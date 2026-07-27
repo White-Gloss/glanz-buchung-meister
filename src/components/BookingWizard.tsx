@@ -628,7 +628,22 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
           <span>Gesamt</span>
           <span className="text-primary">{currency(totals.gross)}</span>
         </div>
+        {booking.depositAmount > 0 && (
+          <div className="flex justify-between text-sm text-amber-300">
+            <span>{depositConfig.label}</span>
+            <span className="font-semibold">{currency(booking.depositAmount)}</span>
+          </div>
+        )}
       </dl>
+
+      {booking.depositAmount > 0 && (
+        <p className="mx-auto mt-4 max-w-lg rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
+          {depositConfig.note} Ihre Anzahlung von{" "}
+          <strong>{currency(booking.depositAmount)}</strong> sichert den Termin – die
+          Zahlungsinformationen erhalten Sie mit der Bestätigung per E-Mail.
+        </p>
+      )}
+
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button onClick={() => generateInvoicePdf(booking)}>
