@@ -41,7 +41,7 @@ function PickupOverview() {
             <span className="px-2">/</span>
             <span className="text-foreground">Abholservice</span>
           </nav>
-          <p className="mt-6 text-xs uppercase tracking-[0.3em] text-primary">
+          <p className="eyebrow mt-6">
             Hol- & Bringservice
           </p>
           <h1 className="text-gradient display-page mt-3 max-w-4xl">
@@ -77,7 +77,7 @@ function PickupOverview() {
             return (
               <article key={title as string} className="glass rounded-2xl p-6">
                 <I className="size-7 text-primary" />
-                <h2 className="mt-4 display-card uppercase">{title as string}</h2>
+                <h3 className="mt-4 display-card uppercase">{title as string}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{text as string}</p>
               </article>
             );
