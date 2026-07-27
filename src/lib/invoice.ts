@@ -137,8 +137,17 @@ export function generateInvoicePdf(booking: Booking) {
     doc.text(doc.splitTextToSize(taxConfig.smallBusinessNote, 170) as string[], L, y);
     y += 10;
   }
+  if (booking.depositAmount > 0) {
+    const depositLine =
+      booking.depositStatus === "bezahlt"
+        ? `Anzahlung (20 %) in Höhe von ${eur(booking.depositAmount)} wurde bereits geleistet. Restbetrag: ${eur(gross - booking.depositAmount)}.`
+        : `${depositConfig.note} Anzahlungsbetrag: ${eur(booking.depositAmount)}.`;
+    doc.text(doc.splitTextToSize(depositLine, 170) as string[], L, y);
+    y += 12;
+  }
   doc.text(doc.splitTextToSize(taxConfig.paymentTerms, 170) as string[], L, y);
   y += 10;
+
   doc.text("Vielen Dank für Ihr Vertrauen.", L, y);
 
   // Fuß
