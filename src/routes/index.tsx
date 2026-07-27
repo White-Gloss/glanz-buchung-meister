@@ -73,11 +73,13 @@ function Header() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-3">
-          <img src={logoAsset.url} alt="White Gloss Detailing Logo" className="h-9 w-auto" />
-          <span className="hidden truncate font-display text-sm uppercase tracking-[0.25em] text-muted-foreground sm:block">
-            Detailing
-          </span>
+          <img
+            src={logoAsset.url}
+            alt="White Gloss Detailing Logo"
+            className="h-12 w-auto sm:h-14"
+          />
         </Link>
+
         <nav className="flex shrink-0 items-center gap-2">
           <Link
             to="/admin"
@@ -111,7 +113,12 @@ function Hero() {
       />
       <div className="grid-lines absolute inset-0 opacity-40" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-40">
-        <div className="max-w-3xl">
+        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          <img
+            src={logoAsset.url}
+            alt="White Gloss Detailing Logo"
+            className="mb-8 h-28 w-auto drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:h-40 lg:h-48"
+          />
           <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-[0.25em]">
             <Star className="size-3.5 text-primary" />
             {company.claim}
@@ -123,7 +130,7 @@ function Hero() {
             Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen Glanz,
             der über den Neuwagenzustand hinausgeht.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="glow-ring">
               <a href="#buchung">
                 Jetzt Termin buchen
@@ -134,7 +141,7 @@ function Hero() {
               <a href="#leistungen">Leistungen ansehen</a>
             </Button>
           </div>
-          <dl className="mt-14 grid max-w-lg grid-cols-3 gap-4">
+          <dl className="mt-14 grid w-full max-w-lg grid-cols-3 gap-4">
             {[
               ["500+", "Fahrzeuge"],
               ["4.9/5", "Bewertung"],
@@ -147,6 +154,7 @@ function Hero() {
             ))}
           </dl>
         </div>
+
       </div>
     </section>
   );
