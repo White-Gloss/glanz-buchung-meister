@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import { calcLineItems, calcTotals, type Booking } from "./bookings";
 import {
   company,
