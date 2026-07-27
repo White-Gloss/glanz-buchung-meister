@@ -53,7 +53,7 @@ export const Route = createFileRoute("/")({
       },
     ],
     links: [
-      { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchpriority: "high" },
+      { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchPriority: "high" },
     ],
   }),
   component: Landing,
@@ -280,7 +280,7 @@ function PickupAreas() {
       </div>
       <Link
         to="/abholservice"
-        className="mt-8 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+        className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring active:text-primary/80"
       >
         Alles zum Abholservice
         <ArrowRight className="size-4" />
@@ -335,7 +335,10 @@ function Footer() {
           <p>Inhaber: {company.owner}</p>
           <p>Steuernummer: {company.taxNumber}</p>
           <p>USt-IdNr.: {company.taxId}</p>
-          <Link to="/admin" className="inline-block pt-2 transition-colors hover:text-foreground">
+          <Link
+            to="/admin"
+            className="inline-flex min-h-11 items-center rounded-lg pt-2 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
             Admin-Bereich
           </Link>
         </div>
