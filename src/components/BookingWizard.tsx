@@ -1,0 +1,649 @@
+import { useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar as CalendarIcon,
+  Car,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Mail,
+  Phone,
+  Plus,
+  Sparkles,
+  Truck,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import {
+  addOns,
+  currency,
+  servicePackages,
+  taxConfig,
+  timeSlots,
+  blockedSlots,
+  vehicleTypes,
+} from "@/lib/servicesConfig";
+import {
+  calcLineItems,
+  calcTotals,
+  loadBookings,
+  nextInvoiceNumber,
+  saveBookings,
+  type Booking,
+} from "@/lib/bookings";
+import { generateInvoicePdf } from "@/lib/invoice";
+
+const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
+
+const vehicleIcons: Record<string, typeof Car> = {
+  kompakt: Car,
+  suv: Car,
+  transporter: Truck,
+};
+
+function toISO(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function MiniCalendar({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (iso: string) => void;
+}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const startOffset = (first.getDay() + 6) % 7; // Montag zuerst
+  const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+  const cells: (Date | null)[] = [
+    ...Array.from({ length: startOffset }, () => null),
+    ...Array.from(
+      { length: daysInMonth },
+      (_, i) => new Date(cursor.getFullYear(), cursor.getMonth(), i + 1),
+    ),
+  ];
+
+  return (
+    <div className="glass rounded-2xl p-4 sm:p-5">
+      <div className="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+        <button
+          type="button"
+          aria-label="Vorheriger Monat"
+          onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+          className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 transition-colors hover:bg-secondary"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <p className="truncate text-center font-display text-base font-semibold uppercase tracking-wide">
+          {cursor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
+        </p>
+        <button
+          type="button"
+          aria-label="Nächster Monat"
+          onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+          className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 transition-colors hover:bg-secondary"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] uppercase tracking-widest text-muted-foreground">
+        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((date, i) => {
+          if (!date) return <span key={`e${i}`} />;
+          const iso = toISO(date);
+          const disabled = date < today || date.getDay() === 0;
+          const selected = iso === value;
+          return (
+            <button
+              key={iso}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(iso)}
+              className={[
+                "aspect-square rounded-lg text-sm transition-all",
+                disabled
+                  ? "cursor-not-allowed text-muted-foreground/35"
+                  : "hover:bg-secondary hover:text-foreground",
+                selected
+                  ? "bg-primary font-semibold text-primary-foreground glow-ring"
+                  : "text-foreground/85",
+              ].join(" ")}
+            >
+              {date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function BookingWizard() {
+  const [step, setStep] = useState(0);
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
+  const [packageId, setPackageId] = useState<string | null>(null);
+  const [addOnIds, setAddOnIds] = useState<string[]>([]);
+  const [date, setDate] = useState<string | null>(null);
+  const [time, setTime] = useState<string | null>(null);
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
+  const [confirmed, setConfirmed] = useState<Booking | null>(null);
+
+  const items = useMemo(
+    () =>
+      vehicleId && packageId
+        ? calcLineItems({ vehicleId, packageId, addOnIds })
+        : [],
+    [vehicleId, packageId, addOnIds],
+  );
+  const totals = calcTotals(items);
+
+  const canContinue = [
+    !!vehicleId,
+    !!packageId,
+    true,
+    !!date && !!time,
+    customer.name.trim().length > 1 &&
+      /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(customer.email.trim()) &&
+      customer.phone.trim().length > 5 &&
+      customer.plate.trim().length > 2,
+  ][step];
+
+  function submit() {
+    if (!vehicleId || !packageId || !date || !time) return;
+    const existing = loadBookings();
+    const booking: Booking = {
+      id: crypto.randomUUID(),
+      invoiceNumber: nextInvoiceNumber(existing),
+      createdAt: new Date().toISOString(),
+      vehicleId,
+      packageId,
+      addOnIds,
+      date,
+      time,
+      customer: {
+        name: customer.name.trim(),
+        email: customer.email.trim(),
+        phone: customer.phone.trim(),
+        plate: customer.plate.trim().toUpperCase(),
+      },
+      total: totals.gross,
+      status: "Ausstehend",
+    };
+    saveBookings([booking, ...existing]);
+    setConfirmed(booking);
+    toast.success("Buchung erfolgreich übermittelt");
+  }
+
+  if (confirmed) {
+    return <Confirmation booking={confirmed} onReset={() => window.location.reload()} />;
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="glass rounded-3xl p-5 sm:p-8">
+        {/* Fortschritt */}
+        <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1">
+          {steps.map((s, i) => (
+            <li key={s} className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span
+                className={[
+                  "flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+                  i === step
+                    ? "bg-primary text-primary-foreground"
+                    : i < step
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground",
+                ].join(" ")}
+              >
+                <span className="tabular-nums opacity-70">{i + 1}</span>
+                <span className="hidden sm:inline">{s}</span>
+              </span>
+              {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
+            </li>
+          ))}
+        </ol>
+
+        {step === 0 && (
+          <section>
+            <StepHeader
+              title="Welches Fahrzeug fahren Sie?"
+              text="Die Fahrzeugklasse bestimmt Aufwand und Materialeinsatz."
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              {vehicleTypes.map((v) => {
+                const Icon = vehicleIcons[v.id] ?? Car;
+                const active = vehicleId === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVehicleId(v.id)}
+                    className={[
+                      "group rounded-2xl border p-5 text-left transition-all duration-300",
+                      active
+                        ? "border-primary bg-primary/10 glow-ring"
+                        : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60",
+                    ].join(" ")}
+                  >
+                    <Icon
+                      className={[
+                        "mb-4 size-7 transition-transform duration-300 group-hover:scale-110",
+                        active ? "text-primary" : "text-muted-foreground",
+                      ].join(" ")}
+                    />
+                    <p className="font-display text-lg font-semibold">{v.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
+                    <p className="mt-3 text-xs uppercase tracking-widest text-primary">
+                      Faktor ×{v.factor.toFixed(2)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {step === 1 && (
+          <section>
+            <StepHeader
+              title="Wählen Sie Ihr Paket"
+              text="Alle Pakete werden ausschließlich in Handarbeit ausgeführt."
+            />
+            <div className="grid gap-4 md:grid-cols-3">
+              {servicePackages.map((p) => {
+                const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
+                const active = packageId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPackageId(p.id)}
+                    className={[
+                      "relative flex flex-col rounded-2xl border p-5 text-left transition-all duration-300",
+                      active
+                        ? "border-primary bg-primary/10 glow-ring"
+                        : "border-border bg-secondary/30 hover:border-primary/50",
+                    ].join(" ")}
+                  >
+                    {p.highlight && (
+                      <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                        Beliebt
+                      </span>
+                    )}
+                    <p className="font-display text-lg font-semibold">{p.name}</p>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                      {p.tagline}
+                    </p>
+                    <p className="mt-4 font-display text-3xl font-bold">
+                      {currency(Math.round(p.basePrice * factor))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">inkl. MwSt. · {p.duration}</p>
+                    <ul className="mt-4 space-y-2 text-sm text-foreground/80">
+                      {p.features.map((f) => (
+                        <li key={f} className="flex gap-2">
+                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {step === 2 && (
+          <section>
+            <StepHeader
+              title="Zusatzleistungen"
+              text="Optional – jederzeit kombinierbar mit Ihrem Paket."
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {addOns.map((a) => {
+                const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
+                const active = addOnIds.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() =>
+                      setAddOnIds((prev) =>
+                        prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
+                      )
+                    }
+                    className={[
+                      "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left transition-all",
+                      active
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-secondary/30 hover:border-primary/40",
+                    ].join(" ")}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium">{a.name}</p>
+                      <p className="text-sm text-muted-foreground">{a.description}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="font-display font-semibold">
+                        +{currency(Math.round(a.price * factor))}
+                      </span>
+                      <span
+                        className={[
+                          "grid size-7 place-items-center rounded-md border transition-colors",
+                          active ? "border-primary bg-primary" : "border-border",
+                        ].join(" ")}
+                      >
+                        {active ? (
+                          <CheckCircle2 className="size-4 text-primary-foreground" />
+                        ) : (
+                          <Plus className="size-4 text-muted-foreground" />
+                        )}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section>
+            <StepHeader
+              title="Wunschtermin wählen"
+              text="Sonntags geschlossen. Belegte Zeitfenster sind deaktiviert."
+            />
+            <div className="grid gap-5 md:grid-cols-2">
+              <MiniCalendar
+                value={date}
+                onChange={(iso) => {
+                  setDate(iso);
+                  setTime(null);
+                }}
+              />
+              <div className="glass rounded-2xl p-5">
+                <p className="mb-4 flex items-center gap-2 font-display text-sm uppercase tracking-widest text-muted-foreground">
+                  <CalendarIcon className="size-4 text-primary" />
+                  Freie Zeitfenster
+                </p>
+                {!date ? (
+                  <p className="text-sm text-muted-foreground">
+                    Bitte wählen Sie zunächst ein Datum aus.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {timeSlots.map((slot) => {
+                      const blocked = (blockedSlots[date] ?? []).includes(slot);
+                      const active = time === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={blocked}
+                          onClick={() => setTime(slot)}
+                          className={[
+                            "rounded-xl border py-2.5 text-sm transition-all",
+                            blocked
+                              ? "cursor-not-allowed border-border/50 text-muted-foreground/40 line-through"
+                              : active
+                                ? "border-primary bg-primary text-primary-foreground glow-ring"
+                                : "border-border bg-secondary/40 hover:border-primary/50",
+                          ].join(" ")}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step === 4 && (
+          <section>
+            <StepHeader
+              title="Ihre Kontaktdaten"
+              text="Wir bestätigen den Termin telefonisch oder per E-Mail."
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                id="name"
+                label="Name"
+                icon={User}
+                value={customer.name}
+                placeholder="Max Mustermann"
+                onChange={(v) => setCustomer({ ...customer, name: v })}
+              />
+              <Field
+                id="email"
+                label="E-Mail"
+                icon={Mail}
+                type="email"
+                value={customer.email}
+                placeholder="max@beispiel.de"
+                onChange={(v) => setCustomer({ ...customer, email: v })}
+              />
+              <Field
+                id="phone"
+                label="Telefon"
+                icon={Phone}
+                value={customer.phone}
+                placeholder="+49 176 12345678"
+                onChange={(v) => setCustomer({ ...customer, phone: v })}
+              />
+              <Field
+                id="plate"
+                label="Kennzeichen"
+                icon={Car}
+                value={customer.plate}
+                placeholder="BN-WG 1967"
+                onChange={(v) => setCustomer({ ...customer, plate: v })}
+              />
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
+            </p>
+          </section>
+        )}
+
+        <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
+          <Button
+            variant="ghost"
+            disabled={step === 0}
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+          >
+            <ArrowLeft className="size-4" />
+            Zurück
+          </Button>
+          {step < steps.length - 1 ? (
+            <Button disabled={!canContinue} onClick={() => setStep((s) => s + 1)}>
+              Weiter
+              <ArrowRight className="size-4" />
+            </Button>
+          ) : (
+            <Button disabled={!canContinue} onClick={submit}>
+              Verbindlich buchen
+              <CheckCircle2 className="size-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Live-Preisrechner */}
+      <aside className="lg:sticky lg:top-6 lg:self-start">
+        <div className="glass-strong rounded-3xl p-6">
+          <p className="flex items-center gap-2 font-display text-sm uppercase tracking-widest text-muted-foreground">
+            <Sparkles className="size-4 text-primary" />
+            Ihre Konfiguration
+          </p>
+          <div className="mt-5 space-y-3 text-sm">
+            {items.length === 0 && (
+              <p className="text-muted-foreground">
+                Wählen Sie Fahrzeug und Paket, um den Preis zu berechnen.
+              </p>
+            )}
+            {items.map((i) => (
+              <div key={i.label} className="flex items-start justify-between gap-3">
+                <span className="min-w-0 text-foreground/80">{i.label}</span>
+                <span className="shrink-0 font-medium tabular-nums">{currency(i.total)}</span>
+              </div>
+            ))}
+          </div>
+          {items.length > 0 && (
+            <div className="mt-5 space-y-2 border-t border-border pt-5 text-sm">
+              {!taxConfig.smallBusiness && (
+                <>
+                  <Row label="Netto" value={currency(totals.net)} />
+                  <Row
+                    label={`MwSt. ${Math.round(taxConfig.vatRate * 100)} %`}
+                    value={currency(totals.vat)}
+                  />
+                </>
+              )}
+              <div className="flex items-baseline justify-between pt-2">
+                <span className="font-display uppercase tracking-wide">Gesamt</span>
+                <span className="font-display text-2xl font-bold text-primary tabular-nums">
+                  {currency(totals.gross)}
+                </span>
+              </div>
+              {taxConfig.smallBusiness && (
+                <p className="text-xs text-muted-foreground">{taxConfig.smallBusinessNote}</p>
+              )}
+            </div>
+          )}
+          {date && time && (
+            <p className="mt-5 rounded-xl bg-secondary/50 px-4 py-3 text-sm">
+              Termin:{" "}
+              <span className="font-medium">
+                {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}, {time} Uhr
+              </span>
+            </p>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-muted-foreground">
+      <span>{label}</span>
+      <span className="tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function StepHeader({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="mb-6">
+      <h3 className="font-display text-2xl font-bold sm:text-3xl">{title}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  icon: Icon,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  id: string;
+  label: string;
+  icon: typeof User;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+      </Label>
+      <div className="relative">
+        <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id={id}
+          type={type}
+          value={value}
+          maxLength={120}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11 bg-secondary/40 pl-9"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
+  const items = calcLineItems(booking);
+  const totals = calcTotals(items);
+  return (
+    <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
+      <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
+        <CheckCircle2 className="size-8 text-primary" />
+      </div>
+      <h3 className="mt-6 font-display text-3xl font-bold sm:text-4xl">Buchung erfolgreich</h3>
+      <p className="mt-2 text-muted-foreground">
+        Vielen Dank, {booking.customer.name}. Wir haben Ihren Termin reserviert und melden uns zur
+        Bestätigung.
+      </p>
+
+      <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
+        <Detail label="Rechnungsnummer" value={booking.invoiceNumber} />
+        <Detail
+          label="Leistungsdatum"
+          value={`${new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}, ${booking.time} Uhr`}
+        />
+        <Detail label="Kennzeichen" value={booking.customer.plate} />
+        {items.map((i) => (
+          <Detail key={i.label} label={i.label} value={currency(i.total)} />
+        ))}
+        <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold">
+          <span>Gesamt</span>
+          <span className="text-primary">{currency(totals.gross)}</span>
+        </div>
+      </dl>
+
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Button onClick={() => generateInvoicePdf(booking)}>
+          <Download className="size-4" />
+          Rechnung als PDF herunterladen
+        </Button>
+        <Button variant="outline" onClick={onReset}>
+          Neue Buchung
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="min-w-0 text-muted-foreground">{label}</dt>
+      <dd className="shrink-0 font-medium">{value}</dd>
+    </div>
+  );
+}
