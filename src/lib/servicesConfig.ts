@@ -62,6 +62,14 @@ export const taxConfig = {
   invoiceStartNumber: 1001,
 };
 
+/** Anzahlung für Neukunden */
+export const depositConfig = {
+  /** Anteil des Bruttobetrags, der von Neukunden im Voraus zu zahlen ist */
+  rate: 0.2,
+  label: "Anzahlung Neukunde (20 %)",
+  note: "Bei Erstbuchungen wird eine Anzahlung von 20 % des Gesamtbetrags fällig. Der Restbetrag ist nach Leistungserbringung zu zahlen.",
+};
+
 export const vehicleTypes: VehicleType[] = [
   {
     id: "kompakt",
