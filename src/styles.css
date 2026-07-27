@@ -225,7 +225,6 @@
 
 /** Kleiner Eyebrow-Text über einer Sektionsüberschrift */
 @utility eyebrow {
-  font-size: var(--text-[0.6875rem]);
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.22em;
