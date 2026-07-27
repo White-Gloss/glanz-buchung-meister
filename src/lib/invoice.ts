@@ -20,6 +20,7 @@ const deDate = (iso: string) => {
 /** jspdf wird erst beim Download nachgeladen (eigener JS-Chunk). */
 export async function generateInvoicePdf(booking: Booking) {
   const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
   const items = calcLineItems(booking);
   const { gross, net, vat } = calcTotals(items);
   const L = 20;
