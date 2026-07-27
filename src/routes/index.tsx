@@ -47,22 +47,22 @@ export const Route = createFileRoute("/")({
         content:
           "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
-      { property: "og:title", content: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
+      { property: "og:title", content: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
       {
         property: "og:description",
         content:
-          "Lackkorrektur, Keramikversiegelung und Innenreinigung auf Next-Level Niveau. Jetzt Termin online buchen.",
+          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: absUrl("/") },
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:alt", content: OG_IMAGE_ALT },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
+      { name: "twitter:title", content: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
       {
         name: "twitter:description",
         content:
-          "Lackkorrektur, Keramikversiegelung und Innenreinigung auf Next-Level Niveau. Jetzt Termin online buchen.",
+          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
       { name: "twitter:image", content: OG_IMAGE },
     ],

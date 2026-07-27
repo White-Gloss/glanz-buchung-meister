@@ -82,22 +82,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
+      { title: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
       {
         name: "description",
         content:
-          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung. Termin online buchen.",
+          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
       { name: "author", content: "White Gloss Detailing" },
-      { property: "og:title", content: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
+      { property: "og:title", content: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
       {
         property: "og:description",
-        content: "No Compromises. Only Results. Jetzt Termin online buchen.",
+        content: "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "White Gloss Detailing" },
       { property: "og:locale", content: "de_DE" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
+      { name: "twitter:description", content: "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d77f5cfd-79b6-420a-be43-bb15bf2939cd/id-preview-c97d80c2--c127cf85-13dc-4675-a048-643c25d4369c.lovable.app-1785138530523.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d77f5cfd-79b6-420a-be43-bb15bf2939cd/id-preview-c97d80c2--c127cf85-13dc-4675-a048-643c25d4369c.lovable.app-1785138530523.png" },
     ],
     links: [
       {
