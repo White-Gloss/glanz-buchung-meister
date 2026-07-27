@@ -230,9 +230,6 @@ function ComparisonSlider({
           className="absolute inset-0 size-full object-cover"
           style={{ objectPosition: "left center" }}
         />
-        <span className="absolute bottom-4 left-4 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-foreground backdrop-blur-sm">
-          Vorher
-        </span>
 
         {/* After image: right half of the split-frame photo, clipped by slider position */}
         <div
@@ -248,9 +245,6 @@ function ComparisonSlider({
             className="size-full object-cover"
             style={{ objectPosition: "right center" }}
           />
-          <span className="absolute bottom-4 left-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary-foreground">
-            Nachher
-          </span>
         </div>
 
         {/* Divider line */}
