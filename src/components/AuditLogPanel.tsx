@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { History, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listAuditLog, type AuditLogEntry } from "@/lib/bookings.functions";
+import { AuditLogSkeleton } from "@/components/skeletons";
 
 const actionStyles: Record<string, string> = {
   "Buchung erstellt": "border-sky-500/30 bg-sky-500/15 text-sky-300",
