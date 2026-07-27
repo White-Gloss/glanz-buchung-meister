@@ -223,6 +223,25 @@ export function currency(value: number) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Abholservice – zentrale Preisauskunft für alle Seiten               */
+/* ------------------------------------------------------------------ */
+
+/** Pauschalpreis des Hol- & Bringservice (unabhängig von der Fahrzeugklasse). */
+export function getPickupPrice(): number {
+  return addOns.find((a) => a.id === "hol")?.price ?? 60;
+}
+
+/** Kurzform, z. B. „60,00 €" */
+export function pickupPriceText(): string {
+  return currency(getPickupPrice());
+}
+
+/** Vollständiger Hinweis für Fließtext und Karten. */
+export function pickupPriceNote(): string {
+  return `Hol- & Bringservice: ${pickupPriceText()} pauschal – im Paket High-End Keramik inklusive.`;
+}
+
+/* ------------------------------------------------------------------ */
 /* Preis-Overrides aus der Datenbank (Admin-Panel)                     */
 /* ------------------------------------------------------------------ */
 
