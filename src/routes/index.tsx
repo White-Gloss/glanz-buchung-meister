@@ -198,7 +198,7 @@ function Hero() {
                 key={l}
                 className="hairline-gold flex flex-col items-center justify-center rounded-3xl bg-card/70 px-2 py-6 text-center backdrop-blur-xl transition-colors hover:border-primary/50"
               >
-                <dt className="display-price text-2xl text-primary sm:text-4xl">{v}</dt>
+                <dt className="display-price text-xl text-primary sm:text-3xl">{v}</dt>
                 <dd className="mt-1 text-[0.55rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.65rem]">
                   {l}
                 </dd>

@@ -44,7 +44,7 @@ function PickupOverview() {
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-primary">
             Hol- & Bringservice
           </p>
-          <h1 className="text-gradient display-page mt-3 max-w-4xl lg:text-7xl">
+          <h1 className="text-gradient display-page mt-3 max-w-4xl">
             Fahrzeugaufbereitung mit Abholservice rund um Horb am Neckar
           </h1>
           <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
@@ -86,7 +86,7 @@ function PickupOverview() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-        <h2 className="display-section uppercase text-3xl sm:text-4xl">
+        <h2 className="display-section uppercase">
           Unser Abholgebiet – {pickupCities.length} Städte
         </h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">

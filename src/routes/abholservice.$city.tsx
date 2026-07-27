@@ -136,7 +136,7 @@ function CityPage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
-            <h2 className="display-section uppercase text-3xl sm:text-4xl">
+            <h2 className="display-section uppercase">
               So läuft die Abholung in {city.name} ab
             </h2>
             <ol className="mt-8 space-y-6">
@@ -170,13 +170,13 @@ function CityPage() {
               ))}
             </ol>
 
-            <h2 className="mt-14 display-section uppercase text-3xl sm:text-4xl">
+            <h2 className="mt-14 display-section uppercase">
               Was Fahrzeuge aus {city.short} besonders braucht
             </h2>
             <p className="mt-4 text-muted-foreground">{city.demand}</p>
             <p className="mt-4 text-muted-foreground">{city.localBenefit}</p>
 
-            <h3 className="mt-10 display-card uppercase text-xl">
+            <h3 className="mt-10 display-card uppercase text-lg sm:text-xl">
               Abholgebiet in und um {city.name}
             </h3>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -197,7 +197,7 @@ function CityPage() {
 
           {/* Pakete */}
           <aside className="space-y-3">
-            <h2 className="display-sub uppercase text-2xl">
+            <h2 className="display-sub uppercase">
               Pakete für Kundschaft aus {city.short}
             </h2>
             {servicePackages.map((p) => (
@@ -235,7 +235,7 @@ function CityPage() {
       {/* FAQ */}
       <section className="border-t border-border/60 bg-card/20">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <h2 className="display-section uppercase text-3xl sm:text-4xl">
+          <h2 className="display-section uppercase">
             Häufige Fragen aus {city.name}
           </h2>
           <dl className="mt-8 space-y-6">
@@ -252,7 +252,7 @@ function CityPage() {
 
       {/* Interne Verlinkung */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="display-sub uppercase text-2xl">Weitere Städte im Abholgebiet</h2>
+        <h2 className="display-sub uppercase">Weitere Städte im Abholgebiet</h2>
         <div className="mt-6">
           <PickupCityGrid cities={neighbours} compact />
         </div>
