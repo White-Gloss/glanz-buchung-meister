@@ -604,7 +604,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
         <CheckCircle2 className="size-8 text-primary" />
       </div>
-      <h3 className="mt-6 font-display text-3xl font-bold sm:text-4xl">Buchung erfolgreich</h3>
+      <h3 className="mt-6 font-display text-3xl font-bold sm:text-4xl">Buchungsanfrage erhalten</h3>
       <p className="mt-2 text-muted-foreground">
         Vielen Dank, {booking.customer.name}. Ihr Wunschtermin ist vorgemerkt. Die verbindliche
         Bestätigung erhalten Sie, sobald unser Team die Buchung freigegeben hat.
