@@ -53,7 +53,7 @@ export const Route = createFileRoute("/")({
       },
     ],
     links: [
-      { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchpriority: "high" },
+      { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchPriority: "high" },
     ],
   }),
   component: Landing,
@@ -93,7 +93,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
-        <Link to="/" aria-label="White Gloss Detailing – zur Startseite" className="flex min-w-0 items-center">
+        <Link to="/" aria-label="White Gloss Detailing – zur Startseite" className="flex min-h-11 min-w-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <img
             src={logoSm.url}
             srcSet={LOGO_SRCSET}
@@ -110,14 +110,14 @@ function Header() {
         <nav className="flex shrink-0 items-center gap-2">
           <Link
             to="/abholservice"
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="hidden min-h-11 items-center rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:text-primary sm:flex"
           >
             Abholservice
           </Link>
           <Link
 
             to="/admin"
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="hidden min-h-11 items-center rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:text-primary sm:flex"
           >
             Admin
           </Link>
@@ -179,22 +179,25 @@ function Hero() {
                 Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen
                 Glanz, der über den Neuwagenzustand hinausgeht.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="glow-ring">
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button asChild size="lg" className="glow-ring w-full sm:w-auto">
                   <a href="#buchung">
                     Jetzt Termin buchen
                     <ArrowRight className="size-4" />
                   </a>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
                   <a href="#leistungen">Leistungen ansehen</a>
                 </Button>
               </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Unverbindliche Anfrage · Antwort innerhalb von 24 Stunden
+              </p>
             </div>
           </div>
 
           {/* Logo-Kachel */}
-          <div className="hairline-gold flex items-center justify-center rounded-3xl bg-card/70 p-8 backdrop-blur-xl lg:col-span-4">
+          <div className="hairline-gold order-last flex items-center justify-center rounded-3xl bg-card/70 p-6 backdrop-blur-xl sm:p-8 lg:order-none lg:col-span-4">
             <img
               src={logoSm.url}
               srcSet={LOGO_SRCSET}
@@ -277,7 +280,7 @@ function PickupAreas() {
       </div>
       <Link
         to="/abholservice"
-        className="mt-8 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+        className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring active:text-primary/80"
       >
         Alles zum Abholservice
         <ArrowRight className="size-4" />
@@ -332,7 +335,10 @@ function Footer() {
           <p>Inhaber: {company.owner}</p>
           <p>Steuernummer: {company.taxNumber}</p>
           <p>USt-IdNr.: {company.taxId}</p>
-          <Link to="/admin" className="inline-block pt-2 transition-colors hover:text-foreground">
+          <Link
+            to="/admin"
+            className="inline-flex min-h-11 items-center rounded-lg pt-2 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
             Admin-Bereich
           </Link>
         </div>

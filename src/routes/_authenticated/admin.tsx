@@ -75,6 +75,7 @@ function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pdfFor, setPdfFor] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
   const [auditKey, setAuditKey] = useState(0);
 
@@ -319,8 +320,20 @@ function AdminPage() {
                               Anzahlung erhalten
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" onClick={() => generateInvoicePdf(b)}>
-                            <Download className="size-4" />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            loading={pdfFor === b.id}
+                            onClick={async () => {
+                              setPdfFor(b.id);
+                              try {
+                                await generateInvoicePdf(b);
+                              } finally {
+                                setPdfFor(null);
+                              }
+                            }}
+                          >
+                            {pdfFor === b.id ? null : <Download className="size-4" />}
                             Rechnung
                           </Button>
                           <Button
