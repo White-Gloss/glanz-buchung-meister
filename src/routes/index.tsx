@@ -70,15 +70,14 @@ function Landing() {
 function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
-        <Link to="/" className="flex min-w-0 items-center">
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 sm:gap-4 sm:px-6 sm:py-3.5">
+        <Link to="/" className="flex min-w-0 items-center py-1">
           <img
             src={logoAsset.url}
             alt="White Gloss Detailing Logo"
-            className="h-9 w-auto max-w-[150px] shrink-0 object-contain sm:h-12 sm:max-w-[220px] lg:h-14"
+            className="h-10 w-auto max-w-[160px] shrink-0 object-contain sm:h-14 sm:max-w-[220px] lg:h-16"
           />
         </Link>
-
 
         <nav className="flex shrink-0 items-center gap-2">
           <Link
