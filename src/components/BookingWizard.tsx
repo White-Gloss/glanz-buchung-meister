@@ -32,6 +32,11 @@ import {
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
+import {
+  validateCustomer,
+  validateCustomerField,
+  type CustomerField,
+} from "@/lib/customerSchema";
 
 import { createBooking } from "@/lib/bookings.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -140,6 +145,25 @@ export function BookingWizard() {
   const [time, setTime] = useState<string | null>(null);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
+  const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
+  const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  function updateCustomer(field: CustomerField, value: string) {
+    setCustomer((c) => ({ ...c, [field]: value }));
+    // Echtzeit-Validierung: Fehler erst nach erster Interaktion anzeigen,
+    // aber sofort wieder entfernen, sobald die Eingabe korrekt ist.
+    setErrors((e) => {
+      const message = validateCustomerField(field, value);
+      if (!message) return { ...e, [field]: undefined };
+      return touched[field] ? { ...e, [field]: message } : e;
+    });
+  }
+
+  function blurCustomer(field: CustomerField) {
+    setTouched((t) => ({ ...t, [field]: true }));
+    setErrors((e) => ({ ...e, [field]: validateCustomerField(field, customer[field]) }));
+  }
 
   const items = useMemo(
     () =>
@@ -155,10 +179,7 @@ export function BookingWizard() {
     !!packageId,
     true,
     !!date && !!time,
-    customer.name.trim().length > 1 &&
-      /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(customer.email.trim()) &&
-      customer.phone.trim().length > 5 &&
-      customer.plate.trim().length > 2,
+    Object.keys(validateCustomer(customer)).length === 0,
   ][step];
 
   const submitBooking = useServerFn(createBooking);
@@ -166,7 +187,15 @@ export function BookingWizard() {
 
   async function submit() {
     if (!vehicleId || !packageId || !date || !time || submitting) return;
+    const fieldErrors = validateCustomer(customer);
+    if (Object.keys(fieldErrors).length > 0) {
+      setTouched({ name: true, email: true, phone: true, plate: true });
+      setErrors(fieldErrors);
+      toast.error("Bitte korrigieren Sie die markierten Felder.");
+      return;
+    }
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const booking = await submitBooking({
         data: {
@@ -184,9 +213,14 @@ export function BookingWizard() {
       setConfirmed(booking);
       toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Buchung konnte nicht gespeichert werden",
-      );
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      const message = offline
+        ? "Keine Internetverbindung. Bitte prüfen Sie Ihr Netzwerk und senden Sie die Anfrage erneut."
+        : error instanceof Error && error.message
+          ? error.message
+          : "Ihre Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es in einem Moment erneut oder rufen Sie uns an.";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -451,7 +485,9 @@ export function BookingWizard() {
                 icon={User}
                 value={customer.name}
                 placeholder="Max Mustermann"
-                onChange={(v) => setCustomer({ ...customer, name: v })}
+                onChange={(v) => updateCustomer("name", v)}
+                onBlur={() => blurCustomer("name")}
+                error={errors.name}
               />
               <Field
                 id="email"
@@ -460,7 +496,9 @@ export function BookingWizard() {
                 type="email"
                 value={customer.email}
                 placeholder="max@beispiel.de"
-                onChange={(v) => setCustomer({ ...customer, email: v })}
+                onChange={(v) => updateCustomer("email", v)}
+                onBlur={() => blurCustomer("email")}
+                error={errors.email}
               />
               <Field
                 id="phone"
@@ -468,7 +506,9 @@ export function BookingWizard() {
                 icon={Phone}
                 value={customer.phone}
                 placeholder="+49 176 12345678"
-                onChange={(v) => setCustomer({ ...customer, phone: v })}
+                onChange={(v) => updateCustomer("phone", v)}
+                onBlur={() => blurCustomer("phone")}
+                error={errors.phone}
               />
               <Field
                 id="plate"
@@ -476,9 +516,19 @@ export function BookingWizard() {
                 icon={Car}
                 value={customer.plate}
                 placeholder="BN-WG 1967"
-                onChange={(v) => setCustomer({ ...customer, plate: v })}
+                onChange={(v) => updateCustomer("plate", v)}
+                onBlur={() => blurCustomer("plate")}
+                error={errors.plate}
               />
             </div>
+            {submitError && (
+              <div
+                role="alert"
+                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {submitError}
+              </div>
+            )}
             <p className="mt-4 text-xs text-muted-foreground">
               Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
             </p>
@@ -591,6 +641,8 @@ function Field({
   onChange,
   placeholder,
   type = "text",
+  onBlur,
+  error,
 }: {
   id: string;
   label: string;
@@ -599,6 +651,8 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  onBlur?: () => void;
+  error?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -614,9 +668,17 @@ function Field({
           maxLength={120}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 bg-secondary/40 pl-9"
+          onBlur={onBlur}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`h-11 bg-secondary/40 pl-9 ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
         />
       </div>
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
