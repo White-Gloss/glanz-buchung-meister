@@ -249,14 +249,14 @@ function ComparisonSlider({
 
         {/* Labels */}
         <span
-          className="pointer-events-none absolute top-3 left-3 rounded bg-black/60 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
-          style={{ opacity: pos > 15 ? 1 - (pos - 15) / 35 : 1 }}
+          className="pointer-events-none absolute top-3 left-3 rounded bg-black/70 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
+          style={{ opacity: pos > 8 ? 1 - (pos - 8) / 25 : 1 }}
         >
           Vorher
         </span>
         <span
           className="pointer-events-none absolute top-3 right-3 rounded bg-primary/80 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
-          style={{ opacity: pos < 85 ? (pos - 50) / 35 : 1 }}
+          style={{ opacity: pos < 92 ? (pos - 75) / 17 : 1 }}
         >
           Nachher
         </span>
