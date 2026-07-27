@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -211,7 +211,9 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
-            <PricePanel />
+            <Suspense fallback={<PricePanelSkeleton />}>
+              <PricePanel />
+            </Suspense>
 
 
 
@@ -336,7 +338,9 @@ function AdminPage() {
                 })}
               </div>
             )}
-            <AuditLogPanel key={auditKey} />
+            <Suspense fallback={<AuditLogSkeleton />}>
+              <AuditLogPanel key={auditKey} />
+            </Suspense>
           </>
         )}
       </main>
