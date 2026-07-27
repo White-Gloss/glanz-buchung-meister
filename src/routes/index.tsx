@@ -220,7 +220,7 @@ function ComparisonSlider({
         <h3 className="font-display text-lg font-semibold">{label}</h3>
       </div>
       <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border">
-        {/* Before image (full background) */}
+        {/* Before image: left half of the split-frame photo */}
         <img
           src={beforeImage}
           alt={beforeAlt}
@@ -228,12 +228,13 @@ function ComparisonSlider({
           width={1920}
           height={1088}
           className="absolute inset-0 size-full object-cover"
+          style={{ objectPosition: "left center" }}
         />
         <span className="absolute bottom-4 left-4 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-foreground backdrop-blur-sm">
           Vorher
         </span>
 
-        {/* After image (clipped by slider position) */}
+        {/* After image: right half of the split-frame photo, clipped by slider position */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
@@ -245,6 +246,7 @@ function ComparisonSlider({
             width={1920}
             height={1088}
             className="size-full object-cover"
+            style={{ objectPosition: "right center" }}
           />
           <span className="absolute bottom-4 left-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary-foreground">
             Nachher
