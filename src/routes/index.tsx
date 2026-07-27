@@ -20,10 +20,6 @@ import { BookingWizard } from "@/components/BookingWizard";
 import { company, features } from "@/lib/servicesConfig";
 import logoAsset from "@/assets/wgd-logo.png.asset.json";
 import heroCar from "@/assets/hero-car.jpg";
-import beforeExterior from "@/assets/before-exterior.jpg";
-import afterExterior from "@/assets/after-exterior.jpg";
-import beforeInterior from "@/assets/before-interior.jpg";
-import afterInterior from "@/assets/after-interior.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
