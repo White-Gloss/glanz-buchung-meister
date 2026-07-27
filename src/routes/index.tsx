@@ -346,10 +346,12 @@ function Footer() {
             <Instagram className="size-4 text-primary" />
             {company.instagram}
           </p>
-          <p className="flex items-center gap-2">
-            <MapPin className="size-4 text-primary" />
-            {company.street}, {company.city}
-          </p>
+          {company.street && company.city && (
+            <p className="flex items-center gap-2">
+              <MapPin className="size-4 text-primary" />
+              {company.street}, {company.city}
+            </p>
+          )}
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p className="font-display uppercase tracking-widest text-foreground">Rechtliches</p>
