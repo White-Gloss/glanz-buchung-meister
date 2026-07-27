@@ -30,7 +30,7 @@ export const Route = createFileRoute("/abholservice/")({
 
 function PickupOverview() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <section className="relative overflow-hidden border-b border-border/60">
         <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">

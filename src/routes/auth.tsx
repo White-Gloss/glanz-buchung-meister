@@ -64,7 +64,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4 py-16">
+    <div className="grid min-h-dvh place-items-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <Button asChild variant="ghost" size="sm" className="mb-6">
           <Link to="/">
