@@ -146,6 +146,26 @@ export const createBooking = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
+// getBookedSlots — public, returns booked (date → time[]) for future dates.
+// Only non-cancelled bookings count as blocked.
+// ---------------------------------------------------------------------------
+export const getBookedSlots = createServerFn({ method: "GET" }).handler(async () => {
+  const rows = await query<{ booking_date: string; booking_time: string }>(
+    `SELECT booking_date::text, booking_time
+       FROM public.bookings
+      WHERE booking_date >= current_date
+        AND status <> 'Storniert'`,
+  );
+  const result: Record<string, string[]> = {};
+  for (const row of rows) {
+    const d = row.booking_date.slice(0, 10); // ensure YYYY-MM-DD
+    if (!result[d]) result[d] = [];
+    result[d].push(row.booking_time);
+  }
+  return result;
+});
+
+// ---------------------------------------------------------------------------
 // Admin helpers
 // ---------------------------------------------------------------------------
 

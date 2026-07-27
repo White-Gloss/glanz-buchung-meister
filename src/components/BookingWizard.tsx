@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,13 +22,10 @@ import { toast } from "sonner";
 import {
   addOns,
   depositConfig,
-
-
   currency,
   servicePackages,
   taxConfig,
   timeSlots,
-  blockedSlots,
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
@@ -38,7 +35,7 @@ import {
   type CustomerField,
 } from "@/lib/customerSchema";
 
-import { createBooking } from "@/lib/bookings.functions";
+import { createBooking, getBookedSlots } from "@/lib/bookings.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateInvoicePdf } from "@/lib/invoice";
 
@@ -155,6 +152,13 @@ export function BookingWizard() {
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Live booked slots from the database — replaces the static blockedSlots config
+  const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
+  const fetchBookedSlots = useServerFn(getBookedSlots);
+  useEffect(() => {
+    fetchBookedSlots({}).then(setLiveBlockedSlots).catch(() => {/* non-critical, fail silently */});
+  }, []);
 
   function updateCustomer(field: CustomerField, value: string) {
     setCustomer((c) => ({ ...c, [field]: value }));
@@ -469,7 +473,7 @@ export function BookingWizard() {
                     aria-label="Freie Zeitfenster"
                   >
                     {timeSlots.map((slot) => {
-                      const blocked = (blockedSlots[date] ?? []).includes(slot);
+                      const blocked = (liveBlockedSlots[date] ?? []).includes(slot);
                       const active = time === slot;
                       return (
                         <button
