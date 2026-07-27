@@ -173,8 +173,46 @@ export const createBooking = createServerFn({ method: "POST" })
       .single();
 
     if (error) throw new Error(error.message);
-    return toBooking(row as Row);
+
+    const created = toBooking(row as Row);
+    await logAudit({
+      bookingId: created.id,
+      invoiceNumber: created.invoiceNumber,
+      action: "Buchung erstellt",
+      newValue: created.status,
+      actorEmail: created.customer.email,
+    });
+    return created;
   });
+
+type AuditEntry = {
+  bookingId: string;
+  invoiceNumber?: string | null;
+  action: string;
+  field?: string | null;
+  oldValue?: string | null;
+  newValue?: string | null;
+  actorId?: string | null;
+  actorEmail?: string | null;
+};
+
+async function logAudit(entry: AuditEntry) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("booking_audit_log").insert({
+      booking_id: entry.bookingId,
+      invoice_number: entry.invoiceNumber ?? null,
+      action: entry.action,
+      field: entry.field ?? null,
+      old_value: entry.oldValue ?? null,
+      new_value: entry.newValue ?? null,
+      actor_id: entry.actorId ?? null,
+      actor_email: entry.actorEmail ?? null,
+    });
+  } catch (e) {
+    console.error("[audit] Eintrag konnte nicht geschrieben werden", e);
+  }
+}
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -202,6 +240,11 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; status: BookingStatus }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: before } = await context.supabase
+      .from("bookings")
+      .select("status")
+      .eq("id", data.id)
+      .maybeSingle();
     const { data: row, error } = await context.supabase
       .from("bookings")
       .update({ status: data.status })
@@ -209,7 +252,18 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
       .select(SELECT)
       .single();
     if (error) throw new Error(error.message);
-    return toBooking(row as Row);
+    const updated = toBooking(row as Row);
+    await logAudit({
+      bookingId: updated.id,
+      invoiceNumber: updated.invoiceNumber,
+      action: "Status geändert",
+      field: "Status",
+      oldValue: (before as { status?: string } | null)?.status ?? null,
+      newValue: updated.status,
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+    });
+    return updated;
   });
 
 export const updateDepositStatus = createServerFn({ method: "POST" })
@@ -217,6 +271,11 @@ export const updateDepositStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; depositStatus: Booking["depositStatus"] }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: before } = await context.supabase
+      .from("bookings")
+      .select("deposit_status")
+      .eq("id", data.id)
+      .maybeSingle();
     const { data: row, error } = await context.supabase
       .from("bookings")
       .update({ deposit_status: data.depositStatus })
@@ -224,7 +283,18 @@ export const updateDepositStatus = createServerFn({ method: "POST" })
       .select(SELECT)
       .single();
     if (error) throw new Error(error.message);
-    return toBooking(row as Row);
+    const updated = toBooking(row as Row);
+    await logAudit({
+      bookingId: updated.id,
+      invoiceNumber: updated.invoiceNumber,
+      action: "Anzahlung geändert",
+      field: "Anzahlung",
+      oldValue: (before as { deposit_status?: string } | null)?.deposit_status ?? null,
+      newValue: updated.depositStatus,
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+    });
+    return updated;
   });
 
 export const deleteBooking = createServerFn({ method: "POST" })
@@ -232,8 +302,21 @@ export const deleteBooking = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: before } = await context.supabase
+      .from("bookings")
+      .select("invoice_number, status")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await context.supabase.from("bookings").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAudit({
+      bookingId: data.id,
+      invoiceNumber: (before as { invoice_number?: string } | null)?.invoice_number ?? null,
+      action: "Buchung gelöscht",
+      oldValue: (before as { status?: string } | null)?.status ?? null,
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+    });
     return { ok: true };
   });
 
@@ -245,4 +328,39 @@ export const isAdminUser = createServerFn({ method: "GET" })
       _role: "admin",
     });
     return { isAdmin: Boolean(data) };
+  });
+
+export type AuditLogEntry = {
+  id: string;
+  bookingId: string;
+  invoiceNumber: string | null;
+  action: string;
+  field: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  actorEmail: string | null;
+  createdAt: string;
+};
+
+export const listAuditLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AuditLogEntry[]> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("booking_audit_log")
+      .select("id, booking_id, invoice_number, action, field, old_value, new_value, actor_email, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any) => ({
+      id: r.id,
+      bookingId: r.booking_id,
+      invoiceNumber: r.invoice_number,
+      action: r.action,
+      field: r.field,
+      oldValue: r.old_value,
+      newValue: r.new_value,
+      actorEmail: r.actor_email,
+      createdAt: r.created_at,
+    }));
   });

@@ -26,6 +26,7 @@ import {
 import { generateInvoicePdf } from "@/lib/invoice";
 import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
 import { PricePanel } from "@/components/PricePanel";
+import { AuditLogPanel } from "@/components/AuditLogPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -65,6 +66,7 @@ function AdminPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState(false);
+  const [auditKey, setAuditKey] = useState(0);
 
   const fetchBookings = useServerFn(listBookings);
   const setStatusFn = useServerFn(updateBookingStatus);
@@ -95,6 +97,7 @@ function AdminPage() {
     try {
       const updated = await setStatusFn({ data: { id, status } });
       setBookings((list) => list.map((b) => (b.id === id ? updated : b)));
+      setAuditKey((k) => k + 1);
       toast.success(`Status auf „${status}“ gesetzt`);
     } catch (error) {
       setBookings(previous);
@@ -106,6 +109,7 @@ function AdminPage() {
     try {
       const updated = await setDepositFn({ data: { id, depositStatus: "bezahlt" } });
       setBookings((list) => list.map((b) => (b.id === id ? updated : b)));
+      setAuditKey((k) => k + 1);
       toast.success("Anzahlung als bezahlt markiert");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen");
@@ -117,6 +121,7 @@ function AdminPage() {
     setBookings((list) => list.filter((b) => b.id !== id));
     try {
       await removeFn({ data: { id } });
+      setAuditKey((k) => k + 1);
       toast.success("Buchung gelöscht");
     } catch (error) {
       setBookings(previous);
@@ -323,6 +328,7 @@ function AdminPage() {
                 })}
               </div>
             )}
+            <AuditLogPanel key={auditKey} />
           </>
         )}
       </main>
