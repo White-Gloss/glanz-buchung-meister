@@ -20,8 +20,10 @@ import { BookingWizard } from "@/components/BookingWizard";
 import { company, features } from "@/lib/servicesConfig";
 import logoAsset from "@/assets/wgd-logo.png.asset.json";
 import heroCar from "@/assets/hero-car.jpg";
-import beforeAfterExterior from "@/assets/before-after-exterior.jpg";
-import beforeAfterInterior from "@/assets/before-after-interior.jpg";
+import beforeExterior from "@/assets/before-exterior.jpg";
+import afterExterior from "@/assets/after-exterior.jpg";
+import beforeInterior from "@/assets/before-interior.jpg";
+import afterInterior from "@/assets/after-interior.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -220,18 +222,17 @@ function ComparisonSlider({
         <h3 className="font-display text-lg font-semibold">{label}</h3>
       </div>
       <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border">
-        {/* Before image: left half of the split-frame photo */}
+        {/* Before image: full photo underneath */}
         <img
           src={beforeImage}
           alt={beforeAlt}
           loading="lazy"
-          width={1920}
-          height={1088}
+          width={1088}
+          height={608}
           className="absolute inset-0 size-full object-cover"
-          style={{ objectPosition: "left center" }}
         />
 
-        {/* After image: right half of the split-frame photo, clipped by slider position */}
+        {/* After image: clipped by slider position */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
@@ -240,12 +241,19 @@ function ComparisonSlider({
             src={afterImage}
             alt={afterAlt}
             loading="lazy"
-            width={1920}
-            height={1088}
+            width={1088}
+            height={608}
             className="size-full object-cover"
-            style={{ objectPosition: "right center" }}
           />
         </div>
+
+        {/* Labels */}
+        <span className="pointer-events-none absolute top-3 left-3 rounded bg-black/70 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+          Vorher
+        </span>
+        <span className="pointer-events-none absolute top-3 right-3 rounded bg-primary/80 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+          Nachher
+        </span>
 
         {/* Divider line */}
         <div
@@ -295,16 +303,16 @@ function BeforeAfter() {
           <ComparisonSlider
             label="Außenaufbereitung"
             icon={Car}
-            beforeImage={beforeAfterExterior}
-            afterImage={beforeAfterExterior}
-            beforeAlt="Fahrzeug vor der Außenaufbereitung mit verkratzter, matter Lackierung"
+            beforeImage={beforeExterior}
+            afterImage={afterExterior}
+            beforeAlt="Fahrzeug vor der Außenaufbereitung mit matter, verschmutzter Lackierung"
             afterAlt="Fahrzeug nach der Außenaufbereitung mit spiegelndem Hochglanzlack"
           />
           <ComparisonSlider
             label="Innenraum-Reinigung"
             icon={Armchair}
-            beforeImage={beforeAfterInterior}
-            afterImage={beforeAfterInterior}
+            beforeImage={beforeInterior}
+            afterImage={afterInterior}
             beforeAlt="Verschmutzter Innenraum vor der Reinigung"
             afterAlt="Perfekt gereinigter und gepflegter Innenraum nach der Aufbereitung"
           />
