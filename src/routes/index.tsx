@@ -15,7 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
 import { company, features } from "@/lib/servicesConfig";
-import logoAsset from "@/assets/wgd-logo.png.asset.json";
+import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
+import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
+
+const LOGO_SRCSET = `${logoSm.url} 440w, ${logoLg.url} 760w`;
 import heroCar from "@/assets/hero-car.jpg";
 
 export const Route = createFileRoute("/")({
@@ -33,6 +36,9 @@ export const Route = createFileRoute("/")({
         content:
           "Lackkorrektur, Keramikversiegelung und Innenreinigung auf Next-Level Niveau. Jetzt Termin online buchen.",
       },
+    ],
+    links: [
+      { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchpriority: "high" },
     ],
   }),
   component: Landing,
@@ -73,7 +79,12 @@ function Header() {
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <Link to="/" className="flex min-w-0 items-center">
           <img
-            src={logoAsset.url}
+            src={logoSm.url}
+            srcSet={LOGO_SRCSET}
+            sizes="(min-width: 640px) 220px, 160px"
+            width={440}
+            height={253}
+            decoding="async"
             alt="White Gloss Detailing Logo"
             className="h-10 w-auto max-w-[160px] shrink-0 object-contain sm:h-13 sm:max-w-[220px] lg:h-15"
           />
@@ -114,7 +125,13 @@ function Hero() {
       <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl flex-col justify-center px-4 py-14 sm:min-h-[calc(100svh-5.25rem)] sm:px-6 sm:py-20 lg:min-h-[calc(100svh-5.75rem)] lg:py-28">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           <img
-            src={logoAsset.url}
+            src={logoSm.url}
+            srcSet={LOGO_SRCSET}
+            sizes="(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)"
+            width={760}
+            height={437}
+            fetchPriority="high"
+            decoding="async"
             alt="White Gloss Detailing Logo"
             className="mx-auto mb-5 h-auto w-[min(64vw,200px)] object-contain drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:mb-7 sm:w-[280px] lg:mb-8 lg:w-[340px]"
           />
@@ -195,7 +212,15 @@ function Footer() {
     <footer className="border-t border-border bg-background/80">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 md:grid-cols-3">
         <div>
-          <img src={logoAsset.url} alt="White Gloss Detailing" className="h-12 w-auto" />
+          <img
+            src={logoSm.url}
+            width={440}
+            height={253}
+            loading="lazy"
+            decoding="async"
+            alt="White Gloss Detailing"
+            className="h-12 w-auto"
+          />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">
             {company.name} – {company.claim}
           </p>
