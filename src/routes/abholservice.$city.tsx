@@ -237,26 +237,14 @@ function CityPage() {
             Häufige Fragen aus {city.name}
           </h2>
           <dl className="mt-8 space-y-6">
-            {[
-              [
-                `Ist der Abholservice in ${city.name} kostenlos?`,
-                `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
-              ],
-              [
-                "Wie lange dauert die Aufbereitung?",
-                `Je nach Paket zwischen 3 Stunden und 2 Werktagen. Die reine Fahrzeit zwischen ${city.name} und ${homeBase.city} beträgt rund ${city.driveMinutes} Minuten pro Strecke.`,
-              ],
-              [
-                "Wo wird mein Fahrzeug bearbeitet?",
-                `Ausschließlich in unserer Werkstatt in ${homeBase.city}. In ${city.name} finden nur Abholung und Rückgabe statt.`,
-              ],
-            ].map(([q, a]) => (
+            {buildCityFaqItems(city).map(([q, a]) => (
               <div key={q} className="hairline-gold rounded-2xl bg-card/60 p-5">
                 <dt className="font-display text-lg uppercase">{q}</dt>
                 <dd className="mt-2 text-sm text-muted-foreground">{a}</dd>
               </div>
             ))}
           </dl>
+
         </div>
       </section>
 
