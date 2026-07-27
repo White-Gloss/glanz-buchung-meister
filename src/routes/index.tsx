@@ -100,6 +100,13 @@ function Header() {
 
         <nav className="flex shrink-0 items-center gap-2">
           <Link
+            to="/abholservice"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+          >
+            Abholservice
+          </Link>
+          <Link
+
             to="/admin"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
           >
