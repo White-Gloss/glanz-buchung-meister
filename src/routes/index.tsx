@@ -231,6 +231,31 @@ function Features() {
   );
 }
 
+function PickupAreas() {
+  return (
+    <section id="abholservice" className="mx-auto max-w-7xl scroll-mt-20 px-4 pb-20 sm:px-6">
+      <p className="text-xs uppercase tracking-[0.3em] text-primary">Abholservice</p>
+      <h2 className="mt-3 max-w-3xl font-display text-3xl font-bold sm:text-5xl">
+        Wir holen Ihr Fahrzeug ab – im Umkreis von Horb am Neckar
+      </h2>
+      <p className="mt-3 max-w-2xl text-muted-foreground">
+        Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in {pickupCities.length}{" "}
+        Städten der Region ab und bringen es veredelt zurück.
+      </p>
+      <div className="mt-10">
+        <PickupCityGrid />
+      </div>
+      <Link
+        to="/abholservice"
+        className="mt-8 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+      >
+        Alles zum Abholservice
+        <ArrowRight className="size-4" />
+      </Link>
+    </section>
+  );
+}
+
 
 function Footer() {
   return (
