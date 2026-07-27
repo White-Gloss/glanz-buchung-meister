@@ -63,16 +63,13 @@ function Landing() {
 
         
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-          <div className="mb-10 max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary">Online Buchung</p>
-            <h2 className="mt-3 font-display text-3xl tracking-wide sm:text-5xl">
-              In 5 Schritten zum Termin
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Konfigurieren Sie Ihre Aufbereitung – der Preis aktualisiert sich live. Rechnung nach
-              deutschem Standard inklusive.
-            </p>
-          </div>
+          <SectionHeading
+            className="mb-10 max-w-2xl"
+            eyebrow="Online Buchung"
+            title="In 5 Schritten zum Termin"
+            text="Konfigurieren Sie Ihre Aufbereitung – der Preis aktualisiert sich live. Rechnung nach deutschem Standard inklusive."
+          />
+
           <BookingWizard />
         </section>
       </main>
