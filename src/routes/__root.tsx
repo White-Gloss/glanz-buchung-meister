@@ -135,6 +135,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Zentral gepflegte Preise anwenden, bevor Kindrouten rendern (Server + Client)
+  applyPriceOverrides(Route.useLoaderData());
+
+
 
   return (
     <QueryClientProvider client={queryClient}>
