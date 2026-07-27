@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lazy, Suspense } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 
 const BookingWizard = lazy(() =>
@@ -79,9 +80,14 @@ function Landing() {
             text="Konfigurieren Sie Ihre Aufbereitung – der Preis aktualisiert sich live. Rechnung nach deutschem Standard inklusive."
           />
 
-          <Suspense fallback={<BookingWizardSkeleton />}>
+          <ErrorBoundary
+            title="Der Buchungsassistent konnte nicht geladen werden"
+            description="Bitte laden Sie die Seite neu. Alternativ nehmen wir Ihre Anfrage gerne telefonisch oder per E-Mail entgegen."
+          >
+            <Suspense fallback={<BookingWizardSkeleton />}>
             <BookingWizard />
-          </Suspense>
+            </Suspense>
+          </ErrorBoundary>
         </section>
       </main>
       <Footer />

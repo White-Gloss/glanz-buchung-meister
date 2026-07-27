@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -212,9 +213,12 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
+            <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">
             <Suspense fallback={<PricePanelSkeleton />}>
               <PricePanel />
             </Suspense>
+            </ErrorBoundary>
+            </ErrorBoundary>
 
 
 
@@ -351,9 +355,11 @@ function AdminPage() {
                 })}
               </div>
             )}
+            <ErrorBoundary title="Das Audit-Log konnte nicht geladen werden">
             <Suspense fallback={<AuditLogSkeleton />}>
               <AuditLogPanel key={auditKey} />
             </Suspense>
+            </ErrorBoundary>
           </>
         )}
       </main>
