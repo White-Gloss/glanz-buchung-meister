@@ -6,7 +6,7 @@
  * Seiten, Meta-Daten, JSON-LD, Übersicht und Sitemap ziehen automatisch nach.
  */
 
-import { company } from "./servicesConfig";
+import { company, pickupPriceText } from "./servicesConfig";
 
 export type PickupCity = {
   /** URL-Slug: /abholservice/{slug} */
@@ -368,7 +368,7 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
 
   const descriptions = [
     `Professionelle Fahrzeugaufbereitung für ${city.name}: Wir holen Ihr Auto ab (${city.distanceKm} km, ca. ${city.driveMinutes} Min. nach Horb) und bringen es veredelt zurück.`,
-    `Lackkorrektur, Keramikversiegelung & Innenreinigung für ${city.name}. Kostenloser Abholservice aus dem ${city.district} – Termin online anfragen.`,
+    `Lackkorrektur, Keramikversiegelung & Innenreinigung für ${city.name}. Abholservice aus dem ${city.district} für ${pickupPriceText()} pauschal – jetzt anfragen.`,
     `Autoaufbereitung ${city.short} ohne Umweg: Abholung an Ihrer Adresse, Aufbereitung in unserer Werkstatt in Horb am Neckar, Rückgabe nach Wunschtermin.`,
   ];
   const description = isHome
@@ -391,8 +391,8 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
 export function buildCityFaqItems(city: PickupCity): [string, string][] {
   return [
     [
-      `Ist der Abholservice in ${city.name} kostenlos?`,
-      `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
+      `Was kostet der Abholservice in ${city.name}?`,
+      `Abholung und Rückgabe in ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) kosten pauschal ${pickupPriceText()} – unabhängig von der Fahrzeugklasse. Im Paket High-End Keramik ist der Hol- & Bringservice kostenfrei enthalten. ${city.faqExtra}`,
     ],
     [
       "Wie lange dauert die Aufbereitung?",

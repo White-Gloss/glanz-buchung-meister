@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Car, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowRight, Car, MapPin, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { buildOverviewJsonLd, homeBase, pickupCities } from "@/lib/pickupLocations";
-import { company } from "@/lib/servicesConfig";
+import { company, pickupPriceNote, pickupPriceText } from "@/lib/servicesConfig";
 
 const TITLE = "Abholservice Fahrzeugaufbereitung | Horb & Umgebung";
 const DESCRIPTION =
@@ -52,6 +52,12 @@ function PickupOverview() {
             trotzdem nicht zu uns fahren: Wir holen es bei Ihnen ab, veredeln es unter
             kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
           </p>
+          <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
+            <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
+            <span className="text-foreground/80">
+              für Abholung &amp; Rückgabe – im Paket High-End Keramik inklusive
+            </span>
+          </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="glow-ring">
               <Link to="/" hash="buchung">
@@ -67,11 +73,12 @@ function PickupOverview() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             [Car, "Abholung & Rückgabe", "Wir übernehmen Ihr Fahrzeug an Wohn- oder Firmenadresse."],
             [MapPin, "13 Städte im Umkreis", "Von Horb über Tübingen bis Böblingen und Reutlingen."],
             [ShieldCheck, "Voll versichert", "Überführungsfahrten sind während des Transports abgesichert."],
+            [Wallet, `${pickupPriceText()} pauschal`, pickupPriceNote()],
           ].map(([Icon, title, text]) => {
             const I = Icon as typeof Car;
             return (

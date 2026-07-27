@@ -19,7 +19,7 @@ import {
   homeBase,
 } from "@/lib/pickupLocations";
 
-import { company, servicePackages } from "@/lib/servicesConfig";
+import { company, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
 
 export const Route = createFileRoute("/abholservice/$city")({
   loader: ({ params }) => {
@@ -102,9 +102,15 @@ function CityPage() {
             Abholservice {city.short}
           </p>
           <h1 className="text-gradient display-page mt-3 max-w-4xl">
-            {city.focusKeyword} – mit kostenlosem Hol- und Bringservice
+            {city.focusKeyword} – mit Hol- und Bringservice
           </h1>
           <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">{city.intro}</p>
+          <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
+            <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
+            <span className="text-foreground/80">
+              für Abholung &amp; Rückgabe – bei High-End Keramik inklusive
+            </span>
+          </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="glow-ring">

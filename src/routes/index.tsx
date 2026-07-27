@@ -17,7 +17,9 @@ import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 
 import { pickupCities } from "@/lib/pickupLocations";
-import { company, features } from "@/lib/servicesConfig";
+import { company, features,
+  pickupPriceText,
+} from "@/lib/servicesConfig";
 
 import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
@@ -249,7 +251,8 @@ function PickupAreas() {
         text={
           <span className="block max-w-2xl">
             Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in{" "}
-            {pickupCities.length} Städten der Region ab und bringen es veredelt zurück.
+            {pickupCities.length} Städten der Region ab und bringen es veredelt zurück – pauschal
+            für {pickupPriceText()}, im Paket High-End Keramik inklusive.
           </span>
         }
       />
