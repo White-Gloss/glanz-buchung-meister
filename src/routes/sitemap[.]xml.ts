@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { pickupCitiesByDistance } from "@/lib/pickupLocations";
+
 
 // TODO: replace with your project URL once a project name or custom domain is set.
 const BASE_URL = "";
