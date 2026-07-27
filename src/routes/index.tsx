@@ -222,18 +222,17 @@ function ComparisonSlider({
         <h3 className="font-display text-lg font-semibold">{label}</h3>
       </div>
       <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border">
-        {/* Before image: left half of the split-frame photo */}
+        {/* Before image: full photo underneath */}
         <img
           src={beforeImage}
           alt={beforeAlt}
           loading="lazy"
-          width={1920}
-          height={1088}
+          width={1088}
+          height={608}
           className="absolute inset-0 size-full object-cover"
-          style={{ objectPosition: "left center" }}
         />
 
-        {/* After image: right half of the split-frame photo, clipped by slider position */}
+        {/* After image: clipped by slider position */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
@@ -242,12 +241,25 @@ function ComparisonSlider({
             src={afterImage}
             alt={afterAlt}
             loading="lazy"
-            width={1920}
-            height={1088}
+            width={1088}
+            height={608}
             className="size-full object-cover"
-            style={{ objectPosition: "right center" }}
           />
         </div>
+
+        {/* Labels */}
+        <span
+          className="pointer-events-none absolute top-3 left-3 rounded bg-black/60 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
+          style={{ opacity: pos > 15 ? 1 - (pos - 15) / 35 : 1 }}
+        >
+          Vorher
+        </span>
+        <span
+          className="pointer-events-none absolute top-3 right-3 rounded bg-primary/80 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white backdrop-blur-sm"
+          style={{ opacity: pos < 85 ? (pos - 50) / 35 : 1 }}
+        >
+          Nachher
+        </span>
 
         {/* Divider line */}
         <div
