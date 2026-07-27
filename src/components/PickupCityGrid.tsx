@@ -23,7 +23,7 @@ export function PickupCityGrid({ cities = pickupCitiesByDistance, compact = fals
             className="hairline-gold group flex h-full flex-col justify-between rounded-2xl bg-card/70 p-5 backdrop-blur-xl transition-colors hover:border-primary/60"
           >
             <div>
-              <p className="flex items-center gap-2 font-display text-xl uppercase tracking-wide text-foreground">
+              <p className="display-card flex items-center gap-2 text-xl uppercase text-foreground">
                 <MapPin className="size-4 shrink-0 text-primary" />
                 {city.name}
               </p>

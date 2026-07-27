@@ -57,7 +57,7 @@ export const Route = createFileRoute("/abholservice/$city")({
 function CityNotFound() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-32 text-center">
-      <h1 className="font-display text-4xl uppercase">Stadt nicht im Abholgebiet</h1>
+      <h1 className="display-page">Stadt nicht im Abholgebiet</h1>
       <p className="mt-4 text-muted-foreground">
         Diese Seite existiert nicht. Hier finden Sie alle Städte, die wir anfahren.
       </p>
@@ -125,7 +125,7 @@ function CityPage() {
                   <Icon className="size-3.5 text-primary" />
                   {label}
                 </dt>
-                <dd className="mt-2 font-display text-lg uppercase text-foreground">{value}</dd>
+                <dd className="display-card mt-2 uppercase text-foreground">{value}</dd>
               </div>
             ))}
           </dl>
@@ -159,7 +159,7 @@ function CityPage() {
                 ],
               ].map(([title, text], i) => (
                 <li key={title} className="flex gap-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/40 font-display text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/40 display-card text-primary">
                     {i + 1}
                   </span>
                   <div>
@@ -207,7 +207,7 @@ function CityPage() {
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="display-card uppercase">{p.name}</h3>
-                  <span className="font-display text-primary">ab {p.basePrice} €</span>
+                  <span className="display-price text-base text-primary">ab {p.basePrice} €</span>
                 </div>
                 <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                   {p.tagline} · {p.duration}
