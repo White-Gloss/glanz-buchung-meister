@@ -333,11 +333,14 @@ export function BookingWizard() {
             <div className="grid gap-3 sm:grid-cols-2">
               {addOns.map((a) => {
                 const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                const active = addOnIds.includes(a.id);
+                const included =
+                  !!packageId && (a.includedInPackages?.includes(packageId) ?? false);
+                const active = included || addOnIds.includes(a.id);
                 return (
                   <button
                     key={a.id}
                     type="button"
+                    disabled={included}
                     onClick={() =>
                       setAddOnIds((prev) =>
                         prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
@@ -348,6 +351,7 @@ export function BookingWizard() {
                       active
                         ? "border-primary bg-primary/10"
                         : "border-border bg-secondary/30 hover:border-primary/40",
+                      included ? "cursor-default" : "",
                     ].join(" ")}
                   >
                     <div className="min-w-0">
@@ -356,7 +360,9 @@ export function BookingWizard() {
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="display-price text-base">
-                        +{currency(Math.round(a.price * factor))}
+                        {included
+                          ? "Inklusive"
+                          : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
                       </span>
                       <span
                         className={[
@@ -373,6 +379,7 @@ export function BookingWizard() {
                     </div>
                   </button>
                 );
+              })}
               })}
             </div>
           </section>
