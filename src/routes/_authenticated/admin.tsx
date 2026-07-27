@@ -150,7 +150,7 @@ function AdminPage() {
       <header className="border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate font-display text-xl font-bold sm:text-2xl">Admin Dashboard</h1>
+            <h1 className="display-sub truncate text-xl sm:text-2xl">Admin Dashboard</h1>
             <p className="truncate text-sm text-muted-foreground">
               Buchungen, Status und Rechnungen
             </p>
@@ -173,7 +173,7 @@ function AdminPage() {
         {denied ? (
           <div className="glass rounded-3xl p-12 text-center">
             <ShieldAlert className="mx-auto size-8 text-destructive" />
-            <p className="mt-4 font-display text-lg">Kein Administrator-Zugriff</p>
+            <p className="display-card mt-4">Kein Administrator-Zugriff</p>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
               Ihr Konto besitzt keine Admin-Rolle. Bitte lassen Sie sich von einem bestehenden
               Administrator freischalten.
@@ -214,7 +214,7 @@ function AdminPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="glass mt-6 rounded-3xl p-12 text-center">
-                <p className="font-display text-lg">Keine Buchungen vorhanden</p>
+                <p className="display-card">Keine Buchungen vorhanden</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Neue Buchungen erscheinen hier automatisch, sobald sie über die Website eingehen.
                 </p>
@@ -229,7 +229,7 @@ function AdminPage() {
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-display text-lg font-bold">
+                            <span className="display-card">
                               {b.customer.name}
                             </span>
                             <span
@@ -268,7 +268,7 @@ function AdminPage() {
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                          <span className="font-display text-xl font-bold text-primary tabular-nums">
+                          <span className="display-price text-xl text-primary">
                             {currency(b.total)}
                           </span>
                           <select
@@ -337,7 +337,7 @@ function Stat({
   return (
     <div className="glass rounded-2xl p-5">
       <Icon className="size-5 text-primary" />
-      <p className="mt-3 font-display text-2xl font-bold tabular-nums">{value}</p>
+      <p className="display-price mt-3 text-2xl">{value}</p>
       <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
     </div>
   );
