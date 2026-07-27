@@ -7,6 +7,7 @@
  */
 
 import { company, pickupPriceText } from "./servicesConfig";
+import { absUrl } from "./seo";
 
 export type PickupCity = {
   /** URL-Slug: /abholservice/{slug} */
@@ -379,7 +380,7 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
   return {
     title: clamp(title, 60),
     description: clamp(description, 155),
-    canonical: `/abholservice/${city.slug}`,
+    canonical: absUrl(`/abholservice/${city.slug}`),
   };
 }
 
@@ -499,7 +500,7 @@ export function buildOverviewJsonLd() {
       "@type": "ListItem",
       position: i + 1,
       name: `Fahrzeugaufbereitung ${city.name}`,
-      url: `/abholservice/${city.slug}`,
+      url: absUrl(`/abholservice/${city.slug}`),
     })),
   };
 }

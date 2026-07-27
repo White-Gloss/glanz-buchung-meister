@@ -20,6 +20,7 @@ import {
 } from "@/lib/pickupLocations";
 
 import { company, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
+import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/$city")({
   loader: ({ params }) => {
@@ -42,7 +43,12 @@ export const Route = createFileRoute("/abholservice/$city")({
         { property: "og:description", content: meta.description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: meta.canonical },
+        { property: "og:image", content: OG_IMAGE },
+        { property: "og:image:alt", content: OG_IMAGE_ALT },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: meta.title },
+        { name: "twitter:description", content: meta.description },
+        { name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: meta.canonical }],
       scripts: [
