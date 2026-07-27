@@ -56,9 +56,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        {...props}
         aria-busy={loading || undefined}
         disabled={loading || props.disabled}
-        {...props}
       >
         {loading ? <Loader2 className="animate-spin" aria-hidden /> : null}
         {children}
