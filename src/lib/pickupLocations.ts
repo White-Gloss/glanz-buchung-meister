@@ -379,7 +379,7 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
   return {
     title: clamp(title, 60),
     description: clamp(description, 155),
-    canonical: `/abholservice/${city.slug}`,
+    canonical: absUrl(`/abholservice/${city.slug}`),
   };
 }
 
