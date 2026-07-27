@@ -54,7 +54,8 @@ export function AuditLogPanel() {
       {error ? (
         <p className="mt-6 text-sm text-destructive">{error}</p>
       ) : loading ? (
-        <p className="mt-6 text-sm text-muted-foreground">Einträge werden geladen …</p>
+        <AuditLogSkeleton />
+
       ) : entries.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">Noch keine Einträge vorhanden.</p>
       ) : (
