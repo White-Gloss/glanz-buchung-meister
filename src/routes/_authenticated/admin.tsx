@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -25,8 +25,18 @@ import {
 } from "@/lib/bookings.functions";
 import { generateInvoicePdf } from "@/lib/invoice";
 import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
-import { PricePanel } from "@/components/PricePanel";
-import { AuditLogPanel } from "@/components/AuditLogPanel";
+import {
+  BookingListSkeleton,
+  AuditLogSkeleton,
+  PricePanelSkeleton,
+} from "@/components/skeletons";
+
+const PricePanel = lazy(() =>
+  import("@/components/PricePanel").then((m) => ({ default: m.PricePanel })),
+);
+const AuditLogPanel = lazy(() =>
+  import("@/components/AuditLogPanel").then((m) => ({ default: m.AuditLogPanel })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -201,7 +211,9 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
-            <PricePanel />
+            <Suspense fallback={<PricePanelSkeleton />}>
+              <PricePanel />
+            </Suspense>
 
 
 
@@ -219,9 +231,7 @@ function AdminPage() {
             </div>
 
             {loading ? (
-              <div className="glass mt-6 rounded-3xl p-12 text-center text-sm text-muted-foreground">
-                Buchungen werden geladen …
-              </div>
+              <BookingListSkeleton />
             ) : filtered.length === 0 ? (
               <div className="glass mt-6 rounded-3xl p-12 text-center">
                 <p className="display-card">Keine Buchungen vorhanden</p>
@@ -328,7 +338,9 @@ function AdminPage() {
                 })}
               </div>
             )}
-            <AuditLogPanel key={auditKey} />
+            <Suspense fallback={<AuditLogSkeleton />}>
+              <AuditLogPanel key={auditKey} />
+            </Suspense>
           </>
         )}
       </main>

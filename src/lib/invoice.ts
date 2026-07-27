@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import { calcLineItems, calcTotals, type Booking } from "./bookings";
 import {
   company,
@@ -18,7 +17,9 @@ const deDate = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("de-DE");
 };
 
-export function generateInvoicePdf(booking: Booking) {
+/** jspdf wird erst beim Download nachgeladen (eigener JS-Chunk). */
+export async function generateInvoicePdf(booking: Booking) {
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const items = calcLineItems(booking);
   const { gross, net, vat } = calcTotals(items);
