@@ -158,31 +158,37 @@ export function BookingWizard() {
       customer.plate.trim().length > 2,
   ][step];
 
-  function submit() {
-    if (!vehicleId || !packageId || !date || !time) return;
-    const existing = loadBookings();
-    const booking: Booking = {
-      id: crypto.randomUUID(),
-      invoiceNumber: nextInvoiceNumber(existing),
-      createdAt: new Date().toISOString(),
-      vehicleId,
-      packageId,
-      addOnIds,
-      date,
-      time,
-      customer: {
-        name: customer.name.trim(),
-        email: customer.email.trim(),
-        phone: customer.phone.trim(),
-        plate: customer.plate.trim().toUpperCase(),
-      },
-      total: totals.gross,
-      status: "Angefragt",
-    };
-    saveBookings([booking, ...existing]);
-    setConfirmed(booking);
-    toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
+  const submitBooking = useServerFn(createBooking);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!vehicleId || !packageId || !date || !time || submitting) return;
+    setSubmitting(true);
+    try {
+      const booking = await submitBooking({
+        data: {
+          vehicleId,
+          packageId,
+          addOnIds,
+          date,
+          time,
+          name: customer.name.trim(),
+          email: customer.email.trim(),
+          phone: customer.phone.trim(),
+          plate: customer.plate.trim().toUpperCase(),
+        },
+      });
+      setConfirmed(booking);
+      toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Buchung konnte nicht gespeichert werden",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
+
 
   if (confirmed) {
     return <Confirmation booking={confirmed} onReset={() => window.location.reload()} />;
