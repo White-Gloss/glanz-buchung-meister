@@ -8,7 +8,13 @@ import {
   type Booking,
   type BookingStatus,
 } from "./bookings";
-import { addOns, servicePackages, taxConfig, vehicleTypes } from "./servicesConfig";
+import {
+  addOns,
+  applyPriceOverrides,
+  servicePackages,
+  taxConfig,
+  vehicleTypes,
+} from "./servicesConfig";
 
 type Row = {
   id: string;
