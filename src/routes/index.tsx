@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Sofa,
   Sparkles,
-  Star,
   Instagram,
   Mail,
   MapPin,
