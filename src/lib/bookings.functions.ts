@@ -105,10 +105,11 @@ function validate(input: BookingInput): BookingInput {
 export const createBooking = createServerFn({ method: "POST" })
   .inputValidator((data: BookingInput) => validate(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabase } = await import("@/integrations/supabase/client");
 
-    // Aktuelle (im Admin-Panel gepflegte) Preise anwenden
-    const { data: priceRows } = await supabaseAdmin
+    // Aktuelle (im Admin-Panel gepflegte) Preise anwenden.
+    // service_prices hat eine öffentliche SELECT-Policy → kein Service-Role-Key nötig.
+    const { data: priceRows } = await supabase
       .from("service_prices")
       .select("item_type, item_id, label, amount");
     applyPriceOverrides(
@@ -128,8 +129,41 @@ export const createBooking = createServerFn({ method: "POST" })
       }),
     );
 
+    // Preferred path: SECURITY DEFINER function – no service-role key required.
+    // All financial values (total, deposit, invoice number) are computed inside
+    // the SQL function from canonical service_prices data – callers pass only IDs.
+    // Apply supabase/migrations/20260727080000_create_booking_public_fn.sql in the
+    // Supabase SQL editor (Project → SQL Editor → paste file → Run) to activate.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
+      "create_booking_public",
+      {
+        p_vehicle_id:     data.vehicleId,
+        p_package_id:     data.packageId,
+        p_add_on_ids:     data.addOnIds,
+        p_booking_date:   data.date,
+        p_booking_time:   data.time,
+        p_customer_name:  data.name,
+        p_customer_email: data.email,
+        p_customer_phone: data.phone,
+        p_customer_plate: data.plate,
+      },
+    ) as { data: unknown; error: { code?: string; message: string } | null };
 
-    // Neukunden-Prüfung: E-Mail ODER Kennzeichen noch nie verwendet
+    // PGRST202 = function not found → fall back to admin client (requires SUPABASE_SERVICE_ROLE_KEY)
+    if (!rpcError) {
+      const row = rpcResult as Row & { booking_date: string };
+      return toBooking({ ...row, booking_date: String(row.booking_date) });
+    }
+
+    if ((rpcError as { code?: string }).code !== "PGRST202") {
+      throw new Error(rpcError.message);
+    }
+
+    // Fallback: admin client with service-role key
+    // Set SUPABASE_SERVICE_ROLE_KEY as a Replit secret to use this path.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const { data: history, error: histError } = await supabaseAdmin
       .from("bookings")
       .select("customer_email, customer_plate")
@@ -150,32 +184,30 @@ export const createBooking = createServerFn({ method: "POST" })
 
     const depositAmount = calcDeposit(totals.gross, isNewCustomer);
 
-    const { data: row, error } = await supabaseAdmin
+    const { data: adminRow, error: adminError } = await supabaseAdmin
       .from("bookings")
       .insert({
         invoice_number: invoiceNumber,
-        vehicle_id: data.vehicleId,
-        package_id: data.packageId,
-        add_on_ids: data.addOnIds,
-        booking_date: data.date,
-        booking_time: data.time,
-        customer_name: data.name,
+        vehicle_id:     data.vehicleId,
+        package_id:     data.packageId,
+        add_on_ids:     data.addOnIds,
+        booking_date:   data.date,
+        booking_time:   data.time,
+        customer_name:  data.name,
         customer_email: data.email,
         customer_phone: data.phone,
         customer_plate: data.plate,
-        total: totals.gross,
-        status: "Angefragt",
+        total:          totals.gross,
+        status:         "Angefragt",
         is_new_customer: isNewCustomer,
-        deposit_amount: depositAmount,
-        deposit_status: depositAmount > 0 ? "offen" : "nicht_erforderlich",
+        deposit_amount:  depositAmount,
+        deposit_status:  depositAmount > 0 ? "offen" : "nicht_erforderlich",
       })
       .select(SELECT)
       .single();
 
-    if (error) throw new Error(error.message);
-
-    const created = toBooking(row as Row);
-    return created;
+    if (adminError) throw new Error(adminError.message);
+    return toBooking(adminRow as Row);
   });
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
