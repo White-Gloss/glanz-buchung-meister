@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
+import { SectionHeading } from "@/components/SectionHeading";
+
 import { pickupCities } from "@/lib/pickupLocations";
 import { company, features } from "@/lib/servicesConfig";
 
