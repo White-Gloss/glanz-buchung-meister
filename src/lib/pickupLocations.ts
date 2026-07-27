@@ -372,8 +372,9 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
     `Autoaufbereitung ${city.short} ohne Umweg: Abholung an Ihrer Adresse, Aufbereitung in unserer Werkstatt in Horb am Neckar, Rückgabe nach Wunschtermin.`,
   ];
   const description = isHome
-    ? `Fahrzeugaufbereitung direkt in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
+    ? `Fahrzeugaufbereitung in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
     : descriptions[idx % descriptions.length];
+
 
   return {
     title: clamp(title, 60),
@@ -383,8 +384,31 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
 }
 
 /* -------------------------------------------------------------------------
+ * FAQ – eine Quelle für sichtbaren Inhalt UND FAQPage-JSON-LD
+ * ---------------------------------------------------------------------- */
+
+/** Frage-/Antwort-Paare je Stadt (identisch mit der Darstellung auf der Seite). */
+export function buildCityFaqItems(city: PickupCity): [string, string][] {
+  return [
+    [
+      `Ist der Abholservice in ${city.name} kostenlos?`,
+      `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
+    ],
+    [
+      "Wie lange dauert die Aufbereitung?",
+      `Je nach Paket zwischen 3 Stunden und 2 Werktagen. Die reine Fahrzeit zwischen ${city.name} und ${homeBase.city} beträgt rund ${city.driveMinutes} Minuten pro Strecke.`,
+    ],
+    [
+      "Wo wird mein Fahrzeug bearbeitet?",
+      `Ausschließlich in unserer Werkstatt in ${homeBase.city}. In ${city.name} finden nur Abholung und Rückgabe statt.`,
+    ],
+  ];
+}
+
+/* -------------------------------------------------------------------------
  * SCHEMA.ORG JSON-LD
  * ---------------------------------------------------------------------- */
+
 
 export function buildCityJsonLd(city: PickupCity) {
   const meta = buildCityMeta(city);
@@ -452,33 +476,13 @@ export function buildCityJsonLd(city: PickupCity) {
 
   const faq = {
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `Ist der Abholservice in ${city.name} kostenlos?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in Horb am Neckar entfernt) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Wie lange dauert die Aufbereitung?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Je nach Paket zwischen 3 Stunden und 2 Werktagen. Die reine Fahrzeit zwischen ${city.name} und Horb am Neckar beträgt rund ${city.driveMinutes} Minuten pro Strecke.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Wo wird mein Fahrzeug aufbereitet?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Die Arbeiten finden ausschließlich in unserer Werkstatt in Horb am Neckar statt – in einer staubarmen Halle mit Prüfbeleuchtung. In ${city.name} erfolgen nur Abholung und Rückgabe.`,
-        },
-      },
-    ],
+    mainEntity: buildCityFaqItems(city).map(([q, a]) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
   };
+
 
   return {
     "@context": "https://schema.org",
