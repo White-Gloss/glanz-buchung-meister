@@ -384,8 +384,31 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
 }
 
 /* -------------------------------------------------------------------------
+ * FAQ – eine Quelle für sichtbaren Inhalt UND FAQPage-JSON-LD
+ * ---------------------------------------------------------------------- */
+
+/** Frage-/Antwort-Paare je Stadt (identisch mit der Darstellung auf der Seite). */
+export function buildCityFaqItems(city: PickupCity): [string, string][] {
+  return [
+    [
+      `Ist der Abholservice in ${city.name} kostenlos?`,
+      `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
+    ],
+    [
+      "Wie lange dauert die Aufbereitung?",
+      `Je nach Paket zwischen 3 Stunden und 2 Werktagen. Die reine Fahrzeit zwischen ${city.name} und ${homeBase.city} beträgt rund ${city.driveMinutes} Minuten pro Strecke.`,
+    ],
+    [
+      "Wo wird mein Fahrzeug bearbeitet?",
+      `Ausschließlich in unserer Werkstatt in ${homeBase.city}. In ${city.name} finden nur Abholung und Rückgabe statt.`,
+    ],
+  ];
+}
+
+/* -------------------------------------------------------------------------
  * SCHEMA.ORG JSON-LD
  * ---------------------------------------------------------------------- */
+
 
 export function buildCityJsonLd(city: PickupCity) {
   const meta = buildCityMeta(city);
