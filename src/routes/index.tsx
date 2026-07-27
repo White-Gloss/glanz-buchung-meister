@@ -309,16 +309,16 @@ function BeforeAfter() {
           <ComparisonSlider
             label="Außenaufbereitung"
             icon={Car}
-            beforeImage={beforeAfterExterior}
-            afterImage={beforeAfterExterior}
-            beforeAlt="Fahrzeug vor der Außenaufbereitung mit verkratzter, matter Lackierung"
+            beforeImage={beforeExterior}
+            afterImage={afterExterior}
+            beforeAlt="Fahrzeug vor der Außenaufbereitung mit matter, verschmutzter Lackierung"
             afterAlt="Fahrzeug nach der Außenaufbereitung mit spiegelndem Hochglanzlack"
           />
           <ComparisonSlider
             label="Innenraum-Reinigung"
             icon={Armchair}
-            beforeImage={beforeAfterInterior}
-            afterImage={beforeAfterInterior}
+            beforeImage={beforeInterior}
+            afterImage={afterInterior}
             beforeAlt="Verschmutzter Innenraum vor der Reinigung"
             afterAlt="Perfekt gereinigter und gepflegter Innenraum nach der Aufbereitung"
           />
