@@ -113,7 +113,12 @@ function Hero() {
       />
       <div className="grid-lines absolute inset-0 opacity-40" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-40">
-        <div className="max-w-3xl">
+        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          <img
+            src={logoAsset.url}
+            alt="White Gloss Detailing Logo"
+            className="mb-8 h-28 w-auto drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:h-40 lg:h-48"
+          />
           <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-[0.25em]">
             <Star className="size-3.5 text-primary" />
             {company.claim}
@@ -125,7 +130,7 @@ function Hero() {
             Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen Glanz,
             der über den Neuwagenzustand hinausgeht.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="glow-ring">
               <a href="#buchung">
                 Jetzt Termin buchen
@@ -136,7 +141,7 @@ function Hero() {
               <a href="#leistungen">Leistungen ansehen</a>
             </Button>
           </div>
-          <dl className="mt-14 grid max-w-lg grid-cols-3 gap-4">
+          <dl className="mt-14 grid w-full max-w-lg grid-cols-3 gap-4">
             {[
               ["500+", "Fahrzeuge"],
               ["4.9/5", "Bewertung"],
@@ -149,6 +154,7 @@ function Hero() {
             ))}
           </dl>
         </div>
+
       </div>
     </section>
   );
