@@ -1,21 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { query, queryOne } from "@/lib/db.server";
 import {
-  calcDeposit,
-  calcLineItems,
-  calcTotals,
-  normalizePlate,
   type Booking,
   type BookingStatus,
 } from "./bookings";
-import {
-  addOns,
-  applyPriceOverrides,
-  servicePackages,
-  taxConfig,
-  vehicleTypes,
-} from "./servicesConfig";
 
+// ---------------------------------------------------------------------------
+// Row shape returned by the DB (snake_case) and the create_booking_public fn
+// ---------------------------------------------------------------------------
 type Row = {
   id: string;
   invoice_number: string;
@@ -62,9 +55,17 @@ function toBooking(row: Row): Booking {
   };
 }
 
-const SELECT =
-  "id, invoice_number, created_at, vehicle_id, package_id, add_on_ids, booking_date, booking_time, customer_name, customer_email, customer_phone, customer_plate, total, status, is_new_customer, deposit_amount, deposit_status, access_token";
+const SELECT_COLS = [
+  "id", "invoice_number", "created_at", "vehicle_id", "package_id",
+  "add_on_ids", "booking_date", "booking_time",
+  "customer_name", "customer_email", "customer_phone", "customer_plate",
+  "total", "status", "is_new_customer", "deposit_amount", "deposit_status",
+  "access_token",
+].join(", ");
 
+// ---------------------------------------------------------------------------
+// Input validation
+// ---------------------------------------------------------------------------
 export type BookingInput = {
   vehicleId: string;
   packageId: string;
@@ -77,6 +78,12 @@ export type BookingInput = {
   plate: string;
 };
 
+import {
+  addOns,
+  servicePackages,
+  vehicleTypes,
+} from "./servicesConfig";
+
 function validate(input: BookingInput): BookingInput {
   const name = String(input.name ?? "").trim().slice(0, 120);
   const email = String(input.email ?? "").trim().slice(0, 160);
@@ -84,131 +91,63 @@ function validate(input: BookingInput): BookingInput {
   const plate = String(input.plate ?? "").trim().slice(0, 20).toUpperCase();
   const vehicleId = String(input.vehicleId ?? "");
   const packageId = String(input.packageId ?? "");
-  const addOnIds = Array.isArray(input.addOnIds) ? input.addOnIds.slice(0, 20).map(String) : [];
+  const addOnIds = Array.isArray(input.addOnIds)
+    ? input.addOnIds.slice(0, 20).map(String)
+    : [];
   const date = String(input.date ?? "");
   const time = String(input.time ?? "");
 
-  if (!vehicleTypes.some((v) => v.id === vehicleId)) throw new Error("Ungültige Fahrzeugklasse");
-  if (!servicePackages.some((p) => p.id === packageId)) throw new Error("Ungültiges Paket");
+  if (!vehicleTypes.some((v) => v.id === vehicleId))
+    throw new Error("Ungültige Fahrzeugklasse");
+  if (!servicePackages.some((p) => p.id === packageId))
+    throw new Error("Ungültiges Paket");
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
   if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("Ungültige Uhrzeit");
   if (name.length < 2) throw new Error("Bitte einen gültigen Namen angeben");
-  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error("Ungültige E-Mail-Adresse");
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email))
+    throw new Error("Ungültige E-Mail-Adresse");
   if (phone.length < 6) throw new Error("Ungültige Telefonnummer");
   if (plate.length < 3) throw new Error("Ungültiges Kennzeichen");
 
   return { vehicleId, packageId, addOnIds, date, time, name, email, phone, plate };
 }
 
+// ---------------------------------------------------------------------------
+// createBooking — public, no auth required.
+// Calls the SECURITY DEFINER function in the Replit-managed Postgres which
+// computes totals, invoice number, and deposit server-side from service_prices.
+// ---------------------------------------------------------------------------
 export const createBooking = createServerFn({ method: "POST" })
   .inputValidator((data: BookingInput) => validate(data))
   .handler(async ({ data }) => {
-    const { supabase } = await import("@/integrations/supabase/client");
-
-    // Aktuelle (im Admin-Panel gepflegte) Preise anwenden.
-    // service_prices hat eine öffentliche SELECT-Policy → kein Service-Role-Key nötig.
-    const { data: priceRows } = await supabase
-      .from("service_prices")
-      .select("item_type, item_id, label, amount");
-    applyPriceOverrides(
-      (priceRows ?? []).map((r: { item_type: string; item_id: string; label: string; amount: number | string }) => ({
-        item_type: r.item_type as "package" | "addon" | "vehicle",
-        item_id: r.item_id,
-        label: r.label,
-        amount: Number(r.amount),
-      })),
+    // create_booking_public returns a JSON scalar, not a row set.
+    const result = await queryOne<{ create_booking_public: string }>(
+      `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        data.vehicleId,
+        data.packageId,
+        data.addOnIds,
+        data.date,
+        data.time,
+        data.name,
+        data.email,
+        data.phone,
+        data.plate,
+      ],
     );
-
-    const totals = calcTotals(
-      calcLineItems({
-        vehicleId: data.vehicleId,
-        packageId: data.packageId,
-        addOnIds: data.addOnIds,
-      }),
-    );
-
-    // Preferred path: SECURITY DEFINER function – no service-role key required.
-    // All financial values (total, deposit, invoice number) are computed inside
-    // the SQL function from canonical service_prices data – callers pass only IDs.
-    // Apply supabase/migrations/20260727080000_create_booking_public_fn.sql in the
-    // Supabase SQL editor (Project → SQL Editor → paste file → Run) to activate.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
-      "create_booking_public",
-      {
-        p_vehicle_id:     data.vehicleId,
-        p_package_id:     data.packageId,
-        p_add_on_ids:     data.addOnIds,
-        p_booking_date:   data.date,
-        p_booking_time:   data.time,
-        p_customer_name:  data.name,
-        p_customer_email: data.email,
-        p_customer_phone: data.phone,
-        p_customer_plate: data.plate,
-      },
-    ) as { data: unknown; error: { code?: string; message: string } | null };
-
-    // PGRST202 = function not found → fall back to admin client (requires SUPABASE_SERVICE_ROLE_KEY)
-    if (!rpcError) {
-      const row = rpcResult as Row & { booking_date: string };
-      return toBooking({ ...row, booking_date: String(row.booking_date) });
-    }
-
-    if ((rpcError as { code?: string }).code !== "PGRST202") {
-      throw new Error(rpcError.message);
-    }
-
-    // Fallback: admin client with service-role key
-    // Set SUPABASE_SERVICE_ROLE_KEY as a Replit secret to use this path.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: history, error: histError } = await supabaseAdmin
-      .from("bookings")
-      .select("customer_email, customer_plate")
-      .limit(5000);
-    if (histError) throw new Error(histError.message);
-
-    const plate = normalizePlate(data.plate);
-    const email = data.email.toLowerCase();
-    const isNewCustomer = !(history ?? []).some(
-      (r: { customer_email: string; customer_plate: string }) =>
-        r.customer_email.toLowerCase() === email || normalizePlate(r.customer_plate) === plate,
-    );
-
-    const { count } = await supabaseAdmin
-      .from("bookings")
-      .select("id", { count: "exact", head: true });
-    const invoiceNumber = `${taxConfig.invoicePrefix}${taxConfig.invoiceStartNumber + (count ?? 0)}`;
-
-    const depositAmount = calcDeposit(totals.gross, isNewCustomer);
-
-    const { data: adminRow, error: adminError } = await supabaseAdmin
-      .from("bookings")
-      .insert({
-        invoice_number: invoiceNumber,
-        vehicle_id:     data.vehicleId,
-        package_id:     data.packageId,
-        add_on_ids:     data.addOnIds,
-        booking_date:   data.date,
-        booking_time:   data.time,
-        customer_name:  data.name,
-        customer_email: data.email,
-        customer_phone: data.phone,
-        customer_plate: data.plate,
-        total:          totals.gross,
-        status:         "Angefragt",
-        is_new_customer: isNewCustomer,
-        deposit_amount:  depositAmount,
-        deposit_status:  depositAmount > 0 ? "offen" : "nicht_erforderlich",
-      })
-      .select(SELECT)
-      .single();
-
-    if (adminError) throw new Error(adminError.message);
-    return toBooking(adminRow as Row);
+    if (!result) throw new Error("Buchung konnte nicht gespeichert werden.");
+    const row: Row & { booking_date: string } =
+      typeof result.create_booking_public === "string"
+        ? JSON.parse(result.create_booking_public)
+        : (result.create_booking_public as unknown as Row);
+    return toBooking({ ...row, booking_date: String(row.booking_date) });
   });
+
+// ---------------------------------------------------------------------------
+// Admin helpers
+// ---------------------------------------------------------------------------
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -219,60 +158,66 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (!data) throw new Error("Kein Administrator-Zugriff");
 }
 
+// ---------------------------------------------------------------------------
+// listBookings — admin only
+// ---------------------------------------------------------------------------
 export const listBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase
-      .from("bookings")
-      .select(SELECT)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data as Row[]).map(toBooking);
+    const rows = await query<Row>(
+      `SELECT ${SELECT_COLS} FROM public.bookings ORDER BY created_at DESC`,
+    );
+    return rows.map(toBooking);
   });
 
+// ---------------------------------------------------------------------------
+// updateBookingStatus — admin only
+// ---------------------------------------------------------------------------
 export const updateBookingStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string; status: BookingStatus }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: row, error } = await context.supabase
-      .from("bookings")
-      .update({ status: data.status })
-      .eq("id", data.id)
-      .select(SELECT)
-      .single();
-    if (error) throw new Error(error.message);
-    const updated = toBooking(row as Row);
-    return updated;
+    const row = await queryOne<Row>(
+      `UPDATE public.bookings SET status = $1 WHERE id = $2 RETURNING ${SELECT_COLS}`,
+      [data.status, data.id],
+    );
+    if (!row) throw new Error("Buchung nicht gefunden");
+    return toBooking(row);
   });
 
+// ---------------------------------------------------------------------------
+// updateDepositStatus — admin only
+// ---------------------------------------------------------------------------
 export const updateDepositStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string; depositStatus: Booking["depositStatus"] }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: row, error } = await context.supabase
-      .from("bookings")
-      .update({ deposit_status: data.depositStatus })
-      .eq("id", data.id)
-      .select(SELECT)
-      .single();
-    if (error) throw new Error(error.message);
-    const updated = toBooking(row as Row);
-    return updated;
+    const row = await queryOne<Row>(
+      `UPDATE public.bookings SET deposit_status = $1 WHERE id = $2 RETURNING ${SELECT_COLS}`,
+      [data.depositStatus, data.id],
+    );
+    if (!row) throw new Error("Buchung nicht gefunden");
+    return toBooking(row);
   });
 
+// ---------------------------------------------------------------------------
+// deleteBooking — admin only
+// ---------------------------------------------------------------------------
 export const deleteBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.from("bookings").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await query(`DELETE FROM public.bookings WHERE id = $1`, [data.id]);
     return { ok: true };
   });
 
+// ---------------------------------------------------------------------------
+// isAdminUser
+// ---------------------------------------------------------------------------
 export const isAdminUser = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -283,6 +228,9 @@ export const isAdminUser = createServerFn({ method: "GET" })
     return { isAdmin: Boolean(data) };
   });
 
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
 export type AuditLogEntry = {
   id: string;
   bookingId: string;
@@ -299,13 +247,23 @@ export const listAuditLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AuditLogEntry[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase
-      .from("booking_audit_log")
-      .select("id, booking_id, invoice_number, action, field, old_value, new_value, actor_email, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r: any) => ({
+    const rows = await query<{
+      id: string;
+      booking_id: string;
+      invoice_number: string | null;
+      action: string;
+      field: string | null;
+      old_value: string | null;
+      new_value: string | null;
+      actor_email: string | null;
+      created_at: string;
+    }>(
+      `SELECT id, booking_id, invoice_number, action, field, old_value, new_value, actor_email, created_at
+         FROM public.booking_audit_log
+        ORDER BY created_at DESC
+        LIMIT 200`,
+    );
+    return rows.map((r) => ({
       id: r.id,
       bookingId: r.booking_id,
       invoiceNumber: r.invoice_number,

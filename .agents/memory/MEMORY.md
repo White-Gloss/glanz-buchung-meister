@@ -1,0 +1,1 @@
+- [Database architecture split](db-architecture.md) — bookings use Replit Postgres (DATABASE_URL); Supabase is auth-only for this project.
