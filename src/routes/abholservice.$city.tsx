@@ -101,7 +101,7 @@ function CityPage() {
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-primary">
             Abholservice {city.short}
           </p>
-          <h1 className="text-gradient mt-3 max-w-4xl font-display text-4xl uppercase leading-[0.95] text-balance sm:text-6xl">
+          <h1 className="text-gradient display-page mt-3 max-w-4xl">
             {city.focusKeyword} – mit kostenlosem Hol- und Bringservice
           </h1>
           <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">{city.intro}</p>
@@ -136,7 +136,7 @@ function CityPage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
-            <h2 className="font-display text-3xl uppercase sm:text-4xl">
+            <h2 className="display-section uppercase text-3xl sm:text-4xl">
               So läuft die Abholung in {city.name} ab
             </h2>
             <ol className="mt-8 space-y-6">
@@ -163,20 +163,20 @@ function CityPage() {
                     {i + 1}
                   </span>
                   <div>
-                    <h3 className="font-display text-lg uppercase">{title}</h3>
+                    <h3 className="display-card uppercase">{title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{text}</p>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <h2 className="mt-14 font-display text-3xl uppercase sm:text-4xl">
+            <h2 className="mt-14 display-section uppercase text-3xl sm:text-4xl">
               Was Fahrzeuge aus {city.short} besonders braucht
             </h2>
             <p className="mt-4 text-muted-foreground">{city.demand}</p>
             <p className="mt-4 text-muted-foreground">{city.localBenefit}</p>
 
-            <h3 className="mt-10 font-display text-xl uppercase">
+            <h3 className="mt-10 display-card uppercase text-xl">
               Abholgebiet in und um {city.name}
             </h3>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -197,7 +197,7 @@ function CityPage() {
 
           {/* Pakete */}
           <aside className="space-y-3">
-            <h2 className="font-display text-2xl uppercase">
+            <h2 className="display-sub uppercase text-2xl">
               Pakete für Kundschaft aus {city.short}
             </h2>
             {servicePackages.map((p) => (
@@ -206,7 +206,7 @@ function CityPage() {
                 className="hairline-gold rounded-2xl bg-card/70 p-5 backdrop-blur-xl"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="font-display text-lg uppercase">{p.name}</h3>
+                  <h3 className="display-card uppercase">{p.name}</h3>
                   <span className="font-display text-primary">ab {p.basePrice} €</span>
                 </div>
                 <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
@@ -235,13 +235,13 @@ function CityPage() {
       {/* FAQ */}
       <section className="border-t border-border/60 bg-card/20">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <h2 className="font-display text-3xl uppercase sm:text-4xl">
+          <h2 className="display-section uppercase text-3xl sm:text-4xl">
             Häufige Fragen aus {city.name}
           </h2>
           <dl className="mt-8 space-y-6">
             {buildCityFaqItems(city).map(([q, a]) => (
               <div key={q} className="hairline-gold rounded-2xl bg-card/60 p-5">
-                <dt className="font-display text-lg uppercase">{q}</dt>
+                <dt className="display-card uppercase">{q}</dt>
                 <dd className="mt-2 text-sm text-muted-foreground">{a}</dd>
               </div>
             ))}
@@ -252,7 +252,7 @@ function CityPage() {
 
       {/* Interne Verlinkung */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="font-display text-2xl uppercase">Weitere Städte im Abholgebiet</h2>
+        <h2 className="display-sub uppercase text-2xl">Weitere Städte im Abholgebiet</h2>
         <div className="mt-6">
           <PickupCityGrid cities={neighbours} compact />
         </div>
