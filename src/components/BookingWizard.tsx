@@ -180,11 +180,11 @@ export function BookingWizard() {
         plate: customer.plate.trim().toUpperCase(),
       },
       total: totals.gross,
-      status: "Ausstehend",
+      status: "Angefragt",
     };
     saveBookings([booking, ...existing]);
     setConfirmed(booking);
-    toast.success("Buchung erfolgreich übermittelt");
+    toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
   }
 
   if (confirmed) {
@@ -606,8 +606,8 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       </div>
       <h3 className="mt-6 font-display text-3xl font-bold sm:text-4xl">Buchung erfolgreich</h3>
       <p className="mt-2 text-muted-foreground">
-        Vielen Dank, {booking.customer.name}. Wir haben Ihren Termin reserviert und melden uns zur
-        Bestätigung.
+        Vielen Dank, {booking.customer.name}. Ihr Wunschtermin ist vorgemerkt. Die verbindliche
+        Bestätigung erhalten Sie, sobald unser Team die Buchung freigegeben hat.
       </p>
 
       <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
