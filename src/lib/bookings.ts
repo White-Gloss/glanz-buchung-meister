@@ -7,7 +7,15 @@ import {
   type AddOn,
 } from "./servicesConfig";
 
-export type BookingStatus = "Ausstehend" | "Bezahlt" | "Storniert";
+export type BookingStatus = "Angefragt" | "Bestätigt" | "Ausstehend" | "Bezahlt" | "Storniert";
+
+export const bookingStatuses: BookingStatus[] = [
+  "Angefragt",
+  "Bestätigt",
+  "Ausstehend",
+  "Bezahlt",
+  "Storniert",
+];
 
 export type Booking = {
   id: string;

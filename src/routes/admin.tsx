@@ -8,10 +8,12 @@ import {
   Trash2,
   CalendarClock,
   Receipt,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  bookingStatuses,
   loadBookings,
   saveBookings,
   currency,
@@ -43,6 +45,8 @@ export const Route = createFileRoute("/admin")({
 });
 
 const statusStyles: Record<BookingStatus, string> = {
+  Angefragt: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+  "Bestätigt": "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   Ausstehend: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   Bezahlt: "bg-primary/15 text-primary border-primary/40",
   Storniert: "bg-destructive/15 text-destructive border-destructive/40",
@@ -55,6 +59,10 @@ function AdminPage() {
   useEffect(() => {
     setBookings(loadBookings());
   }, []);
+
+  function setStatus(id: string, status: BookingStatus) {
+    update(bookings.map((x) => (x.id === id ? { ...x, status } : x)));
+  }
 
   function update(next: Booking[]) {
     setBookings(next);
@@ -75,7 +83,7 @@ function AdminPage() {
   const revenue = bookings
     .filter((b) => b.status !== "Storniert")
     .reduce((s, b) => s + b.total, 0);
-  const open = bookings.filter((b) => b.status === "Ausstehend").length;
+  const pendingConfirmation = bookings.filter((b) => b.status === "Angefragt").length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,7 +107,7 @@ function AdminPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <Stat icon={Receipt} label="Buchungen gesamt" value={String(bookings.length)} />
-          <Stat icon={CalendarClock} label="Offene Termine" value={String(open)} />
+          <Stat icon={CalendarClock} label="Zu bestätigen" value={String(pendingConfirmation)} />
           <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
         </div>
 
@@ -158,20 +166,28 @@ function AdminPage() {
                         aria-label="Status ändern"
                         value={b.status}
                         onChange={(e) =>
-                          update(
-                            bookings.map((x) =>
-                              x.id === b.id
-                                ? { ...x, status: e.target.value as BookingStatus }
-                                : x,
-                            ),
-                          )
+                          setStatus(b.id, e.target.value as BookingStatus)
                         }
                         className="h-9 rounded-lg border border-border bg-secondary/50 px-2 text-sm"
                       >
-                        <option>Ausstehend</option>
-                        <option>Bezahlt</option>
-                        <option>Storniert</option>
+                        {bookingStatuses.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
                       </select>
+                      {b.status === "Angefragt" && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setStatus(b.id, "Bestätigt");
+                            toast.success(`Buchung ${b.invoiceNumber} bestätigt`);
+                          }}
+                        >
+                          <CheckCircle2 className="size-4" />
+                          Bestätigen
+                        </Button>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => generateInvoicePdf(b)}>
                         <Download className="size-4" />
                         Rechnung
