@@ -22,6 +22,9 @@ import { toast } from "sonner";
 import {
   addOns,
   currency,
+  depositConfig,
+
+  currency,
   servicePackages,
   taxConfig,
   timeSlots,
