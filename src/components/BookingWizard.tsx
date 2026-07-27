@@ -624,6 +624,17 @@ function Field({
 function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
   const items = calcLineItems(booking);
   const totals = calcTotals(items);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  async function downloadPdf() {
+    setPdfLoading(true);
+    try {
+      await generateInvoicePdf(booking);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   return (
     <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
