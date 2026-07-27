@@ -19,6 +19,8 @@ import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
 
 const LOGO_SRCSET = `${logoSm.url} 440w, ${logoLg.url} 760w`;
+const LOGO_ALT =
+  "White Gloss Detailing – Logo mit Muscle-Car-Silhouette und dem Claim „No compromises. Only results.“";
 import heroCar from "@/assets/hero-car.jpg";
 
 export const Route = createFileRoute("/")({
@@ -77,7 +79,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
-        <Link to="/" className="flex min-w-0 items-center">
+        <Link to="/" aria-label="White Gloss Detailing – zur Startseite" className="flex min-w-0 items-center">
           <img
             src={logoSm.url}
             srcSet={LOGO_SRCSET}
@@ -85,7 +87,8 @@ function Header() {
             width={440}
             height={253}
             decoding="async"
-            alt="White Gloss Detailing Logo"
+            alt=""
+            aria-hidden
             className="h-10 w-auto max-w-[160px] shrink-0 object-contain sm:h-13 sm:max-w-[220px] lg:h-15"
           />
         </Link>
@@ -111,7 +114,8 @@ function Hero() {
     <section className="relative overflow-hidden">
       <img
         src={heroCar}
-        alt="Schwarzer Sportwagen mit Hochglanzlack nach der Aufbereitung"
+        alt=""
+        aria-hidden
         width={1920}
         height={1088}
         className="absolute inset-0 size-full object-cover opacity-55"
@@ -132,7 +136,7 @@ function Hero() {
             height={437}
             fetchPriority="high"
             decoding="async"
-            alt="White Gloss Detailing Logo"
+            alt={LOGO_ALT}
             className="mx-auto mb-5 h-auto w-[min(64vw,200px)] object-contain drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:mb-7 sm:w-[280px] lg:mb-8 lg:w-[340px]"
           />
 
@@ -218,7 +222,8 @@ function Footer() {
             height={253}
             loading="lazy"
             decoding="async"
-            alt="White Gloss Detailing"
+            alt=""
+            aria-hidden
             className="h-12 w-auto"
           />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">
