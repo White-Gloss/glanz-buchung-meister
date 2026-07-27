@@ -155,13 +155,10 @@ function Hero() {
               aria-hidden
             />
             <div className="relative flex h-full flex-col justify-center">
-              <span className="inline-flex items-center gap-2 self-start text-[0.6rem] uppercase tracking-[0.32em] text-primary sm:text-xs">
-                <Star className="size-3.5 shrink-0" />
-                {company.claim}
-              </span>
-              <h1 className="text-gradient mt-4 font-display text-4xl leading-[0.95] text-balance uppercase sm:mt-5 sm:text-6xl lg:text-7xl xl:text-8xl">
+              <h1 className="text-gradient font-display text-4xl leading-[0.95] text-balance uppercase sm:text-6xl lg:text-7xl xl:text-8xl">
                 Premium Fahrzeug&shy;aufbereitung auf Next-Level Niveau
               </h1>
+
               <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
                 Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen
                 Glanz, der über den Neuwagenzustand hinausgeht.
