@@ -453,33 +453,13 @@ export function buildCityJsonLd(city: PickupCity) {
 
   const faq = {
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `Ist der Abholservice in ${city.name} kostenlos?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Ja. Für ${city.name} (${city.distanceKm} km von unserer Werkstatt in Horb am Neckar entfernt) sind Abholung und Rückgabe im Servicepreis enthalten. ${city.faqExtra}`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Wie lange dauert die Aufbereitung?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Je nach Paket zwischen 3 Stunden und 2 Werktagen. Die reine Fahrzeit zwischen ${city.name} und Horb am Neckar beträgt rund ${city.driveMinutes} Minuten pro Strecke.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Wo wird mein Fahrzeug aufbereitet?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Die Arbeiten finden ausschließlich in unserer Werkstatt in Horb am Neckar statt – in einer staubarmen Halle mit Prüfbeleuchtung. In ${city.name} erfolgen nur Abholung und Rückgabe.`,
-        },
-      },
-    ],
+    mainEntity: buildCityFaqItems(city).map(([q, a]) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
   };
+
 
   return {
     "@context": "https://schema.org",
