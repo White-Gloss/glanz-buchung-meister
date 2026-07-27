@@ -17,7 +17,9 @@ import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 
 import { pickupCities } from "@/lib/pickupLocations";
-import { company, features } from "@/lib/servicesConfig";
+import { company, features,
+  pickupPriceText,
+} from "@/lib/servicesConfig";
 
 import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import logoLg from "@/assets/wgd-logo-760.webp.asset.json";

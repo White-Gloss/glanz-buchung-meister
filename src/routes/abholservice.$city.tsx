@@ -19,7 +19,7 @@ import {
   homeBase,
 } from "@/lib/pickupLocations";
 
-import { company, pickupPriceNote, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
+import { company, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
 
 export const Route = createFileRoute("/abholservice/$city")({
   loader: ({ params }) => {
