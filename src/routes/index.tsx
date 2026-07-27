@@ -64,7 +64,13 @@ const featureIcons = [Sofa, Sparkles, ShieldCheck, Gem];
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
+      <a
+        href="#buchung"
+        className="sr-only rounded-lg bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+      >
+        Direkt zur Buchung springen
+      </a>
       <Header />
       <main>
         <Hero />
@@ -245,22 +251,25 @@ function Features() {
         title="Kompromisslose Qualität in jedem Detail"
         titleClassName="max-w-2xl"
       />
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((f, i) => {
           const Icon = featureIcons[i] ?? Droplets;
           return (
-            <article
+            <li
               key={f.id}
               className="glass group rounded-2xl p-6 transition-colors hover:border-primary/50"
             >
-              <Icon className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+              <Icon
+                aria-hidden
+                className="size-7 text-primary transition-transform duration-300 group-hover:scale-110"
+              />
               <h3 className="display-card mt-5">{f.name}</h3>
 
               <p className="mt-2 text-sm text-muted-foreground">{f.text}</p>
-            </article>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </section>
   );
 }
@@ -315,29 +324,29 @@ function Footer() {
             {company.name} – {company.claim}
           </p>
         </div>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="label-caps text-foreground">Kontakt</p>
+        <address className="space-y-2 text-sm not-italic text-muted-foreground">
+          <h2 className="label-caps text-foreground">Kontakt</h2>
           <p className="flex items-center gap-2">
-            <Phone className="size-4 text-primary" />
+            <Phone aria-hidden className="size-4 text-primary" />
             {company.phone}
           </p>
           <p className="flex items-center gap-2">
-            <Mail className="size-4 text-primary" />
+            <Mail aria-hidden className="size-4 text-primary" />
             {company.email}
           </p>
           <p className="flex items-center gap-2">
-            <Instagram className="size-4 text-primary" />
+            <Instagram aria-hidden className="size-4 text-primary" />
             {company.instagram}
           </p>
           {company.street && company.city && (
             <p className="flex items-center gap-2">
-              <MapPin className="size-4 text-primary" />
+              <MapPin aria-hidden className="size-4 text-primary" />
               {company.street}, {company.city}
             </p>
           )}
-        </div>
+        </address>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="label-caps text-foreground">Rechtliches</p>
+          <h2 className="label-caps text-foreground">Rechtliches</h2>
           <p>Inhaber: {company.owner}</p>
           <p>Steuernummer: {company.taxNumber}</p>
           <p>USt-IdNr.: {company.taxId}</p>

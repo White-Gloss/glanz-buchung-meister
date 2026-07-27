@@ -64,7 +64,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4 py-16">
+    <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <Button asChild variant="ghost" size="sm" className="mb-6">
           <Link to="/">
@@ -74,7 +74,7 @@ function AuthPage() {
         </Button>
         <div className="glass rounded-3xl p-6 sm:p-8">
           <div className="grid size-12 place-items-center rounded-2xl bg-primary/15">
-            <Lock className="size-5 text-primary" />
+            <Lock aria-hidden className="size-5 text-primary" />
           </div>
           <h1 className="display-sub mt-5">
             {mode === "login" ? "Team-Login" : "Team-Konto erstellen"}
@@ -127,6 +127,6 @@ function AuthPage() {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
