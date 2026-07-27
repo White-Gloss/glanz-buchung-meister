@@ -524,7 +524,7 @@ export function BookingWizard() {
               )}
               <div className="flex items-baseline justify-between pt-2">
                 <span className="label-caps">Gesamt</span>
-                <span className="display-price text-2xl text-primary">
+                <span className="display-price text-primary">
                   {currency(totals.gross)}
                 </span>
               </div>
@@ -611,7 +611,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
         <CheckCircle2 className="size-8 text-primary" />
       </div>
-      <h3 className="display-sub mt-6 sm:text-4xl">Buchungsanfrage erhalten</h3>
+      <h3 className="display-sub mt-6">Buchungsanfrage erhalten</h3>
       <p className="mt-2 text-muted-foreground">
         Vielen Dank, {booking.customer.name}. Ihr Wunschtermin ist vorgemerkt. Die verbindliche
         Bestätigung erhalten Sie, sobald unser Team die Buchung freigegeben hat.

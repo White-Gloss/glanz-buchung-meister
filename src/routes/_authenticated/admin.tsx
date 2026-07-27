@@ -337,7 +337,7 @@ function Stat({
   return (
     <div className="glass rounded-2xl p-5">
       <Icon className="size-5 text-primary" />
-      <p className="display-price mt-3 text-2xl">{value}</p>
+      <p className="display-price mt-3 text-xl sm:text-2xl">{value}</p>
       <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
     </div>
   );
