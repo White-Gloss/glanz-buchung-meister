@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import {
   ArrowRight,
   Droplets,
@@ -12,8 +11,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  Car,
-  Armchair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
@@ -50,7 +47,7 @@ function Landing() {
       <main>
         <Hero />
         <Features />
-        <BeforeAfter />
+        
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
           <div className="mb-10 max-w-2xl">
             <p className="text-xs uppercase tracking-[0.3em] text-primary">Online Buchung</p>
