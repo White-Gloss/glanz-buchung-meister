@@ -12,12 +12,16 @@ import {
   Mail,
   MapPin,
   Phone,
+  Car,
+  Armchair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
 import { company, features } from "@/lib/servicesConfig";
 import logoAsset from "@/assets/wgd-logo.png.asset.json";
 import heroCar from "@/assets/hero-car.jpg";
+import beforeAfterExterior from "@/assets/before-after-exterior.jpg";
+import beforeAfterInterior from "@/assets/before-after-interior.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -191,57 +195,118 @@ function Features() {
   );
 }
 
-function BeforeAfter() {
+type ComparisonSliderProps = {
+  beforeImage: string;
+  afterImage: string;
+  beforeAlt: string;
+  afterAlt: string;
+  label: string;
+  icon: React.ElementType;
+};
+
+function ComparisonSlider({
+  beforeImage,
+  afterImage,
+  beforeAlt,
+  afterAlt,
+  label,
+  icon: Icon,
+}: ComparisonSliderProps) {
   const [pos, setPos] = useState(50);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Icon className="size-5 text-primary" />
+        <h3 className="font-display text-lg font-semibold">{label}</h3>
+      </div>
+      <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border">
+        {/* Before image: left half of the split-frame photo */}
+        <img
+          src={beforeImage}
+          alt={beforeAlt}
+          loading="lazy"
+          width={1920}
+          height={1088}
+          className="absolute inset-0 size-full object-cover"
+          style={{ objectPosition: "left center" }}
+        />
+
+        {/* After image: right half of the split-frame photo, clipped by slider position */}
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+        >
+          <img
+            src={afterImage}
+            alt={afterAlt}
+            loading="lazy"
+            width={1920}
+            height={1088}
+            className="size-full object-cover"
+            style={{ objectPosition: "right center" }}
+          />
+        </div>
+
+        {/* Divider line */}
+        <div
+          className="pointer-events-none absolute inset-y-0 w-0.5 bg-primary shadow-[0_0_12px_rgba(0,82,255,0.8)]"
+          style={{ left: `${pos}%` }}
+        />
+
+        {/* Slider thumb indicator */}
+        <div
+          className="pointer-events-none absolute top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-primary bg-background p-1.5 shadow-lg"
+          style={{ left: `${pos}%` }}
+        >
+          <div className="size-2.5 rounded-full bg-primary" />
+        </div>
+
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={pos}
+          aria-label={`Vorher-Nachher-Regler: ${label}`}
+          onChange={(e) => setPos(Number(e.target.value))}
+          className="absolute inset-0 size-full cursor-ew-resize opacity-0"
+        />
+      </div>
+    </div>
+  );
+}
+
+function BeforeAfter() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <div className="glass overflow-hidden rounded-3xl p-5 sm:p-8">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
-          <div className="min-w-0">
+        <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
             <p className="text-xs uppercase tracking-[0.3em] text-primary">Vorher / Nachher</p>
             <h2 className="mt-2 font-display text-2xl font-bold sm:text-3xl">
               Der Unterschied ist sichtbar
             </h2>
           </div>
-          <span className="shrink-0 text-xs uppercase tracking-widest text-muted-foreground">
-            Regler ziehen
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">
+            Regler ziehen zum Vergleichen
           </span>
         </div>
 
-        <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-2xl border border-border">
-          <div className="absolute inset-0 grid place-items-center bg-secondary/60">
-            <span className="font-display text-sm uppercase tracking-[0.4em] text-muted-foreground">
-              Vorher
-            </span>
-          </div>
-          <div
-            className="absolute inset-0 overflow-hidden"
-            style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
-          >
-            <img
-              src={heroCar}
-              alt="Fahrzeug nach der Aufbereitung mit Hochglanzlack"
-              loading="lazy"
-              width={1920}
-              height={1088}
-              className="size-full object-cover"
-            />
-            <span className="absolute bottom-4 left-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary-foreground">
-              Nachher
-            </span>
-          </div>
-          <div
-            className="pointer-events-none absolute inset-y-0 w-0.5 bg-primary"
-            style={{ left: `${pos}%` }}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <ComparisonSlider
+            label="Außenaufbereitung"
+            icon={Car}
+            beforeImage={beforeAfterExterior}
+            afterImage={beforeAfterExterior}
+            beforeAlt="Fahrzeug vor der Außenaufbereitung mit verkratzter, matter Lackierung"
+            afterAlt="Fahrzeug nach der Außenaufbereitung mit spiegelndem Hochglanzlack"
           />
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={pos}
-            aria-label="Vorher-Nachher-Regler"
-            onChange={(e) => setPos(Number(e.target.value))}
-            className="absolute inset-0 size-full cursor-ew-resize opacity-0"
+          <ComparisonSlider
+            label="Innenraum-Reinigung"
+            icon={Armchair}
+            beforeImage={beforeAfterInterior}
+            afterImage={beforeAfterInterior}
+            beforeAlt="Verschmutzter Innenraum vor der Reinigung"
+            afterAlt="Perfekt gereinigter und gepflegter Innenraum nach der Aufbereitung"
           />
         </div>
       </div>
