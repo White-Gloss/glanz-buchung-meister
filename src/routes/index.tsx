@@ -113,13 +113,14 @@ function Hero() {
         aria-hidden
       />
       <div className="grid-lines absolute inset-0 opacity-40" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-40">
+      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:py-40">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <img
             src={logoAsset.url}
             alt="White Gloss Detailing Logo"
-            className="mb-8 h-28 w-auto drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:h-40 lg:h-48"
+            className="mx-auto mb-8 h-auto w-[min(78vw,260px)] object-contain drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:w-[340px] lg:w-[420px]"
           />
+
           <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-[0.25em]">
             <Star className="size-3.5 text-primary" />
             {company.claim}
