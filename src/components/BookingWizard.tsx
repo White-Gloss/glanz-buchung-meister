@@ -667,9 +667,9 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
 
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Button onClick={() => generateInvoicePdf(booking)}>
-          <Download className="size-4" />
-          Rechnung als PDF herunterladen
+        <Button loading={pdfLoading} onClick={downloadPdf}>
+          {pdfLoading ? null : <Download className="size-4" />}
+          {pdfLoading ? "Rechnung wird erstellt …" : "Rechnung als PDF herunterladen"}
         </Button>
         <Button variant="outline" onClick={onReset}>
           Neue Buchung
