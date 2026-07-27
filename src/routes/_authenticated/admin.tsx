@@ -25,6 +25,7 @@ import {
 } from "@/lib/bookings.functions";
 import { generateInvoicePdf } from "@/lib/invoice";
 import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
+import { PricePanel } from "@/components/PricePanel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
