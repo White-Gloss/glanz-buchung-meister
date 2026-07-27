@@ -21,6 +21,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   addOns,
+  depositConfig,
+
+
   currency,
   servicePackages,
   taxConfig,
@@ -28,15 +31,12 @@ import {
   blockedSlots,
   vehicleTypes,
 } from "@/lib/servicesConfig";
-import {
-  calcLineItems,
-  calcTotals,
-  loadBookings,
-  nextInvoiceNumber,
-  saveBookings,
-  type Booking,
-} from "@/lib/bookings";
+import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
+
+import { createBooking } from "@/lib/bookings.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { generateInvoicePdf } from "@/lib/invoice";
+
 
 const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
 
@@ -161,31 +161,37 @@ export function BookingWizard() {
       customer.plate.trim().length > 2,
   ][step];
 
-  function submit() {
-    if (!vehicleId || !packageId || !date || !time) return;
-    const existing = loadBookings();
-    const booking: Booking = {
-      id: crypto.randomUUID(),
-      invoiceNumber: nextInvoiceNumber(existing),
-      createdAt: new Date().toISOString(),
-      vehicleId,
-      packageId,
-      addOnIds,
-      date,
-      time,
-      customer: {
-        name: customer.name.trim(),
-        email: customer.email.trim(),
-        phone: customer.phone.trim(),
-        plate: customer.plate.trim().toUpperCase(),
-      },
-      total: totals.gross,
-      status: "Angefragt",
-    };
-    saveBookings([booking, ...existing]);
-    setConfirmed(booking);
-    toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
+  const submitBooking = useServerFn(createBooking);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!vehicleId || !packageId || !date || !time || submitting) return;
+    setSubmitting(true);
+    try {
+      const booking = await submitBooking({
+        data: {
+          vehicleId,
+          packageId,
+          addOnIds,
+          date,
+          time,
+          name: customer.name.trim(),
+          email: customer.email.trim(),
+          phone: customer.phone.trim(),
+          plate: customer.plate.trim().toUpperCase(),
+        },
+      });
+      setConfirmed(booking);
+      toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Buchung konnte nicht gespeichert werden",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
+
 
   if (confirmed) {
     return <Confirmation booking={confirmed} onReset={() => window.location.reload()} />;
@@ -476,10 +482,11 @@ export function BookingWizard() {
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button disabled={!canContinue} onClick={submit}>
-              Verbindlich buchen
+            <Button disabled={!canContinue || submitting} onClick={submit}>
+              {submitting ? "Wird gesendet …" : "Verbindlich buchen"}
               <CheckCircle2 className="size-4" />
             </Button>
+
           )}
         </div>
       </div>
@@ -624,7 +631,22 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
           <span>Gesamt</span>
           <span className="text-primary">{currency(totals.gross)}</span>
         </div>
+        {booking.depositAmount > 0 && (
+          <div className="flex justify-between text-sm text-amber-300">
+            <span>{depositConfig.label}</span>
+            <span className="font-semibold">{currency(booking.depositAmount)}</span>
+          </div>
+        )}
       </dl>
+
+      {booking.depositAmount > 0 && (
+        <p className="mx-auto mt-4 max-w-lg rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
+          {depositConfig.note} Ihre Anzahlung von{" "}
+          <strong>{currency(booking.depositAmount)}</strong> sichert den Termin – die
+          Zahlungsinformationen erhalten Sie mit der Bestätigung per E-Mail.
+        </p>
+      )}
+
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button onClick={() => generateInvoicePdf(booking)}>
