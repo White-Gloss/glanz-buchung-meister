@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { query } from "@/lib/db.server";
 import type { ServicePriceRow } from "./servicesConfig";
 
 export const listServicePrices = createServerFn({ method: "GET" }).handler(async () => {
@@ -54,11 +55,28 @@ export const updateServicePrice = createServerFn({ method: "POST" })
     if (roleError) throw new Error(roleError.message);
     if (!isAdmin) throw new Error("Kein Administrator-Zugriff");
 
+    // The booking engine (create_booking_public) computes totals from the
+    // Replit-managed Postgres copy of service_prices, so write there FIRST –
+    // it is the source of truth for customer-facing totals.
+    const updated = await query<{ item_id: string }>(
+      `UPDATE public.service_prices
+          SET amount = $1
+        WHERE item_type = $2 AND item_id = $3
+        RETURNING item_id`,
+      [data.amount, data.itemType, data.itemId],
+    );
+    if (updated.length === 0)
+      throw new Error("Preiseintrag nicht gefunden");
+
+    // Mirror the change to Supabase (used by admin panel listing).
     const { error } = await context.supabase
       .from("service_prices")
       .update({ amount: data.amount })
       .eq("item_type", data.itemType)
       .eq("item_id", data.itemId);
-    if (error) throw new Error(error.message);
+    if (error)
+      throw new Error(
+        `Preis wurde im Buchungssystem aktualisiert, aber die Synchronisation mit Supabase ist fehlgeschlagen: ${error.message}`,
+      );
     return { ok: true };
   });
