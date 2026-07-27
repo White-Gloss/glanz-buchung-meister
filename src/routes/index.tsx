@@ -110,14 +110,14 @@ function Header() {
         <nav className="flex shrink-0 items-center gap-2">
           <Link
             to="/abholservice"
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="hidden min-h-11 items-center rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:text-primary sm:flex"
           >
             Abholservice
           </Link>
           <Link
 
             to="/admin"
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="hidden min-h-11 items-center rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:text-primary sm:flex"
           >
             Admin
           </Link>
@@ -179,22 +179,25 @@ function Hero() {
                 Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen
                 Glanz, der über den Neuwagenzustand hinausgeht.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="glow-ring">
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button asChild size="lg" className="glow-ring w-full sm:w-auto">
                   <a href="#buchung">
                     Jetzt Termin buchen
                     <ArrowRight className="size-4" />
                   </a>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
                   <a href="#leistungen">Leistungen ansehen</a>
                 </Button>
               </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Unverbindliche Anfrage · Antwort innerhalb von 24 Stunden
+              </p>
             </div>
           </div>
 
           {/* Logo-Kachel */}
-          <div className="hairline-gold flex items-center justify-center rounded-3xl bg-card/70 p-8 backdrop-blur-xl lg:col-span-4">
+          <div className="hairline-gold order-last flex items-center justify-center rounded-3xl bg-card/70 p-6 backdrop-blur-xl sm:p-8 lg:order-none lg:col-span-4">
             <img
               src={logoSm.url}
               srcSet={LOGO_SRCSET}

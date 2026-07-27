@@ -79,7 +79,7 @@ function MiniCalendar({
           type="button"
           aria-label="Vorheriger Monat"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 transition-colors hover:bg-secondary"
+          className="grid size-11 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:size-9"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -90,7 +90,7 @@ function MiniCalendar({
           type="button"
           aria-label="Nächster Monat"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 transition-colors hover:bg-secondary"
+          className="grid size-11 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:size-9"
         >
           <ChevronRight className="size-4" />
         </button>
@@ -113,10 +113,10 @@ function MiniCalendar({
               disabled={disabled}
               onClick={() => onChange(iso)}
               className={[
-                "aspect-square rounded-lg text-sm transition-all",
+                "aspect-square min-h-11 rounded-lg text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0",
                 disabled
                   ? "cursor-not-allowed text-muted-foreground/35"
-                  : "hover:bg-secondary hover:text-foreground",
+                  : "cursor-pointer hover:bg-secondary hover:text-foreground active:scale-95",
                 selected
                   ? "bg-primary font-semibold text-primary-foreground glow-ring"
                   : "text-foreground/85",
@@ -419,12 +419,12 @@ export function BookingWizard() {
                           disabled={blocked}
                           onClick={() => setTime(slot)}
                           className={[
-                            "rounded-xl border py-2.5 text-sm transition-all",
+                            "min-h-11 rounded-xl border py-2.5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
                             blocked
                               ? "cursor-not-allowed border-border/50 text-muted-foreground/40 line-through"
                               : active
                                 ? "border-primary bg-primary text-primary-foreground glow-ring"
-                                : "border-border bg-secondary/40 hover:border-primary/50",
+                                : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
                           ].join(" ")}
                         >
                           {slot}
@@ -500,9 +500,9 @@ export function BookingWizard() {
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button disabled={!canContinue || submitting} onClick={submit}>
+            <Button disabled={!canContinue} loading={submitting} onClick={submit}>
               {submitting ? "Wird gesendet …" : "Verbindlich buchen"}
-              <CheckCircle2 className="size-4" />
+              {submitting ? null : <CheckCircle2 className="size-4" />}
             </Button>
 
           )}
