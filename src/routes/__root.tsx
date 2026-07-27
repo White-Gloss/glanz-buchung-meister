@@ -95,6 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "No Compromises. Only Results. Jetzt Termin online buchen.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "White Gloss Detailing" },
+      { property: "og:locale", content: "de_DE" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [

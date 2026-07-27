@@ -20,6 +20,7 @@ import {
 } from "@/lib/pickupLocations";
 
 import { company, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
+import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/$city")({
   loader: ({ params }) => {
