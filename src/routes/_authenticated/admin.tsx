@@ -214,11 +214,11 @@ function AdminPage() {
             </div>
 
             <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">
-            <Suspense fallback={<PricePanelSkeleton />}>
-              <PricePanel />
-            </Suspense>
+              <Suspense fallback={<PricePanelSkeleton />}>
+                <PricePanel />
+              </Suspense>
             </ErrorBoundary>
-            </ErrorBoundary>
+
 
 
 
