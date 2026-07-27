@@ -219,9 +219,7 @@ function AdminPage() {
             </div>
 
             {loading ? (
-              <div className="glass mt-6 rounded-3xl p-12 text-center text-sm text-muted-foreground">
-                Buchungen werden geladen …
-              </div>
+              <BookingListSkeleton />
             ) : filtered.length === 0 ? (
               <div className="glass mt-6 rounded-3xl p-12 text-center">
                 <p className="display-card">Keine Buchungen vorhanden</p>
