@@ -380,7 +380,6 @@ export function BookingWizard() {
                   </button>
                 );
               })}
-              })}
             </div>
           </section>
         )}
