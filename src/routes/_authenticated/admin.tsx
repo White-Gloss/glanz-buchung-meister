@@ -25,8 +25,18 @@ import {
 } from "@/lib/bookings.functions";
 import { generateInvoicePdf } from "@/lib/invoice";
 import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
-import { PricePanel } from "@/components/PricePanel";
-import { AuditLogPanel } from "@/components/AuditLogPanel";
+import {
+  BookingListSkeleton,
+  AuditLogSkeleton,
+  PricePanelSkeleton,
+} from "@/components/skeletons";
+
+const PricePanel = lazy(() =>
+  import("@/components/PricePanel").then((m) => ({ default: m.PricePanel })),
+);
+const AuditLogPanel = lazy(() =>
+  import("@/components/AuditLogPanel").then((m) => ({ default: m.AuditLogPanel })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
