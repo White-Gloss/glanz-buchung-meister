@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
+import { SectionHeading } from "@/components/SectionHeading";
+
 import { pickupCities } from "@/lib/pickupLocations";
 import { company, features } from "@/lib/servicesConfig";
 
@@ -61,16 +63,13 @@ function Landing() {
 
         
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-          <div className="mb-10 max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary">Online Buchung</p>
-            <h2 className="mt-3 font-display text-3xl tracking-wide sm:text-5xl">
-              In 5 Schritten zum Termin
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Konfigurieren Sie Ihre Aufbereitung – der Preis aktualisiert sich live. Rechnung nach
-              deutschem Standard inklusive.
-            </p>
-          </div>
+          <SectionHeading
+            className="mb-10 max-w-2xl"
+            eyebrow="Online Buchung"
+            title="In 5 Schritten zum Termin"
+            text="Konfigurieren Sie Ihre Aufbereitung – der Preis aktualisiert sich live. Rechnung nach deutschem Standard inklusive."
+          />
+
           <BookingWizard />
         </section>
       </main>
@@ -154,9 +153,10 @@ function Hero() {
               aria-hidden
             />
             <div className="relative flex h-full flex-col justify-center">
-              <h1 className="text-gradient font-display text-4xl leading-[0.95] text-balance uppercase sm:text-6xl lg:text-7xl xl:text-8xl">
+              <h1 className="text-gradient display-hero">
                 Premium Fahrzeug&shy;aufbereitung auf Next-Level Niveau
               </h1>
+
 
               <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
                 Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen
@@ -198,7 +198,7 @@ function Hero() {
                 key={l}
                 className="hairline-gold flex flex-col items-center justify-center rounded-3xl bg-card/70 px-2 py-6 text-center backdrop-blur-xl transition-colors hover:border-primary/50"
               >
-                <dt className="font-display text-2xl text-primary sm:text-4xl">{v}</dt>
+                <dt className="display-price text-2xl text-primary sm:text-4xl">{v}</dt>
                 <dd className="mt-1 text-[0.55rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.65rem]">
                   {l}
                 </dd>
@@ -214,10 +214,11 @@ function Hero() {
 function Features() {
   return (
     <section id="leistungen" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-      <p className="text-xs uppercase tracking-[0.3em] text-primary">Leistungen</p>
-      <h2 className="mt-3 max-w-2xl font-display text-3xl tracking-wide sm:text-5xl">
-        Kompromisslose Qualität in jedem Detail
-      </h2>
+      <SectionHeading
+        eyebrow="Leistungen"
+        title="Kompromisslose Qualität in jedem Detail"
+        titleClassName="max-w-2xl"
+      />
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((f, i) => {
           const Icon = featureIcons[i] ?? Droplets;
@@ -227,7 +228,8 @@ function Features() {
               className="glass group rounded-2xl p-6 transition-colors hover:border-primary/50"
             >
               <Icon className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="mt-5 font-display text-lg tracking-wide">{f.name}</h3>
+              <h3 className="display-card mt-5">{f.name}</h3>
+
               <p className="mt-2 text-sm text-muted-foreground">{f.text}</p>
             </article>
           );
@@ -240,14 +242,18 @@ function Features() {
 function PickupAreas() {
   return (
     <section id="abholservice" className="mx-auto max-w-7xl scroll-mt-20 px-4 pb-20 sm:px-6">
-      <p className="text-xs uppercase tracking-[0.3em] text-primary">Abholservice</p>
-      <h2 className="mt-3 max-w-3xl font-display text-3xl tracking-wide sm:text-5xl">
-        Wir holen Ihr Fahrzeug ab – im Umkreis von Horb am Neckar
-      </h2>
-      <p className="mt-3 max-w-2xl text-muted-foreground">
-        Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in {pickupCities.length}{" "}
-        Städten der Region ab und bringen es veredelt zurück.
-      </p>
+      <SectionHeading
+        eyebrow="Abholservice"
+        title="Wir holen Ihr Fahrzeug ab – im Umkreis von Horb am Neckar"
+        titleClassName="max-w-3xl"
+        text={
+          <span className="block max-w-2xl">
+            Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in{" "}
+            {pickupCities.length} Städten der Region ab und bringen es veredelt zurück.
+          </span>
+        }
+      />
+
       <div className="mt-10">
         <PickupCityGrid />
       </div>
@@ -283,7 +289,7 @@ function Footer() {
           </p>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-display uppercase tracking-widest text-foreground">Kontakt</p>
+          <p className="label-caps text-foreground">Kontakt</p>
           <p className="flex items-center gap-2">
             <Phone className="size-4 text-primary" />
             {company.phone}
@@ -304,7 +310,7 @@ function Footer() {
           )}
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-display uppercase tracking-widest text-foreground">Rechtliches</p>
+          <p className="label-caps text-foreground">Rechtliches</p>
           <p>Inhaber: {company.owner}</p>
           <p>Steuernummer: {company.taxNumber}</p>
           <p>USt-IdNr.: {company.taxId}</p>

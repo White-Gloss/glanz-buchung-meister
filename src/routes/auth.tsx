@@ -76,7 +76,7 @@ function AuthPage() {
           <div className="grid size-12 place-items-center rounded-2xl bg-primary/15">
             <Lock className="size-5 text-primary" />
           </div>
-          <h1 className="mt-5 font-display text-2xl font-bold">
+          <h1 className="display-sub mt-5 text-2xl">
             {mode === "login" ? "Team-Login" : "Team-Konto erstellen"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
