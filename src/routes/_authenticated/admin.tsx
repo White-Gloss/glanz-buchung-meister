@@ -195,6 +195,10 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
+            <PricePanel />
+
+
+
             <div className="mt-8 flex items-center gap-3">
               <div className="relative w-full max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
