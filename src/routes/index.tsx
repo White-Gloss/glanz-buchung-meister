@@ -93,7 +93,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
-        <Link to="/" aria-label="White Gloss Detailing – zur Startseite" className="flex min-w-0 items-center">
+        <Link to="/" aria-label="White Gloss Detailing – zur Startseite" className="flex min-h-11 min-w-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <img
             src={logoSm.url}
             srcSet={LOGO_SRCSET}
