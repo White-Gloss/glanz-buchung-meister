@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          booking_id: string
+          created_at: string
+          field: string | null
+          id: string
+          invoice_number: string | null
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          booking_id: string
+          created_at?: string
+          field?: string | null
+          id?: string
+          invoice_number?: string | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          booking_id?: string
+          created_at?: string
+          field?: string | null
+          id?: string
+          invoice_number?: string | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           access_token: string
