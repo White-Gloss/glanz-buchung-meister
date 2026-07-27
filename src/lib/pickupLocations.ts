@@ -372,8 +372,9 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
     `Autoaufbereitung ${city.short} ohne Umweg: Abholung an Ihrer Adresse, Aufbereitung in unserer Werkstatt in Horb am Neckar, Rückgabe nach Wunschtermin.`,
   ];
   const description = isHome
-    ? `Fahrzeugaufbereitung direkt in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
+    ? `Fahrzeugaufbereitung in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
     : descriptions[idx % descriptions.length];
+
 
   return {
     title: clamp(title, 60),
