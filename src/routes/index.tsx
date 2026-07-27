@@ -289,7 +289,7 @@ function Footer() {
           </p>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-display uppercase tracking-widest text-foreground">Kontakt</p>
+          <p className="label-caps text-foreground">Kontakt</p>
           <p className="flex items-center gap-2">
             <Phone className="size-4 text-primary" />
             {company.phone}
@@ -310,7 +310,7 @@ function Footer() {
           )}
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="font-display uppercase tracking-widest text-foreground">Rechtliches</p>
+          <p className="label-caps text-foreground">Rechtliches</p>
           <p>Inhaber: {company.owner}</p>
           <p>Steuernummer: {company.taxNumber}</p>
           <p>USt-IdNr.: {company.taxId}</p>
