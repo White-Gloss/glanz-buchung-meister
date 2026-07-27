@@ -214,10 +214,11 @@ function Hero() {
 function Features() {
   return (
     <section id="leistungen" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
-      <p className="text-xs uppercase tracking-[0.3em] text-primary">Leistungen</p>
-      <h2 className="mt-3 max-w-2xl font-display text-3xl tracking-wide sm:text-5xl">
-        Kompromisslose Qualität in jedem Detail
-      </h2>
+      <SectionHeading
+        eyebrow="Leistungen"
+        title="Kompromisslose Qualität in jedem Detail"
+        titleClassName="max-w-2xl"
+      />
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((f, i) => {
           const Icon = featureIcons[i] ?? Droplets;
@@ -227,7 +228,8 @@ function Features() {
               className="glass group rounded-2xl p-6 transition-colors hover:border-primary/50"
             >
               <Icon className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="mt-5 font-display text-lg tracking-wide">{f.name}</h3>
+              <h3 className="display-card mt-5">{f.name}</h3>
+
               <p className="mt-2 text-sm text-muted-foreground">{f.text}</p>
             </article>
           );
