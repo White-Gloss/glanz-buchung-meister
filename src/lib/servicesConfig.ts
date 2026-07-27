@@ -29,6 +29,10 @@ export type AddOn = {
   name: string;
   description: string;
   price: number;
+  /** true = Pauschalpreis ohne Fahrzeug-Faktor */
+  flatPrice?: boolean;
+  /** Paket-IDs, in denen die Leistung bereits enthalten ist (Preis 0) */
+  includedInPackages?: string[];
 };
 
 export const company = {
@@ -170,9 +174,12 @@ export const addOns: AddOn[] = [
   },
   {
     id: "hol",
-    name: "Hol- & Bringservice",
-    description: "Abholung und Rückgabe im Umkreis von 25 km",
-    price: 49,
+    name: "Hol- & Bringservice (Abholservice)",
+    description:
+      "Abholung und Rückgabe im Umkreis von 25 km – bei High-End Keramik inklusive",
+    price: 60,
+    flatPrice: true,
+    includedInPackages: ["keramik"],
   },
 ];
 
