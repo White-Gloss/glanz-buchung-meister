@@ -11,12 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
 import {
+  buildCityFaqItems,
   buildCityJsonLd,
   buildCityMeta,
   getNeighbourCities,
   getPickupCity,
   homeBase,
 } from "@/lib/pickupLocations";
+
 import { company, servicePackages } from "@/lib/servicesConfig";
 
 export const Route = createFileRoute("/abholservice/$city")({
