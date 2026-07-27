@@ -41,3 +41,7 @@ SUPABASE_PROJECT_ID = "kyfzxikckpiqzcnzjgnj"
 SUPABASE_URL = "https://kyfzxikckpiqzcnzjgnj.supabase.co"
 VITE_SUPABASE_PROJECT_ID = "kyfzxikckpiqzcnzjgnj"
 VITE_SUPABASE_URL = "https://kyfzxikckpiqzcnzjgnj.supabase.co"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
