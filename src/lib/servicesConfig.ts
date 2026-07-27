@@ -221,3 +221,60 @@ export function currency(value: number) {
     currency: "EUR",
   }).format(value);
 }
+
+/* ------------------------------------------------------------------ */
+/* Preis-Overrides aus der Datenbank (Admin-Panel)                     */
+/* ------------------------------------------------------------------ */
+
+export type ServicePriceRow = {
+  item_type: "package" | "addon" | "vehicle";
+  item_id: string;
+  label: string;
+  amount: number;
+};
+
+/**
+ * Überschreibt die oben hinterlegten Standardpreise mit den im Admin-Panel
+ * gepflegten Werten. Wird sowohl beim Server-Rendering als auch im Browser
+ * aufgerufen, damit überall dieselben Preise gelten.
+ */
+export function applyPriceOverrides(rows: ServicePriceRow[] | undefined | null) {
+  if (!rows?.length) return;
+  rows.forEach((row) => {
+    if (!Number.isFinite(row.amount)) return;
+    if (row.item_type === "package") {
+      const pkg = servicePackages.find((p) => p.id === row.item_id);
+      if (pkg) pkg.basePrice = row.amount;
+    } else if (row.item_type === "addon") {
+      const add = addOns.find((a) => a.id === row.item_id);
+      if (add) add.price = row.amount;
+    } else if (row.item_type === "vehicle") {
+      const veh = vehicleTypes.find((v) => v.id === row.item_id);
+      if (veh && row.amount > 0) veh.factor = row.amount;
+    }
+  });
+}
+
+/** Aktuelle Preisliste im Format der Datenbank (für das Admin-Panel) */
+export function currentPriceRows(): ServicePriceRow[] {
+  return [
+    ...servicePackages.map((p) => ({
+      item_type: "package" as const,
+      item_id: p.id,
+      label: p.name,
+      amount: p.basePrice,
+    })),
+    ...addOns.map((a) => ({
+      item_type: "addon" as const,
+      item_id: a.id,
+      label: a.name,
+      amount: a.price,
+    })),
+    ...vehicleTypes.map((v) => ({
+      item_type: "vehicle" as const,
+      item_id: v.id,
+      label: `${v.name} (Faktor)`,
+      amount: v.factor,
+    })),
+  ];
+}

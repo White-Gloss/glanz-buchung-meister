@@ -8,7 +8,13 @@ import {
   type Booking,
   type BookingStatus,
 } from "./bookings";
-import { addOns, servicePackages, taxConfig, vehicleTypes } from "./servicesConfig";
+import {
+  addOns,
+  applyPriceOverrides,
+  servicePackages,
+  taxConfig,
+  vehicleTypes,
+} from "./servicesConfig";
 
 type Row = {
   id: string;
@@ -101,6 +107,19 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Aktuelle (im Admin-Panel gepflegte) Preise anwenden
+    const { data: priceRows } = await supabaseAdmin
+      .from("service_prices")
+      .select("item_type, item_id, label, amount");
+    applyPriceOverrides(
+      (priceRows ?? []).map((r: { item_type: string; item_id: string; label: string; amount: number | string }) => ({
+        item_type: r.item_type as "package" | "addon" | "vehicle",
+        item_id: r.item_id,
+        label: r.label,
+        amount: Number(r.amount),
+      })),
+    );
+
     const totals = calcTotals(
       calcLineItems({
         vehicleId: data.vehicleId,
@@ -108,6 +127,7 @@ export const createBooking = createServerFn({ method: "POST" })
         addOnIds: data.addOnIds,
       }),
     );
+
 
     // Neukunden-Prüfung: E-Mail ODER Kennzeichen noch nie verwendet
     const { data: history, error: histError } = await supabaseAdmin

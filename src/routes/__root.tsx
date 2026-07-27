@@ -12,6 +12,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { listServicePrices } from "@/lib/pricing.functions";
+import { applyPriceOverrides } from "@/lib/servicesConfig";
+
 
 
 function NotFoundComponent() {
@@ -109,6 +112,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
   }),
 
+  loader: () => listServicePrices(),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -131,6 +135,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Zentral gepflegte Preise anwenden, bevor Kindrouten rendern (Server + Client)
+  applyPriceOverrides(Route.useLoaderData());
+
+
 
   return (
     <QueryClientProvider client={queryClient}>

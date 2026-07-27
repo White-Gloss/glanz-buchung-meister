@@ -25,6 +25,7 @@ import {
 } from "@/lib/bookings.functions";
 import { generateInvoicePdf } from "@/lib/invoice";
 import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
+import { PricePanel } from "@/components/PricePanel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -194,6 +195,10 @@ function AdminPage() {
               <Stat icon={Wallet} label="Offene Anzahlungen" value={String(openDeposits)} />
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
+
+            <PricePanel />
+
+
 
             <div className="mt-8 flex items-center gap-3">
               <div className="relative w-full max-w-sm">
