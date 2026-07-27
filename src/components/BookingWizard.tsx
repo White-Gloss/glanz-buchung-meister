@@ -276,7 +276,19 @@ export function BookingWizard() {
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => setPackageId(p.id)}
+                    onClick={() => {
+                      setPackageId(p.id);
+                      // Inklusiv-Leistungen des Pakets automatisch aktivieren
+                      const included = addOns
+                        .filter((a) => a.includedInPackages?.includes(p.id))
+                        .map((a) => a.id);
+                      if (included.length) {
+                        setAddOnIds((prev) => [
+                          ...prev,
+                          ...included.filter((id) => !prev.includes(id)),
+                        ]);
+                      }
+                    }}
                     className={[
                       "relative flex flex-col rounded-2xl border p-5 text-left transition-all duration-300",
                       active
