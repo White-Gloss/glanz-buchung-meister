@@ -249,7 +249,8 @@ function PickupAreas() {
         text={
           <span className="block max-w-2xl">
             Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in{" "}
-            {pickupCities.length} Städten der Region ab und bringen es veredelt zurück.
+            {pickupCities.length} Städten der Region ab und bringen es veredelt zurück – pauschal
+            für {pickupPriceText()}, im Paket High-End Keramik inklusive.
           </span>
         }
       />
