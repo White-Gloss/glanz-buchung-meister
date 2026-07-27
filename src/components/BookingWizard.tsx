@@ -105,7 +105,7 @@ function MiniCalendar({
           <span key={d}>{d}</span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1" role="group" aria-label="Verfügbare Termine">
         {cells.map((date, i) => {
           if (!date) return <span key={`e${i}`} />;
           const iso = toISO(date);
@@ -117,6 +117,13 @@ function MiniCalendar({
               type="button"
               disabled={disabled}
               onClick={() => onChange(iso)}
+              aria-pressed={selected}
+              aria-label={new Date(iso).toLocaleDateString("de-DE", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
               className={[
                 "aspect-square min-h-11 rounded-lg text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0",
                 disabled
@@ -235,9 +242,16 @@ export function BookingWizard() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="glass rounded-3xl p-5 sm:p-8">
         {/* Fortschritt */}
-        <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1">
+        <ol
+          className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1"
+          aria-label={`Buchungsfortschritt: Schritt ${step + 1} von ${steps.length}`}
+        >
           {steps.map((s, i) => (
-            <li key={s} className="flex min-w-0 flex-1 items-center gap-1.5">
+            <li
+              key={s}
+              className="flex min-w-0 flex-1 items-center gap-1.5"
+              aria-current={i === step ? "step" : undefined}
+            >
               <span
                 className={[
                   "flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
@@ -250,6 +264,10 @@ export function BookingWizard() {
               >
                 <span className="tabular-nums opacity-70">{i + 1}</span>
                 <span className="hidden sm:inline">{s}</span>
+                <span className="sr-only">
+                  {s}
+                  {i === step ? " (aktueller Schritt)" : i < step ? " (abgeschlossen)" : ""}
+                </span>
               </span>
               {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
             </li>
@@ -271,8 +289,9 @@ export function BookingWizard() {
                     key={v.id}
                     type="button"
                     onClick={() => setVehicleId(v.id)}
+                    aria-pressed={active}
                     className={[
-                      "group rounded-2xl border p-5 text-left transition-all duration-300",
+                      "group rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
                       active
                         ? "border-primary bg-primary/10 glow-ring"
                         : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60",
@@ -323,8 +342,9 @@ export function BookingWizard() {
                         ]);
                       }
                     }}
+                    aria-pressed={active}
                     className={[
-                      "relative flex flex-col rounded-2xl border p-5 text-left transition-all duration-300",
+                      "relative flex flex-col rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
                       active
                         ? "border-primary bg-primary/10 glow-ring"
                         : "border-border bg-secondary/30 hover:border-primary/50",
@@ -380,8 +400,9 @@ export function BookingWizard() {
                         prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
                       )
                     }
+                    aria-pressed={active}
                     className={[
-                      "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left transition-all",
+                      "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
                       active
                         ? "border-primary bg-primary/10"
                         : "border-border bg-secondary/30 hover:border-primary/40",
@@ -442,7 +463,11 @@ export function BookingWizard() {
                     Bitte wählen Sie zunächst ein Datum aus.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div
+                    className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                    role="group"
+                    aria-label="Freie Zeitfenster"
+                  >
                     {timeSlots.map((slot) => {
                       const blocked = (blockedSlots[date] ?? []).includes(slot);
                       const active = time === slot;
@@ -452,6 +477,8 @@ export function BookingWizard() {
                           type="button"
                           disabled={blocked}
                           onClick={() => setTime(slot)}
+                          aria-pressed={active}
+                          aria-label={`${slot} Uhr${blocked ? " – belegt" : ""}`}
                           className={[
                             "min-h-11 rounded-xl border py-2.5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
                             blocked
@@ -560,8 +587,8 @@ export function BookingWizard() {
       </div>
 
       {/* Live-Preisrechner */}
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="glass-strong rounded-3xl p-6">
+      <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Live-Preisübersicht">
+        <div className="glass-strong rounded-3xl p-6" aria-live="polite">
           <p className="label-caps flex items-center gap-2 text-muted-foreground">
             <Sparkles className="size-4 text-primary" />
             Ihre Konfiguration
