@@ -63,7 +63,7 @@ function Landing() {
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
           <div className="mb-10 max-w-2xl">
             <p className="text-xs uppercase tracking-[0.3em] text-primary">Online Buchung</p>
-            <h2 className="mt-3 font-display text-3xl font-bold sm:text-5xl">
+            <h2 className="mt-3 font-display text-3xl tracking-wide sm:text-5xl">
               In 5 Schritten zum Termin
             </h2>
             <p className="mt-3 text-muted-foreground">
@@ -215,7 +215,7 @@ function Features() {
   return (
     <section id="leistungen" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="text-xs uppercase tracking-[0.3em] text-primary">Leistungen</p>
-      <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold sm:text-5xl">
+      <h2 className="mt-3 max-w-2xl font-display text-3xl tracking-wide sm:text-5xl">
         Kompromisslose Qualität in jedem Detail
       </h2>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -227,7 +227,7 @@ function Features() {
               className="glass group rounded-2xl p-6 transition-colors hover:border-primary/50"
             >
               <Icon className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="mt-5 font-display text-lg font-semibold">{f.name}</h3>
+              <h3 className="mt-5 font-display text-lg tracking-wide">{f.name}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{f.text}</p>
             </article>
           );
@@ -241,7 +241,7 @@ function PickupAreas() {
   return (
     <section id="abholservice" className="mx-auto max-w-7xl scroll-mt-20 px-4 pb-20 sm:px-6">
       <p className="text-xs uppercase tracking-[0.3em] text-primary">Abholservice</p>
-      <h2 className="mt-3 max-w-3xl font-display text-3xl font-bold sm:text-5xl">
+      <h2 className="mt-3 max-w-3xl font-display text-3xl tracking-wide sm:text-5xl">
         Wir holen Ihr Fahrzeug ab – im Umkreis von Horb am Neckar
       </h2>
       <p className="mt-3 max-w-2xl text-muted-foreground">
