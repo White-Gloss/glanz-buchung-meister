@@ -1,6 +1,13 @@
 import { jsPDF } from "jspdf";
 import { calcLineItems, calcTotals, type Booking } from "./bookings";
-import { company, servicePackages, taxConfig, vehicleTypes } from "./servicesConfig";
+import {
+  company,
+  depositConfig,
+  servicePackages,
+  taxConfig,
+  vehicleTypes,
+} from "./servicesConfig";
+
 
 const eur = (v: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) +
