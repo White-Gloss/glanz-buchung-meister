@@ -73,11 +73,13 @@ function Header() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-3">
-          <img src={logoAsset.url} alt="White Gloss Detailing Logo" className="h-9 w-auto" />
-          <span className="hidden truncate font-display text-sm uppercase tracking-[0.25em] text-muted-foreground sm:block">
-            Detailing
-          </span>
+          <img
+            src={logoAsset.url}
+            alt="White Gloss Detailing Logo"
+            className="h-12 w-auto sm:h-14"
+          />
         </Link>
+
         <nav className="flex shrink-0 items-center gap-2">
           <Link
             to="/admin"
