@@ -182,7 +182,7 @@ function CityPage() {
               und Nachbarorte an:
             </p>
             <ul className="mt-4 flex flex-wrap gap-2">
-              {city.districts.map((d) => (
+              {city.districts.map((d: string) => (
                 <li
                   key={d}
                   className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"

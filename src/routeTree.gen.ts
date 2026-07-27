@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
+import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -40,6 +41,11 @@ const AbholserviceIndexRoute = AbholserviceIndexRouteImport.update({
   path: '/abholservice/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
+  id: '/abholservice/$city',
+  path: '/abholservice/$city',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice/': typeof AbholserviceIndexRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +65,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice': typeof AbholserviceIndexRoute
 }
 export interface FileRoutesById {
@@ -67,13 +75,26 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice/': typeof AbholserviceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/sitemap.xml' | '/admin' | '/abholservice/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/admin'
+    | '/abholservice/$city'
+    | '/abholservice/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/sitemap.xml' | '/admin' | '/abholservice'
+  to:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/admin'
+    | '/abholservice/$city'
+    | '/abholservice'
   id:
     | '__root__'
     | '/'
@@ -81,6 +102,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/abholservice/$city'
     | '/abholservice/'
   fileRoutesById: FileRoutesById
 }
@@ -89,6 +111,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AbholserviceCityRoute: typeof AbholserviceCityRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
 }
 
@@ -129,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AbholserviceIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/abholservice/$city': {
+      id: '/abholservice/$city'
+      path: '/abholservice/$city'
+      fullPath: '/abholservice/$city'
+      preLoaderRoute: typeof AbholserviceCityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -155,6 +185,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AbholserviceCityRoute: AbholserviceCityRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
 }
 export const routeTree = rootRouteImport
