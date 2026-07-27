@@ -36,15 +36,16 @@ const LOGO_ALT =
 import heroCar from "@/assets/hero-car.jpg";
 import heroCarWebp from "@/assets/hero-car.webp";
 import heroCarAvif from "@/assets/hero-car.avif";
+import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "White Gloss Detailing – Premium Fahrzeugaufbereitung in Bonn" },
+      { title: "White Gloss Detailing – Fahrzeugaufbereitung Horb am Neckar" },
       {
         name: "description",
         content:
-          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Bonn. Termin online buchen und Rechnung sofort als PDF erhalten.",
+          "Premium Fahrzeugaufbereitung, Lackkorrektur und Keramikversiegelung in Horb am Neckar – inkl. Abholservice. Termin online buchen, Rechnung sofort als PDF.",
       },
       { property: "og:title", content: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
       {
@@ -52,8 +53,21 @@ export const Route = createFileRoute("/")({
         content:
           "Lackkorrektur, Keramikversiegelung und Innenreinigung auf Next-Level Niveau. Jetzt Termin online buchen.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: absUrl("/") },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:alt", content: OG_IMAGE_ALT },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "White Gloss Detailing – Premium Fahrzeugaufbereitung" },
+      {
+        name: "twitter:description",
+        content:
+          "Lackkorrektur, Keramikversiegelung und Innenreinigung auf Next-Level Niveau. Jetzt Termin online buchen.",
+      },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
+      { rel: "canonical", href: absUrl("/") },
       { rel: "preload", as: "image", href: logoSm.url, imageSrcSet: LOGO_SRCSET, imageSizes: "(min-width: 1024px) 340px, (min-width: 640px) 280px, min(64vw, 200px)", fetchPriority: "high" },
     ],
   }),

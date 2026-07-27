@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { buildOverviewJsonLd, homeBase, pickupCities } from "@/lib/pickupLocations";
 import { company, pickupPriceNote, pickupPriceText } from "@/lib/servicesConfig";
+import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 const TITLE = "Abholservice Fahrzeugaufbereitung | Horb & Umgebung";
 const DESCRIPTION =
@@ -17,10 +18,15 @@ export const Route = createFileRoute("/abholservice/")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/abholservice" },
+      { property: "og:url", content: absUrl("/abholservice") },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:alt", content: OG_IMAGE_ALT },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: "/abholservice" }],
+    links: [{ rel: "canonical", href: absUrl("/abholservice") }],
     scripts: [
       { type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) },
     ],
