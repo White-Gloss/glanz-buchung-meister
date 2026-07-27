@@ -83,7 +83,7 @@ function MiniCalendar({
         >
           <ChevronLeft className="size-4" />
         </button>
-        <p className="truncate text-center font-display text-base uppercase tracking-wide">
+        <p className="label-caps truncate text-center text-base">
           {cursor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
         </p>
         <button
@@ -250,7 +250,7 @@ export function BookingWizard() {
                         active ? "text-primary" : "text-muted-foreground",
                       ].join(" ")}
                     />
-                    <p className="font-display text-lg tracking-wide">{v.name}</p>
+                    <p className="display-card">{v.name}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
                     <p className="mt-3 text-xs uppercase tracking-widest text-primary">
                       Faktor ×{v.factor.toFixed(2)}
@@ -289,11 +289,11 @@ export function BookingWizard() {
                         Beliebt
                       </span>
                     )}
-                    <p className="font-display text-lg tracking-wide">{p.name}</p>
+                    <p className="display-card">{p.name}</p>
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">
                       {p.tagline}
                     </p>
-                    <p className="mt-4 font-display text-3xl tracking-wide">
+                    <p className="display-price mt-4">
                       {currency(Math.round(p.basePrice * factor))}
                     </p>
                     <p className="text-xs text-muted-foreground">inkl. MwSt. · {p.duration}</p>
@@ -343,7 +343,7 @@ export function BookingWizard() {
                       <p className="text-sm text-muted-foreground">{a.description}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
-                      <span className="font-display tracking-wide">
+                      <span className="display-price text-base">
                         +{currency(Math.round(a.price * factor))}
                       </span>
                       <span
@@ -381,7 +381,7 @@ export function BookingWizard() {
                 }}
               />
               <div className="glass rounded-2xl p-5">
-                <p className="mb-4 flex items-center gap-2 font-display text-sm uppercase tracking-widest text-muted-foreground">
+                <p className="label-caps mb-4 flex items-center gap-2 text-muted-foreground">
                   <CalendarIcon className="size-4 text-primary" />
                   Freie Zeitfenster
                 </p>
@@ -494,7 +494,7 @@ export function BookingWizard() {
       {/* Live-Preisrechner */}
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <div className="glass-strong rounded-3xl p-6">
-          <p className="flex items-center gap-2 font-display text-sm uppercase tracking-widest text-muted-foreground">
+          <p className="label-caps flex items-center gap-2 text-muted-foreground">
             <Sparkles className="size-4 text-primary" />
             Ihre Konfiguration
           </p>
@@ -523,8 +523,8 @@ export function BookingWizard() {
                 </>
               )}
               <div className="flex items-baseline justify-between pt-2">
-                <span className="font-display uppercase tracking-wide">Gesamt</span>
-                <span className="font-display text-2xl tracking-wide text-primary tabular-nums">
+                <span className="label-caps">Gesamt</span>
+                <span className="display-price text-2xl text-primary">
                   {currency(totals.gross)}
                 </span>
               </div>
@@ -559,7 +559,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function StepHeader({ title, text }: { title: string; text: string }) {
   return (
     <div className="mb-6">
-      <h3 className="font-display text-2xl sm:text-3xl">{title}</h3>
+      <h3 className="display-sub">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{text}</p>
     </div>
   );
@@ -611,7 +611,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
         <CheckCircle2 className="size-8 text-primary" />
       </div>
-      <h3 className="mt-6 font-display text-3xl sm:text-4xl">Buchungsanfrage erhalten</h3>
+      <h3 className="display-sub mt-6 sm:text-4xl">Buchungsanfrage erhalten</h3>
       <p className="mt-2 text-muted-foreground">
         Vielen Dank, {booking.customer.name}. Ihr Wunschtermin ist vorgemerkt. Die verbindliche
         Bestätigung erhalten Sie, sobald unser Team die Buchung freigegeben hat.
@@ -627,7 +627,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
         {items.map((i) => (
           <Detail key={i.label} label={i.label} value={currency(i.total)} />
         ))}
-        <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg">
+        <div className="mt-2 flex justify-between border-t border-border pt-3 display-card">
           <span>Gesamt</span>
           <span className="text-primary">{currency(totals.gross)}</span>
         </div>
