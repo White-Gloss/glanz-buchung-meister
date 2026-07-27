@@ -72,13 +72,14 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
-        <Link to="/" className="flex min-w-0 items-center gap-3">
+        <Link to="/" className="flex min-w-0 items-center">
           <img
             src={logoAsset.url}
             alt="White Gloss Detailing Logo"
-            className="h-12 w-auto sm:h-14"
+            className="h-9 w-auto max-w-[150px] shrink-0 object-contain sm:h-12 sm:max-w-[220px] lg:h-14"
           />
         </Link>
+
 
         <nav className="flex shrink-0 items-center gap-2">
           <Link
@@ -112,25 +113,26 @@ function Hero() {
         aria-hidden
       />
       <div className="grid-lines absolute inset-0 opacity-40" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-40">
+      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:py-40">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <img
             src={logoAsset.url}
             alt="White Gloss Detailing Logo"
-            className="mb-8 h-28 w-auto drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:h-40 lg:h-48"
+            className="mx-auto mb-8 h-auto w-[min(78vw,260px)] object-contain drop-shadow-[0_18px_50px_rgba(0,82,255,0.35)] sm:w-[340px] lg:w-[420px]"
           />
-          <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-[0.25em]">
-            <Star className="size-3.5 text-primary" />
+
+          <span className="glass inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.2em] sm:px-4 sm:text-xs sm:tracking-[0.25em]">
+            <Star className="size-3.5 shrink-0 text-primary" />
             {company.claim}
           </span>
-          <h1 className="text-gradient mt-6 font-display text-4xl leading-[1.05] font-bold sm:text-6xl lg:text-7xl">
+          <h1 className="text-gradient mt-6 font-display text-[1.75rem] leading-[1.1] font-bold text-balance break-words sm:text-5xl sm:leading-[1.05] lg:text-7xl">
             Premium Fahrzeugaufbereitung auf Next-Level Niveau
           </h1>
           <p className="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
             Handarbeit, Hightech-Produkte und kompromisslose Detailversessenheit – für einen Glanz,
             der über den Neuwagenzustand hinausgeht.
           </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <div className="mt-9 flex w-full flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="glow-ring">
               <a href="#buchung">
                 Jetzt Termin buchen
@@ -141,16 +143,19 @@ function Hero() {
               <a href="#leistungen">Leistungen ansehen</a>
             </Button>
           </div>
-          <dl className="mt-14 grid w-full max-w-lg grid-cols-3 gap-4">
+          <dl className="mt-12 grid w-full max-w-lg grid-cols-3 gap-2 sm:mt-14 sm:gap-4">
             {[
               ["500+", "Fahrzeuge"],
               ["4.9/5", "Bewertung"],
               ["5 Jahre", "Keramikschutz"],
             ].map(([v, l]) => (
-              <div key={l} className="glass rounded-2xl px-4 py-3">
-                <dt className="font-display text-xl font-bold sm:text-2xl">{v}</dt>
-                <dd className="text-xs uppercase tracking-widest text-muted-foreground">{l}</dd>
+              <div key={l} className="glass rounded-2xl px-2 py-3 sm:px-4">
+                <dt className="font-display text-lg font-bold sm:text-2xl">{v}</dt>
+                <dd className="text-[0.6rem] uppercase tracking-wider text-muted-foreground sm:text-xs sm:tracking-widest">
+                  {l}
+                </dd>
               </div>
+
             ))}
           </dl>
         </div>
