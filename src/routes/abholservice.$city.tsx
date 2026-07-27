@@ -98,7 +98,7 @@ function CityPage() {
             <span className="text-foreground">{city.name}</span>
           </nav>
 
-          <p className="mt-6 text-xs uppercase tracking-[0.3em] text-primary">
+          <p className="eyebrow mt-6">
             Abholservice {city.short}
           </p>
           <h1 className="text-gradient display-page mt-3 max-w-4xl">
@@ -159,7 +159,7 @@ function CityPage() {
                 ],
               ].map(([title, text], i) => (
                 <li key={title} className="flex gap-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/40 display-card text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-primary/40 display-card tabular-nums text-primary">
                     {i + 1}
                   </span>
                   <div>
@@ -176,7 +176,7 @@ function CityPage() {
             <p className="mt-4 text-muted-foreground">{city.demand}</p>
             <p className="mt-4 text-muted-foreground">{city.localBenefit}</p>
 
-            <h3 className="mt-10 display-card uppercase text-lg sm:text-xl">
+            <h3 className="display-sub mt-10 uppercase">
               Abholgebiet in und um {city.name}
             </h3>
             <p className="mt-3 text-sm text-muted-foreground">
