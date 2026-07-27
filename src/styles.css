@@ -152,12 +152,19 @@
   background: linear-gradient(
     100deg,
     oklch(1 0 0) 0%,
-    oklch(1 0 0) 45%,
-    color-mix(in oklab, var(--primary) 80%, white) 100%
+    oklch(1 0 0) 40%,
+    var(--accent) 78%,
+    var(--primary) 100%
   );
   background-clip: text;
   color: transparent;
 }
+
+@utility hairline-gold {
+  border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+
 
 @utility glow-ring {
   box-shadow: var(--shadow-glow);
