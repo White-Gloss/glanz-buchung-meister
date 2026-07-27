@@ -82,6 +82,7 @@ function CityPage() {
 
   return (
     <div className="min-h-dvh bg-background">
+      <main>
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
         <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
@@ -270,6 +271,7 @@ function CityPage() {
           <ArrowRight className="size-4" />
         </Link>
       </section>
+      </main>
     </div>
   );
 }
