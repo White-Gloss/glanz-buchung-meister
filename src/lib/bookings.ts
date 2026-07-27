@@ -68,8 +68,14 @@ export function calcLineItems(input: {
   input.addOnIds.forEach((id) => {
     const add: AddOn | undefined = addOns.find((a) => a.id === id);
     if (!add) return;
-    const price = Math.round(add.price * factor);
-    items.push({ label: add.name, qty: 1, unit: price, total: price });
+    const included = add.includedInPackages?.includes(input.packageId) ?? false;
+    const price = included ? 0 : Math.round(add.price * (add.flatPrice ? 1 : factor));
+    items.push({
+      label: included ? `${add.name} (inklusive)` : add.name,
+      qty: 1,
+      unit: price,
+      total: price,
+    });
   });
 
   return items;

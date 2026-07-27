@@ -137,6 +137,7 @@ export const servicePackages: ServicePackage[] = [
       "Keramikversiegelung (bis 5 Jahre)",
       "Glas- & Felgenversiegelung",
       "Leder-Konditionierung & Schutz",
+      "Hol- & Bringservice inklusive",
     ],
   },
 ];
