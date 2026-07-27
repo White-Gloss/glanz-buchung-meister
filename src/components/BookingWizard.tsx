@@ -31,12 +31,13 @@ import {
 import {
   calcLineItems,
   calcTotals,
-  loadBookings,
-  nextInvoiceNumber,
-  saveBookings,
+  currency as _currency,
   type Booking,
 } from "@/lib/bookings";
+import { createBooking } from "@/lib/bookings.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { generateInvoicePdf } from "@/lib/invoice";
+
 
 const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
 
