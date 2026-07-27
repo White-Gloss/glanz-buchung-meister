@@ -1,6 +1,7 @@
 import {
   addOns,
   currency,
+  depositConfig,
   servicePackages,
   taxConfig,
   vehicleTypes,
@@ -16,6 +17,8 @@ export const bookingStatuses: BookingStatus[] = [
   "Bezahlt",
   "Storniert",
 ];
+
+export type DepositStatus = "nicht_erforderlich" | "offen" | "bezahlt";
 
 export type Booking = {
   id: string;
@@ -34,31 +37,13 @@ export type Booking = {
   };
   total: number;
   status: BookingStatus;
+  isNewCustomer: boolean;
+  depositAmount: number;
+  depositStatus: DepositStatus;
+  accessToken: string;
 };
 
 export type LineItem = { label: string; qty: number; unit: number; total: number };
-
-const STORAGE_KEY = "wgd.bookings.v1";
-
-export function loadBookings(): Booking[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Booking[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveBookings(bookings: Booking[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-}
-
-export function nextInvoiceNumber(existing: Booking[]) {
-  const num = taxConfig.invoiceStartNumber + existing.length;
-  return `${taxConfig.invoicePrefix}${num}`;
-}
 
 export function calcLineItems(input: {
   vehicleId: string;
@@ -97,6 +82,17 @@ export function calcTotals(items: LineItem[]) {
   }
   const net = gross / (1 + taxConfig.vatRate);
   return { gross, net, vat: gross - net };
+}
+
+/** Anzahlung für Neukunden (Standard: 20 % des Bruttobetrags) */
+export function calcDeposit(total: number, isNewCustomer: boolean) {
+  if (!isNewCustomer) return 0;
+  return Math.round(total * depositConfig.rate * 100) / 100;
+}
+
+/** Normalisiert ein Kennzeichen für den Neukunden-Abgleich */
+export function normalizePlate(plate: string) {
+  return plate.replace(/[\s-]/g, "").toUpperCase();
 }
 
 export { currency };
