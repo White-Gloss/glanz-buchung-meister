@@ -356,9 +356,9 @@ function AdminPage() {
               </div>
             )}
             <ErrorBoundary title="Das Audit-Log konnte nicht geladen werden">
-            <Suspense fallback={<AuditLogSkeleton />}>
-              <AuditLogPanel key={auditKey} />
-            </Suspense>
+              <Suspense fallback={<AuditLogSkeleton />}>
+                <AuditLogPanel key={auditKey} />
+              </Suspense>
             </ErrorBoundary>
           </>
         )}

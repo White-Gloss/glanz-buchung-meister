@@ -85,7 +85,7 @@ function Landing() {
             description="Bitte laden Sie die Seite neu. Alternativ nehmen wir Ihre Anfrage gerne telefonisch oder per E-Mail entgegen."
           >
             <Suspense fallback={<BookingWizardSkeleton />}>
-            <BookingWizard />
+              <BookingWizard />
             </Suspense>
           </ErrorBoundary>
         </section>
