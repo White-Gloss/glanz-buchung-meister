@@ -17,8 +17,9 @@ const deDate = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("de-DE");
 };
 
-export function generateInvoicePdf(booking: Booking) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+/** jspdf wird erst beim Download nachgeladen (eigener JS-Chunk). */
+export async function generateInvoicePdf(booking: Booking) {
+  const { jsPDF } = await import("jspdf");
   const items = calcLineItems(booking);
   const { gross, net, vat } = calcTotals(items);
   const L = 20;
