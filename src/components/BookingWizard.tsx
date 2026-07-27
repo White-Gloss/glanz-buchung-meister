@@ -28,12 +28,8 @@ import {
   blockedSlots,
   vehicleTypes,
 } from "@/lib/servicesConfig";
-import {
-  calcLineItems,
-  calcTotals,
-  currency as _currency,
-  type Booking,
-} from "@/lib/bookings";
+import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
+
 import { createBooking } from "@/lib/bookings.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateInvoicePdf } from "@/lib/invoice";
