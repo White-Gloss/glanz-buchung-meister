@@ -55,6 +55,8 @@ function Landing() {
       <main>
         <Hero />
         <Features />
+        <PickupAreas />
+
         
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
           <div className="mb-10 max-w-2xl">
