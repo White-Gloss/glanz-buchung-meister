@@ -479,10 +479,11 @@ export function BookingWizard() {
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button disabled={!canContinue} onClick={submit}>
-              Verbindlich buchen
+            <Button disabled={!canContinue || submitting} onClick={submit}>
+              {submitting ? "Wird gesendet …" : "Verbindlich buchen"}
               <CheckCircle2 className="size-4" />
             </Button>
+
           )}
         </div>
       </div>
