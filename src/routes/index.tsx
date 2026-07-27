@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookingWizard } from "@/components/BookingWizard";
+import { PickupCityGrid } from "@/components/PickupCityGrid";
+import { pickupCities } from "@/lib/pickupLocations";
 import { company, features } from "@/lib/servicesConfig";
+
 import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
 
@@ -55,6 +58,8 @@ function Landing() {
       <main>
         <Hero />
         <Features />
+        <PickupAreas />
+
         
         <section id="buchung" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6">
           <div className="mb-10 max-w-2xl">
@@ -95,6 +100,13 @@ function Header() {
 
         <nav className="flex shrink-0 items-center gap-2">
           <Link
+            to="/abholservice"
+            className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+          >
+            Abholservice
+          </Link>
+          <Link
+
             to="/admin"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
           >
@@ -225,6 +237,31 @@ function Features() {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function PickupAreas() {
+  return (
+    <section id="abholservice" className="mx-auto max-w-7xl scroll-mt-20 px-4 pb-20 sm:px-6">
+      <p className="text-xs uppercase tracking-[0.3em] text-primary">Abholservice</p>
+      <h2 className="mt-3 max-w-3xl font-display text-3xl font-bold sm:text-5xl">
+        Wir holen Ihr Fahrzeug ab – im Umkreis von Horb am Neckar
+      </h2>
+      <p className="mt-3 max-w-2xl text-muted-foreground">
+        Unsere Werkstatt steht in Horb am Neckar. Ihr Fahrzeug holen wir in {pickupCities.length}{" "}
+        Städten der Region ab und bringen es veredelt zurück.
+      </p>
+      <div className="mt-10">
+        <PickupCityGrid />
+      </div>
+      <Link
+        to="/abholservice"
+        className="mt-8 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+      >
+        Alles zum Abholservice
+        <ArrowRight className="size-4" />
+      </Link>
     </section>
   );
 }
