@@ -41,7 +41,9 @@ const AuditLogPanel = lazy(() =>
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
-import { getSupabaseConfigStatus, isSupabaseConfigError } from "@/lib/supabaseConfig";
+import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
+import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -63,12 +65,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
     ],
   }),
   component: AdminRoute,
-  errorComponent: ({ error }) => {
-    if (isSupabaseConfigError(error)) {
-      return <SupabaseConfigNotice missing={getSupabaseConfigStatus().missing} />;
-    }
-    throw error;
-  },
+  component: AdminRoute,
+  errorComponent: ({ error }) => <SupabaseConfigNotice info={diagnoseBackendError(error)} />,
 });
 
 function AdminRoute() {
@@ -76,6 +74,7 @@ function AdminRoute() {
   if (!config.ok) return <SupabaseConfigNotice missing={config.missing} />;
   return <AdminPage />;
 }
+
 
 const statusStyles: Record<BookingStatus, string> = {
   Angefragt: "bg-sky-500/15 text-sky-300 border-sky-500/30",
