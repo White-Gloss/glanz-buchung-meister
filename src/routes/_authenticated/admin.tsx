@@ -65,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     ],
   }),
   component: AdminRoute,
-  component: AdminRoute,
+
   errorComponent: ({ error }) => <SupabaseConfigNotice info={diagnoseBackendError(error)} />,
 });
 
