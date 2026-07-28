@@ -137,7 +137,7 @@ function AdminPage() {
       toast.success(`Status auf „${status}“ gesetzt`);
     } catch (error) {
       setBookings(previous);
-      toast.error(error instanceof Error ? error.message : "Status konnte nicht geändert werden");
+      reportError(error);
     }
   }
 
@@ -148,7 +148,7 @@ function AdminPage() {
       setAuditKey((k) => k + 1);
       toast.success("Anzahlung als bezahlt markiert");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen");
+      reportError(error);
     }
   }
 
@@ -161,9 +161,10 @@ function AdminPage() {
       toast.success("Buchung gelöscht");
     } catch (error) {
       setBookings(previous);
-      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen");
+      reportError(error);
     }
   }
+
 
   async function signOut() {
     await supabase.auth.signOut();
