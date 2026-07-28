@@ -188,8 +188,13 @@ function AdminPage() {
   const pendingConfirmation = bookings.filter((b) => b.status === "Angefragt").length;
   const openDeposits = bookings.filter((b) => b.depositStatus === "offen").length;
 
+  if (fatal) {
+    return <SupabaseConfigNotice info={fatal} onRetry={() => window.location.reload()} />;
+  }
+
   return (
     <div className="min-h-dvh bg-background">
+
       <header className="border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 sm:px-6">
           <div className="min-w-0">
