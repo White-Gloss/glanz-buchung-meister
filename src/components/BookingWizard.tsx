@@ -224,15 +224,11 @@ export function BookingWizard() {
       setConfirmed(booking);
       toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
     } catch (error) {
-      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-      const message = offline
-        ? "Keine Internetverbindung. Bitte prüfen Sie Ihr Netzwerk und senden Sie die Anfrage erneut."
-        : error instanceof Error && error.message
-          ? error.message
-          : "Ihre Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es in einem Moment erneut oder rufen Sie uns an.";
-      setSubmitError(message);
-      toast.error(message);
+      const info = diagnoseBackendError(error);
+      setSubmitError(info);
+      toast.error(info.description);
     } finally {
+
       setSubmitting(false);
     }
   }
