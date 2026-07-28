@@ -151,7 +151,7 @@ export function BookingWizard() {
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
 
   // Live booked slots from the database — replaces the static blockedSlots config
   const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
