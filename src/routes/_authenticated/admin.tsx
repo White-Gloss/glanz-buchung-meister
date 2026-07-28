@@ -91,12 +91,22 @@ function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [pdfFor, setPdfFor] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
+  const [fatal, setFatal] = useState<BackendErrorInfo | null>(null);
   const [auditKey, setAuditKey] = useState(0);
 
   const fetchBookings = useServerFn(listBookings);
   const setStatusFn = useServerFn(updateBookingStatus);
   const setDepositFn = useServerFn(updateDepositStatus);
   const removeFn = useServerFn(deleteBooking);
+
+  function reportError(error: unknown) {
+    const info = diagnoseBackendError(error);
+    if (info.missing.length > 0 || info.title === "Anmeldung erforderlich") {
+      setFatal(info);
+    }
+    toast.error(info.description);
+    return info;
+  }
 
   useEffect(() => {
     let active = true;
@@ -106,15 +116,16 @@ function AdminPage() {
       })
       .catch((error: unknown) => {
         if (!active) return;
-        const message = error instanceof Error ? error.message : "";
-        if (message.includes("Administrator")) setDenied(true);
-        else toast.error(message || "Buchungen konnten nicht geladen werden");
+        const info = diagnoseBackendError(error);
+        if (info.title === "Kein Administrator-Zugriff") setDenied(true);
+        else setFatal(info);
       })
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
   }, [fetchBookings]);
+
 
   async function setStatus(id: string, status: BookingStatus) {
     const previous = bookings;
