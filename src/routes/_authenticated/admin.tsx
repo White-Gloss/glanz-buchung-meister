@@ -41,7 +41,9 @@ const AuditLogPanel = lazy(() =>
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
-import { getSupabaseConfigStatus, isSupabaseConfigError } from "@/lib/supabaseConfig";
+import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
+import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -63,12 +65,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
     ],
   }),
   component: AdminRoute,
-  errorComponent: ({ error }) => {
-    if (isSupabaseConfigError(error)) {
-      return <SupabaseConfigNotice missing={getSupabaseConfigStatus().missing} />;
-    }
-    throw error;
-  },
+
+  errorComponent: ({ error }) => <SupabaseConfigNotice info={diagnoseBackendError(error)} />,
 });
 
 function AdminRoute() {
@@ -76,6 +74,7 @@ function AdminRoute() {
   if (!config.ok) return <SupabaseConfigNotice missing={config.missing} />;
   return <AdminPage />;
 }
+
 
 const statusStyles: Record<BookingStatus, string> = {
   Angefragt: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -92,12 +91,22 @@ function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [pdfFor, setPdfFor] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
+  const [fatal, setFatal] = useState<BackendErrorInfo | null>(null);
   const [auditKey, setAuditKey] = useState(0);
 
   const fetchBookings = useServerFn(listBookings);
   const setStatusFn = useServerFn(updateBookingStatus);
   const setDepositFn = useServerFn(updateDepositStatus);
   const removeFn = useServerFn(deleteBooking);
+
+  function reportError(error: unknown) {
+    const info = diagnoseBackendError(error);
+    if (info.missing.length > 0 || info.title === "Anmeldung erforderlich") {
+      setFatal(info);
+    }
+    toast.error(info.description);
+    return info;
+  }
 
   useEffect(() => {
     let active = true;
@@ -107,15 +116,16 @@ function AdminPage() {
       })
       .catch((error: unknown) => {
         if (!active) return;
-        const message = error instanceof Error ? error.message : "";
-        if (message.includes("Administrator")) setDenied(true);
-        else toast.error(message || "Buchungen konnten nicht geladen werden");
+        const info = diagnoseBackendError(error);
+        if (info.title === "Kein Administrator-Zugriff") setDenied(true);
+        else setFatal(info);
       })
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
     };
   }, [fetchBookings]);
+
 
   async function setStatus(id: string, status: BookingStatus) {
     const previous = bookings;
@@ -127,7 +137,7 @@ function AdminPage() {
       toast.success(`Status auf „${status}“ gesetzt`);
     } catch (error) {
       setBookings(previous);
-      toast.error(error instanceof Error ? error.message : "Status konnte nicht geändert werden");
+      reportError(error);
     }
   }
 
@@ -138,7 +148,7 @@ function AdminPage() {
       setAuditKey((k) => k + 1);
       toast.success("Anzahlung als bezahlt markiert");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Aktualisierung fehlgeschlagen");
+      reportError(error);
     }
   }
 
@@ -151,9 +161,10 @@ function AdminPage() {
       toast.success("Buchung gelöscht");
     } catch (error) {
       setBookings(previous);
-      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen");
+      reportError(error);
     }
   }
+
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -177,8 +188,13 @@ function AdminPage() {
   const pendingConfirmation = bookings.filter((b) => b.status === "Angefragt").length;
   const openDeposits = bookings.filter((b) => b.depositStatus === "offen").length;
 
+  if (fatal) {
+    return <SupabaseConfigNotice info={fatal} onRetry={() => window.location.reload()} />;
+  }
+
   return (
     <div className="min-h-dvh bg-background">
+
       <header className="border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 sm:px-6">
           <div className="min-w-0">

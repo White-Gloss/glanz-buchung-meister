@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -151,7 +153,7 @@ export function BookingWizard() {
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
 
   // Live booked slots from the database — replaces the static blockedSlots config
   const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
@@ -224,15 +226,11 @@ export function BookingWizard() {
       setConfirmed(booking);
       toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
     } catch (error) {
-      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-      const message = offline
-        ? "Keine Internetverbindung. Bitte prüfen Sie Ihr Netzwerk und senden Sie die Anfrage erneut."
-        : error instanceof Error && error.message
-          ? error.message
-          : "Ihre Anfrage konnte gerade nicht übermittelt werden. Bitte versuchen Sie es in einem Moment erneut oder rufen Sie uns an.";
-      setSubmitError(message);
-      toast.error(message);
+      const info = diagnoseBackendError(error);
+      setSubmitError(info);
+      toast.error(info.description);
     } finally {
+
       setSubmitting(false);
     }
   }
@@ -555,11 +553,24 @@ export function BookingWizard() {
             {submitError && (
               <div
                 role="alert"
-                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
               >
-                {submitError}
+                <p className="font-medium">{submitError.title}</p>
+                <p className="mt-1">{submitError.description}</p>
+                {submitError.missing.length > 0 && (
+                  <p className="mt-2 text-xs">
+                    Fehlende Konfiguration:{" "}
+                    <span className="font-mono">{submitError.missing.join(", ")}</span>
+                  </p>
+                )}
+                {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Alternativ erreichen Sie uns telefonisch – wir nehmen Ihren Termin gerne direkt
+                  auf.
+                </p>
               </div>
             )}
+
             <p className="mt-4 text-xs text-muted-foreground">
               Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
             </p>
