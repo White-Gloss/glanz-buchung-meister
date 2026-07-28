@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -551,11 +553,24 @@ export function BookingWizard() {
             {submitError && (
               <div
                 role="alert"
-                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
               >
-                {submitError}
+                <p className="font-medium">{submitError.title}</p>
+                <p className="mt-1">{submitError.description}</p>
+                {submitError.missing.length > 0 && (
+                  <p className="mt-2 text-xs">
+                    Fehlende Konfiguration:{" "}
+                    <span className="font-mono">{submitError.missing.join(", ")}</span>
+                  </p>
+                )}
+                {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Alternativ erreichen Sie uns telefonisch – wir nehmen Ihren Termin gerne direkt
+                  auf.
+                </p>
               </div>
             )}
+
             <p className="mt-4 text-xs text-muted-foreground">
               Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
             </p>
