@@ -86,6 +86,7 @@ const statusStyles: Record<BookingStatus, string> = {
 
 function AdminPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
