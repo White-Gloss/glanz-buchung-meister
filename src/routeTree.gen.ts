@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
+import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -46,10 +47,14 @@ const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
   path: '/abholservice/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
-  id: '/_admin/admin',
-  path: '/admin',
+const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
+  id: '/_admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -74,6 +79,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRoute
@@ -101,6 +107,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/sitemap.xml'
+    | '/_authenticated/_admin'
     | '/abholservice/$city'
     | '/abholservice/'
     | '/_authenticated/_admin/admin'
@@ -159,22 +166,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AbholserviceCityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/_admin': {
+      id: '/_authenticated/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/_admin/admin': {
       id: '/_authenticated/_admin/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
+interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAdminRoute: typeof AuthenticatedAdminAdminRoute
 }
 
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+  {
+    AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRoute,
+  }
+
+const AuthenticatedAdminRouteRouteWithChildren =
+  AuthenticatedAdminRouteRoute._addFileChildren(
+    AuthenticatedAdminRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
+}
+
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRoute,
+  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -191,3 +219,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
