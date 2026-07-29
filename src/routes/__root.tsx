@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { listServicePrices } from "@/lib/pricing.functions";
 import { applyPriceOverrides } from "@/lib/servicesConfig";
 
