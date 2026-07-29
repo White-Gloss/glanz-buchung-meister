@@ -45,7 +45,7 @@ import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
 
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/_admin/admin")({
   head: () => ({
     meta: [
       { title: "Admin Dashboard – White Gloss Detailing" },
