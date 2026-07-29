@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { company } from "@/lib/servicesConfig";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Team-Login – White Gloss Detailing" },
@@ -30,12 +31,29 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+type Mode = "login" | "signup" | "forgot";
+
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const router = useRouter();
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Bereits angemeldete Nutzer nicht auf dem Login-Formular stehen lassen.
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      if (data.user) navigate({ to: "/admin", replace: true });
+      else setChecking(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,9 +62,10 @@ function AuthPage() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await router.invalidate();
         toast.success("Willkommen zurück");
-        navigate({ to: "/admin" });
-      } else {
+        navigate({ to: "/admin", replace: true });
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -54,7 +73,14 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Konto erstellt. Bitte E-Mail bestätigen, falls erforderlich.");
-        navigate({ to: "/admin" });
+        navigate({ to: "/admin", replace: true });
+      } else {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Falls ein Konto existiert, haben wir Ihnen einen Link gesendet.");
+        setMode("login");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Anmeldung fehlgeschlagen");
@@ -62,6 +88,17 @@ function AuthPage() {
       setLoading(false);
     }
   }
+
+  if (checking) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background px-4">
+        <p className="text-sm text-muted-foreground">Sitzung wird geprüft …</p>
+      </main>
+    );
+  }
+
+  const heading =
+    mode === "login" ? "Team-Login" : mode === "signup" ? "Team-Konto erstellen" : "Passwort zurücksetzen";
 
   return (
     <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
@@ -76,11 +113,11 @@ function AuthPage() {
           <div className="grid size-12 place-items-center rounded-2xl bg-primary/15">
             <Lock aria-hidden className="size-5 text-primary" />
           </div>
-          <h1 className="display-sub mt-5">
-            {mode === "login" ? "Team-Login" : "Team-Konto erstellen"}
-          </h1>
+          <h1 className="display-sub mt-5">{heading}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Interner Bereich von {company.name}
+            {mode === "forgot"
+              ? "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts."
+              : `Interner Bereich von ${company.name}`}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -91,40 +128,70 @@ function AuthPage() {
                 type="email"
                 required
                 maxLength={160}
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 bg-secondary/40"
                 placeholder="admin@whitegloss.de"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                maxLength={72}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-secondary/40"
-                placeholder="••••••••"
-              />
-            </div>
+            {mode !== "forgot" && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Passwort</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 bg-secondary/40"
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Bitte warten …" : mode === "login" ? "Anmelden" : "Konto erstellen"}
+              {loading
+                ? "Bitte warten …"
+                : mode === "login"
+                  ? "Anmelden"
+                  : mode === "signup"
+                    ? "Konto erstellen"
+                    : "Link senden"}
             </Button>
           </form>
 
-          <button
-            type="button"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="mt-5 w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {mode === "login"
-              ? "Noch kein Konto? Jetzt registrieren"
-              : "Bereits registriert? Zum Login"}
-          </button>
+          <div className="mt-5 space-y-2 text-center">
+            <button
+              type="button"
+              onClick={() => setMode(mode === "signup" ? "login" : "signup")}
+              className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {mode === "signup"
+                ? "Bereits registriert? Zum Login"
+                : "Noch kein Konto? Jetzt registrieren"}
+            </button>
+            {mode !== "forgot" && (
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Passwort vergessen?
+              </button>
+            )}
+            {mode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Zurück zum Login
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </main>
