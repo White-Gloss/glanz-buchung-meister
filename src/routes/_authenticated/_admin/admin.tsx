@@ -167,8 +167,10 @@ function AdminPage() {
 
 
   async function signOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    navigate({ to: "/auth", replace: true });
   }
 
   const filtered = useMemo(() => {
