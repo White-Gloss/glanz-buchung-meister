@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   ArrowLeft,
