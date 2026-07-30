@@ -26,12 +26,8 @@ import {
   updateDepositStatus,
 } from "@/lib/bookings.functions";
 import { generateInvoicePdf } from "@/lib/invoice";
-import { servicePackages, vehicleTypes } from "@/lib/servicesConfig";
-import {
-  BookingListSkeleton,
-  AuditLogSkeleton,
-  PricePanelSkeleton,
-} from "@/components/skeletons";
+import { company, servicePackages, vehicleTypes } from "@/lib/servicesConfig";
+import { BookingListSkeleton, AuditLogSkeleton, PricePanelSkeleton } from "@/components/skeletons";
 
 const PricePanel = lazy(() =>
   import("@/components/PricePanel").then((m) => ({ default: m.PricePanel })),
@@ -39,12 +35,11 @@ const PricePanel = lazy(() =>
 const AuditLogPanel = lazy(() =>
   import("@/components/AuditLogPanel").then((m) => ({ default: m.AuditLogPanel })),
 );
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/get-client";
 import { toast } from "sonner";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
-
 
 export const Route = createFileRoute("/_authenticated/_admin/admin")({
   head: () => ({
@@ -76,10 +71,9 @@ function AdminRoute() {
   return <AdminPage />;
 }
 
-
 const statusStyles: Record<BookingStatus, string> = {
   Angefragt: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  "Bestätigt": "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  Bestätigt: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   Ausstehend: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   Bezahlt: "bg-primary/15 text-primary border-primary/40",
   Storniert: "bg-destructive/15 text-destructive border-destructive/40",
@@ -128,7 +122,6 @@ function AdminPage() {
     };
   }, [fetchBookings]);
 
-
   async function setStatus(id: string, status: BookingStatus) {
     const previous = bookings;
     setBookings((list) => list.map((b) => (b.id === id ? { ...b, status } : b)));
@@ -167,10 +160,10 @@ function AdminPage() {
     }
   }
 
-
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    const supabase = await getSupabaseClient();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
@@ -186,9 +179,7 @@ function AdminPage() {
     );
   }, [bookings, query]);
 
-  const revenue = bookings
-    .filter((b) => b.status !== "Storniert")
-    .reduce((s, b) => s + b.total, 0);
+  const revenue = bookings.filter((b) => b.status !== "Storniert").reduce((s, b) => s + b.total, 0);
   const pendingConfirmation = bookings.filter((b) => b.status === "Angefragt").length;
   const openDeposits = bookings.filter((b) => b.depositStatus === "offen").length;
 
@@ -198,7 +189,6 @@ function AdminPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-
       <header className="border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 sm:px-6">
           <div className="min-w-0">
@@ -253,9 +243,6 @@ function AdminPage() {
               </Suspense>
             </ErrorBoundary>
 
-
-
-
             <div className="mt-8 flex items-center gap-3">
               <div className="relative w-full max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -288,9 +275,7 @@ function AdminPage() {
                       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="display-card">
-                              {b.customer.name}
-                            </span>
+                            <span className="display-card">{b.customer.name}</span>
                             <span
                               className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[b.status]}`}
                             >
@@ -313,9 +298,7 @@ function AdminPage() {
                                 {b.depositStatus === "bezahlt" ? " bezahlt" : " offen"}
                               </span>
                             )}
-                            <span className="text-xs text-muted-foreground">
-                              {b.invoiceNumber}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{b.invoiceNumber}</span>
                           </div>
                           <p className="truncate text-sm text-muted-foreground">
                             {b.customer.email} · {b.customer.phone} · {b.customer.plate}
@@ -361,6 +344,12 @@ function AdminPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            disabled={!company.legalDetailsVerified}
+                            title={
+                              company.legalDetailsVerified
+                                ? "Rechnung herunterladen"
+                                : "Zuerst geprüfte Firmen-, Steuer- und Bankdaten hinterlegen"
+                            }
                             loading={pdfFor === b.id}
                             onClick={async () => {
                               setPdfFor(b.id);

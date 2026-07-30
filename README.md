@@ -1,29 +1,43 @@
-# Welcome to your Lovable project
+# White Gloss Detailing
 
-This project was built with [Lovable](https://lovable.dev).
+Website und Buchungssystem für White Gloss Detailing, gebaut mit TanStack Start,
+React, TypeScript und Tailwind CSS. Das Projekt ist mit Lovable verbunden.
 
-## Build with Lovable
+## Lokal installieren
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Benötigt werden Git, npm und Node.js `20.19` oder neuer.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+git clone https://github.com/White-Gloss/glanz-buchung-meister.git
+cd glanz-buchung-meister
+npm ci
 npm run dev
 ```
 
-## Built with
+Die lokale Website ist anschließend unter `http://localhost:5000` erreichbar.
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+## Umgebungsvariablen
+
+Login, Buchungen und dynamische Preise benötigen die bereits in Lovable
+hinterlegten Backend-Zugänge:
+
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `DATABASE_URL`, `POSTGRES_URL` oder `SUPABASE_DB_URL`
+- optional serverseitig: `SUPABASE_SERVICE_ROLE_KEY`
+
+Zugangsdaten gehören in die lokale `.env` beziehungsweise in die
+Umgebungsvariablen des Hostings und dürfen nicht in Git veröffentlicht werden.
+
+## Prüfen und bauen
+
+```sh
+npm run build
+npx tsc --noEmit
+```
+
+## Über Lovable veröffentlichen
+
+Änderungen auf den mit Lovable verbundenen GitHub-Branch übertragen, das
+Projekt im Lovable-Editor öffnen und dort **Publish** wählen. Die
+Produktionsdomain ist `https://whitegloss.de`.

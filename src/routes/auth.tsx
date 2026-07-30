@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Toaster } from "@/components/ui/sonner";
+import { getSupabaseClient } from "@/integrations/supabase/get-client";
 import { company } from "@/lib/servicesConfig";
 
 export const Route = createFileRoute("/auth")({
@@ -45,11 +46,13 @@ function AuthPage() {
   // Bereits angemeldete Nutzer nicht auf dem Login-Formular stehen lassen.
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      if (data.user) navigate({ to: "/admin", replace: true });
-      else setChecking(false);
-    });
+    getSupabaseClient().then((supabase) =>
+      supabase.auth.getUser().then(({ data }) => {
+        if (!active) return;
+        if (data.user) navigate({ to: "/admin", replace: true });
+        else setChecking(false);
+      }),
+    );
     return () => {
       active = false;
     };
@@ -59,6 +62,7 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const supabase = await getSupabaseClient();
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -98,102 +102,109 @@ function AuthPage() {
   }
 
   const heading =
-    mode === "login" ? "Team-Login" : mode === "signup" ? "Team-Konto erstellen" : "Passwort zurücksetzen";
+    mode === "login"
+      ? "Team-Login"
+      : mode === "signup"
+        ? "Team-Konto erstellen"
+        : "Passwort zurücksetzen";
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
-      <div className="w-full max-w-md">
-        <Button asChild variant="ghost" size="sm" className="mb-6">
-          <Link to="/">
-            <ArrowLeft className="size-4" />
-            Zur Website
-          </Link>
-        </Button>
-        <div className="glass rounded-3xl p-6 sm:p-8">
-          <div className="grid size-12 place-items-center rounded-2xl bg-primary/15">
-            <Lock aria-hidden className="size-5 text-primary" />
-          </div>
-          <h1 className="display-sub mt-5">{heading}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "forgot"
-              ? "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts."
-              : `Interner Bereich von ${company.name}`}
-          </p>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                maxLength={160}
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11 bg-secondary/40"
-                placeholder="admin@whitegloss.de"
-              />
+    <>
+      <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
+        <div className="w-full max-w-md">
+          <Button asChild variant="ghost" size="sm" className="mb-6">
+            <Link to="/">
+              <ArrowLeft className="size-4" />
+              Zur Website
+            </Link>
+          </Button>
+          <div className="glass rounded-3xl p-6 sm:p-8">
+            <div className="grid size-12 place-items-center rounded-2xl bg-primary/15">
+              <Lock aria-hidden className="size-5 text-primary" />
             </div>
-            {mode !== "forgot" && (
+            <h1 className="display-sub mt-5">{heading}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {mode === "forgot"
+                ? "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts."
+                : `Interner Bereich von ${company.name}`}
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Passwort</Label>
+                <Label htmlFor="email">E-Mail</Label>
                 <Input
-                  id="password"
-                  type="password"
+                  id="email"
+                  type="email"
                   required
-                  minLength={8}
-                  maxLength={72}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  maxLength={160}
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-11 bg-secondary/40"
-                  placeholder="••••••••"
+                  placeholder="admin@whitegloss.de"
                 />
               </div>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading
-                ? "Bitte warten …"
-                : mode === "login"
-                  ? "Anmelden"
-                  : mode === "signup"
-                    ? "Konto erstellen"
-                    : "Link senden"}
-            </Button>
-          </form>
+              {mode !== "forgot" && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Passwort</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={8}
+                    maxLength={72}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 bg-secondary/40"
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading
+                  ? "Bitte warten …"
+                  : mode === "login"
+                    ? "Anmelden"
+                    : mode === "signup"
+                      ? "Konto erstellen"
+                      : "Link senden"}
+              </Button>
+            </form>
 
-          <div className="mt-5 space-y-2 text-center">
-            <button
-              type="button"
-              onClick={() => setMode(mode === "signup" ? "login" : "signup")}
-              className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              {mode === "signup"
-                ? "Bereits registriert? Zum Login"
-                : "Noch kein Konto? Jetzt registrieren"}
-            </button>
-            {mode !== "forgot" && (
+            <div className="mt-5 space-y-2 text-center">
               <button
                 type="button"
-                onClick={() => setMode("forgot")}
+                onClick={() => setMode(mode === "signup" ? "login" : "signup")}
                 className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
-                Passwort vergessen?
+                {mode === "signup"
+                  ? "Bereits registriert? Zum Login"
+                  : "Noch kein Konto? Jetzt registrieren"}
               </button>
-            )}
-            {mode === "forgot" && (
-              <button
-                type="button"
-                onClick={() => setMode("login")}
-                className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Zurück zum Login
-              </button>
-            )}
+              {mode !== "forgot" && (
+                <button
+                  type="button"
+                  onClick={() => setMode("forgot")}
+                  className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Passwort vergessen?
+                </button>
+              )}
+              {mode === "forgot" && (
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Zurück zum Login
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+      <Toaster position="top-center" richColors />
+    </>
   );
 }

@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Download,
   Mail,
   Phone,
   Plus,
@@ -20,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
   addOns,
@@ -31,17 +31,10 @@ import {
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
-import {
-  validateCustomer,
-  validateCustomerField,
-  type CustomerField,
-} from "@/lib/customerSchema";
+import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 
 import { createBooking, getBookedSlots } from "@/lib/bookings.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { generateInvoicePdf } from "@/lib/invoice";
-
-
 const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
 
 const vehicleIcons: Record<string, typeof Car> = {
@@ -159,8 +152,12 @@ export function BookingWizard() {
   const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
   const fetchBookedSlots = useServerFn(getBookedSlots);
   useEffect(() => {
-    fetchBookedSlots({}).then(setLiveBlockedSlots).catch(() => {/* non-critical, fail silently */});
-  }, []);
+    fetchBookedSlots({})
+      .then(setLiveBlockedSlots)
+      .catch(() => {
+        /* non-critical, fail silently */
+      });
+  }, [fetchBookedSlots]);
 
   function updateCustomer(field: CustomerField, value: string) {
     setCustomer((c) => ({ ...c, [field]: value }));
@@ -179,10 +176,7 @@ export function BookingWizard() {
   }
 
   const items = useMemo(
-    () =>
-      vehicleId && packageId
-        ? calcLineItems({ vehicleId, packageId, addOnIds })
-        : [],
+    () => (vehicleId && packageId ? calcLineItems({ vehicleId, packageId, addOnIds }) : []),
     [vehicleId, packageId, addOnIds],
   );
   const totals = calcTotals(items);
@@ -230,439 +224,425 @@ export function BookingWizard() {
       setSubmitError(info);
       toast.error(info.description);
     } finally {
-
       setSubmitting(false);
     }
   }
 
-
   if (confirmed) {
-    return <Confirmation booking={confirmed} onReset={() => window.location.reload()} />;
+    return (
+      <>
+        <Confirmation booking={confirmed} onReset={() => window.location.reload()} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="glass rounded-3xl p-5 sm:p-8">
-        {/* Fortschritt */}
-        <ol
-          className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1"
-          aria-label={`Buchungsfortschritt: Schritt ${step + 1} von ${steps.length}`}
-        >
-          {steps.map((s, i) => (
-            <li
-              key={s}
-              className="flex min-w-0 flex-1 items-center gap-1.5"
-              aria-current={i === step ? "step" : undefined}
-            >
-              <span
-                className={[
-                  "flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                  i === step
-                    ? "bg-primary text-primary-foreground"
-                    : i < step
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground",
-                ].join(" ")}
+    <>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="glass rounded-3xl p-5 sm:p-8">
+          {/* Fortschritt */}
+          <ol
+            className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1"
+            aria-label={`Buchungsfortschritt: Schritt ${step + 1} von ${steps.length}`}
+          >
+            {steps.map((s, i) => (
+              <li
+                key={s}
+                className="flex min-w-0 flex-1 items-center gap-1.5"
+                aria-current={i === step ? "step" : undefined}
               >
-                <span className="tabular-nums opacity-70">{i + 1}</span>
-                <span className="hidden sm:inline">{s}</span>
-                <span className="sr-only">
-                  {s}
-                  {i === step ? " (aktueller Schritt)" : i < step ? " (abgeschlossen)" : ""}
+                <span
+                  className={[
+                    "flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+                    i === step
+                      ? "bg-primary text-primary-foreground"
+                      : i < step
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground",
+                  ].join(" ")}
+                >
+                  <span className="tabular-nums opacity-70">{i + 1}</span>
+                  <span className="hidden sm:inline">{s}</span>
+                  <span className="sr-only">
+                    {s}
+                    {i === step ? " (aktueller Schritt)" : i < step ? " (abgeschlossen)" : ""}
+                  </span>
                 </span>
-              </span>
-              {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
-            </li>
-          ))}
-        </ol>
+                {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
+              </li>
+            ))}
+          </ol>
 
-        {step === 0 && (
-          <section>
-            <StepHeader
-              title="Welches Fahrzeug fahren Sie?"
-              text="Die Fahrzeugklasse bestimmt Aufwand und Materialeinsatz."
-            />
-            <div className="grid gap-4 sm:grid-cols-3">
-              {vehicleTypes.map((v) => {
-                const Icon = vehicleIcons[v.id] ?? Car;
-                const active = vehicleId === v.id;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setVehicleId(v.id)}
-                    aria-pressed={active}
-                    className={[
-                      "group rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "border-primary bg-primary/10 glow-ring"
-                        : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60",
-                    ].join(" ")}
-                  >
-                    <Icon
-                      className={[
-                        "mb-4 size-7 transition-transform duration-300 group-hover:scale-110",
-                        active ? "text-primary" : "text-muted-foreground",
-                      ].join(" ")}
-                    />
-                    <p className="display-card">{v.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
-                    <p className="mt-3 text-xs uppercase tracking-widest text-primary">
-                      Faktor ×{v.factor.toFixed(2)}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {step === 1 && (
-          <section>
-            <StepHeader
-              title="Wählen Sie Ihr Paket"
-              text="Alle Pakete werden ausschließlich in Handarbeit ausgeführt."
-            />
-            <div className="grid gap-4 md:grid-cols-3">
-              {servicePackages.map((p) => {
-                const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                const active = packageId === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setPackageId(p.id);
-                      // Inklusiv-Leistungen des Pakets automatisch aktivieren
-                      const included = addOns
-                        .filter((a) => a.includedInPackages?.includes(p.id))
-                        .map((a) => a.id);
-                      if (included.length) {
-                        setAddOnIds((prev) => [
-                          ...prev,
-                          ...included.filter((id) => !prev.includes(id)),
-                        ]);
-                      }
-                    }}
-                    aria-pressed={active}
-                    className={[
-                      "relative flex flex-col rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "border-primary bg-primary/10 glow-ring"
-                        : "border-border bg-secondary/30 hover:border-primary/50",
-                    ].join(" ")}
-                  >
-                    {p.highlight && (
-                      <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                        Beliebt
-                      </span>
-                    )}
-                    <p className="display-card">{p.name}</p>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                      {p.tagline}
-                    </p>
-                    <p className="display-price mt-4">
-                      {currency(Math.round(p.basePrice * factor))}
-                    </p>
-                    <p className="text-xs text-muted-foreground">inkl. MwSt. · {p.duration}</p>
-                    <ul className="mt-4 space-y-2 text-sm text-foreground/80">
-                      {p.features.map((f) => (
-                        <li key={f} className="flex gap-2">
-                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
-          <section>
-            <StepHeader
-              title="Zusatzleistungen"
-              text="Optional – jederzeit kombinierbar mit Ihrem Paket."
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              {addOns.map((a) => {
-                const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                const included =
-                  !!packageId && (a.includedInPackages?.includes(packageId) ?? false);
-                const active = included || addOnIds.includes(a.id);
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    disabled={included}
-                    onClick={() =>
-                      setAddOnIds((prev) =>
-                        prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
-                      )
-                    }
-                    aria-pressed={active}
-                    className={[
-                      "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-secondary/30 hover:border-primary/40",
-                      included ? "cursor-default" : "",
-                    ].join(" ")}
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium">{a.name}</p>
-                      <p className="text-sm text-muted-foreground">{a.description}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="display-price text-base">
-                        {included
-                          ? "Inklusive"
-                          : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
-                      </span>
-                      <span
-                        className={[
-                          "grid size-7 place-items-center rounded-md border transition-colors",
-                          active ? "border-primary bg-primary" : "border-border",
-                        ].join(" ")}
-                      >
-                        {active ? (
-                          <CheckCircle2 className="size-4 text-primary-foreground" />
-                        ) : (
-                          <Plus className="size-4 text-muted-foreground" />
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {step === 3 && (
-          <section>
-            <StepHeader
-              title="Wunschtermin wählen"
-              text="Sonntags geschlossen. Belegte Zeitfenster sind deaktiviert."
-            />
-            <div className="grid gap-5 md:grid-cols-2">
-              <MiniCalendar
-                value={date}
-                onChange={(iso) => {
-                  setDate(iso);
-                  setTime(null);
-                }}
+          {step === 0 && (
+            <section>
+              <StepHeader
+                title="Welches Fahrzeug fahren Sie?"
+                text="Die Fahrzeugklasse bestimmt Aufwand und Materialeinsatz."
               />
-              <div className="glass rounded-2xl p-5">
-                <p className="label-caps mb-4 flex items-center gap-2 text-muted-foreground">
-                  <CalendarIcon className="size-4 text-primary" />
-                  Freie Zeitfenster
-                </p>
-                {!date ? (
-                  <p className="text-sm text-muted-foreground">
-                    Bitte wählen Sie zunächst ein Datum aus.
-                  </p>
-                ) : (
-                  <div
-                    className="grid grid-cols-2 gap-2 sm:grid-cols-3"
-                    role="group"
-                    aria-label="Freie Zeitfenster"
-                  >
-                    {timeSlots.map((slot) => {
-                      const blocked = (liveBlockedSlots[date] ?? []).includes(slot);
-                      const active = time === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={blocked}
-                          onClick={() => setTime(slot)}
-                          aria-pressed={active}
-                          aria-label={`${slot} Uhr${blocked ? " – belegt" : ""}`}
+              <div className="grid gap-4 sm:grid-cols-3">
+                {vehicleTypes.map((v) => {
+                  const Icon = vehicleIcons[v.id] ?? Car;
+                  const active = vehicleId === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVehicleId(v.id)}
+                      aria-pressed={active}
+                      className={[
+                        "group rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
+                        active
+                          ? "border-primary bg-primary/10 glow-ring"
+                          : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60",
+                      ].join(" ")}
+                    >
+                      <Icon
+                        className={[
+                          "mb-4 size-7 transition-transform duration-300 group-hover:scale-110",
+                          active ? "text-primary" : "text-muted-foreground",
+                        ].join(" ")}
+                      />
+                      <p className="display-card">{v.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
+                      <p className="mt-3 text-xs uppercase tracking-widest text-primary">
+                        Preis passend zur Fahrzeuggröße
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {step === 1 && (
+            <section>
+              <StepHeader
+                title="Wählen Sie Ihr Paket"
+                text="Alle Pakete werden ausschließlich in Handarbeit ausgeführt."
+              />
+              <div className="grid gap-4 md:grid-cols-3">
+                {servicePackages.map((p) => {
+                  const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
+                  const active = packageId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setPackageId(p.id);
+                        // Inklusiv-Leistungen des Pakets automatisch aktivieren
+                        const included = addOns
+                          .filter((a) => a.includedInPackages?.includes(p.id))
+                          .map((a) => a.id);
+                        if (included.length) {
+                          setAddOnIds((prev) => [
+                            ...prev,
+                            ...included.filter((id) => !prev.includes(id)),
+                          ]);
+                        }
+                      }}
+                      aria-pressed={active}
+                      className={[
+                        "relative flex flex-col rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
+                        active
+                          ? "border-primary bg-primary/10 glow-ring"
+                          : "border-border bg-secondary/30 hover:border-primary/50",
+                      ].join(" ")}
+                    >
+                      {p.highlight && (
+                        <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                          Beliebt
+                        </span>
+                      )}
+                      <p className="display-card">{p.name}</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                        {p.tagline}
+                      </p>
+                      <p className="display-price mt-4">
+                        {currency(Math.round(p.basePrice * factor))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Endpreis für diese Fahrzeugklasse · {p.duration}
+                      </p>
+                      <ul className="mt-4 space-y-2 text-sm text-foreground/80">
+                        {p.features.map((f) => (
+                          <li key={f} className="flex gap-2">
+                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {step === 2 && (
+            <section>
+              <StepHeader
+                title="Zusatzleistungen"
+                text="Optional – jederzeit kombinierbar mit Ihrem Paket."
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                {addOns.map((a) => {
+                  const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
+                  const included =
+                    !!packageId && (a.includedInPackages?.includes(packageId) ?? false);
+                  const active = included || addOnIds.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      disabled={included}
+                      onClick={() =>
+                        setAddOnIds((prev) =>
+                          prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
+                        )
+                      }
+                      aria-pressed={active}
+                      className={[
+                        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-secondary/30 hover:border-primary/40",
+                        included ? "cursor-default" : "",
+                      ].join(" ")}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{a.name}</p>
+                        <p className="text-sm text-muted-foreground">{a.description}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="display-price text-base">
+                          {included
+                            ? "Inklusive"
+                            : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
+                        </span>
+                        <span
                           className={[
-                            "min-h-11 rounded-xl border py-2.5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
-                            blocked
-                              ? "cursor-not-allowed border-border/50 text-muted-foreground/40 line-through"
-                              : active
-                                ? "border-primary bg-primary text-primary-foreground glow-ring"
-                                : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
+                            "grid size-7 place-items-center rounded-md border transition-colors",
+                            active ? "border-primary bg-primary" : "border-border",
                           ].join(" ")}
                         >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                          {active ? (
+                            <CheckCircle2 className="size-4 text-primary-foreground" />
+                          ) : (
+                            <Plus className="size-4 text-muted-foreground" />
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          )}
 
-        {step === 4 && (
-          <section>
-            <StepHeader
-              title="Ihre Kontaktdaten"
-              text="Wir bestätigen den Termin telefonisch oder per E-Mail."
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                id="name"
-                label="Name"
-                icon={User}
-                value={customer.name}
-                placeholder="Max Mustermann"
-                onChange={(v) => updateCustomer("name", v)}
-                onBlur={() => blurCustomer("name")}
-                error={errors.name}
+          {step === 3 && (
+            <section>
+              <StepHeader
+                title="Wunschtermin wählen"
+                text="Sonntags geschlossen. Belegte Zeitfenster sind deaktiviert."
               />
-              <Field
-                id="email"
-                label="E-Mail"
-                icon={Mail}
-                type="email"
-                value={customer.email}
-                placeholder="max@beispiel.de"
-                onChange={(v) => updateCustomer("email", v)}
-                onBlur={() => blurCustomer("email")}
-                error={errors.email}
-              />
-              <Field
-                id="phone"
-                label="Telefon"
-                icon={Phone}
-                value={customer.phone}
-                placeholder="+49 176 12345678"
-                onChange={(v) => updateCustomer("phone", v)}
-                onBlur={() => blurCustomer("phone")}
-                error={errors.phone}
-              />
-              <Field
-                id="plate"
-                label="Kennzeichen"
-                icon={Car}
-                value={customer.plate}
-                placeholder="BN-WG 1967"
-                onChange={(v) => updateCustomer("plate", v)}
-                onBlur={() => blurCustomer("plate")}
-                error={errors.plate}
-              />
-            </div>
-            {submitError && (
-              <div
-                role="alert"
-                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
-              >
-                <p className="font-medium">{submitError.title}</p>
-                <p className="mt-1">{submitError.description}</p>
-                {submitError.missing.length > 0 && (
-                  <p className="mt-2 text-xs">
-                    Fehlende Konfiguration:{" "}
-                    <span className="font-mono">{submitError.missing.join(", ")}</span>
+              <div className="grid gap-5 md:grid-cols-2">
+                <MiniCalendar
+                  value={date}
+                  onChange={(iso) => {
+                    setDate(iso);
+                    setTime(null);
+                  }}
+                />
+                <div className="glass rounded-2xl p-5">
+                  <p className="label-caps mb-4 flex items-center gap-2 text-muted-foreground">
+                    <CalendarIcon className="size-4 text-primary" />
+                    Freie Zeitfenster
                   </p>
-                )}
-                {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Alternativ erreichen Sie uns telefonisch – wir nehmen Ihren Termin gerne direkt
-                  auf.
+                  {!date ? (
+                    <p className="text-sm text-muted-foreground">
+                      Bitte wählen Sie zunächst ein Datum aus.
+                    </p>
+                  ) : (
+                    <div
+                      className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                      role="group"
+                      aria-label="Freie Zeitfenster"
+                    >
+                      {timeSlots.map((slot) => {
+                        const blocked = (liveBlockedSlots[date] ?? []).includes(slot);
+                        const active = time === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            disabled={blocked}
+                            onClick={() => setTime(slot)}
+                            aria-pressed={active}
+                            aria-label={`${slot} Uhr${blocked ? " – belegt" : ""}`}
+                            className={[
+                              "min-h-11 rounded-xl border py-2.5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+                              blocked
+                                ? "cursor-not-allowed border-border/50 text-muted-foreground/40 line-through"
+                                : active
+                                  ? "border-primary bg-primary text-primary-foreground glow-ring"
+                                  : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
+                            ].join(" ")}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {step === 4 && (
+            <section>
+              <StepHeader
+                title="Ihre Kontaktdaten"
+                text="Wir bestätigen den Termin telefonisch oder per E-Mail."
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  id="name"
+                  label="Name"
+                  icon={User}
+                  value={customer.name}
+                  placeholder="Max Mustermann"
+                  onChange={(v) => updateCustomer("name", v)}
+                  onBlur={() => blurCustomer("name")}
+                  error={errors.name}
+                />
+                <Field
+                  id="email"
+                  label="E-Mail"
+                  icon={Mail}
+                  type="email"
+                  value={customer.email}
+                  placeholder="max@beispiel.de"
+                  onChange={(v) => updateCustomer("email", v)}
+                  onBlur={() => blurCustomer("email")}
+                  error={errors.email}
+                />
+                <Field
+                  id="phone"
+                  label="Telefon"
+                  icon={Phone}
+                  value={customer.phone}
+                  placeholder="+49 176 12345678"
+                  onChange={(v) => updateCustomer("phone", v)}
+                  onBlur={() => blurCustomer("phone")}
+                  error={errors.phone}
+                />
+                <Field
+                  id="plate"
+                  label="Kennzeichen"
+                  icon={Car}
+                  value={customer.plate}
+                  placeholder="BN-WG 1967"
+                  onChange={(v) => updateCustomer("plate", v)}
+                  onBlur={() => blurCustomer("plate")}
+                  error={errors.plate}
+                />
+              </div>
+              {submitError && (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                >
+                  <p className="font-medium">{submitError.title}</p>
+                  <p className="mt-1">{submitError.description}</p>
+                  {submitError.missing.length > 0 && (
+                    <p className="mt-2 text-xs">
+                      Fehlende Konfiguration:{" "}
+                      <span className="font-mono">{submitError.missing.join(", ")}</span>
+                    </p>
+                  )}
+                  {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Alternativ erreichen Sie uns per E-Mail unter info@whitegloss.de.
+                  </p>
+                </div>
+              )}
+
+              <p className="mt-4 text-xs text-muted-foreground">
+                Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
+              </p>
+            </section>
+          )}
+
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
+            <Button
+              variant="ghost"
+              disabled={step === 0}
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+            >
+              <ArrowLeft className="size-4" />
+              Zurück
+            </Button>
+            {step < steps.length - 1 ? (
+              <Button disabled={!canContinue} onClick={() => setStep((s) => s + 1)}>
+                Weiter
+                <ArrowRight className="size-4" />
+              </Button>
+            ) : (
+              <Button disabled={!canContinue} loading={submitting} onClick={submit}>
+                {submitting ? "Wird gesendet …" : "Terminanfrage senden"}
+                {submitting ? null : <CheckCircle2 className="size-4" />}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Live-Preisrechner */}
+        <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Live-Preisübersicht">
+          <div className="glass-strong rounded-3xl p-6" aria-live="polite">
+            <p className="label-caps flex items-center gap-2 text-muted-foreground">
+              <Sparkles className="size-4 text-primary" />
+              Ihre Konfiguration
+            </p>
+            <div className="mt-5 space-y-3 text-sm">
+              {items.length === 0 && (
+                <p className="text-muted-foreground">
+                  Wählen Sie Fahrzeug und Paket, um den Preis zu berechnen.
+                </p>
+              )}
+              {items.map((i) => (
+                <div key={i.label} className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 text-foreground/80">{i.label}</span>
+                  <span className="shrink-0 font-medium tabular-nums">{currency(i.total)}</span>
+                </div>
+              ))}
+            </div>
+            {items.length > 0 && (
+              <div className="mt-5 space-y-2 border-t border-border pt-5 text-sm">
+                <div className="flex items-baseline justify-between pt-2">
+                  <span className="label-caps">Voraussichtlicher Gesamtpreis</span>
+                  <span className="display-price text-primary">{currency(totals.gross)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Die steuerliche Ausweisung erfolgt auf der finalen Rechnung.
                 </p>
               </div>
             )}
-
-            <p className="mt-4 text-xs text-muted-foreground">
-              Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
-            </p>
-          </section>
-        )}
-
-        <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
-          <Button
-            variant="ghost"
-            disabled={step === 0}
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-          >
-            <ArrowLeft className="size-4" />
-            Zurück
-          </Button>
-          {step < steps.length - 1 ? (
-            <Button disabled={!canContinue} onClick={() => setStep((s) => s + 1)}>
-              Weiter
-              <ArrowRight className="size-4" />
-            </Button>
-          ) : (
-            <Button disabled={!canContinue} loading={submitting} onClick={submit}>
-              {submitting ? "Wird gesendet …" : "Verbindlich buchen"}
-              {submitting ? null : <CheckCircle2 className="size-4" />}
-            </Button>
-
-          )}
-        </div>
-      </div>
-
-      {/* Live-Preisrechner */}
-      <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Live-Preisübersicht">
-        <div className="glass-strong rounded-3xl p-6" aria-live="polite">
-          <p className="label-caps flex items-center gap-2 text-muted-foreground">
-            <Sparkles className="size-4 text-primary" />
-            Ihre Konfiguration
-          </p>
-          <div className="mt-5 space-y-3 text-sm">
-            {items.length === 0 && (
-              <p className="text-muted-foreground">
-                Wählen Sie Fahrzeug und Paket, um den Preis zu berechnen.
+            {date && time && (
+              <p className="mt-5 rounded-xl bg-secondary/50 px-4 py-3 text-sm">
+                Termin:{" "}
+                <span className="font-medium">
+                  {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}, {time} Uhr
+                </span>
               </p>
             )}
-            {items.map((i) => (
-              <div key={i.label} className="flex items-start justify-between gap-3">
-                <span className="min-w-0 text-foreground/80">{i.label}</span>
-                <span className="shrink-0 font-medium tabular-nums">{currency(i.total)}</span>
-              </div>
-            ))}
           </div>
-          {items.length > 0 && (
-            <div className="mt-5 space-y-2 border-t border-border pt-5 text-sm">
-              {!taxConfig.smallBusiness && (
-                <>
-                  <Row label="Netto" value={currency(totals.net)} />
-                  <Row
-                    label={`MwSt. ${Math.round(taxConfig.vatRate * 100)} %`}
-                    value={currency(totals.vat)}
-                  />
-                </>
-              )}
-              <div className="flex items-baseline justify-between pt-2">
-                <span className="label-caps">Gesamt</span>
-                <span className="display-price text-primary">
-                  {currency(totals.gross)}
-                </span>
-              </div>
-              {taxConfig.smallBusiness && (
-                <p className="text-xs text-muted-foreground">{taxConfig.smallBusinessNote}</p>
-              )}
-            </div>
-          )}
-          {date && time && (
-            <p className="mt-5 rounded-xl bg-secondary/50 px-4 py-3 text-sm">
-              Termin:{" "}
-              <span className="font-medium">
-                {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}, {time} Uhr
-              </span>
-            </p>
-          )}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between text-muted-foreground">
-      <span>{label}</span>
-      <span className="tabular-nums">{value}</span>
-    </div>
+        </aside>
+      </div>
+      <Toaster position="top-center" richColors />
+    </>
   );
 }
 
@@ -728,16 +708,6 @@ function Field({
 function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
   const items = calcLineItems(booking);
   const totals = calcTotals(items);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  async function downloadPdf() {
-    setPdfLoading(true);
-    try {
-      await generateInvoicePdf(booking);
-    } finally {
-      setPdfLoading(false);
-    }
-  }
 
   return (
     <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
@@ -751,7 +721,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       </p>
 
       <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
-        <Detail label="Rechnungsnummer" value={booking.invoiceNumber} />
+        <Detail label="Anfragenummer" value={booking.invoiceNumber} />
         <Detail
           label="Leistungsdatum"
           value={`${new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}, ${booking.time} Uhr`}
@@ -774,18 +744,16 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
 
       {booking.depositAmount > 0 && (
         <p className="mx-auto mt-4 max-w-lg rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
-          {depositConfig.note} Ihre Anzahlung von{" "}
-          <strong>{currency(booking.depositAmount)}</strong> sichert den Termin – die
-          Zahlungsinformationen erhalten Sie mit der Bestätigung per E-Mail.
+          {depositConfig.note} Ihre Anzahlung von <strong>{currency(booking.depositAmount)}</strong>{" "}
+          sichert den Termin – die Zahlungsinformationen erhalten Sie mit der Bestätigung per
+          E-Mail.
         </p>
       )}
 
-
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Button loading={pdfLoading} onClick={downloadPdf}>
-          {pdfLoading ? null : <Download className="size-4" />}
-          {pdfLoading ? "Rechnung wird erstellt …" : "Rechnung als PDF herunterladen"}
-        </Button>
+        <p className="w-full text-sm text-muted-foreground">
+          Die verbindliche Bestätigung und Rechnung erhalten Sie nach Prüfung Ihrer Anfrage.
+        </p>
         <Button variant="outline" onClick={onReset}>
           Neue Buchung
         </Button>

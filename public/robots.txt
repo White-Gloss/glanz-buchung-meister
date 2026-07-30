@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /auth
+Disallow: /reset-password
 
-Sitemap: https://glanz-buchung-meister.lovable.app/sitemap.xml
+Sitemap: https://whitegloss.de/sitemap.xml

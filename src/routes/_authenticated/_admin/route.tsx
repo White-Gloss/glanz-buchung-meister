@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from "@/integrations/supabase/get-client";
 import { isAdminUser } from "@/lib/bookings.functions";
 
 export const Route = createFileRoute("/_authenticated/_admin")({
@@ -35,6 +35,7 @@ function AdminGate() {
             </Button>
             <Button
               onClick={async () => {
+                const supabase = await getSupabaseClient();
                 await supabase.auth.signOut();
                 window.location.href = "/auth";
               }}
