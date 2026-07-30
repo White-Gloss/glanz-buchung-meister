@@ -1,3 +1,8 @@
+@import "@fontsource/bebas-neue/latin-400.css";
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-500.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow/latin-700.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -96,12 +101,9 @@
     color-mix(in oklab, var(--background) 20%, transparent) 0%,
     var(--background) 92%
   );
-  --gradient-accent: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--accent) 100%
-  );
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
+  --gradient-accent: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  --shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
     0 18px 60px -22px color-mix(in oklab, var(--primary) 55%, transparent);
   --shadow-elevated: 0 24px 70px -30px oklch(0 0 0 / 90%);
 }
@@ -222,7 +224,6 @@
   }
 }
 
-
 /** Kleiner Eyebrow-Text über einer Sektionsüberschrift */
 @utility eyebrow {
   font-size: 0.6875rem;
@@ -263,15 +264,12 @@
   }
 }
 
-
 /** Einheitlicher Abstand zwischen Eyebrow, Headline und Fließtext */
 @utility headline-stack {
   & > * + * {
     margin-top: calc(var(--spacing) * 3);
   }
 }
-
-
 
 @utility glass {
   background: color-mix(in oklab, var(--surface) 55%, transparent);
@@ -301,8 +299,6 @@
   border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
 }
 
-
-
 @utility glow-ring {
   box-shadow: var(--shadow-glow);
 }
@@ -310,6 +306,10 @@
 @utility grid-lines {
   background-image:
     linear-gradient(color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 64px 64px;
 }

@@ -4,13 +4,17 @@ import { Save, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { updateServicePrice } from "@/lib/pricing.functions";
+import { updateServicePrice } from "@/lib/pricing.admin.functions";
 import { currency, currentPriceRows, type ServicePriceRow } from "@/lib/servicesConfig";
 
 const groups: { type: ServicePriceRow["item_type"]; title: string; hint: string }[] = [
   { type: "package", title: "Pakete (Grundpreis)", hint: "Bruttopreis für die Kompaktklasse" },
   { type: "addon", title: "Zusatzleistungen", hint: "Bruttopreis, Abholservice ist pauschal" },
-  { type: "vehicle", title: "Fahrzeugfaktoren", hint: "Multiplikator auf Paket- und Add-on-Preise" },
+  {
+    type: "vehicle",
+    title: "Fahrzeugfaktoren",
+    hint: "Multiplikator auf Paket- und Add-on-Preise",
+  },
 ];
 
 export function PricePanel() {
@@ -22,7 +26,9 @@ export function PricePanel() {
     const amount = Number(value.replace(",", "."));
     setRows((list) =>
       list.map((r) =>
-        r.item_type === type && r.item_id === id ? { ...r, amount: Number.isFinite(amount) ? amount : 0 } : r,
+        r.item_type === type && r.item_id === id
+          ? { ...r, amount: Number.isFinite(amount) ? amount : 0 }
+          : r,
       ),
     );
   }
@@ -63,7 +69,10 @@ export function PricePanel() {
                 .map((row) => {
                   const key = `${row.item_type}:${row.item_id}`;
                   return (
-                    <div key={key} className="grid grid-cols-[minmax(0,1fr)_92px_auto] items-center gap-2">
+                    <div
+                      key={key}
+                      className="grid grid-cols-[minmax(0,1fr)_92px_auto] items-center gap-2"
+                    >
                       <label htmlFor={key} className="truncate text-sm" title={row.label}>
                         {row.label}
                       </label>

@@ -38,20 +38,25 @@ export type AddOn = {
 export const company = {
   name: "White Gloss Detailing",
   claim: "No Compromises. Only Results.",
-  owner: "Max Mustermann",
+  /**
+   * Erst auf true setzen, wenn Inhaber, Anschrift, Steuerstatus und Bankdaten
+   * geprüft wurden. Bis dahin bleiben Rechnungsdownloads gesperrt.
+   */
+  legalDetailsVerified: false,
+  owner: "",
   street: "",
-  city: "",
+  city: "72160 Horb am Neckar",
   country: "Deutschland",
-  phone: "+49 176 12345678",
+  phone: "",
   email: "info@whitegloss.de",
-  web: "www.whiteglossdetailing.de",
-  instagram: "@whiteglossdetailing",
-  taxId: "DE123456789", // USt-IdNr.
-  taxNumber: "205/5001/0123", // Steuernummer
+  web: "https://whitegloss.de",
+  instagram: "",
+  taxId: "", // USt-IdNr.
+  taxNumber: "", // Steuernummer
   bank: {
     holder: "White Gloss Detailing",
-    iban: "DE02 3705 0198 0000 1234 56",
-    bic: "COLSDE33XXX",
+    iban: "",
+    bic: "",
   },
 };
 
@@ -176,8 +181,7 @@ export const addOns: AddOn[] = [
   {
     id: "hol",
     name: "Hol- & Bringservice (Abholservice)",
-    description:
-      "Abholung und Rückgabe im Umkreis von 25 km – bei High-End Keramik inklusive",
+    description: "Abholung und Rückgabe im Umkreis von 25 km – bei High-End Keramik inklusive",
     price: 60,
     flatPrice: true,
     includedInPackages: ["keramik"],
@@ -195,21 +199,25 @@ export const blockedSlots: Record<string, string[]> = {
 export const features = [
   {
     id: "innen",
+    slug: "innenraumreinigung",
     name: "Innenreinigung",
     text: "Tiefenreinigung von Textilien, Kunststoff und Verkleidungen – bis in jede Fuge.",
   },
   {
     id: "lack",
+    slug: "lackkorrektur",
     name: "Lackkorrektur",
     text: "Mehrstufige Politur entfernt Swirls, Kratzer und Hologramme dauerhaft.",
   },
   {
     id: "keramik",
+    slug: "keramikversiegelung",
     name: "Keramikversiegelung",
     text: "Härtender Schutzfilm für extremen Glanz und jahrelangen Abperleffekt.",
   },
   {
     id: "leder",
+    slug: "lederpflege",
     name: "Lederpflege",
     text: "Schonende Reinigung und Rückfettung für geschmeidige, geschützte Oberflächen.",
   },

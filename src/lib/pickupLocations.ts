@@ -319,9 +319,7 @@ export function getPickupCity(slug: string): PickupCity | undefined {
 }
 
 /** Für die Ausgabe sortiert: nächstgelegene Städte zuerst */
-export const pickupCitiesByDistance = [...pickupCities].sort(
-  (a, b) => a.distanceKm - b.distanceKm,
-);
+export const pickupCitiesByDistance = [...pickupCities].sort((a, b) => a.distanceKm - b.distanceKm);
 
 /** Nachbarstädte für interne Verlinkung (verhindert isolierte Seiten) */
 export function getNeighbourCities(slug: string, count = 4): PickupCity[] {
@@ -376,7 +374,6 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
     ? `Fahrzeugaufbereitung in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
     : descriptions[idx % descriptions.length];
 
-
   return {
     title: clamp(title, 60),
     description: clamp(description, 155),
@@ -410,7 +407,6 @@ export function buildCityFaqItems(city: PickupCity): [string, string][] {
  * SCHEMA.ORG JSON-LD
  * ---------------------------------------------------------------------- */
 
-
 export function buildCityJsonLd(city: PickupCity) {
   const meta = buildCityMeta(city);
 
@@ -419,7 +415,6 @@ export function buildCityJsonLd(city: PickupCity) {
     "@id": `${meta.canonical}#business`,
     name: `${company.name} – Fahrzeugaufbereitung mit Abholservice ${city.name}`,
     description: meta.description,
-    telephone: company.phone,
     email: company.email,
     priceRange: "€€",
     // Physischer Standort: ausschließlich Horb am Neckar
@@ -469,8 +464,13 @@ export function buildCityJsonLd(city: PickupCity) {
   const breadcrumb = {
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Startseite", item: "/" },
-      { "@type": "ListItem", position: 2, name: "Abholservice", item: "/abholservice" },
+      { "@type": "ListItem", position: 1, name: "Startseite", item: absUrl("/") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Abholservice",
+        item: absUrl("/abholservice"),
+      },
       { "@type": "ListItem", position: 3, name: city.name, item: meta.canonical },
     ],
   };
@@ -483,7 +483,6 @@ export function buildCityJsonLd(city: PickupCity) {
       acceptedAnswer: { "@type": "Answer", text: a },
     })),
   };
-
 
   return {
     "@context": "https://schema.org",

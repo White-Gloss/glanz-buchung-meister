@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "@/lib/db.server";
-import {
-  type Booking,
-  type BookingStatus,
-} from "./bookings";
+import { type Booking, type BookingStatus } from "./bookings";
 
 // ---------------------------------------------------------------------------
 // Row shape returned by the DB (snake_case) and the create_booking_public fn
@@ -56,10 +56,23 @@ function toBooking(row: Row): Booking {
 }
 
 const SELECT_COLS = [
-  "id", "invoice_number", "created_at", "vehicle_id", "package_id",
-  "add_on_ids", "booking_date", "booking_time",
-  "customer_name", "customer_email", "customer_phone", "customer_plate",
-  "total", "status", "is_new_customer", "deposit_amount", "deposit_status",
+  "id",
+  "invoice_number",
+  "created_at",
+  "vehicle_id",
+  "package_id",
+  "add_on_ids",
+  "booking_date",
+  "booking_time",
+  "customer_name",
+  "customer_email",
+  "customer_phone",
+  "customer_plate",
+  "total",
+  "status",
+  "is_new_customer",
+  "deposit_amount",
+  "deposit_status",
   "access_token",
 ].join(", ");
 
@@ -78,36 +91,36 @@ export type BookingInput = {
   plate: string;
 };
 
-import {
-  addOns,
-  servicePackages,
-  vehicleTypes,
-} from "./servicesConfig";
+import { addOns, servicePackages, vehicleTypes } from "./servicesConfig";
 
 function validate(input: BookingInput): BookingInput {
-  const name = String(input.name ?? "").trim().slice(0, 120);
-  const email = String(input.email ?? "").trim().slice(0, 160);
-  const phone = String(input.phone ?? "").trim().slice(0, 40);
-  const plate = String(input.plate ?? "").trim().slice(0, 20).toUpperCase();
+  const name = String(input.name ?? "")
+    .trim()
+    .slice(0, 120);
+  const email = String(input.email ?? "")
+    .trim()
+    .slice(0, 160);
+  const phone = String(input.phone ?? "")
+    .trim()
+    .slice(0, 40);
+  const plate = String(input.plate ?? "")
+    .trim()
+    .slice(0, 20)
+    .toUpperCase();
   const vehicleId = String(input.vehicleId ?? "");
   const packageId = String(input.packageId ?? "");
-  const addOnIds = Array.isArray(input.addOnIds)
-    ? input.addOnIds.slice(0, 20).map(String)
-    : [];
+  const addOnIds = Array.isArray(input.addOnIds) ? input.addOnIds.slice(0, 20).map(String) : [];
   const date = String(input.date ?? "");
   const time = String(input.time ?? "");
 
-  if (!vehicleTypes.some((v) => v.id === vehicleId))
-    throw new Error("Ungültige Fahrzeugklasse");
-  if (!servicePackages.some((p) => p.id === packageId))
-    throw new Error("Ungültiges Paket");
+  if (!vehicleTypes.some((v) => v.id === vehicleId)) throw new Error("Ungültige Fahrzeugklasse");
+  if (!servicePackages.some((p) => p.id === packageId)) throw new Error("Ungültiges Paket");
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
   if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("Ungültige Uhrzeit");
   if (name.length < 2) throw new Error("Bitte einen gültigen Namen angeben");
-  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email))
-    throw new Error("Ungültige E-Mail-Adresse");
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error("Ungültige E-Mail-Adresse");
   if (phone.length < 6) throw new Error("Ungültige Telefonnummer");
   if (plate.length < 3) throw new Error("Ungültiges Kennzeichen");
 
@@ -120,7 +133,7 @@ function validate(input: BookingInput): BookingInput {
 // computes totals, invoice number, and deposit server-side from service_prices.
 // ---------------------------------------------------------------------------
 export const createBooking = createServerFn({ method: "POST" })
-  .inputValidator((data: BookingInput) => validate(data))
+  .validator((data: BookingInput) => validate(data))
   .handler(async ({ data }) => {
     // create_booking_public returns a JSON scalar, not a row set.
     const result = await queryOne<{ create_booking_public: string }>(
@@ -169,7 +182,7 @@ export const getBookedSlots = createServerFn({ method: "GET" }).handler(async ()
 // Admin helpers
 // ---------------------------------------------------------------------------
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
+async function assertAdmin(context: { supabase: SupabaseClient<Database>; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
@@ -182,7 +195,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 // listBookings — admin only
 // ---------------------------------------------------------------------------
 export const listBookings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const rows = await query<Row>(
@@ -195,8 +208,8 @@ export const listBookings = createServerFn({ method: "GET" })
 // updateBookingStatus — admin only
 // ---------------------------------------------------------------------------
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string; status: BookingStatus }) => data)
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { id: string; status: BookingStatus }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const row = await queryOne<Row>(
@@ -211,8 +224,8 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
 // updateDepositStatus — admin only
 // ---------------------------------------------------------------------------
 export const updateDepositStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string; depositStatus: Booking["depositStatus"] }) => data)
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { id: string; depositStatus: Booking["depositStatus"] }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const row = await queryOne<Row>(
@@ -227,8 +240,8 @@ export const updateDepositStatus = createServerFn({ method: "POST" })
 // deleteBooking — admin only
 // ---------------------------------------------------------------------------
 export const deleteBooking = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => data)
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { id: string }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     await query(`DELETE FROM public.bookings WHERE id = $1`, [data.id]);
@@ -239,7 +252,7 @@ export const deleteBooking = createServerFn({ method: "POST" })
 // isAdminUser
 // ---------------------------------------------------------------------------
 export const isAdminUser = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -264,7 +277,7 @@ export type AuditLogEntry = {
 };
 
 export const listAuditLog = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }): Promise<AuditLogEntry[]> => {
     await assertAdmin(context);
     const rows = await query<{

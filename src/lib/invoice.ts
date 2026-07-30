@@ -1,12 +1,5 @@
 import { calcLineItems, calcTotals, type Booking } from "./bookings";
-import {
-  company,
-  depositConfig,
-  servicePackages,
-  taxConfig,
-  vehicleTypes,
-} from "./servicesConfig";
-
+import { company, depositConfig, servicePackages, taxConfig, vehicleTypes } from "./servicesConfig";
 
 const eur = (v: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) +
@@ -19,6 +12,12 @@ const deDate = (iso: string) => {
 
 /** jspdf wird erst beim Download nachgeladen (eigener JS-Chunk). */
 export async function generateInvoicePdf(booking: Booking) {
+  if (!company.legalDetailsVerified) {
+    throw new Error(
+      "Rechnungsdownload gesperrt: Firmen-, Steuer- und Bankdaten müssen zuerst geprüft werden.",
+    );
+  }
+
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const items = calcLineItems(booking);

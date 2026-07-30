@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Car, MapPin, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { buildOverviewJsonLd, homeBase, pickupCities } from "@/lib/pickupLocations";
 import { company, pickupPriceNote, pickupPriceText } from "@/lib/servicesConfig";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
@@ -27,9 +29,7 @@ export const Route = createFileRoute("/abholservice/")({
       { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [{ rel: "canonical", href: absUrl("/abholservice") }],
-    scripts: [
-      { type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) },
-    ],
+    scripts: [{ type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) }],
   }),
   component: PickupOverview,
 });
@@ -37,81 +37,95 @@ export const Route = createFileRoute("/abholservice/")({
 function PickupOverview() {
   return (
     <div className="min-h-dvh bg-background">
+      <SiteHeader />
       <main>
-      <section className="relative overflow-hidden border-b border-border/60">
-        <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
-            <Link to="/" className="hover:text-foreground">
-              Startseite
-            </Link>
-            <span className="px-2">/</span>
-            <span className="text-foreground">Abholservice</span>
-          </nav>
-          <p className="eyebrow mt-6">
-            Hol- & Bringservice
-          </p>
-          <h1 className="text-gradient display-page mt-3 max-w-4xl">
-            Fahrzeugaufbereitung mit Abholservice rund um Horb am Neckar
-          </h1>
-          <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Unsere Werkstatt steht in {homeBase.city} ({homeBase.region}). Ihr Fahrzeug muss
-            trotzdem nicht zu uns fahren: Wir holen es bei Ihnen ab, veredeln es unter
-            kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
-          </p>
-          <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
-            <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
-            <span className="text-foreground/80">
-              für Abholung &amp; Rückgabe – im Paket High-End Keramik inklusive
-            </span>
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="glow-ring">
-              <Link to="/" hash="buchung">
-                Abholtermin anfragen
-                <ArrowRight className="size-4" />
+        <section className="relative overflow-hidden border-b border-border/60">
+          <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
+          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
+              <Link to="/" className="hover:text-foreground">
+                Startseite
               </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href={`tel:${company.phone.replace(/\s/g, "")}`}>Telefonisch beraten lassen</a>
-            </Button>
+              <span className="px-2">/</span>
+              <span className="text-foreground">Abholservice</span>
+            </nav>
+            <p className="eyebrow mt-6">Hol- & Bringservice</p>
+            <h1 className="text-gradient display-page mt-3 max-w-4xl">
+              Fahrzeugaufbereitung mit Abholservice rund um Horb am Neckar
+            </h1>
+            <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
+              Unsere Werkstatt steht in {homeBase.city} ({homeBase.region}). Ihr Fahrzeug muss
+              trotzdem nicht zu uns fahren: Wir holen es bei Ihnen ab, veredeln es unter
+              kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
+            </p>
+            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
+              <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
+              <span className="text-foreground/80">
+                für Abholung &amp; Rückgabe – im Paket High-End Keramik inklusive
+              </span>
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="glow-ring">
+                <Link to="/" hash="buchung">
+                  Abholtermin anfragen
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href={`mailto:${company.email}?subject=Frage%20zum%20Abholservice`}>
+                  Frage per E-Mail
+                </a>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            [Car, "Abholung & Rückgabe", "Wir übernehmen Ihr Fahrzeug an Wohn- oder Firmenadresse."],
-            [MapPin, "13 Städte im Umkreis", "Von Horb über Tübingen bis Böblingen und Reutlingen."],
-            [ShieldCheck, "Voll versichert", "Überführungsfahrten sind während des Transports abgesichert."],
-            [Wallet, `${pickupPriceText()} pauschal`, pickupPriceNote()],
-          ].map(([Icon, title, text]) => {
-            const I = Icon as typeof Car;
-            return (
-              <article key={title as string} className="glass rounded-2xl p-6">
-                <I className="size-7 text-primary" />
-                <h3 className="mt-4 display-card uppercase">{title as string}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{text as string}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              [
+                Car,
+                "Abholung & Rückgabe",
+                "Wir übernehmen Ihr Fahrzeug an Wohn- oder Firmenadresse.",
+              ],
+              [
+                MapPin,
+                "13 Städte im Umkreis",
+                "Von Horb über Tübingen bis Böblingen und Reutlingen.",
+              ],
+              [
+                ShieldCheck,
+                "Planbare Übergabe",
+                "Abholung und Rückgabe erfolgen in einem klar abgestimmten Terminfenster.",
+              ],
+              [Wallet, `${pickupPriceText()} pauschal`, pickupPriceNote()],
+            ].map(([Icon, title, text]) => {
+              const I = Icon as typeof Car;
+              return (
+                <article key={title as string} className="glass rounded-2xl p-6">
+                  <I className="size-7 text-primary" />
+                  <h3 className="mt-4 display-card uppercase">{title as string}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{text as string}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-        <h2 className="display-section uppercase">
-          Unser Abholgebiet – {pickupCities.length} Städte
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Wählen Sie Ihre Stadt aus, um Entfernung, Fahrzeit und die regionalen Besonderheiten
-          Ihres Abholtermins zu sehen.
-        </p>
-        <div className="mt-8">
-          <PickupCityGrid />
-        </div>
-      </section>
+        <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
+          <h2 className="display-section uppercase">
+            Unser Abholgebiet – {pickupCities.length} Städte
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            Wählen Sie Ihre Stadt aus, um Entfernung, Fahrzeit und die regionalen Besonderheiten
+            Ihres Abholtermins zu sehen.
+          </p>
+          <div className="mt-8">
+            <PickupCityGrid />
+          </div>
+        </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }
