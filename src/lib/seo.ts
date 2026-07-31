@@ -9,4 +9,5 @@ export const absUrl = (path: string) =>
 
 /** Standard-Vorschaubild für Social-Shares. */
 export const OG_IMAGE = absUrl(heroCar);
-export const OG_IMAGE_ALT = "Professionell aufbereitetes Fahrzeug bei White Gloss Detailing";
+export const OG_IMAGE_ALT =
+  "Schwarzer Chevrolet Impala in der White Gloss Detailing Neon-Szene";
