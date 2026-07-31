@@ -43,11 +43,13 @@ export const company = {
    * geprüft wurden. Bis dahin bleiben Rechnungsdownloads gesperrt.
    */
   legalDetailsVerified: false,
-  owner: "",
-  street: "",
-  city: "72160 Horb am Neckar",
+  owner: "Lars Hägele",
+  street: "Arnistal 27",
+  city: "72160 Horb-Dettingen",
   country: "Deutschland",
-  phone: "",
+  phone: "0152 33540284",
+  phoneHref: "tel:+4915233540284",
+  whatsappHref: "https://wa.me/4915233540284",
   email: "info@whitegloss.de",
   web: "https://whitegloss.de",
   instagram: "",

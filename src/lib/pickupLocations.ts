@@ -421,7 +421,7 @@ export function buildCityJsonLd(city: PickupCity) {
     address: {
       "@type": "PostalAddress",
       streetAddress: company.street || undefined,
-      addressLocality: homeBase.city,
+      addressLocality: "Horb am Neckar-Dettingen",
       postalCode: homeBase.postalCode,
       addressRegion: homeBase.state,
       addressCountry: homeBase.country,

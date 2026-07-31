@@ -1,0 +1,17 @@
+{
+  "name": "White Gloss Detailing",
+  "short_name": "White Gloss",
+  "description": "Premium-Fahrzeugaufbereitung in Horb am Neckar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080a0d",
+  "theme_color": "#080a0d",
+  "lang": "de-DE",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -2,7 +2,6 @@
 @import "@fontsource/barlow/latin-400.css";
 @import "@fontsource/barlow/latin-500.css";
 @import "@fontsource/barlow/latin-600.css";
-@import "@fontsource/barlow/latin-700.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -57,54 +56,47 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  /* Noir #0d0d0d */
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --surface: oklch(0.185 0 0);
-  --surface-2: oklch(0.225 0 0);
-  --card: oklch(0.185 0 0);
+  --radius: 0.875rem;
+  --background: oklch(0.115 0.008 245);
+  --foreground: oklch(0.975 0.004 240);
+  --surface: oklch(0.155 0.009 245);
+  --surface-2: oklch(0.195 0.01 245);
+  --card: oklch(0.155 0.009 245);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.185 0 0);
+  --popover: oklch(0.15 0.009 245);
   --popover-foreground: oklch(0.985 0 0);
-  /* Gold #c9a84c */
-  --primary: oklch(0.735 0.106 88);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.25 0 0);
+  --primary: oklch(0.83 0.045 235);
+  --primary-foreground: oklch(0.12 0.01 245);
+  --secondary: oklch(0.22 0.012 245);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.235 0 0);
-  --muted-foreground: oklch(0.7 0.004 90);
-  /* Light gold #f0d78c */
-  --accent: oklch(0.885 0.084 90);
-  --accent-foreground: oklch(0.145 0 0);
+  --muted: oklch(0.21 0.01 245);
+  --muted-foreground: oklch(0.69 0.012 240);
+  --accent: oklch(0.93 0.022 235);
+  --accent-foreground: oklch(0.12 0.01 245);
   --destructive: oklch(0.62 0.23 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.735 0.106 88);
-  --chart-1: oklch(0.735 0.106 88);
-  --chart-2: oklch(0.885 0.084 90);
-  --chart-3: oklch(0.6 0.08 88);
-  --chart-4: oklch(0.45 0.05 88);
+  --border: oklch(0.92 0.015 240 / 11%);
+  --input: oklch(0.92 0.015 240 / 16%);
+  --ring: oklch(0.83 0.045 235);
+  --chart-1: oklch(0.83 0.045 235);
+  --chart-2: oklch(0.93 0.022 235);
+  --chart-3: oklch(0.65 0.055 235);
+  --chart-4: oklch(0.48 0.04 235);
   --chart-5: oklch(0.5 0 0);
-  --sidebar: oklch(0.17 0 0);
+  --sidebar: oklch(0.14 0.008 245);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.735 0.106 88);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.235 0 0);
+  --sidebar-primary: oklch(0.83 0.045 235);
+  --sidebar-primary-foreground: oklch(0.12 0.01 245);
+  --sidebar-accent: oklch(0.21 0.01 245);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.735 0.106 88);
+  --sidebar-border: oklch(0.92 0.015 240 / 11%);
+  --sidebar-ring: oklch(0.83 0.045 235);
 
-  --gradient-hero: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--background) 20%, transparent) 0%,
-    var(--background) 92%
-  );
-  --gradient-accent: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  --gradient-hero: linear-gradient(180deg, transparent 0%, var(--background) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
   --shadow-glow:
-    0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
-    0 18px 60px -22px color-mix(in oklab, var(--primary) 55%, transparent);
+    0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent),
+    0 18px 60px -22px color-mix(in oklab, var(--primary) 45%, transparent);
   --shadow-elevated: 0 24px 70px -30px oklch(0 0 0 / 90%);
 }
 
@@ -119,13 +111,17 @@
 
   html {
     scroll-behavior: smooth;
+    background-color: var(--color-background);
   }
 
   body {
+    min-width: 320px;
+    overflow-x: clip;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
@@ -135,6 +131,26 @@
     font-family: var(--font-display);
     font-weight: 400;
     letter-spacing: 0.01em;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 32%, transparent);
+    color: var(--foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
   }
 }
 
@@ -287,7 +303,7 @@
   background: linear-gradient(
     100deg,
     oklch(1 0 0) 0%,
-    oklch(1 0 0) 40%,
+    oklch(0.96 0.01 235) 45%,
     var(--accent) 78%,
     var(--primary) 100%
   );
@@ -297,6 +313,10 @@
 
 @utility hairline-gold {
   border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+@utility hairline-metal {
+  border: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
 @utility glow-ring {
@@ -312,4 +332,149 @@
       transparent 1px
     );
   background-size: 64px 64px;
+}
+
+@utility content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
+
+@utility text-chrome {
+  background: linear-gradient(
+    105deg,
+    oklch(1 0 0) 0%,
+    oklch(0.72 0.018 235) 28%,
+    oklch(0.98 0.008 235) 54%,
+    oklch(0.68 0.025 235) 78%,
+    oklch(0.94 0.015 235) 100%
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+@utility metal-panel {
+  border: 1px solid var(--color-border);
+  background:
+    linear-gradient(135deg, oklch(1 0 0 / 5%) 0%, transparent 38%),
+    color-mix(in oklab, var(--surface) 92%, transparent);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 5%),
+    var(--shadow-elevated);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+
+@utility feature-card {
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in oklab, var(--primary) 10%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(145deg, color-mix(in oklab, var(--surface-2) 72%, transparent), var(--surface));
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
+  transition:
+    border-color 300ms ease,
+    transform 300ms ease,
+    box-shadow 300ms ease;
+
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 42%, transparent);
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 6%),
+      0 24px 70px -36px color-mix(in oklab, var(--primary) 48%, transparent);
+  }
+}
+
+@utility package-card {
+  border: 1px solid var(--color-border);
+  background: linear-gradient(155deg, var(--surface-2), var(--surface));
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
+}
+
+@utility package-card-featured {
+  border-color: color-mix(in oklab, var(--primary) 48%, transparent);
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      color-mix(in oklab, var(--primary) 14%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(155deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow-glow);
+}
+
+@utility hero-stage {
+  background: #030507;
+}
+
+@utility hero-scrim {
+  background:
+    linear-gradient(
+      90deg,
+      oklch(0.07 0.012 245 / 96%) 0%,
+      oklch(0.07 0.012 245 / 76%) 45%,
+      transparent 78%
+    ),
+    linear-gradient(0deg, oklch(0.07 0.012 245 / 92%) 0%, transparent 48%),
+    linear-gradient(180deg, oklch(0.07 0.012 245 / 42%) 0%, transparent 30%);
+
+  @media (width < 64rem) {
+    background:
+      linear-gradient(90deg, oklch(0.07 0.012 245 / 92%) 0%, oklch(0.07 0.012 245 / 42%) 100%),
+      linear-gradient(0deg, oklch(0.07 0.012 245 / 96%) 0%, transparent 65%);
+  }
+}
+
+@utility chrome-orb {
+  position: absolute;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+  filter: blur(100px);
+  pointer-events: none;
+}
+
+.prose-legal {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.prose-legal section + section {
+  margin-top: 2.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.prose-legal h2 {
+  margin-bottom: 0.875rem;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.prose-legal p + p {
+  margin-top: 0.875rem;
+}
+
+.prose-legal address {
+  display: grid;
+  font-style: normal;
+}
+
+.prose-legal a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--primary) 55%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.prose-legal a:hover {
+  color: var(--primary);
 }

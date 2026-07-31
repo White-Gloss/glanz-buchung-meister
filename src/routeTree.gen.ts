@@ -12,11 +12,16 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as PreiseRouteImport } from './routes/preise'
+import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
+import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as LeistungenServiceRouteImport } from './routes/leistungen.$service'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
 
@@ -32,6 +37,26 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpressumRoute = ImpressumRouteImport.update({
+  id: '/impressum',
+  path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreiseRoute = PreiseRouteImport.update({
+  id: '/preise',
+  path: '/preise',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualitaetRoute = QualitaetRouteImport.update({
+  id: '/qualitaet',
+  path: '/qualitaet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -58,6 +83,11 @@ const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
   path: '/abholservice/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
+  id: '/leistungen/',
+  path: '/leistungen/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeistungenServiceRoute = LeistungenServiceRouteImport.update({
   id: '/leistungen/$service',
   path: '/leistungen/$service',
@@ -72,21 +102,31 @@ const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
+  '/preise': typeof PreiseRoute
+  '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice/': typeof AbholserviceIndexRoute
+  '/leistungen/': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
+  '/preise': typeof PreiseRoute
+  '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice': typeof AbholserviceIndexRoute
+  '/leistungen': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRoute
 }
 export interface FileRoutesById {
@@ -94,12 +134,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/datenschutz': typeof DatenschutzRoute
+  '/impressum': typeof ImpressumRoute
+  '/preise': typeof PreiseRoute
+  '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice/': typeof AbholserviceIndexRoute
+  '/leistungen/': typeof LeistungenIndexRoute
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRoute
 }
 export interface FileRouteTypes {
@@ -107,33 +152,48 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/datenschutz'
+    | '/impressum'
+    | '/preise'
+    | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/leistungen/$service'
     | '/abholservice/'
+    | '/leistungen/'
     | '/admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/datenschutz'
+    | '/impressum'
+    | '/preise'
+    | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/leistungen/$service'
     | '/abholservice'
+    | '/leistungen'
     | '/admin'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/datenschutz'
+    | '/impressum'
+    | '/preise'
+    | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/_admin'
     | '/abholservice/$city'
     | '/leistungen/$service'
     | '/abholservice/'
+    | '/leistungen/'
     | '/_authenticated/_admin/admin'
   fileRoutesById: FileRoutesById
 }
@@ -141,11 +201,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DatenschutzRoute: typeof DatenschutzRoute
+  ImpressumRoute: typeof ImpressumRoute
+  PreiseRoute: typeof PreiseRoute
+  QualitaetRoute: typeof QualitaetRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
   LeistungenServiceRoute: typeof LeistungenServiceRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
+  LeistungenIndexRoute: typeof LeistungenIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -169,6 +234,34 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impressum': {
+      id: '/impressum'
+      path: '/impressum'
+      fullPath: '/impressum'
+      preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preise': {
+      id: '/preise'
+      path: '/preise'
+      fullPath: '/preise'
+      preLoaderRoute: typeof PreiseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualitaet': {
+      id: '/qualitaet'
+      path: '/qualitaet'
+      fullPath: '/qualitaet'
+      preLoaderRoute: typeof QualitaetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -204,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/abholservice/$city'
       fullPath: '/abholservice/$city'
       preLoaderRoute: typeof AbholserviceCityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leistungen/': {
+      id: '/leistungen/'
+      path: '/leistungen'
+      fullPath: '/leistungen/'
+      preLoaderRoute: typeof LeistungenIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen/$service': {
@@ -252,11 +352,16 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DatenschutzRoute: DatenschutzRoute,
+  ImpressumRoute: ImpressumRoute,
+  PreiseRoute: PreiseRoute,
+  QualitaetRoute: QualitaetRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
   LeistungenServiceRoute: LeistungenServiceRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
+  LeistungenIndexRoute: LeistungenIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

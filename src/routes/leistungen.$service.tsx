@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getServicePage, buildServiceJsonLd, servicePages } from "@/lib/servicePages";
@@ -193,6 +194,11 @@ function ServicePage() {
             ))}
           </div>
         </section>
+        <ConversionBand
+          eyebrow={service.name}
+          title="Passenden Umfang direkt anfragen."
+          text="Fahrzeugklasse und Paket auswählen, Preisübersicht sehen und Wunschtermin unverbindlich senden."
+        />
       </main>
       <SiteFooter />
     </div>
