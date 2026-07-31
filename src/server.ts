@@ -9,6 +9,16 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
+const CANONICAL_HOST = "whitegloss.de";
+const PUBLIC_PAGE_PREFIXES = [
+  "/abholservice",
+  "/leistungen",
+  "/preise",
+  "/qualitaet",
+  "/impressum",
+  "/datenschutz",
+];
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
@@ -44,12 +54,57 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function canonicalRedirect(request: Request): Response | undefined {
+  const url = new URL(request.url);
+  if (url.hostname !== `www.${CANONICAL_HOST}`) return;
+  url.hostname = CANONICAL_HOST;
+  url.protocol = "https:";
+  return Response.redirect(url, 308);
+}
+
+function isPublicPage(pathname: string): boolean {
+  if (pathname === "/" || pathname === "/sitemap.xml") return true;
+  return PUBLIC_PAGE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function withProductionHeaders(request: Request, response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("X-Frame-Options", "SAMEORIGIN");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+
+  const url = new URL(request.url);
+  if (request.method === "GET" && response.status === 200 && isPublicPage(url.pathname)) {
+    headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+  } else if (
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/auth") ||
+    url.pathname.startsWith("/reset-password")
+  ) {
+    headers.set("Cache-Control", "private, no-store");
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const redirect = canonicalRedirect(request);
+      if (redirect) return redirect;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return withProductionHeaders(request, normalized);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Car, MapPin, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConversionBand } from "@/components/ConversionBand";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -124,6 +125,11 @@ function PickupOverview() {
             <PickupCityGrid />
           </div>
         </section>
+        <ConversionBand
+          eyebrow="Hol- & Bringservice"
+          title="Aufbereitung ohne zusätzlichen Werkstattweg."
+          text="Wählen Sie den Hol- & Bringservice im Konfigurator aus und senden Sie Ihren Wunschtermin direkt mit."
+        />
       </main>
       <SiteFooter />
     </div>

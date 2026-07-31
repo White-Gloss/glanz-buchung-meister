@@ -23,6 +23,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
   addOns,
+  applyPriceOverrides,
   depositConfig,
   currency,
   servicePackages,
@@ -34,6 +35,7 @@ import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
 import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 
 import { createBooking, getBookedSlots } from "@/lib/bookings.functions";
+import { listServicePrices } from "@/lib/pricing.functions";
 import { useServerFn } from "@tanstack/react-start";
 const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
 
@@ -147,17 +149,22 @@ export function BookingWizard() {
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
+  const [priceVersion, setPriceVersion] = useState(0);
 
-  // Live booked slots from the database — replaces the static blockedSlots config
+  // Datenbankzugriffe starten erst, wenn der Nutzer in die Nähe des Buchungsbereichs
+  // scrollt. So blockieren Preise und Terminslots nicht mehr das erste HTML der Seite.
   const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
   const fetchBookedSlots = useServerFn(getBookedSlots);
+  const fetchServicePrices = useServerFn(listServicePrices);
   useEffect(() => {
-    fetchBookedSlots({})
-      .then(setLiveBlockedSlots)
-      .catch(() => {
-        /* non-critical, fail silently */
-      });
-  }, [fetchBookedSlots]);
+    void Promise.allSettled([
+      fetchBookedSlots({}).then(setLiveBlockedSlots),
+      fetchServicePrices({}).then((rows) => {
+        applyPriceOverrides(rows);
+        setPriceVersion((version) => version + 1);
+      }),
+    ]);
+  }, [fetchBookedSlots, fetchServicePrices]);
 
   function updateCustomer(field: CustomerField, value: string) {
     setCustomer((c) => ({ ...c, [field]: value }));
@@ -177,7 +184,7 @@ export function BookingWizard() {
 
   const items = useMemo(
     () => (vehicleId && packageId ? calcLineItems({ vehicleId, packageId, addOnIds }) : []),
-    [vehicleId, packageId, addOnIds],
+    [vehicleId, packageId, addOnIds, priceVersion],
   );
   const totals = calcTotals(items);
 

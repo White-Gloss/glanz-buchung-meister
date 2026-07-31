@@ -8,6 +8,7 @@ import {
   Route as RouteIcon,
   Timer,
 } from "lucide-react";
+import { ConversionBand } from "@/components/ConversionBand";
 import { Button } from "@/components/ui/button";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -276,6 +277,11 @@ function CityPage() {
             <ArrowRight className="size-4" />
           </Link>
         </section>
+        <ConversionBand
+          eyebrow={`Abholservice ${city.short}`}
+          title={`Fahrzeug in ${city.short} abholen lassen.`}
+          text="Paket und Hol- & Bringservice auswählen, Wunschtermin senden und die Übergabe direkt mit uns abstimmen."
+        />
       </main>
       <SiteFooter />
     </div>
