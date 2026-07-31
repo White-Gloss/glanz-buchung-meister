@@ -93,8 +93,9 @@ export const Route = createFileRoute("/")({
               priceRange: "€€–€€€",
               address: {
                 "@type": "PostalAddress",
+                streetAddress: company.street,
                 postalCode: "72160",
-                addressLocality: "Horb am Neckar",
+                addressLocality: "Horb am Neckar-Dettingen",
                 addressRegion: "Baden-Württemberg",
                 addressCountry: "DE",
               },

@@ -43,9 +43,9 @@ export const company = {
    * geprüft wurden. Bis dahin bleiben Rechnungsdownloads gesperrt.
    */
   legalDetailsVerified: false,
-  owner: "",
-  street: "",
-  city: "72160 Horb am Neckar",
+  owner: "Lars Hägele",
+  street: "Arnistal 27",
+  city: "72160 Horb-Dettingen",
   country: "Deutschland",
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",

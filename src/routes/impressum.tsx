@@ -46,7 +46,7 @@ function ImprintPage() {
             <h2>Angaben gemäß § 5 DDG</h2>
             <address>
               <strong>{company.name}</strong>
-              {company.owner && <span>{company.owner}</span>}
+              {company.owner && <span>Inhaber: {company.owner}</span>}
               {company.street && <span>{company.street}</span>}
               <span>{company.city}</span>
               <span>{company.country}</span>
