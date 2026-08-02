@@ -21,9 +21,9 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
+import { Route as KalenderTokenRouteImport } from './routes/kalender.$token'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
-import { Route as KalenderTokenIcsRouteImport } from './routes/kalender.$token.ics'
 import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
 import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
@@ -86,6 +86,11 @@ const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
   path: '/abholservice/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KalenderTokenRoute = KalenderTokenRouteImport.update({
+  id: '/kalender/$token',
+  path: '/kalender/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
   id: '/leistungen/',
   path: '/leistungen/',
@@ -95,11 +100,6 @@ const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
-} as any)
-const KalenderTokenIcsRoute = KalenderTokenIcsRouteImport.update({
-  id: '/kalender/$token/ics',
-  path: '/kalender/$token/ics',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenServiceIndexRoute = LeistungenServiceIndexRouteImport.update({
   id: '/leistungen/$service/',
@@ -128,10 +128,10 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/kalender/$token': typeof KalenderTokenRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
-  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -146,10 +146,10 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/kalender/$token': typeof KalenderTokenRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
-  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -167,10 +167,10 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/kalender/$token': typeof KalenderTokenRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
-  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -187,10 +187,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
+    | '/kalender/$token'
     | '/abholservice/'
     | '/leistungen/'
     | '/admin'
-    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
     | '/admin/kunden'
@@ -205,10 +205,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
+    | '/kalender/$token'
     | '/abholservice'
     | '/leistungen'
     | '/admin'
-    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service'
     | '/admin/kunden'
@@ -225,10 +225,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/_admin'
     | '/abholservice/$city'
+    | '/kalender/$token'
     | '/abholservice/'
     | '/leistungen/'
     | '/_authenticated/_admin/admin'
-    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
     | '/_authenticated/_admin/admin/kunden'
@@ -245,9 +245,9 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
+  KalenderTokenRoute: typeof KalenderTokenRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
   LeistungenIndexRoute: typeof LeistungenIndexRoute
-  KalenderTokenIcsRoute: typeof KalenderTokenIcsRoute
   LeistungenServiceCityRoute: typeof LeistungenServiceCityRoute
   LeistungenServiceIndexRoute: typeof LeistungenServiceIndexRoute
 }
@@ -338,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AbholserviceCityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kalender/$token': {
+      id: '/kalender/$token'
+      path: '/kalender/$token'
+      fullPath: '/kalender/$token'
+      preLoaderRoute: typeof KalenderTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leistungen/': {
       id: '/leistungen/'
       path: '/leistungen'
@@ -351,13 +358,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/kalender/$token/ics': {
-      id: '/kalender/$token/ics'
-      path: '/kalender/$token/ics'
-      fullPath: '/kalender/$token/ics'
-      preLoaderRoute: typeof KalenderTokenIcsRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/leistungen/$service/': {
       id: '/leistungen/$service/'
@@ -433,9 +433,9 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
+  KalenderTokenRoute: KalenderTokenRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
   LeistungenIndexRoute: LeistungenIndexRoute,
-  KalenderTokenIcsRoute: KalenderTokenIcsRoute,
   LeistungenServiceCityRoute: LeistungenServiceCityRoute,
   LeistungenServiceIndexRoute: LeistungenServiceIndexRoute,
 }
