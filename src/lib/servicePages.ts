@@ -3,6 +3,8 @@ import { absUrl, SITE_URL } from "./seo";
 export type ServicePage = {
   slug: string;
   name: string;
+  /** Kurzform für Titel und Buttons – hält Meta-Titles unter 60 Zeichen */
+  shortName: string;
   eyebrow: string;
   title: string;
   metaTitle: string;
@@ -19,6 +21,7 @@ export const servicePages: ServicePage[] = [
   {
     slug: "innenraumreinigung",
     name: "Innenraumreinigung",
+    shortName: "Innenreinigung",
     eyebrow: "Sauberkeit bis in jede Fuge",
     title: "Professionelle Innenraumreinigung in Horb am Neckar",
     metaTitle: "Auto-Innenraumreinigung Horb am Neckar | White Gloss",
@@ -74,6 +77,7 @@ export const servicePages: ServicePage[] = [
   {
     slug: "lackkorrektur",
     name: "Lackkorrektur",
+    shortName: "Lackkorrektur",
     eyebrow: "Mehr Tiefe, Klarheit und Glanz",
     title: "Lackkorrektur und Autopolitur in Horb am Neckar",
     metaTitle: "Lackkorrektur & Autopolitur Horb | White Gloss",
@@ -129,6 +133,7 @@ export const servicePages: ServicePage[] = [
   {
     slug: "keramikversiegelung",
     name: "Keramikversiegelung",
+    shortName: "Keramikversiegelung",
     eyebrow: "Langfristiger Lackschutz",
     title: "Keramikversiegelung für Ihr Auto in Horb am Neckar",
     metaTitle: "Keramikversiegelung Auto Horb | White Gloss",
@@ -184,6 +189,7 @@ export const servicePages: ServicePage[] = [
   {
     slug: "lederpflege",
     name: "Lederpflege",
+    shortName: "Lederpflege",
     eyebrow: "Sauber, geschmeidig und geschützt",
     title: "Lederreinigung und Lederpflege in Horb am Neckar",
     metaTitle: "Auto-Lederpflege Horb am Neckar | White Gloss",
@@ -235,6 +241,174 @@ export const servicePages: ServicePage[] = [
       ],
     ],
     relatedPackageIds: ["keramik"],
+  },
+  {
+    slug: "fahrzeugaufbereitung",
+    name: "Fahrzeugaufbereitung",
+    shortName: "Fahrzeugaufbereitung",
+    eyebrow: "Komplettaufbereitung innen und außen",
+    title: "Professionelle Fahrzeugaufbereitung in Horb am Neckar",
+    metaTitle: "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+    metaDescription:
+      "Komplette Fahrzeugaufbereitung in Horb am Neckar: Außenwäsche, Lackpflege und Innenreinigung aus einer Hand. Termin online anfragen.",
+    lead: "Die Komplettaufbereitung verbindet Außen- und Innenarbeiten zu einem abgestimmten Ablauf – vom ersten Waschgang bis zur Endkontrolle bei kontrolliertem Licht.",
+    detail:
+      "Nicht jedes Fahrzeug braucht dasselbe Programm. Wir beurteilen Lackzustand, Innenraum und Materialien zuerst und legen den Umfang danach fest. So entsteht ein Ablauf, der die Substanz schont und dort ansetzt, wo das Ergebnis sichtbar wird.",
+    benefits: [
+      "Abgestimmter Ablauf von Außenwäsche bis Innenraum-Finish",
+      "Beurteilung von Lack, Materialien und Verschmutzungsgrad vor Beginn",
+      "Handarbeit statt Waschstraße – auch an Kanten und Zwischenräumen",
+      "Ergebniskontrolle unter gleichmäßiger Werkstattbeleuchtung",
+    ],
+    process: [
+      {
+        title: "Fahrzeug beurteilen",
+        text: "Wir erfassen Lackzustand, Innenraum, Materialien und besonders beanspruchte Bereiche.",
+      },
+      {
+        title: "Außenaufbereitung",
+        text: "Handwäsche, Felgen- und Reifenreinigung sowie die Vorbereitung der Lackflächen.",
+      },
+      {
+        title: "Innenaufbereitung",
+        text: "Absaugen, Tiefenreinigung der Oberflächen und materialgerechte Pflege der Verkleidungen.",
+      },
+      {
+        title: "Finish & Übergabe",
+        text: "Abschließende Kontrolle aller Flächen, Scheiben und Details vor der Rückgabe.",
+      },
+    ],
+    faq: [
+      [
+        "Was gehört zu einer Fahrzeugaufbereitung?",
+        "Eine Komplettaufbereitung umfasst Außen- und Innenarbeiten. Der genaue Umfang hängt vom gewählten Paket und vom Zustand des Fahrzeugs ab – die Zusammenstellung sehen Sie im Online-Konfigurator.",
+      ],
+      [
+        "Wie lange dauert die Aufbereitung?",
+        "Je nach Paket und Fahrzeuggröße reicht die Bearbeitungszeit von wenigen Stunden bis zu zwei Werktagen. Die geplante Dauer ist bei jedem Paket angegeben.",
+      ],
+      [
+        "Lohnt sich das auch bei einem älteren Fahrzeug?",
+        "Gerade bei älteren Fahrzeugen ist der Unterschied oft deutlich sichtbar. Vor Beginn besprechen wir, welche Gebrauchsspuren sich realistisch verbessern lassen und welche bleiben.",
+      ],
+      [
+        "Kann mein Fahrzeug abgeholt werden?",
+        "Ja. Für Horb am Neckar und zahlreiche Städte der Region steht ein Hol- und Bringservice zur Verfügung.",
+      ],
+    ],
+    relatedPackageIds: ["basis", "premium", "keramik"],
+  },
+  {
+    slug: "smart-repair",
+    name: "Dellenentfernung & Smart Repair",
+    shortName: "Smart Repair",
+    eyebrow: "Kleine Schäden gezielt beheben",
+    title: "Dellenentfernung und Smart Repair in Horb am Neckar",
+    metaTitle: "Dellenentfernung & Smart Repair Horb | White Gloss",
+    metaDescription:
+      "Dellenentfernung und Smart Repair in Horb am Neckar: kleine Dellen und Gebrauchsspuren gezielt beheben statt lackieren. Jetzt begutachten lassen.",
+    lead: "Kleine Dellen und örtlich begrenzte Gebrauchsspuren lassen sich häufig gezielt beheben, ohne dass ein ganzes Bauteil neu lackiert werden muss.",
+    detail:
+      "Ob eine Delle für Smart Repair geeignet ist, entscheidet sich am Fahrzeug: Lage, Größe, Zugänglichkeit von der Rückseite und der Zustand des Lacks an dieser Stelle sind ausschlaggebend. Deshalb steht am Anfang immer eine Begutachtung – erst danach lässt sich seriös sagen, was möglich ist.",
+    benefits: [
+      "Gezielte Bearbeitung einzelner Stellen statt ganzflächiger Lackierung",
+      "Begutachtung und ehrliche Einschätzung vor jeder Zusage",
+      "Sinnvoll kombinierbar mit Lackkorrektur und Aufbereitung",
+      "Besonders relevant vor Verkauf oder Leasingrückgabe",
+    ],
+    process: [
+      {
+        title: "Schaden begutachten",
+        text: "Wir prüfen Lage, Größe und Zugänglichkeit der Stelle sowie den Zustand des Lacks.",
+      },
+      {
+        title: "Machbarkeit klären",
+        text: "Sie erhalten eine klare Einschätzung, was sich beheben lässt – und was nicht.",
+      },
+      {
+        title: "Bearbeitung",
+        text: "Die betroffene Stelle wird gezielt bearbeitet, angrenzende Flächen bleiben unberührt.",
+      },
+      {
+        title: "Kontrolle",
+        text: "Das Ergebnis wird bei gleichmäßiger Beleuchtung aus mehreren Blickwinkeln geprüft.",
+      },
+    ],
+    faq: [
+      [
+        "Ist jede Delle für Smart Repair geeignet?",
+        "Nein. Ob eine Bearbeitung möglich ist, hängt von Lage, Größe, Zugänglichkeit und dem Zustand des Lacks ab. Bei beschädigtem Lack oder scharfen Kanten stößt das Verfahren an Grenzen.",
+      ],
+      [
+        "Was kostet die Dellenentfernung?",
+        "Der Aufwand hängt vom Einzelfall ab. Deshalb nennen wir den Preis erst nach der Begutachtung des Fahrzeugs und nicht pauschal im Voraus.",
+      ],
+      [
+        "Sieht man die Stelle danach noch?",
+        "Ziel ist ein Ergebnis, das im normalen Betrachtungsabstand nicht mehr auffällt. Wie nah das erreichbar ist, sagen wir Ihnen ehrlich nach der Begutachtung.",
+      ],
+      [
+        "Kann mein Fahrzeug abgeholt werden?",
+        "Ja. Für Horb am Neckar und zahlreiche Städte der Region steht ein Hol- und Bringservice zur Verfügung.",
+      ],
+    ],
+    relatedPackageIds: [],
+  },
+  {
+    slug: "leasingrueckgabe",
+    name: "Leasingrückläufer-Aufbereitung",
+    shortName: "Leasingrückgabe",
+    eyebrow: "Vorbereitet in die Rückgabe",
+    title: "Leasingrückläufer-Aufbereitung in Horb am Neckar",
+    metaTitle: "Leasingrückgabe Aufbereitung Horb | White Gloss",
+    metaDescription:
+      "Leasingrückläufer in Horb am Neckar aufbereiten lassen: Gebrauchsspuren vor der Rückgabe gezielt reduzieren. Termin rechtzeitig sichern.",
+    lead: "Vor der Rückgabe zählt jedes Detail: Gebrauchsspuren, die bei der Begutachtung auffallen, lassen sich vorher oft gezielt reduzieren.",
+    detail:
+      "Wir sehen uns das Fahrzeug mit Blick auf die anstehende Rückgabe an und priorisieren die Stellen, die bei einer Begutachtung typischerweise ins Gewicht fallen – Felgen, Einstiege, Sitzflächen, Kanten und der Lack. Was sich sinnvoll beheben lässt und was nicht, besprechen wir vorher offen.",
+    benefits: [
+      "Priorisierung der Stellen, die bei der Rückgabe typischerweise auffallen",
+      "Kombination aus Innenreinigung, Lackpflege und punktueller Nacharbeit",
+      "Offene Einschätzung, welche Spuren bleiben werden",
+      "Planbarer Termin vor dem Rückgabedatum",
+    ],
+    process: [
+      {
+        title: "Rückgabetermin klären",
+        text: "Wir planen die Aufbereitung so, dass sie rechtzeitig vor der Rückgabe abgeschlossen ist.",
+      },
+      {
+        title: "Fahrzeug durchgehen",
+        text: "Gemeinsame Sichtung der Stellen, die bei einer Begutachtung erfahrungsgemäß auffallen.",
+      },
+      {
+        title: "Aufbereitung",
+        text: "Innenraum, Lack und Details werden im abgestimmten Umfang bearbeitet.",
+      },
+      {
+        title: "Übergabe",
+        text: "Endkontrolle bei kontrolliertem Licht und Rückgabe zum vereinbarten Termin.",
+      },
+    ],
+    faq: [
+      [
+        "Wann sollte ich den Termin legen?",
+        "Am besten einige Tage vor dem Rückgabetermin. So bleibt Puffer, falls sich bei der Sichtung zusätzlicher Bedarf zeigt.",
+      ],
+      [
+        "Garantiert die Aufbereitung eine beanstandungsfreie Rückgabe?",
+        "Nein. Wie ein Fahrzeug bewertet wird, entscheidet allein der Leasinggeber. Wir können Gebrauchsspuren reduzieren, aber das Ergebnis der Begutachtung nicht zusagen.",
+      ],
+      [
+        "Werden auch Dellen mitbehandelt?",
+        "Kleinere Dellen lassen sich je nach Lage und Zustand gezielt bearbeiten. Ob das möglich ist, klären wir bei der Begutachtung.",
+      ],
+      [
+        "Kann mein Fahrzeug abgeholt werden?",
+        "Ja. Für Horb am Neckar und zahlreiche Städte der Region steht ein Hol- und Bringservice zur Verfügung.",
+      ],
+    ],
+    relatedPackageIds: ["premium", "keramik"],
   },
 ];
 

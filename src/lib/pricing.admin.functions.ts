@@ -7,7 +7,7 @@ export const updateServicePrice = createServerFn({ method: "POST" })
   .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .validator((data: { itemType: string; itemId: string; amount: number }) => {
     const amount = Number(data.amount);
-    if (!["package", "addon", "vehicle"].includes(data.itemType))
+    if (!["package", "addon", "vehicle", "pickup"].includes(data.itemType))
       throw new Error("Ungültige Preisart");
     if (!Number.isFinite(amount) || amount < 0 || amount > 100000)
       throw new Error("Ungültiger Betrag");
@@ -42,6 +42,10 @@ export const updateServicePrice = createServerFn({ method: "POST" })
         `Preis wurde im Buchungssystem aktualisiert, aber die Synchronisation mit Supabase ist fehlgeschlagen: ${error.message}`,
       );
     }
+
+    // Cache leeren, damit die Änderung sofort auf allen Seiten sichtbar wird.
+    const { invalidateServicePriceCache } = await import("@/lib/pricing.server");
+    invalidateServicePriceCache();
 
     return { ok: true };
   });

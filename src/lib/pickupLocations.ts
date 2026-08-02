@@ -6,7 +6,12 @@
  * Seiten, Meta-Daten, JSON-LD, Übersicht und Sitemap ziehen automatisch nach.
  */
 
-import { company, pickupPriceText } from "./servicesConfig";
+import {
+  company,
+  pickupPricing,
+  pickupPriceText,
+  pickupTierSummary,
+} from "./servicesConfig";
 import { absUrl } from "./seo";
 
 export type PickupCity = {
@@ -314,6 +319,16 @@ export const pickupCities: PickupCity[] = [
   },
 ];
 
+/**
+ * Entfernung einer Abholstadt in km – `null`, wenn kein oder ein unbekannter
+ * Slug übergeben wurde. Grundlage für die Preisstaffel des Abholservice.
+ */
+export function getPickupDistanceKm(slug: string | null | undefined): number | null {
+  if (!slug) return null;
+  const city = pickupCities.find((c) => c.slug === slug);
+  return city ? city.distanceKm : null;
+}
+
 export function getPickupCity(slug: string): PickupCity | undefined {
   return pickupCities.find((c) => c.slug === slug);
 }
@@ -359,6 +374,9 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
     `Fahrzeugaufbereitung ${city.short} | Abholservice`,
     `${city.short}: Fahrzeugaufbereitung mit Abholung`,
     `Autoaufbereitung ${city.short} – Hol- & Bringservice`,
+    `Fahrzeugaufbereitung ${city.short} (${city.district})`,
+    `${city.short}: Autoaufbereitung ohne eigene Anfahrt`,
+    `Fahrzeugpflege ${city.short} – Abholung & Rückgabe`,
   ];
   const idx = pickupCities.findIndex((c) => c.slug === city.slug);
   const title = isHome
@@ -367,8 +385,11 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
 
   const descriptions = [
     `Professionelle Fahrzeugaufbereitung für ${city.name}: Wir holen Ihr Auto ab (${city.distanceKm} km, ca. ${city.driveMinutes} Min. nach Horb) und bringen es veredelt zurück.`,
-    `Lackkorrektur, Keramikversiegelung & Innenreinigung für ${city.name}. Abholservice aus dem ${city.district} für ${pickupPriceText()} pauschal – jetzt anfragen.`,
+    `Lackkorrektur, Keramikversiegelung & Innenreinigung für ${city.name}. Abholservice aus dem ${city.district} für ${pickupPriceText(city.distanceKm)} – jetzt anfragen.`,
     `Autoaufbereitung ${city.short} ohne Umweg: Abholung an Ihrer Adresse, Aufbereitung in unserer Werkstatt in Horb am Neckar, Rückgabe nach Wunschtermin.`,
+    `Fahrzeugaufbereitung für ${city.name}: Anfahrt ${city.route}, rund ${city.driveMinutes} Minuten pro Strecke. Abholung ${pickupPriceText(city.distanceKm)}.`,
+    `${city.short} und Umgebung (${city.districts[0]}, ${city.districts[1]}): Wir holen Ihr Fahrzeug ab und bereiten es in Horb am Neckar auf. Abholung ${pickupPriceText(city.distanceKm)}.`,
+    `Aufbereitung für Fahrzeuge aus ${city.name} im ${city.district}. ${city.distanceKm} km bis zur Werkstatt, Abholung ${pickupPriceText(city.distanceKm)} – Termin online anfragen.`,
   ];
   const description = isHome
     ? `Fahrzeugaufbereitung in Horb am Neckar: Lackkorrektur, Keramikversiegelung und Innenreinigung inklusive Hol- und Bringservice. Jetzt Termin anfragen.`
@@ -385,12 +406,27 @@ export function buildCityMeta(city: PickupCity): SeoMeta {
  * FAQ – eine Quelle für sichtbaren Inhalt UND FAQPage-JSON-LD
  * ---------------------------------------------------------------------- */
 
+/** Erster FAQ-Satz: nennt die konkrete Entfernung und den daraus folgenden Preis. */
+export function buildCityPickupSentence(city: PickupCity): string {
+  const priceText = pickupPriceText(city.distanceKm);
+  if (city.distanceKm === 0) {
+    return `In ${city.name} steht unsere Werkstatt – Abholung und Rückgabe im Stadtgebiet sind ${priceText}.`;
+  }
+  if (priceText === "kostenlos") {
+    return `Abholung und Rückgabe in ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) sind kostenlos.`;
+  }
+  if (priceText === "auf Anfrage") {
+    return `${city.name} liegt ${city.distanceKm} km von unserer Werkstatt in ${homeBase.city} entfernt und damit außerhalb der festen Preisstaffel – die Abholung kalkulieren wir hier individuell auf Anfrage.`;
+  }
+  return `Abholung und Rückgabe in ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) kosten ${priceText}.`;
+}
+
 /** Frage-/Antwort-Paare je Stadt (identisch mit der Darstellung auf der Seite). */
 export function buildCityFaqItems(city: PickupCity): [string, string][] {
   return [
     [
       `Was kostet der Abholservice in ${city.name}?`,
-      `Abholung und Rückgabe in ${city.name} (${city.distanceKm} km von unserer Werkstatt in ${homeBase.city}) kosten pauschal ${pickupPriceText()} – unabhängig von der Fahrzeugklasse. Im Paket High-End Keramik ist der Hol- & Bringservice kostenfrei enthalten. ${city.faqExtra}`,
+      `${buildCityPickupSentence(city)} Der Preis richtet sich nach der Entfernung (${pickupTierSummary()}) und ist unabhängig von der Fahrzeugklasse. Im Paket High-End Keramik ist der Hol- & Bringservice bis ${pickupPricing.freeUpToKm} km kostenfrei enthalten. ${city.faqExtra}`,
     ],
     [
       "Wie lange dauert die Aufbereitung?",
