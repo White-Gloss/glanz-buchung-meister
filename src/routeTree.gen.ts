@@ -23,8 +23,10 @@ import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.ind
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
+import { Route as KalenderTokenIcsRouteImport } from './routes/kalender.$token.ics'
 import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
 import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
+import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +96,11 @@ const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const KalenderTokenIcsRoute = KalenderTokenIcsRouteImport.update({
+  id: '/kalender/$token/ics',
+  path: '/kalender/$token/ics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeistungenServiceIndexRoute = LeistungenServiceIndexRouteImport.update({
   id: '/leistungen/$service/',
   path: '/leistungen/$service/',
@@ -104,6 +111,12 @@ const LeistungenServiceCityRoute = LeistungenServiceCityRouteImport.update({
   path: '/leistungen/$service/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAdminKundenRoute =
+  AuthenticatedAdminAdminKundenRouteImport.update({
+    id: '/kunden',
+    path: '/kunden',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,9 +130,11 @@ export interface FileRoutesByFullPath {
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
-  '/admin': typeof AuthenticatedAdminAdminRoute
+  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
+  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,9 +148,11 @@ export interface FileRoutesByTo {
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
-  '/admin': typeof AuthenticatedAdminAdminRoute
+  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
+  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
+  '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,9 +169,11 @@ export interface FileRoutesById {
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
-  '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRoute
+  '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
+  '/kalender/$token/ics': typeof KalenderTokenIcsRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,8 +190,10 @@ export interface FileRouteTypes {
     | '/abholservice/'
     | '/leistungen/'
     | '/admin'
+    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/admin/kunden'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,8 +208,10 @@ export interface FileRouteTypes {
     | '/abholservice'
     | '/leistungen'
     | '/admin'
+    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service'
+    | '/admin/kunden'
   id:
     | '__root__'
     | '/'
@@ -205,8 +228,10 @@ export interface FileRouteTypes {
     | '/abholservice/'
     | '/leistungen/'
     | '/_authenticated/_admin/admin'
+    | '/kalender/$token/ics'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/_authenticated/_admin/admin/kunden'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -222,6 +247,7 @@ export interface RootRouteChildren {
   AbholserviceCityRoute: typeof AbholserviceCityRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
   LeistungenIndexRoute: typeof LeistungenIndexRoute
+  KalenderTokenIcsRoute: typeof KalenderTokenIcsRoute
   LeistungenServiceCityRoute: typeof LeistungenServiceCityRoute
   LeistungenServiceIndexRoute: typeof LeistungenServiceIndexRoute
 }
@@ -326,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/kalender/$token/ics': {
+      id: '/kalender/$token/ics'
+      path: '/kalender/$token/ics'
+      fullPath: '/kalender/$token/ics'
+      preLoaderRoute: typeof KalenderTokenIcsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leistungen/$service/': {
       id: '/leistungen/$service/'
       path: '/leistungen/$service'
@@ -340,16 +373,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeistungenServiceCityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/_admin/admin/kunden': {
+      id: '/_authenticated/_admin/admin/kunden'
+      path: '/kunden'
+      fullPath: '/admin/kunden'
+      preLoaderRoute: typeof AuthenticatedAdminAdminKundenRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
   }
 }
 
+interface AuthenticatedAdminAdminRouteChildren {
+  AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
+}
+
+const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
+  {
+    AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
+  }
+
+const AuthenticatedAdminAdminRouteWithChildren =
+  AuthenticatedAdminAdminRoute._addFileChildren(
+    AuthenticatedAdminAdminRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteRouteChildren {
-  AuthenticatedAdminAdminRoute: typeof AuthenticatedAdminAdminRoute
+  AuthenticatedAdminAdminRoute: typeof AuthenticatedAdminAdminRouteWithChildren
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
-    AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRoute,
+    AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRouteWithChildren,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =
@@ -381,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   AbholserviceCityRoute: AbholserviceCityRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
   LeistungenIndexRoute: LeistungenIndexRoute,
+  KalenderTokenIcsRoute: KalenderTokenIcsRoute,
   LeistungenServiceCityRoute: LeistungenServiceCityRoute,
   LeistungenServiceIndexRoute: LeistungenServiceIndexRoute,
 }
