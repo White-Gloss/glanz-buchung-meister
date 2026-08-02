@@ -22,8 +22,9 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
-import { Route as LeistungenServiceRouteImport } from './routes/leistungen.$service'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
+import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
+import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,15 +89,20 @@ const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
   path: '/leistungen/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LeistungenServiceRoute = LeistungenServiceRouteImport.update({
-  id: '/leistungen/$service',
-  path: '/leistungen/$service',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const LeistungenServiceIndexRoute = LeistungenServiceIndexRouteImport.update({
+  id: '/leistungen/$service/',
+  path: '/leistungen/$service/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeistungenServiceCityRoute = LeistungenServiceCityRouteImport.update({
+  id: '/leistungen/$service/$city',
+  path: '/leistungen/$service/$city',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -109,10 +115,11 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRoute
+  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
+  '/leistungen/$service/': typeof LeistungenServiceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,10 +131,11 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRoute
+  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
+  '/leistungen/$service': typeof LeistungenServiceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,10 +150,11 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/leistungen/$service': typeof LeistungenServiceRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRoute
+  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
+  '/leistungen/$service/': typeof LeistungenServiceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,10 +168,11 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
-    | '/leistungen/$service'
     | '/abholservice/'
     | '/leistungen/'
     | '/admin'
+    | '/leistungen/$service/$city'
+    | '/leistungen/$service/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -174,10 +184,11 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
-    | '/leistungen/$service'
     | '/abholservice'
     | '/leistungen'
     | '/admin'
+    | '/leistungen/$service/$city'
+    | '/leistungen/$service'
   id:
     | '__root__'
     | '/'
@@ -191,10 +202,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/_admin'
     | '/abholservice/$city'
-    | '/leistungen/$service'
     | '/abholservice/'
     | '/leistungen/'
     | '/_authenticated/_admin/admin'
+    | '/leistungen/$service/$city'
+    | '/leistungen/$service/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -208,9 +220,10 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
-  LeistungenServiceRoute: typeof LeistungenServiceRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
   LeistungenIndexRoute: typeof LeistungenIndexRoute
+  LeistungenServiceCityRoute: typeof LeistungenServiceCityRoute
+  LeistungenServiceIndexRoute: typeof LeistungenServiceIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -306,19 +319,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeistungenIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/leistungen/$service': {
-      id: '/leistungen/$service'
-      path: '/leistungen/$service'
-      fullPath: '/leistungen/$service'
-      preLoaderRoute: typeof LeistungenServiceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/_admin/admin': {
       id: '/_authenticated/_admin/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/leistungen/$service/': {
+      id: '/leistungen/$service/'
+      path: '/leistungen/$service'
+      fullPath: '/leistungen/$service/'
+      preLoaderRoute: typeof LeistungenServiceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leistungen/$service/$city': {
+      id: '/leistungen/$service/$city'
+      path: '/leistungen/$service/$city'
+      fullPath: '/leistungen/$service/$city'
+      preLoaderRoute: typeof LeistungenServiceCityRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -359,9 +379,10 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
-  LeistungenServiceRoute: LeistungenServiceRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
   LeistungenIndexRoute: LeistungenIndexRoute,
+  LeistungenServiceCityRoute: LeistungenServiceCityRoute,
+  LeistungenServiceIndexRoute: LeistungenServiceIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
