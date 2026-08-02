@@ -20,6 +20,17 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Umgebungsvariablen
+# Hinweis: .env enthaelt ausschliesslich oeffentliche Werte (Projekt-URL und
+# Publishable Key) und wird beim Build von Hostinger benoetigt - deshalb bleibt
+# sie bewusst im Repository. Geheimnisse wie SUPABASE_SERVICE_ROLE_KEY oder
+# SUPABASE_DB_URL gehoeren NIE in diese Datei, sondern ausschliesslich in die
+# Umgebungsvariablen des Hosters.
+.env.local
+.env.*.local
+.env.production
+.env.development.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
