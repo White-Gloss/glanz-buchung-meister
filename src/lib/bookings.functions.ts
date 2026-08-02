@@ -177,7 +177,19 @@ export const createBooking = createServerFn({ method: "POST" })
       typeof result.create_booking_public === "string"
         ? JSON.parse(result.create_booking_public)
         : (result.create_booking_public as unknown as Row);
-    return toBooking({ ...row, booking_date: String(row.booking_date) });
+    const booking = toBooking({ ...row, booking_date: String(row.booking_date) });
+
+    // Benachrichtigungen verschicken. Bewusst NACH dem erfolgreichen Speichern
+    // und mit eigenem Fehlerabfang: Eine gestörte Zustellung darf die bereits
+    // gespeicherte Buchung nicht zu einem Fehler für den Kunden machen.
+    try {
+      const { sendBookingMails } = await import("./email.server");
+      await sendBookingMails(booking);
+    } catch (error) {
+      console.error("[mail] Versand übersprungen:", error);
+    }
+
+    return booking;
   });
 
 // ---------------------------------------------------------------------------
