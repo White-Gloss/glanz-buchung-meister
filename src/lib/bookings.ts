@@ -2,11 +2,14 @@ import {
   addOns,
   currency,
   depositConfig,
+  getPickupPrice,
+  isPickupIncluded,
   servicePackages,
   taxConfig,
   vehicleTypes,
   type AddOn,
 } from "./servicesConfig";
+import { getPickupDistanceKm } from "./pickupLocations";
 
 export type BookingStatus = "Angefragt" | "Bestätigt" | "Ausstehend" | "Bezahlt" | "Storniert";
 
@@ -29,6 +32,8 @@ export type Booking = {
   addOnIds: string[];
   date: string; // ISO yyyy-mm-dd
   time: string;
+  /** Slug der Abholstadt – nur gesetzt, wenn der Hol- & Bringservice gebucht wurde */
+  pickupCity: string | null;
   customer: {
     name: string;
     email: string;
@@ -49,6 +54,7 @@ export function calcLineItems(input: {
   vehicleId: string;
   packageId: string;
   addOnIds: string[];
+  pickupCity?: string | null;
 }): LineItem[] {
   const vehicle = vehicleTypes.find((v) => v.id === input.vehicleId);
   const pkg = servicePackages.find((p) => p.id === input.packageId);
@@ -68,6 +74,27 @@ export function calcLineItems(input: {
   input.addOnIds.forEach((id) => {
     const add: AddOn | undefined = addOns.find((a) => a.id === id);
     if (!add) return;
+
+    // Entfernungsabhängige Leistungen (Abholservice) folgen der Staffel,
+    // nicht dem Pauschalpreis aus der Add-on-Liste.
+    if (add.distanceBased) {
+      const distanceKm = getPickupDistanceKm(input.pickupCity);
+      if (distanceKm === null) return;
+      if (isPickupIncluded(input.packageId, distanceKm)) {
+        items.push({ label: `${add.name} (inklusive)`, qty: 1, unit: 0, total: 0 });
+        return;
+      }
+      const price = getPickupPrice(distanceKm);
+      if (price === null) return; // außerhalb der Staffel – nur auf Anfrage
+      items.push({
+        label: `${add.name} · ${distanceKm} km`,
+        qty: 1,
+        unit: price,
+        total: price,
+      });
+      return;
+    }
+
     const included = add.includedInPackages?.includes(input.packageId) ?? false;
     const price = included ? 0 : Math.round(add.price * (add.flatPrice ? 1 : factor));
     items.push({

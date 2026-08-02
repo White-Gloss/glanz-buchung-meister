@@ -11,6 +11,18 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Routen einzeln aufteilen. Ohne diese Option importiert routeTree.gen.ts
+    // ALLE Routen statisch – dadurch lag der Auth-Code des Admin-Bereichs
+    // (~35 KB) im Startgraph jeder öffentlichen Seite.
+    router: { autoCodeSplitting: true },
+  },
+  // Die Seite läuft auf Hostinger in einer Node-Umgebung, nicht auf Cloudflare
+  // Workers. Ohne diese Festlegung baut Nitro gegen "cloudflare-module": das
+  // erzeugt eine wrangler.json und eine Worker-Umgebung, in der die direkte
+  // Postgres-Verbindung (pg über TCP) nicht funktioniert.
+  // Innerhalb der Lovable-Umgebung wird dieser Wert automatisch ignoriert.
+  nitro: {
+    preset: "node-server",
   },
   vite: {
     server: {

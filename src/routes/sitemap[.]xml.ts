@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { servicePages } from "@/lib/servicePages";
+import { allServiceCityCombos, serviceCityPath } from "@/lib/serviceCityPages";
 import { SITE_URL } from "@/lib/seo";
 
 const BASE_URL = SITE_URL;
@@ -17,6 +18,9 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        // Ein Deploy-Datum für alle Einträge: ehrlicher als ein erfundenes
+        // Einzeldatum pro Seite und für Crawler ausreichend.
+        const lastmod = new Date().toISOString().slice(0, 10);
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/leistungen", changefreq: "monthly", priority: "0.9" },
@@ -33,9 +37,15 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "monthly",
             priority: "0.8",
           })),
+          // Local-SEO-Matrix: jede Kombination aus Leistung und Stadt
+          ...allServiceCityCombos().map<SitemapEntry>(({ service, city }) => ({
+            path: serviceCityPath(service.slug, city.slug),
+            changefreq: "monthly",
+            priority: "0.7",
+          })),
         ];
 
-        const urls = entries.map((e) =>
+        const urls = entries.map((entry) => ({ lastmod, ...entry })).map((e) =>
           [
             `  <url>`,
             `    <loc>${BASE_URL}${e.path}</loc>`,

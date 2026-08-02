@@ -77,6 +77,26 @@ function withProductionHeaders(request: Request, response: Response): Response {
   headers.set("X-Frame-Options", "SAMEORIGIN");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
+  // Content-Security-Policy: Die Seite lädt keinerlei Fremdressourcen
+  // (Schriften self-hosted via @fontsource, keine Tracker, keine iframes).
+  // 'unsafe-inline' ist für die JSON-LD-Blöcke und den Hydration-State nötig.
+  headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self'",
+      // Server-Funktionen sprechen mit der eigenen Domain; Supabase nur im Admin-Login.
+      "connect-src 'self' https://*.supabase.co",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+    ].join("; "),
+  );
+
   const url = new URL(request.url);
   if (request.method === "GET" && response.status === 200 && isPublicPage(url.pathname)) {
     headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");

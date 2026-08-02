@@ -18,7 +18,8 @@ export const Route = createFileRoute("/datenschutz")({
       },
       { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: absUrl("/datenschutz") }],
+    links: [{ rel: "canonical", href: absUrl("/datenschutz") },
+        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/datenschutz") }],
   }),
   component: PrivacyPage,
 });
@@ -27,7 +28,7 @@ function PrivacyPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="border-b border-border">
           <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
             <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
@@ -87,7 +88,10 @@ function PrivacyPage() {
             <p>
               Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Für die technische Speicherung der
               Buchungsdaten wird eine von Supabase bereitgestellte Datenbank-Infrastruktur als
-              Auftragsverarbeitungsdienst eingesetzt.
+              Auftragsverarbeitungsdienst eingesetzt. Mit dem Anbieter besteht ein Vertrag zur
+              Auftragsverarbeitung nach Art. 28 DSGVO. Die Datenbank wird in der Region Frankfurt am Main (eu-central-1) und damit
+              innerhalb der Europäischen Union betrieben. Eine Übermittlung der Buchungsdaten in
+              ein Drittland findet im Regelbetrieb nicht statt.
             </p>
           </section>
 

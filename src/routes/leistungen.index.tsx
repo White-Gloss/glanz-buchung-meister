@@ -1,5 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Gem, ShieldCheck, Sofa, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Car,
+  CheckCircle2,
+  FileCheck2,
+  Gem,
+  Hammer,
+  ShieldCheck,
+  Sofa,
+  Sparkles,
+} from "lucide-react";
 
 import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -7,11 +17,13 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 import { servicePages } from "@/lib/servicePages";
+import { ServiceCityMatrix } from "@/components/ServiceCityMatrix";
+import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 
 const TITLE = "Leistungen der Fahrzeugaufbereitung | White Gloss";
 const DESCRIPTION =
-  "Innenraumreinigung, Lackkorrektur, Keramikversiegelung und Lederpflege in Horb am Neckar. Leistungen, Vorteile und Ablauf im Überblick.";
-const icons = [Sofa, Sparkles, ShieldCheck, Gem];
+  "Fahrzeugaufbereitung, Lackkorrektur, Keramikversiegelung, Smart Repair und mehr in Horb am Neckar – mit Abholservice in der ganzen Region.";
+const icons = [Sofa, Sparkles, ShieldCheck, Gem, Car, Hammer, FileCheck2];
 
 export const Route = createFileRoute("/leistungen/")({
   head: () => ({
@@ -53,7 +65,7 @@ function ServicesOverview() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="relative isolate overflow-hidden border-b border-border">
           <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
           <div className="chrome-orb -right-32 -top-32 -z-10" aria-hidden />
@@ -157,6 +169,22 @@ function ServicesOverview() {
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Local-SEO-Matrix: Leistung × Stadt, ohne Client-JavaScript */}
+        <section className="content-auto border-y border-border bg-surface/35">
+          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+            <p className="eyebrow">Leistung und Ort</p>
+            <h2 className="display-section mt-3 uppercase">
+              Jede Leistung, in jeder Stadt der Region
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+              Ausgeführt wird ausschließlich in unserer Werkstatt in Horb am Neckar. Für{" "}
+              {pickupCitiesByDistance.length} Städte im Umkreis übernehmen wir Abholung und
+              Rückgabe. Wählen Sie Ihre Leistung, um die Seiten der einzelnen Orte zu öffnen.
+            </p>
+            <ServiceCityMatrix defaultOpenServiceSlug={servicePages[0]?.slug} />
           </div>
         </section>
 

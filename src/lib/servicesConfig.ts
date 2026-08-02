@@ -33,6 +33,8 @@ export type AddOn = {
   flatPrice?: boolean;
   /** Paket-IDs, in denen die Leistung bereits enthalten ist (Preis 0) */
   includedInPackages?: string[];
+  /** true = Preis ergibt sich aus der Entfernungsstaffel, nicht aus `price` */
+  distanceBased?: boolean;
 };
 
 export const company = {
@@ -72,6 +74,25 @@ export const taxConfig = {
   invoicePrefix: "WGD-2026-",
   invoiceStartNumber: 1001,
 };
+
+/**
+ * Pflichtangabe nach Preisangabenverordnung (PAngV): Bei Angeboten gegenüber
+ * Verbrauchern muss erkennbar sein, dass der Preis die Umsatzsteuer enthält.
+ * Bei Kleinunternehmerregelung (`smallBusiness: true`) tritt der Hinweis nach
+ * § 19 UStG an diese Stelle.
+ */
+export function vatNotice(): string {
+  return taxConfig.smallBusiness
+    ? taxConfig.smallBusinessNote
+    : `Alle Preise sind Endpreise inkl. ${(taxConfig.vatRate * 100).toLocaleString("de-DE")} % MwSt.`;
+}
+
+/** Kurzform direkt unter einer Preisangabe. */
+export function vatNoticeShort(): string {
+  return taxConfig.smallBusiness
+    ? "keine MwSt. (§ 19 UStG)"
+    : `inkl. ${(taxConfig.vatRate * 100).toLocaleString("de-DE")} % MwSt.`;
+}
 
 /** Anzahlung für Neukunden */
 export const depositConfig = {
@@ -183,9 +204,11 @@ export const addOns: AddOn[] = [
   {
     id: "hol",
     name: "Hol- & Bringservice (Abholservice)",
-    description: "Abholung und Rückgabe im Umkreis von 25 km – bei High-End Keramik inklusive",
-    price: 60,
+    description:
+      "Abholung und Rückgabe – Preis nach Entfernungsstaffel, bei High-End Keramik inklusive",
+    price: 0,
     flatPrice: true,
+    distanceBased: true,
     includedInPackages: ["keramik"],
   },
 ];
@@ -233,22 +256,83 @@ export function currency(value: number) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Abholservice – zentrale Preisauskunft für alle Seiten               */
+/* Abholservice – Entfernungsstaffel (zentrale Preisauskunft)          */
 /* ------------------------------------------------------------------ */
 
-/** Pauschalpreis des Hol- & Bringservice (unabhängig von der Fahrzeugklasse). */
-export function getPickupPrice(): number {
-  return addOns.find((a) => a.id === "hol")?.price ?? 60;
+export type PickupTier = {
+  /** Interne ID – entspricht `service_prices.item_id` mit item_type = "pickup" */
+  id: string;
+  /** Obergrenze der Entfernung in km (einschließlich) */
+  maxKm: number;
+  /** Bruttopreis in EUR */
+  amount: number;
+  label: string;
+};
+
+/**
+ * Staffelpreise für den Hol- & Bringservice. Einzige Quelle für Website,
+ * Buchungstool und Rechnung. Die Werte lassen sich im Admin-Bereich
+ * überschreiben (Tabelle `service_prices`, item_type = "pickup").
+ */
+export const pickupPricing = {
+  tiers: [
+    { id: "tier_10", maxKm: 10, amount: 0, label: "Abholung bis 10 km" },
+    { id: "tier_20", maxKm: 20, amount: 50, label: "Abholung bis 20 km" },
+    { id: "tier_50", maxKm: 50, amount: 70, label: "Abholung bis 50 km" },
+  ] as PickupTier[],
+  /** Oberhalb dieser Entfernung erfolgt die Abholung nur auf Anfrage. */
+  maxKm: 50,
+  /** Im genannten Paket ist die Abholung bis `freeUpToKm` kostenfrei. */
+  freeWithPackageId: "keramik",
+  freeUpToKm: 60,
+};
+
+/** true, wenn die Abholung im gewählten Paket kostenfrei enthalten ist. */
+export function isPickupIncluded(packageId: string | null | undefined, distanceKm: number) {
+  return (
+    packageId === pickupPricing.freeWithPackageId && distanceKm <= pickupPricing.freeUpToKm
+  );
 }
 
-/** Kurzform, z. B. „60,00 €" */
-export function pickupPriceText(): string {
-  return currency(getPickupPrice());
+/**
+ * Preis der Abholung für eine Entfernung.
+ * `null` bedeutet: außerhalb der Staffel, nur auf Anfrage.
+ */
+export function getPickupPrice(distanceKm: number): number | null {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) return null;
+  const tier = pickupPricing.tiers.find((t) => distanceKm <= t.maxKm);
+  return tier ? tier.amount : null;
+}
+
+/** Preisangabe für eine konkrete Entfernung, z. B. „kostenlos“ oder „50,00 €“. */
+export function pickupPriceText(distanceKm: number): string {
+  const price = getPickupPrice(distanceKm);
+  if (price === null) return "auf Anfrage";
+  if (price === 0) return "kostenlos";
+  return currency(price);
+}
+
+/** Kurzform der gesamten Staffel für Überschriften und Badges. */
+export function pickupPriceRangeText(): string {
+  const paid = pickupPricing.tiers.filter((t) => t.amount > 0);
+  if (paid.length === 0) return "kostenlos";
+  const max = Math.max(...paid.map((t) => t.amount));
+  return `kostenlos bis ${currency(max)}`;
+}
+
+/** Vollständige Staffel als Aufzählung, z. B. für Info-Karten und FAQ. */
+export function pickupTierSummary(): string {
+  const parts = pickupPricing.tiers.map((tier) =>
+    tier.amount === 0
+      ? `bis ${tier.maxKm} km kostenlos`
+      : `bis ${tier.maxKm} km ${currency(tier.amount)}`,
+  );
+  return `${parts.join(", ")}, über ${pickupPricing.maxKm} km auf Anfrage`;
 }
 
 /** Vollständiger Hinweis für Fließtext und Karten. */
 export function pickupPriceNote(): string {
-  return `Hol- & Bringservice: ${pickupPriceText()} pauschal – im Paket High-End Keramik inklusive.`;
+  return `Hol- & Bringservice nach Entfernung: ${pickupTierSummary()}. Im Paket High-End Keramik bis ${pickupPricing.freeUpToKm} km inklusive.`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -256,7 +340,7 @@ export function pickupPriceNote(): string {
 /* ------------------------------------------------------------------ */
 
 export type ServicePriceRow = {
-  item_type: "package" | "addon" | "vehicle";
+  item_type: "package" | "addon" | "vehicle" | "pickup";
   item_id: string;
   label: string;
   amount: number;
@@ -280,6 +364,9 @@ export function applyPriceOverrides(rows: ServicePriceRow[] | undefined | null) 
     } else if (row.item_type === "vehicle") {
       const veh = vehicleTypes.find((v) => v.id === row.item_id);
       if (veh && row.amount > 0) veh.factor = row.amount;
+    } else if (row.item_type === "pickup") {
+      const tier = pickupPricing.tiers.find((t) => t.id === row.item_id);
+      if (tier && row.amount >= 0) tier.amount = row.amount;
     }
   });
 }
@@ -293,17 +380,25 @@ export function currentPriceRows(): ServicePriceRow[] {
       label: p.name,
       amount: p.basePrice,
     })),
-    ...addOns.map((a) => ({
-      item_type: "addon" as const,
-      item_id: a.id,
-      label: a.name,
-      amount: a.price,
-    })),
+    ...addOns
+      .filter((a) => !a.distanceBased)
+      .map((a) => ({
+        item_type: "addon" as const,
+        item_id: a.id,
+        label: a.name,
+        amount: a.price,
+      })),
     ...vehicleTypes.map((v) => ({
       item_type: "vehicle" as const,
       item_id: v.id,
       label: `${v.name} (Faktor)`,
       amount: v.factor,
+    })),
+    ...pickupPricing.tiers.map((t) => ({
+      item_type: "pickup" as const,
+      item_id: t.id,
+      label: t.label,
+      amount: t.amount,
     })),
   ];
 }

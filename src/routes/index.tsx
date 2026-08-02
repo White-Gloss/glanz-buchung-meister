@@ -29,7 +29,8 @@ import {
   company,
   currency,
   features,
-  pickupPriceText,
+  pickupTierSummary,
+  vatNoticeShort,
   servicePackages,
 } from "@/lib/servicesConfig";
 
@@ -442,7 +443,9 @@ function Packages() {
               <span className="display-price text-3xl text-foreground">
                 ab {currency(servicePackage.basePrice)}
               </span>
-              <span className="text-xs text-muted-foreground">{servicePackage.duration}</span>
+              <span className="text-xs text-muted-foreground">
+                {vatNoticeShort()} · {servicePackage.duration}
+              </span>
             </p>
             <ul className="mt-7 flex-1 space-y-3">
               {servicePackage.features.map((feature) => (
@@ -539,7 +542,7 @@ function PickupAreas() {
           eyebrow="Hol- & Bringservice"
           title="Wir holen Ihr Fahrzeug ab."
           titleClassName="max-w-2xl uppercase"
-          text={`In ${pickupCities.length} Städten der Region holen wir Ihr Fahrzeug ab und bringen es nach dem Finish zurück – pauschal für ${pickupPriceText()}, im Paket High-End Keramik inklusive.`}
+          text={`In ${pickupCities.length} Städten der Region holen wir Ihr Fahrzeug ab und bringen es nach dem Finish zurück – nach Entfernung ${pickupTierSummary()}, im Paket High-End Keramik inklusive.`}
         />
         <p className="max-w-xl text-sm leading-6 text-muted-foreground lg:ml-auto">
           Kein zusätzlicher Werkstattweg, kein Organisationsstress: Abholung und Rückgabe werden in

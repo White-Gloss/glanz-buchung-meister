@@ -73,8 +73,11 @@
   --muted-foreground: oklch(0.69 0.012 240);
   --accent: oklch(0.93 0.022 235);
   --accent-foreground: oklch(0.12 0.01 245);
-  --destructive: oklch(0.62 0.23 25);
-  --destructive-foreground: oklch(1 0 0);
+  /* WCAG AAA: 7,59:1 als Textfarbe auf --background, und 7,58:1 für
+     --destructive-foreground auf --destructive (Button-Variante).
+     Vorher: 5,00:1 als Text (nur AA) und 4,08:1 im Button (unter AA). */
+  --destructive: oklch(0.72 0.18 25);
+  --destructive-foreground: oklch(0.12 0.02 25);
   --border: oklch(0.92 0.015 240 / 11%);
   --input: oklch(0.92 0.015 240 / 16%);
   --ring: oklch(0.83 0.045 235);

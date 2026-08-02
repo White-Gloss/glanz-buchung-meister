@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
+  MapPin,
   Phone,
   Plus,
   Sparkles,
@@ -23,20 +24,28 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
   addOns,
-  applyPriceOverrides,
+  company,
   depositConfig,
   currency,
+  getPickupPrice,
+  isPickupIncluded,
+  pickupPricing,
+  pickupTierSummary,
   servicePackages,
-  taxConfig,
   timeSlots,
+  vatNotice,
+  vatNoticeShort,
   vehicleTypes,
 } from "@/lib/servicesConfig";
+import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
 import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 
 import { createBooking, getBookedSlots } from "@/lib/bookings.functions";
-import { listServicePrices } from "@/lib/pricing.functions";
 import { useServerFn } from "@tanstack/react-start";
+
+/** Die entfernungsabhängige Zusatzleistung (Hol- & Bringservice). */
+const pickupAddOn = addOns.find((a) => a.distanceBased);
 const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
 
 const vehicleIcons: Record<string, typeof Car> = {
@@ -94,7 +103,7 @@ function MiniCalendar({
           <ChevronRight className="size-4" />
         </button>
       </div>
-      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] uppercase tracking-widest text-muted-foreground">
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[0.6875rem] uppercase tracking-widest text-muted-foreground">
         {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((d) => (
           <span key={d}>{d}</span>
         ))}
@@ -141,7 +150,11 @@ export function BookingWizard() {
   const [step, setStep] = useState(0);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [packageId, setPackageId] = useState<string | null>(null);
-  const [addOnIds, setAddOnIds] = useState<string[]>([]);
+  // Nur die vom Nutzer bewusst gewählten Zusatzleistungen. Paket-inklusive
+  // Leistungen kommen abgeleitet dazu und verschwinden beim Paketwechsel
+  // automatisch wieder – vorher blieben sie kostenpflichtig hängen.
+  const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
+  const [pickupCity, setPickupCity] = useState<string>("");
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
@@ -149,22 +162,15 @@ export function BookingWizard() {
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
-  const [priceVersion, setPriceVersion] = useState(0);
-
-  // Datenbankzugriffe starten erst, wenn der Nutzer in die Nähe des Buchungsbereichs
-  // scrollt. So blockieren Preise und Terminslots nicht mehr das erste HTML der Seite.
+  // Belegte Termine werden erst geladen, wenn der Nutzer in die Nähe des
+  // Buchungsbereichs scrollt. Die Preise liefert bereits der Root-Loader.
   const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
   const fetchBookedSlots = useServerFn(getBookedSlots);
-  const fetchServicePrices = useServerFn(listServicePrices);
   useEffect(() => {
-    void Promise.allSettled([
-      fetchBookedSlots({}).then(setLiveBlockedSlots),
-      fetchServicePrices({}).then((rows) => {
-        applyPriceOverrides(rows);
-        setPriceVersion((version) => version + 1);
-      }),
-    ]);
-  }, [fetchBookedSlots, fetchServicePrices]);
+    void fetchBookedSlots({})
+      .then(setLiveBlockedSlots)
+      .catch(() => undefined);
+  }, [fetchBookedSlots]);
 
   function updateCustomer(field: CustomerField, value: string) {
     setCustomer((c) => ({ ...c, [field]: value }));
@@ -182,18 +188,46 @@ export function BookingWizard() {
     setErrors((e) => ({ ...e, [field]: validateCustomerField(field, customer[field]) }));
   }
 
+  const includedAddOnIds = useMemo(
+    () =>
+      packageId
+        ? addOns.filter((a) => a.includedInPackages?.includes(packageId)).map((a) => a.id)
+        : [],
+    [packageId],
+  );
+
+  const addOnIds = useMemo(
+    () => Array.from(new Set([...selectedAddOnIds, ...includedAddOnIds])),
+    [selectedAddOnIds, includedAddOnIds],
+  );
+
+  const pickupSelected = !!pickupAddOn && addOnIds.includes(pickupAddOn.id);
+  const pickupCityData = pickupCitiesByDistance.find((c) => c.slug === pickupCity);
+  const pickupDistanceKm = pickupCityData?.distanceKm ?? null;
+  const pickupPrice = pickupDistanceKm === null ? null : getPickupPrice(pickupDistanceKm);
+  const pickupIncluded =
+    pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
+  const pickupOnRequest = pickupSelected && !pickupIncluded && pickupPrice === null;
+  const pickupTierText = pickupTierSummary();
+
   const items = useMemo(
-    () => (vehicleId && packageId ? calcLineItems({ vehicleId, packageId, addOnIds }) : []),
-    [vehicleId, packageId, addOnIds, priceVersion],
+    () =>
+      vehicleId && packageId
+        ? calcLineItems({ vehicleId, packageId, addOnIds, pickupCity: pickupCity || null })
+        : [],
+    [vehicleId, packageId, addOnIds, pickupCity],
   );
   const totals = calcTotals(items);
+
+  // Schritt "Extras": Ohne gültigen Abholort lässt sich der Staffelpreis nicht bestimmen.
+  const pickupStepValid = !pickupSelected || (!!pickupCityData && !pickupOnRequest);
 
   const canContinue = [
     !!vehicleId,
     !!packageId,
-    true,
+    pickupStepValid,
     !!date && !!time,
-    Object.keys(validateCustomer(customer)).length === 0,
+    Object.keys(validateCustomer(customer)).length === 0 && pickupStepValid,
   ][step];
 
   const submitBooking = useServerFn(createBooking);
@@ -201,6 +235,11 @@ export function BookingWizard() {
 
   async function submit() {
     if (!vehicleId || !packageId || !date || !time || submitting) return;
+    if (!pickupStepValid) {
+      setStep(2);
+      toast.error("Bitte wählen Sie einen gültigen Abholort für den Hol- & Bringservice.");
+      return;
+    }
     const fieldErrors = validateCustomer(customer);
     if (Object.keys(fieldErrors).length > 0) {
       setTouched({ name: true, email: true, phone: true, plate: true });
@@ -222,6 +261,7 @@ export function BookingWizard() {
           email: customer.email.trim(),
           phone: customer.phone.trim(),
           plate: customer.plate.trim().toUpperCase(),
+          pickupCity: pickupSelected ? pickupCity : null,
         },
       });
       setConfirmed(booking);
@@ -336,19 +376,7 @@ export function BookingWizard() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => {
-                        setPackageId(p.id);
-                        // Inklusiv-Leistungen des Pakets automatisch aktivieren
-                        const included = addOns
-                          .filter((a) => a.includedInPackages?.includes(p.id))
-                          .map((a) => a.id);
-                        if (included.length) {
-                          setAddOnIds((prev) => [
-                            ...prev,
-                            ...included.filter((id) => !prev.includes(id)),
-                          ]);
-                        }
-                      }}
+                      onClick={() => setPackageId(p.id)}
                       aria-pressed={active}
                       className={[
                         "relative flex flex-col rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
@@ -358,7 +386,7 @@ export function BookingWizard() {
                       ].join(" ")}
                     >
                       {p.highlight && (
-                        <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                        <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider text-primary-foreground">
                           Beliebt
                         </span>
                       )}
@@ -370,7 +398,7 @@ export function BookingWizard() {
                         {currency(Math.round(p.basePrice * factor))}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Endpreis für diese Fahrzeugklasse · {p.duration}
+                        Endpreis für diese Fahrzeugklasse · {vatNoticeShort()} · {p.duration}
                       </p>
                       <ul className="mt-4 space-y-2 text-sm text-foreground/80">
                         {p.features.map((f) => (
@@ -396,16 +424,15 @@ export function BookingWizard() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {addOns.map((a) => {
                   const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                  const included =
-                    !!packageId && (a.includedInPackages?.includes(packageId) ?? false);
-                  const active = included || addOnIds.includes(a.id);
+                  const included = includedAddOnIds.includes(a.id);
+                  const active = addOnIds.includes(a.id);
                   return (
                     <button
                       key={a.id}
                       type="button"
                       disabled={included}
                       onClick={() =>
-                        setAddOnIds((prev) =>
+                        setSelectedAddOnIds((prev) =>
                           prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
                         )
                       }
@@ -426,7 +453,13 @@ export function BookingWizard() {
                         <span className="display-price text-base">
                           {included
                             ? "Inklusive"
-                            : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
+                            : a.distanceBased
+                              ? pickupPrice === null
+                                ? "nach Entfernung"
+                                : pickupPrice === 0
+                                  ? "Kostenlos"
+                                  : `+${currency(pickupPrice)}`
+                              : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
                         </span>
                         <span
                           className={[
@@ -445,6 +478,80 @@ export function BookingWizard() {
                   );
                 })}
               </div>
+
+              {pickupSelected && pickupAddOn && (
+                <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                  <Label
+                    htmlFor="pickup-city"
+                    className="text-xs uppercase tracking-widest text-muted-foreground"
+                  >
+                    Abholort
+                  </Label>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Der Preis für Abholung und Rückgabe richtet sich nach der Entfernung zu unserer
+                    Werkstatt: {pickupTierText}.
+                  </p>
+                  <div className="relative mt-3">
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      id="pickup-city"
+                      value={pickupCity}
+                      onChange={(e) => setPickupCity(e.target.value)}
+                      aria-invalid={!pickupStepValid ? true : undefined}
+                      aria-describedby={!pickupStepValid ? "pickup-city-error" : undefined}
+                      className="h-11 w-full rounded-md border border-input bg-secondary/40 pl-9 pr-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">Bitte Ort wählen …</option>
+                      {pickupCitiesByDistance.map((city) => {
+                        const price = getPickupPrice(city.distanceKm);
+                        const free = isPickupIncluded(packageId, city.distanceKm);
+                        const suffix = free
+                          ? "im Paket inklusive"
+                          : price === null
+                            ? "auf Anfrage"
+                            : price === 0
+                              ? "kostenlos"
+                              : currency(price);
+                        return (
+                          <option key={city.slug} value={city.slug}>
+                            {city.name} · {city.distanceKm} km · {suffix}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {pickupCityData && pickupIncluded && (
+                    <p className="mt-3 text-sm text-primary">
+                      Im Paket {servicePackages.find((p) => p.id === packageId)?.name} ist die
+                      Abholung in {pickupCityData.name} kostenfrei enthalten.
+                    </p>
+                  )}
+
+                  {pickupOnRequest && (
+                    <p
+                      id="pickup-city-error"
+                      role="alert"
+                      className="mt-3 text-sm text-destructive"
+                    >
+                      {pickupCityData?.name} liegt mit {pickupCityData?.distanceKm} km außerhalb
+                      unserer festen Preisstaffel. Wir kalkulieren die Abholung dorthin gerne
+                      individuell – bitte melden Sie sich unter {company.email} oder wählen Sie
+                      einen anderen Abholort.
+                    </p>
+                  )}
+
+                  {!pickupCityData && (
+                    <p
+                      id="pickup-city-error"
+                      role="alert"
+                      className="mt-3 text-sm text-muted-foreground"
+                    >
+                      Bitte wählen Sie einen Abholort, damit wir den Preis berechnen können.
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
           )}
 
@@ -632,9 +739,7 @@ export function BookingWizard() {
                   <span className="label-caps">Voraussichtlicher Gesamtpreis</span>
                   <span className="display-price text-primary">{currency(totals.gross)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Die steuerliche Ausweisung erfolgt auf der finalen Rechnung.
-                </p>
+                <p className="text-xs text-muted-foreground">{vatNotice()}</p>
               </div>
             )}
             {date && time && (
@@ -715,6 +820,9 @@ function Field({
 function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
   const items = calcLineItems(booking);
   const totals = calcTotals(items);
+  const pickupCityName = booking.pickupCity
+    ? (pickupCitiesByDistance.find((c) => c.slug === booking.pickupCity)?.name ?? null)
+    : null;
 
   return (
     <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
@@ -734,6 +842,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
           value={`${new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}, ${booking.time} Uhr`}
         />
         <Detail label="Kennzeichen" value={booking.customer.plate} />
+        {pickupCityName && <Detail label="Abholort" value={pickupCityName} />}
         {items.map((i) => (
           <Detail key={i.label} label={i.label} value={currency(i.total)} />
         ))}
@@ -741,6 +850,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
           <span>Gesamt</span>
           <span className="text-primary">{currency(totals.gross)}</span>
         </div>
+        <p className="text-xs text-muted-foreground">{vatNotice()}</p>
         {booking.depositAmount > 0 && (
           <div className="flex justify-between text-sm text-amber-300">
             <span>{depositConfig.label}</span>

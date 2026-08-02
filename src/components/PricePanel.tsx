@@ -9,7 +9,12 @@ import { currency, currentPriceRows, type ServicePriceRow } from "@/lib/services
 
 const groups: { type: ServicePriceRow["item_type"]; title: string; hint: string }[] = [
   { type: "package", title: "Pakete (Grundpreis)", hint: "Bruttopreis für die Kompaktklasse" },
-  { type: "addon", title: "Zusatzleistungen", hint: "Bruttopreis, Abholservice ist pauschal" },
+  { type: "addon", title: "Zusatzleistungen", hint: "Bruttopreis für die Kompaktklasse" },
+  {
+    type: "pickup",
+    title: "Abholservice (Staffel)",
+    hint: "Bruttopreis je Entfernungsstufe, unabhängig von der Fahrzeugklasse",
+  },
   {
     type: "vehicle",
     title: "Fahrzeugfaktoren",
@@ -58,7 +63,7 @@ export function PricePanel() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {groups.map((group) => (
           <div key={group.type} className="rounded-2xl border border-border/70 bg-secondary/20 p-4">
             <p className="label-caps text-sm">{group.title}</p>
@@ -97,10 +102,16 @@ export function PricePanel() {
                   );
                 })}
             </div>
-            {group.type !== "vehicle" && (
+            {group.type === "package" && (
               <p className="mt-3 text-xs text-muted-foreground">
                 Beispiel Kompaktklasse:{" "}
                 {currency(rows.find((r) => r.item_type === group.type)?.amount ?? 0)}
+              </p>
+            )}
+            {group.type === "pickup" && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Über 50 km erfolgt die Abholung nur auf Anfrage. Im Paket High-End Keramik ist sie
+                bis 60 km enthalten.
               </p>
             )}
           </div>
