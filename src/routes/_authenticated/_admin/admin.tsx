@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CalendarFeedCard } from "@/components/CalendarFeedCard";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -14,6 +15,7 @@ import {
   LogOut,
   Wallet,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -235,6 +237,23 @@ function AdminPage() {
               />
               <Stat icon={Wallet} label="Offene Anzahlungen" value={String(openDeposits)} />
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
+            </div>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <CalendarFeedCard />
+              <Link
+                to="/admin/kunden"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Kundenakten</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Historie, Umsatz und Notizen je Kunde — automatisch aus den Buchungen
+                  zusammengestellt.
+                </p>
+              </Link>
             </div>
 
             <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">
