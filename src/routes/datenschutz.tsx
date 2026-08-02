@@ -18,8 +18,10 @@ export const Route = createFileRoute("/datenschutz")({
       },
       { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: absUrl("/datenschutz") },
-        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/datenschutz") }],
+    links: [
+      { rel: "canonical", href: absUrl("/datenschutz") },
+      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/datenschutz") },
+    ],
   }),
   component: PrivacyPage,
 });
@@ -89,9 +91,9 @@ function PrivacyPage() {
               Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Für die technische Speicherung der
               Buchungsdaten wird eine von Supabase bereitgestellte Datenbank-Infrastruktur als
               Auftragsverarbeitungsdienst eingesetzt. Mit dem Anbieter besteht ein Vertrag zur
-              Auftragsverarbeitung nach Art. 28 DSGVO. Die Datenbank wird in der Region Frankfurt am Main (eu-central-1) und damit
-              innerhalb der Europäischen Union betrieben. Eine Übermittlung der Buchungsdaten in
-              ein Drittland findet im Regelbetrieb nicht statt.
+              Auftragsverarbeitung nach Art. 28 DSGVO. Die Datenbank wird in der Region Frankfurt am
+              Main (eu-central-1) und damit innerhalb der Europäischen Union betrieben. Eine
+              Übermittlung der Buchungsdaten in ein Drittland findet im Regelbetrieb nicht statt.
             </p>
           </section>
 
@@ -118,9 +120,30 @@ function PrivacyPage() {
           <section>
             <h2>6. Cookies, lokale Speicherung und Reichweitenmessung</h2>
             <p>
-              Im öffentlich zugänglichen Bereich setzen wir derzeit keine eigenen Analyse- oder
-              Marketing-Cookies ein. Technisch notwendige Speichermechanismen können im geschützten
-              Verwaltungsbereich zur Anmeldung und Sicherheit verwendet werden.
+              Technisch notwendige Speichermechanismen können im geschützten Verwaltungsbereich zur
+              Anmeldung und Sicherheit verwendet werden.
+            </p>
+            <p>
+              Mit Ihrer Einwilligung setzen wir außerdem ein Cookie von Google Ads (Google Ireland
+              Limited, Gordon House, Barrow Street, Dublin 4, Irland), um zu messen, über welche
+              Anzeige eine Terminanfrage zustande kommt. Das Cookie wird erst gesetzt, wenn Sie im
+              eingeblendeten Hinweis „Akzeptieren" wählen; bei „Ablehnen" oder ohne Auswahl wird
+              kein Cookie gesetzt. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a
+              DSGVO, § 25 Abs. 1 TTDSG. Dabei können Daten in die USA übermittelt werden; Google hat
+              sich den EU-Standardvertragsklauseln unterworfen.
+            </p>
+            <p>
+              Ihre Entscheidung können Sie jederzeit widerrufen:{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  void import("@/components/CookieConsent").then((m) => m.resetAdsConsent());
+                }}
+                className="text-primary underline underline-offset-2"
+              >
+                Cookie-Einwilligung zurücksetzen
+              </button>
+              .
             </p>
           </section>
 

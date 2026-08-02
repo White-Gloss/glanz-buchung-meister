@@ -12,13 +12,17 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
+import { CookieConsentBanner } from "../components/CookieConsent";
 
 function NotFoundComponent() {
   return (
     <>
       <title>Seite nicht gefunden | White Gloss Detailing</title>
       <meta name="robots" content="noindex,nofollow" />
-      <main id="main-content" className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <main
+        id="main-content"
+        className="flex min-h-dvh items-center justify-center bg-background px-4"
+      >
         <div className="max-w-md text-center">
           <p className="eyebrow">Fehler 404</p>
           <h1 className="display-page mt-3 text-foreground">Seite nicht gefunden</h1>
@@ -50,7 +54,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <>
       <title>Technischer Fehler | White Gloss Detailing</title>
       <meta name="robots" content="noindex,nofollow" />
-      <main id="main-content" className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <main
+        id="main-content"
+        className="flex min-h-dvh items-center justify-center bg-background px-4"
+      >
         <div className="max-w-md text-center">
           <p className="eyebrow">Technischer Hinweis</p>
           <h1 className="display-page mt-3 text-foreground">
@@ -184,5 +191,10 @@ function RootComponent() {
   // Muss vor dem Rendern der Unterseiten passieren, damit Server- und
   // Client-Ausgabe identisch sind (keine Hydration-Abweichung).
   applyPriceOverrides(prices);
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <CookieConsentBanner />
+    </>
+  );
 }
