@@ -2,11 +2,14 @@ import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router"
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/integrations/supabase/get-client";
-import { isAdminUser } from "@/lib/bookings.functions";
 
 export const Route = createFileRoute("/_authenticated/_admin")({
   beforeLoad: async () => {
     try {
+      // Bewusst dynamisch: bookings.functions zieht die Supabase-Auth-Middleware
+      // nach. Ein statischer Import hier landet über routeTree.gen.ts im
+      // Startgraph JEDER öffentlichen Seite (~35 KB ungenutzt).
+      const { isAdminUser } = await import("@/lib/bookings.functions");
       const { isAdmin } = await isAdminUser();
       return { isAdmin };
     } catch {
@@ -21,7 +24,7 @@ function AdminGate() {
 
   if (!isAdmin) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
+      <main id="main-content" className="grid min-h-dvh place-items-center bg-background px-4 py-16">
         <div className="glass w-full max-w-md rounded-3xl p-8 text-center">
           <ShieldAlert aria-hidden className="mx-auto size-8 text-destructive" />
           <h1 className="display-sub mt-4">Kein Administrator-Zugriff</h1>

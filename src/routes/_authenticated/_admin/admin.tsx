@@ -211,7 +211,7 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {denied ? (
           <div className="glass rounded-3xl p-12 text-center">
             <ShieldAlert className="mx-auto size-8 text-destructive" />
