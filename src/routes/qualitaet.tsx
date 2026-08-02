@@ -58,7 +58,7 @@ function QualityPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="relative isolate overflow-hidden border-b border-border">
           <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
           <div className="chrome-orb -right-32 -top-32 -z-10" aria-hidden />

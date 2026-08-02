@@ -22,8 +22,17 @@ import {
   homeBase,
 } from "@/lib/pickupLocations";
 
-import { company, pickupPriceText, servicePackages } from "@/lib/servicesConfig";
+import {
+  company,
+  pickupPricing,
+  pickupPriceText,
+  currency,
+  pickupTierSummary,
+  servicePackages,
+  vatNoticeShort,
+} from "@/lib/servicesConfig";
 import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { servicePages } from "@/lib/servicePages";
 
 export const Route = createFileRoute("/abholservice/$city")({
   loader: ({ params }) => {
@@ -53,7 +62,8 @@ export const Route = createFileRoute("/abholservice/$city")({
         { name: "twitter:description", content: meta.description },
         { name: "twitter:image", content: OG_IMAGE },
       ],
-      links: [{ rel: "canonical", href: meta.canonical }],
+      links: [{ rel: "canonical", href: meta.canonical },
+        { rel: "alternate", hrefLang: "de-DE", href: meta.canonical }],
       scripts: [{ type: "application/ld+json", children: JSON.stringify(loaderData.jsonLd) }],
     };
   },
@@ -90,7 +100,7 @@ function CityPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         {/* HERO */}
         <section className="relative overflow-hidden border-b border-border/60">
           <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
@@ -115,9 +125,12 @@ function CityPage() {
               {city.intro}
             </p>
             <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
-              <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
+              <span className="display-card uppercase">
+                Abholung {pickupPriceText(city.distanceKm)}
+              </span>
               <span className="text-foreground/80">
-                für Abholung &amp; Rückgabe – bei High-End Keramik inklusive
+                {city.distanceKm} km bis zur Werkstatt · {pickupTierSummary()} · bei High-End
+                Keramik bis {pickupPricing.freeUpToKm} km inklusive
               </span>
             </p>
 
@@ -211,6 +224,29 @@ function CityPage() {
                   </li>
                 ))}
               </ul>
+
+              {/* Matrix-Verlinkung: alle Leistungen für genau diese Stadt */}
+              <h3 className="display-sub mt-10 uppercase">
+                Leistungen mit Abholung in {city.name}
+              </h3>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Jede Leistung hat eine eigene Seite mit den Anfahrtsdaten für {city.short}:
+              </p>
+              <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                {servicePages.map((service) => (
+                  <li key={service.slug}>
+                    <Link
+                      to="/leistungen/$service/$city"
+                      params={{ service: service.slug, city: city.slug }}
+                      className="glass flex items-center rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
+                    >
+                      <span className="truncate">
+                        {service.shortName} {city.short}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Pakete */}
@@ -223,7 +259,12 @@ function CityPage() {
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <h3 className="display-card uppercase">{p.name}</h3>
-                    <span className="display-price text-base text-primary">ab {p.basePrice} €</span>
+                    <span className="display-price text-base text-primary">
+                      ab {currency(p.basePrice)}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {vatNoticeShort()}
+                      </span>
+                    </span>
                   </div>
                   <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                     {p.tagline} · {p.duration}

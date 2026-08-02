@@ -6,7 +6,12 @@ import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { buildOverviewJsonLd, homeBase, pickupCities } from "@/lib/pickupLocations";
-import { company, pickupPriceNote, pickupPriceText } from "@/lib/servicesConfig";
+import {
+  company,
+  pickupPriceNote,
+  pickupPriceRangeText,
+  pickupTierSummary,
+} from "@/lib/servicesConfig";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 const TITLE = "Abholservice Fahrzeugaufbereitung | Horb & Umgebung";
@@ -29,7 +34,8 @@ export const Route = createFileRoute("/abholservice/")({
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: absUrl("/abholservice") }],
+    links: [{ rel: "canonical", href: absUrl("/abholservice") },
+        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") }],
     scripts: [{ type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) }],
   }),
   component: PickupOverview,
@@ -39,7 +45,7 @@ function PickupOverview() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="relative overflow-hidden border-b border-border/60">
           <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
           <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
@@ -60,9 +66,11 @@ function PickupOverview() {
               kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
             </p>
             <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
-              <span className="display-card uppercase">{pickupPriceText()} pauschal</span>
+              <span className="display-card uppercase">
+                Abholung {pickupPriceRangeText()}
+              </span>
               <span className="text-foreground/80">
-                für Abholung &amp; Rückgabe – im Paket High-End Keramik inklusive
+                nach Entfernung – {pickupTierSummary()}
               </span>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -99,7 +107,7 @@ function PickupOverview() {
                 "Planbare Übergabe",
                 "Abholung und Rückgabe erfolgen in einem klar abgestimmten Terminfenster.",
               ],
-              [Wallet, `${pickupPriceText()} pauschal`, pickupPriceNote()],
+              [Wallet, `Abholung ${pickupPriceRangeText()}`, pickupPriceNote()],
             ].map(([Icon, title, text]) => {
               const I = Icon as typeof Car;
               return (

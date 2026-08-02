@@ -10,13 +10,15 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { listServicePrices } from "../lib/pricing.functions";
+import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 
 function NotFoundComponent() {
   return (
     <>
       <title>Seite nicht gefunden | White Gloss Detailing</title>
       <meta name="robots" content="noindex,nofollow" />
-      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <main id="main-content" className="flex min-h-dvh items-center justify-center bg-background px-4">
         <div className="max-w-md text-center">
           <p className="eyebrow">Fehler 404</p>
           <h1 className="display-page mt-3 text-foreground">Seite nicht gefunden</h1>
@@ -32,7 +34,7 @@ function NotFoundComponent() {
             </Link>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }
@@ -48,7 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <>
       <title>Technischer Fehler | White Gloss Detailing</title>
       <meta name="robots" content="noindex,nofollow" />
-      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+      <main id="main-content" className="flex min-h-dvh items-center justify-center bg-background px-4">
         <div className="max-w-md text-center">
           <p className="eyebrow">Technischer Hinweis</p>
           <h1 className="display-page mt-3 text-foreground">
@@ -76,12 +78,32 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             </a>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }
 
 export const Route = createRootRoute({
+  /**
+   * Preise einmal pro Aufruf laden und auf die zentrale Konfiguration anwenden.
+   * Dadurch zeigen Startseite, Preisseite, Leistungsseiten und Buchungstool
+   * dieselben Werte – vorher galten die DB-Preise nur im Buchungsassistenten.
+   * Fehler bleiben ohne Folgen: dann greifen die Standardwerte aus dem Code.
+   */
+  loader: async (): Promise<{ prices: ServicePriceRow[] }> => {
+    try {
+      const prices = await listServicePrices();
+      // Bereits hier anwenden, damit auch die head()-Funktionen der
+      // Unterseiten (Meta-Beschreibungen mit Preisangaben) korrekt sind.
+      applyPriceOverrides(prices);
+      return { prices };
+    } catch {
+      return { prices: [] };
+    }
+  },
+  // Preise ändern sich selten – eine Minute Cache spart Anfragen bei jeder Navigation.
+  staleTime: 60_000,
+
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -143,6 +165,13 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        {/* WCAG 2.4.1 "Bypass Blocks": erster Tabstopp überspringt Kopfnavigation. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Zum Inhalt springen
+        </a>
         {children}
         <Scripts />
       </body>
@@ -151,5 +180,9 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+  const { prices } = Route.useLoaderData();
+  // Muss vor dem Rendern der Unterseiten passieren, damit Server- und
+  // Client-Ausgabe identisch sind (keine Hydration-Abweichung).
+  applyPriceOverrides(prices);
   return <Outlet />;
 }

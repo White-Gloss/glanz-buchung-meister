@@ -6,7 +6,16 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
-import { addOns, currency, servicePackages, vehicleTypes } from "@/lib/servicesConfig";
+import {
+  addOns,
+  currency,
+  pickupPricing,
+  pickupTierSummary,
+  servicePackages,
+  vatNotice,
+  vatNoticeShort,
+  vehicleTypes,
+} from "@/lib/servicesConfig";
 
 const TITLE = "Preise für Fahrzeugaufbereitung in Horb | White Gloss";
 const DESCRIPTION =
@@ -36,7 +45,7 @@ function PricingPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="relative isolate overflow-hidden border-b border-border">
           <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
           <div className="chrome-orb -right-32 -top-32 -z-10" aria-hidden />
@@ -90,7 +99,7 @@ function PricingPage() {
                     ab {currency(servicePackage.basePrice)}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    Kompaktklasse · {servicePackage.duration}
+                    {vatNoticeShort()} · Kompaktklasse · {servicePackage.duration}
                   </span>
                 </p>
                 <ul className="mt-8 flex-1 space-y-3">
@@ -165,16 +174,22 @@ function PricingPage() {
                       </p>
                     </div>
                     <p className="whitespace-nowrap text-sm text-foreground">
-                      {addOn.includedInPackages?.includes("keramik")
-                        ? `ab ${currency(addOn.price)}*`
+                      {addOn.distanceBased
+                        ? "nach Entfernung*"
                         : `ab ${currency(addOn.price)}`}
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {vatNoticeShort()}
+                      </span>
                     </p>
                   </article>
                 ))}
               </div>
               <p className="mt-4 text-xs leading-5 text-muted-foreground">
-                * Im Paket High-End Keramik ist der Hol- &amp; Bringservice bereits enthalten.
-                Endpreis abhängig von Fahrzeugklasse und gewähltem Umfang.
+                {vatNotice()} * Hol- &amp; Bringservice nach Entfernung zur Werkstatt:{" "}
+                {pickupTierSummary()}. Im
+                Paket High-End Keramik ist die Abholung bis {pickupPricing.freeUpToKm} km bereits
+                enthalten. Endpreis der übrigen Zusatzleistungen abhängig von Fahrzeugklasse und
+                gewähltem Umfang.
               </p>
             </div>
           </div>

@@ -95,7 +95,7 @@ function AuthPage() {
 
   if (checking) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-background px-4">
+      <main id="main-content" className="grid min-h-dvh place-items-center bg-background px-4">
         <p className="text-sm text-muted-foreground">Sitzung wird geprüft …</p>
       </main>
     );

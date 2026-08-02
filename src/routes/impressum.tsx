@@ -17,7 +17,8 @@ export const Route = createFileRoute("/impressum")({
       },
       { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: absUrl("/impressum") }],
+    links: [{ rel: "canonical", href: absUrl("/impressum") },
+        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") }],
   }),
   component: ImprintPage,
 });
@@ -26,7 +27,7 @@ function ImprintPage() {
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <section className="border-b border-border">
           <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
             <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
@@ -70,6 +71,35 @@ function ImprintPage() {
               </p>
             </section>
           )}
+
+          <section>
+            <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+            <address>
+              {company.owner && <span>{company.owner}</span>}
+              {company.street && <span>{company.street}</span>}
+              <span>{company.city}</span>
+            </address>
+          </section>
+
+          <section>
+            <h2>Online-Streitbeilegung</h2>
+            <p>
+              Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS)
+              bereit:{" "}
+              <a
+                href="https://ec.europa.eu/consumers/odr/"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                https://ec.europa.eu/consumers/odr/
+              </a>
+              . Unsere E-Mail-Adresse finden Sie oben in diesem Impressum.
+            </p>
+            <p>
+              Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
+              einer Verbraucherschlichtungsstelle teilzunehmen.
+            </p>
+          </section>
 
           <section>
             <h2>Haftung für Inhalte und Links</h2>
