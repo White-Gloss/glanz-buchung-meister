@@ -1,4 +1,6 @@
 import { absUrl, SITE_URL } from "./seo";
+import { servicePackages } from "./servicesConfig";
+import { pickupCities } from "./pickupLocations";
 
 export type ServicePage = {
   slug: string;
@@ -419,6 +421,12 @@ export function getServicePage(slug: string) {
 export function buildServiceJsonLd(service: ServicePage) {
   const canonical = absUrl(`/leistungen/${service.slug}`);
 
+  // Nur die Pakete, in denen diese Leistung laut relatedPackageIds enthalten
+  // ist — echte, im Admin-Bereich gepflegte Preise, keine erfundenen Werte.
+  const relatedPackages = servicePackages.filter((pkg) =>
+    service.relatedPackageIds.includes(pkg.id),
+  );
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -428,10 +436,12 @@ export function buildServiceJsonLd(service: ServicePage) {
         name: service.title,
         description: service.metaDescription,
         url: canonical,
-        areaServed: {
-          "@type": "AdministrativeArea",
-          name: "Horb am Neckar und Umgebung",
-        },
+        // Alle tatsächlichen Servicegebiete statt eines einzelnen
+        // generischen Textes — deckt sich mit den echten Städteseiten.
+        areaServed: pickupCities.map((city) => ({
+          "@type": "City",
+          name: city.name,
+        })),
         provider: {
           "@type": "Organization",
           "@id": `${SITE_URL}/#organization`,
@@ -439,6 +449,17 @@ export function buildServiceJsonLd(service: ServicePage) {
           url: SITE_URL,
           email: "info@whitegloss.de",
         },
+        ...(relatedPackages.length > 0
+          ? {
+              offers: relatedPackages.map((pkg) => ({
+                "@type": "Offer",
+                name: pkg.name,
+                price: pkg.basePrice,
+                priceCurrency: "EUR",
+                url: absUrl("/preise"),
+              })),
+            }
+          : {}),
       },
       {
         "@type": "BreadcrumbList",
