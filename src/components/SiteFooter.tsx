@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
 import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import { company, features } from "@/lib/servicesConfig";
@@ -94,6 +94,10 @@ export function SiteFooter() {
           <p className="flex min-h-8 items-center gap-2 text-sm text-muted-foreground">
             <MapPin aria-hidden className="size-4 shrink-0 text-primary" />
             {company.city}
+          </p>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock3 aria-hidden className="size-4 shrink-0 text-primary" />
+            Mo–Fr 09:00–17:00 Uhr
           </p>
           <p className="pt-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
             Termine nach Vereinbarung
