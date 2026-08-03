@@ -104,6 +104,12 @@ export const Route = createFileRoute("/")({
                 "@type": "City",
                 name: city.name,
               })),
+              openingHoursSpecification: {
+                "@type": "OpeningHoursSpecification",
+                dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                opens: "09:00",
+                closes: "17:00",
+              },
               hasOfferCatalog: {
                 "@type": "OfferCatalog",
                 name: "Fahrzeugaufbereitung",
