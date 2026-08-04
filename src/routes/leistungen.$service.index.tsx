@@ -4,16 +4,38 @@ import { Button } from "@/components/ui/button";
 import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getServicePage, buildServiceJsonLd, servicePages } from "@/lib/servicePages";
+import {
+  getServicePage,
+  buildServiceJsonLd,
+  servicePages,
+  type ServicePage,
+} from "@/lib/servicePages";
 import { currency, servicePackages, vatNoticeShort } from "@/lib/servicesConfig";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
+import { listPublishedCustomServices, toServicePage } from "@/lib/customServices.functions";
 
+/**
+ * Eigene (im Admin angelegte) Leistungen bekommen dieselbe Detailseite wie
+ * die 7 Kern-Leistungen — aber ohne Ablauf-Schritte, ohne FAQ (die gibt es
+ * für sie nicht) und ohne die 91-Städte-Matrix (siehe customServices.functions.ts
+ * für die Begründung).
+ */
 export const Route = createFileRoute("/leistungen/$service/")({
-  loader: ({ params }) => {
-    const service = getServicePage(params.service);
+  loader: async ({ params }) => {
+    let customServices: ServicePage[] = [];
+    try {
+      const rows = await listPublishedCustomServices();
+      customServices = rows.map(toServicePage);
+    } catch {
+      // eigene Leistungen bleiben dann einfach weg, kein Fehler für den Besuch
+    }
+    const service =
+      getServicePage(params.service) ??
+      customServices.find((candidate) => candidate.slug === params.service);
     if (!service) throw notFound();
-    return { service, jsonLd: buildServiceJsonLd(service) };
+    const allServices = [...servicePages, ...customServices];
+    return { service, jsonLd: buildServiceJsonLd(service), allServices };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
@@ -50,11 +72,12 @@ export const Route = createFileRoute("/leistungen/$service/")({
 });
 
 function ServicePage() {
-  const { service } = Route.useLoaderData();
+  const { service, allServices } = Route.useLoaderData();
   const relatedPackages = servicePackages.filter((servicePackage) =>
     service.relatedPackageIds.includes(servicePackage.id),
   );
-  const relatedServices = servicePages.filter((item) => item.slug !== service.slug);
+  const relatedServices = allServices.filter((item) => item.slug !== service.slug);
+  const isCoreService = servicePages.some((item) => item.slug === service.slug);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -115,72 +138,78 @@ function ServicePage() {
           </div>
         </section>
 
-        <section className="border-y border-border/60 bg-card/20">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-            <p className="eyebrow">Arbeitsablauf</p>
-            <h2 className="display-section mt-3 uppercase">Sorgfalt in vier Schritten</h2>
-            <ol className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {service.process.map((step, index) => (
-                <li key={step.title} className="glass rounded-2xl p-5">
-                  <span className="display-price text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="display-card mt-4 uppercase">{step.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{step.text}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <p className="eyebrow">Passende Pakete</p>
-          <h2 className="display-section mt-3 uppercase">{service.name} direkt konfigurieren</h2>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {relatedPackages.map((servicePackage) => (
-              <article
-                key={servicePackage.id}
-                className="hairline-gold flex h-full flex-col rounded-2xl bg-card/70 p-5"
-              >
-                <h3 className="display-card uppercase">{servicePackage.name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{servicePackage.tagline}</p>
-                <p className="mt-5 flex items-center justify-between gap-3">
-                  <span className="display-price text-primary">
-                    ab {currency(servicePackage.basePrice)}
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {vatNoticeShort()}
+        {service.process.length > 0 && (
+          <section className="border-y border-border/60 bg-card/20">
+            <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+              <p className="eyebrow">Arbeitsablauf</p>
+              <h2 className="display-section mt-3 uppercase">Sorgfalt in vier Schritten</h2>
+              <ol className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {service.process.map((step, index) => (
+                  <li key={step.title} className="glass rounded-2xl p-5">
+                    <span className="display-price text-primary">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock3 className="size-3.5" />
-                    {servicePackage.duration}
-                  </span>
-                </p>
-              </article>
-            ))}
-          </div>
-          <Button asChild size="lg" className="mt-7">
-            <Link to="/" hash="buchung">
-              Zum Preisrechner
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </section>
+                    <h3 className="display-card mt-4 uppercase">{step.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{step.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )}
 
-        <section className="border-t border-border/60 bg-card/20">
-          <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-            <p className="eyebrow">Antworten vorab</p>
-            <h2 className="display-section mt-3 uppercase">Häufige Fragen zur {service.name}</h2>
-            <dl className="mt-8 space-y-4">
-              {service.faq.map(([question, answer]) => (
-                <div key={question} className="hairline-gold rounded-2xl bg-card/60 p-5">
-                  <dt className="display-card uppercase">{question}</dt>
-                  <dd className="mt-2 text-sm text-muted-foreground">{answer}</dd>
-                </div>
+        {relatedPackages.length > 0 && (
+          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+            <p className="eyebrow">Passende Pakete</p>
+            <h2 className="display-section mt-3 uppercase">{service.name} direkt konfigurieren</h2>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {relatedPackages.map((servicePackage) => (
+                <article
+                  key={servicePackage.id}
+                  className="hairline-gold flex h-full flex-col rounded-2xl bg-card/70 p-5"
+                >
+                  <h3 className="display-card uppercase">{servicePackage.name}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{servicePackage.tagline}</p>
+                  <p className="mt-5 flex items-center justify-between gap-3">
+                    <span className="display-price text-primary">
+                      ab {currency(servicePackage.basePrice)}
+                      <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                        {vatNoticeShort()}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock3 className="size-3.5" />
+                      {servicePackage.duration}
+                    </span>
+                  </p>
+                </article>
               ))}
-            </dl>
-          </div>
-        </section>
+            </div>
+            <Button asChild size="lg" className="mt-7">
+              <Link to="/" hash="buchung">
+                Zum Preisrechner
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </section>
+        )}
+
+        {service.faq.length > 0 && (
+          <section className="border-t border-border/60 bg-card/20">
+            <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
+              <p className="eyebrow">Antworten vorab</p>
+              <h2 className="display-section mt-3 uppercase">Häufige Fragen zur {service.name}</h2>
+              <dl className="mt-8 space-y-4">
+                {service.faq.map(([question, answer]) => (
+                  <div key={question} className="hairline-gold rounded-2xl bg-card/60 p-5">
+                    <dt className="display-card uppercase">{question}</dt>
+                    <dd className="mt-2 text-sm text-muted-foreground">{answer}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </section>
+        )}
 
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
           <h2 className="display-sub uppercase">Weitere Leistungen</h2>
@@ -198,38 +227,40 @@ function ServicePage() {
             ))}
           </div>
         </section>
-        {/* Matrix-Verlinkung: diese Leistung in allen Städten der Region */}
-        <section className="content-auto border-y border-border bg-surface/35">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-            <p className="eyebrow">Regional</p>
-            <h2 className="display-section mt-3 uppercase">
-              {service.shortName} in Ihrer Stadt
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Ausgeführt wird immer in unserer Werkstatt in Horb am Neckar. Für diese Städte
-              übernehmen wir Abholung und Rückgabe – jede Seite nennt Entfernung, Fahrzeit und
-              Abholpreis.
-            </p>
-            <ul className="mt-8 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {pickupCitiesByDistance.map((city) => (
-                <li key={city.slug}>
-                  <Link
-                    to="/leistungen/$service/$city"
-                    params={{ service: service.slug, city: city.slug }}
-                    className="glass flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
-                  >
-                    <span className="truncate">
-                      {service.shortName} {city.short}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {city.distanceKm} km
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+        {/* Matrix-Verlinkung: nur für die Kern-Leistungen, für die es die
+            91 Stadt-Kombinationsseiten wirklich gibt (siehe Loader-Kommentar
+            oben — eigene Leistungen haben diese Seiten bewusst nicht). */}
+        {isCoreService && (
+          <section className="content-auto border-y border-border bg-surface/35">
+            <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+              <p className="eyebrow">Regional</p>
+              <h2 className="display-section mt-3 uppercase">{service.shortName} in Ihrer Stadt</h2>
+              <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+                Ausgeführt wird immer in unserer Werkstatt in Horb am Neckar. Für diese Städte
+                übernehmen wir Abholung und Rückgabe – jede Seite nennt Entfernung, Fahrzeit und
+                Abholpreis.
+              </p>
+              <ul className="mt-8 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {pickupCitiesByDistance.map((city) => (
+                  <li key={city.slug}>
+                    <Link
+                      to="/leistungen/$service/$city"
+                      params={{ service: service.slug, city: city.slug }}
+                      className="glass flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
+                    >
+                      <span className="truncate">
+                        {service.shortName} {city.short}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {city.distanceKm} km
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
 
         <ConversionBand
           eyebrow={service.name}

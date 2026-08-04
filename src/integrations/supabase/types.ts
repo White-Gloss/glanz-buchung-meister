@@ -140,6 +140,99 @@ export type Database = {
         };
         Relationships: [];
       };
+      gallery_items: {
+        Row: {
+          id: string;
+          storage_path: string;
+          title: string;
+          vehicle: string;
+          service_slug: string | null;
+          is_published: boolean;
+          sort_order: number;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          storage_path: string;
+          title?: string;
+          vehicle?: string;
+          service_slug?: string | null;
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          storage_path?: string;
+          title?: string;
+          vehicle?: string;
+          service_slug?: string | null;
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [];
+      };
+      custom_services: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          short_name: string;
+          eyebrow: string;
+          lead: string;
+          detail: string;
+          benefits: string[];
+          meta_title: string;
+          meta_description: string;
+          related_package_ids: string[];
+          is_published: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          short_name: string;
+          eyebrow?: string;
+          lead: string;
+          detail?: string;
+          benefits?: string[];
+          meta_title?: string;
+          meta_description?: string;
+          related_package_ids?: string[];
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          short_name?: string;
+          eyebrow?: string;
+          lead?: string;
+          detail?: string;
+          benefits?: string[];
+          meta_title?: string;
+          meta_description?: string;
+          related_package_ids?: string[];
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [];
+      };
       customer_notes: {
         Row: {
           customer_email: string;

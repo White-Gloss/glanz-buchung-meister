@@ -61,15 +61,38 @@ function slugify(input: string): string {
 
 function CustomServicesPage() {
   const [rows, setRows] = useState<CustomServiceRow[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<CustomServiceRow | null>(null);
   const [creating, setCreating] = useState(false);
 
   const fetchAll = useServerFn(listAllCustomServices);
 
   function reload() {
-    void fetchAll({}).then(setRows);
+    setLoadError(null);
+    void fetchAll({})
+      .then(setRows)
+      .catch((error: unknown) => {
+        setLoadError(
+          error instanceof Error ? error.message : "Leistungen konnten nicht geladen werden.",
+        );
+      });
   }
-  useEffect(reload, [fetchAll]);
+  useEffect(() => {
+    let active = true;
+    void fetchAll({})
+      .then((nextRows) => {
+        if (active) setRows(nextRows);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadError(
+          error instanceof Error ? error.message : "Leistungen konnten nicht geladen werden.",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [fetchAll]);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -112,6 +135,7 @@ function CustomServicesPage() {
 
         {(creating || editing) && (
           <ServiceForm
+            key={editing?.id ?? "new-service"}
             initial={editing ?? undefined}
             onCancel={() => {
               setCreating(false);
@@ -125,7 +149,14 @@ function CustomServicesPage() {
           />
         )}
 
-        {rows === null ? (
+        {loadError ? (
+          <div className="glass rounded-2xl border border-destructive/30 p-5 text-sm">
+            <p className="text-destructive">{loadError}</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={reload}>
+              Erneut laden
+            </Button>
+          </div>
+        ) : rows === null ? (
           <p className="text-sm text-muted-foreground">Wird geladen …</p>
         ) : rows.length === 0 ? (
           <p className="glass rounded-2xl p-8 text-center text-sm text-muted-foreground">
@@ -176,8 +207,8 @@ function ServiceRow({
       await remove({ data: { id: row.id } });
       toast.success("Leistung gelöscht.");
       onDeleted();
-    } catch {
-      toast.error("Löschen fehlgeschlagen.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen.");
     } finally {
       setDeleting(false);
     }
@@ -212,6 +243,7 @@ function ServiceRow({
           size="sm"
           onClick={handleDelete}
           loading={deleting}
+          aria-label={`${row.name} löschen`}
           className="gap-1.5 text-destructive hover:bg-destructive/10"
         >
           <Trash2 className="size-3.5" />
@@ -241,14 +273,14 @@ function ServiceForm({
           detail: initial.detail,
           benefits:
             initial.benefits.length > 0
-              ? [...initial.benefits, "", "", "", ""]
-              : EMPTY_FORM.benefits,
+              ? Array.from({ length: 4 }, (_, index) => initial.benefits[index] ?? "")
+              : [...EMPTY_FORM.benefits],
           metaTitle: initial.meta_title,
           metaDescription: initial.meta_description,
           relatedPackageIds: initial.related_package_ids,
           isPublished: initial.is_published,
         }
-      : EMPTY_FORM,
+      : { ...EMPTY_FORM, benefits: [...EMPTY_FORM.benefits] },
   );
   const [slugTouched, setSlugTouched] = useState(!!initial);
   const [saving, setSaving] = useState(false);
@@ -265,7 +297,8 @@ function ServiceForm({
     if (!slugTouched) updateField("slug", slugify(value));
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!form.name.trim() || !form.slug.trim() || !form.lead.trim()) {
       toast.error("Name, URL-Kurzform und Kurzbeschreibung sind Pflichtfelder.");
       return;
@@ -293,123 +326,142 @@ function ServiceForm({
   }
 
   return (
-    <div className="glass mb-6 space-y-5 rounded-2xl p-5">
+    <form className="glass mb-6 space-y-5 rounded-2xl p-5" onSubmit={handleSubmit}>
       <h2 className="display-card text-sm uppercase">
         {initial ? "Leistung bearbeiten" : "Neue Leistung"}
       </h2>
+      <p className="text-sm leading-6 text-muted-foreground">
+        Für eine neue Leistung reichen Name und Kurzbeschreibung. Alle weiteren Angaben sind
+        optional und können später ergänzt werden.
+      </p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <LabeledInput
-          label="Name"
-          value={form.name}
-          onChange={handleNameChange}
-          placeholder="z. B. Cabrio-Verdeckpflege"
-        />
-        <LabeledInput
-          label="URL-Kurzform"
-          value={form.slug}
-          onChange={(v) => {
-            setSlugTouched(true);
-            updateField("slug", slugify(v));
-          }}
-          placeholder="cabrio-verdeckpflege"
-          hint={`whitegloss.de/leistungen/${form.slug || "…"}`}
-        />
-        <LabeledInput
-          label="Kurzform für Buttons"
-          value={form.shortName}
-          onChange={(v) => updateField("shortName", v)}
-          placeholder="z. B. Verdeckpflege"
-        />
-        <LabeledInput
-          label="Kategorie-Text (klein, über der Überschrift)"
-          value={form.eyebrow}
-          onChange={(v) => updateField("eyebrow", v)}
-          placeholder="z. B. Schutz für Stoff- und Kunststoffverdecke"
-        />
-      </div>
+      <LabeledInput
+        label="Name"
+        value={form.name}
+        onChange={handleNameChange}
+        placeholder="z. B. Cabrio-Verdeckpflege"
+        maxLength={100}
+        required
+      />
 
       <LabeledTextarea
-        label="Kurzbeschreibung (erscheint auf der Übersichtsseite)"
+        label="Kurzbeschreibung"
         value={form.lead}
         onChange={(v) => updateField("lead", v)}
         rows={2}
-      />
-      <LabeledTextarea
-        label="Ausführlicher Text (erscheint auf der Detailseite)"
-        value={form.detail}
-        onChange={(v) => updateField("detail", v)}
-        rows={3}
+        maxLength={320}
+        required
       />
 
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-          Vorteile (bis zu 4, je einer pro Zeile)
-        </p>
-        <div className="mt-2 space-y-2">
-          {form.benefits.map((benefit, i) => (
-            <Input
-              key={i}
-              value={benefit}
-              onChange={(e) => {
-                const next = [...form.benefits];
-                next[i] = e.target.value;
-                updateField("benefits", next);
-              }}
-              placeholder={`Vorteil ${i + 1}`}
-              className="bg-secondary/40"
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-          Passende Pakete (optional, erscheinen auf der Detailseite)
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {servicePackages.map((pkg) => {
-            const active = form.relatedPackageIds.includes(pkg.id);
-            return (
-              <button
-                key={pkg.id}
-                type="button"
-                onClick={() =>
-                  updateField(
-                    "relatedPackageIds",
-                    active
-                      ? form.relatedPackageIds.filter((id) => id !== pkg.id)
-                      : [...form.relatedPackageIds, pkg.id],
-                  )
-                }
-                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                  active
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40"
-                }`}
-              >
-                {pkg.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <details className="rounded-xl border border-border p-3">
-        <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">
-          SEO-Angaben (optional, sonst automatisch abgeleitet)
+      <details className="rounded-xl border border-border p-4">
+        <summary className="cursor-pointer text-sm font-medium text-foreground">
+          Weitere Angaben und SEO (optional)
         </summary>
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LabeledInput
+              label="URL-Kurzform"
+              value={form.slug}
+              onChange={(v) => {
+                setSlugTouched(true);
+                updateField("slug", slugify(v));
+              }}
+              placeholder="cabrio-verdeckpflege"
+              hint={`whitegloss.de/leistungen/${form.slug || "…"}`}
+              maxLength={60}
+            />
+            <LabeledInput
+              label="Kurzform für Buttons"
+              value={form.shortName}
+              onChange={(v) => updateField("shortName", v)}
+              placeholder="z. B. Verdeckpflege"
+              maxLength={80}
+            />
+            <LabeledInput
+              label="Kategorie-Text"
+              value={form.eyebrow}
+              onChange={(v) => updateField("eyebrow", v)}
+              placeholder="z. B. Schutz für Cabrioverdecke"
+              maxLength={120}
+            />
+          </div>
+
+          <LabeledTextarea
+            label="Ausführlicher Text für die Detailseite"
+            value={form.detail}
+            onChange={(v) => updateField("detail", v)}
+            rows={3}
+            maxLength={2500}
+          />
+
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              Vorteile (bis zu 4)
+            </p>
+            <div className="mt-2 space-y-2">
+              {form.benefits.map((benefit, index) => (
+                <Input
+                  key={index}
+                  value={benefit}
+                  maxLength={180}
+                  aria-label={`Vorteil ${index + 1}`}
+                  onChange={(event) => {
+                    const next = [...form.benefits];
+                    next[index] = event.target.value;
+                    updateField("benefits", next);
+                  }}
+                  placeholder={`Vorteil ${index + 1}`}
+                  className="bg-secondary/40"
+                />
+              ))}
+            </div>
+          </div>
+
+          <fieldset>
+            <legend className="text-xs uppercase tracking-widest text-muted-foreground">
+              Passende Pakete
+            </legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {servicePackages.map((pkg) => {
+                const active = form.relatedPackageIds.includes(pkg.id);
+                return (
+                  <button
+                    key={pkg.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() =>
+                      updateField(
+                        "relatedPackageIds",
+                        active
+                          ? form.relatedPackageIds.filter((id) => id !== pkg.id)
+                          : [...form.relatedPackageIds, pkg.id],
+                      )
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {pkg.name}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <LabeledInput
             label="Meta-Titel (max. ca. 60 Zeichen)"
             value={form.metaTitle}
             onChange={(v) => updateField("metaTitle", v)}
+            maxLength={70}
           />
           <LabeledTextarea
             label="Meta-Beschreibung (max. ca. 155 Zeichen)"
             value={form.metaDescription}
             onChange={(v) => updateField("metaDescription", v)}
             rows={2}
+            maxLength={180}
           />
         </div>
       </details>
@@ -425,14 +477,14 @@ function ServiceForm({
       </label>
 
       <div className="flex gap-3 border-t border-border pt-4">
-        <Button onClick={handleSubmit} loading={saving}>
+        <Button type="submit" loading={saving}>
           {initial ? "Änderungen speichern" : "Leistung anlegen"}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Abbrechen
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -442,24 +494,33 @@ function LabeledInput({
   onChange,
   placeholder,
   hint,
+  maxLength,
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   hint?: string;
+  maxLength?: number;
+  required?: boolean;
 }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+    <label className="block">
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+        {required ? " *" : ""}
+      </span>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
+        required={required}
         className="mt-1.5 bg-secondary/40"
       />
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-    </div>
+    </label>
   );
 }
 
@@ -468,21 +529,30 @@ function LabeledTextarea({
   value,
   onChange,
   rows,
+  maxLength,
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   rows: number;
+  maxLength?: number;
+  required?: boolean;
 }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+    <label className="block">
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+        {required ? " *" : ""}
+      </span>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
+        maxLength={maxLength}
+        required={required}
         className="mt-1.5 w-full rounded-xl border border-border bg-secondary/40 p-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
-    </div>
+    </label>
   );
 }

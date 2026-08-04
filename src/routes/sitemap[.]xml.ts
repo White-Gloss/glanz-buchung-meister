@@ -3,6 +3,7 @@ import type {} from "@tanstack/react-start";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { servicePages } from "@/lib/servicePages";
 import { allServiceCityCombos, serviceCityPath } from "@/lib/serviceCityPages";
+import { listPublishedCustomServices } from "@/lib/customServices.functions";
 import { SITE_URL } from "@/lib/seo";
 
 const BASE_URL = SITE_URL;
@@ -21,6 +22,20 @@ export const Route = createFileRoute("/sitemap.xml")({
         // Ein Deploy-Datum für alle Einträge: ehrlicher als ein erfundenes
         // Einzeldatum pro Seite und für Crawler ausreichend.
         const lastmod = new Date().toISOString().slice(0, 10);
+
+        let customServiceEntries: SitemapEntry[] = [];
+        try {
+          const rows = await listPublishedCustomServices();
+          customServiceEntries = rows.map((row) => ({
+            path: `/leistungen/${row.slug}`,
+            changefreq: "monthly",
+            priority: "0.7",
+          }));
+        } catch {
+          // Sitemap bleibt ohne eigene Leistungen funktionsfähig, falls die
+          // Datenbank kurzzeitig nicht erreichbar ist.
+        }
+
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/leistungen", changefreq: "monthly", priority: "0.9" },
@@ -32,6 +47,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "monthly",
             priority: "0.9",
           })),
+          ...customServiceEntries,
           ...pickupCitiesByDistance.map<SitemapEntry>((c) => ({
             path: `/abholservice/${c.slug}`,
             changefreq: "monthly",
@@ -45,18 +61,20 @@ export const Route = createFileRoute("/sitemap.xml")({
           })),
         ];
 
-        const urls = entries.map((entry) => ({ lastmod, ...entry })).map((e) =>
-          [
-            `  <url>`,
-            `    <loc>${BASE_URL}${e.path}</loc>`,
-            e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
-            e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
-            e.priority ? `    <priority>${e.priority}</priority>` : null,
-            `  </url>`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        );
+        const urls = entries
+          .map((entry) => ({ lastmod, ...entry }))
+          .map((e) =>
+            [
+              `  <url>`,
+              `    <loc>${BASE_URL}${e.path}</loc>`,
+              e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
+              e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
+              e.priority ? `    <priority>${e.priority}</priority>` : null,
+              `  </url>`,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          );
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
