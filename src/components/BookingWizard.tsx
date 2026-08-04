@@ -205,8 +205,7 @@ export function BookingWizard() {
   const pickupCityData = pickupCitiesByDistance.find((c) => c.slug === pickupCity);
   const pickupDistanceKm = pickupCityData?.distanceKm ?? null;
   const pickupPrice = pickupDistanceKm === null ? null : getPickupPrice(pickupDistanceKm);
-  const pickupIncluded =
-    pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
+  const pickupIncluded = pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
   const pickupOnRequest = pickupSelected && !pickupIncluded && pickupPrice === null;
   const pickupTierText = pickupTierSummary();
 

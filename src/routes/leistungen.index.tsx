@@ -186,27 +186,25 @@ function ServicesOverview() {
           </div>
         </section>
 
-        {/* Local-SEO-Matrix: Leistung × Stadt, ohne Client-JavaScript */}
-        <section className="content-auto border-y border-border bg-surface/35">
-          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-            <p className="eyebrow">Leistung und Ort</p>
-            <h2 className="display-section mt-3 uppercase">
-              Jede Leistung, in jeder Stadt der Region
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Ausgeführt wird ausschließlich in unserer Werkstatt in Horb am Neckar. Für{" "}
-              {pickupCitiesByDistance.length} Städte im Umkreis übernehmen wir Abholung und
-              Rückgabe. Wählen Sie Ihre Leistung, um die Seiten der einzelnen Orte zu öffnen.
-            </p>
-            <ServiceCityMatrix defaultOpenServiceSlug={servicePages[0]?.slug} />
-          </div>
-        </section>
-
         <ConversionBand
           eyebrow="Noch unsicher?"
           title="Wir finden den sinnvollen Umfang."
           text="Beschreiben Sie uns Zustand und Ziel Ihres Fahrzeugs. Wir ordnen die passende Leistung vor dem Termin ehrlich ein."
         />
+
+        {/* Kompakte Leistungs- und Abholgebietsübersicht am Seitenende. */}
+        <section className="content-auto border-t border-border bg-surface/25">
+          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
+            <p className="eyebrow">Leistung und Ort</p>
+            <h2 className="display-section mt-3 uppercase">Fahrzeugaufbereitung in Ihrer Stadt</h2>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+              Alle Arbeiten führen wir in unserer Werkstatt in Horb am Neckar aus. Für{" "}
+              {pickupCitiesByDistance.length} Städte im Umkreis übernehmen wir Abholung und
+              Rückgabe. Leistungen und Orte sind getrennt und kompakt zusammengefasst.
+            </p>
+            <ServiceCityMatrix />
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>

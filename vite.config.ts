@@ -1,34 +1,75 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import react from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
+import { defineConfig } from "vite";
 
-export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
-    // Routen einzeln aufteilen. Ohne diese Option importiert routeTree.gen.ts
-    // ALLE Routen statisch – dadurch lag der Auth-Code des Admin-Bereichs
-    // (~35 KB) im Startgraph jeder öffentlichen Seite.
-    router: { autoCodeSplitting: true },
+const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+const STATIC_CACHE_CONTROL = `public, max-age=${WEEK_IN_SECONDS}`;
+
+export default defineConfig(({ command }) => ({
+  plugins: [
+    tailwindcss(),
+    tanstackStart({
+      importProtection: {
+        behavior: "error",
+        client: {
+          files: ["**/server/**"],
+          specifiers: ["server-only"],
+        },
+      },
+      server: { entry: "server" },
+    }),
+    ...(command === "build"
+      ? [
+          nitro({
+            preset: "node-server",
+            compressPublicAssets: { gzip: true, brotli: true },
+            routeRules: {
+              "/wgd-logo-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
+              "/favicon.ico": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
+              "/favicon-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
+              "/apple-touch-icon.png": {
+                headers: { "cache-control": STATIC_CACHE_CONTROL },
+              },
+              "/site.webmanifest": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
+            },
+          }),
+        ]
+      : []),
+    react(),
+  ],
+  css: { transformer: "lightningcss" },
+  resolve: {
+    tsconfigPaths: true,
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "@tanstack/react-query",
+      "@tanstack/query-core",
+    ],
   },
-  // Die Seite läuft auf Hostinger in einer Node-Umgebung, nicht auf Cloudflare
-  // Workers. Ohne diese Festlegung baut Nitro gegen "cloudflare-module": das
-  // erzeugt eine wrangler.json und eine Worker-Umgebung, in der die direkte
-  // Postgres-Verbindung (pg über TCP) nicht funktioniert.
-  // Innerhalb der Lovable-Umgebung wird dieser Wert automatisch ignoriert.
-  nitro: {
-    preset: "node-server",
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+    ],
+    ignoreOutdatedRequests: true,
   },
-  vite: {
-    server: {
-      port: 5000,
-      host: "0.0.0.0",
-      strictPort: true,
+  server: {
+    port: 5000,
+    host: "0.0.0.0",
+    strictPort: true,
+    watch: {
+      awaitWriteFinish: {
+        stabilityThreshold: 1_000,
+        pollInterval: 100,
+      },
     },
   },
-});
+}));

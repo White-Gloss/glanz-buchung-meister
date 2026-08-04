@@ -11,7 +11,6 @@ import {
   buildServiceCityMeta,
   buildServiceCitySections,
   getServiceCityCombo,
-  serviceCityPath,
   siblingCities,
   siblingServices,
 } from "@/lib/serviceCityPages";
@@ -52,6 +51,7 @@ export const Route = createFileRoute("/leistungen/$service/$city")({
       meta: [
         { title: meta.title },
         { name: "description", content: meta.description },
+        { name: "robots", content: "noindex,follow" },
         { property: "og:title", content: meta.title },
         { property: "og:description", content: meta.description },
         { property: "og:type", content: "website" },
@@ -122,7 +122,7 @@ function ServiceCityPage() {
               <p className="glass flex items-center gap-3 rounded-2xl px-4 py-3 text-sm">
                 <MapPin aria-hidden className="size-4 shrink-0 text-primary" />
                 <span>
-                  {city.distanceKm} km bis {homeBase.city}
+                  ca. {city.distanceKm} km bis {homeBase.city}
                 </span>
               </p>
               <p className="glass flex items-center gap-3 rounded-2xl px-4 py-3 text-sm">
@@ -230,13 +230,13 @@ function ServiceCityPage() {
             </div>
           ) : (
             <p className="metal-panel mt-8 rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
-              Der Aufwand hängt hier stark vom Einzelfall ab. Deshalb nennen wir den Preis erst
-              nach der Begutachtung des Fahrzeugs und nicht pauschal im Voraus.
+              Der Aufwand hängt hier stark vom Einzelfall ab. Deshalb nennen wir den Preis erst nach
+              der Begutachtung des Fahrzeugs und nicht pauschal im Voraus.
             </p>
           )}
         </section>
 
-        {/* ---------------- FAQ (deckungsgleich mit JSON-LD) ---------------- */}
+        {/* ---------------- FAQ ---------------- */}
         <section className="content-auto border-y border-border bg-surface/35">
           <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6">
             <p className="eyebrow">Häufige Fragen</p>
@@ -254,27 +254,23 @@ function ServiceCityPage() {
           </div>
         </section>
 
-        {/* ---------------- Matrix-Verlinkung (reines CSS, kein JS) ---------------- */}
+        {/* ---------------- Weiterführende Übersichten ---------------- */}
         <section className="content-auto mx-auto max-w-7xl px-4 py-20 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-2">
             <div>
-              <p className="eyebrow">Gleiche Leistung, andere Stadt</p>
-              <h2 className="display-sub mt-3 uppercase">
-                {service.shortName} in der Region
-              </h2>
+              <p className="eyebrow">Hol- und Bringservice</p>
+              <h2 className="display-sub mt-3 uppercase">Weitere Städte in der Region</h2>
               <ul className="mt-6 grid gap-2 sm:grid-cols-2">
                 {otherCities.map((other) => (
                   <li key={other.slug}>
                     <Link
-                      to="/leistungen/$service/$city"
-                      params={{ service: service.slug, city: other.slug }}
+                      to="/abholservice/$city"
+                      params={{ city: other.slug }}
                       className="glass flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
                     >
-                      <span className="truncate">
-                        {service.shortName} {other.short}
-                      </span>
+                      <span className="truncate">Abholservice {other.short}</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {other.distanceKm} km
+                        ca. {other.distanceKm} km
                       </span>
                     </Link>
                   </li>
@@ -283,25 +279,23 @@ function ServiceCityPage() {
             </div>
 
             <div>
-              <p className="eyebrow">Gleiche Stadt, andere Leistung</p>
-              <h2 className="display-sub mt-3 uppercase">Weitere Leistungen für {city.short}</h2>
+              <p className="eyebrow">Leistungsübersicht</p>
+              <h2 className="display-sub mt-3 uppercase">Weitere Leistungen</h2>
               <ul className="mt-6 grid gap-2 sm:grid-cols-2">
                 {otherServices.map((other) => (
                   <li key={other.slug}>
                     <Link
-                      to="/leistungen/$service/$city"
-                      params={{ service: other.slug, city: city.slug }}
+                      to="/leistungen/$service"
+                      params={{ service: other.slug }}
                       className="glass flex items-center rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
                     >
-                      <span className="truncate">
-                        {other.shortName} {city.short}
-                      </span>
+                      <span className="truncate">{other.shortName}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
               <p className="mt-4 text-xs text-muted-foreground">
-                Alle Kombinationen finden Sie in der{" "}
+                Alle Leistungen finden Sie in der{" "}
                 <Link to="/leistungen" className="text-primary hover:underline">
                   Leistungsübersicht
                 </Link>
@@ -321,5 +315,3 @@ function ServiceCityPage() {
     </div>
   );
 }
-
-export { serviceCityPath };

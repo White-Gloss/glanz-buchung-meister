@@ -1,14 +1,13 @@
 /**
- * MATRIX-SEITEN: DIENSTLEISTUNG × STADT (Local-SEO-Matrix)
+ * MATRIX-SEITEN: DIENSTLEISTUNG × STADT
  * --------------------------------------------------------
  * Erzeugt aus den vorhandenen Datenquellen `servicePages` (7 Leistungen) und
  * `pickupCities` (13 Städte) alle Kombinationsseiten unter
  * `/leistungen/[dienst]/[stadt]`.
  *
- * ANTI-DUPLICATE-CONTENT
- * Identischer Text mit ausgetauschtem Stadtnamen wird von Google als doppelter
- * Inhalt gewertet. Deshalb wird jede Seite aus mehreren echten Datenpunkten
- * zusammengesetzt, die sich zwischen den Kombinationen unterscheiden:
+ * Die Seiten bleiben für bestehende Links und konkrete Kundenanfragen
+ * erreichbar, werden aber bewusst nicht indexiert. Die Inhalte setzen sich
+ * trotzdem aus mehreren echten Datenpunkten zusammen:
  *
  *   1. Leistungsdaten   – Text, Ablauf und FAQ der jeweiligen Dienstleistung
  *   2. Stadtdaten       – Entfernung, Fahrzeit, Anfahrtsweg, Stadtteile,
@@ -78,7 +77,7 @@ export function getServiceCityCombo(
   return { service, city };
 }
 
-/** Alle Kombinationen – für Sitemap, Übersichtsraster und Tests. */
+/** Alle Kombinationen – für interne Prüfungen und bestehende Direktaufrufe. */
 export function allServiceCityCombos(): ServiceCityCombo[] {
   return servicePages.flatMap((service) => pickupCities.map((city) => ({ service, city })));
 }
@@ -109,11 +108,11 @@ const serviceBandText: Record<string, BandTexts> = {
     home: "Für Fahrzeuge aus dem Stadtgebiet ist eine Zwischenbegutachtung unkompliziert: Sie können den Lack nach der ersten Politurstufe selbst bei kontrolliertem Licht ansehen, bevor wir weiterarbeiten.",
     near: "Die kurze Anfahrt macht eine Zwischenabstimmung leicht. Gerade bei der Lackkorrektur lohnt sich das, weil sich erst nach der ersten Stufe zeigt, wie tief die Kratzer wirklich sitzen.",
     mid: "Vor Beginn stimmen wir ab, wie weit die Korrektur gehen soll. Das ist bei dieser Entfernung wichtiger als vor Ort, weil Zwischenfragen nicht mit einer kurzen Vorbeifahrt geklärt werden können.",
-    far: "Bei größerer Entfernung dokumentieren wir den Lackzustand vor der Bearbeitung und stimmen den Korrekturumfang vorab ab. So gibt es keine offenen Fragen, während das Fahrzeug bei uns steht.",
+    far: "Bei größerer Entfernung prüfen wir den Lackzustand vor der Bearbeitung und stimmen den Korrekturumfang vorab ab. So ist klar, welche Bearbeitung sinnvoll und realistisch ist.",
   },
   keramikversiegelung: {
-    home: "Die Keramikversiegelung braucht eine staubarme Umgebung und feste Aushärtezeit. Beides steht in unserer Halle bereit – Ihr Fahrzeug bleibt dafür die gesamte Bearbeitungszeit vor Ort.",
-    near: "Weil die Versiegelung mehrere Tage Aushärtezeit benötigt, planen wir den Termin fest ein. Die kurze Entfernung erleichtert die Abstimmung von Abholung und Rückgabe erheblich.",
+    home: "Die Keramikversiegelung braucht einen geschützten Arbeitsbereich und ausreichend Aushärtezeit. Ihr Fahrzeug bleibt dafür während der gesamten Bearbeitung in unserer Halle.",
+    near: "Weil Vorbereitung, Auftrag und Aushärtung Zeit benötigen, planen wir den Termin verbindlich ein. Die kurze Entfernung erleichtert die Abstimmung von Abholung und Rückgabe.",
     mid: "Eine Keramikversiegelung ist kein Termin für zwischendurch: Lackkorrektur, Auftrag und Aushärtung brauchen zusammen mehrere Tage. Wir stimmen den Zeitraum vorab verbindlich ab.",
     far: "Trotz der größeren Entfernung bleibt der Ablauf planbar: Wir vereinbaren Abhol- und Rückgabetermin im Voraus und rechnen die Aushärtezeit der Versiegelung fest mit ein.",
   },
@@ -136,7 +135,7 @@ const serviceBandText: Record<string, BandTexts> = {
     far: "Bei dieser Entfernung empfiehlt sich eine Vorabklärung anhand von Fotos. So vermeiden wir, dass ein Fahrzeug anreist, bei dem das Verfahren an seine Grenzen stößt.",
   },
   leasingrueckgabe: {
-    home: "Vor einer Rückgabe zählt der Termin: Aus dem Stadtgebiet lässt sich die Aufbereitung auch kurzfristig noch vor dem Rückgabedatum einplanen.",
+    home: "Vor einer Rückgabe zählt der Termin: Aus dem Stadtgebiet lässt sich die Aufbereitung nach Verfügbarkeit passend vor dem Rückgabedatum einplanen.",
     near: "Planen Sie die Aufbereitung einige Tage vor dem Rückgabetermin ein. Die kurze Entfernung schafft Puffer, falls sich bei der Sichtung zusätzlicher Bedarf zeigt.",
     mid: "Weil Abholung und Rückgabe bei dieser Entfernung Fahrzeit binden, sollte der Termin mit Abstand vor dem Rückgabedatum liegen – wir planen ihn entsprechend.",
     far: "Bei größerer Distanz ist der zeitliche Vorlauf entscheidend. Wir legen den Termin so, dass zwischen Rückgabe des aufbereiteten Fahrzeugs und Ihrem Leasingtermin Luft bleibt.",
@@ -180,9 +179,7 @@ export function buildServiceCityMeta(service: ServicePage, city: PickupCity): Se
     `${s} ${c} – Termin online anfragen`,
   ];
 
-  const title = isHome
-    ? `${s} ${c} am Neckar | ${company.name}`
-    : titlePatterns[seed % titlePatterns.length];
+  const title = isHome ? `${s} in ${c} | Abholservice` : titlePatterns[seed % titlePatterns.length];
 
   // Leistungen, deren Paket die Abholung ohnehin enthält, dürfen in der
   // Description keinen Preis versprechen, der so nie anfällt.
@@ -190,7 +187,7 @@ export function buildServiceCityMeta(service: ServicePage, city: PickupCity): Se
     ? "im Paket inklusive"
     : pickupPriceText(city.distanceKm);
   const descriptionPatterns = [
-    `${service.shortName} für Fahrzeuge aus ${city.name}: Abholung ${priceText}, ${city.distanceKm} km bis zur Werkstatt in ${homeBase.city}. Jetzt Termin anfragen.`,
+    `${service.shortName} für Fahrzeuge aus ${city.name}: Abholung ${priceText}, ca. ${city.distanceKm} km bis zur Werkstatt in ${homeBase.city}. Jetzt Termin anfragen.`,
     `${service.shortName} in ${city.name} (${city.district}): Wir holen Ihr Fahrzeug ab, arbeiten in ${homeBase.city} und bringen es zurück – Abholung ${priceText}.`,
     `${city.short}: ${service.shortName} ohne eigene Anfahrt. Rund ${city.driveMinutes} Minuten bis zu unserer Werkstatt, Abholung ${priceText}.`,
     `${service.shortName} für ${city.name} – Ausführung in ${homeBase.city}, Anfahrt ${city.route}. Abholung ${priceText}.`,
@@ -246,25 +243,22 @@ export function pickupStatement(service: ServicePage, city: PickupCity): string 
     return `Für ${city.name} ist der Hol- und Bringservice kostenlos – wir sind hier vor Ort.`;
   }
   if (price === null) {
-    return `${city.name} liegt mit ${city.distanceKm} km außerhalb unserer festen Preisstaffel. Die Abholung kalkulieren wir hier individuell auf Anfrage.`;
+    return `${city.name} liegt mit rund ${city.distanceKm} km außerhalb unserer festen Preisstaffel. Die Abholung kalkulieren wir hier individuell auf Anfrage.`;
   }
   if (included) {
-    return `Für diese Leistung ist der Hol- und Bringservice nach ${city.name} im Paket High-End Keramik enthalten (bis ${pickupPricing.freeUpToKm} km). Ohne dieses Paket gilt die Staffel: bei ${city.distanceKm} km ${pickupPriceText(city.distanceKm)}.`;
+    return `Für diese Leistung ist der Hol- und Bringservice nach ${city.name} im Paket High-End Keramik enthalten (bis ${pickupPricing.freeUpToKm} km). Ohne dieses Paket gilt die Staffel: bei rund ${city.distanceKm} km ${pickupPriceText(city.distanceKm)}.`;
   }
 
   return price === 0
-    ? `Bei ${city.distanceKm} km Entfernung ist die Abholung aus ${city.name} kostenlos.`
-    : `Bei ${city.distanceKm} km Entfernung kostet die Abholung aus ${city.name} ${pickupPriceText(city.distanceKm)}.`;
+    ? `Bei rund ${city.distanceKm} km Entfernung ist die Abholung aus ${city.name} kostenlos.`
+    : `Bei rund ${city.distanceKm} km Entfernung kostet die Abholung aus ${city.name} ${pickupPriceText(city.distanceKm)}.`;
 }
 
 /**
  * Baut die Textabschnitte der Kombinationsseite. Reihenfolge und Überschriften
  * rotieren, die Inhalte stammen aus Leistungs- und Stadtdaten.
  */
-export function buildServiceCitySections(
-  service: ServicePage,
-  city: PickupCity,
-): ContentSection[] {
+export function buildServiceCitySections(service: ServicePage, city: PickupCity): ContentSection[] {
   const seed = comboSeed(service, city);
   const isHome = city.distanceKm === 0;
 
@@ -296,7 +290,7 @@ export function buildServiceCitySections(
       : [
           `Zwischen ${city.name} und unserer Werkstatt in ${homeBase.city} liegen rund ${city.distanceKm} km, die Fahrzeit beträgt etwa ${city.driveMinutes} Minuten ${city.route}. Wir übernehmen diese Strecke in beide Richtungen.`,
           `Abgedeckt sind auch die umliegenden Orte und Stadtteile: ${city.districts.join(", ")}. ${pickupStatement(service, city)}`,
-          `Wichtig für die Einordnung: In ${city.name} finden ausschließlich Abholung und Rückgabe statt. Die ${service.shortName} selbst führen wir in ${homeBase.city} aus, wo Polierkabine, kontrollierte Beleuchtung und ein staubarmer Arbeitsbereich zur Verfügung stehen.`,
+          `Wichtig für die Einordnung: In ${city.name} finden ausschließlich Abholung und Rückgabe statt. Die ${service.shortName} selbst führen wir in ${homeBase.city} unter kontrollierter Beleuchtung und in einem geschützten Arbeitsbereich aus.`,
         ],
   };
 
@@ -315,10 +309,7 @@ export function buildServiceCitySections(
 }
 
 /** FAQ der Kombination: Leistungsfragen plus stadtbezogene Fragen. */
-export function buildServiceCityFaq(
-  service: ServicePage,
-  city: PickupCity,
-): [string, string][] {
+export function buildServiceCityFaq(service: ServicePage, city: PickupCity): [string, string][] {
   const seed = comboSeed(service, city);
   const serviceFaq = service.faq.filter(
     ([question]) => !question.toLowerCase().includes("abgeholt"),
@@ -341,26 +332,27 @@ export function buildServiceCityFaq(
 }
 
 /* ------------------------------------------------------------------ */
-/* JSON-LD: AutoRepair + Service + Breadcrumb + FAQ                    */
+/* JSON-LD: AutomotiveBusiness + Service + Breadcrumb                  */
 /* ------------------------------------------------------------------ */
 
 export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
   const meta = buildServiceCityMeta(service, city);
-  const businessId = `${meta.canonical}#business`;
+  const businessId = `${SITE_URL}/#business`;
 
-  const autoRepair = {
-    "@type": "AutoRepair",
+  const business = {
+    "@type": "AutomotiveBusiness",
     "@id": businessId,
-    name: `${company.name} – ${service.shortName} mit Abholservice ${city.name}`,
-    description: meta.description,
-    url: meta.canonical,
+    name: company.name,
+    description: "Premium-Fahrzeugaufbereitung mit regionalem Hol- und Bringservice.",
+    url: SITE_URL,
+    telephone: company.phoneHref.replace("tel:", ""),
     email: company.email,
     priceRange: "€€–€€€",
     // Physischer Standort bleibt immer Horb am Neckar.
     address: {
       "@type": "PostalAddress",
       streetAddress: company.street || undefined,
-      addressLocality: "Horb am Neckar-Dettingen",
+      addressLocality: "Horb am Neckar",
       postalCode: homeBase.postalCode,
       addressRegion: homeBase.state,
       addressCountry: homeBase.country,
@@ -370,28 +362,10 @@ export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
       latitude: homeBase.latitude,
       longitude: homeBase.longitude,
     },
-    // Versorgungsgebiet ist die jeweilige Zielstadt.
-    areaServed: {
+    areaServed: pickupCities.map((pickupCity) => ({
       "@type": "City",
-      name: city.name,
-      containedInPlace: {
-        "@type": "AdministrativeArea",
-        name: city.district,
-      },
-    },
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: `${service.name} für ${city.name}`,
-      itemListElement: [
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Service",
-            "@id": `${meta.canonical}#service`,
-          },
-        },
-      ],
-    },
+      name: pickupCity.name,
+    })),
   };
 
   const serviceNode = {
@@ -420,18 +394,9 @@ export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
     ],
   };
 
-  const faq = {
-    "@type": "FAQPage",
-    mainEntity: buildServiceCityFaq(service, city).map(([question, answer]) => ({
-      "@type": "Question",
-      name: question,
-      acceptedAnswer: { "@type": "Answer", text: answer },
-    })),
-  };
-
   return {
     "@context": "https://schema.org",
-    "@graph": [autoRepair, serviceNode, breadcrumb, faq],
+    "@graph": [business, serviceNode, breadcrumb],
   };
 }
 
@@ -439,8 +404,7 @@ export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
 export function siblingCities(service: ServicePage, city: PickupCity, count = 6): PickupCity[] {
   const others = pickupCities.filter((item) => item.slug !== city.slug);
   const sorted = [...others].sort(
-    (a, b) =>
-      Math.abs(a.distanceKm - city.distanceKm) - Math.abs(b.distanceKm - city.distanceKm),
+    (a, b) => Math.abs(a.distanceKm - city.distanceKm) - Math.abs(b.distanceKm - city.distanceKm),
   );
   return sorted.slice(0, count);
 }

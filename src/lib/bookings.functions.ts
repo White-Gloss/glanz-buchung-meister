@@ -150,7 +150,7 @@ function validate(input: BookingInput): BookingInput {
 
 // ---------------------------------------------------------------------------
 // createBooking — public, no auth required.
-// Calls the SECURITY DEFINER function in the Replit-managed Postgres which
+// Calls the booking function in the configured PostgreSQL database, which
 // computes totals, invoice number, and deposit server-side from service_prices.
 // ---------------------------------------------------------------------------
 export const createBooking = createServerFn({ method: "POST" })

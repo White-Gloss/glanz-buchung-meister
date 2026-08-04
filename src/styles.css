@@ -1,7 +1,35 @@
-@import "@fontsource/bebas-neue/latin-400.css";
-@import "@fontsource/barlow/latin-400.css";
-@import "@fontsource/barlow/latin-500.css";
-@import "@fontsource/barlow/latin-600.css";
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("@fontsource/barlow/files/barlow-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
+}
+
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -256,7 +284,7 @@
   }
 }
 
-/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration") */
+/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration“) */
 @utility label-caps {
   font-family: var(--font-display);
   font-weight: 400;

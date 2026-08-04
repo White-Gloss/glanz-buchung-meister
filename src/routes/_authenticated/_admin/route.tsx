@@ -24,7 +24,10 @@ function AdminGate() {
 
   if (!isAdmin) {
     return (
-      <main id="main-content" className="grid min-h-dvh place-items-center bg-background px-4 py-16">
+      <main
+        id="main-content"
+        className="grid min-h-dvh place-items-center bg-background px-4 py-16"
+      >
         <div className="glass w-full max-w-md rounded-3xl p-8 text-center">
           <ShieldAlert aria-hidden className="mx-auto size-8 text-destructive" />
           <h1 className="display-sub mt-4">Kein Administrator-Zugriff</h1>

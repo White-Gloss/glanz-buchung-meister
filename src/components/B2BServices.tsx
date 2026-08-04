@@ -35,12 +35,6 @@ const services = [
   },
 ] as const;
 
-const processSteps = [
-  ["Bedarf nennen", "Fahrzeuganzahl, Zustand, Leistungsumfang und gewünschten Turnus mitteilen."],
-  ["Angebot erhalten", "Wir kalkulieren den Auftrag passend zu Aufwand, Menge und Logistik."],
-  ["Umsetzung planen", "Termine, Übergabe und auf Wunsch Hol- und Bringservice abstimmen."],
-] as const;
-
 const whatsappHref = `${company.whatsappHref}?text=${encodeURIComponent(
   "Hallo White Gloss, ich möchte ein individuelles B2B-Angebot für Fahrzeugaufbereitung anfragen.",
 )}`;
@@ -58,8 +52,8 @@ export function B2BServices() {
       aria-labelledby="b2b-title"
       className="content-auto scroll-mt-32 border-y border-border bg-[#050709]"
     >
-      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+        <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
             <p className="eyebrow">B2B · Geschäftskunden</p>
             <h2 id="b2b-title" className="display-section mt-3 max-w-3xl uppercase">
@@ -71,7 +65,7 @@ export function B2BServices() {
               einzelnen Leasingrückläufer bis zur regelmäßig betreuten Fahrzeugflotte.
             </p>
 
-            <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/[0.07] p-5 sm:p-6">
+            <div className="mt-8 border-y border-primary/30 bg-primary/[0.045] px-1 py-5 sm:px-5">
               <p className="display-card uppercase text-foreground">
                 Individuelle Kalkulation statt Pauschalpreis
               </p>
@@ -91,20 +85,20 @@ export function B2BServices() {
               <Button
                 asChild
                 size="lg"
-                className="h-auto whitespace-normal rounded-full px-5 py-3 text-center sm:col-span-2"
+                className="h-auto whitespace-normal rounded-lg px-5 py-3 text-center sm:col-span-2"
               >
                 <a href={company.phoneHref}>
                   <Phone aria-hidden className="size-4" />
                   Telefonisch anfragen: {company.phone}
                 </a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full">
+              <Button asChild size="lg" variant="outline" className="rounded-lg">
                 <a href={whatsappHref} target="_blank" rel="noreferrer">
                   <MessageCircle aria-hidden className="size-4" />
                   WhatsApp
                 </a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full">
+              <Button asChild size="lg" variant="outline" className="rounded-lg">
                 <a href={emailHref}>
                   <Mail aria-hidden className="size-4" />
                   E-Mail senden
@@ -113,39 +107,26 @@ export function B2BServices() {
             </div>
           </div>
 
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="border-y border-border">
             {services.map(({ icon: Icon, title, text }, index) => (
               <li
                 key={title}
-                className="metal-panel relative min-h-60 overflow-hidden rounded-3xl p-6 sm:p-7"
+                className="grid gap-5 border-b border-border py-6 last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:items-start sm:py-7"
               >
-                <span
-                  aria-hidden
-                  className="absolute right-5 top-3 font-display text-6xl text-white/[0.035]"
-                >
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <Icon aria-hidden className="size-7 text-primary" />
-                <h3 className="display-sub mt-12 uppercase">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
+                <div className="flex items-center gap-3 sm:block">
+                  <span className="text-[0.62rem] tracking-[0.2em] text-primary">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <Icon aria-hidden className="mt-0 size-5 text-primary sm:mt-3" />
+                </div>
+                <div>
+                  <h3 className="display-sub uppercase">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
+                </div>
               </li>
             ))}
           </ul>
         </div>
-
-        <ol className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-border bg-border md:grid-cols-3">
-          {processSteps.map(([title, text], index) => (
-            <li key={title} className="bg-background p-6 sm:p-7">
-              <div className="flex gap-4">
-                <span className="text-xs tracking-[0.2em] text-primary">0{index + 1}</span>
-                <div>
-                  <h3 className="display-card uppercase">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
       </div>
     </section>
   );

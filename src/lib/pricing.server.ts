@@ -68,7 +68,11 @@ export async function readServicePrices(): Promise<ServicePriceRow[]> {
     }
   }
 
-  if (!rows?.length) return cachedPrices?.rows ?? [];
+  if (!rows?.length) {
+    const fallback = cachedPrices?.rows ?? [];
+    cachedPrices = { rows: fallback, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
+    return fallback;
+  }
 
   cachedPrices = { rows, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
   return rows;

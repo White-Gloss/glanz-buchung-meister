@@ -17,8 +17,10 @@ export const Route = createFileRoute("/impressum")({
       },
       { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: absUrl("/impressum") },
-        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") }],
+    links: [
+      { rel: "canonical", href: absUrl("/impressum") },
+      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") },
+    ],
   }),
   component: ImprintPage,
 });
@@ -82,19 +84,7 @@ function ImprintPage() {
           </section>
 
           <section>
-            <h2>Online-Streitbeilegung</h2>
-            <p>
-              Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS)
-              bereit:{" "}
-              <a
-                href="https://ec.europa.eu/consumers/odr/"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                https://ec.europa.eu/consumers/odr/
-              </a>
-              . Unsere E-Mail-Adresse finden Sie oben in diesem Impressum.
-            </p>
+            <h2>Verbraucherstreitbeilegung</h2>
             <p>
               Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
               einer Verbraucherschlichtungsstelle teilzunehmen.
