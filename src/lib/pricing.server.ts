@@ -6,6 +6,7 @@
 // Falls der direkte Pool nicht konfiguriert ist, greift der Supabase-Fallback.
 
 import type { ServicePriceRow } from "./servicesConfig";
+import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 
 const PRICE_CACHE_TTL_MS = 30_000;
 let cachedPrices: { rows: ServicePriceRow[]; expiresAt: number } | null = null;
@@ -37,16 +38,7 @@ async function readFromSupabase(): Promise<ServicePriceRow[]> {
   const { createClient } = await import("@supabase/supabase-js");
   const client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) {
-          headers.delete("Authorization");
-        }
-        headers.set("apikey", key);
-        return fetch(input, { ...init, headers });
-      },
-    },
+    global: { fetch: createSupabasePublishableFetch(key) },
   });
 
   const { data, error } = await client

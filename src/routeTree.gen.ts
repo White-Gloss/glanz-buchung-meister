@@ -26,6 +26,7 @@ import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
 import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
 import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
+import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
@@ -113,6 +114,12 @@ const LeistungenServiceCityRoute = LeistungenServiceCityRouteImport.update({
   path: '/leistungen/$service/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminAdminIndexRoute =
+  AuthenticatedAdminAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminGalerieRoute =
   AuthenticatedAdminAdminGalerieRouteImport.update({
     id: '/galerie',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,12 +173,12 @@ export interface FileRoutesByTo {
   '/kalender/$token': typeof KalenderTokenRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
-  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -230,12 +240,12 @@ export interface FileRouteTypes {
     | '/kalender/$token'
     | '/abholservice'
     | '/leistungen'
-    | '/admin'
     | '/leistungen/$service/$city'
     | '/leistungen/$service'
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
     | '/_authenticated/_admin/admin/leistungen'
+    | '/_authenticated/_admin/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -399,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeistungenServiceCityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/_admin/admin/': {
+      id: '/_authenticated/_admin/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/galerie': {
       id: '/_authenticated/_admin/admin/galerie'
       path: '/galerie'
@@ -427,6 +445,7 @@ interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
   AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
+  AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
 }
 
 const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
@@ -435,6 +454,7 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
     AuthenticatedAdminAdminLeistungenRoute:
       AuthenticatedAdminAdminLeistungenRoute,
+    AuthenticatedAdminAdminIndexRoute: AuthenticatedAdminAdminIndexRoute,
   }
 
 const AuthenticatedAdminAdminRouteWithChildren =
