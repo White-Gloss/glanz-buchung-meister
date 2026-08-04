@@ -174,9 +174,7 @@ function PricingPage() {
                       </p>
                     </div>
                     <p className="whitespace-nowrap text-sm text-foreground">
-                      {addOn.distanceBased
-                        ? "nach Entfernung*"
-                        : `ab ${currency(addOn.price)}`}
+                      {addOn.distanceBased ? "nach Entfernung*" : `ab ${currency(addOn.price)}`}
                       <span className="block text-xs font-normal text-muted-foreground">
                         {vatNoticeShort()}
                       </span>
@@ -186,10 +184,9 @@ function PricingPage() {
               </div>
               <p className="mt-4 text-xs leading-5 text-muted-foreground">
                 {vatNotice()} * Hol- &amp; Bringservice nach Entfernung zur Werkstatt:{" "}
-                {pickupTierSummary()}. Im
-                Paket High-End Keramik ist die Abholung bis {pickupPricing.freeUpToKm} km bereits
-                enthalten. Endpreis der übrigen Zusatzleistungen abhängig von Fahrzeugklasse und
-                gewähltem Umfang.
+                {pickupTierSummary()}. Im Paket High-End Keramik ist die Abholung bis{" "}
+                {pickupPricing.freeUpToKm} km bereits enthalten. Endpreis der übrigen
+                Zusatzleistungen abhängig von Fahrzeugklasse und gewähltem Umfang.
               </p>
             </div>
           </div>

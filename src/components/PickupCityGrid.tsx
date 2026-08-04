@@ -27,9 +27,7 @@ export function PickupCityGrid({ cities = pickupCitiesByDistance, compact = fals
                 <MapPin className="size-4 shrink-0 text-primary" />
                 {city.name}
               </p>
-              {!compact && (
-                <p className="mt-2 text-sm text-muted-foreground">{city.district}</p>
-              )}
+              {!compact && <p className="mt-2 text-sm text-muted-foreground">{city.district}</p>}
             </div>
             <p className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">

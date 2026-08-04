@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
-import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import { company, features } from "@/lib/servicesConfig";
 
 const FOOTER_LINK =
@@ -13,7 +12,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.8fr_1fr]">
         <div>
           <img
-            src={logoSm.url}
+            src="/wgd-logo-440.webp"
             width={440}
             height={253}
             loading="lazy"

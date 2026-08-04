@@ -6,12 +6,7 @@
  * Seiten, Meta-Daten, JSON-LD, Übersicht und Sitemap ziehen automatisch nach.
  */
 
-import {
-  company,
-  pickupPricing,
-  pickupPriceText,
-  pickupTierSummary,
-} from "./servicesConfig";
+import { company, pickupPricing, pickupPriceText, pickupTierSummary } from "./servicesConfig";
 import { absUrl } from "./seo";
 
 export type PickupCity = {

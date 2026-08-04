@@ -83,8 +83,7 @@ export function diagnoseBackendError(error: unknown): BackendErrorInfo {
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return {
       title: "Keine Internetverbindung",
-      description:
-        "Bitte prüfen Sie Ihr Netzwerk und versuchen Sie es anschließend erneut.",
+      description: "Bitte prüfen Sie Ihr Netzwerk und versuchen Sie es anschließend erneut.",
       missing: [],
       technical,
     };

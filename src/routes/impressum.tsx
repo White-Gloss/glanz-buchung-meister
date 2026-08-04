@@ -17,8 +17,10 @@ export const Route = createFileRoute("/impressum")({
       },
       { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: absUrl("/impressum") },
-        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") }],
+    links: [
+      { rel: "canonical", href: absUrl("/impressum") },
+      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") },
+    ],
   }),
   component: ImprintPage,
 });

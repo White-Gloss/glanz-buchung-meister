@@ -31,17 +31,17 @@ export function VehicleGallery() {
 
   return (
     <section className="content-auto border-y border-border bg-surface/35">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
         <p className="eyebrow">Ergebnisse</p>
-        <h2 className="display-section mt-3 uppercase">Fahrzeuge aus unserer Werkstatt</h2>
+        <h2 className="display-section mt-3 uppercase">Details, die den Unterschied machen.</h2>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Eine Auswahl aufbereiteter Fahrzeuge — direkt aus Horb am Neckar.
+          Eine Auswahl aufbereiteter Fahrzeuge – direkt aus unserer Werkstatt in Horb am Neckar.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <figure key={item.id} className="glass overflow-hidden rounded-2xl">
-              <div className="aspect-video bg-secondary/30">
+            <figure key={item.id}>
+              <div className="aspect-video overflow-hidden border border-border bg-secondary/30">
                 <img
                   src={galleryPublicUrl(item.storage_path)}
                   alt={item.title || item.vehicle || "Aufbereitetes Fahrzeug"}
@@ -52,7 +52,7 @@ export function VehicleGallery() {
                 />
               </div>
               {(item.title || item.vehicle) && (
-                <figcaption className="p-4">
+                <figcaption className="border-b border-border px-1 py-3">
                   {item.title && (
                     <p className="text-sm font-medium text-foreground">{item.title}</p>
                   )}

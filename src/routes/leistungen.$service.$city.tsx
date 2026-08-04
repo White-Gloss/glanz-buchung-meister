@@ -230,8 +230,8 @@ function ServiceCityPage() {
             </div>
           ) : (
             <p className="metal-panel mt-8 rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
-              Der Aufwand hängt hier stark vom Einzelfall ab. Deshalb nennen wir den Preis erst
-              nach der Begutachtung des Fahrzeugs und nicht pauschal im Voraus.
+              Der Aufwand hängt hier stark vom Einzelfall ab. Deshalb nennen wir den Preis erst nach
+              der Begutachtung des Fahrzeugs und nicht pauschal im Voraus.
             </p>
           )}
         </section>
@@ -259,9 +259,7 @@ function ServiceCityPage() {
           <div className="grid gap-12 lg:grid-cols-2">
             <div>
               <p className="eyebrow">Gleiche Leistung, andere Stadt</p>
-              <h2 className="display-sub mt-3 uppercase">
-                {service.shortName} in der Region
-              </h2>
+              <h2 className="display-sub mt-3 uppercase">{service.shortName} in der Region</h2>
               <ul className="mt-6 grid gap-2 sm:grid-cols-2">
                 {otherCities.map((other) => (
                   <li key={other.slug}>

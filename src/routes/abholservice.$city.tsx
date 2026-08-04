@@ -62,8 +62,10 @@ export const Route = createFileRoute("/abholservice/$city")({
         { name: "twitter:description", content: meta.description },
         { name: "twitter:image", content: OG_IMAGE },
       ],
-      links: [{ rel: "canonical", href: meta.canonical },
-        { rel: "alternate", hrefLang: "de-DE", href: meta.canonical }],
+      links: [
+        { rel: "canonical", href: meta.canonical },
+        { rel: "alternate", hrefLang: "de-DE", href: meta.canonical },
+      ],
       scripts: [{ type: "application/ld+json", children: JSON.stringify(loaderData.jsonLd) }],
     };
   },
