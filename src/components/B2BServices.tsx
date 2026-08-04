@@ -16,11 +16,11 @@ const services = [
   {
     icon: ClipboardCheck,
     title: "Leasingrückläufer",
-    text: "Aufbereitung vor der Rückgabe – mit Fokus auf Sauberkeit, Präsentation und sichtbare Gebrauchsspuren im vereinbarten Leistungsumfang.",
+    text: "Aufbereitung vor der Rückgabe – für ein gepflegtes Erscheinungsbild und die fachgerechte Behandlung sichtbarer Gebrauchsspuren im vereinbarten Umfang.",
   },
   {
     icon: Truck,
-    title: "Flotten- & Fuhrparkpflege",
+    title: "Flotten- & Fuhrparkreinigung",
     text: "Einmalige Flottenreinigung oder planbare Pflegeintervalle für einen dauerhaft professionellen Unternehmensauftritt.",
   },
   {
@@ -56,7 +56,7 @@ export function B2BServices() {
     <section
       id="b2b"
       aria-labelledby="b2b-title"
-      className="content-auto scroll-mt-28 border-y border-border bg-[#050709]"
+      className="content-auto scroll-mt-32 border-y border-border bg-[#050709]"
     >
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <div className="grid gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
@@ -76,8 +76,9 @@ export function B2BServices() {
                 Individuelle Kalkulation statt Pauschalpreis
               </p>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Für B2B-Aufträge veröffentlichen wir bewusst keine festen Preise. Fahrzeuganzahl,
-                Zustand, Leistungsumfang, Turnus und Logistik bestimmen das persönliche Angebot.
+                Für B2B-Aufträge gibt es keine festen Pauschalpreise. Jeder Preis wird je nach
+                Fahrzeuganzahl, Zustand, Leistungsumfang, Turnus und Logistik individuell
+                kalkuliert.
               </p>
             </div>
 

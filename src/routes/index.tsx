@@ -42,7 +42,7 @@ const BookingWizard = lazy(() =>
 
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
-  "Premium-Fahrzeugaufbereitung in Horb für Privat- und B2B-Kunden: Innenreinigung, Flottenpflege, Leasingrückläufer und individueller Service.";
+  "Premium-Fahrzeugaufbereitung in Horb für Privat- und Geschäftskunden: Flottenreinigung, Leasingrückläufer und individuelle B2B-Angebote.";
 
 export const Route = createFileRoute("/")({
   head: () => ({

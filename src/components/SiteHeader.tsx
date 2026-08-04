@@ -63,14 +63,16 @@ export function SiteHeader() {
           <Link
             to="/"
             hash="b2b"
-            className="group inline-flex min-h-8 items-center justify-center gap-2 text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            className="group inline-flex min-h-8 items-center justify-center gap-2 rounded-sm text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Building2 aria-hidden className="size-3.5 shrink-0 text-primary" />
-            <span>
-              <span className="text-primary">B2B</span> · Flotten, Leasingrückläufer &amp;
-              Fahrzeughandel
+            <span className="sm:hidden">
+              <span className="text-primary">B2B</span> · Angebot anfragen
             </span>
-            <span className="hidden text-muted-foreground xl:inline">Individuelles Angebot</span>
+            <span className="hidden sm:inline">
+              <span className="text-primary">B2B</span> · Flotten &amp; Leasingrückläufer
+            </span>
+            <span className="hidden text-muted-foreground xl:inline">Individuell kalkuliert</span>
             <ArrowRight
               aria-hidden
               className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
