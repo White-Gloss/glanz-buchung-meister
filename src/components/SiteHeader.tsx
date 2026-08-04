@@ -9,12 +9,11 @@ import {
   Phone,
 } from "lucide-react";
 
-import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
-import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
 import { Button } from "@/components/ui/button";
 import { company, features } from "@/lib/servicesConfig";
 
-const LOGO_SRCSET = `${logoSm.url} 440w, ${logoLg.url} 760w`;
+const LOGO_SMALL = "/wgd-logo-440.webp";
+const LOGO_SRCSET = `${LOGO_SMALL} 440w, /wgd-logo-760.webp 760w`;
 const NAV_LINK =
   "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-white/[0.04] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 const ACTIVE_NAV = "bg-white/[0.05] text-foreground";
@@ -107,7 +106,7 @@ export function SiteHeader() {
             className="flex min-h-11 min-w-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <img
-              src={logoSm.url}
+              src={LOGO_SMALL}
               srcSet={LOGO_SRCSET}
               sizes="(min-width: 640px) 190px, 150px"
               width={440}

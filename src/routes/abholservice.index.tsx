@@ -34,8 +34,10 @@ export const Route = createFileRoute("/abholservice/")({
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: absUrl("/abholservice") },
-        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") }],
+    links: [
+      { rel: "canonical", href: absUrl("/abholservice") },
+      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") },
+    ],
     scripts: [{ type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) }],
   }),
   component: PickupOverview,
@@ -66,12 +68,8 @@ function PickupOverview() {
               kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
             </p>
             <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
-              <span className="display-card uppercase">
-                Abholung {pickupPriceRangeText()}
-              </span>
-              <span className="text-foreground/80">
-                nach Entfernung – {pickupTierSummary()}
-              </span>
+              <span className="display-card uppercase">Abholung {pickupPriceRangeText()}</span>
+              <span className="text-foreground/80">nach Entfernung – {pickupTierSummary()}</span>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" className="glow-ring">

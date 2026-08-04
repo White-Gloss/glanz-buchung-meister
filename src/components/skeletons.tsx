@@ -48,7 +48,11 @@ export function AuditLogSkeleton({ rows = 4 }: { rows?: number }) {
 /** Platzhalter in Struktur des Buchungs-Assistenten. */
 export function BookingWizardSkeleton() {
   return (
-    <div className="glass rounded-3xl p-5 sm:p-8" aria-busy="true" aria-label="Buchungsassistent wird geladen">
+    <div
+      className="glass rounded-3xl p-5 sm:p-8"
+      aria-busy="true"
+      aria-label="Buchungsassistent wird geladen"
+    >
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-8 w-24 rounded-full" />
@@ -71,11 +75,18 @@ export function BookingWizardSkeleton() {
 /** Platzhalter für das Preis-Panel im Admin-Dashboard. */
 export function PricePanelSkeleton() {
   return (
-    <div className="glass mt-8 rounded-3xl p-5 sm:p-6" aria-busy="true" aria-label="Preise werden geladen">
+    <div
+      className="glass mt-8 rounded-3xl p-5 sm:p-6"
+      aria-busy="true"
+      aria-label="Preise werden geladen"
+    >
       <Skeleton className="h-6 w-40" />
       <div className="mt-5 space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+          <div
+            key={i}
+            className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+          >
             <Skeleton className="h-4 w-56" />
             <Skeleton className="h-9 w-28 rounded-md" />
             <Skeleton className="h-9 w-24 rounded-md" />

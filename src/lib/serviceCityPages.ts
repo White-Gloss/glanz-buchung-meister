@@ -261,10 +261,7 @@ export function pickupStatement(service: ServicePage, city: PickupCity): string 
  * Baut die Textabschnitte der Kombinationsseite. Reihenfolge und Überschriften
  * rotieren, die Inhalte stammen aus Leistungs- und Stadtdaten.
  */
-export function buildServiceCitySections(
-  service: ServicePage,
-  city: PickupCity,
-): ContentSection[] {
+export function buildServiceCitySections(service: ServicePage, city: PickupCity): ContentSection[] {
   const seed = comboSeed(service, city);
   const isHome = city.distanceKm === 0;
 
@@ -315,10 +312,7 @@ export function buildServiceCitySections(
 }
 
 /** FAQ der Kombination: Leistungsfragen plus stadtbezogene Fragen. */
-export function buildServiceCityFaq(
-  service: ServicePage,
-  city: PickupCity,
-): [string, string][] {
+export function buildServiceCityFaq(service: ServicePage, city: PickupCity): [string, string][] {
   const seed = comboSeed(service, city);
   const serviceFaq = service.faq.filter(
     ([question]) => !question.toLowerCase().includes("abgeholt"),
@@ -439,8 +433,7 @@ export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
 export function siblingCities(service: ServicePage, city: PickupCity, count = 6): PickupCity[] {
   const others = pickupCities.filter((item) => item.slug !== city.slug);
   const sorted = [...others].sort(
-    (a, b) =>
-      Math.abs(a.distanceKm - city.distanceKm) - Math.abs(b.distanceKm - city.distanceKm),
+    (a, b) => Math.abs(a.distanceKm - city.distanceKm) - Math.abs(b.distanceKm - city.distanceKm),
   );
   return sorted.slice(0, count);
 }

@@ -289,9 +289,7 @@ export const pickupPricing = {
 
 /** true, wenn die Abholung im gewählten Paket kostenfrei enthalten ist. */
 export function isPickupIncluded(packageId: string | null | undefined, distanceKm: number) {
-  return (
-    packageId === pickupPricing.freeWithPackageId && distanceKm <= pickupPricing.freeUpToKm
-  );
+  return packageId === pickupPricing.freeWithPackageId && distanceKm <= pickupPricing.freeUpToKm;
 }
 
 /**

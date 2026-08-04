@@ -1,5 +1,5 @@
 /**
- * Initialises the Replit-managed Postgres database.
+ * Initialises the configured PostgreSQL database.
  * Applies the essential schema without Supabase-specific roles/auth.
  * Safe to run multiple times (idempotent).
  */
@@ -140,8 +140,7 @@ async function run() {
     `);
 
     // ------------------------------------------------------------------
-    // create_booking_public (SECURITY DEFINER not needed on Replit Postgres,
-    // but kept for schema parity)
+    // create_booking_public (SECURITY DEFINER is kept for schema parity)
     // ------------------------------------------------------------------
     await client.query(`
       CREATE OR REPLACE FUNCTION public.create_booking_public(
