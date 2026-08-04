@@ -21,29 +21,20 @@ import { listPublishedCustomServices, toServicePage } from "@/lib/customServices
  * für sie nicht) und ohne die 91-Städte-Matrix (siehe customServices.functions.ts
  * für die Begründung).
  */
-async function findServicePage(slug: string): Promise<ServicePage | undefined> {
-  const core = getServicePage(slug);
-  if (core) return core;
-  try {
-    const rows = await listPublishedCustomServices();
-    const match = rows.find((r) => r.slug === slug);
-    return match ? toServicePage(match) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export const Route = createFileRoute("/leistungen/$service/")({
   loader: async ({ params }) => {
-    const service = await findServicePage(params.service);
-    if (!service) throw notFound();
-    let allServices: ServicePage[] = servicePages;
+    let customServices: ServicePage[] = [];
     try {
       const rows = await listPublishedCustomServices();
-      allServices = [...servicePages, ...rows.map(toServicePage)];
+      customServices = rows.map(toServicePage);
     } catch {
       // eigene Leistungen bleiben dann einfach weg, kein Fehler für den Besuch
     }
+    const service =
+      getServicePage(params.service) ??
+      customServices.find((candidate) => candidate.slug === params.service);
+    if (!service) throw notFound();
+    const allServices = [...servicePages, ...customServices];
     return { service, jsonLd: buildServiceJsonLd(service), allServices };
   },
   head: ({ loaderData }) => {
@@ -167,39 +158,41 @@ function ServicePage() {
           </section>
         )}
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <p className="eyebrow">Passende Pakete</p>
-          <h2 className="display-section mt-3 uppercase">{service.name} direkt konfigurieren</h2>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {relatedPackages.map((servicePackage) => (
-              <article
-                key={servicePackage.id}
-                className="hairline-gold flex h-full flex-col rounded-2xl bg-card/70 p-5"
-              >
-                <h3 className="display-card uppercase">{servicePackage.name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{servicePackage.tagline}</p>
-                <p className="mt-5 flex items-center justify-between gap-3">
-                  <span className="display-price text-primary">
-                    ab {currency(servicePackage.basePrice)}
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      {vatNoticeShort()}
+        {relatedPackages.length > 0 && (
+          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+            <p className="eyebrow">Passende Pakete</p>
+            <h2 className="display-section mt-3 uppercase">{service.name} direkt konfigurieren</h2>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {relatedPackages.map((servicePackage) => (
+                <article
+                  key={servicePackage.id}
+                  className="hairline-gold flex h-full flex-col rounded-2xl bg-card/70 p-5"
+                >
+                  <h3 className="display-card uppercase">{servicePackage.name}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{servicePackage.tagline}</p>
+                  <p className="mt-5 flex items-center justify-between gap-3">
+                    <span className="display-price text-primary">
+                      ab {currency(servicePackage.basePrice)}
+                      <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                        {vatNoticeShort()}
+                      </span>
                     </span>
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock3 className="size-3.5" />
-                    {servicePackage.duration}
-                  </span>
-                </p>
-              </article>
-            ))}
-          </div>
-          <Button asChild size="lg" className="mt-7">
-            <Link to="/" hash="buchung">
-              Zum Preisrechner
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </section>
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock3 className="size-3.5" />
+                      {servicePackage.duration}
+                    </span>
+                  </p>
+                </article>
+              ))}
+            </div>
+            <Button asChild size="lg" className="mt-7">
+              <Link to="/" hash="buchung">
+                Zum Preisrechner
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </section>
+        )}
 
         {service.faq.length > 0 && (
           <section className="border-t border-border/60 bg-card/20">

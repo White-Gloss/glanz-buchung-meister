@@ -121,7 +121,7 @@ function ServicesOverview() {
                   <div className="flex items-start justify-between gap-4">
                     <Icon aria-hidden className="size-8 text-primary" />
                     <span className="text-xs tracking-[0.2em] text-muted-foreground">
-                      0{index + 1}
+                      {String(index + 1).padStart(2, "0")}
                     </span>
                   </div>
                   <p className="eyebrow mt-10">{service.eyebrow}</p>

@@ -4,6 +4,7 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import type { ServicePage } from "./servicePages";
+import { servicePackages } from "./servicesConfig";
 
 /**
  * EIGENE DIENSTLEISTUNGEN
@@ -129,41 +130,84 @@ const RESERVED_SLUGS = new Set([
   "leasingrueckgabe",
 ]);
 
+const VALID_PACKAGE_IDS = new Set(servicePackages.map((servicePackage) => servicePackage.id));
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeText(value: string, label: string, maxLength: number, required = false): string {
+  const normalized = String(value ?? "").trim();
+  if (required && !normalized) throw new Error(`${label} ist ein Pflichtfeld.`);
+  if (normalized.length > maxLength) {
+    throw new Error(`${label} darf höchstens ${maxLength} Zeichen enthalten.`);
+  }
+  return normalized;
+}
+
+function normalizeCustomServiceInput(data: CustomServiceInput): CustomServiceInput {
+  const slug = String(data.slug ?? "")
+    .trim()
+    .toLowerCase();
+  if (RESERVED_SLUGS.has(slug)) {
+    throw new Error(`„${slug}“ ist bereits eine der festen Kern-Leistungen.`);
+  }
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 3 || slug.length > 60) {
+    throw new Error(
+      "Die URL-Kurzform darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten (3–60 Zeichen).",
+    );
+  }
+
+  const name = normalizeText(data.name, "Name", 100, true);
+  const lead = normalizeText(data.lead, "Kurzbeschreibung", 320, true);
+  const benefits = (Array.isArray(data.benefits) ? data.benefits : [])
+    .map((benefit) => normalizeText(benefit, "Vorteil", 180))
+    .filter(Boolean);
+  if (benefits.length > 4) throw new Error("Es sind höchstens vier Vorteile möglich.");
+
+  const relatedPackageIds = [
+    ...new Set(Array.isArray(data.relatedPackageIds) ? data.relatedPackageIds : []),
+  ];
+  if (relatedPackageIds.some((id) => !VALID_PACKAGE_IDS.has(id))) {
+    throw new Error("Mindestens ein ausgewähltes Paket ist ungültig.");
+  }
+
+  return {
+    slug,
+    name,
+    shortName: normalizeText(data.shortName, "Kurzform", 80) || name,
+    eyebrow: normalizeText(data.eyebrow, "Kategorie-Text", 120) || "Fahrzeugaufbereitung",
+    lead,
+    detail: normalizeText(data.detail, "Ausführlicher Text", 2500) || lead,
+    benefits,
+    metaTitle: normalizeText(data.metaTitle, "Meta-Titel", 70),
+    metaDescription: normalizeText(data.metaDescription, "Meta-Beschreibung", 180),
+    relatedPackageIds,
+    isPublished: Boolean(data.isPublished),
+  };
+}
+
 export const createCustomService = createServerFn({ method: "POST" })
   .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .validator((data: CustomServiceInput) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-
-    const slug = data.slug.trim().toLowerCase();
-    if (RESERVED_SLUGS.has(slug)) {
-      throw new Error(
-        `„${slug}“ ist bereits eine der festen Kern-Leistungen und kann nicht erneut angelegt werden.`,
-      );
-    }
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 3 || slug.length > 60) {
-      throw new Error(
-        "Die URL-Kurzform darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten (3–60 Zeichen).",
-      );
-    }
+    const normalized = normalizeCustomServiceInput(data);
 
     const { error } = await context.supabase.from("custom_services").insert({
-      slug,
-      name: data.name.trim(),
-      short_name: data.shortName.trim(),
-      eyebrow: data.eyebrow.trim(),
-      lead: data.lead.trim(),
-      detail: data.detail.trim(),
-      benefits: data.benefits.map((b) => b.trim()).filter(Boolean),
-      meta_title: data.metaTitle.trim(),
-      meta_description: data.metaDescription.trim(),
-      related_package_ids: data.relatedPackageIds,
-      is_published: data.isPublished,
+      slug: normalized.slug,
+      name: normalized.name,
+      short_name: normalized.shortName,
+      eyebrow: normalized.eyebrow,
+      lead: normalized.lead,
+      detail: normalized.detail,
+      benefits: normalized.benefits,
+      meta_title: normalized.metaTitle,
+      meta_description: normalized.metaDescription,
+      related_package_ids: normalized.relatedPackageIds,
+      is_published: normalized.isPublished,
       created_by: context.userId,
     });
     if (error) {
       if (error.code === "23505") {
-        throw new Error(`Die URL-Kurzform „${slug}“ ist bereits vergeben.`);
+        throw new Error(`Die URL-Kurzform „${normalized.slug}“ ist bereits vergeben.`);
       }
       throw new Error(error.message);
     }
@@ -175,39 +219,34 @@ export const updateCustomService = createServerFn({ method: "POST" })
   .validator((data: { id: string } & CustomServiceInput) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    if (!UUID_PATTERN.test(data.id)) throw new Error("Ungültige Leistungs-ID.");
+    const normalized = normalizeCustomServiceInput(data);
 
-    const slug = data.slug.trim().toLowerCase();
-    if (RESERVED_SLUGS.has(slug)) {
-      throw new Error(`„${slug}“ ist bereits eine der festen Kern-Leistungen.`);
-    }
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 3 || slug.length > 60) {
-      throw new Error(
-        "Die URL-Kurzform darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten (3–60 Zeichen).",
-      );
-    }
-
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("custom_services")
       .update({
-        slug,
-        name: data.name.trim(),
-        short_name: data.shortName.trim(),
-        eyebrow: data.eyebrow.trim(),
-        lead: data.lead.trim(),
-        detail: data.detail.trim(),
-        benefits: data.benefits.map((b) => b.trim()).filter(Boolean),
-        meta_title: data.metaTitle.trim(),
-        meta_description: data.metaDescription.trim(),
-        related_package_ids: data.relatedPackageIds,
-        is_published: data.isPublished,
+        slug: normalized.slug,
+        name: normalized.name,
+        short_name: normalized.shortName,
+        eyebrow: normalized.eyebrow,
+        lead: normalized.lead,
+        detail: normalized.detail,
+        benefits: normalized.benefits,
+        meta_title: normalized.metaTitle,
+        meta_description: normalized.metaDescription,
+        related_package_ids: normalized.relatedPackageIds,
+        is_published: normalized.isPublished,
       })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) {
       if (error.code === "23505") {
-        throw new Error(`Die URL-Kurzform „${slug}“ ist bereits vergeben.`);
+        throw new Error(`Die URL-Kurzform „${normalized.slug}“ ist bereits vergeben.`);
       }
       throw new Error(error.message);
     }
+    if (!updated) throw new Error("Die Leistung wurde nicht gefunden oder bereits gelöscht.");
     return { ok: true };
   });
 
@@ -216,7 +255,14 @@ export const deleteCustomService = createServerFn({ method: "POST" })
   .validator((data: { id: string }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.from("custom_services").delete().eq("id", data.id);
+    if (!UUID_PATTERN.test(data.id)) throw new Error("Ungültige Leistungs-ID.");
+    const { data: deleted, error } = await context.supabase
+      .from("custom_services")
+      .delete()
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!deleted) throw new Error("Die Leistung wurde nicht gefunden oder bereits gelöscht.");
     return { ok: true };
   });

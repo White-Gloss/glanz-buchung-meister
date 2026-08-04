@@ -13,6 +13,7 @@ import {
   galleryPublicUrl,
   type GalleryItemRow,
 } from "@/lib/gallery.functions";
+import { listAllCustomServices, type CustomServiceRow } from "@/lib/customServices.functions";
 import { servicePages } from "@/lib/servicePages";
 import { diagnoseBackendError } from "@/lib/backendErrors";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
@@ -52,12 +53,39 @@ function fileToBase64(file: File): Promise<string> {
 
 function GalleryPage() {
   const [items, setItems] = useState<GalleryItemRow[] | null>(null);
+  const [customServices, setCustomServices] = useState<CustomServiceRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const fetchAll = useServerFn(listAllGalleryItems);
+  const fetchCustomServices = useServerFn(listAllCustomServices);
 
   function reload() {
-    void fetchAll({}).then(setItems);
+    setLoadError(null);
+    void fetchAll({})
+      .then(setItems)
+      .catch((error: unknown) => {
+        setLoadError(
+          error instanceof Error ? error.message : "Galerie konnte nicht geladen werden.",
+        );
+      });
   }
-  useEffect(reload, [fetchAll]);
+  useEffect(() => {
+    let active = true;
+    void Promise.all([fetchAll({}), fetchCustomServices({}).catch(() => [])])
+      .then(([nextItems, nextServices]) => {
+        if (!active) return;
+        setItems(nextItems);
+        setCustomServices(nextServices);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadError(
+          error instanceof Error ? error.message : "Galerie konnte nicht geladen werden.",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [fetchAll, fetchCustomServices]);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -84,9 +112,16 @@ function GalleryPage() {
           </p>
         </div>
 
-        <UploadForm onUploaded={reload} />
+        <UploadForm customServices={customServices} onUploaded={reload} />
 
-        {items === null ? (
+        {loadError ? (
+          <div className="glass mt-6 rounded-2xl border border-destructive/30 p-5 text-sm">
+            <p className="text-destructive">{loadError}</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={reload}>
+              Erneut laden
+            </Button>
+          </div>
+        ) : items === null ? (
           <p className="mt-6 text-sm text-muted-foreground">Wird geladen …</p>
         ) : items.length === 0 ? (
           <p className="glass mt-6 rounded-2xl p-8 text-center text-sm text-muted-foreground">
@@ -104,7 +139,13 @@ function GalleryPage() {
   );
 }
 
-function UploadForm({ onUploaded }: { onUploaded: () => void }) {
+function UploadForm({
+  customServices,
+  onUploaded,
+}: {
+  customServices: CustomServiceRow[];
+  onUploaded: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [serviceSlug, setServiceSlug] = useState<string>("");
@@ -118,10 +159,12 @@ function UploadForm({ onUploaded }: { onUploaded: () => void }) {
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Nur JPEG, PNG oder WebP werden unterstützt.");
+      e.currentTarget.value = "";
       return;
     }
     if (file.size > MAX_BYTES) {
       toast.error("Datei ist größer als 8 MB.");
+      e.currentTarget.value = "";
       return;
     }
 
@@ -155,33 +198,35 @@ function UploadForm({ onUploaded }: { onUploaded: () => void }) {
     <div className="glass space-y-4 rounded-2xl p-5">
       <h2 className="display-card text-sm uppercase">Neues Bild hochladen</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+        <label>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">
             Titel (optional)
-          </p>
+          </span>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="z. B. Keramikversiegelung nach dem Finish"
+            maxLength={160}
             className="mt-1.5 bg-secondary/40"
           />
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+        </label>
+        <label>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">
             Fahrzeug (optional)
-          </p>
+          </span>
           <Input
             value={vehicle}
             onChange={(e) => setVehicle(e.target.value)}
             placeholder="z. B. VW Golf 8"
+            maxLength={100}
             className="mt-1.5 bg-secondary/40"
           />
-        </div>
+        </label>
       </div>
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+      <label className="block">
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">
           Zugehörige Leistung (optional)
-        </p>
+        </span>
         <select
           value={serviceSlug}
           onChange={(e) => setServiceSlug(e.target.value)}
@@ -193,8 +238,13 @@ function UploadForm({ onUploaded }: { onUploaded: () => void }) {
               {s.name}
             </option>
           ))}
+          {customServices.map((service) => (
+            <option key={service.id} value={service.slug}>
+              {service.name}
+            </option>
+          ))}
         </select>
-      </div>
+      </label>
 
       <input
         ref={fileInputRef}
@@ -202,6 +252,7 @@ function UploadForm({ onUploaded }: { onUploaded: () => void }) {
         accept="image/jpeg,image/png,image/webp"
         onChange={handleFileChange}
         disabled={uploading}
+        aria-label="Galeriebild auswählen"
         className="hidden"
         id="gallery-file-input"
       />
@@ -234,8 +285,8 @@ function GalleryCard({ item, onChanged }: { item: GalleryItemRow; onChanged: () 
         },
       });
       onChanged();
-    } catch {
-      toast.error("Konnte Status nicht ändern.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Konnte Status nicht ändern.");
     } finally {
       setBusy(false);
     }
@@ -245,11 +296,15 @@ function GalleryCard({ item, onChanged }: { item: GalleryItemRow; onChanged: () 
     if (!window.confirm(`„${item.title || "Dieses Bild"}“ wirklich endgültig löschen?`)) return;
     setBusy(true);
     try {
-      await remove({ data: { id: item.id, storagePath: item.storage_path } });
-      toast.success("Bild gelöscht.");
+      const result = await remove({ data: { id: item.id } });
+      if (result.storageWarning) {
+        toast.warning("Eintrag gelöscht, die Bilddatei konnte aber nicht entfernt werden.");
+      } else {
+        toast.success("Bild gelöscht.");
+      }
       onChanged();
-    } catch {
-      toast.error("Löschen fehlgeschlagen.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Löschen fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -290,6 +345,7 @@ function GalleryCard({ item, onChanged }: { item: GalleryItemRow; onChanged: () 
             size="sm"
             onClick={handleDelete}
             loading={busy}
+            aria-label={`${item.title || "Bild"} löschen`}
             className="gap-1.5 text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="size-3.5" />
