@@ -1,5 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, MapPin, Menu, MessageCircle, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  ChevronDown,
+  MapPin,
+  Menu,
+  MessageCircle,
+  Phone,
+} from "lucide-react";
 
 import logoSm from "@/assets/wgd-logo-440.webp.asset.json";
 import logoLg from "@/assets/wgd-logo-760.webp.asset.json";
@@ -46,13 +54,29 @@ function ServiceMenu({ mobile = false }: { mobile?: boolean }) {
 export function SiteHeader() {
   return (
     <>
-      <div className="border-b border-border/70 bg-black/35">
-        <div className="mx-auto flex min-h-9 max-w-7xl items-center justify-between gap-4 px-4 text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6">
-          <p className="inline-flex items-center gap-2">
+      <div className="border-b border-primary/20 bg-primary/[0.07]">
+        <div className="mx-auto grid min-h-10 max-w-7xl items-center gap-x-4 px-4 py-1.5 text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <p className="hidden items-center gap-2 lg:inline-flex">
             <MapPin aria-hidden className="size-3.5 text-primary" />
             Horb am Neckar · Baden-Württemberg
           </p>
-          <div className="hidden items-center gap-5 sm:flex">
+          <Link
+            to="/"
+            hash="b2b"
+            className="group inline-flex min-h-8 items-center justify-center gap-2 text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Building2 aria-hidden className="size-3.5 shrink-0 text-primary" />
+            <span>
+              <span className="text-primary">B2B</span> · Flotten, Leasingrückläufer &amp;
+              Fahrzeughandel
+            </span>
+            <span className="hidden text-muted-foreground xl:inline">Individuelles Angebot</span>
+            <ArrowRight
+              aria-hidden
+              className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+            />
+          </Link>
+          <div className="hidden items-center gap-5 lg:flex">
             <a
               href={company.phoneHref}
               className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
