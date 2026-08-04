@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
@@ -91,6 +92,7 @@ export const listPublishedGalleryItems = createServerFn({ method: "GET" }).handl
 
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: createSupabasePublishableFetch(key) },
     });
     const { data, error } = await client
       .from("gallery_items")
