@@ -15,6 +15,7 @@ import {
 import heroCarAvif from "@/assets/hero-car.avif";
 import heroCar from "@/assets/hero-car.jpg";
 import heroCarWebp from "@/assets/hero-car.webp";
+import { B2BServices } from "@/components/B2BServices";
 import { ConversionBand } from "@/components/ConversionBand";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PickupCityGrid } from "@/components/PickupCityGrid";
@@ -41,7 +42,7 @@ const BookingWizard = lazy(() =>
 
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
-  "Premium-Fahrzeugaufbereitung in Horb: Innenreinigung, Lackkorrektur und Keramikversiegelung mit Hol- und Bringservice. Termin online anfragen.";
+  "Premium-Fahrzeugaufbereitung in Horb für Privat- und B2B-Kunden: Innenreinigung, Flottenpflege, Leasingrückläufer und individueller Service.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -148,6 +149,7 @@ function Landing() {
         <Hero />
         <ProofStrip />
         <Features />
+        <B2BServices />
         <Process />
         <Packages />
         <QualitySpotlight />

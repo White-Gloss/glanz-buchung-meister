@@ -55,6 +55,11 @@ export function SiteFooter() {
               Abholservice
             </Link>
           </p>
+          <p>
+            <Link to="/" hash="b2b" className={FOOTER_LINK}>
+              B2B &amp; Flottenkunden
+            </Link>
+          </p>
         </nav>
 
         <nav aria-label="Leistungen" className="space-y-1">
