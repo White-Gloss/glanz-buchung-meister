@@ -284,7 +284,7 @@
   }
 }
 
-/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration") */
+/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration“) */
 @utility label-caps {
   font-family: var(--font-display);
   font-weight: 400;

@@ -11,16 +11,12 @@ import { servicePackages } from "./servicesConfig";
  * EIGENE DIENSTLEISTUNGEN
  * ------------------------
  * Die 7 Kern-Leistungen (`servicePages.ts`) bleiben unverändert im Code, weil
- * für sie handgeschriebene Local-SEO-Texte je Entfernungsband existieren
- * (28 individuelle Absätze für die 91-Seiten-Städte-Matrix — siehe
- * `serviceCityPages.ts`). Diese Datei ergänzt zusätzliche, im Admin-Bereich
- * selbst angelegte Leistungen.
+ * für sie redaktionell gepflegte Detailtexte vorliegen. Diese Datei ergänzt
+ * zusätzliche, im Admin-Bereich selbst angelegte Leistungen.
  *
  * WICHTIGER UNTERSCHIED: Eigene Leistungen bekommen EINE Detailseite unter
- * /leistungen/[slug], aber KEINE der 91 Stadt-Kombinationsseiten — dafür
- * fehlen die individuellen Entfernungstexte, und sie automatisch zu
- * generieren würde wieder zu Duplicate Content führen (das war genau das
- * Problem, das die Matrix ursprünglich lösen sollte).
+ * /leistungen/[slug], aber keine automatisch erzeugten Stadt-Kombinationen.
+ * Dafür fehlen individuelle lokale Nachweise und redaktionell geprüfte Texte.
  */
 
 export type CustomServiceRow = {

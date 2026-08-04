@@ -124,20 +124,21 @@ function PrivacyPage() {
               Anmeldung und Sicherheit verwendet werden.
             </p>
             <p>
-              Mit Ihrer Einwilligung setzen wir außerdem ein Cookie von Google Ads (Google Ireland
-              Limited, Gordon House, Barrow Street, Dublin 4, Irland), um zu messen, über welche
-              Anzeige eine Terminanfrage zustande kommt. Das Cookie wird erst gesetzt, wenn Sie im
-              eingeblendeten Hinweis „Akzeptieren" wählen; bei „Ablehnen" oder ohne Auswahl wird
-              kein Cookie gesetzt. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a
-              DSGVO, § 25 Abs. 1 TTDSG. Dabei können Daten in die USA übermittelt werden; Google hat
-              sich den EU-Standardvertragsklauseln unterworfen.
+              Mit Ihrer Einwilligung nutzen wir außerdem Cookies und ähnliche Technologien von
+              Google Ads (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland), um
+              zu messen, über welche Anzeige eine Terminanfrage zustande kommt. Diese werden erst
+              aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei „Ablehnen“
+              oder ohne Auswahl bleibt die Anzeigenmessung deaktiviert. Rechtsgrundlage ist Ihre
+              Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG. Dabei können Daten in
+              die USA übermittelt werden; Google hat sich den EU-Standardvertragsklauseln
+              unterworfen.
             </p>
             <p>
               Ihre Entscheidung können Sie jederzeit widerrufen:{" "}
               <button
                 type="button"
                 onClick={() => {
-                  void import("@/components/CookieConsent").then((m) => m.resetAdsConsent());
+                  void import("@/lib/adsConsent").then((m) => m.resetAdsConsent());
                 }}
                 className="text-primary underline underline-offset-2"
               >

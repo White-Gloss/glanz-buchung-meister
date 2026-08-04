@@ -31,7 +31,7 @@ const BookingWizard = lazy(() =>
 
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
-  "Premium-Fahrzeugaufbereitung in Horb für Privat- und Geschäftskunden: Flottenreinigung, Leasingrückläufer und individuelle B2B-Angebote.";
+  "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,11 +74,11 @@ export const Route = createFileRoute("/")({
               inLanguage: "de-DE",
             },
             {
-              "@type": "AutoRepair",
+              "@type": "AutomotiveBusiness",
               "@id": `${SITE_URL}/#business`,
               name: company.name,
               url: SITE_URL,
-              telephone: "+49 152 33540284",
+              telephone: company.phoneHref.replace("tel:", ""),
               email: company.email,
               image: OG_IMAGE,
               logo: absUrl("/wgd-logo-760.webp"),
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/")({
                 "@type": "PostalAddress",
                 streetAddress: company.street,
                 postalCode: "72160",
-                addressLocality: "Horb am Neckar-Dettingen",
+                addressLocality: "Horb am Neckar",
                 addressRegion: "Baden-Württemberg",
                 addressCountry: "DE",
               },
@@ -125,12 +125,6 @@ export const Route = createFileRoute("/")({
 function Landing() {
   return (
     <div className="min-h-dvh bg-background">
-      <a
-        href="#main-content"
-        className="sr-only rounded-full bg-primary px-5 py-3 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]"
-      >
-        Direkt zum Inhalt
-      </a>
       <SiteHeader />
       <main id="main-content">
         <Hero />
@@ -208,8 +202,8 @@ function Hero() {
       <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className="max-w-3xl">
           <h1 className="display-hero max-w-3xl text-white">
-            Kein Kompromiss.
-            <span className="text-chrome block">Nur sichtbare Ergebnisse.</span>
+            Fahrzeugaufbereitung.
+            <span className="text-chrome block">Kein Kompromiss. Sichtbare Ergebnisse.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
             Premium-Fahrzeugaufbereitung für einen tiefenreinen Innenraum, klaren Lack und

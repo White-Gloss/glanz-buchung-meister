@@ -17,9 +17,8 @@ import { listPublishedCustomServices, toServicePage } from "@/lib/customServices
 
 /**
  * Eigene (im Admin angelegte) Leistungen bekommen dieselbe Detailseite wie
- * die 7 Kern-Leistungen — aber ohne Ablauf-Schritte, ohne FAQ (die gibt es
- * für sie nicht) und ohne die 91-Städte-Matrix (siehe customServices.functions.ts
- * für die Begründung).
+ * die 7 Kern-Leistungen — aber ohne Ablauf-Schritte und ohne FAQ, weil dafür
+ * keine redaktionell geprüften Inhalte vorliegen.
  */
 export const Route = createFileRoute("/leistungen/$service/")({
   loader: async ({ params }) => {
@@ -227,32 +226,28 @@ function ServicePage() {
             ))}
           </div>
         </section>
-        {/* Matrix-Verlinkung: nur für die Kern-Leistungen, für die es die
-            91 Stadt-Kombinationsseiten wirklich gibt (siehe Loader-Kommentar
-            oben — eigene Leistungen haben diese Seiten bewusst nicht). */}
+        {/* Regionale Abholgebiete für die redaktionell gepflegten Kernleistungen. */}
         {isCoreService && (
           <section className="content-auto border-y border-border bg-surface/35">
             <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
               <p className="eyebrow">Regional</p>
-              <h2 className="display-section mt-3 uppercase">{service.shortName} in Ihrer Stadt</h2>
+              <h2 className="display-section mt-3 uppercase">Abholservice in Ihrer Stadt</h2>
               <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
                 Ausgeführt wird immer in unserer Werkstatt in Horb am Neckar. Für diese Städte
-                übernehmen wir Abholung und Rückgabe – jede Seite nennt Entfernung, Fahrzeit und
-                Abholpreis.
+                übernehmen wir Abholung und Rückgabe. Auf der jeweiligen Stadtseite finden Sie
+                Entfernung, Fahrzeit und Abholpreis.
               </p>
               <ul className="mt-8 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {pickupCitiesByDistance.map((city) => (
                   <li key={city.slug}>
                     <Link
-                      to="/leistungen/$service/$city"
-                      params={{ service: service.slug, city: city.slug }}
+                      to="/abholservice/$city"
+                      params={{ city: city.slug }}
                       className="glass flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
                     >
-                      <span className="truncate">
-                        {service.shortName} {city.short}
-                      </span>
+                      <span className="truncate">Abholservice {city.short}</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {city.distanceKm} km
+                        ca. {city.distanceKm} km
                       </span>
                     </Link>
                   </li>

@@ -34,7 +34,7 @@ export function PickupCityGrid({ cities = pickupCitiesByDistance, compact = fals
                 <Timer className="size-3.5 text-primary" />
                 {city.distanceKm === 0
                   ? "Werkstatt vor Ort"
-                  : `${city.distanceKm} km · ca. ${city.driveMinutes} Min.`}
+                  : `ca. ${city.distanceKm} km · ca. ${city.driveMinutes} Min.`}
               </span>
               <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-1" />
             </p>

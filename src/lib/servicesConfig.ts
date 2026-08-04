@@ -133,7 +133,7 @@ export const servicePackages: ServicePackage[] = [
     features: [
       "Handwäsche mit pH-neutralem Shampoo",
       "Felgen- & Reifenreinigung",
-      "Innenraumsaugen & Staubentfernung",
+      "Gründliches Aussaugen & Entstauben des Innenraums",
       "Scheibenreinigung innen & außen",
       "Sprühversiegelung (ca. 3 Monate)",
     ],
@@ -148,7 +148,7 @@ export const servicePackages: ServicePackage[] = [
     features: [
       "Alles aus Basis Pflege",
       "Lackknete & Eisenentferner",
-      "1-Stufen Lackpolitur (Glanzaufbau)",
+      "Einstufige Lackpolitur (Glanzaufbau)",
       "Tiefenreinigung Innenraum & Textilien",
       "Hochwertiges Wachs (ca. 6 Monate)",
     ],
@@ -232,7 +232,7 @@ export const features = [
     id: "lack",
     slug: "lackkorrektur",
     name: "Lackkorrektur",
-    text: "Mehrstufige Politur entfernt Swirls, Kratzer und Hologramme dauerhaft.",
+    text: "Mehrstufige Politur reduziert Swirls, Waschkratzer und Hologramme gezielt.",
   },
   {
     id: "keramik",

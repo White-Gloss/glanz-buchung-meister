@@ -79,16 +79,15 @@ export function SiteHeader() {
   useEffect(() => {
     if (!anyMenuOpen) return;
 
-    const startScrollY = window.scrollY;
+    const startViewportWidth = window.innerWidth;
     const closeWithoutFocus = () => {
       setDesktopServicesOpen(false);
       setMobileOpen(false);
       setMobileServicesOpen(false);
     };
-    const handleScroll = () => {
-      if (Math.abs(window.scrollY - startScrollY) > 4) closeWithoutFocus();
-    };
-    const handlePointerDown = (event: PointerEvent) => {
+    // Ein echter Klick schließt bei einer Aktion außerhalb. Reines
+    // Scrollen/Wischen löst keinen Klick aus und lässt das Menü offen.
+    const handleDocumentClick = (event: MouseEvent) => {
       if (!headerRef.current?.contains(event.target as Node)) closeWithoutFocus();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -97,68 +96,25 @@ export function SiteHeader() {
       closeWithoutFocus();
       focusTarget?.focus();
     };
-    const handleResize = () => closeWithoutFocus();
+    const handleResize = () => {
+      // Mobile Browser verändern beim Scrollen häufig nur die Viewport-Höhe,
+      // wenn die Adressleiste ein-/ausblendet. Das darf das Menü nicht schließen.
+      if (window.innerWidth !== startViewportWidth) closeWithoutFocus();
+    };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleResize, { passive: true });
-    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
-      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("click", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [anyMenuOpen, mobileOpen]);
 
   return (
     <>
-      <div className="border-b border-primary/20 bg-primary/[0.07]">
-        <div className="mx-auto grid min-h-10 max-w-7xl items-center gap-x-4 px-4 py-1.5 text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
-          <p className="hidden items-center gap-2 lg:inline-flex">
-            <MapPin aria-hidden className="size-3.5 text-primary" />
-            Horb am Neckar · Baden-Württemberg
-          </p>
-          <Link
-            to="/"
-            hash="b2b"
-            className="group inline-flex min-h-8 items-center justify-center gap-2 rounded-sm text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Building2 aria-hidden className="size-3.5 shrink-0 text-primary" />
-            <span className="sm:hidden">
-              <span className="text-primary">B2B</span> · Angebot anfragen
-            </span>
-            <span className="hidden sm:inline">
-              <span className="text-primary">B2B</span> · Flotten &amp; Leasingrückläufer
-            </span>
-            <span className="hidden text-muted-foreground xl:inline">Individuell kalkuliert</span>
-            <ArrowRight
-              aria-hidden
-              className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-            />
-          </Link>
-          <div className="hidden items-center gap-5 lg:flex">
-            <a
-              href={company.phoneHref}
-              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
-            >
-              <Phone aria-hidden className="size-3.5 text-primary" />
-              {company.phone}
-            </a>
-            <a
-              href={company.whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
-            >
-              <MessageCircle aria-hidden className="size-3.5 text-primary" />
-              WhatsApp
-            </a>
-          </div>
-        </div>
-      </div>
-
       <header
         ref={headerRef}
         className="sticky top-0 z-50 border-b border-border/70 bg-background/88 backdrop-blur-2xl"
@@ -229,7 +185,7 @@ export function SiteHeader() {
               Abholservice
             </Link>
             <Link to="/" hash="b2b" className={NAV_LINK} onClick={closeMenus}>
-              B2B
+              B2B &amp; Flotten
             </Link>
             <Button asChild size="sm" className="ml-2 rounded-lg px-5">
               <Link to="/" hash="buchung" onClick={closeMenus}>
@@ -332,6 +288,51 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
+
+      <div className="border-b border-primary/20 bg-primary/[0.07]">
+        <div className="mx-auto grid min-h-10 max-w-7xl items-center gap-x-4 px-4 py-1.5 text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <p className="hidden items-center gap-2 lg:inline-flex">
+            <MapPin aria-hidden className="size-3.5 text-primary" />
+            Horb am Neckar · Baden-Württemberg
+          </p>
+          <Link
+            to="/"
+            hash="b2b"
+            className="group inline-flex min-h-8 items-center justify-center gap-2 rounded-sm text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Building2 aria-hidden className="size-3.5 shrink-0 text-primary" />
+            <span className="sm:hidden">
+              <span className="text-primary">B2B</span> · Angebot anfragen
+            </span>
+            <span className="hidden sm:inline">
+              <span className="text-primary">B2B</span> · Flotten &amp; Leasingrückläufer
+            </span>
+            <span className="hidden text-muted-foreground xl:inline">Individuell kalkuliert</span>
+            <ArrowRight
+              aria-hidden
+              className="size-3.5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+            />
+          </Link>
+          <div className="hidden items-center gap-5 lg:flex">
+            <a
+              href={company.phoneHref}
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              <Phone aria-hidden className="size-3.5 text-primary" />
+              {company.phone}
+            </a>
+            <a
+              href={company.whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              <MessageCircle aria-hidden className="size-3.5 text-primary" />
+              WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

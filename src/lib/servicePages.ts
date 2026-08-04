@@ -250,7 +250,7 @@ export const servicePages: ServicePage[] = [
     shortName: "Fahrzeugaufbereitung",
     eyebrow: "Komplettaufbereitung innen und außen",
     title: "Professionelle Fahrzeugaufbereitung in Horb am Neckar",
-    metaTitle: "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+    metaTitle: "Komplettaufbereitung Auto Horb | White Gloss",
     metaDescription:
       "Komplette Fahrzeugaufbereitung in Horb am Neckar: Außenwäsche, Lackpflege und Innenreinigung aus einer Hand. Termin online anfragen.",
     lead: "Die Komplettaufbereitung verbindet Außen- und Innenarbeiten zu einem abgestimmten Ablauf – vom ersten Waschgang bis zur Endkontrolle bei kontrolliertem Licht.",
@@ -442,13 +442,7 @@ export function buildServiceJsonLd(service: ServicePage) {
           "@type": "City",
           name: city.name,
         })),
-        provider: {
-          "@type": "Organization",
-          "@id": `${SITE_URL}/#organization`,
-          name: "White Gloss Detailing",
-          url: SITE_URL,
-          email: "info@whitegloss.de",
-        },
+        provider: { "@id": `${SITE_URL}/#business` },
         ...(relatedPackages.length > 0
           ? {
               offers: relatedPackages.map((pkg) => ({
@@ -473,14 +467,6 @@ export function buildServiceJsonLd(service: ServicePage) {
           },
           { "@type": "ListItem", position: 3, name: service.name, item: canonical },
         ],
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: service.faq.map(([question, answer]) => ({
-          "@type": "Question",
-          name: question,
-          acceptedAnswer: { "@type": "Answer", text: answer },
-        })),
       },
     ],
   };

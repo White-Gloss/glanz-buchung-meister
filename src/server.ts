@@ -77,19 +77,18 @@ function withProductionHeaders(request: Request, response: Response): Response {
   headers.set("X-Frame-Options", "SAMEORIGIN");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
-  // Content-Security-Policy: Die Seite lädt keinerlei Fremdressourcen
-  // (Schriften self-hosted via @fontsource, keine Tracker, keine iframes).
-  // 'unsafe-inline' ist für die JSON-LD-Blöcke und den Hydration-State nötig.
+  // Schriften bleiben self-hosted. Externe Verbindungen sind auf die
+  // Supabase-Galerie sowie das erst nach Einwilligung geladene Google-Ads-Tag
+  // beschränkt. 'unsafe-inline' ist für JSON-LD und Hydration-State nötig.
   headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data:",
+      "img-src 'self' data: https://*.supabase.co https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
       "font-src 'self'",
-      // Server-Funktionen sprechen mit der eigenen Domain; Supabase nur im Admin-Login.
-      "connect-src 'self' https://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",

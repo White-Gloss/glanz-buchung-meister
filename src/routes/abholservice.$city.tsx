@@ -94,7 +94,7 @@ function CityPage() {
 
   const facts: [typeof MapPin, string, string][] = [
     [MapPin, "Werkstatt", homeBase.city],
-    [RouteIcon, "Entfernung", isHome ? "Standort vor Ort" : `${city.distanceKm} km`],
+    [RouteIcon, "Entfernung", isHome ? "Standort vor Ort" : `ca. ${city.distanceKm} km`],
     [Timer, "Fahrzeit", `ca. ${city.driveMinutes} Min.`],
     [Car, "Region", city.district],
   ];
@@ -131,8 +131,9 @@ function CityPage() {
                 Abholung {pickupPriceText(city.distanceKm)}
               </span>
               <span className="text-foreground/80">
-                {city.distanceKm} km bis zur Werkstatt · {pickupTierSummary()} · bei High-End
-                Keramik bis {pickupPricing.freeUpToKm} km inklusive
+                {isHome ? "Werkstatt vor Ort" : `ca. ${city.distanceKm} km bis zur Werkstatt`} ·{" "}
+                {pickupTierSummary()} · bei High-End Keramik bis {pickupPricing.freeUpToKm} km
+                inklusive
               </span>
             </p>
 
@@ -206,7 +207,7 @@ function CityPage() {
               </ol>
 
               <h2 className="mt-14 display-section uppercase">
-                Was Fahrzeuge aus {city.short} besonders braucht
+                Was Fahrzeuge aus {city.short} besonders beansprucht
               </h2>
               <p className="mt-4 text-muted-foreground">{city.demand}</p>
               <p className="mt-4 text-muted-foreground">{city.localBenefit}</p>
@@ -227,24 +228,23 @@ function CityPage() {
                 ))}
               </ul>
 
-              {/* Matrix-Verlinkung: alle Leistungen für genau diese Stadt */}
+              {/* Direkte Wege zu den Leistungsübersichten. */}
               <h3 className="display-sub mt-10 uppercase">
                 Leistungen mit Abholung in {city.name}
               </h3>
               <p className="mt-3 text-sm text-muted-foreground">
-                Jede Leistung hat eine eigene Seite mit den Anfahrtsdaten für {city.short}:
+                Wählen Sie die passende Leistung; Abholung und Rückgabe für {city.short} stimmen wir
+                anschließend mit Ihnen ab.
               </p>
               <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                 {servicePages.map((service) => (
                   <li key={service.slug}>
                     <Link
-                      to="/leistungen/$service/$city"
-                      params={{ service: service.slug, city: city.slug }}
+                      to="/leistungen/$service"
+                      params={{ service: service.slug }}
                       className="glass flex items-center rounded-xl px-4 py-3 text-sm transition-colors hover:text-primary"
                     >
-                      <span className="truncate">
-                        {service.shortName} {city.short}
-                      </span>
+                      <span className="truncate">{service.shortName}</span>
                     </Link>
                   </li>
                 ))}

@@ -192,7 +192,7 @@ function ServicesOverview() {
           text="Beschreiben Sie uns Zustand und Ziel Ihres Fahrzeugs. Wir ordnen die passende Leistung vor dem Termin ehrlich ein."
         />
 
-        {/* Local-SEO-Matrix: bewusst kompakt und ganz am Seitenende */}
+        {/* Kompakte Leistungs- und Abholgebietsübersicht am Seitenende. */}
         <section className="content-auto border-t border-border bg-surface/25">
           <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
             <p className="eyebrow">Leistung und Ort</p>
@@ -200,7 +200,7 @@ function ServicesOverview() {
             <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
               Alle Arbeiten führen wir in unserer Werkstatt in Horb am Neckar aus. Für{" "}
               {pickupCitiesByDistance.length} Städte im Umkreis übernehmen wir Abholung und
-              Rückgabe. Öffnen Sie nur die Leistung, die Sie interessiert.
+              Rückgabe. Leistungen und Orte sind getrennt und kompakt zusammengefasst.
             </p>
             <ServiceCityMatrix />
           </div>
