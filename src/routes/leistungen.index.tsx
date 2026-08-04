@@ -16,9 +16,10 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
-import { servicePages } from "@/lib/servicePages";
+import { servicePages as coreServicePages, type ServicePage } from "@/lib/servicePages";
 import { ServiceCityMatrix } from "@/components/ServiceCityMatrix";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
+import { listPublishedCustomServices, toServicePage } from "@/lib/customServices.functions";
 
 const TITLE = "Leistungen der Fahrzeugaufbereitung | White Gloss";
 const DESCRIPTION =
@@ -26,42 +27,55 @@ const DESCRIPTION =
 const icons = [Sofa, Sparkles, ShieldCheck, Gem, Car, Hammer, FileCheck2];
 
 export const Route = createFileRoute("/leistungen/")({
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/leistungen") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-    ],
-    links: [
-      { rel: "canonical", href: absUrl("/leistungen") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/leistungen") },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          name: "Leistungen von White Gloss Detailing",
-          itemListElement: servicePages.map((service, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            name: service.name,
-            url: absUrl(`/leistungen/${service.slug}`),
-          })),
-        }),
-      },
-    ],
-  }),
+  loader: async (): Promise<{ customServices: ServicePage[] }> => {
+    try {
+      const rows = await listPublishedCustomServices();
+      return { customServices: rows.map(toServicePage) };
+    } catch {
+      return { customServices: [] };
+    }
+  },
+  head: ({ loaderData }) => {
+    const allServices = [...coreServicePages, ...(loaderData?.customServices ?? [])];
+    return {
+      meta: [
+        { title: TITLE },
+        { name: "description", content: DESCRIPTION },
+        { property: "og:title", content: TITLE },
+        { property: "og:description", content: DESCRIPTION },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: absUrl("/leistungen") },
+        { property: "og:image", content: OG_IMAGE },
+        { property: "og:image:alt", content: OG_IMAGE_ALT },
+      ],
+      links: [
+        { rel: "canonical", href: absUrl("/leistungen") },
+        { rel: "alternate", hrefLang: "de-DE", href: absUrl("/leistungen") },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name: "Leistungen von White Gloss Detailing",
+            itemListElement: allServices.map((service, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              name: service.name,
+              url: absUrl(`/leistungen/${service.slug}`),
+            })),
+          }),
+        },
+      ],
+    };
+  },
   component: ServicesOverview,
 });
 
 function ServicesOverview() {
+  const { customServices } = Route.useLoaderData();
+  const servicePages = [...coreServicePages, ...customServices];
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />

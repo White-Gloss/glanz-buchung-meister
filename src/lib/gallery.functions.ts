@@ -35,8 +35,11 @@ async function assertAdmin(context: { supabase: SupabaseClient<Database>; userId
 
 /** Öffentliche URL zu einem Bild im Bucket — reine URL-Bildung, kein Aufruf nötig. */
 export function galleryPublicUrl(storagePath: string): string {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  return `${url}/storage/v1/object/public/gallery/${storagePath}`;
+  const url =
+    import.meta.env.VITE_SUPABASE_URL ||
+    (typeof process !== "undefined" ? process.env?.SUPABASE_URL : undefined);
+  if (!url) return "";
+  return `${url.replace(/\/$/, "")}/storage/v1/object/public/gallery/${storagePath}`;
 }
 
 /** Öffentlich sichtbare, veröffentlichte Bilder — für die Website selbst. */

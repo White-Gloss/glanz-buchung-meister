@@ -21,6 +21,7 @@ import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { VehicleGallery } from "@/components/VehicleGallery";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
@@ -150,6 +151,7 @@ function Landing() {
         <Process />
         <Packages />
         <QualitySpotlight />
+        <VehicleGallery />
         <Booking />
         <PickupAreas />
         <ConversionBand />

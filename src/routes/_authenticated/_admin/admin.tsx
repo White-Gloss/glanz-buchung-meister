@@ -15,7 +15,9 @@ import {
   LogOut,
   Wallet,
   ShieldAlert,
+  Sparkles,
   Users,
+  ImageIcon,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -239,7 +241,7 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <CalendarFeedCard />
               <Link
                 to="/admin/kunden"
@@ -252,6 +254,32 @@ function AdminPage() {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Historie, Umsatz und Notizen je Kunde — automatisch aus den Buchungen
                   zusammengestellt.
+                </p>
+              </Link>
+              <Link
+                to="/admin/leistungen"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Eigene Leistungen</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Zusätzliche Dienstleistungen selbst anlegen, bearbeiten oder als Entwurf
+                  speichern.
+                </p>
+              </Link>
+              <Link
+                to="/admin/galerie"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Fahrzeuggalerie</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Vorher/Nachher-Fotos hochladen — erscheinen auf der Startseite als
+                  Referenzgalerie.
                 </p>
               </Link>
             </div>
