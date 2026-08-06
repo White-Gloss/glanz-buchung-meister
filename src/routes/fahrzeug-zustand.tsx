@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
@@ -28,8 +29,9 @@ import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
  */
 
 const META_TITLE = "Fahrzeugzustand prüfen lassen | White Gloss Detailing";
+// Unter 155 Zeichen: darüber kürzt Google deutsche Snippets sichtbar ab.
 const META_DESCRIPTION =
-  "Fotos vom Fahrzeug hochladen, Zustand beschreiben und eine ehrliche Einschätzung erhalten — unverbindlich und kostenlos, von den Aufbereitern aus Horb am Neckar.";
+  "Fotos vom Fahrzeug hochladen, Zustand beschreiben und eine ehrliche Einschätzung erhalten — kostenlos und unverbindlich aus Horb am Neckar.";
 const CANONICAL = absUrl("/fahrzeug-zustand");
 
 export const Route = createFileRoute("/fahrzeug-zustand")({
@@ -279,11 +281,22 @@ function ConditionPage() {
 
                 <fieldset className="glass space-y-4 rounded-2xl p-5">
                   <legend className="display-card px-1 text-sm uppercase">Zustand</legend>
-                  <label className="block">
-                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  {/*
+                    Beschriftungen sind bewusst über htmlFor/id verknüpft statt
+                    das Feld einzuschachteln: Sonst würde der Hinweistext
+                    darunter Teil des vorgelesenen Feldnamens. Der Hinweis
+                    hängt stattdessen über aria-describedby daran.
+                  */}
+                  <div className="block">
+                    <label
+                      htmlFor="zustand-beschreibung"
+                      className="text-xs uppercase tracking-widest text-muted-foreground"
+                    >
                       Was sollen wir uns ansehen?
-                    </span>
+                    </label>
                     <Textarea
+                      id="zustand-beschreibung"
+                      aria-describedby="zustand-beschreibung-hinweis"
                       value={conditionText}
                       onChange={(event) => setConditionText(event.target.value)}
                       rows={7}
@@ -292,48 +305,63 @@ function ConditionPage() {
                       placeholder="Zum Beispiel: Der Lack ist matt und hat viele feine Kratzer von der Waschanlage. Auf der Motorhaube sind Flecken, die sich nicht abwaschen lassen. Innen sind die Sitze verschmutzt, im Kofferraum riecht es muffig."
                       className="mt-1.5 bg-secondary/40"
                     />
-                    <span className="mt-1 block text-xs text-muted-foreground">
+                    <span
+                      id="zustand-beschreibung-hinweis"
+                      className="mt-1 block text-xs text-muted-foreground"
+                    >
                       {conditionText.length}/4000 Zeichen — je genauer, desto belastbarer unsere
                       Einschätzung.
                     </span>
-                  </label>
+                  </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    <div className="block">
+                      <label
+                        htmlFor="zustand-fahrzeug"
+                        className="text-xs uppercase tracking-widest text-muted-foreground"
+                      >
                         Fahrzeug
-                      </span>
+                      </label>
                       <Input
+                        id="zustand-fahrzeug"
                         value={vehicle}
                         onChange={(event) => setVehicle(event.target.value)}
                         placeholder="z. B. VW Golf 8, Baujahr 2021"
                         maxLength={120}
                         className="mt-1.5 bg-secondary/40"
                       />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    </div>
+                    <div className="block">
+                      <label
+                        htmlFor="zustand-kennzeichen"
+                        className="text-xs uppercase tracking-widest text-muted-foreground"
+                      >
                         Kennzeichen (freiwillig)
-                      </span>
+                      </label>
                       <Input
+                        id="zustand-kennzeichen"
                         value={plate}
                         onChange={(event) => setPlate(event.target.value)}
                         placeholder="nur wenn Sie möchten"
                         maxLength={20}
                         className="mt-1.5 bg-secondary/40"
                       />
-                    </label>
+                    </div>
                   </div>
                 </fieldset>
 
                 <fieldset className="glass space-y-4 rounded-2xl p-5">
                   <legend className="display-card px-1 text-sm uppercase">Kontakt</legend>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    <div className="block">
+                      <label
+                        htmlFor="zustand-name"
+                        className="text-xs uppercase tracking-widest text-muted-foreground"
+                      >
                         Name
-                      </span>
+                      </label>
                       <Input
+                        id="zustand-name"
                         value={name}
                         onChange={(event) => setName(event.target.value)}
                         required
@@ -341,12 +369,16 @@ function ConditionPage() {
                         autoComplete="name"
                         className="mt-1.5 bg-secondary/40"
                       />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    </div>
+                    <div className="block">
+                      <label
+                        htmlFor="zustand-email"
+                        className="text-xs uppercase tracking-widest text-muted-foreground"
+                      >
                         E-Mail
-                      </span>
+                      </label>
                       <Input
+                        id="zustand-email"
                         type="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
@@ -355,13 +387,17 @@ function ConditionPage() {
                         autoComplete="email"
                         className="mt-1.5 bg-secondary/40"
                       />
-                    </label>
+                    </div>
                   </div>
-                  <label className="block">
-                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  <div className="block">
+                    <label
+                      htmlFor="zustand-telefon"
+                      className="text-xs uppercase tracking-widest text-muted-foreground"
+                    >
                       Telefon (freiwillig)
-                    </span>
+                    </label>
                     <Input
+                      id="zustand-telefon"
                       type="tel"
                       value={phone}
                       onChange={(event) => setPhone(event.target.value)}
@@ -369,28 +405,50 @@ function ConditionPage() {
                       autoComplete="tel"
                       className="mt-1.5 bg-secondary/40"
                     />
-                  </label>
+                  </div>
                 </fieldset>
 
+                {/*
+                  Der Verweis auf die Datenschutzerklärung steht bewusst
+                  AUSSERHALB des Labels: Läge er darin, würde ein Klick
+                  darauf gleichzeitig die Zustimmung umschalten und
+                  wegnavigieren. Verbunden ist er über aria-describedby.
+                */}
                 <div className="glass rounded-2xl p-5">
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <div className="flex items-start gap-3">
                     <input
+                      id="zustand-einwilligung"
+                      aria-describedby="zustand-einwilligung-hinweis"
                       type="checkbox"
                       checked={consent}
                       onChange={(event) => setConsent(event.target.checked)}
                       required
-                      className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+                      className="mt-1 size-4 shrink-0 cursor-pointer rounded border-input accent-primary"
                     />
-                    <span className="text-sm leading-6 text-muted-foreground">
-                      Ich bin damit einverstanden, dass meine Angaben und Fotos zur Bearbeitung
-                      meiner Anfrage gespeichert und verarbeitet werden. Die Fotos sind nicht
-                      öffentlich abrufbar. Weitere Hinweise in der{" "}
-                      <Link to="/datenschutz" className="text-primary underline underline-offset-2">
-                        Datenschutzerklärung
-                      </Link>
-                      .
-                    </span>
-                  </label>
+                    <div>
+                      <label
+                        htmlFor="zustand-einwilligung"
+                        className="cursor-pointer text-sm leading-6 text-muted-foreground"
+                      >
+                        Ich bin damit einverstanden, dass meine Angaben und Fotos zur Bearbeitung
+                        meiner Anfrage gespeichert und verarbeitet werden. Die Fotos sind nicht
+                        öffentlich abrufbar.
+                      </label>
+                      <p
+                        id="zustand-einwilligung-hinweis"
+                        className="mt-1 text-sm leading-6 text-muted-foreground"
+                      >
+                        Weitere Hinweise in der{" "}
+                        <Link
+                          to="/datenschutz"
+                          className="text-primary underline underline-offset-2"
+                        >
+                          Datenschutzerklärung
+                        </Link>
+                        .
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -407,6 +465,13 @@ function ConditionPage() {
         </section>
       </main>
       <SiteFooter />
+      {/*
+        Ohne diesen Toaster blieben Fehlermeldungen unsichtbar: Der
+        Admin-Bereich bekommt ihn über die _authenticated-Layoutroute,
+        öffentliche Seiten aber nicht. Hier zählt das besonders, weil ein
+        fehlgeschlagener Upload sonst kommentarlos verpufft.
+      */}
+      <Toaster position="top-center" richColors />
     </div>
   );
 }
