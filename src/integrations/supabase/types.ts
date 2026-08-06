@@ -233,6 +233,132 @@ export type Database = {
         };
         Relationships: [];
       };
+      faqs: {
+        Row: {
+          id: string;
+          question: string;
+          answer: string;
+          category: string;
+          sort_order: number;
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          answer: string;
+          category?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          question?: string;
+          answer?: string;
+          category?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [];
+      };
+      blog_posts: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          content: string;
+          excerpt: string;
+          featured_image_url: string | null;
+          author: string;
+          published_at: string | null;
+          meta_title: string;
+          meta_description: string;
+          og_image_url: string | null;
+          focus_keywords: string[];
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          content?: string;
+          excerpt?: string;
+          featured_image_url?: string | null;
+          author?: string;
+          published_at?: string | null;
+          meta_title?: string;
+          meta_description?: string;
+          og_image_url?: string | null;
+          focus_keywords?: string[];
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          content?: string;
+          excerpt?: string;
+          featured_image_url?: string | null;
+          author?: string;
+          published_at?: string | null;
+          meta_title?: string;
+          meta_description?: string;
+          og_image_url?: string | null;
+          focus_keywords?: string[];
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [];
+      };
+      blog_faqs: {
+        Row: {
+          blog_post_id: string;
+          faq_id: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          blog_post_id: string;
+          faq_id: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          blog_post_id?: string;
+          faq_id?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "blog_faqs_blog_post_id_fkey";
+            columns: ["blog_post_id"];
+            isOneToOne: false;
+            referencedRelation: "blog_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "blog_faqs_faq_id_fkey";
+            columns: ["faq_id"];
+            isOneToOne: false;
+            referencedRelation: "faqs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       customer_notes: {
         Row: {
           customer_email: string;
