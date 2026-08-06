@@ -60,6 +60,11 @@ export function SiteFooter() {
             </Link>
           </p>
           <p>
+            <Link to="/fahrzeug-zustand" className={FOOTER_LINK}>
+              Zustand prüfen lassen
+            </Link>
+          </p>
+          <p>
             <Link to="/ratgeber" className={FOOTER_LINK}>
               Ratgeber
             </Link>

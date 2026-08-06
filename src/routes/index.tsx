@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, MapPin } from "lucide-react";
+import { ArrowRight, Camera, CheckCircle2, MapPin } from "lucide-react";
 
 import heroCarAvif from "@/assets/hero-car.avif";
 import heroCar from "@/assets/hero-car.jpg";
@@ -394,6 +394,26 @@ function Booking() {
         >
           <DeferredBookingWizard />
         </ErrorBoundary>
+
+        {/*
+          Zweiter Weg für alle, die vor der Buchung erst eine Einschätzung
+          möchten: Fotos hochladen statt Paket auswählen.
+        */}
+        <div className="glass mt-10 flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="display-card uppercase">Unsicher, was Ihr Fahrzeug braucht?</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Schicken Sie uns Fotos und eine kurze Beschreibung des Zustands. Wir sehen es uns an
+              und sagen Ihnen ehrlich, was sinnvoll ist — kostenlos und unverbindlich.
+            </p>
+          </div>
+          <Button asChild size="lg" variant="outline" className="shrink-0 gap-2">
+            <Link to="/fahrzeug-zustand">
+              <Camera aria-hidden className="size-4 text-primary" />
+              Zustand prüfen lassen
+            </Link>
+          </Button>
+        </div>
       </div>
     </section>
   );

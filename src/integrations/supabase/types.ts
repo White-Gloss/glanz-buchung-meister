@@ -359,6 +359,51 @@ export type Database = {
           },
         ];
       };
+      condition_reports: {
+        Row: {
+          id: string;
+          customer_name: string;
+          customer_email: string;
+          customer_phone: string;
+          vehicle: string;
+          plate: string;
+          condition_text: string;
+          photo_paths: string[];
+          status: string;
+          admin_note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          customer_name: string;
+          customer_email: string;
+          customer_phone?: string;
+          vehicle?: string;
+          plate?: string;
+          condition_text: string;
+          photo_paths?: string[];
+          status?: string;
+          admin_note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_name?: string;
+          customer_email?: string;
+          customer_phone?: string;
+          vehicle?: string;
+          plate?: string;
+          condition_text?: string;
+          photo_paths?: string[];
+          status?: string;
+          admin_note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       customer_notes: {
         Row: {
           customer_email: string;

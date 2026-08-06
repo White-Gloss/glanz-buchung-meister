@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as PreiseRouteImport } from './routes/preise'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
+import { Route as AuthenticatedAdminAdminZustandRouteImport } from './routes/_authenticated/_admin/admin.zustand'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,6 +55,11 @@ const AuthRoute = AuthRouteImport.update({
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FahrzeugZustandRoute = FahrzeugZustandRouteImport.update({
+  id: '/fahrzeug-zustand',
+  path: '/fahrzeug-zustand',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -170,11 +177,18 @@ const AuthenticatedAdminAdminLeistungenRoute =
     path: '/leistungen',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminZustandRoute =
+  AuthenticatedAdminAdminZustandRouteImport.update({
+    id: '/zustand',
+    path: '/zustand',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
@@ -195,12 +209,14 @@ export interface FileRoutesByFullPath {
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
@@ -220,6 +236,7 @@ export interface FileRoutesByTo {
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -228,6 +245,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
@@ -249,6 +267,7 @@ export interface FileRoutesById {
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/_authenticated/_admin/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -257,6 +276,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/datenschutz'
+    | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
     | '/preise'
@@ -277,12 +297,14 @@ export interface FileRouteTypes {
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/zustand'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/datenschutz'
+    | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
     | '/preise'
@@ -302,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/zustand'
     | '/admin'
   id:
     | '__root__'
@@ -309,6 +332,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/datenschutz'
+    | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
     | '/preise'
@@ -330,6 +354,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
     | '/_authenticated/_admin/admin/leistungen'
+    | '/_authenticated/_admin/admin/zustand'
     | '/_authenticated/_admin/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -338,6 +363,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DatenschutzRoute: typeof DatenschutzRoute
+  FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
   ImpressumRoute: typeof ImpressumRoute
   PreiseRoute: typeof PreiseRoute
@@ -382,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/datenschutz'
       fullPath: '/datenschutz'
       preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fahrzeug-zustand': {
+      id: '/fahrzeug-zustand'
+      path: '/fahrzeug-zustand'
+      fullPath: '/fahrzeug-zustand'
+      preLoaderRoute: typeof FahrzeugZustandRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -538,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLeistungenRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/zustand': {
+      id: '/_authenticated/_admin/admin/zustand'
+      path: '/zustand'
+      fullPath: '/admin/zustand'
+      preLoaderRoute: typeof AuthenticatedAdminAdminZustandRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
   }
 }
 
@@ -547,6 +587,7 @@ interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
   AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
+  AuthenticatedAdminAdminZustandRoute: typeof AuthenticatedAdminAdminZustandRoute
   AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
 }
 
@@ -558,6 +599,7 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
     AuthenticatedAdminAdminLeistungenRoute:
       AuthenticatedAdminAdminLeistungenRoute,
+    AuthenticatedAdminAdminZustandRoute: AuthenticatedAdminAdminZustandRoute,
     AuthenticatedAdminAdminIndexRoute: AuthenticatedAdminAdminIndexRoute,
   }
 
@@ -596,6 +638,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DatenschutzRoute: DatenschutzRoute,
+  FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
   ImpressumRoute: ImpressumRoute,
   PreiseRoute: PreiseRoute,
