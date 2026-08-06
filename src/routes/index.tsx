@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Camera, CheckCircle2, MapPin } from "lucide-react";
+import { ArrowRight, CalendarCheck, Camera, CheckCircle2, MapPin, Sparkles } from "lucide-react";
 
 import heroCarAvif from "@/assets/hero-car.avif";
 import heroCar from "@/assets/hero-car.jpg";
@@ -202,7 +202,7 @@ function Hero() {
       <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className="max-w-3xl">
           <h1 className="display-hero max-w-3xl text-white">
-            Fahrzeugaufbereitung.
+            Fahrzeugaufbereitung.{" "}
             <span className="text-chrome block">Kein Kompromiss. Sichtbare Ergebnisse.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
@@ -242,20 +242,39 @@ function Hero() {
 }
 
 function ProofStrip() {
+  const punkte = [
+    {
+      icon: Sparkles,
+      title: "Materialgerecht",
+      text: "Verfahren passend zu Oberfläche und Zustand",
+    },
+    {
+      icon: CalendarCheck,
+      title: "Planbar",
+      text: "Klare Pakete, Zeitrahmen und Terminanfrage",
+    },
+    {
+      icon: MapPin,
+      title: "Regional",
+      text: `Hol- & Bringservice in ${pickupCities.length} Städten`,
+    },
+  ];
+
   return (
     <section aria-label="White Gloss Vorteile" className="border-b border-border bg-surface/45">
       <div className="mx-auto grid max-w-7xl divide-y divide-border px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
-        {[
-          ["Materialgerecht", "Verfahren passend zu Oberfläche und Zustand"],
-          ["Planbar", "Klare Pakete, Zeitrahmen und Terminanfrage"],
-          ["Regional", `Hol- & Bringservice in ${pickupCities.length} Städten`],
-        ].map(([title, text], index) => (
-          <div key={title} className="py-5 sm:px-6 first:pl-0">
-            <div className="flex items-baseline gap-3">
-              <span className="text-[0.62rem] tracking-[0.2em] text-primary">0{index + 1}</span>
+        {punkte.map(({ icon: Icon, title, text }) => (
+          <div key={title} className="flex items-start gap-4 py-6 sm:px-7 first:sm:pl-0">
+            <span
+              aria-hidden
+              className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-primary/25 bg-primary/10 text-primary"
+            >
+              <Icon className="size-4" />
+            </span>
+            <div>
               <h2 className="text-sm font-medium text-foreground">{title}</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{text}</p>
             </div>
-            <p className="mt-1 pl-8 text-xs text-muted-foreground">{text}</p>
           </div>
         ))}
       </div>
@@ -265,7 +284,9 @@ function ProofStrip() {
 
 function Packages() {
   return (
-    <section className="content-auto mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+    <section className="content-auto relative isolate mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+      {/* Dezentes Streulicht, damit die Sektion sich vom flachen Schwarz abhebt */}
+      <div className="chrome-orb -right-40 -top-24 -z-10 opacity-70" aria-hidden />
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <SectionHeading
           eyebrow="Pakete & Preise"
@@ -282,15 +303,20 @@ function Packages() {
         </Link>
       </div>
 
-      <div className="mt-12 grid overflow-hidden border-y border-border lg:grid-cols-3 lg:divide-x lg:divide-border">
+      <div className="mt-12 grid gap-5 lg:grid-cols-3 lg:items-stretch">
         {servicePackages.map((servicePackage, index) => (
           <article
             key={servicePackage.id}
             className={[
-              "relative flex h-full flex-col border-b border-border px-1 py-8 last:border-b-0 sm:px-7 lg:border-b-0 lg:py-10",
-              servicePackage.highlight ? "bg-primary/[0.035]" : "",
+              "package-card relative flex h-full flex-col rounded-3xl p-6 sm:p-8",
+              servicePackage.highlight ? "package-card-featured" : "",
             ].join(" ")}
           >
+            {servicePackage.highlight && (
+              <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-primary-foreground sm:left-8">
+                Beliebteste Wahl
+              </span>
+            )}
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[0.62rem] uppercase tracking-[0.18em] text-primary">
@@ -300,7 +326,7 @@ function Packages() {
               </div>
               <span className="text-xs text-muted-foreground">0{index + 1}</span>
             </div>
-            <p className="mt-7 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <p className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <span className="display-price text-3xl text-foreground">
                 ab {currency(servicePackage.basePrice)}
               </span>
@@ -308,7 +334,7 @@ function Packages() {
                 {vatNoticeShort()} · {servicePackage.duration}
               </span>
             </p>
-            <ul className="mt-7 flex-1 space-y-3">
+            <ul className="mt-6 flex-1 space-y-3 border-t border-border pt-6">
               {servicePackage.features.map((feature) => (
                 <li key={feature} className="flex gap-3 text-sm text-foreground/78">
                   <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -344,8 +370,7 @@ function QualityJourney() {
         <div className="lg:sticky lg:top-32">
           <p className="eyebrow">Der White-Gloss-Prozess</p>
           <h2 className="display-section mt-3 max-w-3xl uppercase">
-            Ein klarer Ablauf.
-            <span className="text-chrome block">Keine Überraschungen.</span>
+            Ein klarer Ablauf. <span className="text-chrome block">Keine Überraschungen.</span>
           </h2>
           <p className="mt-6 max-w-2xl leading-7 text-muted-foreground">
             Gute Aufbereitung beginnt mit einer ehrlichen Beurteilung. Jeder Schritt folgt dem
@@ -358,15 +383,17 @@ function QualityJourney() {
             </Link>
           </Button>
         </div>
-        <ol className="border-y border-border bg-background/35">
+        <ol className="overflow-hidden rounded-3xl border border-border bg-background/35">
           {steps.map(([title, text], index) => (
             <li
               key={title}
-              className="grid gap-4 border-b border-border p-6 last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:items-start sm:p-7"
+              className="group grid gap-4 border-b border-border p-6 transition-colors last:border-b-0 hover:bg-surface/40 sm:grid-cols-[3rem_minmax(0,1fr)] sm:items-start sm:p-7"
             >
               <span className="text-xs tracking-[0.22em] text-primary">0{index + 1}</span>
               <div>
-                <h3 className="display-sub uppercase">{title}</h3>
+                <h3 className="display-sub uppercase transition-colors group-hover:text-primary">
+                  {title}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
               </div>
             </li>
@@ -379,8 +406,13 @@ function QualityJourney() {
 
 function Booking() {
   return (
-    <section id="buchung" className="content-auto scroll-mt-28 bg-surface/25">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+    <section
+      id="buchung"
+      className="content-auto relative isolate scroll-mt-28 overflow-hidden bg-surface/25"
+    >
+      <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
+      <div className="chrome-orb -left-40 top-10 -z-10 opacity-60" aria-hidden />
+      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
         <SectionHeading
           className="mb-12 max-w-3xl"
           eyebrow="Online anfragen"

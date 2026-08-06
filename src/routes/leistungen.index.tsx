@@ -93,8 +93,7 @@ function ServicesOverview() {
             </nav>
             <p className="eyebrow mt-10">Leistungsspektrum</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">
-              Das passende Detail
-              <span className="text-chrome block">für jedes Ziel.</span>
+              Das passende Detail <span className="text-chrome block">für jedes Ziel.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
               Ob hygienischer Innenraum, klarer Lack oder langfristiger Schutz: Wir stimmen

@@ -61,7 +61,7 @@ export function SiteFooter() {
           </p>
           <p>
             <Link to="/fahrzeug-zustand" className={FOOTER_LINK}>
-              Zustand prüfen lassen
+              Individuelles Angebot
             </Link>
           </p>
           <p>

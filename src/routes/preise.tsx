@@ -59,8 +59,7 @@ function PricingPage() {
             </nav>
             <p className="eyebrow mt-10">Pakete &amp; Preise</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">
-              Klarer Umfang.
-              <span className="text-chrome block">Transparente Startpreise.</span>
+              Klarer Umfang. <span className="text-chrome block">Transparente Startpreise.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
               Sie sehen vor Ihrer Anfrage, welche Leistungen enthalten sind. Fahrzeuggröße und
