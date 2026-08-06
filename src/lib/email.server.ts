@@ -257,6 +257,78 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
   });
 }
 
+/**
+ * Verbindliche Terminbestätigung an den Kunden.
+ *
+ * Geht raus, wenn der Status im Admin-Bereich auf „Bestätigt" wechselt.
+ * Vorher erhält der Kunde nur die Eingangsbestätigung mit dem
+ * ausdrücklichen Hinweis, dass der Termin noch nicht zugesagt ist — ohne
+ * diese zweite Mail bliebe er auf ebendiesem Stand sitzen.
+ */
+export async function sendBookingConfirmed(booking: Booking): Promise<MailResult> {
+  const firstName = booking.customer.name.split(" ")[0] || booking.customer.name;
+  const { pickup } = bookingSummary(booking);
+
+  const treffpunkt = pickup
+    ? `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
+         Wir holen Ihr Fahrzeug in <strong>${escapeHtml(pickup.name)}</strong> ab. Den genauen
+         Ablauf stimmen wir vorab telefonisch mit Ihnen ab.
+       </p>`
+    : `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
+         Bitte bringen Sie das Fahrzeug zum vereinbarten Termin zu uns:<br>
+         <strong>${escapeHtml(company.street)}, ${escapeHtml(company.city)}</strong>
+       </p>`;
+
+  const anzahlung =
+    booking.depositStatus === "nicht_erforderlich"
+      ? ""
+      : `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
+           Offen ist noch die Anzahlung von
+           <strong>${currency(Number(booking.depositAmount))}</strong>. Wir melden uns dazu
+           gesondert bei Ihnen.
+         </p>`;
+
+  const html = layout(
+    "Ihr Termin ist bestätigt",
+    `Hallo ${escapeHtml(firstName)}, wir haben Ihren Termin fest eingeplant. <strong>Diese Bestätigung ist verbindlich.</strong>`,
+    itemsTableHtml(booking) +
+      treffpunkt +
+      anzahlung +
+      `<p style="margin:0;font-size:14px;line-height:1.6;">
+         Sie müssen den Termin verschieben oder absagen? Antworten Sie einfach auf diese E-Mail
+         oder rufen Sie an unter ${escapeHtml(company.phone)}. Bitte geben Sie uns möglichst
+         frühzeitig Bescheid.
+       </p>`,
+  );
+
+  const text = [
+    `Hallo ${firstName},`,
+    "",
+    "wir haben Ihren Termin fest eingeplant. Diese Bestätigung ist verbindlich.",
+    "",
+    itemsTableText(booking),
+    "",
+    pickup
+      ? `Wir holen Ihr Fahrzeug in ${pickup.name} ab. Den Ablauf stimmen wir vorab telefonisch ab.`
+      : `Bitte bringen Sie das Fahrzeug zu uns: ${company.street}, ${company.city}`,
+    ...(booking.depositStatus === "nicht_erforderlich"
+      ? []
+      : ["", `Offene Anzahlung: ${currency(Number(booking.depositAmount))}. Details folgen.`]),
+    "",
+    `Verschieben oder absagen: ${company.phone} oder Antwort auf diese E-Mail.`,
+    "",
+    `${company.name} · ${company.street} · ${company.city}`,
+  ].join("\n");
+
+  return send({
+    to: booking.customer.email,
+    subject: `Termin bestätigt: ${formatDate(booking.date)}, ${booking.time} Uhr – ${company.name}`,
+    html,
+    text,
+    replyTo: company.email,
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* 2) Benachrichtigung an den Betrieb                                  */
 /* ------------------------------------------------------------------ */
