@@ -20,7 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
+import { ConditionPhotoUpload, type UploadedPhoto } from "@/components/ConditionPhotoUpload";
+import { submitConditionReport } from "@/lib/conditionReports.functions";
 import { toast } from "sonner";
 import {
   addOns,
@@ -46,7 +49,11 @@ import { useServerFn } from "@tanstack/react-start";
 
 /** Die entfernungsabhängige Zusatzleistung (Hol- & Bringservice). */
 const pickupAddOn = addOns.find((a) => a.distanceBased);
-const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Kontakt"];
+// „Zustand" steht bewusst kurz vor „Kontakt": Zu diesem Zeitpunkt hat der
+// Kunde Fahrzeug, Paket und Termin bereits gewählt und ist im Ablauf
+// investiert. Der Schritt ist freiwillig und blockiert das Weiterkommen
+// nicht — Fotos sind hilfreich, aber keine Bedingung für eine Anfrage.
+const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Zustand", "Kontakt"];
 
 const vehicleIcons: Record<string, typeof Car> = {
   kompakt: Car,
@@ -158,6 +165,13 @@ export function BookingWizard() {
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
+  // Fahrzeugzustand: Fotos landen sofort im privaten Speicher, die Pfade
+  // werden erst nach erfolgreicher Buchung einer Meldung zugeordnet.
+  const [conditionPhotos, setConditionPhotos] = useState<UploadedPhoto[]>([]);
+  const [conditionNote, setConditionNote] = useState("");
+  // Verhindert, dass man weiterklickt, während ein Foto noch hochlädt —
+  // der Schritt würde ausgehängt und das Bild ginge verloren.
+  const [photosUploading, setPhotosUploading] = useState(false);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
@@ -226,10 +240,14 @@ export function BookingWizard() {
     !!packageId,
     pickupStepValid,
     !!date && !!time,
+    // Zustand: freiwillig, also immer passierbar — nur nicht mitten im
+    // laufenden Upload.
+    !photosUploading,
     Object.keys(validateCustomer(customer)).length === 0 && pickupStepValid,
   ][step];
 
   const submitBooking = useServerFn(createBooking);
+  const sendConditionReport = useServerFn(submitConditionReport);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
@@ -263,6 +281,32 @@ export function BookingWizard() {
           pickupCity: pickupSelected ? pickupCity : null,
         },
       });
+      /*
+       * Fahrzeugzustand nachreichen, falls der Kunde etwas hinterlegt hat.
+       * Bewusst NACH der Buchung und in einem eigenen try/catch: Die
+       * Terminanfrage ist der Kern des Vorgangs und darf nicht daran
+       * scheitern, dass eine Zusatzinformation nicht durchkommt. Der
+       * Kunde sieht in dem Fall trotzdem seine bestätigte Buchung.
+       */
+      if (conditionPhotos.length > 0 || conditionNote.trim()) {
+        try {
+          await sendConditionReport({
+            data: {
+              name: customer.name.trim(),
+              email: customer.email.trim(),
+              phone: customer.phone.trim(),
+              vehicle: vehicleTypes.find((v) => v.id === vehicleId)?.name ?? "",
+              plate: customer.plate.trim().toUpperCase(),
+              conditionText: conditionNote.trim(),
+              photoPaths: conditionPhotos.map((photo) => photo.path),
+              bookingId: booking.id,
+            },
+          });
+        } catch (error) {
+          console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
+        }
+      }
+
       setConfirmed(booking);
       toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
     } catch (error) {
@@ -615,6 +659,47 @@ export function BookingWizard() {
           )}
 
           {step === 4 && (
+            <section>
+              <StepHeader
+                title="Fahrzeugzustand (optional)"
+                text="Schicken Sie uns ein paar Fotos, dann können wir den Aufwand vorab realistisch einschätzen und Sie bekommen ein belastbares Angebot statt einer groben Schätzung."
+              />
+
+              <div className="mt-6">
+                <ConditionPhotoUpload
+                  photos={conditionPhotos}
+                  onChange={setConditionPhotos}
+                  onUploadingChange={setPhotosUploading}
+                  inputId="buchung-zustand-fotos"
+                  hint="Am hilfreichsten: das ganze Fahrzeug von schräg vorn und hinten, dazu Nahaufnahmen von Stellen, die Sie stören. Die Fotos sind nicht öffentlich sichtbar."
+                />
+              </div>
+
+              <div className="mt-6">
+                <label
+                  htmlFor="buchung-zustand-notiz"
+                  className="text-xs uppercase tracking-widest text-muted-foreground"
+                >
+                  Anmerkungen zum Zustand (optional)
+                </label>
+                <Textarea
+                  id="buchung-zustand-notiz"
+                  value={conditionNote}
+                  onChange={(event) => setConditionNote(event.target.value)}
+                  rows={4}
+                  maxLength={4000}
+                  placeholder="z. B. Kratzer auf der Motorhaube, Flecken auf den Sitzen, Geruch im Innenraum"
+                  className="mt-1.5 bg-secondary/40"
+                />
+              </div>
+
+              <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                Dieser Schritt ist freiwillig — Sie können ihn einfach überspringen.
+              </p>
+            </section>
+          )}
+
+          {step === 5 && (
             <section>
               <StepHeader
                 title="Ihre Kontaktdaten"

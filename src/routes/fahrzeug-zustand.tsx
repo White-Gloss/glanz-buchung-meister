@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
+import { Camera, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import {
-  submitConditionReport,
-  uploadConditionPhoto,
-  MAX_PHOTOS,
-  MAX_IMAGE_BYTES,
-} from "@/lib/conditionReports.functions";
+import { ConditionPhotoUpload, type UploadedPhoto } from "@/components/ConditionPhotoUpload";
+import { submitConditionReport } from "@/lib/conditionReports.functions";
 import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
 
 /**
@@ -58,24 +54,6 @@ export const Route = createFileRoute("/fahrzeug-zustand")({
   component: ConditionPage,
 });
 
-type UploadedPhoto = {
-  path: string;
-  /** Lokale Vorschau-URL (blob:) — der Bucket selbst ist nicht öffentlich. */
-  previewUrl: string;
-  name: string;
-};
-
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
-    reader.onerror = () => reject(new Error("Die Datei konnte nicht gelesen werden."));
-    reader.readAsDataURL(file);
-  });
-}
-
 function ConditionPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -85,67 +63,12 @@ function ConditionPage() {
   const [conditionText, setConditionText] = useState("");
   const [consent, setConsent] = useState(false);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  // Solange Fotos unterwegs sind, bleibt „Anfrage senden“ gesperrt.
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const upload = useServerFn(uploadConditionPhoto);
   const submit = useServerFn(submitConditionReport);
-
-  async function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
-
-    const frei = MAX_PHOTOS - photos.length;
-    if (frei <= 0) {
-      toast.error(`Es sind höchstens ${MAX_PHOTOS} Fotos möglich.`);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    setUploading(true);
-    // Nacheinander statt parallel: mehrere große Bilder gleichzeitig
-    // lassen den Upload auf Mobilfunkverbindungen häufig scheitern.
-    for (const file of files.slice(0, frei)) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`„${file.name}" ist kein JPEG, PNG oder WebP.`);
-        continue;
-      }
-      if (file.size > MAX_IMAGE_BYTES) {
-        toast.error(`„${file.name}" ist größer als 8 MB.`);
-        continue;
-      }
-      try {
-        const base64Data = await fileToBase64(file);
-        const result = await upload({
-          data: { fileName: file.name, contentType: file.type, base64Data },
-        });
-        setPhotos((previous) => [
-          ...previous,
-          { path: result.path, previewUrl: URL.createObjectURL(file), name: file.name },
-        ]);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : `„${file.name}" konnte nicht geladen werden.`,
-        );
-      }
-    }
-
-    if (files.length > frei) {
-      toast.warning(`Nur die ersten ${frei} Fotos wurden übernommen.`);
-    }
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  function removePhoto(path: string) {
-    setPhotos((previous) => {
-      const entfernt = previous.find((photo) => photo.path === path);
-      if (entfernt) URL.revokeObjectURL(entfernt.previewUrl);
-      return previous.filter((photo) => photo.path !== path);
-    });
-  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -221,62 +144,11 @@ function ConditionPage() {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <fieldset className="glass space-y-4 rounded-2xl p-5">
                   <legend className="display-card px-1 text-sm uppercase">Ihre Fotos</legend>
-
-                  {photos.length > 0 && (
-                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {photos.map((photo) => (
-                        <li key={photo.path} className="relative">
-                          <div className="aspect-square overflow-hidden rounded-xl border border-border/60 bg-secondary/30">
-                            <img
-                              src={photo.previewUrl}
-                              alt={`Vorschau: ${photo.name}`}
-                              className="size-full object-cover"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(photo.path)}
-                            aria-label={`${photo.name} entfernen`}
-                            className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-background/90 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
-                          >
-                            <X aria-hidden className="size-4" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    onChange={handleFiles}
-                    disabled={uploading || photos.length >= MAX_PHOTOS}
-                    aria-label="Fotos auswählen"
-                    className="hidden"
-                    id="zustand-fotos"
+                  <ConditionPhotoUpload
+                    photos={photos}
+                    onChange={setPhotos}
+                    onUploadingChange={setUploading}
                   />
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                      asChild
-                      variant="outline"
-                      disabled={uploading || photos.length >= MAX_PHOTOS}
-                      className="gap-2"
-                    >
-                      <label htmlFor="zustand-fotos" className="cursor-pointer">
-                        {uploading ? (
-                          <Loader2 aria-hidden className="size-4 animate-spin" />
-                        ) : (
-                          <ImagePlus aria-hidden className="size-4" />
-                        )}
-                        {uploading ? "Wird hochgeladen …" : "Fotos auswählen"}
-                      </label>
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      {photos.length} von {MAX_PHOTOS} · JPEG, PNG oder WebP · bis 8 MB je Bild
-                    </p>
-                  </div>
                 </fieldset>
 
                 <fieldset className="glass space-y-4 rounded-2xl p-5">
