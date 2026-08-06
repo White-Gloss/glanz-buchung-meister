@@ -140,7 +140,14 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          <nav aria-label="Hauptnavigation" className="hidden items-center gap-0.5 lg:flex">
+          {/*
+            Umbruchgrenze bewusst bei XL statt LG: Mit acht Punkten plus
+            Schaltflaeche passt die Leiste bei 1024px nicht mehr in eine
+            Zeile. Zwischen 1024 und 1280px greift deshalb das Menue hinter
+            dem Symbol — lieber ein sauberes Menue als eine gequetschte
+            oder umbrechende Leiste.
+          */}
+          <nav aria-label="Hauptnavigation" className="hidden items-center gap-0.5 xl:flex">
             <div className="relative">
               <button
                 ref={desktopServicesButtonRef}
@@ -189,6 +196,14 @@ export function SiteHeader() {
               Abholservice
             </Link>
             <Link
+              to="/fahrzeug-zustand"
+              className={NAV_LINK}
+              activeProps={{ className: ACTIVE_NAV }}
+              onClick={closeMenus}
+            >
+              Individuelles Angebot
+            </Link>
+            <Link
               to="/ratgeber"
               className={NAV_LINK}
               activeProps={{ className: ACTIVE_NAV }}
@@ -214,7 +229,7 @@ export function SiteHeader() {
             </Button>
           </nav>
 
-          <div className="relative lg:hidden">
+          <div className="relative xl:hidden">
             <button
               ref={mobileButtonRef}
               type="button"
@@ -281,6 +296,9 @@ export function SiteHeader() {
                 <Link to="/abholservice" className={MOBILE_NAV_LINK} onClick={closeMenus}>
                   Hol- &amp; Bringservice
                 </Link>
+                <Link to="/fahrzeug-zustand" className={MOBILE_NAV_LINK} onClick={closeMenus}>
+                  Individuelles Angebot
+                </Link>
                 <Link to="/ratgeber" className={MOBILE_NAV_LINK} onClick={closeMenus}>
                   Ratgeber
                 </Link>
@@ -316,7 +334,14 @@ export function SiteHeader() {
       </header>
 
       <div className="border-b border-primary/20 bg-primary/[0.07]">
-        <div className="mx-auto grid min-h-10 max-w-7xl items-center gap-x-4 px-4 py-1.5 text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+        {/*
+          0.75rem = 12px statt vorher 0.68rem (10,9px). In diesem Band steht
+          unter anderem die Telefonnummer — ein Kontaktelement, das auch
+          Kundschaft mit nachlassender Sehkraft mühelos lesen können muss.
+          Versalien mit weiter Laufweite lesen sich zudem schlechter als
+          gemischte Schreibweise, was kleine Grade zusätzlich bestraft.
+        */}
+        <div className="mx-auto grid min-h-10 max-w-7xl items-center gap-x-4 px-4 py-1.5 text-[0.75rem] uppercase tracking-[0.14em] text-muted-foreground sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
           <p className="hidden items-center gap-2 lg:inline-flex">
             <MapPin aria-hidden className="size-3.5 text-primary" />
             Horb am Neckar · Baden-Württemberg

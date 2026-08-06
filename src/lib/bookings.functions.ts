@@ -258,14 +258,50 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   .validator((data: { id: string; status: BookingStatus }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const row = await withActor(actorEmailOf(context), (db) =>
-      db.queryOne<Row>(
+
+    // Den bisherigen Status mitlesen: Die Bestätigungsmail soll nur beim
+    // tatsächlichen Wechsel rausgehen, nicht jedes Mal, wenn derselbe
+    // Status erneut gespeichert wird.
+    const { row, vorher } = await withActor(actorEmailOf(context), async (db) => {
+      const alt = await db.queryOne<{ status: string }>(
+        `SELECT status FROM public.bookings WHERE id = $1 FOR UPDATE`,
+        [data.id],
+      );
+      const aktualisiert = await db.queryOne<Row>(
         `UPDATE public.bookings SET status = $1 WHERE id = $2 RETURNING ${SELECT_COLS}`,
         [data.status, data.id],
-      ),
-    );
+      );
+      return { row: aktualisiert, vorher: alt?.status ?? null };
+    });
     if (!row) throw new Error("Buchung nicht gefunden");
-    return toBooking(row);
+
+    const booking = toBooking(row);
+
+    /*
+     * Verbindliche Terminbestätigung an den Kunden. Bewusst nach dem
+     * Speichern und in einem eigenen try/catch: Ein gestörter Mailversand
+     * darf den Statuswechsel im Admin-Bereich nicht scheitern lassen —
+     * der Status ist dann ja bereits korrekt gesetzt.
+     */
+    if (data.status === "Bestätigt" && vorher !== "Bestätigt") {
+      try {
+        const { sendBookingConfirmed, mailConfigured } = await import("./email.server");
+        if (mailConfigured()) {
+          const ergebnis = await sendBookingConfirmed(booking);
+          if (!ergebnis.sent) {
+            console.error(`[mail] Terminbestätigung nicht zugestellt: ${ergebnis.reason}`);
+          }
+        } else {
+          console.warn(
+            `[mail] Versand nicht konfiguriert — keine Terminbestätigung zu ${booking.invoiceNumber} verschickt.`,
+          );
+        }
+      } catch (error) {
+        console.error("[mail] Terminbestätigung fehlgeschlagen", error);
+      }
+    }
+
+    return booking;
   });
 
 // ---------------------------------------------------------------------------
