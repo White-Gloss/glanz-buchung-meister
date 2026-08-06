@@ -20,6 +20,7 @@ import {
   ImageIcon,
   HelpCircle,
   FileText,
+  Camera,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -282,6 +283,19 @@ function AdminPage() {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Vorher/Nachher-Fotos hochladen — erscheinen auf der Startseite als
                   Referenzgalerie.
+                </p>
+              </Link>
+              <Link
+                to="/admin/zustand"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Camera className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Zustandsmeldungen</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Fotos und Zustandsbeschreibungen, die Interessenten vor der Buchung geschickt
+                  haben.
                 </p>
               </Link>
               <Link

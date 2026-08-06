@@ -1,0 +1,436 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Camera, CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import {
+  submitConditionReport,
+  uploadConditionPhoto,
+  MAX_PHOTOS,
+  MAX_IMAGE_BYTES,
+} from "@/lib/conditionReports.functions";
+import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+
+/**
+ * ZUSTAND MELDEN
+ * ---------------
+ * Ergänzt den Buchungsbereich: Wer vorab wissen möchte, was bei seinem
+ * Fahrzeug sinnvoll ist, schickt Fotos und eine Beschreibung. Das spart
+ * beiden Seiten die Rückfragen, die sonst am Telefon nötig wären.
+ *
+ * Die Fotos landen in einem privaten Speicher und sind ausschließlich im
+ * Admin-Bereich sichtbar — nicht öffentlich abrufbar.
+ */
+
+const META_TITLE = "Fahrzeugzustand prüfen lassen | White Gloss Detailing";
+const META_DESCRIPTION =
+  "Fotos vom Fahrzeug hochladen, Zustand beschreiben und eine ehrliche Einschätzung erhalten — unverbindlich und kostenlos, von den Aufbereitern aus Horb am Neckar.";
+const CANONICAL = absUrl("/fahrzeug-zustand");
+
+export const Route = createFileRoute("/fahrzeug-zustand")({
+  head: () => ({
+    meta: [
+      { title: META_TITLE },
+      { name: "description", content: META_DESCRIPTION },
+      { property: "og:title", content: META_TITLE },
+      { property: "og:description", content: META_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: CANONICAL },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:alt", content: OG_IMAGE_ALT },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: META_TITLE },
+      { name: "twitter:description", content: META_DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
+    ],
+    links: [
+      { rel: "canonical", href: CANONICAL },
+      { rel: "alternate", hrefLang: "de-DE", href: CANONICAL },
+    ],
+  }),
+  component: ConditionPage,
+});
+
+type UploadedPhoto = {
+  path: string;
+  /** Lokale Vorschau-URL (blob:) — der Bucket selbst ist nicht öffentlich. */
+  previewUrl: string;
+  name: string;
+};
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("Die Datei konnte nicht gelesen werden."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function ConditionPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [vehicle, setVehicle] = useState("");
+  const [plate, setPlate] = useState("");
+  const [conditionText, setConditionText] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const upload = useServerFn(uploadConditionPhoto);
+  const submit = useServerFn(submitConditionReport);
+
+  async function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const frei = MAX_PHOTOS - photos.length;
+    if (frei <= 0) {
+      toast.error(`Es sind höchstens ${MAX_PHOTOS} Fotos möglich.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setUploading(true);
+    // Nacheinander statt parallel: mehrere große Bilder gleichzeitig
+    // lassen den Upload auf Mobilfunkverbindungen häufig scheitern.
+    for (const file of files.slice(0, frei)) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`„${file.name}" ist kein JPEG, PNG oder WebP.`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error(`„${file.name}" ist größer als 8 MB.`);
+        continue;
+      }
+      try {
+        const base64Data = await fileToBase64(file);
+        const result = await upload({
+          data: { fileName: file.name, contentType: file.type, base64Data },
+        });
+        setPhotos((previous) => [
+          ...previous,
+          { path: result.path, previewUrl: URL.createObjectURL(file), name: file.name },
+        ]);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : `„${file.name}" konnte nicht geladen werden.`,
+        );
+      }
+    }
+
+    if (files.length > frei) {
+      toast.warning(`Nur die ersten ${frei} Fotos wurden übernommen.`);
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removePhoto(path: string) {
+    setPhotos((previous) => {
+      const entfernt = previous.find((photo) => photo.path === path);
+      if (entfernt) URL.revokeObjectURL(entfernt.previewUrl);
+      return previous.filter((photo) => photo.path !== path);
+    });
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!consent) {
+      toast.error("Bitte bestätigen Sie die Einwilligung zur Verarbeitung.");
+      return;
+    }
+    setSending(true);
+    try {
+      await submit({
+        data: {
+          name,
+          email,
+          phone,
+          vehicle,
+          plate,
+          conditionText,
+          photoPaths: photos.map((photo) => photo.path),
+        },
+      });
+      photos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+      setDone(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Das Senden ist fehlgeschlagen.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="min-h-dvh bg-background">
+      <SiteHeader />
+      <main id="main-content">
+        <section className="relative overflow-hidden border-b border-border/60">
+          <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
+          <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
+            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
+              <Link to="/" className="hover:text-foreground">
+                Startseite
+              </Link>
+              <span className="px-2">/</span>
+              <span className="text-foreground">Zustand prüfen lassen</span>
+            </nav>
+
+            <p className="eyebrow mt-7">Vor der Buchung</p>
+            <h1 className="text-gradient display-page mt-3">Zustand prüfen lassen</h1>
+            <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
+              Schicken Sie uns ein paar Fotos und eine kurze Beschreibung. Wir sehen uns das an und
+              sagen Ihnen ehrlich, was bei Ihrem Fahrzeug sinnvoll ist — und was nicht. Kostenlos
+              und unverbindlich.
+            </p>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
+          {done ? <SuccessPanel /> : null}
+
+          {!done && (
+            <>
+              <div className="glass mb-8 rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
+                <p className="font-medium text-foreground">Welche Fotos helfen uns am meisten?</p>
+                <ul className="mt-3 list-disc space-y-1.5 pl-5">
+                  <li>Das ganze Fahrzeug von schräg vorn und schräg hinten</li>
+                  <li>
+                    Nahaufnahmen von Stellen, die Sie stören — Kratzer, matte Partien, Flecken
+                  </li>
+                  <li>Innenraum: Sitze, Fußräume, Armaturenbrett</li>
+                  <li>Am besten bei Tageslicht und trockenem Lack</li>
+                </ul>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <fieldset className="glass space-y-4 rounded-2xl p-5">
+                  <legend className="display-card px-1 text-sm uppercase">Ihre Fotos</legend>
+
+                  {photos.length > 0 && (
+                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {photos.map((photo) => (
+                        <li key={photo.path} className="relative">
+                          <div className="aspect-square overflow-hidden rounded-xl border border-border/60 bg-secondary/30">
+                            <img
+                              src={photo.previewUrl}
+                              alt={`Vorschau: ${photo.name}`}
+                              className="size-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(photo.path)}
+                            aria-label={`${photo.name} entfernen`}
+                            className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-background/90 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            <X aria-hidden className="size-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={handleFiles}
+                    disabled={uploading || photos.length >= MAX_PHOTOS}
+                    aria-label="Fotos auswählen"
+                    className="hidden"
+                    id="zustand-fotos"
+                  />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      asChild
+                      variant="outline"
+                      disabled={uploading || photos.length >= MAX_PHOTOS}
+                      className="gap-2"
+                    >
+                      <label htmlFor="zustand-fotos" className="cursor-pointer">
+                        {uploading ? (
+                          <Loader2 aria-hidden className="size-4 animate-spin" />
+                        ) : (
+                          <ImagePlus aria-hidden className="size-4" />
+                        )}
+                        {uploading ? "Wird hochgeladen …" : "Fotos auswählen"}
+                      </label>
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      {photos.length} von {MAX_PHOTOS} · JPEG, PNG oder WebP · bis 8 MB je Bild
+                    </p>
+                  </div>
+                </fieldset>
+
+                <fieldset className="glass space-y-4 rounded-2xl p-5">
+                  <legend className="display-card px-1 text-sm uppercase">Zustand</legend>
+                  <label className="block">
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Was sollen wir uns ansehen?
+                    </span>
+                    <Textarea
+                      value={conditionText}
+                      onChange={(event) => setConditionText(event.target.value)}
+                      rows={7}
+                      required
+                      maxLength={4000}
+                      placeholder="Zum Beispiel: Der Lack ist matt und hat viele feine Kratzer von der Waschanlage. Auf der Motorhaube sind Flecken, die sich nicht abwaschen lassen. Innen sind die Sitze verschmutzt, im Kofferraum riecht es muffig."
+                      className="mt-1.5 bg-secondary/40"
+                    />
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {conditionText.length}/4000 Zeichen — je genauer, desto belastbarer unsere
+                      Einschätzung.
+                    </span>
+                  </label>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                        Fahrzeug
+                      </span>
+                      <Input
+                        value={vehicle}
+                        onChange={(event) => setVehicle(event.target.value)}
+                        placeholder="z. B. VW Golf 8, Baujahr 2021"
+                        maxLength={120}
+                        className="mt-1.5 bg-secondary/40"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                        Kennzeichen (freiwillig)
+                      </span>
+                      <Input
+                        value={plate}
+                        onChange={(event) => setPlate(event.target.value)}
+                        placeholder="nur wenn Sie möchten"
+                        maxLength={20}
+                        className="mt-1.5 bg-secondary/40"
+                      />
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset className="glass space-y-4 rounded-2xl p-5">
+                  <legend className="display-card px-1 text-sm uppercase">Kontakt</legend>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                        Name
+                      </span>
+                      <Input
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        required
+                        maxLength={120}
+                        autoComplete="name"
+                        className="mt-1.5 bg-secondary/40"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                        E-Mail
+                      </span>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        required
+                        maxLength={254}
+                        autoComplete="email"
+                        className="mt-1.5 bg-secondary/40"
+                      />
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Telefon (freiwillig)
+                    </span>
+                    <Input
+                      type="tel"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      maxLength={40}
+                      autoComplete="tel"
+                      className="mt-1.5 bg-secondary/40"
+                    />
+                  </label>
+                </fieldset>
+
+                <div className="glass rounded-2xl p-5">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(event) => setConsent(event.target.checked)}
+                      required
+                      className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+                    />
+                    <span className="text-sm leading-6 text-muted-foreground">
+                      Ich bin damit einverstanden, dass meine Angaben und Fotos zur Bearbeitung
+                      meiner Anfrage gespeichert und verarbeitet werden. Die Fotos sind nicht
+                      öffentlich abrufbar. Weitere Hinweise in der{" "}
+                      <Link to="/datenschutz" className="text-primary underline underline-offset-2">
+                        Datenschutzerklärung
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button type="submit" size="lg" loading={sending} disabled={uploading}>
+                    Anfrage senden
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Wir melden uns in der Regel innerhalb eines Werktags.
+                  </p>
+                </div>
+              </form>
+            </>
+          )}
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function SuccessPanel() {
+  return (
+    <div className="glass rounded-3xl p-8 text-center">
+      <CheckCircle2 aria-hidden className="mx-auto size-10 text-primary" />
+      <h2 className="display-sub mt-4">Angekommen — vielen Dank.</h2>
+      <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
+        Wir sehen uns Ihre Fotos an und melden uns in der Regel innerhalb eines Werktags mit einer
+        Einschätzung bei Ihnen. Wenn es schneller gehen soll, rufen Sie uns gern direkt an.
+      </p>
+      <div className="mt-7 flex flex-wrap justify-center gap-3">
+        <Button asChild variant="outline">
+          <Link to="/">Zur Startseite</Link>
+        </Button>
+        <Button asChild>
+          <Link to="/" hash="buchung">
+            <Camera aria-hidden className="size-4" />
+            Termin konfigurieren
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
