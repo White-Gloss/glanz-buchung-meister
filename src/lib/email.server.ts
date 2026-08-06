@@ -36,6 +36,52 @@ export function mailConfigured(): boolean {
   return Boolean(apiKey && from);
 }
 
+/**
+ * Zustand der Konfiguration für die Anzeige im Admin-Bereich.
+ *
+ * Gibt bewusst NUR zurück, ob ein Schlüssel gesetzt ist — niemals seinen
+ * Wert, auch nicht gekürzt. Absender und interne Zieladresse sind dagegen
+ * keine Geheimnisse: sie stehen in jeder versendeten Mail.
+ */
+export function mailSettingsSummary(): {
+  apiKeySet: boolean;
+  from: string | null;
+  ownerTo: string | null;
+} {
+  const { apiKey, from, ownerTo } = config();
+  return { apiKeySet: Boolean(apiKey), from: from || null, ownerTo: ownerTo || null };
+}
+
+/**
+ * Testmail an eine bereits geprüfte Adresse.
+ *
+ * Der Aufrufer verantwortet, dass die Adresse dem angemeldeten
+ * Administrator gehört — siehe mailDiagnostics.functions.ts.
+ */
+export async function sendMailSelfTestTo(to: string): Promise<MailResult> {
+  const zeitpunkt = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
+  const text = [
+    "Diese Testmail bestätigt, dass der E-Mail-Versand der Website funktioniert.",
+    "",
+    `Gesendet am ${zeitpunkt}.`,
+    "",
+    "Kommt diese Nachricht an, erhalten Kundinnen und Kunden auch die",
+    "Eingangsbestätigung und die Terminbestätigung.",
+  ].join("\n");
+
+  return send({
+    to,
+    subject: `Testmail – ${company.name}`,
+    html: layout(
+      "E-Mail-Versand funktioniert",
+      "Diese Testmail wurde aus dem Admin-Bereich ausgelöst.",
+      `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">Gesendet am ${escapeHtml(zeitpunkt)}.</p>
+       <p style="margin:0;font-size:15px;line-height:1.6;">Kommt diese Nachricht an, erhalten Kundinnen und Kunden auch die Eingangsbestätigung und die Terminbestätigung.</p>`,
+    ),
+    text,
+  });
+}
+
 async function send(params: {
   to: string;
   subject: string;

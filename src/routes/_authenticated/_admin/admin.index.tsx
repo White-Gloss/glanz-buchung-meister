@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CalendarFeedCard } from "@/components/CalendarFeedCard";
+import { MailStatusCard } from "@/components/MailStatusCard";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -325,6 +326,10 @@ function AdminPage() {
                 </p>
               </Link>
             </div>
+
+            <ErrorBoundary title="Der E-Mail-Status konnte nicht geladen werden">
+              <MailStatusCard />
+            </ErrorBoundary>
 
             <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">
               <Suspense fallback={<PricePanelSkeleton />}>
