@@ -422,6 +422,18 @@
   border: 1px solid var(--color-border);
   background: linear-gradient(155deg, var(--surface-2), var(--surface));
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
+  transition:
+    border-color 300ms ease,
+    transform 300ms ease,
+    box-shadow 300ms ease;
+
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 38%, transparent);
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 6%),
+      0 24px 70px -36px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
 }
 
 @utility package-card-featured {
@@ -434,6 +446,15 @@
     ),
     linear-gradient(155deg, var(--surface-2), var(--surface));
   box-shadow: var(--shadow-glow);
+
+  /* Muss nach der Hover-Regel von .package-card greifen, damit die
+     hervorgehobene Karte ihren Leuchtrand auch beim Überfahren behält. */
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 62%, transparent);
+    box-shadow:
+      var(--shadow-glow),
+      0 28px 80px -34px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
 }
 
 @utility hero-stage {

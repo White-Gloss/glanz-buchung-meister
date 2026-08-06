@@ -114,7 +114,9 @@ function ConditionPage() {
               <span className="text-foreground">Zustand prüfen lassen</span>
             </nav>
 
-            <p className="eyebrow mt-7">Vor der Buchung</p>
+            {/* Greift die Bezeichnung aus dem Hauptmenü auf, damit klar ist,
+                dass dies die Seite hinter „Individuelles Angebot“ ist. */}
+            <p className="eyebrow mt-7">Individuelles Angebot</p>
             <h1 className="text-gradient display-page mt-3">Zustand prüfen lassen</h1>
             <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
               Schicken Sie uns ein paar Fotos und eine kurze Beschreibung. Wir sehen uns das an und

@@ -57,7 +57,7 @@ export function B2BServices() {
           <div>
             <p className="eyebrow">B2B · Geschäftskunden</p>
             <h2 id="b2b-title" className="display-section mt-3 max-w-3xl uppercase">
-              Gepflegte Fahrzeuge.
+              Gepflegte Fahrzeuge.{" "}
               <span className="text-chrome block">Ein professioneller Auftritt.</span>
             </h2>
             <p className="mt-6 max-w-2xl leading-7 text-muted-foreground">

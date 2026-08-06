@@ -121,7 +121,7 @@ export function SiteHeader() {
     <>
       <header
         ref={headerRef}
-        className="sticky top-0 z-50 border-b border-border/70 bg-background/88 backdrop-blur-2xl"
+        className="sticky top-0 z-50 border-b border-border/70 bg-background/94 backdrop-blur-2xl"
       >
         <div className="mx-auto grid min-h-[4.75rem] max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6">
           <Link

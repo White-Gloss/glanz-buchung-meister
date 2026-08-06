@@ -72,7 +72,7 @@ function QualityPage() {
             </nav>
             <p className="eyebrow mt-10">Unser Qualitätsanspruch</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">
-              Sorgfalt ist kein Extra.
+              Sorgfalt ist kein Extra.{" "}
               <span className="text-chrome block">Sie ist der Standard.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
