@@ -60,3 +60,10 @@ Der Produktionsstart erfolgt aus dem erzeugten Build:
 ```sh
 node .output/server/index.mjs
 ```
+
+## Deployment
+
+Die Website wird bei Hostinger über die Git-Bereitstellung im hPanel
+ausgerollt. Build- und Startbefehle, die Aufteilung der Umgebungsvariablen in
+öffentliche und geheime Werte sowie die Einrichtung des automatischen
+Deployments stehen in [`docs/deployment.md`](docs/deployment.md).
