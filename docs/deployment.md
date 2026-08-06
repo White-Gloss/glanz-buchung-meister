@@ -11,14 +11,14 @@ schlimmer als keine. Die Werte unten sind das, was Sie dort eintragen.
 
 ## Kurzfassung
 
-| Was                  | Wert                                    |
-| -------------------- | --------------------------------------- |
-| Branch               | `main`                                  |
-| Node-Version         | `20.19` oder neuer (empfohlen: 22)      |
-| Installationsbefehl  | `npm ci`                                |
-| Build-Befehl         | `npm run build`                         |
-| Startdatei           | `.output/server/index.mjs`              |
-| Startbefehl          | `node .output/server/index.mjs`         |
+| Was                 | Wert                               |
+| ------------------- | ---------------------------------- |
+| Branch              | `main`                             |
+| Node-Version        | `20.19` oder neuer (empfohlen: 22) |
+| Installationsbefehl | `npm ci`                           |
+| Build-Befehl        | `npm run build`                    |
+| Startdatei          | `.output/server/index.mjs`         |
+| Startbefehl         | `node .output/server/index.mjs`    |
 
 ## Ablauf eines Deployments
 
@@ -55,17 +55,58 @@ sichtbar sind:
 
 Diese Werte dürfen **niemals** in `.env` oder sonst ins Repository:
 
-| Variable                                       | Wofür                                       |
-| ---------------------------------------------- | ------------------------------------------- |
-| `META_PIXEL_ID`                                | Conversions API, serverseitig               |
-| `META_CAPI_ACCESS_TOKEN`                       | Zugriffstoken der Conversions API           |
-| `RESEND_API_KEY`                               | E-Mail-Versand                              |
-| `SUPABASE_SERVICE_ROLE_KEY`                    | optional, serverseitige Vollzugriffe        |
-| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung            |
+| Variable                                            | Wofür                                     |
+| --------------------------------------------------- | ----------------------------------------- |
+| `META_PIXEL_ID`                                     | Conversions API, serverseitig             |
+| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Conversions API         |
+| `RESEND_API_KEY`                                    | E-Mail-Versand                            |
+| `MAIL_FROM`                                         | Absender der Kundenmails                  |
+| `MAIL_TO_OWNER`                                     | Zieladresse der internen Benachrichtigung |
+| `SUPABASE_SERVICE_ROLE_KEY`                         | optional, serverseitige Vollzugriffe      |
+| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung               |
 
 Ein Token mit `VITE_`-Präfix zu setzen würde es in den öffentlichen
 Browser-Dateien veröffentlichen. Deshalb heißen die serverseitigen Variablen
 bewusst ohne dieses Präfix.
+
+### E-Mail-Versand einrichten (Resend)
+
+Ohne `RESEND_API_KEY` und `MAIL_FROM` verschickt die Seite keine einzige
+Mail — weder die Eingangsbestätigung noch die Terminbestätigung. Der Server
+protokolliert dann nur `RESEND_API_KEY oder MAIL_FROM fehlt`; Buchungen
+werden trotzdem gespeichert.
+
+1. Auf <https://resend.com> ein Konto anlegen.
+2. **Domains → Add Domain** → `whitegloss.de` eintragen. Resend zeigt
+   danach drei bis vier DNS-Einträge an (DKIM als `TXT`, ein `MX` und ein
+   `TXT` für den Rückkanal, optional DMARC).
+3. Diese Einträge im Hostinger-hPanel unter **Domains → DNS-Zonenverwaltung**
+   anlegen — Typ, Name und Wert genau so übernehmen, wie Resend sie zeigt.
+   Bis Resend „Verified" meldet, dauert es meist Minuten, in Einzelfällen
+   bis zu 24 Stunden.
+4. **API Keys → Create API Key**, Berechtigung _Sending access_ genügt. Der
+   Schlüssel beginnt mit `re_` und ist **nur einmal** sichtbar.
+5. Im hPanel unter den Umgebungsvariablen setzen:
+
+   | Variable         | Beispielwert                                    |
+   | ---------------- | ----------------------------------------------- |
+   | `RESEND_API_KEY` | `re_…` (der Schlüssel aus Schritt 4)            |
+   | `MAIL_FROM`      | `White Gloss Detailing <termine@whitegloss.de>` |
+   | `MAIL_TO_OWNER`  | `info@whitegloss.de`                            |
+
+`MAIL_FROM` ist keine Zugangsdatei und kein Postfach, sondern nur die
+Absenderzeile. Die Domain im spitzen Klammernteil **muss** die in Schritt 2
+verifizierte Domain sein — sonst weist Resend den Versand ab. Ein Postfach
+für diese Adresse braucht es nicht; Antworten der Kundschaft landen dort
+allerdings ins Leere, deshalb besser eine Adresse verwenden, die tatsächlich
+existiert.
+
+`MAIL_TO_OWNER` ist optional: ohne diesen Wert geht die interne
+Benachrichtigung an die in `servicesConfig` hinterlegte Firmenadresse.
+
+Solange die Domain nicht verifiziert ist, erlaubt Resend nur den Versand an
+die eigene Registrierungsadresse. Ein Test mit einer Kundenadresse schlägt
+in diesem Zustand also fehl, ohne dass am Code etwas falsch wäre.
 
 ## Automatisches Deployment einrichten
 
