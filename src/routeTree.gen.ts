@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
@@ -23,10 +24,14 @@ import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.ind
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as KalenderTokenRouteImport } from './routes/kalender.$token'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
+import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
+import { Route as RatgeberSlugRouteImport } from './routes/ratgeber.$slug'
 import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
 import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
 import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
 import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
+import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
+import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
@@ -48,6 +53,11 @@ const AuthRoute = AuthRouteImport.update({
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImpressumRoute = ImpressumRouteImport.update({
@@ -99,6 +109,16 @@ const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
   path: '/leistungen/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RatgeberIndexRoute = RatgeberIndexRouteImport.update({
+  id: '/ratgeber/',
+  path: '/ratgeber/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RatgeberSlugRoute = RatgeberSlugRouteImport.update({
+  id: '/ratgeber/$slug',
+  path: '/ratgeber/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -118,6 +138,18 @@ const AuthenticatedAdminAdminIndexRoute =
   AuthenticatedAdminAdminIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
+const AuthenticatedAdminAdminBlogRoute =
+  AuthenticatedAdminAdminBlogRouteImport.update({
+    id: '/blog',
+    path: '/blog',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
+const AuthenticatedAdminAdminFaqsRoute =
+  AuthenticatedAdminAdminFaqsRouteImport.update({
+    id: '/faqs',
+    path: '/faqs',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
 const AuthenticatedAdminAdminGalerieRoute =
@@ -143,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
@@ -150,11 +183,15 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/kalender/$token': typeof KalenderTokenRoute
+  '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
+  '/ratgeber/': typeof RatgeberIndexRoute
   '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
@@ -164,6 +201,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
@@ -171,10 +209,14 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/kalender/$token': typeof KalenderTokenRoute
+  '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
+  '/ratgeber': typeof RatgeberIndexRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
+  '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
@@ -186,6 +228,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
@@ -194,11 +237,15 @@ export interface FileRoutesById {
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/kalender/$token': typeof KalenderTokenRoute
+  '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
+  '/ratgeber/': typeof RatgeberIndexRoute
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
@@ -210,6 +257,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/datenschutz'
+    | '/faq'
     | '/impressum'
     | '/preise'
     | '/qualitaet'
@@ -217,11 +265,15 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/kalender/$token'
+    | '/ratgeber/$slug'
     | '/abholservice/'
     | '/leistungen/'
+    | '/ratgeber/'
     | '/admin'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/admin/blog'
+    | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
@@ -231,6 +283,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/datenschutz'
+    | '/faq'
     | '/impressum'
     | '/preise'
     | '/qualitaet'
@@ -238,10 +291,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/kalender/$token'
+    | '/ratgeber/$slug'
     | '/abholservice'
     | '/leistungen'
+    | '/ratgeber'
     | '/leistungen/$service/$city'
     | '/leistungen/$service'
+    | '/admin/blog'
+    | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
@@ -252,6 +309,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/datenschutz'
+    | '/faq'
     | '/impressum'
     | '/preise'
     | '/qualitaet'
@@ -260,11 +318,15 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin'
     | '/abholservice/$city'
     | '/kalender/$token'
+    | '/ratgeber/$slug'
     | '/abholservice/'
     | '/leistungen/'
+    | '/ratgeber/'
     | '/_authenticated/_admin/admin'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/_authenticated/_admin/admin/blog'
+    | '/_authenticated/_admin/admin/faqs'
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
     | '/_authenticated/_admin/admin/leistungen'
@@ -276,6 +338,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DatenschutzRoute: typeof DatenschutzRoute
+  FaqRoute: typeof FaqRoute
   ImpressumRoute: typeof ImpressumRoute
   PreiseRoute: typeof PreiseRoute
   QualitaetRoute: typeof QualitaetRoute
@@ -283,8 +346,10 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
   KalenderTokenRoute: typeof KalenderTokenRoute
+  RatgeberSlugRoute: typeof RatgeberSlugRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
   LeistungenIndexRoute: typeof LeistungenIndexRoute
+  RatgeberIndexRoute: typeof RatgeberIndexRoute
   LeistungenServiceCityRoute: typeof LeistungenServiceCityRoute
   LeistungenServiceIndexRoute: typeof LeistungenServiceIndexRoute
 }
@@ -317,6 +382,13 @@ declare module '@tanstack/react-router' {
       path: '/datenschutz'
       fullPath: '/datenschutz'
       preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/impressum': {
@@ -389,6 +461,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeistungenIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ratgeber/': {
+      id: '/ratgeber/'
+      path: '/ratgeber'
+      fullPath: '/ratgeber/'
+      preLoaderRoute: typeof RatgeberIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ratgeber/$slug': {
+      id: '/ratgeber/$slug'
+      path: '/ratgeber/$slug'
+      fullPath: '/ratgeber/$slug'
+      preLoaderRoute: typeof RatgeberSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/_admin/admin': {
       id: '/_authenticated/_admin/admin'
       path: '/admin'
@@ -417,6 +503,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/blog': {
+      id: '/_authenticated/_admin/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AuthenticatedAdminAdminBlogRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
+    '/_authenticated/_admin/admin/faqs': {
+      id: '/_authenticated/_admin/admin/faqs'
+      path: '/faqs'
+      fullPath: '/admin/faqs'
+      preLoaderRoute: typeof AuthenticatedAdminAdminFaqsRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/galerie': {
       id: '/_authenticated/_admin/admin/galerie'
       path: '/galerie'
@@ -442,6 +542,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminAdminRouteChildren {
+  AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
+  AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
   AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
@@ -450,6 +552,8 @@ interface AuthenticatedAdminAdminRouteChildren {
 
 const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
   {
+    AuthenticatedAdminAdminBlogRoute: AuthenticatedAdminAdminBlogRoute,
+    AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
     AuthenticatedAdminAdminGalerieRoute: AuthenticatedAdminAdminGalerieRoute,
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
     AuthenticatedAdminAdminLeistungenRoute:
@@ -492,6 +596,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DatenschutzRoute: DatenschutzRoute,
+  FaqRoute: FaqRoute,
   ImpressumRoute: ImpressumRoute,
   PreiseRoute: PreiseRoute,
   QualitaetRoute: QualitaetRoute,
@@ -499,8 +604,10 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
   KalenderTokenRoute: KalenderTokenRoute,
+  RatgeberSlugRoute: RatgeberSlugRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,
   LeistungenIndexRoute: LeistungenIndexRoute,
+  RatgeberIndexRoute: RatgeberIndexRoute,
   LeistungenServiceCityRoute: LeistungenServiceCityRoute,
   LeistungenServiceIndexRoute: LeistungenServiceIndexRoute,
 }

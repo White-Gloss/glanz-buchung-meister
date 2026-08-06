@@ -36,12 +36,19 @@ export function CookieConsentBanner() {
   }, []);
 
   useEffect(() => {
-    if (consent === "granted") loadGoogleAdsTag();
+    if (consent !== "granted") return;
+    loadGoogleAdsTag();
+    // Meta Pixel erst nach der Einwilligung nachladen – gleiche Regel wie
+    // beim Google-Tag. Dynamischer Import, damit der Pixel-Code auf
+    // Seiten ohne Einwilligung gar nicht erst im Bundle landet.
+    void import("@/lib/metaPixel").then((m) => m.loadMetaPixel());
   }, [consent]);
 
   if (!ready || consent !== null) return null;
-  // Ohne konfigurierte Conversion-ID gibt es nichts zu erlauben – kein Banner nötig.
-  if (!import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID) return null;
+  // Ohne konfiguriertes Ziel gibt es nichts zu erlauben – kein Banner nötig.
+  if (!import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID && !import.meta.env.VITE_META_PIXEL_ID) {
+    return null;
+  }
 
   function decide(value: AdsConsent) {
     storeAdsConsent(value);
@@ -57,9 +64,10 @@ export function CookieConsentBanner() {
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p id="cookie-consent-text" className="text-sm leading-6 text-muted-foreground">
-          Mit Ihrer Einwilligung nutzen wir Cookies und ähnliche Technologien von Google Ads, um zu
-          messen, über welche Anzeige eine Terminanfrage zustande kommt. Ohne Einwilligung
-          funktioniert die Buchung unverändert – nur die Anzeigenmessung entfällt. Details in der{" "}
+          Mit Ihrer Einwilligung nutzen wir Cookies und ähnliche Technologien von Google Ads sowie
+          Meta (Facebook und Instagram), um zu messen, über welche Anzeige eine Terminanfrage
+          zustande kommt. Ohne Einwilligung funktionieren Website und Buchung unverändert – nur die
+          Anzeigenmessung entfällt. Details in der{" "}
           <a href="/datenschutz" className="text-primary underline underline-offset-2">
             Datenschutzerklärung
           </a>

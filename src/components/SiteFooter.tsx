@@ -59,6 +59,16 @@ export function SiteFooter() {
               B2B &amp; Flottenkunden
             </Link>
           </p>
+          <p>
+            <Link to="/ratgeber" className={FOOTER_LINK}>
+              Ratgeber
+            </Link>
+          </p>
+          <p>
+            <Link to="/faq" className={FOOTER_LINK}>
+              Häufige Fragen
+            </Link>
+          </p>
         </nav>
 
         <nav aria-label="Leistungen" className="space-y-1">

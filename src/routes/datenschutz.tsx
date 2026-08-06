@@ -134,6 +134,20 @@ function PrivacyPage() {
               unterworfen.
             </p>
             <p>
+              Ebenfalls nur mit Ihrer Einwilligung setzen wir den Meta-Pixel und die Conversions API
+              von Meta Platforms Ireland Limited (Merrion Road, Dublin 4, Irland) ein. Damit messen
+              wir, welche Anzeige auf Facebook oder Instagram zu einem Seitenaufruf oder einer
+              Anfrage geführt hat. Verarbeitet werden dabei Ihre IP-Adresse, Angaben zu Browser und
+              Endgerät, die aufgerufene Seite sowie die Meta-eigenen Cookies <code>_fbp</code> und{" "}
+              <code>_fbc</code>. Die Conversions API meldet dieselben Ereignisse zusätzlich von
+              unserem Server aus; sie ersetzt die Einwilligung nicht, sondern erfolgt ausschließlich
+              nach Ihrer Zustimmung und mit derselben Ereigniskennung, damit ein Ereignis nur einmal
+              gezählt wird. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, §
+              25 Abs. 1 TDDDG. Für die dabei erfolgende gemeinsame Verarbeitung besteht mit Meta
+              eine Vereinbarung über gemeinsame Verantwortlichkeit nach Art. 26 DSGVO; Daten können
+              in die USA übermittelt werden.
+            </p>
+            <p>
               Ihre Entscheidung können Sie jederzeit widerrufen:{" "}
               <button
                 type="button"

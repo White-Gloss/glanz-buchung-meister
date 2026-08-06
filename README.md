@@ -19,7 +19,7 @@ Die lokale Website ist anschließend unter `http://localhost:5000` erreichbar.
 
 ## Umgebungsvariablen
 
-Login, Buchungen, Galerie und dynamische Preise benötigen folgende
+Login, Buchungen, Galerie, Ratgeber und dynamische Preise benötigen folgende
 Umgebungsvariablen:
 
 - `SUPABASE_URL`
@@ -30,9 +30,22 @@ Umgebungsvariablen:
 - optional serverseitig: `SUPABASE_SERVICE_ROLE_KEY`
 - optional für E-Mails: `RESEND_API_KEY`
 
+Für die Anzeigenmessung (jeweils optional — ohne die Variablen bleibt die
+betreffende Anbindung vollständig inaktiv):
+
+- `VITE_GOOGLE_ADS_CONVERSION_ID` und `VITE_GOOGLE_ADS_CONVERSION_LABEL`
+- `VITE_META_PIXEL_ID` — Meta Pixel im Browser
+- `META_PIXEL_ID` und `META_CAPI_ACCESS_TOKEN` — serverseitige Conversions API
+- `META_TEST_EVENT_CODE` — optional, für den Testereignis-Reiter im Events Manager
+
+Google-Tag und Meta-Pixel laden ausschließlich nach erteilter
+Cookie-Einwilligung. Ohne Zustimmung wird weder ein Skript geladen noch ein
+Ereignis gesendet — auch serverseitig nicht.
+
 Zugangsdaten gehören in die lokale `.env` beziehungsweise in die
 Umgebungsvariablen von Hostinger. Geheimnisse dürfen nicht in Git veröffentlicht
-werden.
+werden. `META_CAPI_ACCESS_TOKEN` darf nicht mit `VITE_`-Präfix gesetzt werden,
+sonst landet das Token im öffentlichen Browser-Bundle.
 
 ## Prüfen und bauen
 
@@ -47,3 +60,10 @@ Der Produktionsstart erfolgt aus dem erzeugten Build:
 ```sh
 node .output/server/index.mjs
 ```
+
+## Deployment
+
+Die Website wird bei Hostinger über die Git-Bereitstellung im hPanel
+ausgerollt. Build- und Startbefehle, die Aufteilung der Umgebungsvariablen in
+öffentliche und geheime Werte sowie die Einrichtung des automatischen
+Deployments stehen in [`docs/deployment.md`](docs/deployment.md).

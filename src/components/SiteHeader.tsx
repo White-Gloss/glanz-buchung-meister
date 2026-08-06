@@ -14,8 +14,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { company, features } from "@/lib/servicesConfig";
 
+// Der Innenabstand ist ab 1024px bewusst knapper und wird erst ab 1280px
+// wieder grosszügig: Mit "Ratgeber" und "FAQ" stehen sieben Punkte plus
+// Schaltfläche in der Leiste, die sonst am unteren Ende des Desktop-
+// Bereichs umbrechen würden.
 const NAV_LINK =
-  "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-white/[0.04] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
+  "inline-flex min-h-11 items-center rounded-full px-2.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-white/[0.04] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring xl:px-3.5";
 const ACTIVE_NAV = "bg-white/[0.05] text-foreground";
 const MOBILE_NAV_LINK =
   "flex min-h-12 w-full items-center justify-between rounded-xl px-4 text-sm text-foreground outline-none transition-colors hover:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-ring";
@@ -184,6 +188,22 @@ export function SiteHeader() {
             >
               Abholservice
             </Link>
+            <Link
+              to="/ratgeber"
+              className={NAV_LINK}
+              activeProps={{ className: ACTIVE_NAV }}
+              onClick={closeMenus}
+            >
+              Ratgeber
+            </Link>
+            <Link
+              to="/faq"
+              className={NAV_LINK}
+              activeProps={{ className: ACTIVE_NAV }}
+              onClick={closeMenus}
+            >
+              FAQ
+            </Link>
             <Link to="/" hash="b2b" className={NAV_LINK} onClick={closeMenus}>
               B2B &amp; Flotten
             </Link>
@@ -260,6 +280,12 @@ export function SiteHeader() {
                 </Link>
                 <Link to="/abholservice" className={MOBILE_NAV_LINK} onClick={closeMenus}>
                   Hol- &amp; Bringservice
+                </Link>
+                <Link to="/ratgeber" className={MOBILE_NAV_LINK} onClick={closeMenus}>
+                  Ratgeber
+                </Link>
+                <Link to="/faq" className={MOBILE_NAV_LINK} onClick={closeMenus}>
+                  Häufige Fragen
                 </Link>
                 <Link to="/" hash="b2b" className={MOBILE_NAV_LINK} onClick={closeMenus}>
                   B2B &amp; Flottenkunden

@@ -18,6 +18,8 @@ import {
   Sparkles,
   Users,
   ImageIcon,
+  HelpCircle,
+  FileText,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -280,6 +282,32 @@ function AdminPage() {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Vorher/Nachher-Fotos hochladen — erscheinen auf der Startseite als
                   Referenzgalerie.
+                </p>
+              </Link>
+              <Link
+                to="/admin/faqs"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">FAQs</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Häufige Fragen pflegen und sortieren — erscheinen auf /faq und als FAQ-Rich-Result
+                  bei Google.
+                </p>
+              </Link>
+              <Link
+                to="/admin/blog"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Ratgeber</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Blog-Beiträge schreiben, Bilder hochladen und Meta-Angaben für Google und Social
+                  Media setzen.
                 </p>
               </Link>
             </div>
