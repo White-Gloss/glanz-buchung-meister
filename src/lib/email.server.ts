@@ -334,3 +334,93 @@ export async function sendBookingMails(booking: Booking): Promise<void> {
   if (!customer.sent) console.error(`[mail] Kundenmail fehlgeschlagen: ${customer.reason}`);
   if (!owner.sent) console.error(`[mail] Betriebsmail fehlgeschlagen: ${owner.reason}`);
 }
+
+/* ------------------------------------------------------------------ */
+/* Zustandsmeldungen                                                   */
+/* ------------------------------------------------------------------ */
+
+export type ConditionReportMail = {
+  name: string;
+  email: string;
+  phone: string;
+  vehicle: string;
+  plate: string;
+  conditionText: string;
+  photoCount: number;
+};
+
+/**
+ * Benachrichtigt den Betrieb über eine neue Zustandsmeldung.
+ *
+ * Die Fotos werden BEWUSST NICHT angehängt, sondern nur gezählt. Zwei
+ * Gründe: Acht Bilder zu je 8 MB sprengen jedes Postfach, und die Fotos
+ * liegen absichtlich in einem privaten Speicher — als Mailanhang lägen
+ * sie unverschlüsselt beim Mailanbieter und in jedem weitergeleiteten
+ * Postfach. Die Mail verlinkt deshalb in den Admin-Bereich, wo sie über
+ * kurzlebige signierte Links angezeigt werden.
+ *
+ * Antworten geht direkt an den Interessenten (reply_to).
+ */
+export async function sendConditionReportNotification(
+  report: ConditionReportMail,
+): Promise<MailResult> {
+  const { ownerTo } = config();
+
+  const fotoText = report.photoCount === 1 ? "1 Foto" : `${report.photoCount} Fotos`;
+
+  const zeile = (bezeichnung: string, wert: string) =>
+    `<tr><td style="padding:6px 0;font-size:14px;color:#71717a;">${escapeHtml(bezeichnung)}</td>
+         <td style="padding:6px 0;font-size:14px;text-align:right;">${wert}</td></tr>`;
+
+  const html = layout(
+    `Zustandsmeldung: ${report.name}`,
+    `${escapeHtml(fotoText)} und eine Beschreibung sind eingegangen.`,
+    `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+       ${zeile("Name", escapeHtml(report.name))}
+       ${zeile("E-Mail", `<a href="mailto:${escapeHtml(report.email)}">${escapeHtml(report.email)}</a>`)}
+       ${report.phone ? zeile("Telefon", `<a href="tel:${escapeHtml(report.phone.replace(/\s/g, ""))}">${escapeHtml(report.phone)}</a>`) : ""}
+       ${report.vehicle ? zeile("Fahrzeug", escapeHtml(report.vehicle)) : ""}
+       ${report.plate ? zeile("Kennzeichen", escapeHtml(report.plate)) : ""}
+       ${zeile("Fotos", escapeHtml(fotoText))}
+     </table>
+     <p style="margin:0 0 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#71717a;">
+       Beschreibung des Kunden
+     </p>
+     <p style="margin:0 0 24px;padding:14px 16px;background:#f4f4f5;border-radius:8px;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(
+       report.conditionText,
+     )}</p>
+     <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#71717a;">
+       Die Fotos sind aus Datenschutzgründen nicht angehängt. Sie sind im Admin-Bereich hinterlegt.
+     </p>
+     <p style="margin:0;font-size:14px;">
+       <a href="${company.web}/admin/zustand" style="display:inline-block;background:#18181b;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
+         Meldung mit Fotos ansehen
+       </a>
+     </p>`,
+  );
+
+  const text = [
+    `Neue Zustandsmeldung – ${report.name}`,
+    "",
+    `Name:     ${report.name}`,
+    `E-Mail:   ${report.email}`,
+    ...(report.phone ? [`Telefon:  ${report.phone}`] : []),
+    ...(report.vehicle ? [`Fahrzeug: ${report.vehicle}`] : []),
+    ...(report.plate ? [`Kennz.:   ${report.plate}`] : []),
+    `Fotos:    ${fotoText}`,
+    "",
+    "Beschreibung:",
+    report.conditionText,
+    "",
+    "Die Fotos sind aus Datenschutzgründen nicht angehängt.",
+    `Ansehen: ${company.web}/admin/zustand`,
+  ].join("\n");
+
+  return send({
+    to: ownerTo,
+    subject: `Zustandsmeldung · ${report.name}${report.vehicle ? ` · ${report.vehicle}` : ""}`,
+    html,
+    text,
+    replyTo: report.email,
+  });
+}

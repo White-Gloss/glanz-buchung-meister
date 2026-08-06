@@ -210,6 +210,35 @@ export const submitConditionReport = createServerFn({ method: "POST" })
     );
     if (!row) throw new Error("Die Meldung konnte nicht gespeichert werden.");
 
+    // Benachrichtigung an den Betrieb. Bewusst NACH dem Speichern und in
+    // einem eigenen try/catch: Ist der Mailversand gestört, ist die
+    // Meldung trotzdem sicher in der Datenbank und im Admin-Bereich
+    // sichtbar. Ein Mailfehler darf den Kunden nie eine Fehlermeldung
+    // sehen lassen — dieselbe Regel gilt schon bei den Buchungen.
+    try {
+      const { sendConditionReportNotification, mailConfigured } = await import("./email.server");
+      if (mailConfigured()) {
+        const result = await sendConditionReportNotification({
+          name,
+          email,
+          phone,
+          vehicle,
+          plate,
+          conditionText,
+          photoCount: photoPaths.length,
+        });
+        if (!result.sent) {
+          console.error(`[mail] Zustandsmeldung nicht zugestellt: ${result.reason}`);
+        }
+      } else {
+        console.warn(
+          "[mail] Versand nicht konfiguriert — keine Benachrichtigung zur Zustandsmeldung verschickt.",
+        );
+      }
+    } catch (error) {
+      console.error("[mail] Benachrichtigung zur Zustandsmeldung fehlgeschlagen", error);
+    }
+
     return { ok: true, id: row.id };
   });
 
