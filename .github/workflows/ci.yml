@@ -1,0 +1,59 @@
+# Prueft jeden Pull Request und jeden Push auf main mit denselben
+# Befehlen, die auch lokal in der README stehen. Bisher lief im Repo
+# keinerlei automatische Pruefung — ein Tippfehler im TypeScript waere
+# erst beim Deployment aufgefallen.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Ein laufender Durchgang wird abgebrochen, wenn direkt danach ein
+# weiterer Commit auf denselben Branch kommt. Spart Wartezeit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, Typen und Build
+    runs-on: ubuntu-latest
+    # Der Build ist klein; die Grenze verhindert nur haengende Durchgaenge.
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 20.19 ist laut README das Minimum. 22 ist die aktuelle
+          # LTS-Version und entspricht der lokalen Entwicklungsumgebung.
+          node-version: "22"
+          cache: npm
+
+      # `npm ci` statt `npm install`: installiert exakt die Versionen aus
+      # der Lockfile und schlaegt fehl, wenn Lockfile und package.json
+      # auseinanderlaufen.
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typen pruefen
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      # Das fertige Build als Artefakt ablegen. Damit laesst sich ein
+      # Deployment spaeter aus genau dem geprueften Stand ziehen, statt
+      # auf dem Zielserver neu zu bauen.
+      - name: Build-Ergebnis sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-build-${{ github.sha }}
+          path: .output
+          retention-days: 7
+          if-no-files-found: error
