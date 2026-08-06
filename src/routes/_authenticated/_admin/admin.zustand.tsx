@@ -234,6 +234,13 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
             <time dateTime={report.created_at} className="text-xs text-muted-foreground">
               {formatDateTime(report.created_at)}
             </time>
+            {/* Stammt die Meldung aus dem Buchungsassistenten, gehört sie
+                zu einem konkreten Termin — das gehört sofort ins Auge. */}
+            {report.invoice_number && (
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
+                zur Buchung {report.invoice_number}
+              </span>
+            )}
           </div>
           <h2 className="mt-2 text-sm font-medium text-foreground">
             {report.customer_name}

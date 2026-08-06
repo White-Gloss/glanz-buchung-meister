@@ -44,10 +44,15 @@ export type ConditionReport = {
   admin_note: string;
   created_at: string;
   updated_at: string;
+  booking_id: string | null;
+  /** Rechnungsnummer der zugehörigen Buchung, falls die Meldung aus dem
+   *  Buchungsassistenten stammt. Kommt aus dem Join, nicht aus der Zeile. */
+  invoice_number: string | null;
 };
 
-const SELECT_COLS = `id, customer_name, customer_email, customer_phone, vehicle, plate,
-  condition_text, photo_paths, status, admin_note, created_at, updated_at`;
+const SELECT_COLS = `r.id, r.customer_name, r.customer_email, r.customer_phone, r.vehicle,
+  r.plate, r.condition_text, r.photo_paths, r.status, r.admin_note, r.created_at,
+  r.updated_at, r.booking_id, b.invoice_number`;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -169,6 +174,11 @@ export type ConditionReportInput = {
   plate: string;
   conditionText: string;
   photoPaths: string[];
+  /**
+   * Gesetzt, wenn die Meldung aus dem Buchungsassistenten stammt. Dann
+   * erscheint sie im Admin-Bereich mit Bezug zur jeweiligen Buchung.
+   */
+  bookingId?: string | null;
 };
 
 /**
@@ -183,15 +193,25 @@ export const submitConditionReport = createServerFn({ method: "POST" })
     const phone = normalizeText(data.phone, "Telefonnummer", 40);
     const vehicle = normalizeText(data.vehicle, "Fahrzeug", 120);
     const plate = normalizeText(data.plate, "Kennzeichen", 20);
-    const conditionText = normalizeText(data.conditionText, "Zustandsbeschreibung", 4000, true);
-
-    if (conditionText.length < 20) {
-      throw new Error(
-        "Bitte beschreiben Sie den Zustand etwas ausführlicher (mindestens 20 Zeichen).",
-      );
-    }
-
+    const conditionText = normalizeText(data.conditionText, "Zustandsbeschreibung", 4000);
     const photoPaths = [...new Set(Array.isArray(data.photoPaths) ? data.photoPaths : [])];
+
+    /*
+     * Eine Meldung braucht Substanz — aber nicht zwingend Text: Aus dem
+     * Buchungsassistenten kommen oft nur Fotos, und ein Pflichttext kurz
+     * vor dem Abschluss wäre eine unnötige Hürde. Ohne Fotos ist die
+     * Beschreibung dagegen der ganze Inhalt und muss aussagekräftig sein.
+     */
+    if (photoPaths.length === 0) {
+      if (!conditionText) {
+        throw new Error("Bitte beschreiben Sie den Zustand oder laden Sie Fotos hoch.");
+      }
+      if (conditionText.length < 20) {
+        throw new Error(
+          "Bitte beschreiben Sie den Zustand etwas ausführlicher (mindestens 20 Zeichen).",
+        );
+      }
+    }
     if (photoPaths.length > MAX_PHOTOS) {
       throw new Error(`Es sind höchstens ${MAX_PHOTOS} Fotos möglich.`);
     }
@@ -201,12 +221,15 @@ export const submitConditionReport = createServerFn({ method: "POST" })
       throw new Error("Mindestens ein Foto konnte nicht zugeordnet werden.");
     }
 
+    const bookingId = data.bookingId && UUID_PATTERN.test(data.bookingId) ? data.bookingId : null;
+
     const row = await queryOne<{ id: string }>(
       `INSERT INTO public.condition_reports
-         (customer_name, customer_email, customer_phone, vehicle, plate, condition_text, photo_paths)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (customer_name, customer_email, customer_phone, vehicle, plate, condition_text,
+          photo_paths, booking_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id`,
-      [name, email, phone, vehicle, plate, conditionText, photoPaths],
+      [name, email, phone, vehicle, plate, conditionText, photoPaths, bookingId],
     );
     if (!row) throw new Error("Die Meldung konnte nicht gespeichert werden.");
 
@@ -251,7 +274,10 @@ export const listConditionReports = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<ConditionReport[]> => {
     await assertAdmin(context);
     return query<ConditionReport>(
-      `SELECT ${SELECT_COLS} FROM public.condition_reports ORDER BY created_at DESC`,
+      `SELECT ${SELECT_COLS}
+         FROM public.condition_reports r
+         LEFT JOIN public.bookings b ON b.id = r.booking_id
+        ORDER BY r.created_at DESC`,
     );
   });
 
