@@ -5,7 +5,14 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
 const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+const YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 const STATIC_CACHE_CONTROL = `public, max-age=${WEEK_IN_SECONDS}`;
+// Vite gibt Build-Chunks und Assets stets mit einem Inhalts-Hash im
+// Dateinamen aus. Ändert sich der Inhalt, ändert sich der Hash – die URL
+// wird also nie wiederverwendet. Deshalb darf der Browser sie dauerhaft
+// zwischenspeichern (immutable), was bei wiederkehrenden Besuchern und nach
+// Klicks auf andere Seiten die Netzwerklast komplett eliminiert.
+const IMMUTABLE_CACHE_CONTROL = `public, max-age=${YEAR_IN_SECONDS}, immutable`;
 
 export default defineConfig(({ command }) => ({
   plugins: [
@@ -26,6 +33,9 @@ export default defineConfig(({ command }) => ({
             preset: "node-server",
             compressPublicAssets: { gzip: true, brotli: true },
             routeRules: {
+              // Vite-Build-Chunks (JS, CSS, Fonts) – immer mit Hash im Namen,
+              // daher sicher für dauerhaftes Browser-Caching geeignet.
+              "/_build/**": { headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
               "/wgd-logo-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon.ico": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
