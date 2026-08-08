@@ -9,6 +9,8 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import bebasNeue400 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
+import barlow400 from "@fontsource/barlow/files/barlow-latin-400-normal.woff2?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
@@ -146,6 +148,23 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      // Kritische Schriftarten vorladen, damit der Browser sie parallel
+      // zum CSS-Download anfordert – verkürzt die sichtbare Wartezeit auf
+      // Text (FCP) und reduziert den Flash of Unstyled Text (FOUT).
+      {
+        rel: "preload",
+        as: "font",
+        href: bebasNeue400,
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        as: "font",
+        href: barlow400,
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "any" },
       { rel: "icon", href: "/favicon-48.png", type: "image/png", sizes: "48x48" },
