@@ -79,13 +79,14 @@ function parseBookingPayload(value: unknown): Row {
     if (isRowLike(value)) return value;
     throw new Error("Buchung konnte nicht gelesen werden.");
   }
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(value);
-    if (!isRowLike(parsed)) throw new Error("Ungültiges Buchungsformat");
-    return parsed;
+    parsed = JSON.parse(value);
   } catch {
     throw new Error("Buchung konnte nicht gelesen werden.");
   }
+  if (!isRowLike(parsed)) throw new Error("Buchung konnte nicht gelesen werden.");
+  return parsed;
 }
 
 function toBooking(row: Row): Booking {
