@@ -75,7 +75,7 @@ export async function generateInvoicePdf(booking: Booking) {
   const meta: [string, string][] = [
     ["Rechnungsnummer", booking.invoiceNumber],
     ["Rechnungsdatum", deDate(booking.createdAt)],
-    ["Leistungsdatum", `${deDate(booking.date)}, ${booking.time} Uhr`],
+    ["Leistungsdatum", deDate(booking.date)],
     ["Kundennummer", booking.id.slice(0, 8).toUpperCase()],
   ];
   meta.forEach(([k, v], i) => {

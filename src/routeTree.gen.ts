@@ -23,6 +23,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
+import { Route as AngebotTokenRouteImport } from './routes/angebot.$token'
 import { Route as KalenderTokenRouteImport } from './routes/kalender.$token'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
@@ -104,6 +105,11 @@ const AbholserviceIndexRoute = AbholserviceIndexRouteImport.update({
 const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
   id: '/abholservice/$city',
   path: '/abholservice/$city',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AngebotTokenRoute = AngebotTokenRouteImport.update({
+  id: '/angebot/$token',
+  path: '/angebot/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KalenderTokenRoute = KalenderTokenRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/angebot/$token': typeof AngebotTokenRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/angebot/$token': typeof AngebotTokenRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
+  '/angebot/$token': typeof AngebotTokenRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
+    | '/angebot/$token'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/abholservice/$city'
+    | '/angebot/$token'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/_admin'
     | '/abholservice/$city'
+    | '/angebot/$token'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -371,6 +383,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
+  AngebotTokenRoute: typeof AngebotTokenRoute
   KalenderTokenRoute: typeof KalenderTokenRoute
   RatgeberSlugRoute: typeof RatgeberSlugRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       path: '/abholservice/$city'
       fullPath: '/abholservice/$city'
       preLoaderRoute: typeof AbholserviceCityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/angebot/$token': {
+      id: '/angebot/$token'
+      path: '/angebot/$token'
+      fullPath: '/angebot/$token'
+      preLoaderRoute: typeof AngebotTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kalender/$token': {
@@ -646,6 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
+  AngebotTokenRoute: AngebotTokenRoute,
   KalenderTokenRoute: KalenderTokenRoute,
   RatgeberSlugRoute: RatgeberSlugRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,

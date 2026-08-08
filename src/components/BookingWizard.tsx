@@ -35,16 +35,23 @@ import {
   pickupPricing,
   pickupTierSummary,
   servicePackages,
-  timeSlots,
   vatNotice,
   vatNoticeShort,
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
-import { calcLineItems, calcTotals, type Booking } from "@/lib/bookings";
+import {
+  calcLineItems,
+  calcTotals,
+  contactChannels,
+  MAX_BOOKINGS_PER_DAY,
+  TIME_NOTICE,
+  type Booking,
+  type ContactChannel,
+} from "@/lib/bookings";
 import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 
-import { createBooking, getBookedSlots } from "@/lib/bookings.functions";
+import { createBooking, getDayLoad } from "@/lib/bookings.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 /** Die entfernungsabhängige Zusatzleistung (Hol- & Bringservice). */
@@ -68,9 +75,12 @@ function toISO(d: Date) {
 function MiniCalendar({
   value,
   onChange,
+  dayLoad,
 }: {
   value: string | null;
   onChange: (iso: string) => void;
+  /** Datum -> belegte Plätze. Ein voller Tag ist nicht mehr wählbar. */
+  dayLoad: Record<string, number>;
 }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -119,7 +129,9 @@ function MiniCalendar({
         {cells.map((date, i) => {
           if (!date) return <span key={`e${i}`} />;
           const iso = toISO(date);
-          const disabled = date < today || date.getDay() === 0;
+          const belegt = dayLoad[iso] ?? 0;
+          const ausgebucht = belegt >= MAX_BOOKINGS_PER_DAY;
+          const disabled = date < today || date.getDay() === 0 || ausgebucht;
           const selected = iso === value;
           return (
             <button
@@ -128,16 +140,18 @@ function MiniCalendar({
               disabled={disabled}
               onClick={() => onChange(iso)}
               aria-pressed={selected}
-              aria-label={new Date(iso).toLocaleDateString("de-DE", {
+              aria-label={`${new Date(iso).toLocaleDateString("de-DE", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
                 year: "numeric",
-              })}
+              })}${ausgebucht ? " – ausgebucht" : ""}`}
               className={[
                 "aspect-square min-h-11 rounded-lg text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0",
                 disabled
-                  ? "cursor-not-allowed text-muted-foreground/35"
+                  ? ausgebucht
+                    ? "cursor-not-allowed text-muted-foreground/35 line-through"
+                    : "cursor-not-allowed text-muted-foreground/35"
                   : "cursor-pointer hover:bg-secondary hover:text-foreground active:scale-95",
                 selected
                   ? "bg-primary font-semibold text-primary-foreground glow-ring"
@@ -163,7 +177,7 @@ export function BookingWizard() {
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [pickupCity, setPickupCity] = useState<string>("");
   const [date, setDate] = useState<string | null>(null);
-  const [time, setTime] = useState<string | null>(null);
+  const [preferredContact, setPreferredContact] = useState<ContactChannel>("E-Mail");
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
   // Fahrzeugzustand: Fotos landen sofort im privaten Speicher, die Pfade
   // werden erst nach erfolgreicher Buchung einer Meldung zugeordnet.
@@ -176,15 +190,15 @@ export function BookingWizard() {
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
-  // Belegte Termine werden erst geladen, wenn der Nutzer in die Nähe des
-  // Buchungsbereichs scrollt. Die Preise liefert bereits der Root-Loader.
-  const [liveBlockedSlots, setLiveBlockedSlots] = useState<Record<string, string[]>>({});
-  const fetchBookedSlots = useServerFn(getBookedSlots);
+  // Auslastung je Tag: ausgebuchte Tage werden im Kalender gesperrt.
+  // Nur eine Anzeigehilfe — verbindlich entscheidet die Datenbank.
+  const [dayLoad, setDayLoad] = useState<Record<string, number>>({});
+  const fetchDayLoad = useServerFn(getDayLoad);
   useEffect(() => {
-    void fetchBookedSlots({})
-      .then(setLiveBlockedSlots)
+    void fetchDayLoad({})
+      .then(setDayLoad)
       .catch(() => undefined);
-  }, [fetchBookedSlots]);
+  }, [fetchDayLoad]);
 
   function updateCustomer(field: CustomerField, value: string) {
     setCustomer((c) => ({ ...c, [field]: value }));
@@ -239,7 +253,7 @@ export function BookingWizard() {
     !!vehicleId,
     !!packageId,
     pickupStepValid,
-    !!date && !!time,
+    !!date,
     // Zustand: freiwillig, also immer passierbar — nur nicht mitten im
     // laufenden Upload.
     !photosUploading,
@@ -251,7 +265,7 @@ export function BookingWizard() {
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    if (!vehicleId || !packageId || !date || !time || submitting) return;
+    if (!vehicleId || !packageId || !date || submitting) return;
     if (!pickupStepValid) {
       setStep(2);
       toast.error("Bitte wählen Sie einen gültigen Abholort für den Hol- & Bringservice.");
@@ -273,12 +287,12 @@ export function BookingWizard() {
           packageId,
           addOnIds,
           date,
-          time,
           name: customer.name.trim(),
           email: customer.email.trim(),
           phone: customer.phone.trim(),
           plate: customer.plate.trim().toUpperCase(),
           pickupCity: pickupSelected ? pickupCity : null,
+          preferredContact,
         },
       });
       /*
@@ -602,57 +616,39 @@ export function BookingWizard() {
             <section>
               <StepHeader
                 title="Wunschtermin wählen"
-                text="Sonntags geschlossen. Belegte Zeitfenster sind deaktiviert."
+                text={`Sonntags geschlossen. Pro Tag vergeben wir höchstens ${MAX_BOOKINGS_PER_DAY} Termine – ausgebuchte Tage sind durchgestrichen.`}
               />
               <div className="grid gap-5 md:grid-cols-2">
-                <MiniCalendar
-                  value={date}
-                  onChange={(iso) => {
-                    setDate(iso);
-                    setTime(null);
-                  }}
-                />
+                <MiniCalendar value={date} onChange={setDate} dayLoad={dayLoad} />
                 <div className="glass rounded-2xl p-5">
                   <p className="label-caps mb-4 flex items-center gap-2 text-muted-foreground">
                     <CalendarIcon className="size-4 text-primary" />
-                    Freie Zeitfenster
+                    Ihr Termin
                   </p>
                   {!date ? (
-                    <p className="text-sm text-muted-foreground">
-                      Bitte wählen Sie zunächst ein Datum aus.
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Bitte wählen Sie ein Datum aus dem Kalender.
                     </p>
                   ) : (
-                    <div
-                      className="grid grid-cols-2 gap-2 sm:grid-cols-3"
-                      role="group"
-                      aria-label="Freie Zeitfenster"
-                    >
-                      {timeSlots.map((slot) => {
-                        const blocked = (liveBlockedSlots[date] ?? []).includes(slot);
-                        const active = time === slot;
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            disabled={blocked}
-                            onClick={() => setTime(slot)}
-                            aria-pressed={active}
-                            aria-label={`${slot} Uhr${blocked ? " – belegt" : ""}`}
-                            className={[
-                              "min-h-11 rounded-xl border py-2.5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
-                              blocked
-                                ? "cursor-not-allowed border-border/50 text-muted-foreground/40 line-through"
-                                : active
-                                  ? "border-primary bg-primary text-primary-foreground glow-ring"
-                                  : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
-                            ].join(" ")}
-                          >
-                            {slot}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <>
+                      <p className="display-card">
+                        {new Date(date).toLocaleDateString("de-DE", { dateStyle: "full" })}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Noch {MAX_BOOKINGS_PER_DAY - (dayLoad[date] ?? 0)} von{" "}
+                        {MAX_BOOKINGS_PER_DAY} Plätzen frei.
+                      </p>
+                    </>
                   )}
+                  {/*
+                    Bewusst keine Uhrzeitauswahl: Wie lange ein Fahrzeug
+                    braucht, zeigt sich erst beim Sichten. Die Zeit für
+                    Bringung und Abholung wird wenige Tage vorher
+                    persönlich abgestimmt.
+                  */}
+                  <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
+                    {TIME_NOTICE}
+                  </p>
                 </div>
               </div>
             </section>
@@ -768,6 +764,39 @@ export function BookingWizard() {
                 </div>
               )}
 
+              {/*
+                Für die Uhrzeit-Absprache wenige Tage vor dem Termin: Auf
+                welchem Weg der Kunde erreicht werden möchte. Spart Anrufe
+                bei Leuten, die lieber schreiben.
+              */}
+              <fieldset className="mt-6 border-t border-border pt-5">
+                <legend className="label-caps mb-1 text-muted-foreground">
+                  Wie dürfen wir Sie erreichen?
+                </legend>
+                <p className="mb-3 text-sm leading-6 text-muted-foreground">{TIME_NOTICE}</p>
+                <div className="flex flex-wrap gap-2">
+                  {contactChannels.map((channel) => {
+                    const active = preferredContact === channel;
+                    return (
+                      <button
+                        key={channel}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setPreferredContact(channel)}
+                        className={[
+                          "min-h-11 rounded-xl border px-5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground glow-ring"
+                            : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
+                        ].join(" ")}
+                      >
+                        {channel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
               <p className="mt-4 text-xs text-muted-foreground">
                 Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
               </p>
@@ -826,11 +855,11 @@ export function BookingWizard() {
                 <p className="text-xs text-muted-foreground">{vatNotice()}</p>
               </div>
             )}
-            {date && time && (
+            {date && (
               <p className="mt-5 rounded-xl bg-secondary/50 px-4 py-3 text-sm">
                 Termin:{" "}
                 <span className="font-medium">
-                  {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}, {time} Uhr
+                  {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}
                 </span>
               </p>
             )}
@@ -923,7 +952,7 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
         <Detail label="Anfragenummer" value={booking.invoiceNumber} />
         <Detail
           label="Leistungsdatum"
-          value={`${new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}, ${booking.time} Uhr`}
+          value={new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}
         />
         <Detail label="Kennzeichen" value={booking.customer.plate} />
         {pickupCityName && <Detail label="Abholort" value={pickupCityName} />}
