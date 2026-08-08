@@ -52,7 +52,9 @@ function AuthPage() {
         if (data.user) navigate({ to: "/admin", replace: true });
         else setChecking(false);
       }),
-    );
+    ).catch(() => {
+      if (active) setChecking(false);
+    });
     return () => {
       active = false;
     };

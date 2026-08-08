@@ -24,6 +24,7 @@ export function storeAdsConsent(value: AdsConsent) {
 }
 
 export function loadGoogleAdsTag() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   const conversionId = import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID;
   if (!conversionId || document.getElementById("google-ads-tag")) return;
 

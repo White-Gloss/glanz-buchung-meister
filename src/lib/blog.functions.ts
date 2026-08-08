@@ -362,7 +362,7 @@ export const createBlogPost = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) {
       if (error.code === "23505") {
-        throw new Error(`Die URL-Kurzform „${row.slug}" ist bereits vergeben.`);
+        throw new Error(`Die URL-Kurzform „${row.slug}“ ist bereits vergeben.`);
       }
       throw new Error(error.message);
     }
@@ -388,7 +388,7 @@ export const updateBlogPost = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) {
       if (error.code === "23505") {
-        throw new Error(`Die URL-Kurzform „${row.slug}" ist bereits vergeben.`);
+        throw new Error(`Die URL-Kurzform „${row.slug}“ ist bereits vergeben.`);
       }
       throw new Error(error.message);
     }

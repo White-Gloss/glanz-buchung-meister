@@ -43,10 +43,15 @@ function CustomersPage() {
   const fetchNotes = useServerFn(listCustomerNotes);
 
   useEffect(() => {
-    void Promise.all([fetchBookings({}), fetchNotes({})]).then(([b, n]) => {
-      setBookings(b);
-      setNotes(new Map((n as NoteRow[]).map((row) => [row.customer_email, row.note])));
-    });
+    void Promise.all([fetchBookings({}), fetchNotes({})])
+      .then(([b, n]) => {
+        setBookings(b);
+        setNotes(new Map((n as NoteRow[]).map((row) => [row.customer_email, row.note])));
+      })
+      .catch((error: unknown) => {
+        setBookings([]);
+        toast.error(diagnoseBackendError(error).description);
+      });
   }, [fetchBookings, fetchNotes]);
 
   const customers = useMemo(() => (bookings ? deriveCustomers(bookings) : []), [bookings]);

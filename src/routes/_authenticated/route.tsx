@@ -30,7 +30,7 @@ function AuthenticatedLayout() {
         if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
       });
       unsubscribe = () => data.subscription.unsubscribe();
-    });
+    }).catch(() => undefined);
     return () => {
       active = false;
       unsubscribe?.();

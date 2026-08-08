@@ -53,6 +53,26 @@ type Row = {
   access_token: string;
 };
 
+function isValidIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() + 1 === month &&
+    parsed.getUTCDate() === day
+  );
+}
+
+function parseBookingPayload(value: unknown): Row {
+  if (typeof value !== "string") return value as Row;
+  try {
+    return JSON.parse(value) as Row;
+  } catch {
+    throw new Error("Buchung konnte nicht gelesen werden.");
+  }
+}
+
 function toBooking(row: Row): Booking {
   return {
     id: row.id,
@@ -154,7 +174,7 @@ function validate(input: BookingInput): BookingInput {
   if (!servicePackages.some((p) => p.id === packageId)) throw new Error("Ungültiges Paket");
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
+  if (!isValidIsoDate(date)) throw new Error("Ungültiges Datum");
   if (name.length < 2) throw new Error("Bitte einen gültigen Namen angeben");
   if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error("Ungültige E-Mail-Adresse");
   if (phone.length < 6) throw new Error("Ungültige Telefonnummer");
@@ -217,10 +237,7 @@ export const createBooking = createServerFn({ method: "POST" })
       ],
     );
     if (!result) throw new Error("Buchung konnte nicht gespeichert werden.");
-    const raw: Row & { booking_date: string } =
-      typeof result.create_booking_public === "string"
-        ? JSON.parse(result.create_booking_public)
-        : (result.create_booking_public as unknown as Row);
+    const raw = parseBookingPayload(result.create_booking_public) as Row & { booking_date: string };
 
     // Die DB-Funktion kann aus Kompatibilitätsgründen einen älteren Row-Shape
     // zurückgeben. Für die neuen Admin-Felder laden wir den Datensatz deshalb
@@ -343,10 +360,7 @@ export const createManualBooking = createServerFn({ method: "POST" })
       ],
     );
     if (!result) throw new Error("Manuelle Buchung konnte nicht gespeichert werden.");
-    const raw =
-      typeof result.create_booking_public === "string"
-        ? (JSON.parse(result.create_booking_public) as Row)
-        : (result.create_booking_public as unknown as Row);
+    const raw = parseBookingPayload(result.create_booking_public);
 
     const row = await withActor(actorEmailOf(context), (db) =>
       db.queryOne<Row>(

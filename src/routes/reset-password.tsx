@@ -50,6 +50,8 @@ function ResetPasswordPage() {
         if (event === "PASSWORD_RECOVERY" || session) setReady(true);
       });
       unsubscribe = () => data.subscription.unsubscribe();
+    }).catch(() => {
+      if (active) setReady(false);
     });
     return () => {
       active = false;
