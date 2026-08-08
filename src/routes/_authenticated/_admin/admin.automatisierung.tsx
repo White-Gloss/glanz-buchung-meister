@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
@@ -12,6 +12,7 @@ import {
   ReceiptText,
   ShieldCheck,
   Workflow,
+  type LucideIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ function AutomationRoute() {
 type StatusTone = "ready" | "pending" | "off";
 
 type SetupCardProps = {
-  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  icon: LucideIcon;
   title: string;
   status: string;
   tone: StatusTone;
