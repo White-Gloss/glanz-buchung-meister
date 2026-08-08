@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
-
 import {
   ArrowLeft,
   ArrowRight,
   Calendar as CalendarIcon,
+  Camera,
   Car,
   CheckCircle2,
   ChevronLeft,
@@ -13,33 +12,22 @@ import {
   MapPin,
   Phone,
   Plus,
+  ShieldCheck,
   Sparkles,
   Truck,
   User,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionPhotoUpload, type UploadedPhoto } from "@/components/ConditionPhotoUpload";
-import { submitConditionReport } from "@/lib/conditionReports.functions";
-import { toast } from "sonner";
-import {
-  addOns,
-  company,
-  depositConfig,
-  currency,
-  getPickupPrice,
-  isPickupIncluded,
-  pickupPricing,
-  pickupTierSummary,
-  servicePackages,
-  vatNotice,
-  vatNoticeShort,
-  vehicleTypes,
-} from "@/lib/servicesConfig";
-import { pickupCitiesByDistance } from "@/lib/pickupLocations";
+import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+import { createBooking, getDayLoad } from "@/lib/bookings.functions";
 import {
   calcLineItems,
   calcTotals,
@@ -49,18 +37,25 @@ import {
   type Booking,
   type ContactChannel,
 } from "@/lib/bookings";
+import { submitConditionReport } from "@/lib/conditionReports.functions";
 import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
+import { pickupCitiesByDistance } from "@/lib/pickupLocations";
+import {
+  addOns,
+  company,
+  currency,
+  depositConfig,
+  getPickupPrice,
+  isPickupIncluded,
+  pickupTierSummary,
+  servicePackages,
+  vatNotice,
+  vatNoticeShort,
+  vehicleTypes,
+} from "@/lib/servicesConfig";
 
-import { createBooking, getDayLoad } from "@/lib/bookings.functions";
-import { useServerFn } from "@tanstack/react-start";
-
-/** Die entfernungsabhängige Zusatzleistung (Hol- & Bringservice). */
-const pickupAddOn = addOns.find((a) => a.distanceBased);
-// „Zustand" steht bewusst kurz vor „Kontakt": Zu diesem Zeitpunkt hat der
-// Kunde Fahrzeug, Paket und Termin bereits gewählt und ist im Ablauf
-// investiert. Der Schritt ist freiwillig und blockiert das Weiterkommen
-// nicht — Fotos sind hilfreich, aber keine Bedingung für eine Anfrage.
-const steps = ["Fahrzeug", "Paket", "Extras", "Termin", "Zustand", "Kontakt"];
+const steps = ["Paket", "Fahrzeug", "Extras", "Fotos", "Wunschtermin", "Anfrage"];
+const pickupAddOn = addOns.find((addOn) => addOn.distanceBased);
 
 const vehicleIcons: Record<string, typeof Car> = {
   kompakt: Car,
@@ -68,8 +63,16 @@ const vehicleIcons: Record<string, typeof Car> = {
   transporter: Truck,
 };
 
-function toISO(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function toISO(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+function formatBookingDate(iso: string) {
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return iso;
+  return new Date(year, month - 1, day).toLocaleDateString("de-DE", { dateStyle: "full" });
 }
 
 function MiniCalendar({
@@ -79,7 +82,6 @@ function MiniCalendar({
 }: {
   value: string | null;
   onChange: (iso: string) => void;
-  /** Datum -> belegte Plätze. Ein voller Tag ist nicht mehr wählbar. */
   dayLoad: Record<string, number>;
 }) {
   const today = new Date();
@@ -87,52 +89,55 @@ function MiniCalendar({
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-  const startOffset = (first.getDay() + 6) % 7; // Montag zuerst
+  const startOffset = (first.getDay() + 6) % 7;
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const cells: (Date | null)[] = [
     ...Array.from({ length: startOffset }, () => null),
     ...Array.from(
       { length: daysInMonth },
-      (_, i) => new Date(cursor.getFullYear(), cursor.getMonth(), i + 1),
+      (_, index) => new Date(cursor.getFullYear(), cursor.getMonth(), index + 1),
     ),
   ];
 
   return (
-    <div className="glass rounded-2xl p-4 sm:p-5">
-      <div className="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+    <div className="mx-auto w-full max-w-xl rounded-2xl border border-border bg-secondary/20 p-4 sm:p-6">
+      <div className="mb-5 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <button
           type="button"
           aria-label="Vorheriger Monat"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="grid size-11 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:size-9"
+          className="grid size-11 place-items-center rounded-xl border border-border bg-background/40 outline-none transition-colors hover:border-primary/50 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ChevronLeft className="size-4" />
         </button>
-        <p className="label-caps truncate text-center text-base">
+        <p className="text-center text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
           {cursor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
         </p>
         <button
           type="button"
           aria-label="Nächster Monat"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="grid size-11 shrink-0 place-items-center rounded-lg border border-border bg-secondary/50 outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:size-9"
+          className="grid size-11 place-items-center rounded-xl border border-border bg-background/40 outline-none transition-colors hover:border-primary/50 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ChevronRight className="size-4" />
         </button>
       </div>
+
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[0.6875rem] uppercase tracking-widest text-muted-foreground">
-        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((d) => (
-          <span key={d}>{d}</span>
+        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((day) => (
+          <span key={day}>{day}</span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1" role="group" aria-label="Verfügbare Termine">
-        {cells.map((date, i) => {
-          if (!date) return <span key={`e${i}`} />;
+
+      <div className="grid grid-cols-7 gap-1" role="group" aria-label="Verfügbare Wunschtermine">
+        {cells.map((date, index) => {
+          if (!date) return <span key={`empty-${index}`} />;
           const iso = toISO(date);
-          const belegt = dayLoad[iso] ?? 0;
-          const ausgebucht = belegt >= MAX_BOOKINGS_PER_DAY;
-          const disabled = date < today || date.getDay() === 0 || ausgebucht;
+          const used = dayLoad[iso] ?? 0;
+          const full = used >= MAX_BOOKINGS_PER_DAY;
+          const disabled = date < today || date.getDay() === 0 || full;
           const selected = iso === value;
+
           return (
             <button
               key={iso}
@@ -140,19 +145,14 @@ function MiniCalendar({
               disabled={disabled}
               onClick={() => onChange(iso)}
               aria-pressed={selected}
-              aria-label={`${new Date(iso).toLocaleDateString("de-DE", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}${ausgebucht ? " – ausgebucht" : ""}`}
+              aria-label={`${formatBookingDate(iso)}${full ? " – ausgebucht" : ""}`}
               className={[
-                "aspect-square min-h-11 rounded-lg text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0",
+                "aspect-square min-h-11 rounded-xl text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
                 disabled
-                  ? ausgebucht
-                    ? "cursor-not-allowed text-muted-foreground/35 line-through"
-                    : "cursor-not-allowed text-muted-foreground/35"
-                  : "cursor-pointer hover:bg-secondary hover:text-foreground active:scale-95",
+                  ? full
+                    ? "cursor-not-allowed text-muted-foreground/30 line-through"
+                    : "cursor-not-allowed text-muted-foreground/30"
+                  : "hover:bg-secondary active:scale-95",
                 selected
                   ? "bg-primary font-semibold text-primary-foreground glow-ring"
                   : "text-foreground/85",
@@ -169,57 +169,53 @@ function MiniCalendar({
 
 export function BookingWizard() {
   const [step, setStep] = useState(0);
-  const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [packageId, setPackageId] = useState<string | null>(null);
-  // Nur die vom Nutzer bewusst gewählten Zusatzleistungen. Paket-inklusive
-  // Leistungen kommen abgeleitet dazu und verschwinden beim Paketwechsel
-  // automatisch wieder – vorher blieben sie kostenpflichtig hängen.
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
-  const [pickupCity, setPickupCity] = useState<string>("");
+  const [pickupCity, setPickupCity] = useState("");
+  const [conditionPhotos, setConditionPhotos] = useState<UploadedPhoto[]>([]);
+  const [conditionNote, setConditionNote] = useState("");
+  const [photosUploading, setPhotosUploading] = useState(false);
   const [date, setDate] = useState<string | null>(null);
   const [preferredContact, setPreferredContact] = useState<ContactChannel>("E-Mail");
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
-  // Fahrzeugzustand: Fotos landen sofort im privaten Speicher, die Pfade
-  // werden erst nach erfolgreicher Buchung einer Meldung zugeordnet.
-  const [conditionPhotos, setConditionPhotos] = useState<UploadedPhoto[]>([]);
-  const [conditionNote, setConditionNote] = useState("");
-  // Verhindert, dass man weiterklickt, während ein Foto noch hochlädt —
-  // der Schritt würde ausgehängt und das Bild ginge verloren.
-  const [photosUploading, setPhotosUploading] = useState(false);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
-  // Auslastung je Tag: ausgebuchte Tage werden im Kalender gesperrt.
-  // Nur eine Anzeigehilfe — verbindlich entscheidet die Datenbank.
   const [dayLoad, setDayLoad] = useState<Record<string, number>>({});
+  const [submitting, setSubmitting] = useState(false);
+
   const fetchDayLoad = useServerFn(getDayLoad);
+  const submitBooking = useServerFn(createBooking);
+  const sendConditionReport = useServerFn(submitConditionReport);
+
   useEffect(() => {
     void fetchDayLoad({})
       .then(setDayLoad)
       .catch(() => undefined);
   }, [fetchDayLoad]);
 
-  function updateCustomer(field: CustomerField, value: string) {
-    setCustomer((c) => ({ ...c, [field]: value }));
-    // Echtzeit-Validierung: Fehler erst nach erster Interaktion anzeigen,
-    // aber sofort wieder entfernen, sobald die Eingabe korrekt ist.
-    setErrors((e) => {
-      const message = validateCustomerField(field, value);
-      if (!message) return { ...e, [field]: undefined };
-      return touched[field] ? { ...e, [field]: message } : e;
+  useEffect(() => {
+    if (step === 0) return;
+    document.getElementById("booking-active-step")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
-  }
+  }, [step]);
 
-  function blurCustomer(field: CustomerField) {
-    setTouched((t) => ({ ...t, [field]: true }));
-    setErrors((e) => ({ ...e, [field]: validateCustomerField(field, customer[field]) }));
-  }
+  const selectedPackage = servicePackages.find((pkg) => pkg.id === packageId) ?? null;
+  const selectedVehicle = vehicleTypes.find((vehicle) => vehicle.id === vehicleId) ?? null;
 
   const includedAddOnIds = useMemo(
     () =>
       packageId
-        ? addOns.filter((a) => a.includedInPackages?.includes(packageId)).map((a) => a.id)
+        ? addOns
+            .filter(
+              (addOn) =>
+                !addOn.distanceBased && addOn.includedInPackages?.includes(packageId),
+            )
+            .map((addOn) => addOn.id)
         : [],
     [packageId],
   );
@@ -229,13 +225,16 @@ export function BookingWizard() {
     [selectedAddOnIds, includedAddOnIds],
   );
 
-  const pickupSelected = !!pickupAddOn && addOnIds.includes(pickupAddOn.id);
-  const pickupCityData = pickupCitiesByDistance.find((c) => c.slug === pickupCity);
+  const pickupSelected = !!pickupAddOn && selectedAddOnIds.includes(pickupAddOn.id);
+  const pickupCityData = pickupCitiesByDistance.find((city) => city.slug === pickupCity);
   const pickupDistanceKm = pickupCityData?.distanceKm ?? null;
   const pickupPrice = pickupDistanceKm === null ? null : getPickupPrice(pickupDistanceKm);
-  const pickupIncluded = pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
-  const pickupOnRequest = pickupSelected && !pickupIncluded && pickupPrice === null;
-  const pickupTierText = pickupTierSummary();
+  const pickupIncluded =
+    pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
+  const pickupOnRequest =
+    pickupSelected && !!pickupCityData && !pickupIncluded && pickupPrice === null;
+  const pickupStepValid =
+    !pickupSelected || (!!pickupCityData && (pickupIncluded || pickupPrice !== null));
 
   const items = useMemo(
     () =>
@@ -246,33 +245,48 @@ export function BookingWizard() {
   );
   const totals = calcTotals(items);
 
-  // Schritt "Extras": Ohne gültigen Abholort lässt sich der Staffelpreis nicht bestimmen.
-  const pickupStepValid = !pickupSelected || (!!pickupCityData && !pickupOnRequest);
-
   const canContinue = [
-    !!vehicleId,
     !!packageId,
+    !!vehicleId,
     pickupStepValid,
+    conditionPhotos.length > 0 && !photosUploading,
     !!date,
-    // Zustand: mindestens eine Aufnahme ist Pflicht, und während ein
-    // Upload läuft darf nicht weitergeklickt werden — der Schritt würde
-    // ausgehängt und die Datei ginge verloren. Beides meldet
-    // ConditionPhotoUpload über dieselbe Rückmeldung.
-    !photosUploading,
     Object.keys(validateCustomer(customer)).length === 0 && pickupStepValid,
   ][step];
 
-  const submitBooking = useServerFn(createBooking);
-  const sendConditionReport = useServerFn(submitConditionReport);
-  const [submitting, setSubmitting] = useState(false);
+  function updateCustomer(field: CustomerField, value: string) {
+    setCustomer((current) => ({ ...current, [field]: value }));
+    setErrors((current) => {
+      const message = validateCustomerField(field, value);
+      if (!message) return { ...current, [field]: undefined };
+      return touched[field] ? { ...current, [field]: message } : current;
+    });
+  }
+
+  function blurCustomer(field: CustomerField) {
+    setTouched((current) => ({ ...current, [field]: true }));
+    setErrors((current) => ({
+      ...current,
+      [field]: validateCustomerField(field, customer[field]),
+    }));
+  }
+
+  function toggleAddOn(id: string, distanceBased = false) {
+    setSelectedAddOnIds((current) => {
+      const active = current.includes(id);
+      if (active && distanceBased) setPickupCity("");
+      return active ? current.filter((item) => item !== id) : [...current, id];
+    });
+  }
 
   async function submit() {
     if (!vehicleId || !packageId || !date || submitting) return;
     if (!pickupStepValid) {
       setStep(2);
-      toast.error("Bitte wählen Sie einen gültigen Abholort für den Hol- & Bringservice.");
+      toast.error("Bitte wählen Sie einen gültigen Abholort.");
       return;
     }
+
     const fieldErrors = validateCustomer(customer);
     if (Object.keys(fieldErrors).length > 0) {
       setTouched({ name: true, email: true, phone: true, plate: true });
@@ -280,8 +294,16 @@ export function BookingWizard() {
       toast.error("Bitte korrigieren Sie die markierten Felder.");
       return;
     }
+
+    if (conditionPhotos.length === 0 || photosUploading) {
+      setStep(3);
+      toast.error("Bitte laden Sie mindestens ein Fahrzeugfoto hoch.");
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
+
     try {
       const booking = await submitBooking({
         data: {
@@ -297,34 +319,26 @@ export function BookingWizard() {
           preferredContact,
         },
       });
-      /*
-       * Fahrzeugzustand nachreichen, falls der Kunde etwas hinterlegt hat.
-       * Bewusst NACH der Buchung und in einem eigenen try/catch: Die
-       * Terminanfrage ist der Kern des Vorgangs und darf nicht daran
-       * scheitern, dass eine Zusatzinformation nicht durchkommt. Der
-       * Kunde sieht in dem Fall trotzdem seine bestätigte Buchung.
-       */
-      if (conditionPhotos.length > 0 || conditionNote.trim()) {
-        try {
-          await sendConditionReport({
-            data: {
-              name: customer.name.trim(),
-              email: customer.email.trim(),
-              phone: customer.phone.trim(),
-              vehicle: vehicleTypes.find((v) => v.id === vehicleId)?.name ?? "",
-              plate: customer.plate.trim().toUpperCase(),
-              conditionText: conditionNote.trim(),
-              photoPaths: conditionPhotos.map((photo) => photo.path),
-              bookingId: booking.id,
-            },
-          });
-        } catch (error) {
-          console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
-        }
+
+      try {
+        await sendConditionReport({
+          data: {
+            name: customer.name.trim(),
+            email: customer.email.trim(),
+            phone: customer.phone.trim(),
+            vehicle: selectedVehicle?.name ?? "",
+            plate: customer.plate.trim().toUpperCase(),
+            conditionText: conditionNote.trim(),
+            photoPaths: conditionPhotos.map((photo) => photo.path),
+            bookingId: booking.id,
+          },
+        });
+      } catch (error) {
+        console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
       }
 
       setConfirmed(booking);
-      toast.success("Buchungsanfrage übermittelt – wir bestätigen den Termin in Kürze");
+      toast.success("Anfrage gesendet – White Gloss prüft jetzt Ihren Wunschtermin.");
     } catch (error) {
       const info = diagnoseBackendError(error);
       setSubmitError(info);
@@ -345,75 +359,79 @@ export function BookingWizard() {
 
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="glass rounded-3xl p-5 sm:p-8">
-          {/* Fortschritt */}
-          <ol
-            className="mb-8 flex items-center gap-1.5 overflow-x-auto pb-1"
-            aria-label={`Buchungsfortschritt: Schritt ${step + 1} von ${steps.length}`}
-          >
-            {steps.map((s, i) => (
-              <li
-                key={s}
-                className="flex min-w-0 flex-1 items-center gap-1.5"
-                aria-current={i === step ? "step" : undefined}
-              >
-                <span
-                  className={[
-                    "flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                    i === step
-                      ? "bg-primary text-primary-foreground"
-                      : i < step
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground",
-                  ].join(" ")}
-                >
-                  <span className="tabular-nums opacity-70">{i + 1}</span>
-                  <span className="hidden sm:inline">{s}</span>
-                  <span className="sr-only">
-                    {s}
-                    {i === step ? " (aktueller Schritt)" : i < step ? " (abgeschlossen)" : ""}
-                  </span>
-                </span>
-                {i < steps.length - 1 && <span className="h-px flex-1 bg-border" />}
-              </li>
-            ))}
-          </ol>
+      <div id="booking-active-step" className="mx-auto w-full max-w-4xl scroll-mt-28">
+        <div className="mb-5 px-1 sm:mb-7">
+          <div className="mb-3 flex items-center justify-between gap-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            <span>Schritt {step + 1} von {steps.length}</span>
+            <span className="font-semibold text-foreground">{steps[step]}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-500"
+              style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+        </div>
 
+        <div className="glass rounded-3xl p-5 sm:p-8 lg:p-10">
           {step === 0 && (
             <section>
               <StepHeader
-                title="Welches Fahrzeug fahren Sie?"
-                text="Die Fahrzeugklasse bestimmt Aufwand und Materialeinsatz."
+                eyebrow="1 · Leistung"
+                title="Welches Paket passt zu Ihrem Fahrzeug?"
+                text="Wählen Sie zuerst nur das gewünschte Ergebnis. Fahrzeuggröße, Extras und Fotos kommen danach – Schritt für Schritt."
               />
-              <div className="grid gap-4 sm:grid-cols-3">
-                {vehicleTypes.map((v) => {
-                  const Icon = vehicleIcons[v.id] ?? Car;
-                  const active = vehicleId === v.id;
+
+              <div className="mx-auto grid max-w-3xl gap-4">
+                {servicePackages.map((pkg) => {
+                  const active = packageId === pkg.id;
                   return (
                     <button
-                      key={v.id}
+                      key={pkg.id}
                       type="button"
-                      onClick={() => setVehicleId(v.id)}
+                      onClick={() => setPackageId(pkg.id)}
                       aria-pressed={active}
                       className={[
-                        "group rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
+                        "relative rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring sm:p-6",
                         active
                           ? "border-primary bg-primary/10 glow-ring"
-                          : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-secondary/60",
+                          : "border-border bg-secondary/25 hover:border-primary/50 hover:bg-secondary/45",
                       ].join(" ")}
                     >
-                      <Icon
-                        className={[
-                          "mb-4 size-7 transition-transform duration-300 group-hover:scale-110",
-                          active ? "text-primary" : "text-muted-foreground",
-                        ].join(" ")}
-                      />
-                      <p className="display-card">{v.name}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
-                      <p className="mt-3 text-xs uppercase tracking-widest text-primary">
-                        Preis passend zur Fahrzeuggröße
-                      </p>
+                      {pkg.highlight && (
+                        <span className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-[0.625rem] font-semibold uppercase tracking-wider text-primary-foreground">
+                          Beliebt
+                        </span>
+                      )}
+                      <div className="pr-20">
+                        <p className="display-card">{pkg.name}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{pkg.tagline}</p>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">ab</p>
+                          <p className="display-price text-primary">{currency(pkg.basePrice)}</p>
+                          <p className="text-xs text-muted-foreground">{vatNoticeShort()} · {pkg.duration}</p>
+                        </div>
+                        {active && (
+                          <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+                            <CheckCircle2 className="size-4" /> Ausgewählt
+                          </span>
+                        )}
+                      </div>
+                      <ul className="mt-5 grid gap-2 text-sm text-foreground/80 sm:grid-cols-2">
+                        {pkg.features.slice(0, 4).map((feature) => (
+                          <li key={feature} className="flex gap-2">
+                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {pkg.features.length > 4 && (
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          + {pkg.features.length - 4} weitere enthaltene Leistungen
+                        </p>
+                      )}
                     </button>
                   );
                 })}
@@ -424,49 +442,35 @@ export function BookingWizard() {
           {step === 1 && (
             <section>
               <StepHeader
-                title="Wählen Sie Ihr Paket"
-                text="Alle Pakete werden ausschließlich in Handarbeit ausgeführt."
+                eyebrow="2 · Fahrzeug"
+                title="Welche Fahrzeuggröße bringen Sie?"
+                text={`Gewähltes Paket: ${selectedPackage?.name ?? "–"}. Jetzt wird der passende Endpreis für Ihre Fahrzeugklasse berechnet.`}
               />
-              <div className="grid gap-4 md:grid-cols-3">
-                {servicePackages.map((p) => {
-                  const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                  const active = packageId === p.id;
+
+              <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-3">
+                {vehicleTypes.map((vehicle) => {
+                  const Icon = vehicleIcons[vehicle.id] ?? Car;
+                  const active = vehicleId === vehicle.id;
+                  const price = selectedPackage
+                    ? Math.round(selectedPackage.basePrice * vehicle.factor)
+                    : 0;
                   return (
                     <button
-                      key={p.id}
+                      key={vehicle.id}
                       type="button"
-                      onClick={() => setPackageId(p.id)}
+                      onClick={() => setVehicleId(vehicle.id)}
                       aria-pressed={active}
                       className={[
-                        "relative flex flex-col rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
+                        "rounded-2xl border p-5 text-center outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring",
                         active
                           ? "border-primary bg-primary/10 glow-ring"
-                          : "border-border bg-secondary/30 hover:border-primary/50",
+                          : "border-border bg-secondary/25 hover:border-primary/50 hover:bg-secondary/45",
                       ].join(" ")}
                     >
-                      {p.highlight && (
-                        <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider text-primary-foreground">
-                          Beliebt
-                        </span>
-                      )}
-                      <p className="display-card">{p.name}</p>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        {p.tagline}
-                      </p>
-                      <p className="display-price mt-4">
-                        {currency(Math.round(p.basePrice * factor))}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Endpreis für diese Fahrzeugklasse · {vatNoticeShort()} · {p.duration}
-                      </p>
-                      <ul className="mt-4 space-y-2 text-sm text-foreground/80">
-                        {p.features.map((f) => (
-                          <li key={f} className="flex gap-2">
-                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <Icon className={`mx-auto size-7 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                      <p className="mt-4 font-semibold">{vehicle.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{vehicle.description}</p>
+                      <p className="mt-4 display-price text-lg text-primary">{currency(price)}</p>
                     </button>
                   );
                 })}
@@ -477,52 +481,56 @@ export function BookingWizard() {
           {step === 2 && (
             <section>
               <StepHeader
-                title="Zusatzleistungen"
-                text="Optional – jederzeit kombinierbar mit Ihrem Paket."
+                eyebrow="3 · Zusatzleistungen"
+                title="Möchten Sie etwas ergänzen?"
+                text="Extras sind optional. Wählen Sie nur, was Sie wirklich brauchen – der Preis aktualisiert sich direkt."
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                {addOns.map((a) => {
-                  const factor = vehicleTypes.find((v) => v.id === vehicleId)?.factor ?? 1;
-                  const included = includedAddOnIds.includes(a.id);
-                  const active = addOnIds.includes(a.id);
+
+              <div className="mx-auto max-w-2xl space-y-3">
+                {addOns.map((addOn) => {
+                  const included = packageId
+                    ? (addOn.includedInPackages?.includes(packageId) ?? false)
+                    : false;
+                  const fixedIncluded = included && !addOn.distanceBased;
+                  const active = fixedIncluded || selectedAddOnIds.includes(addOn.id);
+                  const factor = selectedVehicle?.factor ?? 1;
+
+                  let priceLabel = `+${currency(Math.round(addOn.price * (addOn.flatPrice ? 1 : factor)))}`;
+                  if (fixedIncluded) priceLabel = "Inklusive";
+                  if (addOn.distanceBased) {
+                    if (!active && included) priceLabel = "Im Paket inklusive";
+                    else if (!active) priceLabel = "nach Entfernung";
+                    else if (pickupDistanceKm === null) priceLabel = included ? "Inklusive" : "Ort wählen";
+                    else if (pickupIncluded) priceLabel = "Inklusive";
+                    else if (pickupPrice === null) priceLabel = "auf Anfrage";
+                    else if (pickupPrice === 0) priceLabel = "Kostenlos";
+                    else priceLabel = `+${currency(pickupPrice)}`;
+                  }
+
                   return (
                     <button
-                      key={a.id}
+                      key={addOn.id}
                       type="button"
-                      disabled={included}
-                      onClick={() =>
-                        setSelectedAddOnIds((prev) =>
-                          prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id],
-                        )
-                      }
+                      disabled={fixedIncluded}
+                      onClick={() => toggleAddOn(addOn.id, !!addOn.distanceBased)}
                       aria-pressed={active}
                       className={[
-                        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+                        "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border p-4 text-left outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring sm:p-5",
                         active
                           ? "border-primary bg-primary/10"
-                          : "border-border bg-secondary/30 hover:border-primary/40",
-                        included ? "cursor-default" : "",
+                          : "border-border bg-secondary/25 hover:border-primary/40 hover:bg-secondary/45",
+                        fixedIncluded ? "cursor-default" : "",
                       ].join(" ")}
                     >
                       <div className="min-w-0">
-                        <p className="font-medium">{a.name}</p>
-                        <p className="text-sm text-muted-foreground">{a.description}</p>
+                        <p className="font-semibold">{addOn.name}</p>
+                        <p className="mt-1 text-sm leading-5 text-muted-foreground">{addOn.description}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
-                        <span className="display-price text-base">
-                          {included
-                            ? "Inklusive"
-                            : a.distanceBased
-                              ? pickupPrice === null
-                                ? "nach Entfernung"
-                                : pickupPrice === 0
-                                  ? "Kostenlos"
-                                  : `+${currency(pickupPrice)}`
-                              : `+${currency(Math.round(a.price * (a.flatPrice ? 1 : factor)))}`}
-                        </span>
+                        <span className="text-sm font-semibold text-primary">{priceLabel}</span>
                         <span
                           className={[
-                            "grid size-7 place-items-center rounded-md border transition-colors",
+                            "grid size-8 place-items-center rounded-lg border",
                             active ? "border-primary bg-primary" : "border-border",
                           ].join(" ")}
                         >
@@ -536,122 +544,107 @@ export function BookingWizard() {
                     </button>
                   );
                 })}
-              </div>
 
-              {pickupSelected && pickupAddOn && (
-                <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                  <Label
-                    htmlFor="pickup-city"
-                    className="text-xs uppercase tracking-widest text-muted-foreground"
-                  >
-                    Abholort
-                  </Label>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Der Preis für Abholung und Rückgabe richtet sich nach der Entfernung zu unserer
-                    Werkstatt: {pickupTierText}.
-                  </p>
-                  <div className="relative mt-3">
-                    <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      id="pickup-city"
-                      value={pickupCity}
-                      onChange={(e) => setPickupCity(e.target.value)}
-                      aria-invalid={!pickupStepValid ? true : undefined}
-                      aria-describedby={!pickupStepValid ? "pickup-city-error" : undefined}
-                      className="h-11 w-full rounded-md border border-input bg-secondary/40 pl-9 pr-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">Bitte Ort wählen …</option>
-                      {pickupCitiesByDistance.map((city) => {
-                        const price = getPickupPrice(city.distanceKm);
-                        const free = isPickupIncluded(packageId, city.distanceKm);
-                        const suffix = free
-                          ? "im Paket inklusive"
-                          : price === null
-                            ? "auf Anfrage"
-                            : price === 0
-                              ? "kostenlos"
-                              : currency(price);
-                        return (
-                          <option key={city.slug} value={city.slug}>
-                            {city.name} · {city.distanceKm} km · {suffix}
-                          </option>
-                        );
-                      })}
-                    </select>
+                {pickupSelected && pickupAddOn && (
+                  <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+                    <Label htmlFor="pickup-city" className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Abholort
+                    </Label>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {pickupTierSummary()}.
+                    </p>
+                    <div className="relative mt-3">
+                      <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <select
+                        id="pickup-city"
+                        value={pickupCity}
+                        onChange={(event) => setPickupCity(event.target.value)}
+                        aria-invalid={!pickupStepValid ? true : undefined}
+                        className="h-12 w-full rounded-xl border border-input bg-secondary/40 pl-9 pr-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Bitte Ort wählen …</option>
+                        {pickupCitiesByDistance.map((city) => {
+                          const price = getPickupPrice(city.distanceKm);
+                          const free = isPickupIncluded(packageId, city.distanceKm);
+                          const suffix = free
+                            ? "im Paket inklusive"
+                            : price === null
+                              ? "auf Anfrage"
+                              : price === 0
+                                ? "kostenlos"
+                                : currency(price);
+                          return (
+                            <option key={city.slug} value={city.slug}>
+                              {city.name} · {city.distanceKm} km · {suffix}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    {pickupOnRequest && (
+                      <p role="alert" className="mt-3 text-sm text-destructive">
+                        Dieser Ort liegt außerhalb unserer festen Preisstaffel. Bitte wählen Sie einen anderen Ort oder kontaktieren Sie uns direkt unter {company.email}.
+                      </p>
+                    )}
                   </div>
+                )}
 
-                  {pickupCityData && pickupIncluded && (
-                    <p className="mt-3 text-sm text-primary">
-                      Im Paket {servicePackages.find((p) => p.id === packageId)?.name} ist die
-                      Abholung in {pickupCityData.name} kostenfrei enthalten.
-                    </p>
-                  )}
-
-                  {pickupOnRequest && (
-                    <p
-                      id="pickup-city-error"
-                      role="alert"
-                      className="mt-3 text-sm text-destructive"
-                    >
-                      {pickupCityData?.name} liegt mit {pickupCityData?.distanceKm} km außerhalb
-                      unserer festen Preisstaffel. Wir kalkulieren die Abholung dorthin gerne
-                      individuell – bitte melden Sie sich unter {company.email} oder wählen Sie
-                      einen anderen Abholort.
-                    </p>
-                  )}
-
-                  {!pickupCityData && (
-                    <p
-                      id="pickup-city-error"
-                      role="alert"
-                      className="mt-3 text-sm text-muted-foreground"
-                    >
-                      Bitte wählen Sie einen Abholort, damit wir den Preis berechnen können.
-                    </p>
-                  )}
-                </div>
-              )}
+                {items.length > 0 && (
+                  <div className="flex items-center justify-between rounded-2xl border border-border bg-background/25 px-5 py-4">
+                    <span className="text-sm text-muted-foreground">Aktueller Gesamtpreis</span>
+                    <span className="display-price text-xl text-primary">{currency(totals.gross)}</span>
+                  </div>
+                )}
+              </div>
             </section>
           )}
 
           {step === 3 && (
             <section>
               <StepHeader
-                title="Wunschtermin wählen"
-                text={`Sonntags geschlossen. Pro Tag vergeben wir höchstens ${MAX_BOOKINGS_PER_DAY} Termine – ausgebuchte Tage sind durchgestrichen.`}
+                eyebrow="4 · Fahrzeugzustand"
+                title="Jetzt die Fotos – danach können wir seriös prüfen"
+                text="Mindestens ein Foto ist erforderlich. Ideal sind Gesamtansichten und Nahaufnahmen von Kratzern, Flecken oder besonders verschmutzten Stellen."
               />
-              <div className="grid gap-5 md:grid-cols-2">
-                <MiniCalendar value={date} onChange={setDate} dayLoad={dayLoad} />
-                <div className="glass rounded-2xl p-5">
-                  <p className="label-caps mb-4 flex items-center gap-2 text-muted-foreground">
-                    <CalendarIcon className="size-4 text-primary" />
-                    Ihr Termin
-                  </p>
-                  {!date ? (
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      Bitte wählen Sie ein Datum aus dem Kalender.
+
+              <div className="mx-auto max-w-2xl">
+                <div className="mb-5 rounded-2xl border border-border bg-secondary/20 p-4 text-sm leading-6 text-muted-foreground">
+                  <div className="flex gap-3">
+                    <Camera className="mt-0.5 size-5 shrink-0 text-primary" />
+                    <p>
+                      Die Aufnahmen sind privat und nur für die Angebotsprüfung im Admin-Bereich sichtbar. Sie helfen dabei, Mehraufwand vor dem Termin zu erkennen.
                     </p>
-                  ) : (
-                    <>
-                      <p className="display-card">
-                        {new Date(date).toLocaleDateString("de-DE", { dateStyle: "full" })}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Noch {MAX_BOOKINGS_PER_DAY - (dayLoad[date] ?? 0)} von{" "}
-                        {MAX_BOOKINGS_PER_DAY} Plätzen frei.
-                      </p>
-                    </>
-                  )}
-                  {/*
-                    Bewusst keine Uhrzeitauswahl: Wie lange ein Fahrzeug
-                    braucht, zeigt sich erst beim Sichten. Die Zeit für
-                    Bringung und Abholung wird wenige Tage vorher
-                    persönlich abgestimmt.
-                  */}
-                  <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
-                    {TIME_NOTICE}
-                  </p>
+                  </div>
                 </div>
+
+                <ConditionPhotoUpload
+                  photos={conditionPhotos}
+                  onChange={setConditionPhotos}
+                  onUploadingChange={setPhotosUploading}
+                  inputId="buchung-zustand-fotos"
+                  hint="Empfohlen: Fahrzeug schräg vorne, schräg hinten und Detailaufnahmen auffälliger Stellen."
+                />
+
+                <div className="mt-6">
+                  <Label htmlFor="buchung-zustand-notiz" className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Kurze Anmerkung (optional)
+                  </Label>
+                  <Textarea
+                    id="buchung-zustand-notiz"
+                    value={conditionNote}
+                    onChange={(event) => setConditionNote(event.target.value)}
+                    rows={4}
+                    maxLength={4000}
+                    placeholder="z. B. Flecken auf den Sitzen, Kratzer an der Motorhaube, Tierhaare im Innenraum …"
+                    className="mt-2 bg-secondary/40"
+                  />
+                </div>
+
+                <p className="mt-4 text-center text-xs text-muted-foreground">
+                  {conditionPhotos.length === 0
+                    ? "Bitte laden Sie mindestens eine Aufnahme hoch, um fortzufahren."
+                    : `${conditionPhotos.length} Aufnahme${conditionPhotos.length === 1 ? "" : "n"} bereit.`}
+                </p>
               </div>
             </section>
           )}
@@ -659,225 +652,197 @@ export function BookingWizard() {
           {step === 4 && (
             <section>
               <StepHeader
-                title="Fahrzeugzustand"
-                text="Bitte laden Sie mindestens eine Aufnahme hoch. Ohne Bild lässt sich der Aufwand nicht seriös einschätzen — mit Bild bekommen Sie ein belastbares Angebot statt einer groben Schätzung."
+                eyebrow="5 · Wunschtermin"
+                title="Welcher Tag wäre für Sie ideal?"
+                text="Sie wählen hier nur Ihren Wunschtermin. White Gloss prüft die Anfrage anschließend und bestätigt den finalen Termin als Admin."
               />
 
-              <div className="mt-6">
-                <ConditionPhotoUpload
-                  photos={conditionPhotos}
-                  onChange={setConditionPhotos}
-                  onUploadingChange={setPhotosUploading}
-                  inputId="buchung-zustand-fotos"
-                  hint="Am hilfreichsten: das ganze Fahrzeug von schräg vorn und hinten, dazu Nahaufnahmen von Stellen, die Sie stören. Die Fotos sind nicht öffentlich sichtbar."
-                />
-              </div>
+              <MiniCalendar value={date} onChange={setDate} dayLoad={dayLoad} />
 
-              <div className="mt-6">
-                <label
-                  htmlFor="buchung-zustand-notiz"
-                  className="text-xs uppercase tracking-widest text-muted-foreground"
-                >
-                  Anmerkungen zum Zustand (optional)
-                </label>
-                <Textarea
-                  id="buchung-zustand-notiz"
-                  value={conditionNote}
-                  onChange={(event) => setConditionNote(event.target.value)}
-                  rows={4}
-                  maxLength={4000}
-                  placeholder="z. B. Kratzer auf der Motorhaube, Flecken auf den Sitzen, Geruch im Innenraum"
-                  className="mt-1.5 bg-secondary/40"
-                />
+              <div className="mx-auto mt-5 max-w-xl rounded-2xl border border-primary/25 bg-primary/5 p-5 text-center">
+                <CalendarIcon className="mx-auto size-5 text-primary" />
+                {date ? (
+                  <>
+                    <p className="mt-2 font-semibold">{formatBookingDate(date)}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Wunschtermin ausgewählt · noch nicht verbindlich bestätigt
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">Bitte wählen Sie einen verfügbaren Tag.</p>
+                )}
+                <p className="mt-4 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
+                  {TIME_NOTICE}
+                </p>
               </div>
-
-              <p className="mt-4 text-xs leading-5 text-muted-foreground">
-                Dieser Schritt ist freiwillig — Sie können ihn einfach überspringen.
-              </p>
             </section>
           )}
 
           {step === 5 && (
             <section>
               <StepHeader
-                title="Ihre Kontaktdaten"
-                text="Wir bestätigen den Termin telefonisch oder per E-Mail."
+                eyebrow="6 · Anfrage senden"
+                title="Noch Ihre Kontaktdaten – dann prüfen wir alles"
+                text="Nach dem Absenden erhalten Sie sofort eine Eingangsbestätigung. Der Termin wird erst durch die anschließende Freigabe von White Gloss verbindlich."
               />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  id="name"
-                  label="Name"
-                  icon={User}
-                  value={customer.name}
-                  placeholder="Max Mustermann"
-                  onChange={(v) => updateCustomer("name", v)}
-                  onBlur={() => blurCustomer("name")}
-                  error={errors.name}
+
+              <div className="mx-auto max-w-2xl">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    id="name"
+                    label="Name"
+                    icon={User}
+                    value={customer.name}
+                    placeholder="Max Mustermann"
+                    onChange={(value) => updateCustomer("name", value)}
+                    onBlur={() => blurCustomer("name")}
+                    error={errors.name}
+                  />
+                  <Field
+                    id="email"
+                    label="E-Mail"
+                    icon={Mail}
+                    type="email"
+                    value={customer.email}
+                    placeholder="max@beispiel.de"
+                    onChange={(value) => updateCustomer("email", value)}
+                    onBlur={() => blurCustomer("email")}
+                    error={errors.email}
+                  />
+                  <Field
+                    id="phone"
+                    label="Telefon"
+                    icon={Phone}
+                    value={customer.phone}
+                    placeholder="+49 176 12345678"
+                    onChange={(value) => updateCustomer("phone", value)}
+                    onBlur={() => blurCustomer("phone")}
+                    error={errors.phone}
+                  />
+                  <Field
+                    id="plate"
+                    label="Kennzeichen"
+                    icon={Car}
+                    value={customer.plate}
+                    placeholder="FDS-WG 26"
+                    onChange={(value) => updateCustomer("plate", value)}
+                    onBlur={() => blurCustomer("plate")}
+                    error={errors.plate}
+                  />
+                </div>
+
+                <fieldset className="mt-6 rounded-2xl border border-border bg-secondary/20 p-5">
+                  <legend className="px-2 text-xs uppercase tracking-widest text-muted-foreground">
+                    Bevorzugter Kontaktweg
+                  </legend>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {contactChannels.map((channel) => {
+                      const active = preferredContact === channel;
+                      return (
+                        <button
+                          key={channel}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setPreferredContact(channel)}
+                          className={[
+                            "min-h-11 rounded-xl border px-5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+                            active
+                              ? "border-primary bg-primary text-primary-foreground glow-ring"
+                              : "border-border bg-background/30 hover:border-primary/50 hover:bg-secondary",
+                          ].join(" ")}
+                        >
+                          {channel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+
+                <ReviewSummary
+                  packageName={selectedPackage?.name ?? "–"}
+                  vehicleName={selectedVehicle?.name ?? "–"}
+                  addOnIds={addOnIds}
+                  date={date}
+                  total={totals.gross}
+                  photoCount={conditionPhotos.length}
                 />
-                <Field
-                  id="email"
-                  label="E-Mail"
-                  icon={Mail}
-                  type="email"
-                  value={customer.email}
-                  placeholder="max@beispiel.de"
-                  onChange={(v) => updateCustomer("email", v)}
-                  onBlur={() => blurCustomer("email")}
-                  error={errors.email}
-                />
-                <Field
-                  id="phone"
-                  label="Telefon"
-                  icon={Phone}
-                  value={customer.phone}
-                  placeholder="+49 176 12345678"
-                  onChange={(v) => updateCustomer("phone", v)}
-                  onBlur={() => blurCustomer("phone")}
-                  error={errors.phone}
-                />
-                <Field
-                  id="plate"
-                  label="Kennzeichen"
-                  icon={Car}
-                  value={customer.plate}
-                  placeholder="BN-WG 1967"
-                  onChange={(v) => updateCustomer("plate", v)}
-                  onBlur={() => blurCustomer("plate")}
-                  error={errors.plate}
-                />
+
+                <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-5">
+                  <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+                    <div>
+                      <p className="font-semibold">Wichtig: Dies ist noch keine Terminbestätigung.</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        White Gloss prüft Fotos, Leistungsumfang, Preis und Wunschtermin. Sie erhalten danach die verbindliche Bestätigung oder ein Gegenangebot mit möglichen Ersatzterminen per E-Mail.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {submitError && (
+                  <div role="alert" className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                    <p className="font-medium">{submitError.title}</p>
+                    <p className="mt-1">{submitError.description}</p>
+                    {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
+                  </div>
+                )}
+
+                <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
+                  Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben und Fahrzeugaufnahmen zur Bearbeitung Ihrer Anfrage zu.
+                </p>
               </div>
-              {submitError && (
-                <div
-                  role="alert"
-                  className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
-                >
-                  <p className="font-medium">{submitError.title}</p>
-                  <p className="mt-1">{submitError.description}</p>
-                  {submitError.missing.length > 0 && (
-                    <p className="mt-2 text-xs">
-                      Fehlende Konfiguration:{" "}
-                      <span className="font-mono">{submitError.missing.join(", ")}</span>
-                    </p>
-                  )}
-                  {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Alternativ erreichen Sie uns per E-Mail unter info@whitegloss.de.
-                  </p>
-                </div>
-              )}
-
-              {/*
-                Für die Uhrzeit-Absprache wenige Tage vor dem Termin: Auf
-                welchem Weg der Kunde erreicht werden möchte. Spart Anrufe
-                bei Leuten, die lieber schreiben.
-              */}
-              <fieldset className="mt-6 border-t border-border pt-5">
-                <legend className="label-caps mb-1 text-muted-foreground">
-                  Wie dürfen wir Sie erreichen?
-                </legend>
-                <p className="mb-3 text-sm leading-6 text-muted-foreground">{TIME_NOTICE}</p>
-                <div className="flex flex-wrap gap-2">
-                  {contactChannels.map((channel) => {
-                    const active = preferredContact === channel;
-                    return (
-                      <button
-                        key={channel}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setPreferredContact(channel)}
-                        className={[
-                          "min-h-11 rounded-xl border px-5 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
-                          active
-                            ? "border-primary bg-primary text-primary-foreground glow-ring"
-                            : "cursor-pointer border-border bg-secondary/40 hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]",
-                        ].join(" ")}
-                      >
-                        {channel}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-
-              <p className="mt-4 text-xs text-muted-foreground">
-                Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten zur Terminabwicklung zu.
-              </p>
             </section>
           )}
 
-          <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
-            <Button
-              variant="ghost"
-              disabled={step === 0}
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-            >
-              <ArrowLeft className="size-4" />
-              Zurück
-            </Button>
+          <div className="mt-8 flex flex-col-reverse items-stretch justify-center gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+            {step > 0 && (
+              <Button
+                variant="ghost"
+                className="sm:min-w-36"
+                onClick={() => setStep((current) => Math.max(0, current - 1))}
+              >
+                <ArrowLeft className="size-4" />
+                Zurück
+              </Button>
+            )}
+
             {step < steps.length - 1 ? (
-              <Button disabled={!canContinue} onClick={() => setStep((s) => s + 1)}>
+              <Button
+                className="sm:min-w-44"
+                disabled={!canContinue}
+                onClick={() => setStep((current) => current + 1)}
+              >
                 Weiter
                 <ArrowRight className="size-4" />
               </Button>
             ) : (
-              <Button disabled={!canContinue} loading={submitting} onClick={submit}>
+              <Button className="sm:min-w-52" disabled={!canContinue || submitting} onClick={submit}>
                 {submitting ? "Wird gesendet …" : "Terminanfrage senden"}
                 {submitting ? null : <CheckCircle2 className="size-4" />}
               </Button>
             )}
           </div>
         </div>
-
-        {/* Live-Preisrechner */}
-        <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Live-Preisübersicht">
-          <div className="glass-strong rounded-3xl p-6" aria-live="polite">
-            <p className="label-caps flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="size-4 text-primary" />
-              Ihre Konfiguration
-            </p>
-            <div className="mt-5 space-y-3 text-sm">
-              {items.length === 0 && (
-                <p className="text-muted-foreground">
-                  Wählen Sie Fahrzeug und Paket, um den Preis zu berechnen.
-                </p>
-              )}
-              {items.map((i) => (
-                <div key={i.label} className="flex items-start justify-between gap-3">
-                  <span className="min-w-0 text-foreground/80">{i.label}</span>
-                  <span className="shrink-0 font-medium tabular-nums">{currency(i.total)}</span>
-                </div>
-              ))}
-            </div>
-            {items.length > 0 && (
-              <div className="mt-5 space-y-2 border-t border-border pt-5 text-sm">
-                <div className="flex items-baseline justify-between pt-2">
-                  <span className="label-caps">Voraussichtlicher Gesamtpreis</span>
-                  <span className="display-price text-primary">{currency(totals.gross)}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{vatNotice()}</p>
-              </div>
-            )}
-            {date && (
-              <p className="mt-5 rounded-xl bg-secondary/50 px-4 py-3 text-sm">
-                Termin:{" "}
-                <span className="font-medium">
-                  {new Date(date).toLocaleDateString("de-DE", { dateStyle: "long" })}
-                </span>
-              </p>
-            )}
-          </div>
-        </aside>
       </div>
       <Toaster position="top-center" richColors />
     </>
   );
 }
 
-function StepHeader({ title, text }: { title: string; text: string }) {
+function StepHeader({
+  eyebrow,
+  title,
+  text,
+}: {
+  eyebrow: string;
+  title: string;
+  text: string;
+}) {
   return (
-    <div className="mb-6">
-      <h3 className="display-sub">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+    <div className="mx-auto mb-7 max-w-2xl text-center sm:mb-9">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">{eyebrow}</p>
+      <h3 className="display-sub mt-2">{title}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -897,7 +862,7 @@ function Field({
   label: string;
   icon: typeof User;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
   onBlur?: () => void;
@@ -916,11 +881,11 @@ function Field({
           value={value}
           maxLength={120}
           placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={`h-11 bg-secondary/40 pl-9 ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
+          className={`h-12 bg-secondary/40 pl-9 ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
         />
       </div>
       {error && (
@@ -932,11 +897,64 @@ function Field({
   );
 }
 
+function ReviewSummary({
+  packageName,
+  vehicleName,
+  addOnIds,
+  date,
+  total,
+  photoCount,
+}: {
+  packageName: string;
+  vehicleName: string;
+  addOnIds: string[];
+  date: string | null;
+  total: number;
+  photoCount: number;
+}) {
+  const selectedAddOns = addOns.filter((addOn) => addOnIds.includes(addOn.id));
+
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-secondary/20 p-5">
+      <p className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <Sparkles className="size-4 text-primary" />
+        Ihre Anfrage im Überblick
+      </p>
+      <dl className="mt-5 space-y-3 text-sm">
+        <ReviewRow label="Paket" value={packageName} />
+        <ReviewRow label="Fahrzeug" value={vehicleName} />
+        <ReviewRow
+          label="Extras"
+          value={selectedAddOns.length ? selectedAddOns.map((addOn) => addOn.name).join(", ") : "Keine"}
+        />
+        <ReviewRow label="Fotos" value={`${photoCount} Aufnahme${photoCount === 1 ? "" : "n"}`} />
+        <ReviewRow label="Wunschtermin" value={date ? formatBookingDate(date) : "–"} />
+      </dl>
+      <div className="mt-5 flex items-end justify-between gap-4 border-t border-border pt-5">
+        <div>
+          <p className="text-sm font-semibold">Voraussichtlicher Gesamtpreis</p>
+          <p className="mt-1 text-xs text-muted-foreground">{vatNotice()}</p>
+        </div>
+        <p className="display-price shrink-0 text-xl text-primary">{currency(total)}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
 function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
   const items = calcLineItems(booking);
   const totals = calcTotals(items);
   const pickupCityName = booking.pickupCity
-    ? (pickupCitiesByDistance.find((c) => c.slug === booking.pickupCity)?.name ?? null)
+    ? (pickupCitiesByDistance.find((city) => city.slug === booking.pickupCity)?.name ?? null)
     : null;
 
   return (
@@ -944,52 +962,47 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
         <CheckCircle2 className="size-8 text-primary" />
       </div>
-      <h3 className="display-sub mt-6">Buchungsanfrage erhalten</h3>
-      <p className="mt-2 text-muted-foreground">
-        Vielen Dank, {booking.customer.name}. Ihr Wunschtermin ist vorgemerkt. Die verbindliche
-        Bestätigung erhalten Sie, sobald unser Team die Buchung freigegeben hat.
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">Anfrage erfolgreich gesendet</p>
+      <h3 className="display-sub mt-2">Wir prüfen jetzt Ihre Buchung</h3>
+      <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground">
+        Vielen Dank, {booking.customer.name}. Ihre Anfrage und der Wunschtermin sind bei White Gloss eingegangen. Erst die anschließende E-Mail nach unserer Prüfung bestätigt den Termin verbindlich.
       </p>
 
       <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
         <Detail label="Anfragenummer" value={booking.invoiceNumber} />
-        <Detail
-          label="Leistungsdatum"
-          value={new Date(booking.date).toLocaleDateString("de-DE", { dateStyle: "long" })}
-        />
+        <Detail label="Wunschtermin" value={formatBookingDate(booking.date)} />
         <Detail label="Kennzeichen" value={booking.customer.plate} />
-        {pickupCityName && <Detail label="Abholort" value={pickupCityName} />}
-        {items.map((i) => (
-          <Detail key={i.label} label={i.label} value={currency(i.total)} />
+        {pickupCityName && <Detail label="Gewünschte Abholung" value={pickupCityName} />}
+        {items.map((item) => (
+          <Detail key={item.label} label={item.label} value={currency(item.total)} />
         ))}
-        <div className="mt-2 flex justify-between border-t border-border pt-3 display-card">
-          <span>Gesamt</span>
+        <div className="mt-2 flex justify-between gap-4 border-t border-border pt-3 font-semibold">
+          <span>Voraussichtlicher Gesamtpreis</span>
           <span className="text-primary">{currency(totals.gross)}</span>
         </div>
         <p className="text-xs text-muted-foreground">{vatNotice()}</p>
-        {booking.depositAmount > 0 && (
-          <div className="flex justify-between text-sm text-amber-300">
-            <span>{depositConfig.label}</span>
-            <span className="font-semibold">{currency(booking.depositAmount)}</span>
-          </div>
-        )}
       </dl>
 
+      <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-left">
+        <p className="font-semibold">So geht es weiter</p>
+        <ol className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+          <li>1. White Gloss prüft Ihre Fahrzeugfotos, Leistungen und den Wunschtermin.</li>
+          <li>2. Sie erhalten die verbindliche Bestätigung oder ein Gegenangebot mit Ersatzterminen per E-Mail.</li>
+          <li>3. Erst nach Ihrer bzw. unserer finalen Bestätigung ist der Termin fest reserviert.</li>
+        </ol>
+      </div>
+
       {booking.depositAmount > 0 && (
-        <p className="mx-auto mt-4 max-w-lg rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
-          {depositConfig.note} Ihre Anzahlung von <strong>{currency(booking.depositAmount)}</strong>{" "}
-          sichert den Termin – die Zahlungsinformationen erhalten Sie mit der Bestätigung per
-          E-Mail.
+        <p className="mx-auto mt-4 max-w-xl rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
+          Für Neukunden wird nach der Terminfreigabe eine Anzahlung von <strong>{currency(booking.depositAmount)}</strong> fällig. Die Zahlungsinformationen erhalten Sie erst mit der verbindlichen Bestätigung.
         </p>
       )}
 
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <p className="w-full text-sm text-muted-foreground">
-          Die verbindliche Bestätigung und Rechnung erhalten Sie nach Prüfung Ihrer Anfrage.
-        </p>
-        <Button variant="outline" onClick={onReset}>
-          Neue Buchung
-        </Button>
-      </div>
+      <p className="mt-5 text-sm leading-6 text-muted-foreground">{TIME_NOTICE}</p>
+
+      <Button className="mt-7" variant="outline" onClick={onReset}>
+        Neue Anfrage
+      </Button>
     </div>
   );
 }
@@ -998,7 +1011,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
       <dt className="min-w-0 text-muted-foreground">{label}</dt>
-      <dd className="shrink-0 font-medium">{value}</dd>
+      <dd className="shrink-0 text-right font-medium">{value}</dd>
     </div>
   );
 }
