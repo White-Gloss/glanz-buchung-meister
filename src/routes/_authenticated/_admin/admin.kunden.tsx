@@ -50,6 +50,7 @@ function CustomersPage() {
       })
       .catch((error: unknown) => {
         setBookings([]);
+        setNotes(new Map());
         toast.error(diagnoseBackendError(error).description);
       });
   }, [fetchBookings, fetchNotes]);
