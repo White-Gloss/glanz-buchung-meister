@@ -22,15 +22,17 @@ function AuthenticatedLayout() {
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
-    getSupabaseClient().then((supabase) => {
-      if (!active) return;
-      const { data } = supabase.auth.onAuthStateChange((event) => {
-        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-        router.invalidate();
-        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-      });
-      unsubscribe = () => data.subscription.unsubscribe();
-    }).catch(() => undefined);
+    getSupabaseClient()
+      .then((supabase) => {
+        if (!active) return;
+        const { data } = supabase.auth.onAuthStateChange((event) => {
+          if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+          router.invalidate();
+          if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+        });
+        unsubscribe = () => data.subscription.unsubscribe();
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
       unsubscribe?.();

@@ -41,18 +41,20 @@ function ResetPasswordPage() {
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
-    getSupabaseClient().then((supabase) => {
-      if (!active) return;
-      supabase.auth.getSession().then(({ data }) => {
-        if (active) setReady(Boolean(data.session));
+    getSupabaseClient()
+      .then((supabase) => {
+        if (!active) return;
+        supabase.auth.getSession().then(({ data }) => {
+          if (active) setReady(Boolean(data.session));
+        });
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === "PASSWORD_RECOVERY" || session) setReady(true);
+        });
+        unsubscribe = () => data.subscription.unsubscribe();
+      })
+      .catch(() => {
+        if (active) setReady(false);
       });
-      const { data } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "PASSWORD_RECOVERY" || session) setReady(true);
-      });
-      unsubscribe = () => data.subscription.unsubscribe();
-    }).catch(() => {
-      if (active) setReady(false);
-    });
     return () => {
       active = false;
       unsubscribe?.();

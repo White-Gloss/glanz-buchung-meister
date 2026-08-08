@@ -46,15 +46,17 @@ function AuthPage() {
   // Bereits angemeldete Nutzer nicht auf dem Login-Formular stehen lassen.
   useEffect(() => {
     let active = true;
-    getSupabaseClient().then((supabase) =>
-      supabase.auth.getUser().then(({ data }) => {
-        if (!active) return;
-        if (data.user) navigate({ to: "/admin", replace: true });
-        else setChecking(false);
-      }),
-    ).catch(() => {
-      if (active) setChecking(false);
-    });
+    getSupabaseClient()
+      .then((supabase) =>
+        supabase.auth.getUser().then(({ data }) => {
+          if (!active) return;
+          if (data.user) navigate({ to: "/admin", replace: true });
+          else setChecking(false);
+        }),
+      )
+      .catch(() => {
+        if (active) setChecking(false);
+      });
     return () => {
       active = false;
     };
