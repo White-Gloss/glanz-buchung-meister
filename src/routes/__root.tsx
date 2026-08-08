@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import bebasNeue400 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
 import appCss from "../styles.css?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
@@ -147,6 +148,13 @@ export const Route = createRootRoute({
       },
     ],
     links: [
+      {
+        rel: "preload",
+        href: bebasNeue400,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       {
         rel: "stylesheet",
         href: appCss,

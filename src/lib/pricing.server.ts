@@ -8,7 +8,10 @@
 import type { ServicePriceRow } from "./servicesConfig";
 import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 
-const PRICE_CACHE_TTL_MS = 30_000;
+// Preise ändern sich selten und eine Admin-Änderung leert den Cache explizit.
+// Fünf Minuten vermeiden deshalb wiederholte Datenbank-Roundtrips bei
+// öffentlichen Seitenaufrufen, ohne Änderungen unnötig lange festzuhalten.
+const PRICE_CACHE_TTL_MS = 5 * 60_000;
 let cachedPrices: { rows: ServicePriceRow[]; expiresAt: number } | null = null;
 
 function normalize(rows: Array<Record<string, unknown>>): ServicePriceRow[] {
