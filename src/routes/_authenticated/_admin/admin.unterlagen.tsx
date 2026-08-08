@@ -1,32 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Download,
-  FilePlus2,
-  Printer,
-  Search,
-  Send,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FilePlus2, Printer, Search, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
 import { diagnoseBackendError } from "@/lib/backendErrors";
-import { type Booking, type BookingSource, currency } from "@/lib/bookings";
+import {
+  contactChannels,
+  currency,
+  type Booking,
+  type BookingSource,
+  type ContactChannel,
+} from "@/lib/bookings";
 import {
   createManualBooking,
   listBookings,
   updateBookingAgreedPrice,
   updateBookingStatus,
 } from "@/lib/bookings.functions";
-import {
-  downloadBookingDocumentPdf,
-  printBookingDocumentPdf,
-} from "@/lib/bookingDocument";
+import { downloadBookingDocumentPdf, printBookingDocumentPdf } from "@/lib/bookingDocument";
 import { addOns, servicePackages, vehicleTypes } from "@/lib/servicesConfig";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 
@@ -81,7 +76,7 @@ function DocumentsPage() {
     packageId: servicePackages[0]?.id ?? "",
     addOnIds: [] as string[],
     date: "",
-    time: "",
+    preferredContact: "Telefon" as ContactChannel,
   });
 
   async function reload() {
@@ -179,8 +174,8 @@ function DocumentsPage() {
           packageId: manual.packageId,
           addOnIds: manual.addOnIds,
           date: manual.date,
-          time: manual.time,
           pickupCity: null,
+          preferredContact: manual.preferredContact,
         },
       });
       toast.success("Manuelle Buchung angelegt");
@@ -192,7 +187,7 @@ function DocumentsPage() {
         plate: "",
         addOnIds: [],
         date: "",
-        time: "",
+        preferredContact: "Telefon" as ContactChannel,
       }));
       setShowManual(false);
       await reload();
@@ -216,8 +211,8 @@ function DocumentsPage() {
             <p className="text-xs uppercase tracking-[0.22em] text-primary">White Gloss Admin</p>
             <h1 className="display-sub mt-2 text-3xl sm:text-4xl">Unterlagen & Preis</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Vereinbarten Preis festhalten, Buchungen aus WhatsApp/Telefon/vor Ort erfassen und
-              für jeden Auftrag druckbare PDF-Unterlagen speichern.
+              Vereinbarten Preis festhalten, Buchungen aus WhatsApp/Telefon/vor Ort erfassen und für
+              jeden Auftrag druckbare PDF-Unterlagen speichern.
             </p>
           </div>
           <Button onClick={() => setShowManual((value) => !value)}>
@@ -256,26 +251,34 @@ function DocumentsPage() {
               <Field label="Name">
                 <Input
                   value={manual.name}
-                  onChange={(event) => setManual((value) => ({ ...value, name: event.target.value }))}
+                  onChange={(event) =>
+                    setManual((value) => ({ ...value, name: event.target.value }))
+                  }
                 />
               </Field>
               <Field label="E-Mail">
                 <Input
                   type="email"
                   value={manual.email}
-                  onChange={(event) => setManual((value) => ({ ...value, email: event.target.value }))}
+                  onChange={(event) =>
+                    setManual((value) => ({ ...value, email: event.target.value }))
+                  }
                 />
               </Field>
               <Field label="Telefon">
                 <Input
                   value={manual.phone}
-                  onChange={(event) => setManual((value) => ({ ...value, phone: event.target.value }))}
+                  onChange={(event) =>
+                    setManual((value) => ({ ...value, phone: event.target.value }))
+                  }
                 />
               </Field>
               <Field label="Kennzeichen">
                 <Input
                   value={manual.plate}
-                  onChange={(event) => setManual((value) => ({ ...value, plate: event.target.value }))}
+                  onChange={(event) =>
+                    setManual((value) => ({ ...value, plate: event.target.value }))
+                  }
                 />
               </Field>
               <Field label="Fahrzeugklasse">
@@ -312,15 +315,28 @@ function DocumentsPage() {
                 <Input
                   type="date"
                   value={manual.date}
-                  onChange={(event) => setManual((value) => ({ ...value, date: event.target.value }))}
+                  onChange={(event) =>
+                    setManual((value) => ({ ...value, date: event.target.value }))
+                  }
                 />
               </Field>
-              <Field label="Uhrzeit">
-                <Input
-                  type="time"
-                  value={manual.time}
-                  onChange={(event) => setManual((value) => ({ ...value, time: event.target.value }))}
-                />
+              <Field label="Bevorzugter Kontakt">
+                <select
+                  value={manual.preferredContact}
+                  onChange={(event) =>
+                    setManual((value) => ({
+                      ...value,
+                      preferredContact: event.target.value as ContactChannel,
+                    }))
+                  }
+                  className="h-10 w-full rounded-lg border border-border bg-secondary/40 px-3 text-sm"
+                >
+                  {contactChannels.map((channel) => (
+                    <option key={channel} value={channel}>
+                      {channel}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
 
@@ -380,9 +396,13 @@ function DocumentsPage() {
 
         <section className="mt-5 space-y-4">
           {loading ? (
-            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">Buchungen werden geladen …</div>
+            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">
+              Buchungen werden geladen …
+            </div>
           ) : filtered.length === 0 ? (
-            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">Keine Buchungen gefunden.</div>
+            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">
+              Keine Buchungen gefunden.
+            </div>
           ) : (
             filtered.map((booking) => {
               const pkg = servicePackages.find((item) => item.id === booking.packageId);
@@ -404,15 +424,18 @@ function DocumentsPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {booking.invoiceNumber} · {booking.customer.plate} · {booking.customer.phone}
+                        {booking.invoiceNumber} · {booking.customer.plate} ·{" "}
+                        {booking.customer.phone}
                       </p>
                       <p className="mt-1 text-sm text-foreground/80">
                         {pkg?.name ?? booking.packageId} · {vehicle?.name ?? booking.vehicleId} ·{" "}
-                        {new Date(`${booking.date}T12:00:00`).toLocaleDateString("de-DE")}, {booking.time} Uhr
+                        {new Date(`${booking.date}T12:00:00`).toLocaleDateString("de-DE")}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         Kalkulation: {currency(booking.total)}
-                        {hasPrice ? ` · Vereinbart: ${currency(booking.agreedPrice ?? 0)}` : " · Vereinbarter Preis noch offen"}
+                        {hasPrice
+                          ? ` · Vereinbart: ${currency(booking.agreedPrice ?? 0)}`
+                          : " · Vereinbarter Preis noch offen"}
                       </p>
                     </div>
 
@@ -424,7 +447,10 @@ function DocumentsPage() {
                             inputMode="decimal"
                             value={prices[booking.id] ?? ""}
                             onChange={(event) =>
-                              setPrices((values) => ({ ...values, [booking.id]: event.target.value }))
+                              setPrices((values) => ({
+                                ...values,
+                                [booking.id]: event.target.value,
+                              }))
                             }
                             className="w-28"
                             placeholder="0,00"
@@ -443,7 +469,11 @@ function DocumentsPage() {
                         variant="outline"
                         onClick={() =>
                           downloadBookingDocumentPdf(booking, "admin").catch((error) =>
-                            toast.error(error instanceof Error ? error.message : "PDF konnte nicht erstellt werden"),
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "PDF konnte nicht erstellt werden",
+                            ),
                           )
                         }
                       >
@@ -453,7 +483,11 @@ function DocumentsPage() {
                         variant="outline"
                         onClick={() =>
                           printBookingDocumentPdf(booking).catch((error) =>
-                            toast.error(error instanceof Error ? error.message : "Druckansicht konnte nicht geöffnet werden"),
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Druckansicht konnte nicht geöffnet werden",
+                            ),
                           )
                         }
                       >
@@ -463,7 +497,11 @@ function DocumentsPage() {
                         <Button
                           disabled={!hasPrice || busyId === booking.id}
                           loading={busyId === booking.id}
-                          title={hasPrice ? "Termin verbindlich bestätigen" : "Zuerst vereinbarten Preis speichern"}
+                          title={
+                            hasPrice
+                              ? "Termin verbindlich bestätigen"
+                              : "Zuerst vereinbarten Preis speichern"
+                          }
                           onClick={() => confirmBooking(booking)}
                         >
                           <CheckCircle2 className="size-4" /> Bestätigen
@@ -484,7 +522,9 @@ function DocumentsPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5 text-sm">
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );

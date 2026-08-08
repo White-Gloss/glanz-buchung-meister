@@ -113,7 +113,7 @@ export async function sendLexwareInvoiceEmail(params: {
     `Hallo ${firstName},`,
     "",
     `im Anhang finden Sie Ihre Rechnung ${number}.`,
-    `Termin: ${formatDate(booking.date)}, ${booking.time} Uhr`,
+    `Termin: ${formatDate(booking.date)}`,
     `Gesamt: ${currency(booking.total)}`,
     "",
     "Bei Rückfragen antworten Sie einfach auf diese E-Mail.",
@@ -147,7 +147,6 @@ export async function sendAppointmentReminder(booking: Booking): Promise<Automat
     `Hallo ${escapeHtml(firstName)}, Ihr Termin bei ${escapeHtml(company.name)} steht bald an.`,
     `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
       <tr><td style="padding:6px 0;color:#71717a;">Datum</td><td style="padding:6px 0;text-align:right;">${escapeHtml(formatDate(booking.date))}</td></tr>
-      <tr><td style="padding:6px 0;color:#71717a;">Uhrzeit</td><td style="padding:6px 0;text-align:right;">${escapeHtml(booking.time)} Uhr</td></tr>
       <tr><td style="padding:6px 0;color:#71717a;">Leistung</td><td style="padding:6px 0;text-align:right;">${escapeHtml(pkg?.name ?? booking.packageId)}</td></tr>
       <tr><td style="padding:6px 0;color:#71717a;">Fahrzeug</td><td style="padding:6px 0;text-align:right;">${escapeHtml(vehicle?.name ?? booking.vehicleId)} · ${escapeHtml(booking.customer.plate)}</td></tr>
     </table>
@@ -158,7 +157,7 @@ export async function sendAppointmentReminder(booking: Booking): Promise<Automat
     `Hallo ${firstName},`,
     "",
     `Ihr Termin bei ${company.name} steht bald an.`,
-    `${formatDate(booking.date)}, ${booking.time} Uhr`,
+    formatDate(booking.date),
     `Leistung: ${pkg?.name ?? booking.packageId}`,
     `Kennzeichen: ${booking.customer.plate}`,
     place,
@@ -168,7 +167,7 @@ export async function sendAppointmentReminder(booking: Booking): Promise<Automat
 
   return send({
     to: booking.customer.email,
-    subject: `Terminerinnerung: ${formatDate(booking.date)}, ${booking.time} Uhr – ${company.name}`,
+    subject: `Terminerinnerung: ${formatDate(booking.date)} – ${company.name}`,
     html,
     text,
     idempotencyKey: `whitegloss-reminder-${booking.id}-${booking.date}`,

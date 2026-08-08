@@ -76,12 +76,8 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
   const agreed = booking.agreedPrice ?? null;
   const shownPrice = agreed ?? booking.total;
 
-  const text = (
-    value: string | string[],
-    x: number,
-    atY: number,
-    options?: PdfTextOptions,
-  ) => doc.text(value, x, atY, options);
+  const text = (value: string | string[], x: number, atY: number, options?: PdfTextOptions) =>
+    doc.text(value, x, atY, options);
 
   const wrapped = (value: string, width: number) => doc.splitTextToSize(value, width) as string[];
 

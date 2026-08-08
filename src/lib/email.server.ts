@@ -9,13 +9,10 @@
  * lediglich zurück, ob es geklappt hat.
  */
 
-import { calcLineItems, calcTotals, type Booking } from "./bookings";
+import { calcLineItems, calcTotals, TIME_NOTICE, type Booking } from "./bookings";
 import { company, currency, depositConfig, vatNotice } from "./servicesConfig";
 import { getPickupCity } from "./pickupLocations";
-import {
-  createBookingDocumentPdfBytes,
-  type BookingDocumentKind,
-} from "./bookingDocument";
+import { createBookingDocumentPdfBytes, type BookingDocumentKind } from "./bookingDocument";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
@@ -34,6 +31,13 @@ export function mailConfigured(): boolean {
   return Boolean(apiKey && from);
 }
 
+/**
+ * Zustand der Konfiguration für die Anzeige im Admin-Bereich.
+ *
+ * Gibt bewusst NUR zurück, ob ein Schlüssel gesetzt ist — niemals seinen
+ * Wert, auch nicht gekürzt. Absender und interne Zieladresse sind dagegen
+ * keine Geheimnisse: sie stehen in jeder versendeten Mail.
+ */
 export function mailSettingsSummary(): {
   apiKeySet: boolean;
   from: string | null;
@@ -43,6 +47,12 @@ export function mailSettingsSummary(): {
   return { apiKeySet: Boolean(apiKey), from: from || null, ownerTo: ownerTo || null };
 }
 
+/**
+ * Testmail an eine bereits geprüfte Adresse.
+ *
+ * Der Aufrufer verantwortet, dass die Adresse dem angemeldeten
+ * Administrator gehört — siehe mailDiagnostics.functions.ts.
+ */
 export async function sendMailSelfTestTo(to: string): Promise<MailResult> {
   const zeitpunkt = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
   const text = [
@@ -211,7 +221,7 @@ function itemsTableHtml(booking: Booking): string {
     </tr>
     <tr>
       <td style="padding:6px 0;font-size:14px;color:#71717a;">Termin</td>
-      <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(formatDate(booking.date))}, ${escapeHtml(booking.time)} Uhr</td>
+      <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(formatDate(booking.date))}</td>
     </tr>
     <tr>
       <td style="padding:6px 0;font-size:14px;color:#71717a;">Kennzeichen</td>
@@ -246,7 +256,7 @@ function itemsTableText(booking: Booking): string {
   const agreed = booking.agreedPrice ?? null;
   const lines = [
     `Buchungsnummer: ${booking.invoiceNumber}`,
-    `Termin: ${formatDate(booking.date)}, ${booking.time} Uhr`,
+    `Termin: ${formatDate(booking.date)}`,
     `Kennzeichen: ${booking.customer.plate}`,
   ];
   if (pickup) lines.push(`Abholort: ${pickup.name} (${pickup.distanceKm} km)`);
@@ -255,13 +265,23 @@ function itemsTableText(booking: Booking): string {
   if (agreed != null && Math.abs(agreed - totals.gross) > 0.009) {
     lines.push(`Kalkulation laut Auswahl: ${currency(totals.gross)}`);
   }
-  lines.push(`${agreed != null ? "Vereinbarter Gesamtpreis" : "Derzeitiger Gesamtpreis"}: ${currency(agreed ?? totals.gross)}`);
+  lines.push(
+    `${agreed != null ? "Vereinbarter Gesamtpreis" : "Derzeitiger Gesamtpreis"}: ${currency(agreed ?? totals.gross)}`,
+  );
   if (booking.depositStatus !== "nicht_erforderlich") {
     lines.push(`Anzahlung: ${currency(Number(booking.depositAmount))}`);
   }
   lines.push(vatNotice());
   return lines.join("\n");
 }
+
+/**
+ * Pflichthinweis in JEDER Kunden-Mail: Termine sind datumsbasiert, die
+ * Uhrzeit wird wenige Tage vorher persönlich abgestimmt.
+ */
+const timeNoticeHtml = `<p style="margin:0 0 20px;padding:12px 14px;background:#f4f4f5;border-radius:8px;font-size:14px;line-height:1.6;">
+  ${escapeHtml(TIME_NOTICE)}
+</p>`;
 
 async function bookingPdfAttachment(
   booking: Booking,
@@ -305,6 +325,7 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
     "Ihre Terminanfrage ist eingegangen",
     `Hallo ${escapeHtml(firstName)}, vielen Dank für Ihre Anfrage. Wir melden uns zeitnah mit der verbindlichen Bestätigung. <strong>Dieser Termin ist noch nicht final zugesagt.</strong>`,
     itemsTableHtml(booking) +
+      timeNoticeHtml +
       priceBasisHtml(false) +
       depositHint +
       `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
@@ -323,6 +344,8 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
     "verbindlichen Bestätigung. Dieser Termin ist noch nicht final zugesagt.",
     "",
     itemsTableText(booking),
+    "",
+    TIME_NOTICE,
     "",
     priceBasisText(false),
     "",
@@ -375,6 +398,7 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
     "Ihr Termin ist bestätigt",
     `Hallo ${escapeHtml(firstName)}, wir haben Ihren Termin fest eingeplant. <strong>Diese Bestätigung ist verbindlich.</strong>`,
     itemsTableHtml(booking) +
+      timeNoticeHtml +
       priceBasisHtml(true) +
       treffpunkt +
       anzahlung +
@@ -396,6 +420,8 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
     "",
     itemsTableText(booking),
     "",
+    TIME_NOTICE,
+    "",
     priceBasisText(true),
     "",
     pickup
@@ -414,7 +440,7 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
 
   return send({
     to: booking.customer.email,
-    subject: `Termin bestätigt: ${formatDate(booking.date)}, ${booking.time} Uhr – ${company.name}`,
+    subject: `Termin bestätigt: ${formatDate(booking.date)} – ${company.name}`,
     html,
     text,
     replyTo: company.email,
@@ -433,7 +459,7 @@ export async function sendOwnerNotification(booking: Booking): Promise<MailResul
 
   const html = layout(
     `Neue Anfrage: ${booking.customer.name}`,
-    `${escapeHtml(formatDate(booking.date))} um ${escapeHtml(booking.time)} Uhr${
+    `${escapeHtml(formatDate(booking.date))}${
       pickup ? ` · Abholung in ${escapeHtml(pickup.name)}` : ""
     }`,
     `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
@@ -572,5 +598,162 @@ export async function sendConditionReportNotification(
     html,
     text,
     replyTo: report.email,
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* 4) Gegenangebot an den Kunden                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Gegenangebot: angepasster Preis mit Begründung und bis zu drei
+ * Ersatzterminen.
+ *
+ * Jeder Termin ist ein Link mit dem Zugriffstoken der Buchung. Ein Klick
+ * gilt als Zusage — deshalb steht neben jedem Datum, was er auslöst, und
+ * die Links führen auf eine Seite, die den Termin noch einmal zeigt,
+ * bevor sie ihn festschreibt. Reine Ein-Klick-Bestätigung wäre riskant:
+ * Mailprogramme laden Links teils selbst vor.
+ */
+export async function sendCounterOfferMail(booking: Booking): Promise<MailResult> {
+  const firstName = booking.customer.name.split(" ")[0] || booking.customer.name;
+  const preis = booking.agreedPrice ?? booking.total;
+  const termine = [booking.date, ...booking.offerAltDates];
+
+  const link = (datum: string) =>
+    `${company.web.replace(/\/$/, "")}/angebot/${booking.accessToken}?termin=${datum}`;
+
+  const buttons = termine
+    .map((datum, index) => {
+      const label = index === 0 ? "Ihr Wunschtermin" : `Ersatztermin ${index}`;
+      return `<tr><td style="padding:0 0 10px;">
+        <a href="${link(datum)}"
+           style="display:block;padding:14px 18px;background:${index === 0 ? "#18181b" : "#ffffff"};
+                  color:${index === 0 ? "#ffffff" : "#18181b"};border:1px solid #18181b;
+                  border-radius:8px;text-decoration:none;font-size:15px;">
+          <strong>${escapeHtml(formatDate(datum))}</strong><br>
+          <span style="font-size:12px;opacity:.75;">${escapeHtml(label)} – hier auswählen</span>
+        </a>
+      </td></tr>`;
+    })
+    .join("");
+
+  const html = layout(
+    "Unser Angebot für Ihr Fahrzeug",
+    `Hallo ${escapeHtml(firstName)}, wir haben Ihre Anfrage geprüft und schicken Ihnen hier unser Angebot. <strong>Verbindlich wird es erst, wenn Sie einen Termin auswählen.</strong>`,
+    `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+       <tr>
+         <td style="padding:6px 0;font-size:14px;color:#71717a;">Rechnungsnummer</td>
+         <td style="padding:6px 0;font-size:14px;text-align:right;"><strong>${escapeHtml(booking.invoiceNumber)}</strong></td>
+       </tr>
+       <tr>
+         <td style="padding:6px 0;font-size:14px;color:#71717a;">Kennzeichen</td>
+         <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(booking.customer.plate)}</td>
+       </tr>
+       <tr>
+         <td style="padding:12px 0 0;font-size:16px;border-top:1px solid #e4e4e7;"><strong>Angebotspreis</strong></td>
+         <td style="padding:12px 0 0;font-size:16px;text-align:right;border-top:1px solid #e4e4e7;white-space:nowrap;">
+           <strong>${currency(preis)}</strong>
+         </td>
+       </tr>
+     </table>
+     <p style="margin:0 0 20px;font-size:12px;color:#71717a;">${escapeHtml(vatNotice())}</p>
+     ${
+       booking.offerNote
+         ? `<p style="margin:0 0 20px;padding:12px 14px;background:#f4f4f5;border-radius:8px;font-size:14px;line-height:1.6;">
+              <strong>Warum dieser Preis:</strong><br>${escapeHtml(booking.offerNote)}
+            </p>`
+         : ""
+     }
+     <p style="margin:0 0 12px;font-size:15px;line-height:1.6;"><strong>Bitte wählen Sie einen Termin:</strong></p>
+     <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${buttons}</table>
+     ${timeNoticeHtml}
+     <p style="margin:0;font-size:14px;line-height:1.6;">
+       Passt nichts davon? Antworten Sie einfach auf diese E-Mail oder rufen Sie an unter
+       ${escapeHtml(company.phone)} – wir finden einen Termin.
+     </p>`,
+  );
+
+  const text = [
+    `Hallo ${firstName},`,
+    "",
+    "wir haben Ihre Anfrage geprüft. Verbindlich wird das Angebot erst,",
+    "wenn Sie einen Termin auswählen.",
+    "",
+    `Rechnungsnummer: ${booking.invoiceNumber}`,
+    `Kennzeichen: ${booking.customer.plate}`,
+    `Angebotspreis: ${currency(preis)}`,
+    vatNotice(),
+    ...(booking.offerNote ? ["", `Warum dieser Preis: ${booking.offerNote}`] : []),
+    "",
+    "Bitte wählen Sie einen Termin:",
+    ...termine.map(
+      (datum, index) =>
+        `${index === 0 ? "Ihr Wunschtermin" : `Ersatztermin ${index}`}: ${formatDate(datum)}\n  ${link(datum)}`,
+    ),
+    "",
+    TIME_NOTICE,
+    "",
+    `Passt nichts davon? ${company.phone} oder Antwort auf diese E-Mail.`,
+    "",
+    `${company.name} · ${company.street} · ${company.city}`,
+  ].join("\n");
+
+  return send({
+    to: booking.customer.email,
+    subject: `Unser Angebot zu ${booking.invoiceNumber} – ${company.name}`,
+    html,
+    text,
+    replyTo: company.email,
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* 5) Zusage des Kunden an den Betrieb                                 */
+/* ------------------------------------------------------------------ */
+
+export async function sendOfferAcceptedToOwner(booking: Booking): Promise<MailResult> {
+  const { ownerTo } = config();
+  const preis = booking.agreedPrice ?? booking.total;
+
+  const html = layout(
+    `Zusage: ${booking.customer.name}`,
+    `${escapeHtml(formatDate(booking.date))} · ${currency(preis)}`,
+    `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+       <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Rechnungsnummer</td>
+           <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(booking.invoiceNumber)}</td></tr>
+       <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Kennzeichen</td>
+           <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(booking.customer.plate)}</td></tr>
+       <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Kontakt bevorzugt</td>
+           <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(booking.preferredContact)}</td></tr>
+       <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Telefon</td>
+           <td style="padding:6px 0;font-size:14px;text-align:right;">${escapeHtml(booking.customer.phone)}</td></tr>
+     </table>
+     <p style="margin:0;font-size:14px;line-height:1.6;">
+       Der Kunde hat das Angebot angenommen. Der Termin steht damit fest;
+       die Uhrzeit ist noch abzustimmen.
+     </p>`,
+  );
+
+  const text = [
+    `Zusage von ${booking.customer.name}`,
+    "",
+    `Termin: ${formatDate(booking.date)}`,
+    `Preis: ${currency(preis)}`,
+    `Rechnungsnummer: ${booking.invoiceNumber}`,
+    `Kennzeichen: ${booking.customer.plate}`,
+    `Kontakt bevorzugt: ${booking.preferredContact}`,
+    `Telefon: ${booking.customer.phone}`,
+    `E-Mail: ${booking.customer.email}`,
+    "",
+    "Uhrzeit noch abstimmen.",
+  ].join("\n");
+
+  return send({
+    to: ownerTo,
+    subject: `Zusage ${booking.invoiceNumber}: ${formatDate(booking.date)}`,
+    html,
+    text,
+    replyTo: booking.customer.email,
   });
 }

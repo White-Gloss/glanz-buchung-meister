@@ -26,15 +26,19 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { bookingStatuses, currency, type Booking, type BookingStatus } from "@/lib/bookings";
+import { currency, type Booking, type BookingStatus } from "@/lib/bookings";
 import {
+  confirmBooking,
   deleteBooking,
+  getAvailableDates,
   listBookings,
+  sendCounterOffer,
   updateBookingStatus,
   updateDepositStatus,
 } from "@/lib/bookings.functions";
-import { generateInvoicePdf } from "@/lib/invoice";
-import { company, servicePackages, vehicleTypes } from "@/lib/servicesConfig";
+import { getConditionPhotoUrls, listConditionReports } from "@/lib/conditionReports.functions";
+import { BookingCard } from "@/components/BookingCard";
+import { company } from "@/lib/servicesConfig";
 import { BookingListSkeleton, AuditLogSkeleton, PricePanelSkeleton } from "@/components/skeletons";
 
 const PricePanel = lazy(() =>
@@ -79,14 +83,6 @@ function AdminRoute() {
   return <AdminPage />;
 }
 
-const statusStyles: Record<BookingStatus, string> = {
-  Angefragt: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  Bestätigt: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  Ausstehend: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  Bezahlt: "bg-primary/15 text-primary border-primary/40",
-  Storniert: "bg-destructive/15 text-destructive border-destructive/40",
-};
-
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -98,10 +94,22 @@ function AdminPage() {
   const [fatal, setFatal] = useState<BackendErrorInfo | null>(null);
   const [auditKey, setAuditKey] = useState(0);
 
+  // Tagesauslastung für „x von 3 Plätzen belegt" und die Ersatzterminwahl.
+  const [dayLoad, setDayLoad] = useState<Record<string, number>>({});
+  // Buchung -> Zahl der Zustandsfotos, plus Buchung -> Meldungs-ID für den
+  // Abruf der signierten Adressen beim Aufklappen.
+  const [photoCounts, setPhotoCounts] = useState<Record<string, number>>({});
+  const [reportIds, setReportIds] = useState<Record<string, string>>({});
+
   const fetchBookings = useServerFn(listBookings);
+  const fetchDayLoad = useServerFn(getAvailableDates);
+  const fetchReports = useServerFn(listConditionReports);
+  const fetchPhotoUrls = useServerFn(getConditionPhotoUrls);
   const setStatusFn = useServerFn(updateBookingStatus);
   const setDepositFn = useServerFn(updateDepositStatus);
   const removeFn = useServerFn(deleteBooking);
+  const confirmFn = useServerFn(confirmBooking);
+  const offerFn = useServerFn(sendCounterOffer);
 
   function reportError(error: unknown) {
     const info = diagnoseBackendError(error);
@@ -129,6 +137,67 @@ function AdminPage() {
       active = false;
     };
   }, [fetchBookings]);
+
+  // Auslastung und Fotobestand ergänzen. Beides ist Beiwerk: schlägt es
+  // fehl, bleibt die Buchungsliste trotzdem benutzbar.
+  useEffect(() => {
+    let active = true;
+    void fetchDayLoad({})
+      .then((load) => active && setDayLoad(load))
+      .catch(() => undefined);
+    void fetchReports({})
+      .then((reports) => {
+        if (!active) return;
+        const counts: Record<string, number> = {};
+        const ids: Record<string, string> = {};
+        for (const report of reports) {
+          if (!report.booking_id) continue;
+          counts[report.booking_id] = report.photo_paths.length;
+          ids[report.booking_id] = report.id;
+        }
+        setPhotoCounts(counts);
+        setReportIds(ids);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [fetchDayLoad, fetchReports]);
+
+  async function loadPhotos(bookingId: string): Promise<string[]> {
+    const reportId = reportIds[bookingId];
+    if (!reportId) return [];
+    try {
+      return await fetchPhotoUrls({ data: { id: reportId } });
+    } catch (error) {
+      reportError(error);
+      return [];
+    }
+  }
+
+  /** Wunschtermin und Standardpreis unverändert zusagen. */
+  async function confirmDirect(id: string) {
+    try {
+      const updated = await confirmFn({ data: { id } });
+      setBookings((list) => list.map((b) => (b.id === id ? updated : b)));
+      setAuditKey((k) => k + 1);
+      toast.success("Termin bestätigt – der Kunde hat die Zusage per E-Mail erhalten.");
+    } catch (error) {
+      reportError(error);
+    }
+  }
+
+  /** Gegenangebot mit Preis, Begründung und Ersatzterminen senden. */
+  async function sendOffer(id: string, price: number | null, note: string, altDates: string[]) {
+    try {
+      const updated = await offerFn({ data: { id, price, note, altDates } });
+      setBookings((list) => list.map((b) => (b.id === id ? updated : b)));
+      setAuditKey((k) => k + 1);
+      toast.success("Angebot verschickt – der Kunde wählt jetzt einen Termin.");
+    } catch (error) {
+      reportError(error);
+    }
+  }
 
   async function setStatus(id: string, status: BookingStatus) {
     const previous = bookings;
@@ -188,7 +257,7 @@ function AdminPage() {
   }, [bookings, query]);
 
   const revenue = bookings.filter((b) => b.status !== "Storniert").reduce((s, b) => s + b.total, 0);
-  const pendingConfirmation = bookings.filter((b) => b.status === "Angefragt").length;
+  const pendingConfirmation = bookings.filter((b) => b.status === "Wartend auf Prüfung").length;
   const openDeposits = bookings.filter((b) => b.depositStatus === "offen").length;
 
   if (fatal) {
@@ -361,115 +430,22 @@ function AdminPage() {
               </div>
             ) : (
               <div className="mt-6 space-y-4">
-                {filtered.map((b) => {
-                  const vehicle = vehicleTypes.find((v) => v.id === b.vehicleId);
-                  const pkg = servicePackages.find((p) => p.id === b.packageId);
-                  return (
-                    <article key={b.id} className="glass rounded-2xl p-5">
-                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="display-card">{b.customer.name}</span>
-                            <span
-                              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[b.status]}`}
-                            >
-                              {b.status}
-                            </span>
-                            {b.isNewCustomer && (
-                              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
-                                Neukunde
-                              </span>
-                            )}
-                            {b.depositAmount > 0 && (
-                              <span
-                                className={`rounded-full border px-2.5 py-0.5 text-xs ${
-                                  b.depositStatus === "bezahlt"
-                                    ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
-                                    : "border-amber-500/30 bg-amber-500/15 text-amber-300"
-                                }`}
-                              >
-                                Anzahlung {currency(b.depositAmount)}
-                                {b.depositStatus === "bezahlt" ? " bezahlt" : " offen"}
-                              </span>
-                            )}
-                            <span className="text-xs text-muted-foreground">{b.invoiceNumber}</span>
-                          </div>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {b.customer.email} · {b.customer.phone} · {b.customer.plate}
-                          </p>
-                          <p className="text-sm text-foreground/80">
-                            {pkg?.name} · {vehicle?.name} ·{" "}
-                            {new Date(b.date).toLocaleDateString("de-DE", { dateStyle: "long" })},{" "}
-                            {b.time} Uhr
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                          <span className="display-price text-xl text-primary">
-                            {currency(b.total)}
-                          </span>
-                          <select
-                            aria-label="Status ändern"
-                            value={b.status}
-                            onChange={(e) => setStatus(b.id, e.target.value as BookingStatus)}
-                            className="h-9 rounded-lg border border-border bg-secondary/50 px-2 text-sm"
-                          >
-                            {bookingStatuses.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                          {b.status === "Angefragt" && (
-                            <Button size="sm" onClick={() => setStatus(b.id, "Bestätigt")}>
-                              <CheckCircle2 className="size-4" />
-                              Bestätigen
-                            </Button>
-                          )}
-                          {b.depositStatus === "offen" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => markDepositPaid(b.id)}
-                            >
-                              <Wallet className="size-4" />
-                              Anzahlung erhalten
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!company.legalDetailsVerified}
-                            title={
-                              company.legalDetailsVerified
-                                ? "Rechnung herunterladen"
-                                : "Zuerst geprüfte Firmen-, Steuer- und Bankdaten hinterlegen"
-                            }
-                            loading={pdfFor === b.id}
-                            onClick={async () => {
-                              setPdfFor(b.id);
-                              try {
-                                await generateInvoicePdf(b);
-                              } finally {
-                                setPdfFor(null);
-                              }
-                            }}
-                          >
-                            {pdfFor === b.id ? null : <Download className="size-4" />}
-                            Rechnung
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            aria-label="Buchung löschen"
-                            onClick={() => remove(b.id)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                {filtered.map((b) => (
+                  <BookingCard
+                    key={b.id}
+                    booking={b}
+                    dayLoad={dayLoad}
+                    photoCount={photoCounts[b.id] ?? 0}
+                    actions={{
+                      onStatus: setStatus,
+                      onConfirm: confirmDirect,
+                      onCounterOffer: sendOffer,
+                      onDepositPaid: markDepositPaid,
+                      onDelete: remove,
+                      onLoadPhotos: loadPhotos,
+                    }}
+                  />
+                ))}
               </div>
             )}
             <ErrorBoundary title="Das Audit-Log konnte nicht geladen werden">

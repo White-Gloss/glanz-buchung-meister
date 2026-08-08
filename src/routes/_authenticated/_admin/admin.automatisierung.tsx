@@ -189,7 +189,13 @@ function AutomationPage() {
           <SetupCard
             icon={BellRing}
             title="Erinnerungen"
-            status={statusError ? "Statusfehler" : reminderReady ? "bereit für Scheduler" : "noch nicht aktiv"}
+            status={
+              statusError
+                ? "Statusfehler"
+                : reminderReady
+                  ? "bereit für Scheduler"
+                  : "noch nicht aktiv"
+            }
             tone={reminderReady ? "ready" : "pending"}
             description="Die Versandroutine für bestätigte Termine ist vorhanden und schützt gegen Doppelversand. Für den vollautomatischen Betrieb muss der geschützte Cron-Endpunkt regelmäßig aufgerufen werden."
             detail={

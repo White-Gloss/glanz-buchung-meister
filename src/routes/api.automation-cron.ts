@@ -12,7 +12,10 @@ export const Route = createFileRoute("/api/automation-cron")({
     handlers: {
       POST: async ({ request }) => {
         if (!process.env.REMINDER_CRON_SECRET?.trim()) {
-          return Response.json({ ok: false, error: "Cron ist nicht konfiguriert." }, { status: 503 });
+          return Response.json(
+            { ok: false, error: "Cron ist nicht konfiguriert." },
+            { status: 503 },
+          );
         }
         if (!authorized(request)) {
           return Response.json({ ok: false, error: "Nicht autorisiert." }, { status: 401 });
@@ -38,7 +41,10 @@ export const Route = createFileRoute("/api/automation-cron")({
           );
         } catch (error) {
           console.error("[automation-cron] Reminder-Lauf fehlgeschlagen", error);
-          return Response.json({ ok: false, error: "Reminder-Lauf fehlgeschlagen." }, { status: 500 });
+          return Response.json(
+            { ok: false, error: "Reminder-Lauf fehlgeschlagen." },
+            { status: 500 },
+          );
         }
       },
     },

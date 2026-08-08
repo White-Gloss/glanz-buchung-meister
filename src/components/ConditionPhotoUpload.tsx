@@ -53,7 +53,8 @@ function fileToBase64(file: File): Promise<string> {
 function canvasToJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Das Foto konnte nicht verkleinert werden."))),
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("Das Foto konnte nicht verkleinert werden.")),
       "image/jpeg",
       quality,
     );
@@ -67,7 +68,8 @@ async function loadImage(file: File): Promise<HTMLImageElement> {
     image.decoding = "async";
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = () => reject(new Error("Das Fotoformat kann auf diesem Gerät nicht gelesen werden."));
+      image.onerror = () =>
+        reject(new Error("Das Fotoformat kann auf diesem Gerät nicht gelesen werden."));
       image.src = url;
     });
     return image;
@@ -107,7 +109,11 @@ async function compressImage(file: File): Promise<File> {
   }
 
   if (!result) throw new Error("Das Foto konnte nicht verkleinert werden.");
-  if (result.size >= file.size && ALLOWED_IMAGE_TYPES.has(file.type) && file.size <= MAX_MEDIA_BYTES) {
+  if (
+    result.size >= file.size &&
+    ALLOWED_IMAGE_TYPES.has(file.type) &&
+    file.size <= MAX_MEDIA_BYTES
+  ) {
     return file;
   }
 
@@ -123,7 +129,9 @@ type CaptureVideo = HTMLVideoElement & {
   webkitCaptureStream?: () => MediaStream;
 };
 
-async function videoDuration(file: File): Promise<{ video: CaptureVideo; url: string; duration: number }> {
+async function videoDuration(
+  file: File,
+): Promise<{ video: CaptureVideo; url: string; duration: number }> {
   const url = URL.createObjectURL(file);
   const video = document.createElement("video") as CaptureVideo;
   video.preload = "metadata";
@@ -132,7 +140,8 @@ async function videoDuration(file: File): Promise<{ video: CaptureVideo; url: st
   video.src = url;
   await new Promise<void>((resolve, reject) => {
     video.onloadedmetadata = () => resolve();
-    video.onerror = () => reject(new Error("Das Videoformat kann auf diesem Gerät nicht gelesen werden."));
+    video.onerror = () =>
+      reject(new Error("Das Videoformat kann auf diesem Gerät nicht gelesen werden."));
   });
   const duration = Number(video.duration);
   if (!Number.isFinite(duration) || duration <= 0) {
@@ -155,7 +164,9 @@ function bestRecorderMime(): string | null {
 
 async function compressVideo(file: File): Promise<File> {
   if (file.size > MAX_VIDEO_SOURCE_BYTES) {
-    throw new Error(`Das Video ist mit ${mb(file.size)} zu groß. Bitte nehmen Sie ein kürzeres Video auf.`);
+    throw new Error(
+      `Das Video ist mit ${mb(file.size)} zu groß. Bitte nehmen Sie ein kürzeres Video auf.`,
+    );
   }
 
   const { video, url, duration } = await videoDuration(file);
@@ -229,7 +240,8 @@ async function compressVideo(file: File): Promise<File> {
 
 async function prepareMedia(file: File): Promise<File> {
   if (file.type.startsWith("image/")) {
-    const needsConversion = !ALLOWED_IMAGE_TYPES.has(file.type) || file.size > IMAGE_COMPRESSION_TRIGGER;
+    const needsConversion =
+      !ALLOWED_IMAGE_TYPES.has(file.type) || file.size > IMAGE_COMPRESSION_TRIGGER;
     const prepared = needsConversion ? await compressImage(file) : file;
     if (prepared.size > MAX_MEDIA_BYTES) {
       throw new Error(`Das Foto ist nach der Optimierung noch größer als ${mb(MAX_MEDIA_BYTES)}.`);
@@ -328,7 +340,10 @@ export function ConditionPhotoUpload({
         setProcessingName(original.name);
         if (original.type.startsWith("video/") && original.size > MAX_MEDIA_BYTES) {
           toast.info("Das Video wird vor dem Upload automatisch verkleinert.");
-        } else if (original.type.startsWith("image/") && original.size > IMAGE_COMPRESSION_TRIGGER) {
+        } else if (
+          original.type.startsWith("image/") &&
+          original.size > IMAGE_COMPRESSION_TRIGGER
+        ) {
           toast.info("Das Foto wird vor dem Upload automatisch verkleinert.");
         }
 
@@ -350,7 +365,9 @@ export function ConditionPhotoUpload({
         });
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : `„${original.name}“ konnte nicht geladen werden.`,
+          error instanceof Error
+            ? error.message
+            : `„${original.name}“ konnte nicht geladen werden.`,
         );
       }
     }

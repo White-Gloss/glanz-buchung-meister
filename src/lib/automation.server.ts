@@ -17,7 +17,11 @@ type BookingRow = {
   customer_email: string;
   customer_phone: string;
   customer_plate: string;
+  preferred_contact: string | null;
   total: number | string;
+  agreed_price: number | string | null;
+  offer_note: string | null;
+  offer_alt_dates: string[] | null;
   status: string;
   is_new_customer: boolean;
   deposit_amount: number | string;
@@ -27,8 +31,9 @@ type BookingRow = {
 
 const SELECT_BOOKING = `
   id, invoice_number, created_at, vehicle_id, package_id, add_on_ids,
-  booking_date::text, booking_time, pickup_city, customer_name, customer_email,
-  customer_phone, customer_plate, total, status, is_new_customer,
+  booking_date::text, booking_time, pickup_city, preferred_contact,
+  customer_name, customer_email, customer_phone, customer_plate,
+  total, agreed_price, offer_note, offer_alt_dates, status, is_new_customer,
   deposit_amount, deposit_status, access_token::text
 `;
 
@@ -43,6 +48,10 @@ function toBooking(row: BookingRow): Booking {
     date: row.booking_date.slice(0, 10),
     time: row.booking_time,
     pickupCity: row.pickup_city,
+    preferredContact: (row.preferred_contact ?? "E-Mail") as Booking["preferredContact"],
+    agreedPrice: row.agreed_price == null ? null : Number(row.agreed_price),
+    offerNote: row.offer_note ?? null,
+    offerAltDates: (row.offer_alt_dates ?? []).map((d) => String(d).slice(0, 10)),
     customer: {
       name: row.customer_name,
       email: row.customer_email,
@@ -182,10 +191,13 @@ export async function runDueAppointmentReminders(): Promise<ReminderRunResult> {
        FROM public.bookings b
        LEFT JOIN public.booking_automation_state s ON s.booking_id = b.id
       WHERE b.status = 'Bestätigt'
-        AND ((b.booking_date + b.booking_time::time) AT TIME ZONE 'Europe/Berlin') > now()
-        AND ((b.booking_date + b.booking_time::time) AT TIME ZONE 'Europe/Berlin') <= now() + interval '25 hours'
+        -- Termine sind datumsbasiert; ohne Uhrzeit waere der Ausdruck
+        -- (Datum + Uhrzeit) NULL und die Erinnerung ginge nie raus.
+        -- Ersatzweise gilt der Tagesbeginn in Werkstattzeit.
+        AND ((b.booking_date + COALESCE(b.booking_time, '00:00')::time) AT TIME ZONE 'Europe/Berlin') > now()
+        AND ((b.booking_date + COALESCE(b.booking_time, '00:00')::time) AT TIME ZONE 'Europe/Berlin') <= now() + interval '25 hours'
         AND s.reminder_sent_at IS NULL
-      ORDER BY b.booking_date, b.booking_time
+      ORDER BY b.booking_date
       LIMIT 50`,
   );
 
@@ -201,7 +213,10 @@ export async function runDueAppointmentReminders(): Promise<ReminderRunResult> {
     try {
       const mail = await sendAppointmentReminder(booking);
       if (!mail.sent) {
-        await finishReminder(booking.id, (mail.reason || "Reminder-Versand fehlgeschlagen").slice(0, 4000));
+        await finishReminder(
+          booking.id,
+          (mail.reason || "Reminder-Versand fehlgeschlagen").slice(0, 4000),
+        );
         result.failed += 1;
         continue;
       }
@@ -236,7 +251,7 @@ export async function runAutomationCatchUp(): Promise<CatchUpResult> {
       WHERE b.status = 'Bestätigt'
         AND b.booking_date >= current_date
         AND (s.lexware_invoice_id IS NULL OR s.invoice_mail_sent_at IS NULL)
-      ORDER BY b.booking_date, b.booking_time
+      ORDER BY b.booking_date
       LIMIT 25`,
   );
 

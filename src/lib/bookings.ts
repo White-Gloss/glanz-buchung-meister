@@ -11,15 +11,38 @@ import {
 } from "./servicesConfig";
 import { getPickupDistanceKm } from "./pickupLocations";
 
-export type BookingStatus = "Angefragt" | "Bestätigt" | "Ausstehend" | "Bezahlt" | "Storniert";
+/**
+ * TERMINE SIND DATUMSBASIERT.
+ * Es werden bewusst keine Uhrzeiten erhoben oder angezeigt — die genaue
+ * Zeit für Bringung und Abholung wird wenige Tage vor dem Termin
+ * persönlich abgestimmt. Dieser Hinweis gehört in jede Kunden-Mail.
+ */
+export const TIME_NOTICE =
+  "Die genaue Uhrzeit für die Bringung/Abholung stimmen wir wenige Tage vor Ihrem Termin individuell mit Ihnen ab.";
+
+/** Höchstzahl aktiver Buchungen pro Kalendertag – identisch zur Datenbankregel. */
+export const MAX_BOOKINGS_PER_DAY = 3;
+
+export type BookingStatus =
+  | "Wartend auf Prüfung"
+  | "Gegenangebot gesendet"
+  | "Bestätigt"
+  | "Ausstehend"
+  | "Bezahlt"
+  | "Storniert";
 
 export const bookingStatuses: BookingStatus[] = [
-  "Angefragt",
+  "Wartend auf Prüfung",
+  "Gegenangebot gesendet",
   "Bestätigt",
   "Ausstehend",
   "Bezahlt",
   "Storniert",
 ];
+
+/** Bevorzugter Weg für die Uhrzeit-Absprache. */
+export const contactChannels = ["WhatsApp", "Telefon", "E-Mail"] as const;
+export type ContactChannel = (typeof contactChannels)[number];
 
 export type DepositStatus = "nicht_erforderlich" | "offen" | "bezahlt";
 export type BookingSource = "website" | "whatsapp" | "telefon" | "vor_ort" | "sonstiges";
@@ -32,7 +55,11 @@ export type Booking = {
   packageId: string;
   addOnIds: string[];
   date: string; // ISO yyyy-mm-dd
-  time: string;
+  /**
+   * Nur noch für Altbuchungen gefüllt. Neue Termine sind rein
+   * datumsbasiert; die Uhrzeit wird persönlich abgestimmt.
+   */
+  time: string | null;
   /** Slug der Abholstadt – nur gesetzt, wenn der Hol- & Bringservice gebucht wurde */
   pickupCity: string | null;
   customer: {
@@ -41,10 +68,19 @@ export type Booking = {
     phone: string;
     plate: string;
   };
+  /** Bevorzugter Kontaktweg für die Uhrzeit-Absprache */
+  preferredContact: ContactChannel;
   /** Automatisch aus Paket/Zusatzleistungen berechneter Ausgangspreis. */
   total: number;
-  /** Vom Admin nach Angaben/Fotos mit dem Kunden vereinbarter Gesamtpreis. */
-  agreedPrice?: number | null;
+  /**
+   * Mit dem Kunden vereinbarter Gesamtpreis — gesetzt entweder direkt im
+   * Admin-Bereich oder über ein Gegenangebot. null = Standardpreis gilt.
+   */
+  agreedPrice: number | null;
+  /** Begründung des Gegenangebots, z. B. Mehraufwand laut Fotos */
+  offerNote: string | null;
+  /** Bis zu drei Ersatztermine, die dem Kunden angeboten wurden */
+  offerAltDates: string[];
   /** Herkunft der Anfrage/Buchung. Alte Datensätze werden als Website behandelt. */
   bookingSource?: BookingSource;
   status: BookingStatus;
@@ -53,6 +89,11 @@ export type Booking = {
   depositStatus: DepositStatus;
   accessToken: string;
 };
+
+/** Der tatsächlich gültige Preis: Gegenangebot schlägt Standardpreis. */
+export function effectivePrice(booking: Pick<Booking, "total" | "agreedPrice">): number {
+  return booking.agreedPrice ?? booking.total;
+}
 
 export type LineItem = { label: string; qty: number; unit: number; total: number };
 

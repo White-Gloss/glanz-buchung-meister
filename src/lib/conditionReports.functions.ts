@@ -62,8 +62,7 @@ const ALLOWED_MEDIA_TYPES = new Set([
 ]);
 
 /** Storage-Pfad: <uuid>/<zeit>-<zufall>.<ext> */
-const STORAGE_PATH_PATTERN =
-  /^[0-9a-f-]{36}\/\d+-\d+\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i;
+const STORAGE_PATH_PATTERN = /^[0-9a-f-]{36}\/\d+-\d+\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i;
 
 function normalizeText(value: string, label: string, maxLength: number, required = false): string {
   const normalized = String(value ?? "").trim();
@@ -224,7 +223,9 @@ export const submitConditionReport = createServerFn({ method: "POST" })
     // mindestens eine Aufnahme oder einen aussagekräftigen Text.
     if (photoPaths.length === 0) {
       if (!conditionText) {
-        throw new Error("Bitte beschreiben Sie kurz Ihr Anliegen oder laden Sie ein Foto/Video hoch.");
+        throw new Error(
+          "Bitte beschreiben Sie kurz Ihr Anliegen oder laden Sie ein Foto/Video hoch.",
+        );
       }
       if (conditionText.length < 20) {
         throw new Error(

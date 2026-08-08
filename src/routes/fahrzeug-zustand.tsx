@@ -73,7 +73,9 @@ function ConditionPage() {
       return;
     }
     if (!hasSubstance) {
-      toast.error("Bitte laden Sie eine Aufnahme hoch oder beschreiben Sie kurz, wobei wir beraten sollen.");
+      toast.error(
+        "Bitte laden Sie eine Aufnahme hoch oder beschreiben Sie kurz, wobei wir beraten sollen.",
+      );
       return;
     }
     setSending(true);
@@ -114,8 +116,12 @@ function ConditionPage() {
               <span className="text-foreground">Zustand prüfen lassen</span>
             </nav>
 
+            {/* Greift die Bezeichnung aus dem Hauptmenü auf, damit klar ist,
+                dass dies die Seite hinter „Individuelles Angebot“ ist. */}
             <p className="eyebrow mt-7">Individuelles Angebot</p>
-            <h1 className="text-gradient display-page mt-3">Sie wissen nicht, was Ihr Auto braucht?</h1>
+            <h1 className="text-gradient display-page mt-3">
+              Sie wissen nicht, was Ihr Auto braucht?
+            </h1>
             <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
               Kein Problem: Schicken Sie uns Fotos oder ein kurzes Video und sagen Sie einfach, was
               Sie am Fahrzeug stört oder welches Ergebnis Sie sich wünschen. Sie müssen kein Paket
@@ -131,13 +137,23 @@ function ConditionPage() {
           {!done && (
             <>
               <div className="glass mb-8 rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
-                <p className="font-medium text-foreground">Welche Aufnahmen helfen uns am meisten?</p>
+                <p className="font-medium text-foreground">
+                  Welche Aufnahmen helfen uns am meisten?
+                </p>
                 <ul className="mt-3 list-disc space-y-1.5 pl-5">
                   <li>Das ganze Fahrzeug von schräg vorn und schräg hinten</li>
-                  <li>Nahaufnahmen von Kratzern, matten Stellen, Flecken oder anderen Auffälligkeiten</li>
+                  <li>
+                    Nahaufnahmen von Kratzern, matten Stellen, Flecken oder anderen Auffälligkeiten
+                  </li>
                   <li>Innenraum: Sitze, Fußräume, Armaturenbrett und Kofferraum</li>
-                  <li>Alternativ ein kurzes Video, in dem Sie einmal um das Fahrzeug bzw. durch den Innenraum gehen</li>
-                  <li>Am besten bei Tageslicht; große Handyfotos werden vor dem Upload automatisch verkleinert</li>
+                  <li>
+                    Alternativ ein kurzes Video, in dem Sie einmal um das Fahrzeug bzw. durch den
+                    Innenraum gehen
+                  </li>
+                  <li>
+                    Am besten bei Tageslicht; große Handyfotos werden vor dem Upload automatisch
+                    verkleinert
+                  </li>
                 </ul>
               </div>
 
@@ -153,7 +169,9 @@ function ConditionPage() {
                 </fieldset>
 
                 <fieldset className="glass space-y-4 rounded-2xl p-5">
-                  <legend className="display-card px-1 text-sm uppercase">Wobei sollen wir beraten?</legend>
+                  <legend className="display-card px-1 text-sm uppercase">
+                    Wobei sollen wir beraten?
+                  </legend>
                   <div className="block">
                     <label
                       htmlFor="zustand-beschreibung"
