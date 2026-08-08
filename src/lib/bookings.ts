@@ -22,6 +22,7 @@ export const bookingStatuses: BookingStatus[] = [
 ];
 
 export type DepositStatus = "nicht_erforderlich" | "offen" | "bezahlt";
+export type BookingSource = "website" | "whatsapp" | "telefon" | "vor_ort" | "sonstiges";
 
 export type Booking = {
   id: string;
@@ -40,7 +41,12 @@ export type Booking = {
     phone: string;
     plate: string;
   };
+  /** Automatisch aus Paket/Zusatzleistungen berechneter Ausgangspreis. */
   total: number;
+  /** Vom Admin nach Angaben/Fotos mit dem Kunden vereinbarter Gesamtpreis. */
+  agreedPrice?: number | null;
+  /** Herkunft der Anfrage/Buchung. Alte Datensätze werden als Website behandelt. */
+  bookingSource?: BookingSource;
   status: BookingStatus;
   isNewCustomer: boolean;
   depositAmount: number;

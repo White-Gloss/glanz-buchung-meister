@@ -7,21 +7,20 @@
  * GRUNDREGEL: Ein Fehler beim Mailversand darf NIEMALS eine Buchung
  * verhindern. Alle Funktionen hier fangen ihre Fehler selbst ab und melden
  * lediglich zurück, ob es geklappt hat.
- *
- * Benötigte Umgebungsvariablen (bei Hostinger zu hinterlegen):
- *   RESEND_API_KEY   – API-Schlüssel von resend.com
- *   MAIL_FROM        – Absender, z. B. "White Gloss Detailing <buchung@whitegloss.de>"
- *   MAIL_TO_OWNER    – Zieladresse für die interne Benachrichtigung
- *                      (optional; ohne Angabe wird company.email verwendet)
  */
 
 import { calcLineItems, calcTotals, type Booking } from "./bookings";
 import { company, currency, depositConfig, vatNotice } from "./servicesConfig";
 import { getPickupCity } from "./pickupLocations";
+import {
+  createBookingDocumentPdfBytes,
+  type BookingDocumentKind,
+} from "./bookingDocument";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 export type MailResult = { sent: boolean; reason?: string };
+type MailAttachment = { filename: string; content: string };
 
 function config() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -30,19 +29,11 @@ function config() {
   return { apiKey, from, ownerTo };
 }
 
-/** true, wenn der Versand grundsätzlich eingerichtet ist. */
 export function mailConfigured(): boolean {
   const { apiKey, from } = config();
   return Boolean(apiKey && from);
 }
 
-/**
- * Zustand der Konfiguration für die Anzeige im Admin-Bereich.
- *
- * Gibt bewusst NUR zurück, ob ein Schlüssel gesetzt ist — niemals seinen
- * Wert, auch nicht gekürzt. Absender und interne Zieladresse sind dagegen
- * keine Geheimnisse: sie stehen in jeder versendeten Mail.
- */
 export function mailSettingsSummary(): {
   apiKeySet: boolean;
   from: string | null;
@@ -52,12 +43,6 @@ export function mailSettingsSummary(): {
   return { apiKeySet: Boolean(apiKey), from: from || null, ownerTo: ownerTo || null };
 }
 
-/**
- * Testmail an eine bereits geprüfte Adresse.
- *
- * Der Aufrufer verantwortet, dass die Adresse dem angemeldeten
- * Administrator gehört — siehe mailDiagnostics.functions.ts.
- */
 export async function sendMailSelfTestTo(to: string): Promise<MailResult> {
   const zeitpunkt = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
   const text = [
@@ -88,6 +73,7 @@ async function send(params: {
   html: string;
   text: string;
   replyTo?: string;
+  attachments?: MailAttachment[];
 }): Promise<MailResult> {
   const { apiKey, from } = config();
   if (!apiKey || !from) {
@@ -108,6 +94,7 @@ async function send(params: {
         html: params.html,
         text: params.text,
         ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+        ...(params.attachments?.length ? { attachments: params.attachments } : {}),
       }),
     });
 
@@ -120,10 +107,6 @@ async function send(params: {
     return { sent: false, reason: error instanceof Error ? error.message : "Netzwerkfehler" };
   }
 }
-
-/* ------------------------------------------------------------------ */
-/* Bausteine                                                           */
-/* ------------------------------------------------------------------ */
 
 function escapeHtml(value: string): string {
   return value
@@ -152,7 +135,6 @@ function bookingSummary(booking: Booking) {
   return { items, totals, pickup };
 }
 
-/** Gemeinsames, bewusst schlichtes Layout – funktioniert in jedem Mailprogramm. */
 function layout(headline: string, intro: string, bodyHtml: string): string {
   return `<!doctype html>
 <html lang="de"><body style="margin:0;padding:24px;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#18181b;">
@@ -173,8 +155,25 @@ function layout(headline: string, intro: string, bodyHtml: string): string {
 </body></html>`;
 }
 
+function priceBasisHtml(confirmed: boolean): string {
+  const copy = confirmed
+    ? "Der vereinbarte Preis wurde auf Grundlage Ihrer Angaben und – sofern vorhanden – der übermittelten Fotos festgelegt. Sollten bei der Fahrzeugannahme zusätzliche Verschmutzungen, Mängel oder ein deutlich abweichender Fahrzeugzustand festgestellt werden, die vorab nicht erkennbar waren, kann sich der erforderliche Aufwand ändern. Selbstverständlich stimmen wir eine mögliche Preisanpassung vor Beginn zusätzlicher Arbeiten transparent mit Ihnen ab."
+    : "Der derzeit angegebene Preis basiert auf Ihren Angaben und – sofern vorhanden – den übermittelten Fotos. Die verbindliche Preisvereinbarung erfolgt mit der Terminbestätigung. Sollte der Fahrzeugzustand vor Ort deutlich von den vorab übermittelten Angaben abweichen, sprechen wir eine mögliche Anpassung selbstverständlich vor Beginn der Arbeiten mit Ihnen ab.";
+  return `<div style="margin:0 0 20px;padding:14px 16px;border-radius:8px;background:#f4f4f5;">
+    <p style="margin:0 0 5px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#52525b;">Preisgrundlage</p>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#52525b;">${escapeHtml(copy)}</p>
+  </div>`;
+}
+
+function priceBasisText(confirmed: boolean): string {
+  return confirmed
+    ? "Der vereinbarte Preis wurde auf Grundlage Ihrer Angaben und – sofern vorhanden – der übermittelten Fotos festgelegt. Zusätzlicher, vorab nicht erkennbarer Aufwand wird vor Beginn zusätzlicher Arbeiten transparent mit Ihnen abgestimmt."
+    : "Der derzeit angegebene Preis basiert auf Ihren Angaben und – sofern vorhanden – den übermittelten Fotos. Die verbindliche Preisvereinbarung erfolgt mit der Terminbestätigung.";
+}
+
 function itemsTableHtml(booking: Booking): string {
   const { items, totals, pickup } = bookingSummary(booking);
+  const agreed = booking.agreedPrice ?? null;
   const rows = items
     .map(
       (item) => `<tr>
@@ -183,6 +182,14 @@ function itemsTableHtml(booking: Booking): string {
       </tr>`,
     )
     .join("");
+
+  const calculationRow =
+    agreed != null && Math.abs(agreed - totals.gross) > 0.009
+      ? `<tr>
+          <td style="padding:8px 0 0;font-size:13px;color:#71717a;border-top:1px solid #e4e4e7;">Kalkulation laut Auswahl</td>
+          <td style="padding:8px 0 0;font-size:13px;text-align:right;color:#71717a;border-top:1px solid #e4e4e7;white-space:nowrap;">${currency(totals.gross)}</td>
+        </tr>`
+      : "";
 
   const depositRow =
     booking.depositStatus === "nicht_erforderlich"
@@ -199,7 +206,7 @@ function itemsTableHtml(booking: Booking): string {
   return `
   <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
     <tr>
-      <td style="padding:6px 0;font-size:14px;color:#71717a;">Rechnungsnummer</td>
+      <td style="padding:6px 0;font-size:14px;color:#71717a;">Buchungsnummer</td>
       <td style="padding:6px 0;font-size:14px;text-align:right;"><strong>${escapeHtml(booking.invoiceNumber)}</strong></td>
     </tr>
     <tr>
@@ -222,10 +229,11 @@ function itemsTableHtml(booking: Booking): string {
 
   <table style="width:100%;border-collapse:collapse;border-top:1px solid #e4e4e7;margin:0 0 8px;">
     ${rows}
+    ${calculationRow}
     <tr>
-      <td style="padding:12px 0 0;font-size:16px;border-top:1px solid #e4e4e7;"><strong>Gesamt</strong></td>
+      <td style="padding:12px 0 0;font-size:16px;border-top:1px solid #e4e4e7;"><strong>${agreed != null ? "Vereinbarter Gesamtpreis" : "Derzeitiger Gesamtpreis"}</strong></td>
       <td style="padding:12px 0 0;font-size:16px;text-align:right;border-top:1px solid #e4e4e7;white-space:nowrap;">
-        <strong>${currency(totals.gross)}</strong>
+        <strong>${currency(agreed ?? totals.gross)}</strong>
       </td>
     </tr>
     ${depositRow}
@@ -235,20 +243,46 @@ function itemsTableHtml(booking: Booking): string {
 
 function itemsTableText(booking: Booking): string {
   const { items, totals, pickup } = bookingSummary(booking);
+  const agreed = booking.agreedPrice ?? null;
   const lines = [
-    `Rechnungsnummer: ${booking.invoiceNumber}`,
+    `Buchungsnummer: ${booking.invoiceNumber}`,
     `Termin: ${formatDate(booking.date)}, ${booking.time} Uhr`,
     `Kennzeichen: ${booking.customer.plate}`,
   ];
   if (pickup) lines.push(`Abholort: ${pickup.name} (${pickup.distanceKm} km)`);
   lines.push("");
   items.forEach((item) => lines.push(`${item.label}: ${currency(item.total)}`));
-  lines.push(`Gesamt: ${currency(totals.gross)}`);
+  if (agreed != null && Math.abs(agreed - totals.gross) > 0.009) {
+    lines.push(`Kalkulation laut Auswahl: ${currency(totals.gross)}`);
+  }
+  lines.push(`${agreed != null ? "Vereinbarter Gesamtpreis" : "Derzeitiger Gesamtpreis"}: ${currency(agreed ?? totals.gross)}`);
   if (booking.depositStatus !== "nicht_erforderlich") {
     lines.push(`Anzahlung: ${currency(Number(booking.depositAmount))}`);
   }
   lines.push(vatNotice());
   return lines.join("\n");
+}
+
+async function bookingPdfAttachment(
+  booking: Booking,
+  kind: BookingDocumentKind,
+): Promise<MailAttachment | undefined> {
+  try {
+    const bytes = await createBookingDocumentPdfBytes(booking, kind);
+    const prefix =
+      kind === "confirmation"
+        ? "Terminbestaetigung"
+        : kind === "admin"
+          ? "Auftragsunterlagen"
+          : "Terminanfrage";
+    return {
+      filename: `${prefix}_${booking.invoiceNumber}.pdf`,
+      content: Buffer.from(bytes).toString("base64"),
+    };
+  } catch (error) {
+    console.error("[mail] PDF-Unterlage konnte nicht erstellt werden", error);
+    return undefined;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -265,13 +299,18 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
            <strong>${currency(Number(booking.depositAmount))}</strong>. Wie und bis wann,
            teilen wir Ihnen mit der Terminbestätigung mit.
          </p>`;
+  const attachment = await bookingPdfAttachment(booking, "request");
 
   const html = layout(
     "Ihre Terminanfrage ist eingegangen",
     `Hallo ${escapeHtml(firstName)}, vielen Dank für Ihre Anfrage. Wir melden uns zeitnah mit der verbindlichen Bestätigung. <strong>Dieser Termin ist noch nicht final zugesagt.</strong>`,
     itemsTableHtml(booking) +
+      priceBasisHtml(false) +
       depositHint +
-      `<p style="margin:0;font-size:14px;line-height:1.6;">
+      `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
+         Ihre Auftragsübersicht finden Sie zusätzlich als PDF im Anhang – zum Speichern oder Ausdrucken.
+       </p>
+       <p style="margin:0;font-size:14px;line-height:1.6;">
          Etwas stimmt nicht oder Sie möchten den Termin ändern? Antworten Sie einfach auf diese
          E-Mail oder rufen Sie an unter ${escapeHtml(company.phone)}.
        </p>`,
@@ -285,9 +324,13 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
     "",
     itemsTableText(booking),
     "",
+    priceBasisText(false),
+    "",
     booking.depositStatus === "nicht_erforderlich"
       ? "Eine Anzahlung ist für diesen Termin nicht erforderlich."
       : `Anzahlung erforderlich: ${currency(Number(booking.depositAmount))}. Details folgen mit der Bestätigung.`,
+    "",
+    "Ihre Auftragsübersicht ist dieser E-Mail als PDF beigefügt.",
     "",
     `Rückfragen: ${company.phone} oder Antwort auf diese E-Mail.`,
     "",
@@ -300,17 +343,10 @@ export async function sendCustomerConfirmation(booking: Booking): Promise<MailRe
     html,
     text,
     replyTo: company.email,
+    attachments: attachment ? [attachment] : undefined,
   });
 }
 
-/**
- * Verbindliche Terminbestätigung an den Kunden.
- *
- * Geht raus, wenn der Status im Admin-Bereich auf „Bestätigt" wechselt.
- * Vorher erhält der Kunde nur die Eingangsbestätigung mit dem
- * ausdrücklichen Hinweis, dass der Termin noch nicht zugesagt ist — ohne
- * diese zweite Mail bliebe er auf ebendiesem Stand sitzen.
- */
 export async function sendBookingConfirmed(booking: Booking): Promise<MailResult> {
   const firstName = booking.customer.name.split(" ")[0] || booking.customer.name;
   const { pickup } = bookingSummary(booking);
@@ -333,14 +369,20 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
            <strong>${currency(Number(booking.depositAmount))}</strong>. Wir melden uns dazu
            gesondert bei Ihnen.
          </p>`;
+  const attachment = await bookingPdfAttachment(booking, "confirmation");
 
   const html = layout(
     "Ihr Termin ist bestätigt",
     `Hallo ${escapeHtml(firstName)}, wir haben Ihren Termin fest eingeplant. <strong>Diese Bestätigung ist verbindlich.</strong>`,
     itemsTableHtml(booking) +
+      priceBasisHtml(true) +
       treffpunkt +
       anzahlung +
-      `<p style="margin:0;font-size:14px;line-height:1.6;">
+      `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;">
+         Die Endabrechnung erfolgt erst nach dem Termin. Sie können bei Fahrzeugübergabe bar zahlen
+         oder – sofern vereinbart – innerhalb von 7 Tagen per Rechnung.
+       </p>
+       <p style="margin:0;font-size:14px;line-height:1.6;">
          Sie müssen den Termin verschieben oder absagen? Antworten Sie einfach auf diese E-Mail
          oder rufen Sie an unter ${escapeHtml(company.phone)}. Bitte geben Sie uns möglichst
          frühzeitig Bescheid.
@@ -354,12 +396,16 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
     "",
     itemsTableText(booking),
     "",
+    priceBasisText(true),
+    "",
     pickup
       ? `Wir holen Ihr Fahrzeug in ${pickup.name} ab. Den Ablauf stimmen wir vorab telefonisch ab.`
       : `Bitte bringen Sie das Fahrzeug zu uns: ${company.street}, ${company.city}`,
     ...(booking.depositStatus === "nicht_erforderlich"
       ? []
       : ["", `Offene Anzahlung: ${currency(Number(booking.depositAmount))}. Details folgen.`]),
+    "",
+    "Die Endabrechnung erfolgt erst nach dem Termin: bar bei Fahrzeugübergabe oder – sofern vereinbart – per Rechnung innerhalb von 7 Tagen.",
     "",
     `Verschieben oder absagen: ${company.phone} oder Antwort auf diese E-Mail.`,
     "",
@@ -372,6 +418,7 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
     html,
     text,
     replyTo: company.email,
+    attachments: attachment ? [attachment] : undefined,
   });
 }
 
@@ -382,6 +429,7 @@ export async function sendBookingConfirmed(booking: Booking): Promise<MailResult
 export async function sendOwnerNotification(booking: Booking): Promise<MailResult> {
   const { ownerTo } = config();
   const { pickup } = bookingSummary(booking);
+  const attachment = await bookingPdfAttachment(booking, "admin");
 
   const html = layout(
     `Neue Anfrage: ${booking.customer.name}`,
@@ -399,9 +447,12 @@ export async function sendOwnerNotification(booking: Booking): Promise<MailResul
            <td style="padding:6px 0;font-size:14px;text-align:right;">${booking.isNewCustomer ? "Neukunde" : "Bestandskunde"}</td></tr>
      </table>` +
       itemsTableHtml(booking) +
-      `<p style="margin:0;font-size:14px;">
-         <a href="${company.web}/admin" style="display:inline-block;background:#18181b;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
-           Im Admin-Bereich öffnen
+      `<p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:#71717a;">
+         Die druckbaren Auftragsunterlagen sind dieser E-Mail als PDF beigefügt und zusätzlich im Admin-Bereich verfügbar.
+       </p>
+       <p style="margin:0;font-size:14px;">
+         <a href="${company.web}/admin/unterlagen" style="display:inline-block;background:#18181b;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;">
+           Unterlagen & Preis öffnen
          </a>
        </p>`,
   );
@@ -416,7 +467,8 @@ export async function sendOwnerNotification(booking: Booking): Promise<MailResul
     "",
     itemsTableText(booking),
     "",
-    `Admin: ${company.web}/admin`,
+    "Druckbare Auftragsunterlagen sind als PDF beigefügt.",
+    `Admin: ${company.web}/admin/unterlagen`,
   ].join("\n");
 
   return send({
@@ -425,17 +477,10 @@ export async function sendOwnerNotification(booking: Booking): Promise<MailResul
     html,
     text,
     replyTo: booking.customer.email,
+    attachments: attachment ? [attachment] : undefined,
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* Sammelaufruf                                                        */
-/* ------------------------------------------------------------------ */
-
-/**
- * Verschickt beide E-Mails. Wirft nie – Fehler werden protokolliert, damit
- * eine gestörte Zustellung die Buchung nicht gefährdet.
- */
 export async function sendBookingMails(booking: Booking): Promise<void> {
   if (!mailConfigured()) {
     console.warn(
@@ -467,23 +512,10 @@ export type ConditionReportMail = {
   photoCount: number;
 };
 
-/**
- * Benachrichtigt den Betrieb über eine neue Zustandsmeldung.
- *
- * Die Fotos werden BEWUSST NICHT angehängt, sondern nur gezählt. Zwei
- * Gründe: Acht Bilder zu je 8 MB sprengen jedes Postfach, und die Fotos
- * liegen absichtlich in einem privaten Speicher — als Mailanhang lägen
- * sie unverschlüsselt beim Mailanbieter und in jedem weitergeleiteten
- * Postfach. Die Mail verlinkt deshalb in den Admin-Bereich, wo sie über
- * kurzlebige signierte Links angezeigt werden.
- *
- * Antworten geht direkt an den Interessenten (reply_to).
- */
 export async function sendConditionReportNotification(
   report: ConditionReportMail,
 ): Promise<MailResult> {
   const { ownerTo } = config();
-
   const fotoText = report.photoCount === 1 ? "1 Foto" : `${report.photoCount} Fotos`;
 
   const zeile = (bezeichnung: string, wert: string) =>
