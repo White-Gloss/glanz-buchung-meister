@@ -64,10 +64,25 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
+function isRowLike(value: unknown): value is Row {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Partial<Row>;
+  return (
+    typeof row.id === "string" &&
+    typeof row.invoice_number === "string" &&
+    typeof row.booking_date === "string"
+  );
+}
+
 function parseBookingPayload(value: unknown): Row {
-  if (typeof value !== "string") return value as Row;
+  if (typeof value !== "string") {
+    if (isRowLike(value)) return value;
+    throw new Error("Buchung konnte nicht gelesen werden.");
+  }
   try {
-    return JSON.parse(value) as Row;
+    const parsed = JSON.parse(value);
+    if (!isRowLike(parsed)) throw new Error("Ungültiges Buchungsformat");
+    return parsed;
   } catch {
     throw new Error("Buchung konnte nicht gelesen werden.");
   }
