@@ -67,10 +67,11 @@ function isValidIsoDate(value: string): boolean {
 function isRowLike(value: unknown): value is Row {
   if (!value || typeof value !== "object") return false;
   const row = value as Partial<Row>;
+  const bookingDate = typeof row.booking_date === "string" ? row.booking_date.slice(0, 10) : "";
   return (
     typeof row.id === "string" &&
     typeof row.invoice_number === "string" &&
-    typeof row.booking_date === "string"
+    isValidIsoDate(bookingDate)
   );
 }
 
