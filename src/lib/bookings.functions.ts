@@ -190,12 +190,17 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // create_booking_public returns a JSON scalar, not a row set.
     const result = await queryOne<{ create_booking_public: string }>(
-      `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         data.vehicleId,
         data.packageId,
         data.addOnIds,
         data.date,
+        // Uhrzeit wird nicht mehr erhoben. Der Parameter bleibt in der
+        // Signatur, damit ein noch nicht ausgetauschter Stand der Anwendung
+        // weiter buchen kann — dort landen die Werte sonst um eine Stelle
+        // verschoben in den falschen Spalten.
+        null,
         data.name,
         data.email,
         data.phone,

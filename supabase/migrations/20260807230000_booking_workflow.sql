@@ -172,7 +172,12 @@ CREATE TRIGGER enforce_daily_booking_limit
 -- ---------------------------------------------------------------------
 -- 5. Öffentliche Buchungsfunktion ohne Uhrzeit
 -- ---------------------------------------------------------------------
--- Die alte Signatur wird entfernt, damit es keine zwei Fassungen gibt.
+-- WICHTIG: p_booking_time bleibt in der Signatur, obwohl keine Uhrzeit mehr
+-- erhoben wird. Grund ist die Auslieferungslücke — solange auf dem Server noch
+-- ein älterer Stand der Anwendung läuft, ruft dieser mit zehn Argumenten
+-- inklusive Uhrzeit auf. Ohne den Parameter hätte der Aufruf dieselbe
+-- Argumentzahl und dieselben Typen, aber alle Werte ab dem Datum wären um eine
+-- Stelle verschoben: der Name landete in der E-Mail-Spalte und so fort.
 DROP FUNCTION IF EXISTS public.create_booking_public(
   text, text, text[], date, text, text, text, text, text, text
 );
@@ -182,6 +187,7 @@ CREATE OR REPLACE FUNCTION public.create_booking_public(
   p_package_id        text,
   p_add_on_ids        text[],
   p_booking_date      date,
+  p_booking_time      text,
   p_customer_name     text,
   p_customer_email    text,
   p_customer_phone    text,
@@ -372,13 +378,14 @@ BEGIN
 
   INSERT INTO public.bookings (
     invoice_number,  vehicle_id,     package_id,     add_on_ids,
-    booking_date,    pickup_city,    preferred_contact,
+    booking_date,    booking_time,   pickup_city,    preferred_contact,
     customer_name,   customer_email, customer_phone, customer_plate,
     total,           status,         is_new_customer,
     deposit_amount,  deposit_status
   ) VALUES (
     v_invoice_number, p_vehicle_id,  p_package_id,   p_add_on_ids,
-    p_booking_date,   v_pickup_city, COALESCE(p_preferred_contact, 'E-Mail'),
+    p_booking_date,   NULLIF(trim(COALESCE(p_booking_time, '')), ''),
+    v_pickup_city,    COALESCE(p_preferred_contact, 'E-Mail'),
     trim(p_customer_name),  lower(trim(p_customer_email)),
     trim(p_customer_phone), upper(trim(p_customer_plate)),
     v_total,          'Wartend auf Prüfung', v_is_new_customer,
@@ -394,6 +401,7 @@ BEGIN
     'package_id',        v_row.package_id,
     'add_on_ids',        v_row.add_on_ids,
     'booking_date',      v_row.booking_date,
+    'booking_time',      v_row.booking_time,
     'pickup_city',       v_row.pickup_city,
     'preferred_contact', v_row.preferred_contact,
     'customer_name',     v_row.customer_name,
@@ -414,7 +422,7 @@ END;
 $function$;
 
 GRANT EXECUTE ON FUNCTION public.create_booking_public(
-  text, text, text[], date, text, text, text, text, text, text
+  text, text, text[], date, text, text, text, text, text, text, text
 ) TO anon, authenticated;
 
 -- ---------------------------------------------------------------------
