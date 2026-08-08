@@ -5,7 +5,9 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
 const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+const YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 const STATIC_CACHE_CONTROL = `public, max-age=${WEEK_IN_SECONDS}`;
+const IMMUTABLE_ASSET_CACHE_CONTROL = `public, max-age=${YEAR_IN_SECONDS}, immutable`;
 
 export default defineConfig(({ command }) => ({
   plugins: [
@@ -26,6 +28,13 @@ export default defineConfig(({ command }) => ({
             preset: "node-server",
             compressPublicAssets: { gzip: true, brotli: true },
             routeRules: {
+              // Vite versieht gebaute JS-, CSS-, Font- und Bilddateien unter
+              // /assets/ mit einem Content-Hash. Sie können deshalb gefahrlos
+              // sehr lange im Browser-Cache bleiben; eine neue Version erhält
+              // automatisch einen neuen Dateinamen.
+              "/assets/**": {
+                headers: { "cache-control": IMMUTABLE_ASSET_CACHE_CONTROL },
+              },
               "/wgd-logo-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon.ico": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
