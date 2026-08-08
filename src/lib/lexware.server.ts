@@ -57,7 +57,9 @@ function splitName(fullName: string) {
 }
 
 async function findContactByExactEmail(email: string): Promise<string | null> {
-  const response = await lexwareFetch(`/contacts?email=${encodeURIComponent(email)}&customer=true&page=0&size=25`);
+  const response = await lexwareFetch(
+    `/contacts?email=${encodeURIComponent(email)}&customer=true&page=0&size=25`,
+  );
   const result = (await response.json()) as LexwareContactList;
   const target = email.trim().toLowerCase();
   for (const contact of result.content ?? []) {
@@ -162,10 +164,14 @@ async function ensureState(bookingId: string): Promise<AutomationState> {
 async function claimBooking(bookingId: string): Promise<boolean> {
   const row = await queryOne<{ booking_id: string }>(
     `UPDATE public.booking_automation_state
-        SET lexware_processing_at = now(), lexware_last_error = null, updated_at = now()
+        SET lexware_processing_at = now(), updated_at = now()
       WHERE booking_id = $1
         AND lexware_invoice_id IS NULL
-        AND (lexware_processing_at IS NULL OR lexware_processing_at < now() - ($2 || ' minutes')::interval)
+        AND lexware_last_error IS NULL
+        AND (
+          lexware_processing_at IS NULL
+          OR lexware_processing_at < now() - make_interval(mins => $2::int)
+        )
       RETURNING booking_id`,
     [bookingId, CLAIM_TTL_MINUTES],
   );
@@ -213,9 +219,18 @@ export async function syncBookingToLexware(booking: Booking): Promise<LexwareSyn
         WHERE booking_id = $1`,
       [booking.id, invoice.id, invoice.voucherNumber ?? null],
     );
-    return { status: "created", invoiceId: invoice.id, invoiceNumber: invoice.voucherNumber ?? null };
+    return {
+      status: "created",
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.voucherNumber ?? null,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // Absichtlich KEIN automatischer Retry nach einem fehlgeschlagenen
+    // Lexware-Erstellversuch. Falls Lexware den POST angenommen hat, aber die
+    // Antwort unterwegs verloren ging, könnte ein blinder Retry eine zweite
+    // finalisierte Rechnung erzeugen. Der Fehler bleibt deshalb stehen, bis
+    // er im Admin/bei Lexware geprüft und bewusst zurückgesetzt wurde.
     await query(
       `UPDATE public.booking_automation_state
           SET lexware_processing_at = null, lexware_last_error = $2, updated_at = now()
