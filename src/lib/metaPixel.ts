@@ -1,4 +1,5 @@
 import { readStoredConsent } from "./adsConsent";
+import { company } from "./servicesConfig";
 
 /**
  * META PIXEL (FACEBOOK / INSTAGRAM)
@@ -29,7 +30,11 @@ declare global {
 export const META_CONTENT_CATEGORY = "Fahrzeugpflege/Detailing";
 
 function pixelId(): string | undefined {
-  return import.meta.env.VITE_META_PIXEL_ID;
+  // 1. Umgebungsvariable (Produktion, Build-Inject)
+  if (import.meta.env.VITE_META_PIXEL_ID) return import.meta.env.VITE_META_PIXEL_ID;
+  // 2. Zentrale Config (Entwicklung, nach Token-Eingabe)
+  if (company.meta.pixelId) return company.meta.pixelId;
+  return undefined;
 }
 
 /** Einwilligung erteilt und Pixel konfiguriert? */

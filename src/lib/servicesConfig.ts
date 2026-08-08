@@ -52,6 +52,40 @@ export const company = {
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   whatsappHref: "https://wa.me/4915233540284",
+  /** WhatsApp Business API (Cloud API) – für automatisierte Nachrichten */
+  whatsapp: {
+    wabaId: "1870045597301726",
+    /** Phone Number ID (aus Meta Business Suite → WhatsApp → API Setup) */
+    phoneNumberId: "",
+    /** Permanent Access Token (System User Token aus Meta Business App) */
+    accessToken: "",
+    /** Template-Nachrichten (genehmigt in Meta Business Suite) */
+    templates: {
+      bookingConfirmation: "",
+      followUpAfterService: "",
+      reminderDayBefore: "",
+    },
+  },
+  /** Meta Pixel, Conversions API & Werbekonto */
+  meta: {
+    /** Werbekonto-ID (Ad Account) */
+    adAccountId: "1676726026310355",
+    /** Pixel-ID aus Meta Events Manager */
+    pixelId: "1371250097882121",
+    /** CAPI System User ID */
+    systemUserId: "61592688045541",
+    /** CAPI Access Token (Conversions API → Einstellungen → Token) */
+    capiToken: "",
+  },
+  /** Instagram Feed (Basic Display API) */
+  instagramBusiness: {
+    /** Instagram Business Account ID */
+    accountId: "1272278672627760",
+    /** Facebook Page ID (verbunden mit dem Instagram-Konto) */
+    pageId: "1263688256824658",
+    /** Long-lived Access Token (Meta Graph API Explorer) */
+    accessToken: "",
+  },
   email: "info@whitegloss.de",
   web: "https://whitegloss.de",
   instagram: "",
@@ -70,7 +104,8 @@ export const taxConfig = {
   smallBusiness: false,
   smallBusinessNote:
     "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).",
-  paymentTerms: "Zahlbar innerhalb von 14 Tagen ohne Abzug nach Leistungserbringung.",
+  paymentTerms:
+    "Ohne abweichende Vereinbarung ist der Rechnungsbetrag vor Ort in bar oder spätestens innerhalb von 7 Tagen nach Leistungserbringung per Überweisung zahlbar.",
   invoicePrefix: "WGD-2026-",
   invoiceStartNumber: 1001,
 };
@@ -97,9 +132,9 @@ export function vatNoticeShort(): string {
 /** Anzahlung für Neukunden */
 export const depositConfig = {
   /** Anteil des Bruttobetrags, der von Neukunden im Voraus zu zahlen ist */
-  rate: 0.2,
-  label: "Anzahlung Neukunde (20 %)",
-  note: "Bei Erstbuchungen wird eine Anzahlung von 20 % des Gesamtbetrags fällig. Der Restbetrag ist nach Leistungserbringung zu zahlen.",
+  rate: 0.1,
+  label: "Anzahlung Neukunde (10 %)",
+  note: "Bei Erstbuchungen wird nach Annahme des Auftrags eine Anzahlung von 10 % des verbindlich vereinbarten Gesamtbetrags fällig. Der Restbetrag ist vor Ort in bar oder spätestens innerhalb von 7 Tagen nach Leistungserbringung per Überweisung zu zahlen.",
 };
 
 export const vehicleTypes: VehicleType[] = [

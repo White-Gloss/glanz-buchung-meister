@@ -164,7 +164,7 @@ export function calcTotals(items: LineItem[]) {
   return { gross, net, vat: gross - net };
 }
 
-/** Anzahlung für Neukunden (Standard: 20 % des Bruttobetrags) */
+/** Anzahlung für Neukunden (Standard: 10 % des Bruttobetrags) */
 export function calcDeposit(total: number, isNewCustomer: boolean) {
   if (!isNewCustomer) return 0;
   return Math.round(total * depositConfig.rate * 100) / 100;

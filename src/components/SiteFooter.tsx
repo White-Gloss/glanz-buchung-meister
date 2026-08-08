@@ -136,6 +136,12 @@ export function SiteFooter() {
             <Link to="/datenschutz" className="transition-colors hover:text-foreground">
               Datenschutz
             </Link>
+            <Link to="/agb" className="transition-colors hover:text-foreground">
+              AGB
+            </Link>
+            <Link to="/widerruf" className="transition-colors hover:text-foreground">
+              Widerruf
+            </Link>
           </nav>
         </div>
       </div>

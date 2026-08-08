@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, CircleGauge, Plus } from "lucide-react";
 
 import { ConversionBand } from "@/components/ConversionBand";
+import { TrustSignals } from "@/components/TrustSignals";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,10 @@ export const Route = createFileRoute("/preise")({
       { property: "og:url", content: absUrl("/preise") },
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:alt", content: OG_IMAGE_ALT },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
       { rel: "canonical", href: absUrl("/preise") },
@@ -73,6 +78,8 @@ function PricingPage() {
             </Button>
           </div>
         </section>
+
+        <TrustSignals />
 
         <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <div className="grid gap-5 lg:grid-cols-3">

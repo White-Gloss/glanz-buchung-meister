@@ -212,8 +212,7 @@ export function BookingWizard() {
       packageId
         ? addOns
             .filter(
-              (addOn) =>
-                !addOn.distanceBased && addOn.includedInPackages?.includes(packageId),
+              (addOn) => !addOn.distanceBased && addOn.includedInPackages?.includes(packageId),
             )
             .map((addOn) => addOn.id)
         : [],
@@ -229,8 +228,7 @@ export function BookingWizard() {
   const pickupCityData = pickupCitiesByDistance.find((city) => city.slug === pickupCity);
   const pickupDistanceKm = pickupCityData?.distanceKm ?? null;
   const pickupPrice = pickupDistanceKm === null ? null : getPickupPrice(pickupDistanceKm);
-  const pickupIncluded =
-    pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
+  const pickupIncluded = pickupDistanceKm !== null && isPickupIncluded(packageId, pickupDistanceKm);
   const pickupOnRequest =
     pickupSelected && !!pickupCityData && !pickupIncluded && pickupPrice === null;
   const pickupStepValid =
@@ -362,7 +360,9 @@ export function BookingWizard() {
       <div id="booking-active-step" className="mx-auto w-full max-w-4xl scroll-mt-28">
         <div className="mb-5 px-1 sm:mb-7">
           <div className="mb-3 flex items-center justify-between gap-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <span>Schritt {step + 1} von {steps.length}</span>
+            <span>
+              Schritt {step + 1} von {steps.length}
+            </span>
             <span className="font-semibold text-foreground">{steps[step]}</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -409,9 +409,13 @@ export function BookingWizard() {
                       </div>
                       <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-widest text-muted-foreground">ab</p>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            ab
+                          </p>
                           <p className="display-price text-primary">{currency(pkg.basePrice)}</p>
-                          <p className="text-xs text-muted-foreground">{vatNoticeShort()} · {pkg.duration}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {vatNoticeShort()} · {pkg.duration}
+                          </p>
                         </div>
                         {active && (
                           <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
@@ -467,7 +471,9 @@ export function BookingWizard() {
                           : "border-border bg-secondary/25 hover:border-primary/50 hover:bg-secondary/45",
                       ].join(" ")}
                     >
-                      <Icon className={`mx-auto size-7 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                      <Icon
+                        className={`mx-auto size-7 ${active ? "text-primary" : "text-muted-foreground"}`}
+                      />
                       <p className="mt-4 font-semibold">{vehicle.name}</p>
                       <p className="mt-1 text-sm text-muted-foreground">{vehicle.description}</p>
                       <p className="mt-4 display-price text-lg text-primary">{currency(price)}</p>
@@ -500,7 +506,8 @@ export function BookingWizard() {
                   if (addOn.distanceBased) {
                     if (!active && included) priceLabel = "Im Paket inklusive";
                     else if (!active) priceLabel = "nach Entfernung";
-                    else if (pickupDistanceKm === null) priceLabel = included ? "Inklusive" : "Ort wählen";
+                    else if (pickupDistanceKm === null)
+                      priceLabel = included ? "Inklusive" : "Ort wählen";
                     else if (pickupIncluded) priceLabel = "Inklusive";
                     else if (pickupPrice === null) priceLabel = "auf Anfrage";
                     else if (pickupPrice === 0) priceLabel = "Kostenlos";
@@ -524,7 +531,9 @@ export function BookingWizard() {
                     >
                       <div className="min-w-0">
                         <p className="font-semibold">{addOn.name}</p>
-                        <p className="mt-1 text-sm leading-5 text-muted-foreground">{addOn.description}</p>
+                        <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                          {addOn.description}
+                        </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
                         <span className="text-sm font-semibold text-primary">{priceLabel}</span>
@@ -547,7 +556,10 @@ export function BookingWizard() {
 
                 {pickupSelected && pickupAddOn && (
                   <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
-                    <Label htmlFor="pickup-city" className="text-xs uppercase tracking-widest text-muted-foreground">
+                    <Label
+                      htmlFor="pickup-city"
+                      className="text-xs uppercase tracking-widest text-muted-foreground"
+                    >
                       Abholort
                     </Label>
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -583,7 +595,8 @@ export function BookingWizard() {
                     </div>
                     {pickupOnRequest && (
                       <p role="alert" className="mt-3 text-sm text-destructive">
-                        Dieser Ort liegt außerhalb unserer festen Preisstaffel. Bitte wählen Sie einen anderen Ort oder kontaktieren Sie uns direkt unter {company.email}.
+                        Dieser Ort liegt außerhalb unserer festen Preisstaffel. Bitte wählen Sie
+                        einen anderen Ort oder kontaktieren Sie uns direkt unter {company.email}.
                       </p>
                     )}
                   </div>
@@ -592,7 +605,9 @@ export function BookingWizard() {
                 {items.length > 0 && (
                   <div className="flex items-center justify-between rounded-2xl border border-border bg-background/25 px-5 py-4">
                     <span className="text-sm text-muted-foreground">Aktueller Gesamtpreis</span>
-                    <span className="display-price text-xl text-primary">{currency(totals.gross)}</span>
+                    <span className="display-price text-xl text-primary">
+                      {currency(totals.gross)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -612,7 +627,8 @@ export function BookingWizard() {
                   <div className="flex gap-3">
                     <Camera className="mt-0.5 size-5 shrink-0 text-primary" />
                     <p>
-                      Die Aufnahmen sind privat und nur für die Angebotsprüfung im Admin-Bereich sichtbar. Sie helfen dabei, Mehraufwand vor dem Termin zu erkennen.
+                      Die Aufnahmen sind privat und nur für die Angebotsprüfung im Admin-Bereich
+                      sichtbar. Sie helfen dabei, Mehraufwand vor dem Termin zu erkennen.
                     </p>
                   </div>
                 </div>
@@ -626,7 +642,10 @@ export function BookingWizard() {
                 />
 
                 <div className="mt-6">
-                  <Label htmlFor="buchung-zustand-notiz" className="text-xs uppercase tracking-widest text-muted-foreground">
+                  <Label
+                    htmlFor="buchung-zustand-notiz"
+                    className="text-xs uppercase tracking-widest text-muted-foreground"
+                  >
                     Kurze Anmerkung (optional)
                   </Label>
                   <Textarea
@@ -669,7 +688,9 @@ export function BookingWizard() {
                     </p>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-muted-foreground">Bitte wählen Sie einen verfügbaren Tag.</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Bitte wählen Sie einen verfügbaren Tag.
+                  </p>
                 )}
                 <p className="mt-4 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
                   {TIME_NOTICE}
@@ -771,16 +792,23 @@ export function BookingWizard() {
                   <div className="flex gap-3">
                     <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
                     <div>
-                      <p className="font-semibold">Wichtig: Dies ist noch keine Terminbestätigung.</p>
+                      <p className="font-semibold">
+                        Wichtig: Dies ist noch keine Terminbestätigung.
+                      </p>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        White Gloss prüft Fotos, Leistungsumfang, Preis und Wunschtermin. Sie erhalten danach die verbindliche Bestätigung oder ein Gegenangebot mit möglichen Ersatzterminen per E-Mail.
+                        White Gloss prüft Fotos, Leistungsumfang, Preis und Wunschtermin. Sie
+                        erhalten danach die verbindliche Bestätigung oder ein Gegenangebot mit
+                        möglichen Ersatzterminen per E-Mail.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {submitError && (
-                  <div role="alert" className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                  <div
+                    role="alert"
+                    className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                  >
                     <p className="font-medium">{submitError.title}</p>
                     <p className="mt-1">{submitError.description}</p>
                     {submitError.hint && <p className="mt-2 text-xs">{submitError.hint}</p>}
@@ -788,7 +816,8 @@ export function BookingWizard() {
                 )}
 
                 <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
-                  Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben und Fahrzeugaufnahmen zur Bearbeitung Ihrer Anfrage zu.
+                  Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben und Fahrzeugaufnahmen
+                  zur Bearbeitung Ihrer Anfrage zu.
                 </p>
               </div>
             </section>
@@ -816,7 +845,11 @@ export function BookingWizard() {
                 <ArrowRight className="size-4" />
               </Button>
             ) : (
-              <Button className="sm:min-w-52" disabled={!canContinue || submitting} onClick={submit}>
+              <Button
+                className="sm:min-w-52"
+                disabled={!canContinue || submitting}
+                onClick={submit}
+              >
                 {submitting ? "Wird gesendet …" : "Terminanfrage senden"}
                 {submitting ? null : <CheckCircle2 className="size-4" />}
               </Button>
@@ -829,15 +862,7 @@ export function BookingWizard() {
   );
 }
 
-function StepHeader({
-  eyebrow,
-  title,
-  text,
-}: {
-  eyebrow: string;
-  title: string;
-  text: string;
-}) {
+function StepHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
   return (
     <div className="mx-auto mb-7 max-w-2xl text-center sm:mb-9">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">{eyebrow}</p>
@@ -925,7 +950,9 @@ function ReviewSummary({
         <ReviewRow label="Fahrzeug" value={vehicleName} />
         <ReviewRow
           label="Extras"
-          value={selectedAddOns.length ? selectedAddOns.map((addOn) => addOn.name).join(", ") : "Keine"}
+          value={
+            selectedAddOns.length ? selectedAddOns.map((addOn) => addOn.name).join(", ") : "Keine"
+          }
         />
         <ReviewRow label="Fotos" value={`${photoCount} Aufnahme${photoCount === 1 ? "" : "n"}`} />
         <ReviewRow label="Wunschtermin" value={date ? formatBookingDate(date) : "–"} />
@@ -962,10 +989,14 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
         <CheckCircle2 className="size-8 text-primary" />
       </div>
-      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">Anfrage erfolgreich gesendet</p>
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        Anfrage erfolgreich gesendet
+      </p>
       <h3 className="display-sub mt-2">Wir prüfen jetzt Ihre Buchung</h3>
       <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground">
-        Vielen Dank, {booking.customer.name}. Ihre Anfrage und der Wunschtermin sind bei White Gloss eingegangen. Erst die anschließende E-Mail nach unserer Prüfung bestätigt den Termin verbindlich.
+        Vielen Dank, {booking.customer.name}. Ihre Anfrage und der Wunschtermin sind bei White Gloss
+        eingegangen. Erst die anschließende E-Mail nach unserer Prüfung bestätigt den Termin
+        verbindlich.
       </p>
 
       <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
@@ -987,14 +1018,21 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
         <p className="font-semibold">So geht es weiter</p>
         <ol className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
           <li>1. White Gloss prüft Ihre Fahrzeugfotos, Leistungen und den Wunschtermin.</li>
-          <li>2. Sie erhalten die verbindliche Bestätigung oder ein Gegenangebot mit Ersatzterminen per E-Mail.</li>
-          <li>3. Erst nach Ihrer bzw. unserer finalen Bestätigung ist der Termin fest reserviert.</li>
+          <li>
+            2. Sie erhalten die verbindliche Bestätigung oder ein Gegenangebot mit Ersatzterminen
+            per E-Mail.
+          </li>
+          <li>
+            3. Erst nach Ihrer bzw. unserer finalen Bestätigung ist der Termin fest reserviert.
+          </li>
         </ol>
       </div>
 
       {booking.depositAmount > 0 && (
         <p className="mx-auto mt-4 max-w-xl rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
-          Für Neukunden wird nach der Terminfreigabe eine Anzahlung von <strong>{currency(booking.depositAmount)}</strong> fällig. Die Zahlungsinformationen erhalten Sie erst mit der verbindlichen Bestätigung.
+          Für Neukunden wird nach der Terminfreigabe eine Anzahlung von{" "}
+          <strong>{currency(booking.depositAmount)}</strong> fällig. Die Zahlungsinformationen
+          erhalten Sie erst mit der verbindlichen Bestätigung.
         </p>
       )}
 

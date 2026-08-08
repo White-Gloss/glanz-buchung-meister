@@ -67,8 +67,20 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const pixelId = process.env.META_PIXEL_ID || process.env.VITE_META_PIXEL_ID;
     const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+    // Runtime-Fallback aus der zentralen Config (Entwicklung)
+    let resolvedPixelId = pixelId;
+    let resolvedToken = accessToken;
+    if (!resolvedPixelId || !resolvedToken) {
+      try {
+        const { company } = await import("./servicesConfig");
+        if (!resolvedPixelId) resolvedPixelId = company.meta.pixelId || undefined;
+        if (!resolvedToken) resolvedToken = company.meta.capiToken || undefined;
+      } catch {
+        /* Konfigurationsimport optional */
+      }
+    }
     // Ohne vollständige Konfiguration ist die Anbindung schlicht inaktiv.
-    if (!pixelId || !accessToken) return { ok: false, skipped: true };
+    if (!resolvedPixelId || !resolvedToken) return { ok: false, skipped: true };
 
     const eventName = String(data.eventName ?? "").slice(0, 50);
     const eventId = String(data.eventId ?? "").slice(0, 100);
@@ -118,8 +130,8 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
 
     try {
       const response = await fetch(
-        `https://graph.facebook.com/${GRAPH_API_VERSION}/${pixelId}/events?access_token=${encodeURIComponent(
-          accessToken,
+        `https://graph.facebook.com/${GRAPH_API_VERSION}/${resolvedPixelId}/events?access_token=${encodeURIComponent(
+          resolvedToken,
         )}`,
         {
           method: "POST",

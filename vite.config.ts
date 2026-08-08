@@ -5,7 +5,9 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
 const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+const YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 const STATIC_CACHE_CONTROL = `public, max-age=${WEEK_IN_SECONDS}`;
+const IMMUTABLE_CACHE = `public, max-age=${YEAR_IN_SECONDS}, immutable`;
 
 export default defineConfig(({ command }) => ({
   plugins: [
@@ -26,6 +28,20 @@ export default defineConfig(({ command }) => ({
             preset: "node-server",
             compressPublicAssets: { gzip: true, brotli: true },
             routeRules: {
+              /** ════════════════════════════════════════
+               *  GLOBALE SECURITY HEADERS
+               *  ════════════════════════════════════════ */
+              "/**": {
+                headers: {
+                  "X-Content-Type-Options": "nosniff",
+                  "X-Frame-Options": "SAMEORIGIN",
+                  "Referrer-Policy": "strict-origin-when-cross-origin",
+                  "X-DNS-Prefetch-Control": "on",
+                  "X-XSS-Protection": "0", // Veraltet, absichtlich deaktiviert
+                  "Permissions-Policy":
+                    "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+                },
+              },
               "/wgd-logo-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon.ico": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
               "/favicon-**": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
@@ -33,6 +49,8 @@ export default defineConfig(({ command }) => ({
                 headers: { "cache-control": STATIC_CACHE_CONTROL },
               },
               "/site.webmanifest": { headers: { "cache-control": STATIC_CACHE_CONTROL } },
+              "/_build/**": { headers: { "cache-control": IMMUTABLE_CACHE } },
+              "/assets/**": { headers: { "cache-control": IMMUTABLE_CACHE } },
             },
           }),
         ]

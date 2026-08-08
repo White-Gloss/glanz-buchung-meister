@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AgbRouteImport } from './routes/agb'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DankeRouteImport } from './routes/danke'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -20,6 +22,7 @@ import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
@@ -51,9 +54,19 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgbRoute = AgbRouteImport.update({
+  id: '/agb',
+  path: '/agb',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DankeRoute = DankeRouteImport.update({
+  id: '/danke',
+  path: '/danke',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
@@ -94,6 +107,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WiderrufRoute = WiderrufRouteImport.update({
+  id: '/widerruf',
+  path: '/widerruf',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -212,7 +230,9 @@ const AuthenticatedAdminAdminZustandRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
+  '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
@@ -221,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
@@ -244,7 +265,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
+  '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
@@ -253,6 +276,7 @@ export interface FileRoutesByTo {
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
@@ -277,7 +301,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
+  '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
@@ -286,6 +312,7 @@ export interface FileRoutesById {
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/widerruf': typeof WiderrufRoute
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
@@ -312,7 +339,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agb'
     | '/auth'
+    | '/danke'
     | '/datenschutz'
     | '/fahrzeug-zustand'
     | '/faq'
@@ -321,6 +350,7 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/widerruf'
     | '/abholservice/$city'
     | '/angebot/$token'
     | '/api/automation-cron'
@@ -344,7 +374,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agb'
     | '/auth'
+    | '/danke'
     | '/datenschutz'
     | '/fahrzeug-zustand'
     | '/faq'
@@ -353,6 +385,7 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/widerruf'
     | '/abholservice/$city'
     | '/angebot/$token'
     | '/api/automation-cron'
@@ -376,7 +409,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/agb'
     | '/auth'
+    | '/danke'
     | '/datenschutz'
     | '/fahrzeug-zustand'
     | '/faq'
@@ -385,6 +420,7 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/widerruf'
     | '/_authenticated/_admin'
     | '/abholservice/$city'
     | '/angebot/$token'
@@ -411,7 +447,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AgbRoute: typeof AgbRoute
   AuthRoute: typeof AuthRoute
+  DankeRoute: typeof DankeRoute
   DatenschutzRoute: typeof DatenschutzRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
@@ -420,6 +458,7 @@ export interface RootRouteChildren {
   QualitaetRoute: typeof QualitaetRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  WiderrufRoute: typeof WiderrufRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
   AngebotTokenRoute: typeof AngebotTokenRoute
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
@@ -448,11 +487,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agb': {
+      id: '/agb'
+      path: '/agb'
+      fullPath: '/agb'
+      preLoaderRoute: typeof AgbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/danke': {
+      id: '/danke'
+      path: '/danke'
+      fullPath: '/danke'
+      preLoaderRoute: typeof DankeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/datenschutz': {
@@ -509,6 +562,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widerruf': {
+      id: '/widerruf'
+      path: '/widerruf'
+      fullPath: '/widerruf'
+      preLoaderRoute: typeof WiderrufRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_admin': {
@@ -722,7 +782,9 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AgbRoute: AgbRoute,
   AuthRoute: AuthRoute,
+  DankeRoute: DankeRoute,
   DatenschutzRoute: DatenschutzRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
@@ -731,6 +793,7 @@ const rootRouteChildren: RootRouteChildren = {
   QualitaetRoute: QualitaetRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  WiderrufRoute: WiderrufRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
   AngebotTokenRoute: AngebotTokenRoute,
   ApiAutomationCronRoute: ApiAutomationCronRoute,
