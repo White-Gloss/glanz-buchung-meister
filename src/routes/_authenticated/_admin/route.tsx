@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
-import { ShieldAlert } from "lucide-react";
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { ShieldAlert, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseClient } from "@/integrations/supabase/get-client";
 
@@ -54,5 +54,26 @@ function AdminGate() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <AutomationShortcut />
+    </>
+  );
+}
+
+function AutomationShortcut() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  if (pathname.startsWith("/admin/automatisierung")) return null;
+
+  return (
+    <Link
+      to="/admin/automatisierung"
+      aria-label="Automatisierung öffnen"
+      className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-2.5 text-sm font-medium text-foreground shadow-xl backdrop-blur transition-colors hover:border-primary/60 hover:bg-secondary"
+    >
+      <Workflow aria-hidden className="size-4 text-primary" />
+      <span className="hidden sm:inline">Automatisierung</span>
+    </Link>
+  );
 }
