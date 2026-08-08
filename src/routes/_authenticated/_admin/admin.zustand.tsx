@@ -21,12 +21,8 @@ import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 /**
  * ZUSTANDSMELDUNGEN IM ADMIN-BEREICH
  * -----------------------------------
- * Zeigt, was Interessenten über /fahrzeug-zustand geschickt haben.
- *
- * Die Fotos liegen in einem privaten Speicher. Sie werden deshalb erst
- * beim Aufklappen einer Meldung über kurzlebige signierte Links geladen —
- * das spart Datenvolumen und vermeidet, dass Bildadressen im Umlauf
- * bleiben, die noch stundenlang gültig wären.
+ * Fotos und Videos liegen privat im Storage. Erst beim Aufklappen werden
+ * dafür zeitlich begrenzte signierte Links erzeugt.
  */
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/zustand")({
@@ -61,6 +57,10 @@ function formatDateTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function isVideoPath(path: string): boolean {
+  return /\.(mp4|mov|webm)$/i.test(path);
 }
 
 function ConditionAdminPage() {
@@ -122,8 +122,8 @@ function ConditionAdminPage() {
             <a href="/fahrzeug-zustand" className="text-primary underline underline-offset-2">
               Zustand prüfen lassen
             </a>
-            . Die Fotos sind nicht öffentlich abrufbar — sie werden nur hier über zeitlich begrenzte
-            Links angezeigt.
+            . Fotos und Videos sind nicht öffentlich abrufbar — sie werden nur hier über zeitlich
+            begrenzte Links angezeigt.
             {offen > 0 && (
               <>
                 {" "}
@@ -164,23 +164,23 @@ function ConditionAdminPage() {
 function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged: () => void }) {
   const [status, setStatus] = useState<ConditionStatus>(report.status);
   const [note, setNote] = useState(report.admin_note);
-  const [photoUrls, setPhotoUrls] = useState<string[] | null>(null);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [mediaUrls, setMediaUrls] = useState<string[] | null>(null);
+  const [loadingMedia, setLoadingMedia] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const fetchPhotos = useServerFn(getConditionPhotoUrls);
+  const fetchMedia = useServerFn(getConditionPhotoUrls);
   const update = useServerFn(updateConditionReport);
   const remove = useServerFn(deleteConditionReport);
 
-  async function showPhotos() {
-    if (photoUrls || loadingPhotos) return;
-    setLoadingPhotos(true);
+  async function showMedia() {
+    if (mediaUrls || loadingMedia) return;
+    setLoadingMedia(true);
     try {
-      setPhotoUrls(await fetchPhotos({ data: { id: report.id } }));
+      setMediaUrls(await fetchMedia({ data: { id: report.id } }));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Fotos konnten nicht geladen werden.");
+      toast.error(error instanceof Error ? error.message : "Medien konnten nicht geladen werden.");
     } finally {
-      setLoadingPhotos(false);
+      setLoadingMedia(false);
     }
   }
 
@@ -199,7 +199,9 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
 
   async function handleDelete() {
     if (
-      !window.confirm(`Meldung von „${report.customer_name}" mit allen Fotos endgültig löschen?`)
+      !window.confirm(
+        `Meldung von „${report.customer_name}" mit allen Fotos/Videos endgültig löschen?`,
+      )
     ) {
       return;
     }
@@ -207,7 +209,7 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
     try {
       const result = await remove({ data: { id: report.id } });
       if (result.storageWarning) {
-        toast.warning("Meldung gelöscht, die Fotos konnten aber nicht entfernt werden.");
+        toast.warning("Meldung gelöscht, einzelne Medien konnten aber nicht entfernt werden.");
       } else {
         toast.success("Meldung gelöscht.");
       }
@@ -234,8 +236,6 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
             <time dateTime={report.created_at} className="text-xs text-muted-foreground">
               {formatDateTime(report.created_at)}
             </time>
-            {/* Stammt die Meldung aus dem Buchungsassistenten, gehört sie
-                zu einem konkreten Termin — das gehört sofort ins Auge. */}
             {report.invoice_number && (
               <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-xs text-primary">
                 zur Buchung {report.invoice_number}
@@ -283,41 +283,70 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
         </Button>
       </header>
 
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-        {report.condition_text}
-      </p>
+      {report.condition_text ? (
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+          {report.condition_text}
+        </p>
+      ) : (
+        <p className="mt-4 text-sm italic text-muted-foreground">
+          Keine zusätzliche Beschreibung — bitte Aufnahmen prüfen.
+        </p>
+      )}
 
       {report.photo_paths.length > 0 && (
         <div className="mt-5">
-          {photoUrls === null ? (
+          {mediaUrls === null ? (
             <Button
               variant="outline"
               size="sm"
-              onClick={showPhotos}
-              loading={loadingPhotos}
+              onClick={showMedia}
+              loading={loadingMedia}
               className="gap-1.5"
             >
               <Images className="size-3.5" />
               {report.photo_paths.length}{" "}
-              {report.photo_paths.length === 1 ? "Foto ansehen" : "Fotos ansehen"}
+              {report.photo_paths.length === 1 ? "Aufnahme ansehen" : "Aufnahmen ansehen"}
             </Button>
           ) : (
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {photoUrls.map((url, index) => (
-                <li key={url}>
-                  {/* Neues Tab statt Lightbox: die signierten Links lassen
-                      sich so in voller Auflösung ansehen und zoomen. */}
-                  <a href={url} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={url}
-                      alt={`Foto ${index + 1} von ${report.customer_name}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="aspect-square w-full rounded-xl border border-border/60 object-cover transition-opacity hover:opacity-85"
-                    />
-                  </a>
-                </li>
-              ))}
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {mediaUrls.map((url, index) => {
+                const path = report.photo_paths[index] ?? "";
+                const video = isVideoPath(path);
+                return (
+                  <li key={`${path}-${url}`} className="min-w-0">
+                    {video ? (
+                      <div className="overflow-hidden rounded-xl border border-border/60 bg-black/20">
+                        <video
+                          src={url}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="aspect-video w-full bg-black object-contain"
+                          aria-label={`Zustandsvideo ${index + 1} von ${report.customer_name}`}
+                        />
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block px-3 py-2 text-xs text-primary underline underline-offset-2"
+                        >
+                          Video separat öffnen
+                        </a>
+                      </div>
+                    ) : (
+                      <a href={url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={url}
+                          alt={`Foto ${index + 1} von ${report.customer_name}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="aspect-video w-full rounded-xl border border-border/60 object-cover transition-opacity hover:opacity-85"
+                        />
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
