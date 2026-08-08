@@ -9,10 +9,10 @@ import {
 /**
  * Vorher/Nachher-Referenzgalerie auf der Startseite.
  *
- * Lädt erst nach dem ersten Rendern (kein Server-Loader auf der
- * Startseite) — dieselbe Zurückhaltung wie beim Buchungsassistenten:
- * die Galerie ist kein Inhalt, der den ersten Seitenaufbau (LCP) blockieren
- * sollte, gerade weil sie mehrere Bilder gleichzeitig lädt.
+ * Die Galerie liegt unterhalb des sichtbaren Startbereichs. Ihre Datenabfrage
+ * wird deshalb bewusst kurz nach hinten geschoben, damit sie beim ersten
+ * Laden nicht mit Hero-Bild, Fonts, CSS und Hydration um Netzwerk-/CPU-Zeit
+ * konkurriert. Die eigentlichen Galeriebilder bleiben zusätzlich lazy-loaded.
  *
  * Rendert komplett unsichtbar (null), solange keine Bilder vorhanden sind —
  * keine leere Sektion mit Überschrift ohne Inhalt.
@@ -22,9 +22,22 @@ export function VehicleGallery() {
   const fetchItems = useServerFn(listPublishedGalleryItems);
 
   useEffect(() => {
-    void fetchItems({})
-      .then(setItems)
-      .catch(() => setItems([]));
+    let cancelled = false;
+
+    const timer = window.setTimeout(() => {
+      void fetchItems({})
+        .then((rows) => {
+          if (!cancelled) setItems(rows);
+        })
+        .catch(() => {
+          if (!cancelled) setItems([]);
+        });
+    }, 2_500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [fetchItems]);
 
   if (items === null || items.length === 0) return null;
@@ -46,6 +59,7 @@ export function VehicleGallery() {
                   src={galleryPublicUrl(item.storage_path)}
                   alt={item.title || item.vehicle || "Aufbereitetes Fahrzeug"}
                   loading="lazy"
+                  decoding="async"
                   className="size-full object-cover"
                   width={640}
                   height={360}
