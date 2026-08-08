@@ -95,7 +95,10 @@ export async function sendLexwareInvoiceEmail(params: {
   const firstName = booking.customer.name.split(/\s+/)[0] || booking.customer.name;
   const lines = calcLineItems(booking);
   const itemsHtml = lines
-    .map((item) => `<tr><td style="padding:7px 0;font-size:14px;">${escapeHtml(item.label)}</td><td style="padding:7px 0;font-size:14px;text-align:right;">${escapeHtml(currency(item.total))}</td></tr>`)
+    .map(
+      (item) =>
+        `<tr><td style="padding:7px 0;font-size:14px;">${escapeHtml(item.label)}</td><td style="padding:7px 0;font-size:14px;text-align:right;">${escapeHtml(currency(item.total))}</td></tr>`,
+    )
     .join("");
 
   const html = layout(
@@ -141,7 +144,7 @@ export async function sendAppointmentReminder(booking: Booking): Promise<Automat
 
   const html = layout(
     "Erinnerung an Ihren Termin",
-    `Hallo ${escapeHtml(firstName)}, morgen ist Ihr Termin bei ${escapeHtml(company.name)}.`,
+    `Hallo ${escapeHtml(firstName)}, Ihr Termin bei ${escapeHtml(company.name)} steht bald an.`,
     `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
       <tr><td style="padding:6px 0;color:#71717a;">Datum</td><td style="padding:6px 0;text-align:right;">${escapeHtml(formatDate(booking.date))}</td></tr>
       <tr><td style="padding:6px 0;color:#71717a;">Uhrzeit</td><td style="padding:6px 0;text-align:right;">${escapeHtml(booking.time)} Uhr</td></tr>
@@ -154,7 +157,7 @@ export async function sendAppointmentReminder(booking: Booking): Promise<Automat
   const text = [
     `Hallo ${firstName},`,
     "",
-    `Erinnerung an Ihren Termin morgen bei ${company.name}.`,
+    `Ihr Termin bei ${company.name} steht bald an.`,
     `${formatDate(booking.date)}, ${booking.time} Uhr`,
     `Leistung: ${pkg?.name ?? booking.packageId}`,
     `Kennzeichen: ${booking.customer.plate}`,
