@@ -44,8 +44,8 @@ function titleFor(kind: BookingDocumentKind) {
   return "Terminanfrage / Auftragsübersicht";
 }
 
-function priceNote(kind: BookingDocumentKind) {
-  if (kind === "confirmation" || kind === "admin") {
+function priceNote(kind: BookingDocumentKind, hasAgreedPrice: boolean) {
+  if (kind === "confirmation" || (kind === "admin" && hasAgreedPrice)) {
     return (
       "Der vereinbarte Preis wurde auf Grundlage Ihrer Angaben und – sofern vorhanden – der " +
       "übermittelten Fotos festgelegt. Sollten bei der Fahrzeugannahme zusätzliche Verschmutzungen, " +
@@ -188,7 +188,7 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
   }
 
   doc.setFillColor(250, 250, 250);
-  const noteLines = wrapped(priceNote(kind), W - 10);
+  const noteLines = wrapped(priceNote(kind, agreed != null), W - 10);
   const noteHeight = Math.max(24, noteLines.length * 4.5 + 13);
   doc.roundedRect(L, y, W, noteHeight, 2, 2, "F");
   doc.setFont("helvetica", "bold");
