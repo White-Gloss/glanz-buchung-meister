@@ -151,9 +151,27 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "any" },
-      { rel: "icon", href: "/favicon-48.png", type: "image/png", sizes: "48x48" },
-      { rel: "icon", href: "/favicon-192.png", type: "image/png", sizes: "192x192" },
+      // 48×48 zuerst: Googles Suchergebnisse bevorzugen ein quadratisches Icon
+      // in einem Vielfachen von 48 px. Die Versionskennung umgeht alte Favicon-Caches.
+      {
+        rel: "icon",
+        href: "/favicon-48.png?v=20260808",
+        type: "image/png",
+        sizes: "48x48",
+      },
+      {
+        rel: "shortcut icon",
+        href: "/favicon-48.png?v=20260808",
+        type: "image/png",
+        sizes: "48x48",
+      },
+      {
+        rel: "icon",
+        href: "/favicon-192.png?v=20260808",
+        type: "image/png",
+        sizes: "192x192",
+      },
+      { rel: "icon", href: "/favicon.ico?v=20260808", type: "image/x-icon", sizes: "any" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       { rel: "manifest", href: "/site.webmanifest" },
     ],
