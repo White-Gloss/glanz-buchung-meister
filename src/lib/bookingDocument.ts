@@ -4,6 +4,8 @@ import { getPickupCity } from "./pickupLocations";
 
 export type BookingDocumentKind = "request" | "confirmation" | "admin";
 
+type PdfTextOptions = { align?: "left" | "center" | "right" | "justify" };
+
 const eur = (value: number) =>
   new Intl.NumberFormat("de-DE", {
     minimumFractionDigits: 2,
@@ -74,12 +76,15 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
   const agreed = booking.agreedPrice ?? null;
   const shownPrice = agreed ?? booking.total;
 
-  const text = (value: string, x: number, atY: number, options?: Parameters<typeof doc.text>[3]) =>
-    doc.text(value, x, atY, options);
+  const text = (
+    value: string | string[],
+    x: number,
+    atY: number,
+    options?: PdfTextOptions,
+  ) => doc.text(value, x, atY, options);
 
   const wrapped = (value: string, width: number) => doc.splitTextToSize(value, width) as string[];
 
-  // Header
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(18);
@@ -110,7 +115,6 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
   text(`Buchungsnummer ${booking.invoiceNumber}`, R, y, { align: "right" });
   y += 10;
 
-  // Customer / booking meta
   doc.setFillColor(247, 247, 248);
   doc.roundedRect(L, y, W, 34, 2, 2, "F");
   doc.setTextColor(25);
@@ -141,7 +145,6 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
     y += 7;
   }
 
-  // Services
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(20);
@@ -184,7 +187,6 @@ async function buildDocument(booking: Booking, kind: BookingDocumentKind) {
     y += 8;
   }
 
-  // Price basis note
   doc.setFillColor(250, 250, 250);
   const noteLines = wrapped(priceNote(kind), W - 10);
   const noteHeight = Math.max(24, noteLines.length * 4.5 + 13);
@@ -268,13 +270,18 @@ export async function downloadBookingDocumentPdf(
   kind: BookingDocumentKind = "admin",
 ): Promise<void> {
   const doc = await buildDocument(booking, kind);
-  const prefix = kind === "confirmation" ? "Terminbestaetigung" : kind === "request" ? "Terminanfrage" : "Auftragsunterlagen";
+  const prefix =
+    kind === "confirmation"
+      ? "Terminbestaetigung"
+      : kind === "request"
+        ? "Terminanfrage"
+        : "Auftragsunterlagen";
   doc.save(`${prefix}_${booking.invoiceNumber}.pdf`);
 }
 
 export async function printBookingDocumentPdf(booking: Booking): Promise<void> {
   const bytes = await createBookingDocumentPdfBytes(booking, "admin");
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const opened = window.open(url, "_blank", "noopener,noreferrer");
   if (!opened) {
