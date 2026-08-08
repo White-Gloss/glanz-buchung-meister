@@ -98,7 +98,10 @@ function withProductionHeaders(request: Request, response: Response): Response {
 
   const url = new URL(request.url);
   if (request.method === "GET" && response.status === 200 && isPublicPage(url.pathname)) {
-    headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+    // HTML nach Deployments nicht im CDN festhalten. Alte HTML-Antworten können
+    // sonst auf bereits entfernte, gehashte JS-Chunks zeigen und einzelne
+    // Routen wie /preise mit einem Ladefehler abbrechen lassen.
+    headers.set("Cache-Control", "no-cache, must-revalidate");
   } else if (
     url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/auth") ||
