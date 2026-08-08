@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as AngebotTokenRouteImport } from './routes/angebot.$token'
+import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
 import { Route as KalenderTokenRouteImport } from './routes/kalender.$token'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
@@ -32,11 +33,13 @@ import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authentic
 import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
 import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
 import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
+import { Route as AuthenticatedAdminAdminAutomatisierungRouteImport } from './routes/_authenticated/_admin/admin.automatisierung'
 import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
 import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
+import { Route as AuthenticatedAdminAdminUnterlagenRouteImport } from './routes/_authenticated/_admin/admin.unterlagen'
 import { Route as AuthenticatedAdminAdminZustandRouteImport } from './routes/_authenticated/_admin/admin.zustand'
 
 const IndexRoute = IndexRouteImport.update({
@@ -112,6 +115,11 @@ const AngebotTokenRoute = AngebotTokenRouteImport.update({
   path: '/angebot/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAutomationCronRoute = ApiAutomationCronRouteImport.update({
+  id: '/api/automation-cron',
+  path: '/api/automation-cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KalenderTokenRoute = KalenderTokenRouteImport.update({
   id: '/kalender/$token',
   path: '/kalender/$token',
@@ -153,6 +161,12 @@ const AuthenticatedAdminAdminIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminAutomatisierungRoute =
+  AuthenticatedAdminAdminAutomatisierungRouteImport.update({
+    id: '/automatisierung',
+    path: '/automatisierung',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminBlogRoute =
   AuthenticatedAdminAdminBlogRouteImport.update({
     id: '/blog',
@@ -183,6 +197,12 @@ const AuthenticatedAdminAdminLeistungenRoute =
     path: '/leistungen',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminUnterlagenRoute =
+  AuthenticatedAdminAdminUnterlagenRouteImport.update({
+    id: '/unterlagen',
+    path: '/unterlagen',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminZustandRoute =
   AuthenticatedAdminAdminZustandRouteImport.update({
     id: '/zustand',
@@ -203,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -211,11 +232,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
@@ -232,6 +255,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
@@ -239,11 +263,13 @@ export interface FileRoutesByTo {
   '/ratgeber': typeof RatgeberIndexRoute
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
+  '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin': typeof AuthenticatedAdminAdminIndexRoute
 }
@@ -263,6 +289,7 @@ export interface FileRoutesById {
   '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/angebot/$token': typeof AngebotTokenRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/kalender/$token': typeof KalenderTokenRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -271,11 +298,13 @@ export interface FileRoutesById {
   '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
+  '/_authenticated/_admin/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/_authenticated/_admin/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/_authenticated/_admin/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
@@ -294,6 +323,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/angebot/$token'
+    | '/api/automation-cron'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -302,11 +332,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/admin/automatisierung'
     | '/admin/blog'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/unterlagen'
     | '/admin/zustand'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -323,6 +355,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/abholservice/$city'
     | '/angebot/$token'
+    | '/api/automation-cron'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice'
@@ -330,11 +363,13 @@ export interface FileRouteTypes {
     | '/ratgeber'
     | '/leistungen/$service/$city'
     | '/leistungen/$service'
+    | '/admin/automatisierung'
     | '/admin/blog'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/unterlagen'
     | '/admin/zustand'
     | '/admin'
   id:
@@ -353,6 +388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin'
     | '/abholservice/$city'
     | '/angebot/$token'
+    | '/api/automation-cron'
     | '/kalender/$token'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -361,11 +397,13 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin/admin'
     | '/leistungen/$service/$city'
     | '/leistungen/$service/'
+    | '/_authenticated/_admin/admin/automatisierung'
     | '/_authenticated/_admin/admin/blog'
     | '/_authenticated/_admin/admin/faqs'
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
     | '/_authenticated/_admin/admin/leistungen'
+    | '/_authenticated/_admin/admin/unterlagen'
     | '/_authenticated/_admin/admin/zustand'
     | '/_authenticated/_admin/admin/'
   fileRoutesById: FileRoutesById
@@ -384,6 +422,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AbholserviceCityRoute: typeof AbholserviceCityRoute
   AngebotTokenRoute: typeof AngebotTokenRoute
+  ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   KalenderTokenRoute: typeof KalenderTokenRoute
   RatgeberSlugRoute: typeof RatgeberSlugRoute
   AbholserviceIndexRoute: typeof AbholserviceIndexRoute
@@ -500,6 +539,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AngebotTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/automation-cron': {
+      id: '/api/automation-cron'
+      path: '/api/automation-cron'
+      fullPath: '/api/automation-cron'
+      preLoaderRoute: typeof ApiAutomationCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kalender/$token': {
       id: '/kalender/$token'
       path: '/kalender/$token'
@@ -556,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/automatisierung': {
+      id: '/_authenticated/_admin/admin/automatisierung'
+      path: '/automatisierung'
+      fullPath: '/admin/automatisierung'
+      preLoaderRoute: typeof AuthenticatedAdminAdminAutomatisierungRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/blog': {
       id: '/_authenticated/_admin/admin/blog'
       path: '/blog'
@@ -591,6 +644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLeistungenRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/unterlagen': {
+      id: '/_authenticated/_admin/admin/unterlagen'
+      path: '/unterlagen'
+      fullPath: '/admin/unterlagen'
+      preLoaderRoute: typeof AuthenticatedAdminAdminUnterlagenRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/zustand': {
       id: '/_authenticated/_admin/admin/zustand'
       path: '/zustand'
@@ -602,23 +662,29 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminAdminRouteChildren {
+  AuthenticatedAdminAdminAutomatisierungRoute: typeof AuthenticatedAdminAdminAutomatisierungRoute
   AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
   AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
   AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
+  AuthenticatedAdminAdminUnterlagenRoute: typeof AuthenticatedAdminAdminUnterlagenRoute
   AuthenticatedAdminAdminZustandRoute: typeof AuthenticatedAdminAdminZustandRoute
   AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
 }
 
 const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
   {
+    AuthenticatedAdminAdminAutomatisierungRoute:
+      AuthenticatedAdminAdminAutomatisierungRoute,
     AuthenticatedAdminAdminBlogRoute: AuthenticatedAdminAdminBlogRoute,
     AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
     AuthenticatedAdminAdminGalerieRoute: AuthenticatedAdminAdminGalerieRoute,
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
     AuthenticatedAdminAdminLeistungenRoute:
       AuthenticatedAdminAdminLeistungenRoute,
+    AuthenticatedAdminAdminUnterlagenRoute:
+      AuthenticatedAdminAdminUnterlagenRoute,
     AuthenticatedAdminAdminZustandRoute: AuthenticatedAdminAdminZustandRoute,
     AuthenticatedAdminAdminIndexRoute: AuthenticatedAdminAdminIndexRoute,
   }
@@ -667,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AbholserviceCityRoute: AbholserviceCityRoute,
   AngebotTokenRoute: AngebotTokenRoute,
+  ApiAutomationCronRoute: ApiAutomationCronRoute,
   KalenderTokenRoute: KalenderTokenRoute,
   RatgeberSlugRoute: RatgeberSlugRoute,
   AbholserviceIndexRoute: AbholserviceIndexRoute,

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   CalendarClock,
   Camera,
   CheckCircle2,
-  Download,
+  FileText,
   Mail,
   Phone,
   Trash2,
@@ -278,7 +279,6 @@ export type BookingCardActions = {
   onCounterOffer: (id: string, price: number | null, note: string, altDates: string[]) => void;
   onDepositPaid: (id: string) => void;
   onDelete: (id: string) => void;
-  onInvoice: (booking: Booking) => void;
   /** Lädt die signierten Foto-Adressen erst beim Aufklappen. */
   onLoadPhotos: (bookingId: string) => Promise<string[]>;
 };
@@ -287,17 +287,13 @@ export function BookingCard({
   booking,
   dayLoad,
   photoCount,
-  invoiceBusy,
   actions,
-  legalDetailsVerified,
 }: {
   booking: Booking;
   dayLoad: Record<string, number>;
   /** Anzahl vorhandener Zustandsfotos, aus der Meldungsliste. */
   photoCount: number;
-  invoiceBusy: boolean;
   actions: BookingCardActions;
-  legalDetailsVerified: boolean;
 }) {
   const [showOffer, setShowOffer] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -512,20 +508,17 @@ export function BookingCard({
           </Button>
         )}
 
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!legalDetailsVerified}
-          title={
-            legalDetailsVerified
-              ? "Rechnung herunterladen"
-              : "Zuerst geprüfte Firmen-, Steuer- und Bankdaten hinterlegen"
-          }
-          loading={invoiceBusy}
-          onClick={() => actions.onInvoice(booking)}
-        >
-          {invoiceBusy ? null : <Download className="size-4" />}
-          Rechnung
+        {/*
+          Kein Rechnungsdownload mehr an dieser Stelle: Die offizielle
+          Endrechnung entsteht erst nach dem Termin über den
+          Abrechnungsablauf. Vorher gibt es Auftragsunterlagen und den
+          abgestimmten Preis unter „Unterlagen & Preis".
+        */}
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/admin/unterlagen" search={{ buchung: booking.id }}>
+            <FileText className="size-4" />
+            Unterlagen &amp; Preis
+          </Link>
         </Button>
 
         <Button

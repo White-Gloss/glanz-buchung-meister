@@ -45,6 +45,7 @@ export const contactChannels = ["WhatsApp", "Telefon", "E-Mail"] as const;
 export type ContactChannel = (typeof contactChannels)[number];
 
 export type DepositStatus = "nicht_erforderlich" | "offen" | "bezahlt";
+export type BookingSource = "website" | "whatsapp" | "telefon" | "vor_ort" | "sonstiges";
 
 export type Booking = {
   id: string;
@@ -69,13 +70,19 @@ export type Booking = {
   };
   /** Bevorzugter Kontaktweg für die Uhrzeit-Absprache */
   preferredContact: ContactChannel;
+  /** Automatisch aus Paket/Zusatzleistungen berechneter Ausgangspreis. */
   total: number;
-  /** Abweichender Preis aus einem Gegenangebot; null = Standardpreis gilt */
+  /**
+   * Mit dem Kunden vereinbarter Gesamtpreis — gesetzt entweder direkt im
+   * Admin-Bereich oder über ein Gegenangebot. null = Standardpreis gilt.
+   */
   agreedPrice: number | null;
   /** Begründung des Gegenangebots, z. B. Mehraufwand laut Fotos */
   offerNote: string | null;
   /** Bis zu drei Ersatztermine, die dem Kunden angeboten wurden */
   offerAltDates: string[];
+  /** Herkunft der Anfrage/Buchung. Alte Datensätze werden als Website behandelt. */
+  bookingSource?: BookingSource;
   status: BookingStatus;
   isNewCustomer: boolean;
   depositAmount: number;

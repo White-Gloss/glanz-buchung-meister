@@ -254,8 +254,10 @@ export function BookingWizard() {
     !!packageId,
     pickupStepValid,
     !!date,
-    // Zustand: freiwillig, also immer passierbar — nur nicht mitten im
-    // laufenden Upload.
+    // Zustand: mindestens eine Aufnahme ist Pflicht, und während ein
+    // Upload läuft darf nicht weitergeklickt werden — der Schritt würde
+    // ausgehängt und die Datei ginge verloren. Beides meldet
+    // ConditionPhotoUpload über dieselbe Rückmeldung.
     !photosUploading,
     Object.keys(validateCustomer(customer)).length === 0 && pickupStepValid,
   ][step];
@@ -657,8 +659,8 @@ export function BookingWizard() {
           {step === 4 && (
             <section>
               <StepHeader
-                title="Fahrzeugzustand (optional)"
-                text="Schicken Sie uns ein paar Fotos, dann können wir den Aufwand vorab realistisch einschätzen und Sie bekommen ein belastbares Angebot statt einer groben Schätzung."
+                title="Fahrzeugzustand"
+                text="Bitte laden Sie mindestens eine Aufnahme hoch. Ohne Bild lässt sich der Aufwand nicht seriös einschätzen — mit Bild bekommen Sie ein belastbares Angebot statt einer groben Schätzung."
               />
 
               <div className="mt-6">

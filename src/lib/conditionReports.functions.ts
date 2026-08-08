@@ -9,21 +9,10 @@ import { query, queryOne } from "@/lib/db.server";
 /**
  * ZUSTANDSMELDUNGEN
  * ------------------
- * Interessenten laden vor der Buchung Fotos ihres Fahrzeugs hoch und
- * beschreiben den Zustand. Im Admin-Bereich lassen sich die Meldungen
- * ansehen und bearbeiten.
- *
- * ZWEI GETRENNTE WEGE, bewusst so gewählt:
- *
- *   Datenbank  Alle Lese- und Schreibzugriffe laufen über die direkte
- *              PostgreSQL-Verbindung (db.server.ts) — genau wie bei den
- *              Buchungen. Die Tabelle hat deshalb keine RLS-Policies und
- *              ist über die öffentliche REST-Schnittstelle unerreichbar.
- *
- *   Dateien    Fotos müssen über die Storage-API laufen. Der Bucket ist
- *              privat; hochladen darf jeder (Interessenten haben keinen
- *              Zugang), lesen und löschen nur Admins. Die Anzeige im
- *              Admin-Bereich erfolgt über kurzlebige signierte Links.
+ * Interessenten können Fotos und kurze Videos ihres Fahrzeugs hochladen und
+ * den Zustand bzw. ihr gewünschtes Ergebnis beschreiben. Alle Medien liegen
+ * in einem privaten Supabase-Storage-Bucket und werden im Admin-Bereich nur
+ * über kurzlebige signierte Links angezeigt.
  */
 
 export const CONDITION_PHOTO_BUCKET = "condition-photos";
@@ -39,14 +28,13 @@ export type ConditionReport = {
   vehicle: string;
   plate: string;
   condition_text: string;
+  /** Historischer Spaltenname: enthält inzwischen Fotos UND Videos. */
   photo_paths: string[];
   status: ConditionStatus;
   admin_note: string;
   created_at: string;
   updated_at: string;
   booking_id: string | null;
-  /** Rechnungsnummer der zugehörigen Buchung, falls die Meldung aus dem
-   *  Buchungsassistenten stammt. Kommt aus dem Join, nicht aus der Zeile. */
   invoice_number: string | null;
 };
 
@@ -56,14 +44,25 @@ const SELECT_COLS = `r.id, r.customer_name, r.customer_email, r.customer_phone, 
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** Höchstzahl Fotos je Meldung — auch als Check-Constraint in der Datenbank. */
+/** Maximal acht Aufnahmen je Meldung; entspricht dem bestehenden DB-Constraint. */
 export const MAX_PHOTOS = 8;
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const MAX_BASE64_LENGTH = Math.ceil(MAX_IMAGE_BYTES / 3) * 4 + 8;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+/** Nach lokaler Optimierung werden höchstens 12 MB pro Medium angenommen. */
+export const MAX_MEDIA_BYTES = 12 * 1024 * 1024;
+/** Rückwärtskompatibler Export für ältere Imports. */
+export const MAX_IMAGE_BYTES = MAX_MEDIA_BYTES;
+const MAX_BASE64_LENGTH = Math.ceil(MAX_MEDIA_BYTES / 3) * 4 + 16;
 
-/** Storage-Pfad, wie ihn der Upload vergibt: <uuid>/<zeit>-<zufall>.<ext> */
-const STORAGE_PATH_PATTERN = /^[0-9a-f-]{36}\/\d+-\d+\.(jpg|jpeg|png|webp)$/i;
+const ALLOWED_MEDIA_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+
+/** Storage-Pfad: <uuid>/<zeit>-<zufall>.<ext> */
+const STORAGE_PATH_PATTERN = /^[0-9a-f-]{36}\/\d+-\d+\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i;
 
 function normalizeText(value: string, label: string, maxLength: number, required = false): string {
   const normalized = String(value ?? "").trim();
@@ -94,11 +93,11 @@ async function assertAdmin(context: { supabase: SupabaseClient<Database>; userId
   if (!data) throw new Error("Kein Administrator-Zugriff");
 }
 
-// =====================================================================
-// Öffentlich: Fotos hochladen und Meldung einsenden
-// =====================================================================
+function isIsoBaseMedia(bytes: Buffer): boolean {
+  return bytes.length >= 12 && bytes.subarray(4, 8).toString("ascii") === "ftyp";
+}
 
-function hasValidImageSignature(bytes: Buffer, contentType: string): boolean {
+function hasValidMediaSignature(bytes: Buffer, contentType: string): boolean {
   if (contentType === "image/jpeg") {
     return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   }
@@ -108,38 +107,72 @@ function hasValidImageSignature(bytes: Buffer, contentType: string): boolean {
       bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
     );
   }
-  return (
-    contentType === "image/webp" &&
-    bytes.length >= 12 &&
-    bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
-    bytes.subarray(8, 12).toString("ascii") === "WEBP"
-  );
+  if (contentType === "image/webp") {
+    return (
+      bytes.length >= 12 &&
+      bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+      bytes.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+  if (contentType === "video/webm") {
+    return (
+      bytes.length >= 4 &&
+      bytes[0] === 0x1a &&
+      bytes[1] === 0x45 &&
+      bytes[2] === 0xdf &&
+      bytes[3] === 0xa3
+    );
+  }
+  if (contentType === "video/mp4" || contentType === "video/quicktime") {
+    return isIsoBaseMedia(bytes);
+  }
+  return false;
 }
 
+function extensionForContentType(contentType: string): string {
+  switch (contentType) {
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "video/mp4":
+      return "mp4";
+    case "video/webm":
+      return "webm";
+    case "video/quicktime":
+      return "mov";
+    default:
+      return "jpg";
+  }
+}
+
+// =====================================================================
+// Öffentlich: Medien hochladen und Meldung einsenden
+// =====================================================================
+
 /**
- * Ein einzelnes Foto hochladen und den Storage-Pfad zurückgeben.
+ * Einzelnes Foto/Video in den privaten Storage laden.
  *
- * Der Aufruf ist bewusst ohne Anmeldung möglich — Interessenten haben
- * keinen Zugang. Geprüft werden Dateityp, Größe und die tatsächliche
- * Dateisignatur, damit unter dem Deckmantel eines Bildformats kein
- * anderer Inhalt hochgeladen wird.
+ * Der Browser verkleinert große Aufnahmen bereits vor diesem Aufruf. Der
+ * Server prüft trotzdem Typ, Dateigröße und echte Dateisignatur, damit die
+ * öffentliche Upload-Funktion nicht für beliebige Dateien missbraucht wird.
  */
 export const uploadConditionPhoto = createServerFn({ method: "POST" })
   .validator((data: { fileName: string; contentType: string; base64Data: string }) => data)
   .handler(async ({ data }) => {
-    if (!ALLOWED_IMAGE_TYPES.has(data.contentType)) {
-      throw new Error("Nur JPEG, PNG oder WebP werden unterstützt.");
+    if (!ALLOWED_MEDIA_TYPES.has(data.contentType)) {
+      throw new Error("Unterstützt werden JPEG, PNG, WebP sowie MP4, MOV und WebM.");
     }
     if (!data.base64Data || data.base64Data.length > MAX_BASE64_LENGTH) {
-      throw new Error("Die Datei ist leer oder größer als 8 MB.");
+      throw new Error("Die Datei ist leer oder nach der Optimierung noch zu groß.");
     }
 
     const bytes = Buffer.from(data.base64Data, "base64");
-    if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) {
-      throw new Error("Die Datei ist größer als 8 MB.");
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_MEDIA_BYTES) {
+      throw new Error("Die Datei ist nach der Optimierung noch größer als 12 MB.");
     }
-    if (!hasValidImageSignature(bytes, data.contentType)) {
-      throw new Error("Die Datei stimmt nicht mit dem angegebenen Bildformat überein.");
+    if (!hasValidMediaSignature(bytes, data.contentType)) {
+      throw new Error("Die Datei stimmt nicht mit dem angegebenen Foto-/Videoformat überein.");
     }
 
     const { createClient } = await import("@supabase/supabase-js");
@@ -152,16 +185,13 @@ export const uploadConditionPhoto = createServerFn({ method: "POST" })
       global: { fetch: createSupabasePublishableFetch(key) },
     });
 
-    const ext = data.fileName.split(".").pop()?.toLowerCase() || "jpg";
-    const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
-    // Zufälliger Ordner je Upload: ohne den Pfad zu kennen, kommt niemand
-    // an die Datei — zusätzlich zum privaten Bucket.
-    const path = `${crypto.randomUUID()}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${safeExt}`;
+    const ext = extensionForContentType(data.contentType);
+    const path = `${crypto.randomUUID()}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
 
     const { error } = await client.storage
       .from(CONDITION_PHOTO_BUCKET)
       .upload(path, bytes, { contentType: data.contentType, upsert: false });
-    if (error) throw new Error("Das Foto konnte nicht hochgeladen werden.");
+    if (error) throw new Error("Die Aufnahme konnte nicht hochgeladen werden.");
 
     return { ok: true, path };
   });
@@ -173,18 +203,11 @@ export type ConditionReportInput = {
   vehicle: string;
   plate: string;
   conditionText: string;
+  /** Historischer Feldname; enthält Fotos und Videos. */
   photoPaths: string[];
-  /**
-   * Gesetzt, wenn die Meldung aus dem Buchungsassistenten stammt. Dann
-   * erscheint sie im Admin-Bereich mit Bezug zur jeweiligen Buchung.
-   */
   bookingId?: string | null;
 };
 
-/**
- * Meldung speichern. Läuft über die direkte Datenbankverbindung, nicht
- * über die REST-Schnittstelle — dieselbe Systematik wie bei Buchungen.
- */
 export const submitConditionReport = createServerFn({ method: "POST" })
   .validator((data: ConditionReportInput) => data)
   .handler(async ({ data }) => {
@@ -196,29 +219,25 @@ export const submitConditionReport = createServerFn({ method: "POST" })
     const conditionText = normalizeText(data.conditionText, "Zustandsbeschreibung", 4000);
     const photoPaths = [...new Set(Array.isArray(data.photoPaths) ? data.photoPaths : [])];
 
-    /*
-     * Eine Meldung braucht Substanz — aber nicht zwingend Text: Aus dem
-     * Buchungsassistenten kommen oft nur Fotos, und ein Pflichttext kurz
-     * vor dem Abschluss wäre eine unnötige Hürde. Ohne Fotos ist die
-     * Beschreibung dagegen der ganze Inhalt und muss aussagekräftig sein.
-     */
+    // Einzelne Felder dürfen optional sein; die Meldung selbst braucht aber
+    // mindestens eine Aufnahme oder einen aussagekräftigen Text.
     if (photoPaths.length === 0) {
       if (!conditionText) {
-        throw new Error("Bitte beschreiben Sie den Zustand oder laden Sie Fotos hoch.");
+        throw new Error(
+          "Bitte beschreiben Sie kurz Ihr Anliegen oder laden Sie ein Foto/Video hoch.",
+        );
       }
       if (conditionText.length < 20) {
         throw new Error(
-          "Bitte beschreiben Sie den Zustand etwas ausführlicher (mindestens 20 Zeichen).",
+          "Bitte beschreiben Sie Ihr Anliegen etwas ausführlicher (mindestens 20 Zeichen).",
         );
       }
     }
     if (photoPaths.length > MAX_PHOTOS) {
-      throw new Error(`Es sind höchstens ${MAX_PHOTOS} Fotos möglich.`);
+      throw new Error(`Es sind höchstens ${MAX_PHOTOS} Fotos/Videos möglich.`);
     }
-    // Nur selbst vergebene Pfadmuster zulassen, damit über dieses Feld
-    // keine fremden Dateien aus dem Bucket verknüpft werden können.
     if (photoPaths.some((path) => !STORAGE_PATH_PATTERN.test(path))) {
-      throw new Error("Mindestens ein Foto konnte nicht zugeordnet werden.");
+      throw new Error("Mindestens eine Aufnahme konnte nicht zugeordnet werden.");
     }
 
     const bookingId = data.bookingId && UUID_PATTERN.test(data.bookingId) ? data.bookingId : null;
@@ -233,11 +252,6 @@ export const submitConditionReport = createServerFn({ method: "POST" })
     );
     if (!row) throw new Error("Die Meldung konnte nicht gespeichert werden.");
 
-    // Benachrichtigung an den Betrieb. Bewusst NACH dem Speichern und in
-    // einem eigenen try/catch: Ist der Mailversand gestört, ist die
-    // Meldung trotzdem sicher in der Datenbank und im Admin-Bereich
-    // sichtbar. Ein Mailfehler darf den Kunden nie eine Fehlermeldung
-    // sehen lassen — dieselbe Regel gilt schon bei den Buchungen.
     try {
       const { sendConditionReportNotification, mailConfigured } = await import("./email.server");
       if (mailConfigured()) {
@@ -281,14 +295,7 @@ export const listConditionReports = createServerFn({ method: "GET" })
     );
   });
 
-/**
- * Erzeugt kurzlebige signierte Links für die Fotos einer Meldung.
- *
- * Der Bucket ist privat, also gibt es keine dauerhaft gültige Adresse.
- * Die Links laufen nach einer Stunde ab; das reicht zum Ansehen und
- * verhindert, dass eine versehentlich weitergegebene Adresse dauerhaft
- * funktioniert.
- */
+/** Kurzlebige signierte Links für private Fotos und Videos. */
 export const getConditionPhotoUrls = createServerFn({ method: "POST" })
   .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .validator((data: { id: string }) => data)
@@ -296,8 +303,6 @@ export const getConditionPhotoUrls = createServerFn({ method: "POST" })
     await assertAdmin(context);
     if (!UUID_PATTERN.test(data.id)) throw new Error("Ungültige Meldungs-ID.");
 
-    // Pfade serverseitig lesen: so lassen sich über einen manipulierten
-    // Aufruf keine beliebigen Bucket-Dateien signieren.
     const report = await queryOne<{ photo_paths: string[] }>(
       `SELECT photo_paths FROM public.condition_reports WHERE id = $1`,
       [data.id],
@@ -335,14 +340,7 @@ export const updateConditionReport = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/**
- * Meldung löschen — inklusive der Fotodateien.
- *
- * Reihenfolge: erst die Dateien, dann die Zeile. Scheitert das Löschen
- * der Dateien, bleibt die Zeile erhalten und der Vorgang lässt sich
- * wiederholen. Andersherum wären die Pfade verloren und die Dateien
- * blieben dauerhaft im Speicher liegen.
- */
+/** Meldung löschen — inklusive aller zugehörigen Foto-/Videodateien. */
 export const deleteConditionReport = createServerFn({ method: "POST" })
   .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .validator((data: { id: string }) => data)

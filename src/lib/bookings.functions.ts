@@ -9,9 +9,19 @@ import {
   effectivePrice,
   MAX_BOOKINGS_PER_DAY,
   type Booking,
+  type BookingSource,
   type BookingStatus,
   type ContactChannel,
 } from "./bookings";
+import {
+  addOns,
+  depositConfig,
+  isPickupIncluded,
+  pickupPricing,
+  servicePackages,
+  vehicleTypes,
+} from "./servicesConfig";
+import { getPickupDistanceKm } from "./pickupLocations";
 
 // ---------------------------------------------------------------------------
 // Row shape returned by the DB (snake_case) and the create_booking_public fn
@@ -32,9 +42,10 @@ type Row = {
   pickup_city: string | null;
   preferred_contact: string;
   total: number | string;
-  agreed_price: number | string | null;
-  offer_note: string | null;
-  offer_alt_dates: string[] | null;
+  agreed_price?: number | string | null;
+  offer_note?: string | null;
+  offer_alt_dates?: string[] | null;
+  booking_source?: BookingSource | null;
   status: string;
   is_new_customer: boolean;
   deposit_amount: number | string;
@@ -61,10 +72,10 @@ function toBooking(row: Row): Booking {
     },
     preferredContact: (row.preferred_contact ?? "E-Mail") as ContactChannel,
     total: Number(row.total),
-    agreedPrice:
-      row.agreed_price === null || row.agreed_price === undefined ? null : Number(row.agreed_price),
+    agreedPrice: row.agreed_price == null ? null : Number(row.agreed_price),
     offerNote: row.offer_note ?? null,
     offerAltDates: (row.offer_alt_dates ?? []).map((d) => String(d).slice(0, 10)),
+    bookingSource: row.booking_source ?? "website",
     status: row.status as BookingStatus,
     isNewCustomer: row.is_new_customer,
     depositAmount: Number(row.deposit_amount),
@@ -92,6 +103,7 @@ const SELECT_COLS = [
   "agreed_price",
   "offer_note",
   "offer_alt_dates",
+  "booking_source",
   "status",
   "is_new_customer",
   "deposit_amount",
@@ -114,10 +126,6 @@ export type BookingInput = {
   pickupCity: string | null;
   preferredContact: ContactChannel;
 };
-
-import { addOns, servicePackages, vehicleTypes } from "./servicesConfig";
-import { getPickupDistanceKm } from "./pickupLocations";
-import { pickupPricing, isPickupIncluded } from "./servicesConfig";
 
 function validate(input: BookingInput): BookingInput {
   const name = String(input.name ?? "")
@@ -188,7 +196,6 @@ function validate(input: BookingInput): BookingInput {
 export const createBooking = createServerFn({ method: "POST" })
   .validator((data: BookingInput) => validate(data))
   .handler(async ({ data }) => {
-    // create_booking_public returns a JSON scalar, not a row set.
     const result = await queryOne<{ create_booking_public: string }>(
       `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
@@ -210,11 +217,20 @@ export const createBooking = createServerFn({ method: "POST" })
       ],
     );
     if (!result) throw new Error("Buchung konnte nicht gespeichert werden.");
-    const row: Row & { booking_date: string } =
+    const raw: Row & { booking_date: string } =
       typeof result.create_booking_public === "string"
         ? JSON.parse(result.create_booking_public)
         : (result.create_booking_public as unknown as Row);
-    const booking = toBooking({ ...row, booking_date: String(row.booking_date) });
+
+    // Die DB-Funktion kann aus Kompatibilitätsgründen einen älteren Row-Shape
+    // zurückgeben. Für die neuen Admin-Felder laden wir den Datensatz deshalb
+    // einmal vollständig nach.
+    const fresh = await queryOne<Row>(`SELECT ${SELECT_COLS} FROM public.bookings WHERE id = $1`, [
+      raw.id,
+    ]);
+    const booking = fresh
+      ? toBooking({ ...fresh, booking_date: String(fresh.booking_date) })
+      : toBooking({ ...raw, booking_date: String(raw.booking_date) });
 
     // Benachrichtigungen verschicken. Bewusst NACH dem erfolgreichen Speichern
     // und mit eigenem Fehlerabfang: Eine gestörte Zustellung darf die bereits
@@ -294,6 +310,91 @@ export const listBookings = createServerFn({ method: "GET" })
   });
 
 // ---------------------------------------------------------------------------
+// createManualBooking — admin only (WhatsApp / Telefon / vor Ort)
+// ---------------------------------------------------------------------------
+export const createManualBooking = createServerFn({ method: "POST" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((input: BookingInput & { source: BookingSource }) => {
+    const booking = validate(input);
+    const source = String(input.source) as BookingSource;
+    if (!(["whatsapp", "telefon", "vor_ort", "sonstiges"] as BookingSource[]).includes(source)) {
+      throw new Error("Ungültige Buchungsquelle");
+    }
+    return { ...booking, source };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+
+    const result = await queryOne<{ create_booking_public: string }>(
+      `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        data.vehicleId,
+        data.packageId,
+        data.addOnIds,
+        data.date,
+        // Keine Uhrzeit mehr: Termine sind datumsbasiert.
+        null,
+        data.name,
+        data.email,
+        data.phone,
+        data.plate,
+        data.pickupCity,
+        data.preferredContact,
+      ],
+    );
+    if (!result) throw new Error("Manuelle Buchung konnte nicht gespeichert werden.");
+    const raw =
+      typeof result.create_booking_public === "string"
+        ? (JSON.parse(result.create_booking_public) as Row)
+        : (result.create_booking_public as unknown as Row);
+
+    const row = await withActor(actorEmailOf(context), (db) =>
+      db.queryOne<Row>(
+        `UPDATE public.bookings
+            SET booking_source = $2,
+                notes = concat_ws(E'\n', nullif(notes, ''), $3),
+                updated_at = now()
+          WHERE id = $1
+          RETURNING ${SELECT_COLS}`,
+        [raw.id, data.source, `Manuell erfasst · Quelle: ${data.source}`],
+      ),
+    );
+    if (!row) throw new Error("Manuelle Buchung konnte nicht geladen werden.");
+    return toBooking(row);
+  });
+
+// ---------------------------------------------------------------------------
+// updateBookingAgreedPrice — admin only
+// ---------------------------------------------------------------------------
+export const updateBookingAgreedPrice = createServerFn({ method: "POST" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { id: string; agreedPrice: number }) => {
+    const agreedPrice = Number(data.agreedPrice);
+    if (!Number.isFinite(agreedPrice) || agreedPrice <= 0 || agreedPrice > 100000) {
+      throw new Error("Bitte einen gültigen vereinbarten Preis eingeben.");
+    }
+    return { id: String(data.id), agreedPrice: Math.round(agreedPrice * 100) / 100 };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const deposit = Math.round(data.agreedPrice * depositConfig.rate * 100) / 100;
+    const row = await withActor(actorEmailOf(context), (db) =>
+      db.queryOne<Row>(
+        `UPDATE public.bookings
+            SET agreed_price = $2,
+                agreed_price_set_at = now(),
+                deposit_amount = CASE WHEN deposit_status = 'offen' THEN $3 ELSE deposit_amount END,
+                updated_at = now()
+          WHERE id = $1
+          RETURNING ${SELECT_COLS}`,
+        [data.id, data.agreedPrice, deposit],
+      ),
+    );
+    if (!row) throw new Error("Buchung nicht gefunden");
+    return toBooking(row);
+  });
+
+// ---------------------------------------------------------------------------
 // updateBookingStatus — admin only
 // ---------------------------------------------------------------------------
 export const updateBookingStatus = createServerFn({ method: "POST" })
@@ -302,19 +403,25 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
 
-    // Den bisherigen Status mitlesen: Die Bestätigungsmail soll nur beim
-    // tatsächlichen Wechsel rausgehen, nicht jedes Mal, wenn derselbe
-    // Status erneut gespeichert wird.
+    // Den bisherigen Status und den vom Admin vereinbarten Preis mitlesen.
+    // Ein Termin darf ausdrücklich erst bestätigt werden, wenn der konkrete
+    // Preis nach Prüfung der Angaben/Fotos gespeichert wurde.
     const { row, vorher } = await withActor(actorEmailOf(context), async (db) => {
-      const alt = await db.queryOne<{ status: string }>(
-        `SELECT status FROM public.bookings WHERE id = $1 FOR UPDATE`,
+      const alt = await db.queryOne<{ status: string; agreed_price: number | string | null }>(
+        `SELECT status, agreed_price FROM public.bookings WHERE id = $1 FOR UPDATE`,
         [data.id],
       );
+      if (!alt) return { row: null, vorher: null };
+      if (data.status === "Bestätigt" && alt.agreed_price == null) {
+        throw new Error(
+          "Bitte zuerst unter „Unterlagen & Preis“ den mit dem Kunden vereinbarten Preis speichern.",
+        );
+      }
       const aktualisiert = await db.queryOne<Row>(
-        `UPDATE public.bookings SET status = $1 WHERE id = $2 RETURNING ${SELECT_COLS}`,
+        `UPDATE public.bookings SET status = $1, updated_at = now() WHERE id = $2 RETURNING ${SELECT_COLS}`,
         [data.status, data.id],
       );
-      return { row: aktualisiert, vorher: alt?.status ?? null };
+      return { row: aktualisiert, vorher: alt.status };
     });
     if (!row) throw new Error("Buchung nicht gefunden");
 
@@ -323,8 +430,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     /*
      * Verbindliche Terminbestätigung an den Kunden. Bewusst nach dem
      * Speichern und in einem eigenen try/catch: Ein gestörter Mailversand
-     * darf den Statuswechsel im Admin-Bereich nicht scheitern lassen —
-     * der Status ist dann ja bereits korrekt gesetzt.
+     * darf den Statuswechsel im Admin-Bereich nicht scheitern lassen.
      */
     if (data.status === "Bestätigt" && vorher !== "Bestätigt") {
       try {
@@ -357,7 +463,7 @@ export const updateDepositStatus = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const row = await withActor(actorEmailOf(context), (db) =>
       db.queryOne<Row>(
-        `UPDATE public.bookings SET deposit_status = $1 WHERE id = $2 RETURNING ${SELECT_COLS}`,
+        `UPDATE public.bookings SET deposit_status = $1, updated_at = now() WHERE id = $2 RETURNING ${SELECT_COLS}`,
         [data.depositStatus, data.id],
       ),
     );
@@ -480,11 +586,18 @@ export const confirmBooking = createServerFn({ method: "POST" })
 
     const row = await withActor(actorEmailOf(context), async (db) => {
       return db.queryOne<Row>(
+        // Direktbestätigung heißt: der berechnete Preis ist der
+        // vereinbarte. agreed_price wird deshalb gesetzt, falls es noch
+        // leer ist — sonst verstößt der Datensatz gegen die Regel, dass
+        // ein bestätigter Termin einen abgestimmten Preis haben muss.
         `UPDATE public.bookings
             SET status = 'Bestätigt',
+                agreed_price = COALESCE(agreed_price, total),
+                agreed_price_set_at = COALESCE(agreed_price_set_at, now()),
                 offer_note = NULL,
                 offer_alt_dates = '{}',
-                offer_sent_at = NULL
+                offer_sent_at = NULL,
+                updated_at = now()
           WHERE id = $1
           RETURNING ${SELECT_COLS}`,
         [data.id],
@@ -568,8 +681,11 @@ export const sendCounterOffer = createServerFn({ method: "POST" })
       return db.queryOne<Row>(
         `UPDATE public.bookings
             SET status = 'Gegenangebot gesendet',
-                agreed_price = $2,
-                agreed_price_set_at = CASE WHEN $2 IS NULL THEN NULL ELSE now() END,
+                -- Ohne eigenen Betrag gilt der berechnete Preis als
+                -- vereinbart; der Kunde bekommt in jedem Fall eine Zahl
+                -- genannt, und die spätere Bestätigung hat ihren Preis.
+                agreed_price = COALESCE($2::numeric, total),
+                agreed_price_set_at = now(),
                 offer_note = $3,
                 offer_alt_dates = $4::date[],
                 offer_sent_at = now(),
@@ -675,7 +791,10 @@ export const acceptOffer = createServerFn({ method: "POST" })
         `UPDATE public.bookings
             SET booking_date = $2::date,
                 status = 'Bestätigt',
-                customer_reply_at = now()
+                agreed_price = COALESCE(agreed_price, total),
+                agreed_price_set_at = COALESCE(agreed_price_set_at, now()),
+                customer_reply_at = now(),
+                updated_at = now()
           WHERE id = $1
           RETURNING ${SELECT_COLS}`,
         [booking.id, gewaehlt],

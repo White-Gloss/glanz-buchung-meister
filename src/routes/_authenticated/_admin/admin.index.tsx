@@ -38,7 +38,6 @@ import {
 } from "@/lib/bookings.functions";
 import { getConditionPhotoUrls, listConditionReports } from "@/lib/conditionReports.functions";
 import { BookingCard } from "@/components/BookingCard";
-import { generateInvoicePdf } from "@/lib/invoice";
 import { company } from "@/lib/servicesConfig";
 import { BookingListSkeleton, AuditLogSkeleton, PricePanelSkeleton } from "@/components/skeletons";
 
@@ -437,22 +436,12 @@ function AdminPage() {
                     booking={b}
                     dayLoad={dayLoad}
                     photoCount={photoCounts[b.id] ?? 0}
-                    invoiceBusy={pdfFor === b.id}
-                    legalDetailsVerified={company.legalDetailsVerified}
                     actions={{
                       onStatus: setStatus,
                       onConfirm: confirmDirect,
                       onCounterOffer: sendOffer,
                       onDepositPaid: markDepositPaid,
                       onDelete: remove,
-                      onInvoice: async (booking) => {
-                        setPdfFor(booking.id);
-                        try {
-                          await generateInvoicePdf(booking);
-                        } finally {
-                          setPdfFor(null);
-                        }
-                      },
                       onLoadPhotos: loadPhotos,
                     }}
                   />
