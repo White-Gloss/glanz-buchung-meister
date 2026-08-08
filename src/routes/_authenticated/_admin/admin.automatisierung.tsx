@@ -104,6 +104,7 @@ function AutomationPage() {
   }, [fetchStatus]);
 
   const lexwareReady = Boolean(status?.lexwareApiKeySet);
+  const reminderReady = Boolean(status?.reminderCronSecretSet);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -162,7 +163,7 @@ function AutomationPage() {
             title="E-Mail"
             status="vorhanden"
             tone="ready"
-            description="Eingangsbestätigung, interne Buchungsmeldung und verbindliche Terminbestätigung sind bereits im System vorgesehen."
+            description="Eingangsbestätigung, interne Buchungsmeldung, Terminbestätigung, Rechnungs-PDF und Terminerinnerung nutzen den serverseitigen Mailversand."
             detail="Der echte Versandstatus und eine Testmail stehen weiter unten."
           />
           <SetupCard
@@ -176,11 +177,11 @@ function AutomationPage() {
           <SetupCard
             icon={ReceiptText}
             title="Lexware"
-            status={statusError ? "Statusfehler" : lexwareReady ? "Secret gesetzt" : "nicht verbunden"}
+            status={statusError ? "Statusfehler" : lexwareReady ? "bereit" : "nicht verbunden"}
             tone={lexwareReady ? "ready" : "pending"}
             description={
               lexwareReady
-                ? "Der Lexware-API-Schlüssel ist serverseitig hinterlegt. Als Nächstes kann die Rechnungsübergabe aktiviert werden."
+                ? "Der Lexware-API-Schlüssel ist serverseitig hinterlegt. Bestätigte Buchungen können automatisch als Lexware-Rechnung verarbeitet werden."
                 : "Für die automatische Rechnungsübergabe fehlt noch der serverseitige Lexware-API-Schlüssel."
             }
             detail="Server-Variable: LEXWARE_API_KEY — der Wert wird hier absichtlich niemals angezeigt."
@@ -188,13 +189,13 @@ function AutomationPage() {
           <SetupCard
             icon={BellRing}
             title="Erinnerungen"
-            status="noch nicht aktiv"
-            tone="pending"
-            description="Die geplante Erinnerung soll Kunden vor einem bestätigten Termin automatisch per E-Mail informieren."
+            status={statusError ? "Statusfehler" : reminderReady ? "bereit für Scheduler" : "noch nicht aktiv"}
+            tone={reminderReady ? "ready" : "pending"}
+            description="Die Versandroutine für bestätigte Termine ist vorhanden und schützt gegen Doppelversand. Für den vollautomatischen Betrieb muss der geschützte Cron-Endpunkt regelmäßig aufgerufen werden."
             detail={
-              status?.reminderCronSecretSet
-                ? "REMINDER_CRON_SECRET ist bereits hinterlegt; die eigentliche Versandroutine fehlt noch."
-                : "Für den späteren Cron-Aufruf wird REMINDER_CRON_SECRET serverseitig benötigt."
+              reminderReady
+                ? "REMINDER_CRON_SECRET ist hinterlegt. Jetzt muss nur noch der stündliche Cronjob beim Hosting aktiviert sein."
+                : "Server-Variable REMINDER_CRON_SECRET fehlt noch; ohne sie lehnt der Cron-Endpunkt jeden Automationslauf ab."
             }
           />
         </div>
@@ -220,8 +221,8 @@ function AutomationPage() {
               ["1", "Buchung", "Kunde bucht über whitegloss.de"],
               ["2", "Eingang", "Bestätigung und interne Meldung per E-Mail"],
               ["3", "Freigabe", "Du setzt den Auftrag im Admin auf Bestätigt"],
-              ["4", "Termin", "Kalender und spätere Erinnerung greifen"],
-              ["5", "Rechnung", "Lexware übernimmt Kunde und Rechnung"],
+              ["4", "Rechnung", "Lexware übernimmt Kunde und erstellt die PDF-Rechnung"],
+              ["5", "Termin", "Kalender und Terminerinnerung greifen automatisch"],
             ].map(([number, title, text]) => (
               <div key={number} className="rounded-xl border border-border bg-secondary/20 p-4">
                 <span className="text-xs font-semibold text-primary">SCHRITT {number}</span>
