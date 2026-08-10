@@ -426,7 +426,6 @@ export function buildServiceJsonLd(service: ServicePage) {
   const relatedPackages = servicePackages.filter((pkg) =>
     service.relatedPackageIds.includes(pkg.id),
   );
-
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -463,7 +462,7 @@ export function buildServiceJsonLd(service: ServicePage) {
             "@type": "ListItem",
             position: 2,
             name: "Leistungen",
-            item: absUrl("/#leistungen"),
+            item: absUrl("/leistungen"),
           },
           { "@type": "ListItem", position: 3, name: service.name, item: canonical },
         ],

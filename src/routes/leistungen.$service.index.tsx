@@ -90,7 +90,7 @@ function ServicePage() {
                 Startseite
               </Link>
               <span className="px-2">/</span>
-              <Link to="/" hash="leistungen" className="hover:text-foreground">
+              <Link to="/leistungen" className="hover:text-foreground">
                 Leistungen
               </Link>
               <span className="px-2">/</span>
