@@ -4,12 +4,7 @@ module.exports = {
   ci: {
     collect: {
       numberOfRuns: 3,
-      url: [
-        `${baseUrl}/`,
-        `${baseUrl}/preise`,
-        `${baseUrl}/leistungen`,
-        `${baseUrl}/abholservice`,
-      ],
+      url: [`${baseUrl}/`, `${baseUrl}/preise`, `${baseUrl}/leistungen`, `${baseUrl}/abholservice`],
     },
     assert: {
       assertions: {
