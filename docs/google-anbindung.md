@@ -16,6 +16,28 @@ Seite. Sie gehören deshalb in die eingecheckte `.env` und nicht in die
 geheimen Umgebungsvariablen des Servers. Nach dem Eintragen ist ein neues
 Deployment nötig, weil `VITE_`-Werte beim Build fest eingebaut werden.
 
+## Die Kennungen des Kontos
+
+Alle drei sind oeffentlich und stehen ohnehin im Quelltext bzw. in den
+Google-Oberflaechen. Hier festgehalten, damit sie nicht gesucht werden muessen.
+
+| Kennung | Bedeutung                               | Wert                | Im Code?                          |
+| ------- | --------------------------------------- | ------------------- | --------------------------------- |
+| `G-…`   | Mess-ID des Analytics-Datenstreams      | `G-RFX3GFRVBG`      | ja, als `VITE_GA4_MEASUREMENT_ID` |
+| `GT-…`  | Google-Tag-Container um den Datenstream | `GT-K8HXCGP3`       | **nein, bewusst nicht**           |
+| `AW-…`  | Conversion-ID aus Google Ads            | noch nicht angelegt | offen                             |
+
+**Warum das `GT-` nicht eingetragen ist:** Es umschliesst dieselbe Property,
+auf die auch die Mess-ID zeigt. Wuerde die Seite beide laden, zaehlte sie
+jeden Seitenaufruf doppelt — ein Fehler, der lange unbemerkt bleibt, weil die
+Zahlen plausibel aussehen. Im Echtzeitbericht wurde das nach dem Deployment
+geprueft: drei Nutzer, drei `page_view` — nicht sechs.
+
+Der Google-Tag-Container wird erst dann gebraucht, wenn Tags ueber den Tag
+Manager statt ueber die Website verwaltet werden sollen. Das ist hier nicht
+der Fall: Die Website laedt das Skript selbst, damit die Einwilligung
+zuverlaessig davor greift.
+
 ## Wichtig: Reihenfolge
 
 Search Console zuerst, dann Analytics, dann Ads. Ads setzt ein bestätigtes
