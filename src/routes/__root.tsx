@@ -59,7 +59,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           <h1 className="display-page mt-3 text-foreground">
             Diese Seite konnte nicht geladen werden
           </h1>
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 max-w-md text-sm text-muted-foreground">
             Es ist ein Fehler aufgetreten. Bitte laden Sie die Seite neu oder wechseln Sie zur
             Startseite.
           </p>
@@ -121,10 +121,6 @@ export const Route = createRootRoute({
           "Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur und Keramikversiegelung mit Hol- und Bringservice. Jetzt Termin anfragen.",
       },
       { name: "author", content: "White Gloss Detailing" },
-      {
-        name: "google-site-verification",
-        content: "I2I9Ia4K3SCzXzilf34_sahgjjzHaEOqkKW-_-f7XBk",
-      },
       { name: "robots", content: "index,follow,max-image-preview:large" },
       { name: "theme-color", content: "#080a0d" },
       { name: "color-scheme", content: "dark" },
