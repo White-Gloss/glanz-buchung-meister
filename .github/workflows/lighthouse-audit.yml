@@ -1,0 +1,48 @@
+name: Lighthouse Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "lighthouserc.mobile.cjs"
+      - "lighthouserc.desktop.cjs"
+      - ".github/workflows/lighthouse-audit.yml"
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-audit
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+
+      - name: Mobile Lighthouse
+        run: npm run lighthouse:mobile
+        env:
+          LHCI_BASE_URL: https://white-gloss.de
+
+      - name: Desktop Lighthouse
+        run: npm run lighthouse:desktop
+        env:
+          LHCI_BASE_URL: https://white-gloss.de
