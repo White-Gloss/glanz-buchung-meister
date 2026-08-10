@@ -149,6 +149,21 @@ export function trackContactFromContent(source: string) {
   });
 }
 
+/**
+ * Klick auf „Termin anfragen" aus einem Inhaltsabschnitt heraus. Das ist
+ * ausdrücklich KEIN Lead: Der Besucher steht damit erst am Anfang des
+ * Buchungsassistenten und hat noch nichts abgeschickt. Würde man hier
+ * ebenfalls „Lead" melden, zählte eine einzige Anfrage doppelt — die
+ * Ereigniskennungen unterscheiden sich, Meta kann sie also nicht als
+ * Dublette erkennen.
+ */
+export function trackBookingStart(source: string) {
+  trackMetaEvent("InitiateCheckout", {
+    params: { content_category: META_CONTENT_CATEGORY, content_name: source },
+  });
+}
+
+/** Abgeschickte Terminanfrage — der eigentliche Lead. */
 export function trackLeadFromContent(source: string, value?: number) {
   trackMetaEvent("Lead", {
     params: {

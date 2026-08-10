@@ -39,29 +39,50 @@ export function HashScrollFix() {
     const id = (hash || "").replace(/^#/, "");
     if (!id) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let abgebrochen = false;
-    let letzteZielposition = -1;
 
-    // Eigenes Scrollen des Besuchers beendet die Korrektur sofort.
+    /**
+     * Jede Eingabe, mit der man scrollen kann, gilt als Wille des Besuchers:
+     * Mausrad, Wischen, jede Taste (Leertaste, Bild auf/ab, Pos1/Ende,
+     * Pfeiltasten) und jedes Drücken der Maus, womit auch das Ziehen der
+     * Bildlaufleiste erfasst ist.
+     *
+     * Bewusst NICHT das `scroll`-Ereignis: Wenn die zunächst ausgelassenen
+     * Abschnitte nachgerendert werden, verschiebt der Browser die Ansicht von
+     * sich aus (Scroll-Anchoring) und löst dabei ebenfalls `scroll` aus. Die
+     * Korrektur würde sich also selbst abbrechen — genau in dem Moment, für
+     * den sie gebaut ist.
+     */
+    const ABBRUCH_EREIGNISSE = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
+
     function onUserScroll() {
       abgebrochen = true;
     }
 
     function zielPosition(element: HTMLElement) {
-      return Math.max(0, element.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET);
+      const roh = element.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      // Am Seitenende ist die Wunschposition nicht erreichbar. Ohne diese
+      // Begrenzung liefen wir gegen einen Anschlag und setzten bei jedem
+      // Einzelbild erneut dieselbe unerreichbare Position.
+      const maximum = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      return Math.min(Math.max(0, roh), maximum);
     }
 
     function justiere() {
       const element = document.getElementById(id);
       if (!element) return;
       const ziel = zielPosition(element);
-      // Nur bewegen, wenn sich das Ziel gegenüber der letzten Messung
-      // verschoben hat und wir spürbar danebenstehen. Sonst würde jeder
-      // Frame ein neues Scrollen auslösen.
-      if (Math.abs(ziel - letzteZielposition) < 2 && Math.abs(window.scrollY - ziel) < 4) return;
-      letzteZielposition = ziel;
-      window.scrollTo({ top: ziel, behavior: reduceMotion ? "auto" : "smooth" });
+      // Nur bewegen, wenn wir spürbar danebenstehen — sonst löste jeder
+      // Einzelbild-Durchlauf ein neues Scrollen aus.
+      if (Math.abs(window.scrollY - ziel) < 2) return;
+      // Ausdrücklich "instant" und nicht "auto": Das Stylesheet setzt
+      // `scroll-behavior: smooth` für die ganze Seite, und "auto" bedeutet
+      // genau das — dem CSS folgen. Eine einmal gestartete Scroll-Animation
+      // lässt sich aber nicht mehr abbrechen. Sie liefe weiter, nachdem der
+      // Besucher längst selbst gescrollt hat, und zöge ihn zurück; das
+      // Abbruch-Kennzeichen käme dagegen nicht an. "instant" setzt die
+      // Position sofort und lässt sich damit jederzeit stoppen.
+      window.scrollTo({ top: ziel, behavior: "instant" });
     }
 
     const start = performance.now();
@@ -76,16 +97,18 @@ export function HashScrollFix() {
     // Erst im nächsten Frame beginnen: Der Router hat den Sprung dann
     // bereits versucht, und das Ziel existiert im DOM.
     const startId = window.requestAnimationFrame(() => {
-      window.addEventListener("wheel", onUserScroll, { passive: true, once: true });
-      window.addEventListener("touchmove", onUserScroll, { passive: true, once: true });
+      for (const name of ABBRUCH_EREIGNISSE) {
+        window.addEventListener(name, onUserScroll, { passive: true, once: true });
+      }
       tick();
     });
 
     return () => {
       abgebrochen = true;
       window.cancelAnimationFrame(startId);
-      window.removeEventListener("wheel", onUserScroll);
-      window.removeEventListener("touchmove", onUserScroll);
+      for (const name of ABBRUCH_EREIGNISSE) {
+        window.removeEventListener(name, onUserScroll);
+      }
     };
   }, [hash]);
 

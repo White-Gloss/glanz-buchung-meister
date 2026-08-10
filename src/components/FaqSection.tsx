@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronDown, MessageCircle, Phone } from "lucide-react";
 import type { FaqRow } from "@/lib/faqs.functions";
 import { company } from "@/lib/servicesConfig";
-import { trackContactFromContent, trackLeadFromContent } from "@/lib/metaPixel";
+import { trackBookingStart, trackContactFromContent } from "@/lib/metaPixel";
 
 /**
  * FAQ-ABSCHNITT
@@ -85,7 +85,7 @@ function FaqContactBand({ trackingSource }: { trackingSource: string }) {
         <Link
           to="/"
           hash="buchung"
-          onClick={() => trackLeadFromContent(`${trackingSource}:terminanfrage`)}
+          onClick={() => trackBookingStart(`${trackingSource}:terminanfrage`)}
           className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Termin anfragen

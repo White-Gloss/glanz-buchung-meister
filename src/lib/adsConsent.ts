@@ -27,7 +27,25 @@ declare global {
   }
 }
 
-const STORAGE_KEY = "ads-consent";
+/**
+ * Der Schlüssel trägt die Fassung des Einwilligungstextes im Namen.
+ *
+ * WARUM: Eine Einwilligung gilt immer nur für die Zwecke, über die beim
+ * Erteilen aufgeklärt wurde (Art. 4 Nr. 11 DSGVO). Wer früher „Akzeptieren"
+ * gewählt hat, hat dem damaligen Text zugestimmt — Google Ads und Meta,
+ * ohne Analytics. Würde derselbe gespeicherte Wert jetzt auch Analytics
+ * freischalten, wäre das eine Verarbeitung ohne Rechtsgrundlage.
+ *
+ * Der neue Schlüssel lässt alte Zustimmungen ins Leere laufen: Das Banner
+ * erscheint einmal erneut, diesmal mit dem erweiterten Text. Bei jeder
+ * künftigen inhaltlichen Änderung des Bannertextes muss die Zahl erhöht
+ * werden.
+ *
+ * Der alte Schlüssel wird beim ersten Zugriff entfernt, damit keine
+ * verwaisten Werte im Browser zurückbleiben.
+ */
+const STORAGE_KEY = "ads-consent-v2";
+const LEGACY_STORAGE_KEYS = ["ads-consent"];
 
 export type AdsConsent = "granted" | "denied";
 
@@ -42,6 +60,7 @@ export function googleTrackingConfigured(): boolean {
 
 export function readStoredConsent(): AdsConsent | null {
   if (typeof window === "undefined") return null;
+  for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
   const value = window.localStorage.getItem(STORAGE_KEY);
   return value === "granted" || value === "denied" ? value : null;
 }
@@ -62,7 +81,7 @@ function trackingAllowed(): boolean {
  * Lädt gtag.js nach und meldet die konfigurierten Ziele an. Mehrfachaufrufe
  * sind unschädlich. Der Warteschlangen-Code steht bewusst in TypeScript und
  * nicht als eingebettetes Skript im Dokument: So funktioniert die Anbindung
- * auch dann, wenn später eine strengere Content-Security-Policy eingebette
+ * auch dann, wenn später eine strengere Content-Security-Policy eingebettete
  * Skripte verbietet.
  */
 export function loadGoogleTags() {
@@ -144,5 +163,6 @@ export function reportAdsConversion(params: { value: number; invoiceNumber: stri
 export function resetAdsConsent() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(STORAGE_KEY);
+  for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
   window.location.reload();
 }
