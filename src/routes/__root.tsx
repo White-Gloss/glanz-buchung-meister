@@ -12,6 +12,8 @@ import appCss from "../styles.css?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
+import { HashScrollFix } from "../components/HashScrollFix";
+import { MetaPageViews } from "../components/MetaPageViews";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +124,19 @@ export const Route = createRootRoute({
       },
       { name: "author", content: "White Gloss Detailing" },
       { name: "robots", content: "index,follow,max-image-preview:large" },
+      // Nachweis gegenüber der Google Search Console. Google zeigt beim
+      // Einrichten einen Bestätigungscode an; dieser gehört in die
+      // Umgebungsvariable VITE_GOOGLE_SITE_VERIFICATION (nur der Code, nicht
+      // das ganze meta-Tag). Ohne Wert entfällt das Tag ersatzlos — ein
+      // leeres content-Attribut würde Google als ungültig ablehnen.
+      ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
+        ? [
+            {
+              name: "google-site-verification",
+              content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION,
+            },
+          ]
+        : []),
       { name: "theme-color", content: "#080a0d" },
       { name: "color-scheme", content: "dark" },
       { name: "format-detection", content: "telephone=no" },
@@ -208,6 +223,8 @@ function RootComponent() {
   return (
     <>
       <Outlet />
+      <HashScrollFix />
+      <MetaPageViews />
       <CookieConsentBanner />
     </>
   );
