@@ -84,10 +84,12 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 
 Ohne `RESEND_API_KEY` und `MAIL_FROM` wird keine Kundenmail versendet. Buchungen können trotzdem gespeichert werden; der Mailversand meldet dann die fehlende Konfiguration. Die Variablennamen sind auf dem VPS vorhanden; ihre geheimen Werte werden beim Deployment weder gelesen noch übertragen.
 
-Im geprüften Resend-Konto ist derzeit `whitegloss.de` verifiziert, nicht
-`white-gloss.de`. Die Deployment-Automation ändert deshalb weder Absender noch
-DNS. Eine Umstellung des Mail-Absenders auf die neue Domain benötigt eine
-separate Freigabe und die exakten Resend-DNS-Werte.
+Im geprüften Resend-Konto ist `white-gloss.de` in der Region `eu-west-1`
+vollständig verifiziert. DKIM, SPF-MX und SPF-TXT wurden am 10. August 2026
+über die IONOS-DNS-Verwaltung bestätigt; eine reale Produktionstestmail von
+`buchung@white-gloss.de` wurde anschließend erfolgreich zugestellt. Die
+Deployment-Automation überträgt weiterhin weder Resend-Schlüssel noch andere
+Produktionsgeheimnisse.
 
 Empfohlene Produktionswerte:
 
@@ -124,9 +126,10 @@ GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Re
 Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
 einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,
 reproduziert den Build, verifiziert Archiv und Server-Helfer per SHA-256 und
-prüft zusätzlich die versionierte systemd-Unit auf Konfigurationsdrift. Ein
-Produktionsneustart ist auf 15 Sekunden begrenzt. Danach führt der Workflow den
-Produktions-Smoke-Test aus. Ohne die
+prüft zusätzlich die versionierte systemd-Unit auf Konfigurationsdrift. Untätige
+PostgreSQL-Verbindungen halten den Prozess nach dem Schließen des HTTP-Servers
+nicht mehr offen; zusätzlich bleibt der Produktionsneustart auf 15 Sekunden
+begrenzt. Danach führt der Workflow den Produktions-Smoke-Test aus. Ohne die
 explizite Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der
 Deployment-Job vollständig übersprungen.
 
