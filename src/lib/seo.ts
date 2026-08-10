@@ -1,7 +1,7 @@
 import heroCar from "@/assets/hero-car.jpg";
 
 /** Öffentliche Basis-URL des Projekts – für canonical, og:url und Sitemap. */
-export const SITE_URL = "https://whitegloss.de";
+export const SITE_URL = "https://white-gloss.de";
 
 /** Macht aus einem Pfad eine absolute URL (Crawler brauchen absolute Angaben). */
 export const absUrl = (path: string) =>

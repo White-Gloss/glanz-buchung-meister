@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /auth
 Disallow: /reset-password
 
-Sitemap: https://whitegloss.de/sitemap.xml
+Sitemap: https://white-gloss.de/sitemap.xml

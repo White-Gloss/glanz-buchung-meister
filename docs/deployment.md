@@ -77,7 +77,7 @@ protokolliert dann nur `RESEND_API_KEY oder MAIL_FROM fehlt`; Buchungen
 werden trotzdem gespeichert.
 
 1. Auf <https://resend.com> ein Konto anlegen.
-2. **Domains → Add Domain** → `whitegloss.de` eintragen. Resend zeigt
+2. **Domains → Add Domain** → `white-gloss.de` eintragen. Resend zeigt
    danach drei bis vier DNS-Einträge an (DKIM als `TXT`, ein `MX` und ein
    `TXT` für den Rückkanal, optional DMARC).
 3. Diese Einträge im Hostinger-hPanel unter **Domains → DNS-Zonenverwaltung**
@@ -88,11 +88,11 @@ werden trotzdem gespeichert.
    Schlüssel beginnt mit `re_` und ist **nur einmal** sichtbar.
 5. Im hPanel unter den Umgebungsvariablen setzen:
 
-   | Variable         | Beispielwert                                    |
-   | ---------------- | ----------------------------------------------- |
-   | `RESEND_API_KEY` | `re_…` (der Schlüssel aus Schritt 4)            |
-   | `MAIL_FROM`      | `White Gloss Detailing <termine@whitegloss.de>` |
-   | `MAIL_TO_OWNER`  | `info@whitegloss.de`                            |
+   | Variable         | Beispielwert                                     |
+   | ---------------- | ------------------------------------------------ |
+   | `RESEND_API_KEY` | `re_…` (der Schlüssel aus Schritt 4)             |
+   | `MAIL_FROM`      | `White Gloss Detailing <buchung@white-gloss.de>` |
+   | `MAIL_TO_OWNER`  | `info@white-gloss.de`                            |
 
 `MAIL_FROM` ist keine Zugangsdatei und kein Postfach, sondern nur die
 Absenderzeile. Die Domain im spitzen Klammernteil **muss** die in Schritt 2
@@ -126,11 +126,11 @@ im hPanel jedes Mal von Hand angestoßen werden.
 
 Diese Adressen sollten erreichbar sein:
 
-- `https://whitegloss.de/` — Startseite
-- `https://whitegloss.de/faq` — FAQ-Seite
-- `https://whitegloss.de/ratgeber` — Ratgeber-Übersicht
-- `https://whitegloss.de/sitemap.xml` — enthält `/faq` und `/ratgeber`
-- `https://whitegloss.de/admin` — Anmeldung als Administrator
+- `https://white-gloss.de/` — Startseite
+- `https://white-gloss.de/faq` — FAQ-Seite
+- `https://white-gloss.de/ratgeber` — Ratgeber-Übersicht
+- `https://white-gloss.de/sitemap.xml` — enthält `/faq` und `/ratgeber`
+- `https://white-gloss.de/admin` — Anmeldung als Administrator
 
 Solange im Admin-Panel noch keine Inhalte angelegt sind, zeigen `/faq` und
 `/ratgeber` einen freundlichen Hinweistext statt einer leeren Seite. Das ist

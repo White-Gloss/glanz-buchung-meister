@@ -9,7 +9,7 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
-const CANONICAL_HOST = "whitegloss.de";
+const CANONICAL_HOST = "white-gloss.de";
 const PUBLIC_PAGE_PREFIXES = [
   "/abholservice",
   "/leistungen",
