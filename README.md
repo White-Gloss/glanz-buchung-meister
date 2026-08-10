@@ -1,8 +1,8 @@
 # White Gloss Detailing
 
 Website und Buchungssystem für White Gloss Detailing, gebaut mit TanStack Start,
-React, TypeScript, Tailwind CSS und Nitro. Der Produktionsbetrieb läuft als
-Node-Anwendung bei Hostinger.
+React, TypeScript, Tailwind CSS und Nitro. Die Produktionsarchitektur ist eine
+Node-/SSR-Anwendung; der vollständige Hostingbetrieb wird auf IONOS umgestellt.
 
 ## Lokal installieren
 
@@ -42,10 +42,11 @@ Google-Tag und Meta-Pixel laden ausschließlich nach erteilter
 Cookie-Einwilligung. Ohne Zustimmung wird weder ein Skript geladen noch ein
 Ereignis gesendet — auch serverseitig nicht.
 
-Zugangsdaten gehören in die lokale `.env` beziehungsweise in die
-Umgebungsvariablen von Hostinger. Geheimnisse dürfen nicht in Git veröffentlicht
-werden. `META_CAPI_ACCESS_TOKEN` darf nicht mit `VITE_`-Präfix gesetzt werden,
-sonst landet das Token im öffentlichen Browser-Bundle.
+Zugangsdaten gehören in die lokale `.env.local` beziehungsweise in die
+geschützten Umgebungsvariablen des Produktionshostings. Geheimnisse dürfen nicht
+in Git veröffentlicht werden. `META_CAPI_ACCESS_TOKEN` darf nicht mit
+`VITE_`-Präfix gesetzt werden, sonst landet das Token im öffentlichen
+Browser-Bundle.
 
 ## Prüfen und bauen
 
@@ -61,9 +62,21 @@ Der Produktionsstart erfolgt aus dem erzeugten Build:
 node .output/server/index.mjs
 ```
 
+Zusätzliche Produktions- und SEO-Prüfungen:
+
+```sh
+npm run smoke:production
+npm run audit:domain-migration
+npm run lighthouse:mobile
+npm run lighthouse:desktop
+```
+
 ## Deployment
 
-Die Website wird bei Hostinger über die Git-Bereitstellung im hPanel
-ausgerollt. Build- und Startbefehle, die Aufteilung der Umgebungsvariablen in
-öffentliche und geheime Werte sowie die Einrichtung des automatischen
-Deployments stehen in [`docs/deployment.md`](docs/deployment.md).
+Die Zielarchitektur für IONOS sowie Build-, Start-, Secret- und Rollback-Regeln
+stehen in [`docs/deployment.md`](docs/deployment.md). Der genaue automatische
+GitHub→IONOS-Mechanismus wird erst festgelegt, wenn der konkrete IONOS-Tarif und
+dessen Node-/Server-Funktionen bestätigt sind.
+
+Die technischen Quality Gates sind in
+[`docs/quality-gates.md`](docs/quality-gates.md) dokumentiert.
