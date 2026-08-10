@@ -30,7 +30,7 @@ Geprüft werden:
 - XML-Sitemap, Mindestanzahl an URLs und ausschließlich neue Domain
 - robots.txt mit korrektem Sitemap-Verweis
 
-Die GitHub Action `.github/workflows/production-smoke.yml` führt diesen Test zusätzlich alle sechs Stunden und manuell aus. Sie verändert keine Produktionsdaten.
+Die GitHub Action `.github/workflows/production-smoke.yml` führt diesen Test auf `main`, zusätzlich alle sechs Stunden und manuell aus. Sie verändert keine Produktionsdaten.
 
 ## 2. Audit der Domainmigration
 
@@ -54,7 +54,7 @@ MIGRATION_NEW_BASE=https://neu.example.de \
 npm run audit:domain-migration
 ```
 
-Dieser Check wird erst dann automatisch an ein Deployment gekoppelt, wenn die endgültige IONOS-Deployment-Architektur feststeht.
+Die GitHub Action `.github/workflows/domain-migration-audit.yml` prüft die Migration täglich sowie bei Änderungen am Audit selbst. Die direkte Kopplung an das spätere IONOS-Deployment folgt, sobald die endgültige Deployment-Architektur feststeht.
 
 ## 3. Lighthouse-Baseline
 
@@ -80,6 +80,8 @@ Aktuell gemessene Kernseiten:
 - `/abholservice`
 
 Die Baseline nutzt zunächst bewusst realistische Warnschwellen statt aggressiver Merge-Blocker. Erst nachdem stabile Produktionsmessungen vorliegen, werden die Performance-Schwellen schrittweise verschärft.
+
+Die GitHub Action `.github/workflows/lighthouse-audit.yml` führt die mobile und Desktop-Prüfung wöchentlich sowie nach Änderungen an der Audit-Konfiguration aus.
 
 ## 4. CI-Schutz
 
