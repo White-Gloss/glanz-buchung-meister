@@ -78,8 +78,8 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
     const headers = request?.headers;
 
     const userAgent = headers?.get("user-agent") ?? undefined;
-    // Hinter dem Reverse-Proxy von Hostinger steht die echte Adresse im
-    // ersten Eintrag von X-Forwarded-For.
+    // Bei einem vorgeschalteten Reverse-Proxy steht die ursprüngliche
+    // Client-Adresse üblicherweise im ersten Eintrag von X-Forwarded-For.
     const forwardedFor = headers?.get("x-forwarded-for");
     const clientIp = forwardedFor?.split(",")[0]?.trim() || undefined;
 
