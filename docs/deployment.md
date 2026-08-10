@@ -30,7 +30,12 @@ Der endgültige Tarif muss für die bestehende Architektur mindestens Folgendes 
 - HTTPS für `white-gloss.de`,
 - reproduzierbares Rollback auf einen vorherigen Git-Stand.
 
-**Blocker für die automatische Pipeline:** Der genaue IONOS-Tarif muss bekannt sein. Erst danach wird entschieden, ob das Deployment nativ aus IONOS heraus oder über GitHub Actions/SSH erfolgt. Es wird bewusst keine statische oder produktspezifische Konfiguration auf Verdacht eingerichtet.
+Der aktive IONOS-Tarif wurde am 10. August 2026 als Ubuntu-24.04-VPS mit
+Root-/SSH-Zugang bestätigt. Er ist für die Node-/SSR-Anwendung geeignet; das
+Deployment erfolgt deshalb über GitHub Actions und einen eingeschränkten
+SSH-Benutzer. Die einmalige, noch nicht ausgeführte Servervorbereitung und die
+absichtlich noch nicht gesetzten Secrets stehen in
+[`docs/ionos-vps-bootstrap.md`](ionos-vps-bootstrap.md).
 
 ## Zielablauf eines Deployments
 
@@ -111,7 +116,11 @@ GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Re
 4. Syntaxprüfung der Quality-Skripte
 5. `npm run build`
 
-Ein Deployment soll später **nur auf einem grünen CI-Stand** basieren.
+Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
+einen erfolgreichen `CI`-Lauf für `main`, reproduziert den Build und führt nach
+der atomaren Aktivierung den Produktions-Smoke-Test aus. Ohne die explizite
+Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der Deployment-Job
+vollständig übersprungen.
 
 ## Rollback-Grundsatz
 
