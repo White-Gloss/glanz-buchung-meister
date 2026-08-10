@@ -12,7 +12,8 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Alte URLs 1:1 permanent auf die jeweilige neue URL weiterleiten.
   - Redirect-Ketten vermeiden.
   - Alte und neue Search-Console-Property sauber verbinden und Adressänderung durchführen.
-  - **Vorbereitet:** `npm run audit:domain-migration` prüft wichtige Alt-URLs auf permanente 301/308-Weiterleitungen und identische Zielpfade.
+  - **Technischer Teilpunkt ERLEDIGT (10.08.2026):** Der automatisierte Domain-Migrationsaudit bestätigt für `/`, `/leistungen`, `/preise`, `/qualitaet`, `/abholservice`, `/faq` und `/ratgeber` jeweils eine direkte permanente `301`-Weiterleitung von `whitegloss.de` auf denselben Pfad unter `white-gloss.de`. Der Audit läuft reproduzierbar per `npm run audit:domain-migration` und zusätzlich automatisiert in GitHub Actions.
+  - **Offen:** Search Console / Adressänderung und die tatsächliche Verarbeitung der neuen Domain durch Google beobachten bzw. abschließen.
   - **Abnahme:** Weiterleitungen funktionieren dauerhaft und Google verarbeitet die neue Domain als Ziel.
 
 - [ ] **2. GitHub → IONOS automatisch deployen** — **BLOCKIERT / P0**
@@ -27,20 +28,23 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Mobile/Desktop für Startseite, Preise, Leistung und Buchungsflow messen.
   - LCP, INP und CLS beobachten.
   - Performance-Budgets definieren.
-  - **Umgesetzt:** Mobile- und Desktop-Lighthouse-CI-Konfigurationen mit ersten Performance-, Accessibility-, Best-Practice- und SEO-Schwellen sind im Repository vorhanden.
-  - **Offen:** Stabile Produktionsmessungen und spätere Felddaten/CrUX auswerten, Schwellen danach nachschärfen.
+  - **Labor-Baseline ERLEDIGT (10.08.2026):** Mobile- und Desktop-Lighthouse-CI laufen reproduzierbar gegen `/`, `/preise`, `/leistungen` und `/abholservice`, jeweils mit drei Messläufen pro URL. Die definierten Accessibility-, Best-Practice-, SEO- und Performance-Schwellen werden automatisiert ausgewertet.
+  - **Verifizierter Befund:** Desktop erfüllt die aktuellen Assertions. Mobile erfüllt sie bis auf den CLS der Seite `/abholservice`; gemessen wurden ca. `0,195–0,198` bei einem Zielwert von `<= 0,10`.
+  - **Offen:** Ursache des mobilen Layout Shifts auf `/abholservice` beseitigen, anschließend erneut messen; danach stabile Produktionsmessungen sowie spätere Felddaten/CrUX auswerten und Budgets ggf. verschärfen.
   - **Abnahme:** Kernseiten erreichen wiederholbar gute Laborwerte und reale Felddaten zeigen keine kritischen CWV-Probleme.
 
 - [ ] **4. End-to-End-Tests für Buchung und Kernflows** — **OFFEN / P1**
   - Paketwahl, Fahrzeug, Extras, Fotos, Termin und Anfrage automatisiert testen.
   - Pflichtfelder, Fehlerfälle und Mobile abdecken.
   - Zentrale Admin-Flows separat absichern.
+  - **Sicherheitsgrenze:** Ein echter Produktions-E2E-Test darf keine Testbuchungen oder Testfotos in Live-Systeme schreiben. Für vollständige E2E-Abdeckung ist deshalb entweder eine isolierte Testkonfiguration oder Punkt 9 (Staging/Preview) erforderlich.
   - **Abnahme:** Regressionen in geschäftskritischen Flows blockieren einen Merge.
 
 - [ ] **5. Post-Deploy Smoke-Tests** — **IN ARBEIT / P1**
   - Nach Deployment `/`, `/preise`, `/leistungen`, `/sitemap.xml` und `/admin` prüfen.
   - HTTP-Status und Kerninhalte validieren.
-  - **Umgesetzt:** Ein read-only Produktions-Smoke-Test prüft Kernseiten, Canonicals, Sitemap und robots.txt; ein GitHub-Workflow führt ihn zusätzlich regelmäßig aus.
+  - **Umgesetzt:** Ein read-only Produktions-Smoke-Test prüft Kernseiten, Canonicals, Sitemap, robots.txt und zentrale Security-Header; ein GitHub-Workflow führt ihn zusätzlich regelmäßig aus.
+  - **Verifiziert (10.08.2026):** Live-Test erfolgreich; `/`, `/preise`, `/leistungen` und `/admin` liefern HTTP 200, die Sitemap liefert HTTP 200 und enthält 29 URLs, robots.txt liefert HTTP 200.
   - **Offen:** Den Smoke-Test direkt hinter die finale IONOS-Deployment-Pipeline hängen, sobald Punkt 2 entsperrt ist.
   - **Abnahme:** Produktion wird unmittelbar nach jedem Release automatisch auf Erreichbarkeit und Kernfunktionen geprüft.
 
