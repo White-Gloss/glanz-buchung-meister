@@ -9,7 +9,11 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "smoke:production": "node scripts/smoke-production.mjs",
+    "audit:domain-migration": "node scripts/audit-domain-migration.mjs",
+    "lighthouse:mobile": "npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.mobile.cjs",
+    "lighthouse:desktop": "npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.desktop.cjs"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

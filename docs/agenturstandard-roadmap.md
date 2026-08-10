@@ -12,6 +12,7 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Alte URLs 1:1 permanent auf die jeweilige neue URL weiterleiten.
   - Redirect-Ketten vermeiden.
   - Alte und neue Search-Console-Property sauber verbinden und Adressänderung durchführen.
+  - **Vorbereitet:** `npm run audit:domain-migration` prüft wichtige Alt-URLs auf permanente 301/308-Weiterleitungen und identische Zielpfade.
   - **Abnahme:** Weiterleitungen funktionieren dauerhaft und Google verarbeitet die neue Domain als Ziel.
 
 - [ ] **2. GitHub → IONOS automatisch deployen** — **BLOCKIERT / P0**
@@ -19,12 +20,15 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Passende Deployment-Architektur für Node/SSR wählen.
   - Deployment nur nach erfolgreicher Prüfung von `main` auslösen.
   - Rollback und Environment-Konfiguration dokumentieren.
+  - **Blocker:** Der genaue IONOS-Tarif bzw. die verfügbare Node-/Server-Laufzeit muss feststehen, bevor eine sichere Deployment-Pipeline eingerichtet wird.
   - **Abnahme:** Ein erfolgreicher Merge auf `main` erzeugt automatisch und reproduzierbar eine neue Produktion; fehlgeschlagene Builds beschädigen die bestehende Version nicht.
 
-- [ ] **3. Core Web Vitals / Lighthouse real messen** — **OFFEN / P1**
+- [ ] **3. Core Web Vitals / Lighthouse real messen** — **IN ARBEIT / P1**
   - Mobile/Desktop für Startseite, Preise, Leistung und Buchungsflow messen.
   - LCP, INP und CLS beobachten.
   - Performance-Budgets definieren.
+  - **Umgesetzt:** Mobile- und Desktop-Lighthouse-CI-Konfigurationen mit ersten Performance-, Accessibility-, Best-Practice- und SEO-Schwellen sind im Repository vorhanden.
+  - **Offen:** Stabile Produktionsmessungen und spätere Felddaten/CrUX auswerten, Schwellen danach nachschärfen.
   - **Abnahme:** Kernseiten erreichen wiederholbar gute Laborwerte und reale Felddaten zeigen keine kritischen CWV-Probleme.
 
 - [ ] **4. End-to-End-Tests für Buchung und Kernflows** — **OFFEN / P1**
@@ -33,15 +37,19 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Zentrale Admin-Flows separat absichern.
   - **Abnahme:** Regressionen in geschäftskritischen Flows blockieren einen Merge.
 
-- [ ] **5. Post-Deploy Smoke-Tests** — **OFFEN / P1**
+- [ ] **5. Post-Deploy Smoke-Tests** — **IN ARBEIT / P1**
   - Nach Deployment `/`, `/preise`, `/leistungen`, `/sitemap.xml` und `/admin` prüfen.
   - HTTP-Status und Kerninhalte validieren.
+  - **Umgesetzt:** Ein read-only Produktions-Smoke-Test prüft Kernseiten, Canonicals, Sitemap und robots.txt; ein GitHub-Workflow führt ihn zusätzlich regelmäßig aus.
+  - **Offen:** Den Smoke-Test direkt hinter die finale IONOS-Deployment-Pipeline hängen, sobald Punkt 2 entsperrt ist.
   - **Abnahme:** Produktion wird unmittelbar nach jedem Release automatisch auf Erreichbarkeit und Kernfunktionen geprüft.
 
-- [ ] **6. Monitoring und Fehleralarme** — **OFFEN / P1**
+- [ ] **6. Monitoring und Fehleralarme** — **IN ARBEIT / P1**
   - Uptime-Monitoring für Domain und Kernrouten.
   - Frontend-/Serverfehler zentral erfassen.
   - Alarmierung bei 5xx/Ausfällen/erhöhter Fehlerquote.
+  - **Umgesetzt:** Die Live-Seite wird über GitHub Actions alle sechs Stunden mit dem read-only Smoke-Test geprüft.
+  - **Offen:** Zentrales Exception-/Fehlermonitoring und gezielte Alarmierung ergänzen.
   - **Abnahme:** Kritische Fehler werden automatisch erkannt, protokolliert und gemeldet.
 
 - [ ] **7. Trust / Social Proof / echte Referenzen** — **OFFEN / P1**
@@ -74,3 +82,5 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
 ## Aktueller technischer Stand
 
 Die Website hat bereits eine starke Grundlage: technische SEO, strukturierte Leistungs- und Stadtseiten, Sitemap, Canonicals, interne Verlinkung, strukturierte Daten, Buchungsflow, CI sowie Performance-orientierte Bild-/Bundle-Strategien. Die Roadmap konzentriert sich deshalb bewusst auf die verbleibenden Unterschiede zu einem belastbaren Agentur-/Enterprise-Betrieb statt auf zusätzliche dekorative Änderungen.
+
+Die technischen Quality-Gates und Bedienbefehle sind zusätzlich in `docs/quality-gates.md` dokumentiert.

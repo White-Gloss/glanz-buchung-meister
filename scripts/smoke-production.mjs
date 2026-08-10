@@ -1,0 +1,115 @@
+const BASE_URL = new URL(process.env.SMOKE_BASE_URL || "https://white-gloss.de").origin;
+const REQUEST_TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
+
+const pageChecks = [
+  { path: "/", markers: ["Fahrzeugaufbereitung", "White Gloss"] },
+  { path: "/preise", markers: ["Pakete", "Preise"] },
+  { path: "/leistungen", markers: ["Leistungsspektrum", "Leistungen"] },
+  { path: "/admin", markers: [] },
+];
+
+const failures = [];
+
+function fail(label, message) {
+  failures.push(`${label}: ${message}`);
+}
+
+async function get(path, { redirect = "follow" } = {}) {
+  const url = new URL(path, BASE_URL);
+  const response = await fetch(url, {
+    redirect,
+    headers: {
+      "user-agent": "WhiteGloss-Production-Smoke/1.0",
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const body = await response.text();
+  return { response, body, requestedUrl: url.href };
+}
+
+function assertCanonical(path, body) {
+  const expected = new URL(path, `${BASE_URL}/`).href.replace(/\/$/, path === "/" ? "/" : "");
+  const canonicalPattern =
+    /<link\s+[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>|<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i;
+  const match = body.match(canonicalPattern);
+  const canonical = match?.[1] || match?.[2];
+  if (!canonical) {
+    fail(path, "kein Canonical-Link im serverseitigen HTML gefunden");
+    return;
+  }
+  if (canonical.replace(/\/$/, "") !== expected.replace(/\/$/, "")) {
+    fail(path, `Canonical ist ${canonical}, erwartet ${expected}`);
+  }
+}
+
+for (const check of pageChecks) {
+  try {
+    const { response, body } = await get(check.path);
+    const label = check.path;
+    if (!response.ok) {
+      fail(label, `HTTP ${response.status}`);
+      continue;
+    }
+    if (body.trim().length < 200) {
+      fail(label, "Antwort ist unerwartet kurz");
+    }
+    for (const marker of check.markers) {
+      if (!body.toLowerCase().includes(marker.toLowerCase())) {
+        fail(label, `erwarteter Inhalt fehlt: ${marker}`);
+      }
+    }
+    if (check.path !== "/admin") {
+      assertCanonical(check.path, body);
+    }
+    console.log(`PASS ${label} -> ${response.status} ${response.url}`);
+  } catch (error) {
+    fail(check.path, error instanceof Error ? error.message : String(error));
+  }
+}
+
+try {
+  const { response, body } = await get("/sitemap.xml");
+  if (!response.ok) fail("/sitemap.xml", `HTTP ${response.status}`);
+  const contentType = response.headers.get("content-type") || "";
+  if (!/xml/i.test(contentType)) {
+    fail("/sitemap.xml", `unerwarteter Content-Type: ${contentType || "leer"}`);
+  }
+  const locations = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1].trim());
+  if (locations.length < 20) {
+    fail("/sitemap.xml", `nur ${locations.length} URL-Einträge gefunden`);
+  }
+  const wrongOrigin = locations.filter((location) => !location.startsWith(`${BASE_URL}/`));
+  if (wrongOrigin.length > 0) {
+    fail("/sitemap.xml", `${wrongOrigin.length} URL(s) liegen nicht auf ${BASE_URL}`);
+  }
+  if (body.includes("https://whitegloss.de")) {
+    fail("/sitemap.xml", "alte Domain whitegloss.de ist noch enthalten");
+  }
+  console.log(`PASS /sitemap.xml -> ${response.status}, ${locations.length} URLs`);
+} catch (error) {
+  fail("/sitemap.xml", error instanceof Error ? error.message : String(error));
+}
+
+try {
+  const { response, body } = await get("/robots.txt");
+  if (!response.ok) fail("/robots.txt", `HTTP ${response.status}`);
+  const expectedSitemap = `Sitemap: ${BASE_URL}/sitemap.xml`;
+  if (!body.includes(expectedSitemap)) {
+    fail("/robots.txt", `Sitemap-Hinweis fehlt: ${expectedSitemap}`);
+  }
+  if (!/^User-agent:\s*\*/im.test(body) || !/^Allow:\s*\//im.test(body)) {
+    fail("/robots.txt", "grundlegende Crawl-Regeln fehlen");
+  }
+  console.log(`PASS /robots.txt -> ${response.status}`);
+} catch (error) {
+  fail("/robots.txt", error instanceof Error ? error.message : String(error));
+}
+
+if (failures.length > 0) {
+  console.error("\nProduction-Smoke-Test fehlgeschlagen:");
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exitCode = 1;
+} else {
+  console.log(`\nProduction-Smoke-Test erfolgreich für ${BASE_URL}`);
+}

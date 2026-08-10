@@ -14,6 +14,7 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+.lighthouseci/
 *.local
 
 # Wrangler / Cloudflare
@@ -22,10 +23,10 @@ dist-ssr
 
 # Umgebungsvariablen
 # Hinweis: .env enthaelt ausschliesslich oeffentliche Werte (Projekt-URL und
-# Publishable Key) und wird beim Build von Hostinger benoetigt - deshalb bleibt
-# sie bewusst im Repository. Geheimnisse wie SUPABASE_SERVICE_ROLE_KEY oder
+# Publishable Key) und wird bereits beim Build benoetigt - deshalb bleibt sie
+# bewusst im Repository. Geheimnisse wie SUPABASE_SERVICE_ROLE_KEY oder
 # SUPABASE_DB_URL gehoeren NIE in diese Datei, sondern ausschliesslich in die
-# Umgebungsvariablen des Hosters.
+# geschuetzten Umgebungsvariablen des Produktionshostings.
 .env.local
 .env.*.local
 .env.production

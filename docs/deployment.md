@@ -1,175 +1,118 @@
-# Deployment auf Hostinger
+# Deployment auf IONOS – technische Vorgaben
 
-Die Website läuft bei Hostinger als Node-Anwendung. Der Code wird über die
-Git-Bereitstellung im hPanel geholt — Hostinger zieht sich den Stand also
-selbst aus GitHub. Zugangsdaten müssen dafür nirgends hinterlegt werden.
+Die Website wird auf `white-gloss.de` betrieben und soll vollständig zu IONOS umziehen. Dieses Projekt ist **keine rein statische Website**, sondern eine Node-/SSR-Anwendung (TanStack Start + Nitro). Deshalb wird die endgültige Deployment-Methode erst festgelegt, wenn der konkrete IONOS-Tarif und dessen Node-/Server-Funktionen bestätigt sind.
 
-Diese Datei beschreibt, was die Anwendung zum Bauen und Starten braucht.
-Die genauen Menüpfade im hPanel sind hier bewusst nicht abgebildet: Hostinger
-ändert die Oberfläche regelmäßig, und eine veraltete Klickanleitung wäre
-schlimmer als keine. Die Werte unten sind das, was Sie dort eintragen.
+Die hier dokumentierten technischen Anforderungen gelten unabhängig davon, ob IONOS später eine native Git-Anbindung, einen VPS/Cloud-Server oder eine andere Node-fähige Laufzeit bereitstellt.
 
-## Kurzfassung
+## Deployment-Vertrag
 
-| Was                 | Wert                               |
-| ------------------- | ---------------------------------- |
-| Branch              | `main`                             |
-| Node-Version        | `20.19` oder neuer (empfohlen: 22) |
-| Installationsbefehl | `npm ci`                           |
-| Build-Befehl        | `npm run build`                    |
-| Startdatei          | `.output/server/index.mjs`         |
-| Startbefehl         | `node .output/server/index.mjs`    |
+| Was | Wert |
+| --- | --- |
+| Produktionsbranch | `main` |
+| Referenz-Node-Version in CI | `24` |
+| Installationsbefehl | `npm ci` |
+| Build-Befehl | `npm run build` |
+| Build-Ausgabe | `.output/` |
+| Server-Einstieg | `.output/server/index.mjs` |
+| Startbefehl | `node .output/server/index.mjs` |
+| Hauptdomain | `https://white-gloss.de` |
 
-## Ablauf eines Deployments
+`vite.config.ts` baut im Produktionsmodus mit Nitro als `node-server`. Eine Hosting-Variante, die nur statische HTML-/JS-Dateien ausliefert, reicht daher für die vollständige Anwendung nicht aus.
 
-1. Änderungen werden nach `main` gemergt.
-2. Hostinger holt den neuen Stand (manuell im hPanel oder automatisch, siehe
-   unten).
-3. Auf dem Server laufen `npm ci` und `npm run build`. Dabei entsteht der
-   Ordner `.output`.
-4. Der Node-Prozess wird neu gestartet und bedient die Seite aus `.output`.
+## Mindestanforderungen an den IONOS-Tarif
 
-`.output` liegt bewusst nicht im Repository (siehe `.gitignore`) — der Build
-entsteht immer frisch aus dem Quellcode.
+Der endgültige Tarif muss für die bestehende Architektur mindestens Folgendes ermöglichen:
+
+- einen dauerhaft laufenden Node-Prozess oder eine gleichwertige Node-Server-Laufzeit,
+- geschützte serverseitige Umgebungsvariablen,
+- `npm ci` und `npm run build` während des Deployments,
+- Neustart bzw. Rollout des Node-Prozesses nach erfolgreichem Build,
+- HTTPS für `white-gloss.de`,
+- reproduzierbares Rollback auf einen vorherigen Git-Stand.
+
+**Blocker für die automatische Pipeline:** Der genaue IONOS-Tarif muss bekannt sein. Erst danach wird entschieden, ob das Deployment nativ aus IONOS heraus oder über GitHub Actions/SSH erfolgt. Es wird bewusst keine statische oder produktspezifische Konfiguration auf Verdacht eingerichtet.
+
+## Zielablauf eines Deployments
+
+1. Änderung über Pull Request prüfen.
+2. CI muss erfolgreich sein (`npm audit`, ESLint, Quality-Skripte, Produktions-Build).
+3. Änderung nach `main` mergen.
+4. IONOS übernimmt genau diesen `main`-Stand.
+5. Auf dem Zielsystem laufen `npm ci` und `npm run build`.
+6. Erst nach erfolgreichem Build wird der neue Node-Stand aktiviert.
+7. Direkt danach läuft `npm run smoke:production` gegen die Live-Domain.
+8. Bei fehlgeschlagenem Build oder Smoke-Test bleibt bzw. wird der letzte funktionierende Stand wieder aktiv.
+
+Damit ist das gewünschte Ziel klar: **Merge nach `main` → automatisch zu IONOS → Build → Neustart → Smoke-Test**.
 
 ## Umgebungsvariablen
 
-Hier gibt es einen Stolperstein, der leicht zu übersehen ist: **Variablen mit
-`VITE_`-Präfix werden beim Bauen fest in die Browser-Dateien eingebacken.**
-Sie müssen also bereits vorhanden sein, wenn `npm run build` läuft — ein
-späteres Setzen ändert nichts mehr. Alle anderen Variablen liest der Server
-erst zur Laufzeit.
+Variablen mit `VITE_`-Präfix werden beim Build in Browser-Dateien eingebettet. Sie müssen deshalb bereits vorhanden sein, wenn `npm run build` läuft. Geheimnisse dürfen niemals ein `VITE_`-Präfix erhalten.
 
-### Öffentliche Werte — stehen in `.env` im Repository
+### Öffentliche Werte im Repository
 
-Diese Datei liegt absichtlich im Git, weil Hostinger sie beim Bauen braucht.
-Sie enthält ausschließlich Werte, die ohnehin im Quelltext jeder Seite
-sichtbar sind:
+Die eingecheckte `.env` enthält nur Werte, die im Browser ohnehin öffentlich sind:
 
-- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `VITE_META_PIXEL_ID` — sobald hier eine ID steht, lädt der Meta-Pixel
-  (weiterhin nur nach erteilter Cookie-Einwilligung)
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_META_PIXEL_ID` (derzeit leer)
 
-### Geheimnisse — ausschließlich in den Hostinger-Umgebungsvariablen
+### Geheimnisse nur im Produktionshosting
 
-Diese Werte dürfen **niemals** in `.env` oder sonst ins Repository:
+Folgende Werte gehören ausschließlich in geschützte IONOS-Umgebungsvariablen bzw. den später gewählten Secret-Store und **niemals** ins Repository:
 
-| Variable                                            | Wofür                                     |
-| --------------------------------------------------- | ----------------------------------------- |
-| `META_PIXEL_ID`                                     | Conversions API, serverseitig             |
-| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Conversions API         |
-| `RESEND_API_KEY`                                    | E-Mail-Versand                            |
-| `MAIL_FROM`                                         | Absender der Kundenmails                  |
-| `MAIL_TO_OWNER`                                     | Zieladresse der internen Benachrichtigung |
-| `SUPABASE_SERVICE_ROLE_KEY`                         | optional, serverseitige Vollzugriffe      |
-| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung               |
+| Variable | Zweck |
+| --- | --- |
+| `META_PIXEL_ID` | serverseitige Meta-Conversions |
+| `META_CAPI_ACCESS_TOKEN` | Zugriffstoken der Meta Conversions API |
+| `RESEND_API_KEY` | E-Mail-Versand |
+| `MAIL_FROM` | Absender der Kundenmails |
+| `MAIL_TO_OWNER` | Zieladresse interner Benachrichtigungen |
+| `SUPABASE_SERVICE_ROLE_KEY` | optionale serverseitige Vollzugriffe |
+| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung |
 
-Ein Token mit `VITE_`-Präfix zu setzen würde es in den öffentlichen
-Browser-Dateien veröffentlichen. Deshalb heißen die serverseitigen Variablen
-bewusst ohne dieses Präfix.
+## E-Mail-Versand mit Resend
 
-### E-Mail-Versand einrichten (Resend)
+Ohne `RESEND_API_KEY` und `MAIL_FROM` wird keine Kundenmail versendet. Buchungen können trotzdem gespeichert werden; der Mailversand meldet dann die fehlende Konfiguration.
 
-Ohne `RESEND_API_KEY` und `MAIL_FROM` verschickt die Seite keine einzige
-Mail — weder die Eingangsbestätigung noch die Terminbestätigung. Der Server
-protokolliert dann nur `RESEND_API_KEY oder MAIL_FROM fehlt`; Buchungen
-werden trotzdem gespeichert.
+Für `white-gloss.de` müssen die von Resend vorgegebenen DNS-Einträge bei der aktuell zuständigen DNS-Verwaltung von IONOS hinterlegt werden. Werte für DKIM, Return-Path/MX und gegebenenfalls DMARC werden **nicht** aus alten Hostinger-Einstellungen übernommen, sondern exakt aus dem aktiven Resend-Domain-Setup.
 
-1. Auf <https://resend.com> ein Konto anlegen.
-2. **Domains → Add Domain** → `white-gloss.de` eintragen. Resend zeigt
-   danach drei bis vier DNS-Einträge an (DKIM als `TXT`, ein `MX` und ein
-   `TXT` für den Rückkanal, optional DMARC).
-3. Diese Einträge im Hostinger-hPanel unter **Domains → DNS-Zonenverwaltung**
-   anlegen — Typ, Name und Wert genau so übernehmen, wie Resend sie zeigt.
-   Bis Resend „Verified" meldet, dauert es meist Minuten, in Einzelfällen
-   bis zu 24 Stunden.
-4. **API Keys → Create API Key**, Berechtigung _Sending access_ genügt. Der
-   Schlüssel beginnt mit `re_` und ist **nur einmal** sichtbar.
-5. Im hPanel unter den Umgebungsvariablen setzen:
+Empfohlene Produktionswerte:
 
-   | Variable         | Beispielwert                                     |
-   | ---------------- | ------------------------------------------------ |
-   | `RESEND_API_KEY` | `re_…` (der Schlüssel aus Schritt 4)             |
-   | `MAIL_FROM`      | `White Gloss Detailing <buchung@white-gloss.de>` |
-   | `MAIL_TO_OWNER`  | `info@white-gloss.de`                            |
+| Variable | Beispiel |
+| --- | --- |
+| `MAIL_FROM` | `White Gloss Detailing <info@white-gloss.de>` oder eine andere tatsächlich genutzte Adresse der verifizierten Domain |
+| `MAIL_TO_OWNER` | `info@white-gloss.de` |
 
-`MAIL_FROM` ist keine Zugangsdatei und kein Postfach, sondern nur die
-Absenderzeile. Die Domain im spitzen Klammernteil **muss** die in Schritt 2
-verifizierte Domain sein — sonst weist Resend den Versand ab. Ein Postfach
-für diese Adresse braucht es nicht; Antworten der Kundschaft landen dort
-allerdings ins Leere, deshalb besser eine Adresse verwenden, die tatsächlich
-existiert.
+Der eigentliche API-Key bleibt geheim.
 
-`MAIL_TO_OWNER` ist optional: ohne diesen Wert geht die interne
-Benachrichtigung an die in `servicesConfig` hinterlegte Firmenadresse.
+## Quality Gates nach dem Deployment
 
-Solange die Domain nicht verifiziert ist, erlaubt Resend nur den Versand an
-die eigene Registrierungsadresse. Ein Test mit einer Kundenadresse schlägt
-in diesem Zustand also fehl, ohne dass am Code etwas falsch wäre.
+Die technischen Prüfungen sind in `docs/quality-gates.md` dokumentiert. Wichtig sind insbesondere:
 
-## Automatisches Deployment einrichten
-
-Damit ein Merge nach `main` von selbst ankommt:
-
-1. Im hPanel bei der Git-Bereitstellung die **Webhook-URL** kopieren.
-2. In GitHub unter **Settings → Webhooks → Add webhook** einfügen:
-   - Payload URL: die kopierte Adresse
-   - Content type: `application/json`
-   - Trigger: „Just the push event"
-3. Speichern. Ab dann löst jeder Push auf `main` ein Deployment aus.
-
-Ohne diesen Schritt funktioniert alles genauso, nur muss die Bereitstellung
-im hPanel jedes Mal von Hand angestoßen werden.
-
-## Nach dem Deployment prüfen
-
-Diese Adressen sollten erreichbar sein:
-
-- `https://white-gloss.de/` — Startseite
-- `https://white-gloss.de/faq` — FAQ-Seite
-- `https://white-gloss.de/ratgeber` — Ratgeber-Übersicht
-- `https://white-gloss.de/sitemap.xml` — enthält `/faq` und `/ratgeber`
-- `https://white-gloss.de/admin` — Anmeldung als Administrator
-
-Solange im Admin-Panel noch keine Inhalte angelegt sind, zeigen `/faq` und
-`/ratgeber` einen freundlichen Hinweistext statt einer leeren Seite. Das ist
-so gewollt und kein Fehler.
-
-Die strukturierten Daten lassen sich anschließend im
-[Test für Rich-Suchergebnisse](https://search.google.com/test/rich-results)
-prüfen — dort sollten bei einem Ratgeber-Beitrag `BlogPosting`,
-`BreadcrumbList` und, sofern FAQs zugeordnet sind, `FAQPage` erscheinen.
-
-## Wenn etwas schiefgeht
-
-Der Build bricht ab und die alte Version läuft weiter — Hostinger tauscht erst
-nach einem erfolgreichen Build. Führt ein Deployment trotzdem zu einem Fehler
-auf der Seite:
-
-1. Im hPanel das Build-Protokoll ansehen. `npm ci` scheitert zum Beispiel,
-   wenn `package.json` und `package-lock.json` nicht zusammenpassen.
-2. Zurückrollen, indem in GitHub der letzte Commit auf `main` revertiert und
-   erneut bereitgestellt wird.
-
-Fehlen die Supabase-Variablen, zeigt die Seite bewusst einen Hinweis statt
-einer weißen Seite — dann stimmt etwas an der Konfiguration nicht.
-
-## Hinweis zu GitHub Actions
-
-Im Repository gibt es bewusst keine GitHub-Actions-Workflows: In diesem
-GitHub-Konto lassen sich derzeit keine Actions ausführen. Jeder Lauf bricht
-nach wenigen Sekunden ab, ohne einen Runner zu bekommen — das betrifft auch
-GitHubs eigene Sicherheitsprüfungen und ist unabhängig vom Projektcode.
-
-Für das Deployment spielt das keine Rolle, weil Hostinger den Code selbst
-holt und baut. Vor einem Merge sollten die Prüfungen aber lokal laufen:
-
-```sh
-npm run lint
-npx tsc --noEmit
-npm run build
+```bash
+npm run smoke:production
+npm run audit:domain-migration
+npm run lighthouse:mobile
+npm run lighthouse:desktop
 ```
 
-Sobald Actions im Konto verfügbar sind, lohnt sich ein CI-Workflow, der genau
-diese drei Befehle bei jedem Pull Request ausführt.
+Der Produktions-Smoke-Test prüft unter anderem Startseite, Preise, Leistungen, Admin-Erreichbarkeit, Sitemap, robots.txt und Canonicals. Zusätzlich existiert ein regelmäßiger read-only Smoke-Workflow in GitHub Actions.
+
+## CI
+
+GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Requests und `main` mit:
+
+1. `npm ci --ignore-scripts`
+2. `npm audit --omit=dev --audit-level=moderate`
+3. `npm run lint`
+4. Syntaxprüfung der Quality-Skripte
+5. `npm run build`
+
+Ein Deployment soll später **nur auf einem grünen CI-Stand** basieren.
+
+## Rollback-Grundsatz
+
+Ein Rollback muss immer auf einen bekannten Git-Stand erfolgen. Keine Produktionsdateien werden manuell „repariert“, ohne dass dieselbe Änderung auch im Repository existiert. So bleiben GitHub, IONOS und die tatsächlich laufende Version nachvollziehbar synchron.
