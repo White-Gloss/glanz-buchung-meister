@@ -1,113 +1,111 @@
-# IONOS-VPS für White Gloss vorbereiten
+# IONOS-VPS für White Gloss
 
-## Verifizierter Tarifstand
+## Verifizierter Produktionsstand
 
-Am 10. August 2026 wurde im IONOS Cloud Panel der aktive Server geprüft:
+Am 10. August 2026 wurden Cloud Panel und Server geprüft:
 
-- virtuelle Maschine `VPS 6-8-240`,
-- Ubuntu 24.04,
-- 6 vCore,
-- 8 GB RAM,
-- 240 GB NVMe SSD,
-- Root-/SSH-Zugang.
+- VPS `VPS 6-8-240` mit Ubuntu 24.04, 6 vCore, 8 GB RAM und
+  240 GB NVMe SSD,
+- Node.js 22.23.2 als Produktionslaufzeit,
+- Caddy auf Port 80/443 mit gültigem TLS für `white-gloss.de`,
+- `white-gloss.service` als aktiver, gehärteter systemd-Dienst,
+- Anwendung ausschließlich auf `127.0.0.1:3000`,
+- UFW mit ausschließlich 22, 80 und 443 als eingehenden Freigaben,
+- atomare Releases unter `/srv/white-gloss-releases/<commit-sha>`,
+- aktiver Symlink `/srv/white-gloss-current`,
+- Produktionsvariablen in `/etc/white-gloss/environment` mit Modus `0600`
+  und Eigentümer `root:root`.
 
-Der Tarif ist damit für die bestehende TanStack-Start-/Nitro-Anwendung geeignet.
-Er stellt einen dauerhaft laufenden Node-Prozess, SSH-Deployments, systemd und
-atomare Releases bereit. Eine Vertragsänderung ist nicht erforderlich.
+Der Tarif ist für die bestehende TanStack-Start-/Nitro-Anwendung geeignet.
+Eine Vertragsänderung, ein neuer Reverse Proxy oder eine DNS-Umschaltung sind
+nicht erforderlich.
 
-## Sicherheitsmodell
+## Sicherheitsmodell der Automation
 
-GitHub Actions meldet sich nicht als `root`, sondern als eigener Benutzer
-`white-gloss` per SSH-Schlüssel an. Der Benutzer darf ausschließlich den
-Dienst `white-gloss.service` ohne Passwort neu starten. Der bekannte
-SSH-Hostschlüssel wird fest in GitHub hinterlegt; `ssh-keyscan` läuft nicht bei
-jedem Deployment erneut.
+Der bereits vorhandene manuelle Benutzer `deploy` bleibt Laufzeitbenutzer des
+Node-Dienstes. Sein SSH-Schlüssel wird nicht in GitHub gespeichert, weil dieser
+Benutzer für manuelle Administration vollständiges `sudo` besitzt.
 
-Produktionsgeheimnisse liegen in
-`/etc/white-gloss/white-gloss.env` auf dem VPS. Sie werden weder in GitHub noch
-in Release-Archive kopiert. Der systemd-Dienst bindet die Anwendung nur an
-`127.0.0.1:3000`; HTTPS und der öffentliche Zugriff erfolgen später über den
-Reverse Proxy.
+GitHub Actions verwendet stattdessen den separaten Benutzer
+`white-gloss-ci` und einen ausschließlich dafür erzeugten ED25519-Schlüssel:
 
-## Einmalige Vorbereitung – noch nicht ausgeführt
+- kein Login als `root`,
+- keine Mitgliedschaft in `sudo` oder einer Laufzeitgruppe,
+- SSH-Key mit der Option `restrict`,
+- Uploads nur nach `/home/white-gloss-ci/incoming`,
+- genau zwei erlaubte privilegierte Operationen über
+  `/usr/local/sbin/white-gloss-deploy`: `activate` und `rollback`.
 
-Die folgenden Änderungen benötigen eine ausdrückliche Produktionsfreigabe und
-werden deshalb nicht automatisch ausgeführt:
+Der root-eigene Helfer ist im Repository unter
+`scripts/deploy-ionos-release.sh` versioniert. Vor jedem Deployment vergleicht
+GitHub seine SHA-256-Prüfsumme mit der installierten Serverversion. Eine Änderung
+am privilegierten Helfer kann deshalb nicht automatisch wirksam werden.
 
-1. Node.js 24 auf dem VPS installieren und mit `node --version` prüfen.
-2. Systembenutzer und Verzeichnisse anlegen:
+Der Helfer akzeptiert ausschließlich 40-stellige Git-Commit-IDs und den exakt
+dazugehörigen Uploadpfad. Er prüft Eigentümer und Inhalt des Archivs, verwirft
+Pfade außerhalb von `.output`, lehnt symbolische Links ab, legt root-eigene
+Releases an, schaltet den Symlink atomar um und startet nur
+`white-gloss.service` neu. Ein lokaler Healthcheck muss innerhalb von
+30 Sekunden erfolgreich sein; andernfalls wird sofort auf den vorherigen
+Release-Stand zurückgeschaltet.
+
+## Einmalige Servervorbereitung
+
+Für die Aktivierung der Pipeline sind einmalig folgende, überprüfbare Schritte
+nötig:
+
+1. Systembenutzer und Uploadverzeichnis anlegen:
 
    ```sh
-   useradd --create-home --shell /bin/bash white-gloss
-   install -d -o white-gloss -g white-gloss -m 750 /opt/white-gloss/releases
-   install -d -o root -g white-gloss -m 750 /etc/white-gloss
-   install -o root -g white-gloss -m 640 /dev/null /etc/white-gloss/white-gloss.env
+   useradd --create-home --shell /bin/bash white-gloss-ci
+   install -d -o white-gloss-ci -g white-gloss-ci -m 700 \
+     /home/white-gloss-ci/.ssh
+   install -d -o white-gloss-ci -g white-gloss-ci -m 700 \
+     /home/white-gloss-ci/incoming
    ```
 
-3. Einen ausschließlich für GitHub Actions erzeugten öffentlichen SSH-Schlüssel
-   in `/home/white-gloss/.ssh/authorized_keys` hinterlegen.
-4. `/etc/systemd/system/white-gloss.service` anlegen:
+2. Den CI-Public-Key mit `restrict` in
+   `/home/white-gloss-ci/.ssh/authorized_keys` hinterlegen.
+3. Den geprüften Helfer root-eigen und unveränderbar für den CI-Benutzer nach
+   `/usr/local/sbin/white-gloss-deploy` installieren.
+4. In `/etc/sudoers.d/white-gloss-ci` ausschließlich die beiden Helferaufrufe
+   erlauben und die Datei mit `visudo -cf` prüfen.
+5. Login, Upload, Ablehnung ungültiger Argumente und den lokalen Healthcheck
+   testen, bevor GitHub das erste Release aktivieren darf.
 
-   ```ini
-   [Unit]
-   Description=White Gloss Node SSR
-   After=network-online.target
-   Wants=network-online.target
+Caddy, Firewall, systemd-Dienst und Produktionsvariablen werden dabei nicht
+verändert.
 
-   [Service]
-   Type=simple
-   User=white-gloss
-   Group=white-gloss
-   WorkingDirectory=/opt/white-gloss/current
-   Environment=NODE_ENV=production
-   Environment=HOST=127.0.0.1
-   Environment=PORT=3000
-   EnvironmentFile=/etc/white-gloss/white-gloss.env
-   ExecStart=/usr/bin/node /opt/white-gloss/current/server/index.mjs
-   Restart=on-failure
-   RestartSec=5
-   NoNewPrivileges=true
-   PrivateTmp=true
-   ProtectSystem=strict
-   ProtectHome=true
-   ReadWritePaths=/opt/white-gloss
+## GitHub-Konfiguration
 
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-5. In `/etc/sudoers.d/white-gloss-deploy` ausschließlich diesen Neustart
-   erlauben und die Datei mit `visudo -cf` prüfen:
-
-   ```text
-   white-gloss ALL=(root) NOPASSWD: /usr/bin/systemctl restart white-gloss.service
-   ```
-
-6. Reverse Proxy, TLS und Firewall prüfen. DNS wird erst nach separater
-   Bestätigung umgeschaltet.
-
-## Noch nicht gesetzte GitHub-Konfiguration
-
-Der Workflow bleibt standardmäßig deaktiviert. Erst nach der Servervorbereitung
-werden im GitHub-Environment `production` diese Secrets hinterlegt:
+Das Environment `production` enthält ausschließlich diese Deployment-Secrets:
 
 - `IONOS_SSH_HOST`
-- `IONOS_SSH_USER` (`white-gloss`)
+- `IONOS_SSH_USER` (`white-gloss-ci`)
 - `IONOS_SSH_PRIVATE_KEY`
 - `IONOS_SSH_KNOWN_HOSTS`
 - optional `IONOS_SSH_PORT` (Standard: `22`)
 
-Anschließend wird die Repository-Variable `IONOS_DEPLOY_ENABLED=true` gesetzt.
-Bis dahin überspringt GitHub das Deployment vollständig.
+Der Workflow bleibt ohne die Repository-Variable
+`IONOS_DEPLOY_ENABLED=true` deaktiviert. Die Variable wird erst gesetzt, wenn
+Servervorbereitung, Prüfsummenabgleich und End-to-End-Test erfolgreich waren.
 
-## Automatischer Ablauf nach Freigabe
+Produktionsgeheimnisse von Supabase, Resend und weiteren Diensten verbleiben
+ausschließlich in `/etc/white-gloss/environment`; sie werden weder in GitHub
+noch in Release-Archive kopiert.
 
-1. Der normale Workflow `CI` prüft den neuen `main`-Commit.
-2. Nur bei erfolgreicher CI und aktiviertem Deployment startet der IONOS-Job.
-3. Der Job reproduziert den Build für exakt den geprüften Commit.
-4. `.output/` wird als unveränderliches Release auf den VPS übertragen.
-5. Ein Symlink aktiviert das Release atomar; systemd startet den Dienst neu.
-6. Zuerst läuft ein lokaler Healthcheck auf dem VPS, danach der bestehende
-   Produktions-Smoke-Test gegen `https://white-gloss.de`.
-7. Schlägt einer der Tests fehl, wird – sofern vorhanden – das vorherige Release
-   wieder aktiviert.
+## Automatischer Ablauf
+
+1. `CI` prüft einen Push nach `main` vollständig.
+2. Der Deployment-Workflow akzeptiert nur einen erfolgreichen `push`-Lauf aus
+   diesem Repository und verwirft überholte `main`-Revisionen.
+3. GitHub baut exakt den geprüften Commit erneut mit Node.js 24.
+4. Nur `.output` wird gepackt, übertragen und per SHA-256 verifiziert.
+5. Der root-eigene Helfer aktiviert das Release atomar und führt den lokalen
+   Healthcheck aus.
+6. Anschließend prüft der vollständige Produktions-Smoke-Test
+   `https://white-gloss.de`.
+7. Bei einem fehlgeschlagenen Live-Test wird der vorherige Commit reaktiviert
+   und erneut geprüft.
+8. Zum Schluss muss der aktive Server-Symlink exakt auf den geprüften Commit
+   zeigen.

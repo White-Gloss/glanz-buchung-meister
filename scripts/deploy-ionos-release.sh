@@ -2,31 +2,63 @@
 
 set -Eeuo pipefail
 
-action="${1:-}"
-deploy_root="${2:-}"
-service_name="${3:-}"
-release_id="${4:-}"
-archive_path="${5:-}"
-healthcheck_url="${6:-}"
+readonly RELEASES_DIR="/srv/white-gloss-releases"
+readonly CURRENT_LINK="/srv/white-gloss-current"
+readonly SERVICE_NAME="white-gloss.service"
+readonly RUNTIME_USER="deploy"
+readonly RUNTIME_GROUP="deploy"
+readonly CI_USER="white-gloss-ci"
+readonly INCOMING_DIR="/home/white-gloss-ci/incoming"
+readonly STAGING_DIR="/var/lib/white-gloss-deploy"
+readonly HEALTHCHECK_URL="http://127.0.0.1:3000/"
 
 die() {
-  printf 'IONOS deployment error: %s\n' "$*" >&2
+  printf 'White Gloss deployment error: %s\n' "$*" >&2
   exit 1
 }
 
-[[ "$deploy_root" == /opt/white-gloss ]] || die "unexpected deployment root"
-[[ "$service_name" == white-gloss.service ]] || die "unexpected systemd service"
-[[ "$release_id" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]] || die "invalid release id"
-[[ "$healthcheck_url" == http://127.0.0.1:3000/ ]] || die "unexpected healthcheck URL"
+require_root() {
+  [[ "${EUID}" -eq 0 ]] || die "must run as root"
+}
 
-releases_dir="$deploy_root/releases"
-current_link="$deploy_root/current"
-target_release="$releases_dir/$release_id"
+validate_server_contract() {
+  [[ -d "$RELEASES_DIR" ]] || die "release directory is missing"
+  [[ "$(systemctl show "$SERVICE_NAME" -p User --value)" == "$RUNTIME_USER" ]] ||
+    die "unexpected runtime user"
+  [[ "$(systemctl show "$SERVICE_NAME" -p Group --value)" == "$RUNTIME_GROUP" ]] ||
+    die "unexpected runtime group"
+}
+
+validate_release_id() {
+  [[ "$1" =~ ^[0-9a-f]{40}$ ]] || die "invalid release id"
+}
+
+release_path() {
+  printf '%s/%s\n' "$RELEASES_DIR" "$1"
+}
+
+validate_release() {
+  local target_release
+  target_release="$(release_path "$1")"
+  [[ -d "$target_release" ]] || die "release directory is missing"
+  [[ -f "$target_release/.output/server/index.mjs" ]] ||
+    die "server entrypoint is missing"
+}
+
+current_release_id() {
+  local current_path
+  current_path="$(readlink -f "$CURRENT_LINK" 2>/dev/null || true)"
+  [[ -n "$current_path" ]] || return 0
+  [[ "$current_path" == "$RELEASES_DIR/"* ]] ||
+    die "current symlink leaves the release directory"
+  basename "$current_path"
+}
 
 restart_and_wait() {
-  sudo --non-interactive /usr/bin/systemctl restart "$service_name"
+  systemctl restart "$SERVICE_NAME"
   for _ in {1..30}; do
-    if curl --silent --show-error --fail --max-time 3 "$healthcheck_url" >/dev/null; then
+    if curl --silent --show-error --fail --max-time 3 \
+      "$HEALTHCHECK_URL" >/dev/null; then
       return 0
     fi
     sleep 1
@@ -34,56 +66,131 @@ restart_and_wait() {
   return 1
 }
 
-activate_release() {
-  [[ "$archive_path" == /tmp/white-gloss-*.tgz ]] || die "invalid archive path"
-  [[ -f "$archive_path" ]] || die "release archive not found"
-  [[ ! -e "$target_release" ]] || die "release already exists"
+switch_release() {
+  local release_id previous_id previous_path target_release next_link
+  release_id="$1"
+  validate_release "$release_id"
+  target_release="$(release_path "$release_id")"
+  previous_id="$(current_release_id)"
+  previous_path=""
+  if [[ -n "$previous_id" ]]; then
+    previous_path="$(release_path "$previous_id")"
+  fi
 
-  install -d -m 750 "$releases_dir"
+  next_link="${CURRENT_LINK}.next.$$"
+  ln -s "$target_release" "$next_link"
+  mv -Tf "$next_link" "$CURRENT_LINK"
+
+  if restart_and_wait; then
+    printf '%s\n' "$previous_id"
+    return 0
+  fi
+
+  if [[ -n "$previous_path" && -f "$previous_path/.output/server/index.mjs" ]]; then
+    next_link="${CURRENT_LINK}.rollback.$$"
+    ln -s "$previous_path" "$next_link"
+    mv -Tf "$next_link" "$CURRENT_LINK"
+    restart_and_wait || true
+  fi
+  die "new release failed its local healthcheck"
+}
+
+validate_archive_members() {
+  local archive_path member normalized metadata
+  archive_path="$1"
+  while IFS= read -r member; do
+    normalized="${member#./}"
+    case "$normalized" in
+      .output | .output/*) ;;
+      *) die "archive contains a path outside .output" ;;
+    esac
+    case "/$normalized/" in
+      */../* | *$'\n'* | *$'\r'*) die "archive contains an unsafe path" ;;
+    esac
+  done < <(tar --list --gzip --file "$archive_path")
+
+  while IFS= read -r metadata; do
+    case "${metadata:0:1}" in
+      - | d) ;;
+      *) die "archive contains an unsupported entry type" ;;
+    esac
+  done < <(tar --list --verbose --gzip --file "$archive_path")
+}
+
+extract_release() {
+  local release_id archive_path target_release incomplete_release archive_owner
+  local archive_mode staged_archive
+  release_id="$1"
+  archive_path="$2"
+  target_release="$(release_path "$release_id")"
+
+  [[ "$archive_path" == "$INCOMING_DIR/$release_id.tgz" ]] ||
+    die "unexpected archive path"
+  [[ -f "$archive_path" && ! -L "$archive_path" ]] ||
+    die "release archive is missing or unsafe"
+  archive_owner="$(stat -c '%U' "$archive_path")"
+  [[ "$archive_owner" == "$CI_USER" ]] || die "unexpected archive owner"
+  archive_mode="$(stat -c '%a' "$archive_path")"
+  (( (8#$archive_mode & 8#022) == 0 )) ||
+    die "release archive is writable by group or others"
+
+  install -d -o root -g root -m 700 "$STAGING_DIR"
+  staged_archive="$STAGING_DIR/$release_id.$$.tgz"
+  install -o root -g root -m 600 "$archive_path" "$staged_archive"
+  validate_archive_members "$staged_archive"
+
+  if [[ -e "$target_release" ]]; then
+    validate_release "$release_id"
+    rm -f -- "$staged_archive"
+    return 0
+  fi
+
   incomplete_release="${target_release}.incomplete.$$"
-  trap 'rm -rf -- "$incomplete_release"' EXIT
-  install -d -m 750 "$incomplete_release"
-  tar --extract --gzip --file "$archive_path" --directory "$incomplete_release" \
+  trap 'rm -f -- "$staged_archive"; rm -rf -- "$incomplete_release"' EXIT
+  install -d -o root -g "$RUNTIME_GROUP" -m 750 "$incomplete_release"
+  tar --extract --gzip --file "$staged_archive" --directory "$incomplete_release" \
     --no-same-owner --no-same-permissions
-  [[ -f "$incomplete_release/server/index.mjs" ]] || die "server entrypoint missing"
+
+  if find "$incomplete_release" ! -type d ! -type f -print -quit | grep -q .; then
+    die "release contains unsupported file types"
+  fi
+  [[ -f "$incomplete_release/.output/server/index.mjs" ]] ||
+    die "server entrypoint is missing"
+
+  chown -R root:"$RUNTIME_GROUP" "$incomplete_release"
+  find "$incomplete_release" -type d -exec chmod 750 {} +
+  find "$incomplete_release" -type f -exec chmod 640 {} +
   mv -- "$incomplete_release" "$target_release"
+  rm -f -- "$staged_archive"
   trap - EXIT
+}
 
-  previous_path="$(readlink -f "$current_link" 2>/dev/null || true)"
-  previous_id=""
-  if [[ -n "$previous_path" ]]; then
-    [[ "$previous_path" == "$releases_dir/"* ]] || die "current symlink leaves release directory"
-    previous_id="${previous_path##*/}"
-  fi
-
-  ln -s "$target_release" "${current_link}.next"
-  mv -Tf "${current_link}.next" "$current_link"
-
-  if ! restart_and_wait; then
-    if [[ -n "$previous_path" && -f "$previous_path/server/index.mjs" ]]; then
-      ln -s "$previous_path" "${current_link}.rollback"
-      mv -Tf "${current_link}.rollback" "$current_link"
-      restart_and_wait || true
-    fi
-    die "new release failed its local healthcheck"
-  fi
-
-  printf '%s\n' "$previous_id"
+activate_release() {
+  local release_id archive_path
+  release_id="$1"
+  archive_path="$2"
+  validate_release_id "$release_id"
+  extract_release "$release_id" "$archive_path"
+  switch_release "$release_id"
 }
 
 rollback_release() {
-  [[ -f "$target_release/server/index.mjs" ]] || die "rollback release not found"
-  ln -s "$target_release" "${current_link}.rollback"
-  mv -Tf "${current_link}.rollback" "$current_link"
-  restart_and_wait || die "rollback release failed its local healthcheck"
+  local release_id
+  release_id="$1"
+  validate_release_id "$release_id"
+  switch_release "$release_id" >/dev/null
 }
 
-case "$action" in
+require_root
+validate_server_contract
+case "${1:-}" in
   activate)
-    activate_release
+    [[ "$#" -eq 3 ]] || die "activate expects release id and archive path"
+    activate_release "$2" "$3"
     ;;
   rollback)
-    rollback_release
+    [[ "$#" -eq 2 ]] || die "rollback expects a release id"
+    rollback_release "$2"
     ;;
   *)
     die "expected activate or rollback"

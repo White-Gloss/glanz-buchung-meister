@@ -21,6 +21,8 @@ jobs:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
       vars.IONOS_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -32,8 +34,8 @@ jobs:
       IONOS_SSH_PRIVATE_KEY: ${{ secrets.IONOS_SSH_PRIVATE_KEY }}
       IONOS_SSH_KNOWN_HOSTS: ${{ secrets.IONOS_SSH_KNOWN_HOSTS }}
       IONOS_SSH_PORT: ${{ secrets.IONOS_SSH_PORT }}
-      RELEASE_ID: ${{ github.event.workflow_run.head_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-      REMOTE_ARCHIVE: /tmp/white-gloss-${{ github.run_id }}-${{ github.run_attempt }}.tgz
+      RELEASE_ID: ${{ github.event.workflow_run.head_sha }}
+      REMOTE_ARCHIVE: /home/white-gloss-ci/incoming/${{ github.event.workflow_run.head_sha }}.tgz
 
     steps:
       - name: Deployment-Konfiguration validieren
@@ -63,6 +65,17 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Aktuellen main-Stand bestätigen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git fetch --no-tags --depth=1 origin main
+          current_main="$(git rev-parse FETCH_HEAD)"
+          if [[ "$current_main" != "$RELEASE_ID" ]]; then
+            echo "Ein neuerer main-Stand existiert bereits; dieses ältere Deployment wird verworfen." >&2
+            exit 1
+          fi
+
       - name: Produktions-Build reproduzieren
         run: |
           npm ci --ignore-scripts
@@ -73,7 +86,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           test -f .output/server/index.mjs
-          tar -C .output -czf release.tgz .
+          tar -czf release.tgz .output
+          sha256sum release.tgz > release.tgz.sha256
 
       - name: SSH mit festem Hostschlüssel einrichten
         shell: bash
@@ -105,6 +119,29 @@ jobs:
       - name: Release übertragen
         run: scp release.tgz "ionos-production:${REMOTE_ARCHIVE}"
 
+      - name: Übertragung und privilegierten Helfer verifizieren
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          local_archive_sha="$(cut -d ' ' -f 1 release.tgz.sha256)"
+          remote_archive_sha="$(
+            ssh ionos-production "sha256sum '${REMOTE_ARCHIVE}'" | cut -d ' ' -f 1
+          )"
+          [[ "$remote_archive_sha" == "$local_archive_sha" ]] || {
+            echo "Die Prüfsumme des übertragenen Release-Pakets stimmt nicht." >&2
+            exit 1
+          }
+
+          local_helper_sha="$(sha256sum scripts/deploy-ionos-release.sh | cut -d ' ' -f 1)"
+          remote_helper_sha="$(
+            ssh ionos-production "sha256sum /usr/local/sbin/white-gloss-deploy" |
+              cut -d ' ' -f 1
+          )"
+          [[ "$remote_helper_sha" == "$local_helper_sha" ]] || {
+            echo "Der root-eigene Deployment-Helfer weicht vom geprüften Repository-Stand ab." >&2
+            exit 1
+          }
+
       - name: Release atomar aktivieren
         id: activate
         shell: bash
@@ -112,10 +149,9 @@ jobs:
           set -Eeuo pipefail
           previous_release="$({
             ssh ionos-production \
-              "bash -s -- activate /opt/white-gloss white-gloss.service ${RELEASE_ID} ${REMOTE_ARCHIVE} http://127.0.0.1:3000/" \
-              < scripts/deploy-ionos-release.sh
+              "sudo -n /usr/local/sbin/white-gloss-deploy activate ${RELEASE_ID} ${REMOTE_ARCHIVE}"
           })"
-          if [[ -n "$previous_release" && ! "$previous_release" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]; then
+          if [[ -n "$previous_release" && ! "$previous_release" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Der Server lieferte eine ungültige vorherige Release-ID" >&2
             exit 1
           fi
@@ -135,8 +171,24 @@ jobs:
         run: |
           set -Eeuo pipefail
           ssh ionos-production \
-            "bash -s -- rollback /opt/white-gloss white-gloss.service ${{ steps.activate.outputs.previous_release }} unused http://127.0.0.1:3000/" \
-            < scripts/deploy-ionos-release.sh
+            "sudo -n /usr/local/sbin/white-gloss-deploy rollback ${{ steps.activate.outputs.previous_release }}"
+
+          SMOKE_BASE_URL=https://white-gloss.de \
+            SMOKE_TIMEOUT_MS=15000 \
+            node scripts/smoke-production.mjs
+
+      - name: Aktive Release-ID bestätigen
+        if: steps.smoke.outcome == 'success'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          active_release="$(
+            ssh ionos-production "basename \"\$(readlink -f /srv/white-gloss-current)\""
+          )"
+          [[ "$active_release" == "$RELEASE_ID" ]] || {
+            echo "Der aktive Serverstand entspricht nicht dem geprüften Commit." >&2
+            exit 1
+          }
 
       - name: Deployment bei fehlgeschlagenem Smoke-Test abbrechen
         if: steps.smoke.outcome == 'failure'
