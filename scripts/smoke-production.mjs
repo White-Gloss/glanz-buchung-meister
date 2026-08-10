@@ -43,6 +43,39 @@ function assertCanonical(path, body) {
   }
 }
 
+function assertSecurityHeaders(response) {
+  const headers = response.headers;
+  const requiredExact = [
+    ["x-content-type-options", "nosniff"],
+    ["x-frame-options", "SAMEORIGIN"],
+    ["referrer-policy", "strict-origin-when-cross-origin"],
+  ];
+
+  for (const [name, expected] of requiredExact) {
+    const actual = headers.get(name);
+    if (actual?.toLowerCase() !== expected.toLowerCase()) {
+      fail("security-headers", `${name} ist ${actual || "nicht gesetzt"}; erwartet ${expected}`);
+    }
+  }
+
+  const hsts = headers.get("strict-transport-security") || "";
+  if (!/max-age=\d+/i.test(hsts)) {
+    fail("security-headers", "Strict-Transport-Security mit max-age fehlt");
+  }
+
+  const permissions = headers.get("permissions-policy") || "";
+  if (!permissions.includes("camera=()") || !permissions.includes("microphone=()")) {
+    fail("security-headers", "Permissions-Policy sperrt Kamera/Mikrofon nicht wie erwartet");
+  }
+
+  const csp = headers.get("content-security-policy") || "";
+  for (const directive of ["default-src 'self'", "object-src 'none'", "frame-ancestors 'self'"]) {
+    if (!csp.includes(directive)) {
+      fail("security-headers", `CSP-Direktive fehlt: ${directive}`);
+    }
+  }
+}
+
 for (const check of pageChecks) {
   try {
     const { response, body } = await get(check.path);
@@ -61,6 +94,9 @@ for (const check of pageChecks) {
     }
     if (check.path !== "/admin") {
       assertCanonical(check.path, body);
+    }
+    if (check.path === "/") {
+      assertSecurityHeaders(response);
     }
     console.log(`PASS ${label} -> ${response.status} ${response.url}`);
   } catch (error) {
