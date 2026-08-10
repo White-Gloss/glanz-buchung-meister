@@ -13,6 +13,7 @@ import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
 import { HashScrollFix } from "../components/HashScrollFix";
+import { MetaPageViews } from "../components/MetaPageViews";
 
 function NotFoundComponent() {
   return (
@@ -223,6 +224,7 @@ function RootComponent() {
     <>
       <Outlet />
       <HashScrollFix />
+      <MetaPageViews />
       <CookieConsentBanner />
     </>
   );
