@@ -126,3 +126,37 @@ Unternehmensprofil und diese Angaben sollten übereinstimmen.
 - Eine erfolgreich abgeschickte Terminanfrage meldet automatisch die
   Conversion an Google Ads und das Ereignis `generate_lead` an Analytics –
   ebenfalls nur mit Einwilligung.
+
+---
+
+## Stadtseiten: was noch fehlt
+
+Die dreizehn Stadtseiten unter `/abholservice/…` sind die einzigen lokalen
+Seiten, die Google indexiert. Sie teilten sich ursprünglich rund die Hälfte
+ihres Textes wortwörtlich. Durch berechnete Kennzahlen je Stadt, eine
+Vergleichstabelle der Nachbarorte und den Abbau doppelter Paketbeschreibungen
+liegt die Wiederholungsquote jetzt bei knapp 47 statt 51 Prozent.
+
+Weiter kommt man mit Technik nicht. Der Rest sind Ablauf, Leistungsliste und
+FAQ – die überall gleich sein müssen, weil sie überall gleich sind.
+
+**Was den Unterschied macht, kann nur aus dem Betrieb kommen:** das Feld
+`localProof` in `src/lib/pickupLocations.ts`. Zwei bis vier Sätze je Stadt
+über tatsächlich dort betreute Fahrzeuge – ein konkreter Auftrag, eine
+wiederkehrende Kundschaft, eine Besonderheit bei der Übergabe. Ist das Feld
+leer, entfällt der Abschnitt; er darf **nicht** mit erfundenen Angaben
+gefüllt werden. Das wären falsche Aussagen über den Betrieb auf der Website
+eines realen Unternehmens, und Google erkennt generische Ortsfüllsel
+zuverlässig.
+
+Dieselbe Überlegung gilt für Fotos: Ein einziges echtes Vorher-Nachher-Bild
+eines Fahrzeugs aus dem jeweiligen Ort wiegt mehr als jede Textoptimierung.
+
+### Warum die 91 Kombiseiten weiter ausgesperrt bleiben
+
+Die Seiten unter `/leistungen/[leistung]/[stadt]` tragen bewusst `noindex`.
+Sie sind zu 81 Prozent wortgleich; würde man sie freigeben, wären es 91
+nahezu identische Seiten auf einmal – genau das Muster, das Google als
+Doorway Pages einstuft. Die Freigabe lohnt erst, wenn die Stadtseiten selbst
+echten örtlichen Inhalt tragen, und dann schrittweise für die wichtigsten
+Orte.
