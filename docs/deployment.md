@@ -124,7 +124,9 @@ GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Re
 Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
 einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,
 reproduziert den Build, verifiziert Archiv und Server-Helfer per SHA-256 und
-führt nach der atomaren Aktivierung den Produktions-Smoke-Test aus. Ohne die
+prüft zusätzlich die versionierte systemd-Unit auf Konfigurationsdrift. Ein
+Produktionsneustart ist auf 15 Sekunden begrenzt. Danach führt der Workflow den
+Produktions-Smoke-Test aus. Ohne die
 explizite Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der
 Deployment-Job vollständig übersprungen.
 
