@@ -224,7 +224,7 @@ function AutomationPage() {
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-5">
             {[
-              ["1", "Buchung", "Kunde bucht über whitegloss.de"],
+              ["1", "Buchung", "Kunde bucht über white-gloss.de"],
               ["2", "Eingang", "Bestätigung und interne Meldung per E-Mail"],
               ["3", "Freigabe", "Du setzt den Auftrag im Admin auf Bestätigt"],
               ["4", "Rechnung", "Lexware übernimmt Kunde und erstellt die PDF-Rechnung"],

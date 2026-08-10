@@ -145,7 +145,7 @@ export const Route = createFileRoute("/kalender/$token")({
 
             const termin = [
               "BEGIN:VEVENT",
-              `UID:${row.id}@whitegloss.de`,
+              `UID:${row.id}@white-gloss.de`,
               `DTSTAMP:${now}`,
               `DTSTART;VALUE=DATE:${start}`,
               `DTEND;VALUE=DATE:${end}`,
@@ -169,7 +169,7 @@ export const Route = createFileRoute("/kalender/$token")({
 
             const erinnerung = [
               "BEGIN:VEVENT",
-              `UID:${row.id}-erinnerung@whitegloss.de`,
+              `UID:${row.id}-erinnerung@white-gloss.de`,
               `DTSTAMP:${now}`,
               `DTSTART;VALUE=DATE:${erinnerungStart}`,
               `DTEND;VALUE=DATE:${erinnerungEnde}`,

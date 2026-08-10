@@ -52,8 +52,8 @@ export const company = {
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   whatsappHref: "https://wa.me/4915233540284",
-  email: "info@whitegloss.de",
-  web: "https://whitegloss.de",
+  email: "info@white-gloss.de",
+  web: "https://white-gloss.de",
   instagram: "",
   taxId: "", // USt-IdNr.
   taxNumber: "", // Steuernummer
