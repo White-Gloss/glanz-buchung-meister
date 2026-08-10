@@ -51,8 +51,8 @@ Release-Stand zurückgeschaltet.
 
 ## Einmalige Servervorbereitung
 
-Für die Aktivierung der Pipeline sind einmalig folgende, überprüfbare Schritte
-nötig:
+Die folgenden Schritte wurden am 10. August 2026 ausgeführt und anschließend
+gegen den weiterhin aktiven Produktionsdienst geprüft:
 
 1. Systembenutzer und Uploadverzeichnis anlegen:
 
@@ -75,6 +75,18 @@ nötig:
 
 Caddy, Firewall, systemd-Dienst und Produktionsvariablen werden dabei nicht
 verändert.
+
+Der installierte CI-Schlüssel hat den Fingerprint
+`SHA256:iE4j5JHCiZWshvkuOwDjkYvOegshxIc6luJB0e9JYEg`. Der manuelle
+`deploy`-Schlüssel ist davon getrennt. Die Prüfungen bestätigten außerdem:
+
+- `white-gloss-ci` besitzt ausschließlich seine eigene Primärgruppe,
+- direkter `systemctl`- und Root-Shell-Zugriff werden abgewiesen,
+- `/etc/white-gloss/environment` ist für den CI-Benutzer nicht lesbar,
+- ein ungültiger Release-Identifier wird vor jeder Änderung abgewiesen,
+- SFTP-Upload und SHA-256-Abgleich funktionieren,
+- `white-gloss.service` und der aktive Release-Symlink blieben während der
+  Vorbereitung unverändert.
 
 ## GitHub-Konfiguration
 
