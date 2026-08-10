@@ -39,7 +39,8 @@ GitHub Actions verwendet stattdessen den separaten Benutzer
 Der root-eigene Helfer ist im Repository unter
 `scripts/deploy-ionos-release.sh` versioniert. Vor jedem Deployment vergleicht
 GitHub seine SHA-256-Prüfsumme mit der installierten Serverversion. Eine Änderung
-am privilegierten Helfer kann deshalb nicht automatisch wirksam werden.
+am privilegierten Helfer kann deshalb nicht automatisch wirksam werden. Dasselbe
+gilt für die unter `ops/white-gloss.service` versionierte systemd-Unit.
 
 Der Helfer akzeptiert ausschließlich 40-stellige Git-Commit-IDs und den exakt
 dazugehörigen Uploadpfad. Er prüft Eigentümer und Inhalt des Archivs, verwirft
@@ -88,6 +89,13 @@ Der installierte CI-Schlüssel hat den Fingerprint
 - `white-gloss.service` und der aktive Release-Symlink blieben während der
   Vorbereitung unverändert.
 
+Ein realer Neustarttest zeigte, dass Nitro zwar den HTTP-Server nach `SIGTERM`
+erfolgreich schließt, der Node-Prozess wegen weiterer offener Handles aber nicht
+immer selbst endet. Die systemd-Unit begrenzt den Stop deshalb auf 15 Sekunden
+und erzwingt danach den Prozessabschluss. So kann ein Deployment nicht bis zum
+systemd-Standardlimit von 90 Sekunden im 502-Zustand hängen bleiben. Unit und
+Helfer werden vor jedem Deployment per SHA-256 auf Konfigurationsdrift geprüft.
+
 ## GitHub-Konfiguration
 
 Das Environment `production` enthält ausschließlich diese Deployment-Secrets:
@@ -112,7 +120,8 @@ noch in Release-Archive kopiert.
 2. Der Deployment-Workflow akzeptiert nur einen erfolgreichen `push`-Lauf aus
    diesem Repository und verwirft überholte `main`-Revisionen.
 3. GitHub baut exakt den geprüften Commit erneut mit Node.js 24.
-4. Nur `.output` wird gepackt, übertragen und per SHA-256 verifiziert.
+4. Nur `.output` wird gepackt und übertragen; Archiv, privilegierter Helfer und
+   systemd-Unit werden per SHA-256 verifiziert.
 5. Der root-eigene Helfer aktiviert das Release atomar und führt den lokalen
    Healthcheck aus.
 6. Anschließend prüft der vollständige Produktions-Smoke-Test
