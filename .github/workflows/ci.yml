@@ -37,5 +37,12 @@ jobs:
       - name: Codequalität prüfen
         run: npm run lint
 
+      - name: Qualitätsskripte syntaktisch prüfen
+        run: |
+          node --check scripts/smoke-production.mjs
+          node --check scripts/audit-domain-migration.mjs
+          node --check lighthouserc.mobile.cjs
+          node --check lighthouserc.desktop.cjs
+
       - name: Produktions-Build erstellen
         run: npm run build
