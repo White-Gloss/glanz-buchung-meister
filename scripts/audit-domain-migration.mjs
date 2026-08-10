@@ -2,15 +2,7 @@ const OLD_BASE = new URL(process.env.MIGRATION_OLD_BASE || "https://whitegloss.d
 const NEW_BASE = new URL(process.env.MIGRATION_NEW_BASE || "https://white-gloss.de").origin;
 const REQUEST_TIMEOUT_MS = Number(process.env.MIGRATION_TIMEOUT_MS || 15000);
 
-const paths = [
-  "/",
-  "/leistungen",
-  "/preise",
-  "/qualitaet",
-  "/abholservice",
-  "/faq",
-  "/ratgeber",
-];
+const paths = ["/", "/leistungen", "/preise", "/qualitaet", "/abholservice", "/faq", "/ratgeber"];
 
 const failures = [];
 
