@@ -54,7 +54,11 @@ MIGRATION_NEW_BASE=https://neu.example.de \
 npm run audit:domain-migration
 ```
 
-Die GitHub Action `.github/workflows/domain-migration-audit.yml` prüft die Migration täglich sowie bei Änderungen am Audit selbst. Die direkte Kopplung an das spätere IONOS-Deployment folgt, sobald die endgültige Deployment-Architektur feststeht.
+Die GitHub Action `.github/workflows/domain-migration-audit.yml` prüft die
+Migration täglich sowie bei Änderungen am Audit selbst. Der Post-Deploy-
+Smoke-Test ist im IONOS-Workflow direkt an ein erfolgreiches Deployment
+gekoppelt; der separate Zeitplan bleibt als unabhängige Produktionsüberwachung
+bestehen.
 
 ## 3. Lighthouse-Baseline
 
@@ -100,8 +104,6 @@ Dadurch können fehlerhafte Quality-Gates nicht unbemerkt in `main` gelangen.
 Folgende Quality-Gates werden ergänzt, sobald die jeweils nötige Grundlage vorhanden ist:
 
 - Playwright-E2E-Tests für den kompletten Buchungsflow
-- Post-Deploy-Smoke-Test direkt nach einem erfolgreichen IONOS-Deployment
 - echtes Fehler-/Exception-Monitoring für Client und Server
 - Staging-/Preview-Umgebung
 - automatische Auswertung historischer Lighthouse-Messwerte
-

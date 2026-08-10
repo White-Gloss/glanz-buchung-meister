@@ -30,7 +30,13 @@ Der endgültige Tarif muss für die bestehende Architektur mindestens Folgendes 
 - HTTPS für `white-gloss.de`,
 - reproduzierbares Rollback auf einen vorherigen Git-Stand.
 
-**Blocker für die automatische Pipeline:** Der genaue IONOS-Tarif muss bekannt sein. Erst danach wird entschieden, ob das Deployment nativ aus IONOS heraus oder über GitHub Actions/SSH erfolgt. Es wird bewusst keine statische oder produktspezifische Konfiguration auf Verdacht eingerichtet.
+Der aktive IONOS-Tarif wurde am 10. August 2026 als Ubuntu-24.04-VPS mit
+Root-/SSH-Zugang bestätigt. Er ist für die Node-/SSR-Anwendung geeignet; das
+Deployment erfolgt deshalb über GitHub Actions, den separaten Benutzer
+`white-gloss-ci` und einen root-eigenen, streng validierenden
+Aktivierungshelfer. Der bereits laufende Caddy-/systemd-Aufbau und die
+Servervorbereitung stehen in
+[`docs/ionos-vps-bootstrap.md`](ionos-vps-bootstrap.md).
 
 ## Zielablauf eines Deployments
 
@@ -61,7 +67,8 @@ Die eingecheckte `.env` enthält nur Werte, die im Browser ohnehin öffentlich s
 
 ### Geheimnisse nur im Produktionshosting
 
-Folgende Werte gehören ausschließlich in geschützte IONOS-Umgebungsvariablen bzw. den später gewählten Secret-Store und **niemals** ins Repository:
+Folgende Werte gehören ausschließlich in die root-eigene Datei
+`/etc/white-gloss/environment` auf dem IONOS-VPS und **niemals** ins Repository:
 
 | Variable | Zweck |
 | --- | --- |
@@ -75,9 +82,12 @@ Folgende Werte gehören ausschließlich in geschützte IONOS-Umgebungsvariablen 
 
 ## E-Mail-Versand mit Resend
 
-Ohne `RESEND_API_KEY` und `MAIL_FROM` wird keine Kundenmail versendet. Buchungen können trotzdem gespeichert werden; der Mailversand meldet dann die fehlende Konfiguration.
+Ohne `RESEND_API_KEY` und `MAIL_FROM` wird keine Kundenmail versendet. Buchungen können trotzdem gespeichert werden; der Mailversand meldet dann die fehlende Konfiguration. Die Variablennamen sind auf dem VPS vorhanden; ihre geheimen Werte werden beim Deployment weder gelesen noch übertragen.
 
-Für `white-gloss.de` müssen die von Resend vorgegebenen DNS-Einträge bei der aktuell zuständigen DNS-Verwaltung von IONOS hinterlegt werden. Werte für DKIM, Return-Path/MX und gegebenenfalls DMARC werden **nicht** aus alten Hostinger-Einstellungen übernommen, sondern exakt aus dem aktiven Resend-Domain-Setup.
+Im geprüften Resend-Konto ist derzeit `whitegloss.de` verifiziert, nicht
+`white-gloss.de`. Die Deployment-Automation ändert deshalb weder Absender noch
+DNS. Eine Umstellung des Mail-Absenders auf die neue Domain benötigt eine
+separate Freigabe und die exakten Resend-DNS-Werte.
 
 Empfohlene Produktionswerte:
 
@@ -111,7 +121,12 @@ GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Re
 4. Syntaxprüfung der Quality-Skripte
 5. `npm run build`
 
-Ein Deployment soll später **nur auf einem grünen CI-Stand** basieren.
+Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
+einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,
+reproduziert den Build, verifiziert Archiv und Server-Helfer per SHA-256 und
+führt nach der atomaren Aktivierung den Produktions-Smoke-Test aus. Ohne die
+explizite Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der
+Deployment-Job vollständig übersprungen.
 
 ## Rollback-Grundsatz
 
