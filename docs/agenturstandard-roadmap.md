@@ -16,13 +16,14 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - **Offen:** Search Console / Adressänderung und die tatsächliche Verarbeitung der neuen Domain durch Google beobachten bzw. abschließen.
   - **Abnahme:** Weiterleitungen funktionieren dauerhaft und Google verarbeitet die neue Domain als Ziel.
 
-- [ ] **2. GitHub → IONOS automatisch deployen** — **BLOCKIERT / P0**
+- [x] **2. GitHub → IONOS automatisch deployen** — **ERLEDIGT / P0**
   - Genauen IONOS-Tarif identifizieren.
   - Passende Deployment-Architektur für Node/SSR wählen.
   - Deployment nur nach erfolgreicher Prüfung von `main` auslösen.
   - Rollback und Environment-Konfiguration dokumentieren.
-  - **Blocker:** Der genaue IONOS-Tarif bzw. die verfügbare Node-/Server-Laufzeit muss feststehen, bevor eine sichere Deployment-Pipeline eingerichtet wird.
-  - **Abnahme:** Ein erfolgreicher Merge auf `main` erzeugt automatisch und reproduzierbar eine neue Produktion; fehlgeschlagene Builds beschädigen die bestehende Version nicht.
+  - **Verifiziert ERLEDIGT (10.08.2026):** Der bestehende IONOS-VPS wird nach erfolgreichem CI-Lauf auf `main` automatisiert aus GitHub Actions beliefert. Die Pipeline reproduziert den Produktions-Build, überträgt ein geprüftes Release-Paket, aktiviert Releases atomar, führt unmittelbar einen Live-Smoke-Test aus und rollt bei einem Fehlschlag auf das vorherige Release zurück.
+  - **Produktionsnachweis:** Workflow `Deploy to IONOS VPS`, Run `31402673159`, für Commit `f6272f57401a79bdaac5ace174b6332aa5e92943` erfolgreich. Deployment-Konfiguration, Produktions-Build, Übertragung, atomare Aktivierung, Live-Smoke-Test und Bestätigung der aktiven Release-ID waren erfolgreich.
+  - **Abnahme erfüllt:** Ein erfolgreicher Merge auf `main` erzeugt automatisch und reproduzierbar eine neue Produktion; fehlgeschlagene Builds beschädigen die bestehende Version nicht.
 
 - [ ] **3. Core Web Vitals / Lighthouse real messen** — **IN ARBEIT / P1**
   - Mobile/Desktop für Startseite, Preise, Leistung und Buchungsflow messen.
@@ -40,13 +41,13 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - **Sicherheitsgrenze:** Ein echter Produktions-E2E-Test darf keine Testbuchungen oder Testfotos in Live-Systeme schreiben. Für vollständige E2E-Abdeckung ist deshalb entweder eine isolierte Testkonfiguration oder Punkt 9 (Staging/Preview) erforderlich.
   - **Abnahme:** Regressionen in geschäftskritischen Flows blockieren einen Merge.
 
-- [ ] **5. Post-Deploy Smoke-Tests** — **IN ARBEIT / P1**
+- [x] **5. Post-Deploy Smoke-Tests** — **ERLEDIGT / P1**
   - Nach Deployment `/`, `/preise`, `/leistungen`, `/sitemap.xml` und `/admin` prüfen.
   - HTTP-Status und Kerninhalte validieren.
   - **Umgesetzt:** Ein read-only Produktions-Smoke-Test prüft Kernseiten, Canonicals, Sitemap, robots.txt und zentrale Security-Header; ein GitHub-Workflow führt ihn zusätzlich regelmäßig aus.
   - **Verifiziert (10.08.2026):** Live-Test erfolgreich; `/`, `/preise`, `/leistungen` und `/admin` liefern HTTP 200, die Sitemap liefert HTTP 200 und enthält 29 URLs, robots.txt liefert HTTP 200.
-  - **Offen:** Den Smoke-Test direkt hinter die finale IONOS-Deployment-Pipeline hängen, sobald Punkt 2 entsperrt ist.
-  - **Abnahme:** Produktion wird unmittelbar nach jedem Release automatisch auf Erreichbarkeit und Kernfunktionen geprüft.
+  - **Post-Deploy-Verknüpfung verifiziert (10.08.2026):** Der IONOS-Produktionsworkflow führt den Live-Smoke-Test unmittelbar nach atomarer Release-Aktivierung aus. Im erfolgreichen Run `31402673159` für Commit `f6272f57401a79bdaac5ace174b6332aa5e92943` war der Smoke-Test erfolgreich; bei Fehlschlag ist ein automatischer Rollback auf das vorherige Release vorgesehen.
+  - **Abnahme erfüllt:** Produktion wird unmittelbar nach jedem Release automatisch auf Erreichbarkeit und Kernfunktionen geprüft.
 
 - [ ] **6. Monitoring und Fehleralarme** — **IN ARBEIT / P1**
   - Uptime-Monitoring für Domain und Kernrouten.
