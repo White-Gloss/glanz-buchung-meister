@@ -3,5 +3,9 @@ Allow: /
 Disallow: /admin
 Disallow: /auth
 Disallow: /reset-password
+# Persoenliche Links mit Zugriffstoken: gehoeren einem einzelnen Kunden und
+# duerfen nicht in der Suche auftauchen.
+Disallow: /angebot/
+Disallow: /kalender/
 
 Sitemap: https://white-gloss.de/sitemap.xml

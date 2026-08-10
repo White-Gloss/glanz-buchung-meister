@@ -38,6 +38,8 @@ import {
   type ContactChannel,
 } from "@/lib/bookings";
 import { submitConditionReport } from "@/lib/conditionReports.functions";
+import { reportBookingRequest } from "@/lib/adsConsent";
+import { trackLeadFromContent } from "@/lib/metaPixel";
 import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import {
@@ -333,6 +335,18 @@ export function BookingWizard() {
         });
       } catch (error) {
         console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
+      }
+
+      // Erfolgreich abgeschickte Anfrage an die Werbekonten melden. Beide
+      // Aufrufe prüfen selbst, ob eine Einwilligung vorliegt und ob das
+      // jeweilige Konto überhaupt konfiguriert ist — ohne beides passiert
+      // nichts. Fehler dürfen die Bestätigung nie verhindern, deshalb
+      // gekapselt.
+      try {
+        reportBookingRequest({ value: totals.gross, bookingId: booking.id });
+        trackLeadFromContent("buchungsassistent", totals.gross);
+      } catch (error) {
+        console.error("[Messung] Conversion konnte nicht gemeldet werden", error);
       }
 
       setConfirmed(booking);

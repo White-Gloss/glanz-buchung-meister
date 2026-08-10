@@ -125,13 +125,16 @@ function PrivacyPage() {
             </p>
             <p>
               Mit Ihrer Einwilligung nutzen wir außerdem Cookies und ähnliche Technologien von
-              Google Ads (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland), um
-              zu messen, über welche Anzeige eine Terminanfrage zustande kommt. Diese werden erst
-              aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei „Ablehnen“
-              oder ohne Auswahl bleibt die Anzeigenmessung deaktiviert. Rechtsgrundlage ist Ihre
-              Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG. Dabei können Daten in
-              die USA übermittelt werden; Google hat sich den EU-Standardvertragsklauseln
-              unterworfen.
+              Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irland). Das betrifft
+              zwei Dienste, die über dasselbe Skript (gtag.js) laufen: Google Ads misst, über welche
+              Anzeige eine Terminanfrage zustande kommt; Google Analytics 4 wertet aus, wie unsere
+              Website genutzt wird (aufgerufene Seiten, Verweildauer, ungefähre Herkunftsregion,
+              Angaben zu Browser und Endgerät). Ihre IP-Adresse wird dabei gekürzt. Beide Dienste
+              werden erst aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei
+              „Ablehnen“ oder ohne Auswahl bleiben sie deaktiviert und es wird kein Google-Skript
+              geladen. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25
+              Abs. 1 TDDDG. Dabei können Daten in die USA übermittelt werden; Google hat sich den
+              EU-Standardvertragsklauseln unterworfen.
             </p>
             <p>
               Ebenfalls nur mit Ihrer Einwilligung setzen wir den Meta-Pixel und die Conversions API

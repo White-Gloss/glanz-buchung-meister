@@ -6,16 +6,16 @@ Die hier dokumentierten technischen Anforderungen gelten unabhängig davon, ob I
 
 ## Deployment-Vertrag
 
-| Was | Wert |
-| --- | --- |
-| Produktionsbranch | `main` |
-| Referenz-Node-Version in CI | `24` |
-| Installationsbefehl | `npm ci` |
-| Build-Befehl | `npm run build` |
-| Build-Ausgabe | `.output/` |
-| Server-Einstieg | `.output/server/index.mjs` |
-| Startbefehl | `node .output/server/index.mjs` |
-| Hauptdomain | `https://white-gloss.de` |
+| Was                         | Wert                            |
+| --------------------------- | ------------------------------- |
+| Produktionsbranch           | `main`                          |
+| Referenz-Node-Version in CI | `24`                            |
+| Installationsbefehl         | `npm ci`                        |
+| Build-Befehl                | `npm run build`                 |
+| Build-Ausgabe               | `.output/`                      |
+| Server-Einstieg             | `.output/server/index.mjs`      |
+| Startbefehl                 | `node .output/server/index.mjs` |
+| Hauptdomain                 | `https://white-gloss.de`        |
 
 `vite.config.ts` baut im Produktionsmodus mit Nitro als `node-server`. Eine Hosting-Variante, die nur statische HTML-/JS-Dateien ausliefert, reicht daher für die vollständige Anwendung nicht aus.
 
@@ -64,21 +64,25 @@ Die eingecheckte `.env` enthält nur Werte, die im Browser ohnehin öffentlich s
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_META_PIXEL_ID` (derzeit leer)
+- `VITE_GOOGLE_SITE_VERIFICATION` (derzeit leer)
+- `VITE_GOOGLE_ADS_CONVERSION_ID` (derzeit leer)
+- `VITE_GOOGLE_ADS_CONVERSION_LABEL` (derzeit leer)
+- `VITE_GA4_MEASUREMENT_ID` (derzeit leer)
 
 ### Geheimnisse nur im Produktionshosting
 
 Folgende Werte gehören ausschließlich in die root-eigene Datei
 `/etc/white-gloss/environment` auf dem IONOS-VPS und **niemals** ins Repository:
 
-| Variable | Zweck |
-| --- | --- |
-| `META_PIXEL_ID` | serverseitige Meta-Conversions |
-| `META_CAPI_ACCESS_TOKEN` | Zugriffstoken der Meta Conversions API |
-| `RESEND_API_KEY` | E-Mail-Versand |
-| `MAIL_FROM` | Absender der Kundenmails |
-| `MAIL_TO_OWNER` | Zieladresse interner Benachrichtigungen |
-| `SUPABASE_SERVICE_ROLE_KEY` | optionale serverseitige Vollzugriffe |
-| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung |
+| Variable                                            | Zweck                                   |
+| --------------------------------------------------- | --------------------------------------- |
+| `META_PIXEL_ID`                                     | serverseitige Meta-Conversions          |
+| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Meta Conversions API  |
+| `RESEND_API_KEY`                                    | E-Mail-Versand                          |
+| `MAIL_FROM`                                         | Absender der Kundenmails                |
+| `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
+| `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
+| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
 
 ## E-Mail-Versand mit Resend
 
@@ -93,10 +97,10 @@ Produktionsgeheimnisse.
 
 Empfohlene Produktionswerte:
 
-| Variable | Beispiel |
-| --- | --- |
-| `MAIL_FROM` | `White Gloss Detailing <info@white-gloss.de>` oder eine andere tatsächlich genutzte Adresse der verifizierten Domain |
-| `MAIL_TO_OWNER` | `info@white-gloss.de` |
+| Variable        | Beispiel                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_FROM`     | `White Gloss Detailing <info@white-gloss.de>` oder eine andere tatsächlich genutzte Adresse der verifizierten Domain |
+| `MAIL_TO_OWNER` | `info@white-gloss.de`                                                                                                |
 
 Der eigentliche API-Key bleibt geheim.
 

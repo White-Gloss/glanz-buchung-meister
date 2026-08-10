@@ -1,0 +1,128 @@
+# Google-Anbindung
+
+Die Website ist technisch vollständig für Google vorbereitet. Was noch fehlt,
+sind vier Werte aus den Google-Konten. Solange ein Wert leer bleibt, ist genau
+dieser Teil inaktiv – die Website funktioniert unverändert weiter.
+
+| Variable                           | Woher              | Wofür                                |
+| ---------------------------------- | ------------------ | ------------------------------------ |
+| `VITE_GOOGLE_SITE_VERIFICATION`    | Search Console     | Nachweis, dass die Domain uns gehört |
+| `VITE_GA4_MEASUREMENT_ID`          | Google Analytics 4 | Besucherstatistik                    |
+| `VITE_GOOGLE_ADS_CONVERSION_ID`    | Google Ads         | Anzeigenmessung                      |
+| `VITE_GOOGLE_ADS_CONVERSION_LABEL` | Google Ads         | Anzeigenmessung                      |
+
+Alle vier Werte sind **öffentlich** – sie stehen ohnehin im Quelltext jeder
+Seite. Sie gehören deshalb in die eingecheckte `.env` und nicht in die
+geheimen Umgebungsvariablen des Servers. Nach dem Eintragen ist ein neues
+Deployment nötig, weil `VITE_`-Werte beim Build fest eingebaut werden.
+
+## Wichtig: Reihenfolge
+
+Search Console zuerst, dann Analytics, dann Ads. Ads setzt ein bestätigtes
+Analytics-Konto nicht voraus, aber die Conversion-Aktion lässt sich sauberer
+anlegen, wenn Analytics bereits misst.
+
+---
+
+## Schritt 1 – Google Search Console
+
+Die Search Console zeigt, für welche Suchbegriffe die Seite gefunden wird und
+ob Google Fehler beim Indexieren meldet. Sie kostet nichts und setzt keine
+Cookies – sie braucht deshalb auch keine Einwilligung.
+
+1. https://search.google.com/search-console öffnen und mit dem Google-Konto
+   der Firma anmelden.
+2. „Property hinzufügen" wählen. Es gibt zwei Varianten:
+   - **Domain** (empfohlen): `white-gloss.de` eingeben. Deckt automatisch
+     `www`, `https` und alle Unterseiten ab. Der Nachweis läuft über einen
+     DNS-TXT-Eintrag bei IONOS.
+   - **URL-Präfix**: `https://white-gloss.de` eingeben. Der Nachweis läuft
+     über ein `meta`-Tag im Quelltext – dafür ist die Variable
+     `VITE_GOOGLE_SITE_VERIFICATION` vorgesehen.
+3. Je nach Variante:
+   - **Domain-Variante:** Google zeigt einen TXT-Wert
+     (`google-site-verification=…`). Diesen bei IONOS unter
+     _Domains → white-gloss.de → DNS_ als **TXT-Eintrag** anlegen, Feld
+     „Hostname" leer lassen bzw. `@`. Achtung: Der bereits vorhandene
+     SPF-TXT-Eintrag für Resend darf dabei **nicht** überschrieben werden –
+     eine Domain darf mehrere TXT-Einträge haben, aber nur einen SPF-Eintrag.
+     Also einen **zusätzlichen** Eintrag anlegen, keinen bestehenden ändern.
+   - **URL-Präfix-Variante:** Google zeigt ein fertiges `meta`-Tag. Nur den
+     Wert aus `content="…"` kopieren und in `.env` als
+     `VITE_GOOGLE_SITE_VERIFICATION` eintragen, dann deployen.
+4. In der Search Console auf „Bestätigen" klicken. DNS-Änderungen bei IONOS
+   brauchen erfahrungsgemäß wenige Minuten bis zu einer Stunde.
+5. Danach unter _Sitemaps_ die Adresse `sitemap.xml` eintragen und absenden.
+   Die Sitemap wird von der Website automatisch erzeugt und enthält alle
+   öffentlichen Seiten inklusive Ratgeber-Beiträgen; `robots.txt` verweist
+   bereits darauf.
+
+## Schritt 2 – Google Analytics 4
+
+1. https://analytics.google.com öffnen, Konto und Property für
+   `white-gloss.de` anlegen (Zeitzone Berlin, Währung Euro).
+2. Datenstream vom Typ **Web** für `https://white-gloss.de` anlegen.
+3. Google zeigt die **Mess-ID** im Format `G-XXXXXXXXXX`. Diese als
+   `VITE_GA4_MEASUREMENT_ID` in `.env` eintragen und deployen.
+4. Den von Google angebotenen Tag-Code **nicht** zusätzlich einbauen – die
+   Website lädt das Skript selbst, und zwar erst nach der Einwilligung.
+5. In der Property unter _Verwaltung → Ereignisse_ das Ereignis
+   `generate_lead` als **Schlüsselereignis** markieren. Die Website sendet es
+   automatisch, sobald eine Terminanfrage erfolgreich abgeschickt wurde.
+
+Wichtig zum Verständnis der Zahlen: Analytics zählt nur Besucher, die im
+Cookie-Hinweis „Akzeptieren" gewählt haben. Die echten Besucherzahlen liegen
+also höher als die angezeigten. Das ist kein Fehler, sondern die Folge der
+Rechtslage (§ 25 TDDDG).
+
+## Schritt 3 – Google Ads Conversion
+
+Nur nötig, wenn tatsächlich Anzeigen geschaltet werden.
+
+1. In Google Ads: _Tools → Conversions → Conversion-Aktion erstellen →
+   Website_.
+2. Als Kategorie „Kontakt" oder „Lead senden" wählen, Wert: „Für jede
+   Conversion unterschiedliche Werte verwenden" (die Website sendet den
+   berechneten Angebotspreis in Euro mit).
+3. Beim Einrichten die Variante **Google-Tag** wählen. Google zeigt dann zwei
+   Werte:
+   - die **Conversion-ID** im Format `AW-123456789`
+     → `VITE_GOOGLE_ADS_CONVERSION_ID`
+   - das **Conversion-Label**, eine kurze Zeichenfolge
+     → `VITE_GOOGLE_ADS_CONVERSION_LABEL`
+4. Beide in `.env` eintragen und deployen. Der von Google angebotene
+   Code-Schnipsel wird nicht gebraucht.
+
+## Schritt 4 – Google Unternehmensprofil
+
+Für ein lokales Handwerks- und Dienstleistungsgeschäft ist das der wirksamste
+Google-Eintrag überhaupt – wichtiger als Analytics. Er läuft vollständig
+außerhalb der Website:
+
+1. https://business.google.com öffnen, Eintrag für „White Gloss Detailing" in
+   Horb am Neckar anlegen oder beanspruchen.
+2. Adresse, Telefonnummer und Öffnungszeiten **exakt** so eintragen wie im
+   Impressum der Website. Abweichungen schwächen die lokale Auffindbarkeit.
+3. Als Website `https://white-gloss.de` hinterlegen.
+4. Kategorie: „Autoaufbereitung" bzw. „Autowäsche".
+5. Fotos hochladen. Der Eintrag lebt von Vorher-Nachher-Bildern.
+
+Die Website liefert Google bereits passende strukturierte Daten
+(`LocalBusiness` mit Adresse, Öffnungszeiten und Leistungen) – der Eintrag im
+Unternehmensprofil und diese Angaben sollten übereinstimmen.
+
+---
+
+## Was die Website automatisch erledigt
+
+- `sitemap.xml` wird bei jedem Aufruf neu erzeugt, inklusive Ratgeber-Beiträgen
+  und eigenen Leistungen aus der Verwaltung.
+- `robots.txt` verweist auf die Sitemap und sperrt Verwaltungsbereiche sowie
+  persönliche Kundenlinks (`/angebot/`, `/kalender/`).
+- Jede Seite hat Titel, Beschreibung, Canonical-Adresse und strukturierte
+  Daten.
+- Das Google-Skript wird **erst nach aktiver Einwilligung** geladen. Ohne
+  Einwilligung stellt die Seite keine einzige Verbindung zu Google her.
+- Eine erfolgreich abgeschickte Terminanfrage meldet automatisch die
+  Conversion an Google Ads und das Ereignis `generate_lead` an Analytics –
+  ebenfalls nur mit Einwilligung.
