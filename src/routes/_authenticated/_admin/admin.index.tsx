@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CalendarFeedCard } from "@/components/CalendarFeedCard";
 import { MailStatusCard } from "@/components/MailStatusCard";
+import { AssistantPanel } from "@/components/AssistantPanel";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -398,6 +399,10 @@ function AdminPage() {
 
             <ErrorBoundary title="Der E-Mail-Status konnte nicht geladen werden">
               <MailStatusCard />
+            </ErrorBoundary>
+
+            <ErrorBoundary title="Der Assistent konnte nicht geladen werden">
+              <AssistantPanel />
             </ErrorBoundary>
 
             <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">

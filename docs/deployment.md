@@ -82,6 +82,7 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `MAIL_FROM`                                         | Absender der Kundenmails                |
 | `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
 | `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
+| `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
 | `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
 
 ## E-Mail-Versand mit Resend
