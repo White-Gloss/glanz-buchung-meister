@@ -29,7 +29,10 @@ async function get(path, { redirect = "follow" } = {}) {
 }
 
 function assertCanonical(path, body) {
-  const expected = new URL(path, `${BASE_URL}/`).href.replace(/\/$/, path === "/" ? "/" : "");
+  const expected = new URL(path, `${BASE_URL}/`).href.replace(
+    /\/$/,
+    path === "/" ? "/" : "",
+  );
   const canonicalPattern = /<link\s+[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>|<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i;
   const match = body.match(canonicalPattern);
   const canonical = match?.[1] || match?.[2];
