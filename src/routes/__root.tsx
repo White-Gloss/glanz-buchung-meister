@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
+import { HashScrollFix } from "../components/HashScrollFix";
 
 function NotFoundComponent() {
   return (
@@ -208,6 +209,7 @@ function RootComponent() {
   return (
     <>
       <Outlet />
+      <HashScrollFix />
       <CookieConsentBanner />
     </>
   );
