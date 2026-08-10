@@ -89,12 +89,16 @@ Der installierte CI-Schlüssel hat den Fingerprint
 - `white-gloss.service` und der aktive Release-Symlink blieben während der
   Vorbereitung unverändert.
 
-Ein realer Neustarttest zeigte, dass Nitro zwar den HTTP-Server nach `SIGTERM`
-erfolgreich schließt, der Node-Prozess wegen weiterer offener Handles aber nicht
-immer selbst endet. Die systemd-Unit begrenzt den Stop deshalb auf 15 Sekunden
-und erzwingt danach den Prozessabschluss. So kann ein Deployment nicht bis zum
-systemd-Standardlimit von 90 Sekunden im 502-Zustand hängen bleiben. Unit und
-Helfer werden vor jedem Deployment per SHA-256 auf Konfigurationsdrift geprüft.
+Ein isolierter Neustarttest zeigte, dass Nitro den HTTP-Server nach `SIGTERM`
+erfolgreich schließt, der Node-Prozess zuvor aber noch bis zum Idle-Timeout des
+PostgreSQL-Pools auf eine ungenutzte Verbindung wartete. Der Pool verwendet
+deshalb `allowExitOnIdle`: Aktive Abfragen werden weiterhin abgeschlossen,
+untätige Datenbank-Sockets halten den bereits gestoppten HTTP-Prozess jedoch
+nicht mehr künstlich am Leben. `TimeoutStopSec=15` und `SendSIGKILL=yes` bleiben
+als begrenztes Sicherheitsnetz für tatsächlich hängende Prozesse bestehen. So
+kann ein Deployment nicht bis zum systemd-Standardlimit von 90 Sekunden im
+502-Zustand hängen bleiben. Unit und Helfer werden vor jedem Deployment per
+SHA-256 auf Konfigurationsdrift geprüft.
 
 ## GitHub-Konfiguration
 

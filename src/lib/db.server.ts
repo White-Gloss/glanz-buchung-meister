@@ -19,7 +19,14 @@ function getPool(): Pool {
     if (!connectionString) {
       throw new Error("Datenbankverbindung nicht konfiguriert (SUPABASE_DB_URL fehlt).");
     }
-    _pool = new Pool({ connectionString });
+    _pool = new Pool({
+      connectionString,
+      // Der HTTP-Server hält den Produktionsprozess selbst am Leben. Sobald
+      // Nitro ihn bei SIGTERM geschlossen hat, dürfen ausschließlich untätige
+      // PostgreSQL-Verbindungen den Prozess nicht bis zu ihrem Idle-Timeout
+      // festhalten. Aktive Abfragen bleiben davon unberührt.
+      allowExitOnIdle: true,
+    });
   }
   return _pool;
 }
