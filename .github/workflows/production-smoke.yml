@@ -2,6 +2,9 @@ name: Production Smoke
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "23 */6 * * *"
 
