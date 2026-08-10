@@ -23,6 +23,7 @@ import {
   HelpCircle,
   FileText,
   Camera,
+  Inbox,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -393,6 +394,19 @@ function AdminPage() {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Blog-Beiträge schreiben, Bilder hochladen und Meta-Angaben für Google und Social
                   Media setzen.
+                </p>
+              </Link>
+              <Link
+                to="/admin/posteingang"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Inbox className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Posteingang</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Das Firmenpostfach mitlesen, ohne das Mailprogramm zu wechseln. Nur lesend —
+                  geantwortet wird weiterhin in Outlook.
                 </p>
               </Link>
             </div>

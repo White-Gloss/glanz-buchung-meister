@@ -83,7 +83,36 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
 | `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
 | `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
+| `IMAP_HOST`                                         | Posteingang im Adminbereich             |
+| `IMAP_USER`                                         | Postfachname für den Posteingang        |
+| `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
 | `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
+
+## Posteingang im Adminbereich
+
+Der Adminbereich kann das bestehende Postfach unter `/admin/posteingang`
+anzeigen. Dafür sind drei Werte nötig; optional kommen zwei weitere hinzu:
+
+| Variable        | Pflicht | Bedeutung                                                  | IONOS-Vorgabe   |
+| --------------- | ------- | ---------------------------------------------------------- | --------------- |
+| `IMAP_HOST`     | ja      | Adresse des Mailservers                                    | `imap.ionos.de` |
+| `IMAP_USER`     | ja      | vollständige Mailadresse, z. B. `info@white-gloss.de`      | –               |
+| `IMAP_PASSWORD` | ja      | Passwort dieses Postfachs                                  | –               |
+| `IMAP_PORT`     | nein    | Port des Mailservers                                       | `993`           |
+| `IMAP_SECURE`   | nein    | direkte Verschlüsselung; leiten sich sonst aus dem Port ab | `true`          |
+
+`IMAP_PASSWORD` ist das Passwort des echten Firmenpostfachs und damit eines der
+empfindlichsten Geheimnisse überhaupt. Es gehört ausschließlich in
+`/etc/white-gloss/environment`, niemals ins Repository, niemals mit
+`VITE_`-Präfix und niemals in einen Chatverlauf.
+
+Fehlt einer der drei Pflichtwerte, zeigt die Seite einen Einrichtungshinweis
+statt einer Fehlermeldung; der übrige Adminbereich bleibt unberührt.
+
+Die Verbindung öffnet das Postfach **schreibgeschützt**. Nachrichten werden
+weder als gelesen markiert noch verschoben, gelöscht oder in der Datenbank
+gespeichert; Anhänge werden nur mit Namen und Größe aufgeführt und nicht zum
+Herunterladen angeboten.
 
 ## E-Mail-Versand mit Resend
 
