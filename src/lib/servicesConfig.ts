@@ -41,8 +41,14 @@ export const company = {
   name: "White Gloss Detailing",
   claim: "No Compromises. Only Results.",
   /**
-   * Erst auf true setzen, wenn Inhaber, Anschrift, Steuerstatus und Bankdaten
-   * geprüft wurden. Bis dahin bleiben Rechnungsdownloads gesperrt.
+   * Merker für den Betrieb: Sind Inhaber, Anschrift, Steuerstatus und
+   * Bankdaten geprüft?
+   *
+   * ACHTUNG — dieses Feld sperrt nichts. Der Rechnungsdownload ist an anderer
+   * Stelle vollständig abgeschaltet (`invoice.ts`), und die vor dem Termin
+   * erzeugte Unterlage trägt ausdrücklich den Vermerk „Kein Rechnungs- oder
+   * Steuerbeleg". Ein früherer Kommentar behauptete hier eine Sperre, die es
+   * im Code nie gab; wer das Feld auf `true` setzt, ändert damit nichts.
    */
   legalDetailsVerified: false,
   owner: "Lars Hägele",

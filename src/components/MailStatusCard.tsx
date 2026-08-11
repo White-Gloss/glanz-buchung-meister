@@ -89,6 +89,36 @@ export function MailStatusCard() {
                 : "RESEND_API_KEY und MAIL_FROM sind beim Hoster zu hinterlegen. Solange sie fehlen, gehen weder Eingangs- noch Terminbestätigung raus. Buchungen werden trotzdem gespeichert."}
             </p>
           )}
+
+          {/*
+            Absender und Ziel identisch: erklärt, warum ausgerechnet die
+            interne Meldung im Spam landet, während Kundenmails ankommen.
+            Die Ursache liegt beim Hoster, nicht im Code — deshalb steht die
+            Abhilfe direkt daneben.
+          */}
+          {status.configured && status.selfAddressed && (
+            <div className="mt-4 max-w-2xl rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-medium text-amber-300">
+                <AlertTriangle aria-hidden className="size-4 shrink-0" />
+                Interne Meldungen landen wahrscheinlich im Spam
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Absender und Ziel sind dieselbe Adresse. Die Website verschickt damit über einen
+                fremden Server eine Nachricht, die von{" "}
+                <strong className="text-foreground/90">{status.ownerTo}</strong> zu kommen scheint —
+                an genau diese Adresse. Dieses Muster nutzen Betrüger zum Fälschen von Absendern,
+                weshalb viele Anbieter solche Nachrichten aussortieren, selbst bei einwandfrei
+                eingerichteter Domain. Mails an Kundschaft sind davon nicht betroffen.
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Abhilfe beim Hoster: <code className="text-foreground/90">MAIL_FROM</code> auf eine
+                Absenderadresse setzen, die nicht das Ziel ist — etwa{" "}
+                <code className="text-foreground/90">buchung@…</code> statt{" "}
+                <code className="text-foreground/90">info@…</code>. Beide dürfen zur selben
+                verifizierten Domain gehören.
+              </p>
+            </div>
+          )}
         </div>
 
         <Button

@@ -82,7 +82,64 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `MAIL_FROM`                                         | Absender der Kundenmails                |
 | `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
 | `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
+| `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
+| `IMAP_HOST`                                         | Posteingang im Adminbereich             |
+| `IMAP_USER`                                         | Postfachname für den Posteingang        |
+| `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
 | `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
+
+## KI-Assistent und Bildbewertung
+
+Ohne `ANTHROPIC_API_KEY` ist der Assistent vollständig inaktiv und im
+Adminbereich unsichtbar — es erscheint kein Knopf, der nur Fehler wirft.
+
+Ist der Schlüssel gesetzt, gilt: Für jede Anfrage werden Daten an Anthropic
+übertragen. Das ist eine **Auftragsverarbeitung nach Art. 28 DSGVO** und
+setzt einen entsprechenden Vertrag mit dem Anbieter sowie einen Eintrag im
+Verarbeitungsverzeichnis voraus. Der Schlüssel gehört deshalb erst dann auf
+den Server, wenn beides vorliegt.
+
+Was übertragen wird:
+
+| Funktion             | Übertragen wird                                              |
+| -------------------- | ------------------------------------------------------------ |
+| Antwortentwürfe      | Buchungsdaten inkl. Name und Kennzeichen, keine Kontaktdaten |
+| Fragen zu den Zahlen | Buchungsliste ohne Namen                                     |
+| Website-Texte        | nur das eingegebene Thema                                    |
+| Bildbewertung        | ausgewählte Fotos, Fahrzeug, Kennzeichen, Zustandstext       |
+
+Die Bildbewertung unter `/admin/zustand` ist die einzige Stelle, an der
+Fotos aus dem privaten Bucket den Server verlassen. Sie läuft ausschließlich
+auf ausdrücklichen Knopfdruck, nie automatisch beim Eingang einer Meldung.
+Videos und Dateien über rund 3,7 MB werden übersprungen und im Ergebnis
+benannt. Die Datenschutzerklärung führt diese Übermittlung in Abschnitt 7
+auf — wird der Assistent abgeschaltet, gehört dieser Abschnitt entfernt.
+
+## Posteingang im Adminbereich
+
+Der Adminbereich kann das bestehende Postfach unter `/admin/posteingang`
+anzeigen. Dafür sind drei Werte nötig; optional kommen zwei weitere hinzu:
+
+| Variable        | Pflicht | Bedeutung                                                  | IONOS-Vorgabe   |
+| --------------- | ------- | ---------------------------------------------------------- | --------------- |
+| `IMAP_HOST`     | ja      | Adresse des Mailservers                                    | `imap.ionos.de` |
+| `IMAP_USER`     | ja      | vollständige Mailadresse, z. B. `info@white-gloss.de`      | –               |
+| `IMAP_PASSWORD` | ja      | Passwort dieses Postfachs                                  | –               |
+| `IMAP_PORT`     | nein    | Port des Mailservers                                       | `993`           |
+| `IMAP_SECURE`   | nein    | direkte Verschlüsselung; leiten sich sonst aus dem Port ab | `true`          |
+
+`IMAP_PASSWORD` ist das Passwort des echten Firmenpostfachs und damit eines der
+empfindlichsten Geheimnisse überhaupt. Es gehört ausschließlich in
+`/etc/white-gloss/environment`, niemals ins Repository, niemals mit
+`VITE_`-Präfix und niemals in einen Chatverlauf.
+
+Fehlt einer der drei Pflichtwerte, zeigt die Seite einen Einrichtungshinweis
+statt einer Fehlermeldung; der übrige Adminbereich bleibt unberührt.
+
+Die Verbindung öffnet das Postfach **schreibgeschützt**. Nachrichten werden
+weder als gelesen markiert noch verschoben, gelöscht oder in der Datenbank
+gespeichert; Anhänge werden nur mit Namen und Größe aufgeführt und nicht zum
+Herunterladen angeboten.
 
 ## E-Mail-Versand mit Resend
 
