@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Bot, Copy, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -122,6 +123,13 @@ export function AssistantPanel() {
       <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
         Der Assistent macht <strong className="text-foreground/90">Vorschläge</strong>. Nichts davon
         geht automatisch an Kundschaft — Sie lesen gegen, ändern und schicken selbst.
+      </p>
+      <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+        Fahrzeugfotos schätzt er unter{" "}
+        <Link to="/admin/zustand" className="text-primary underline underline-offset-2">
+          Zustandsmeldungen
+        </Link>{" "}
+        ein — dort, wo die Aufnahmen liegen.
       </p>
 
       <div

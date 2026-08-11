@@ -119,3 +119,129 @@ export const draftText = createServerFn({ method: "POST" })
     const ergebnis = await draftWebsiteText({ kind: data.kind as Kind, thema });
     return { text: ergebnis.text };
   });
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * BILDBEWERTUNG EINER ZUSTANDSMELDUNG
+ * ------------------------------------
+ * Die einzige Stelle im Projekt, an der Fotos aus dem privaten Bucket den
+ * Server verlassen. Das passiert ausschließlich auf ausdrücklichen Knopfdruck
+ * im Adminbereich — nie automatisch beim Eingang einer Meldung.
+ *
+ * Warum diese Grenzen:
+ *
+ * - VIDEOS werden übersprungen. Die Schnittstelle nimmt nur Bilder entgegen;
+ *   ein Video stumm mitzuschicken ginge schief, es kommentarlos wegzulassen
+ *   wäre irreführend. Beides wird im Ergebnis benannt.
+ * - GROSSE DATEIEN werden übersprungen. Über etwa 3,7 MB weist die
+ *   Schnittstelle ein Bild ohnehin ab; besser vorher aussortieren und sagen,
+ *   welches fehlt, als die ganze Anfrage scheitern zu lassen.
+ * - KEINE KONTAKTDATEN. Mitgeschickt werden Fahrzeug, Kennzeichen und die
+ *   Zustandsbeschreibung — nicht Name, E-Mail oder Telefonnummer.
+ */
+
+/** Je Bild; die Schnittstelle lehnt darüber ab (5 MB nach Base64-Kodierung). */
+const MAX_BILD_BYTES = 3_700_000;
+/** Über alle Bilder zusammen, damit eine Anfrage nicht ins Uferlose läuft. */
+const MAX_GESAMT_BYTES = 15_000_000;
+
+const BILD_TYPEN: Record<string, "image/jpeg" | "image/png" | "image/webp"> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+function dateiname(pfad: string): string {
+  return pfad.split("/").pop() ?? pfad;
+}
+
+export const assessConditionPhotos = createServerFn({ method: "POST" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { reportId: string }) => data)
+  .handler(async ({ data, context }): Promise<{ text: string; ausgelassen: string[] }> => {
+    await assertAdmin(context);
+    if (!UUID_PATTERN.test(data.reportId)) throw new Error("Ungültige Meldungs-ID.");
+
+    const { queryOne } = await import("./db.server");
+    const report = await queryOne<{
+      vehicle: string;
+      plate: string;
+      condition_text: string;
+      photo_paths: string[];
+      booking_id: string | null;
+    }>(
+      `SELECT vehicle, plate, condition_text, photo_paths, booking_id
+         FROM public.condition_reports WHERE id = $1`,
+      [data.reportId],
+    );
+    if (!report) throw new Error("Die Meldung wurde nicht gefunden.");
+    if (report.photo_paths.length === 0) {
+      throw new Error("Zu dieser Meldung gibt es keine Aufnahmen.");
+    }
+
+    const { CONDITION_PHOTO_BUCKET } = await import("./conditionReports.functions");
+
+    const photos: { mediaType: "image/jpeg" | "image/png" | "image/webp"; base64: string }[] = [];
+    const ausgelassen: string[] = [];
+    let gesamt = 0;
+
+    for (const pfad of report.photo_paths) {
+      const endung = pfad.split(".").pop()?.toLowerCase() ?? "";
+      const mediaType = BILD_TYPEN[endung];
+      if (!mediaType) {
+        ausgelassen.push(
+          `${dateiname(pfad)} (Video — Bilder können beurteilt werden, Videos nicht)`,
+        );
+        continue;
+      }
+
+      const { data: blob, error } = await context.supabase.storage
+        .from(CONDITION_PHOTO_BUCKET)
+        .download(pfad);
+      if (error || !blob) {
+        ausgelassen.push(`${dateiname(pfad)} (konnte nicht geladen werden)`);
+        continue;
+      }
+
+      const bytes = Buffer.from(await blob.arrayBuffer());
+      if (bytes.byteLength > MAX_BILD_BYTES) {
+        ausgelassen.push(`${dateiname(pfad)} (zu groß für die Bildprüfung)`);
+        continue;
+      }
+      if (gesamt + bytes.byteLength > MAX_GESAMT_BYTES) {
+        ausgelassen.push(`${dateiname(pfad)} (Gesamtumfang der Anfrage erreicht)`);
+        continue;
+      }
+
+      gesamt += bytes.byteLength;
+      photos.push({ mediaType, base64: bytes.toString("base64") });
+    }
+
+    if (photos.length === 0) {
+      throw new Error(
+        "Zu dieser Meldung liegt kein auswertbares Foto vor. Videos und sehr große Dateien lassen sich nicht prüfen.",
+      );
+    }
+
+    let booking;
+    if (report.booking_id) {
+      const { listBookings } = await import("./bookings.functions");
+      booking = (await listBookings()).find((b) => b.id === report.booking_id);
+    }
+
+    const { assessPhotos } = await import("./assistant.server");
+    const ergebnis = await assessPhotos({
+      context: {
+        vehicle: report.vehicle,
+        plate: report.plate,
+        conditionText: report.condition_text,
+        booking,
+        ausgelassen,
+      },
+      photos,
+    });
+
+    return { text: ergebnis.text, ausgelassen };
+  });

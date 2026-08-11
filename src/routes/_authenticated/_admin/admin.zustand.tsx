@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Camera, Images, Mail, Phone, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Images, Mail, Phone, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,7 @@ import {
   type ConditionReport,
   type ConditionStatus,
 } from "@/lib/conditionReports.functions";
+import { assessConditionPhotos, getAssistantStatus } from "@/lib/assistant.functions";
 import { diagnoseBackendError } from "@/lib/backendErrors";
 import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
@@ -63,10 +64,17 @@ function isVideoPath(path: string): boolean {
   return /\.(mp4|mov|webm)$/i.test(path);
 }
 
+/** Nur Bilder lassen sich beurteilen — Videos zählen hier nicht mit. */
+function bildAnzahl(paths: string[]): number {
+  return paths.filter((path) => !isVideoPath(path)).length;
+}
+
 function ConditionAdminPage() {
   const [reports, setReports] = useState<ConditionReport[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [assistent, setAssistent] = useState(false);
   const fetchAll = useServerFn(listConditionReports);
+  const fetchAssistentStatus = useServerFn(getAssistantStatus);
 
   const reload = useCallback(() => {
     setLoadError(null);
@@ -95,6 +103,18 @@ function ConditionAdminPage() {
       active = false;
     };
   }, [fetchAll]);
+
+  // Ohne eingerichteten Assistenten erscheint der Knopf zur Bildbewertung gar
+  // nicht — besser als ein Knopf, der nur eine Fehlermeldung auswirft.
+  useEffect(() => {
+    let active = true;
+    void fetchAssistentStatus()
+      .then((status) => active && setAssistent(status.configured))
+      .catch(() => active && setAssistent(false));
+    return () => {
+      active = false;
+    };
+  }, [fetchAssistentStatus]);
 
   const offen = reports?.filter((report) => report.status === "Neu").length ?? 0;
 
@@ -151,7 +171,7 @@ function ConditionAdminPage() {
           <ul className="space-y-4">
             {reports.map((report) => (
               <li key={report.id}>
-                <ReportCard report={report} onChanged={reload} />
+                <ReportCard report={report} onChanged={reload} assistent={assistent} />
               </li>
             ))}
           </ul>
@@ -161,16 +181,27 @@ function ConditionAdminPage() {
   );
 }
 
-function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged: () => void }) {
+function ReportCard({
+  report,
+  onChanged,
+  assistent,
+}: {
+  report: ConditionReport;
+  onChanged: () => void;
+  assistent: boolean;
+}) {
   const [status, setStatus] = useState<ConditionStatus>(report.status);
   const [note, setNote] = useState(report.admin_note);
   const [mediaUrls, setMediaUrls] = useState<string[] | null>(null);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [bewertung, setBewertung] = useState<{ text: string; ausgelassen: string[] } | null>(null);
+  const [bewertungLaeuft, setBewertungLaeuft] = useState(false);
 
   const fetchMedia = useServerFn(getConditionPhotoUrls);
   const update = useServerFn(updateConditionReport);
   const remove = useServerFn(deleteConditionReport);
+  const bewerten = useServerFn(assessConditionPhotos);
 
   async function showMedia() {
     if (mediaUrls || loadingMedia) return;
@@ -181,6 +212,17 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
       toast.error(error instanceof Error ? error.message : "Medien konnten nicht geladen werden.");
     } finally {
       setLoadingMedia(false);
+    }
+  }
+
+  async function fotosBewerten() {
+    setBewertungLaeuft(true);
+    try {
+      setBewertung(await bewerten({ data: { reportId: report.id } }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Die Einschätzung ist fehlgeschlagen.");
+    } finally {
+      setBewertungLaeuft(false);
     }
   }
 
@@ -348,6 +390,68 @@ function ReportCard({ report, onChanged }: { report: ConditionReport; onChanged:
                 );
               })}
             </ul>
+          )}
+        </div>
+      )}
+
+      {assistent && bildAnzahl(report.photo_paths) > 0 && (
+        <div className="mt-5">
+          {bewertung === null ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fotosBewerten}
+                loading={bewertungLaeuft}
+                className="gap-1.5"
+              >
+                <Sparkles className="size-3.5" />
+                Fotos einschätzen lassen
+              </Button>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Die Fotos werden dafür einmalig an den KI-Dienst übertragen. Das Ergebnis ist eine
+                Vorsortierung für Sie, keine Begutachtung — und es geht nicht an die Kundschaft.
+              </p>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-primary">
+                <Sparkles aria-hidden className="size-3.5" />
+                Einschätzung des Assistenten
+              </p>
+
+              {bewertung.ausgelassen.length > 0 && (
+                <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                  <p className="text-xs font-medium text-amber-300">
+                    Nicht in die Einschätzung eingeflossen:
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {bewertung.ausgelassen.map((zeile) => (
+                      <li key={zeile} className="text-xs leading-5 text-muted-foreground">
+                        {zeile}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/85">
+                {bewertung.text}
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNote(note ? `${note}\n\n${bewertung.text}` : bewertung.text)}
+                >
+                  In die interne Notiz übernehmen
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setBewertung(null)}>
+                  Ausblenden
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -265,41 +265,89 @@ export async function draftWebsiteText(params: {
 
 export type PhotoInput = { mediaType: "image/jpeg" | "image/png" | "image/webp"; base64: string };
 
+/**
+ * Umfeld einer Bildbewertung.
+ *
+ * Bewusst nicht an eine Buchung gebunden: Die Aufnahmen kommen über die
+ * Zustandsmeldungen herein, und die meisten davon gehören zu Interessenten,
+ * die noch gar nicht gebucht haben. Hängt doch ein Vorgang daran, kommt er
+ * über `booking` dazu — dann kann auch der Preis eingeordnet werden.
+ *
+ * Kontaktdaten stehen hier absichtlich nicht: Für die Einschätzung eines
+ * Lackzustands braucht es weder E-Mail-Adresse noch Telefonnummer.
+ */
+export type PhotoContext = {
+  /** Fahrzeugbezeichnung, so wie gemeldet. */
+  vehicle: string;
+  /** Kennzeichen, falls angegeben. */
+  plate: string;
+  /** Was die Kundschaft selbst zum Zustand geschrieben hat. */
+  conditionText: string;
+  /** Zugehöriger Vorgang, falls die Meldung an einer Buchung hängt. */
+  booking?: Booking;
+  /** Aufnahmen, die nicht mitgeschickt werden konnten — mit Begründung. */
+  ausgelassen?: string[];
+};
+
 export async function assessPhotos(params: {
-  booking: Booking;
+  context: PhotoContext;
   photos: PhotoInput[];
 }): Promise<AssistantResult> {
+  const mitBuchung = Boolean(params.context.booking);
+
   const system = [
     "Du siehst Fotos eines Fahrzeugs, das zur Aufbereitung angefragt wurde, und",
     "schätzt den Aufwand ein.",
     "",
     "Gliedere deine Antwort in drei Teile:",
     "1. Was auf den Bildern erkennbar ist — nur das, was du wirklich siehst.",
-    "2. Was sich daraus für den Aufwand ergibt.",
-    "3. Ob der berechnete Preis passt, oder ob ein Gegenangebot sinnvoll wäre —",
-    "   mit Betrag und Begründung.",
+    "2. Was sich daraus für den Aufwand ergibt: welche Arbeitsschritte nötig",
+    "   wären und womit an Zeit zu rechnen ist.",
+    mitBuchung
+      ? "3. Ob der berechnete Preis dazu passt, oder ob ein Gegenangebot sinnvoll wäre — mit Betrag und Begründung."
+      : "3. Welche Leistung du vorschlagen würdest und welche Preisspanne dazu passt. Es liegt keine Buchung vor, also nenne keine feste Summe, sondern einen Rahmen.",
     "",
     "WICHTIG: Fotos zeigen weder Lackdicke noch Vorschäden unter der",
     "Oberfläche, und Beleuchtung täuscht über Kratzer hinweg. Deine",
     "Einschätzung ist eine Vorsortierung für den Meister, keine Begutachtung.",
     "Benenne ausdrücklich, was sich auf den Bildern NICHT beurteilen lässt.",
     "Wenn ein Bild zu unscharf oder zu dunkel für eine Aussage ist, sage das.",
+    "",
+    "Schreibe für den Betrieb, nicht für die Kundschaft — dieser Text geht",
+    "nicht hinaus.",
   ].join("\n");
+
+  const beschreibung = [
+    `Fahrzeug: ${params.context.vehicle || "(nicht angegeben)"}`,
+    params.context.plate ? `Kennzeichen: ${params.context.plate}` : null,
+    "",
+    "Angaben der Kundschaft zum Zustand:",
+    params.context.conditionText || "(keine Beschreibung mitgeschickt)",
+    params.context.booking
+      ? [
+          "",
+          "Zugehöriger Vorgang:",
+          bookingSummary(params.context.booking),
+          `Berechneter Preis: ${currency(params.context.booking.total)}`,
+        ].join("\n")
+      : "",
+    params.context.ausgelassen?.length
+      ? [
+          "",
+          "Nicht mitgeschickt und daher nicht beurteilbar:",
+          ...params.context.ausgelassen.map((zeile) => `- ${zeile}`),
+        ].join("\n")
+      : "",
+  ]
+    .filter((zeile) => zeile !== null && zeile !== "")
+    .join("\n");
 
   const inhalt: Anthropic.ContentBlockParam[] = [
     ...params.photos.map<Anthropic.ContentBlockParam>((photo) => ({
       type: "image",
       source: { type: "base64", media_type: photo.mediaType, data: photo.base64 },
     })),
-    {
-      type: "text",
-      text: [
-        "Vorgang:",
-        bookingSummary(params.booking),
-        "",
-        `Berechneter Preis: ${currency(params.booking.total)}`,
-      ].join("\n"),
-    },
+    { type: "text", text: beschreibung },
   ];
 
   // Höherer Aufwand: Hier hängt eine Preisempfehlung dran, und die Bilder

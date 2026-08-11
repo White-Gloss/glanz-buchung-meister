@@ -88,6 +88,33 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
 | `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
 
+## KI-Assistent und Bildbewertung
+
+Ohne `ANTHROPIC_API_KEY` ist der Assistent vollständig inaktiv und im
+Adminbereich unsichtbar — es erscheint kein Knopf, der nur Fehler wirft.
+
+Ist der Schlüssel gesetzt, gilt: Für jede Anfrage werden Daten an Anthropic
+übertragen. Das ist eine **Auftragsverarbeitung nach Art. 28 DSGVO** und
+setzt einen entsprechenden Vertrag mit dem Anbieter sowie einen Eintrag im
+Verarbeitungsverzeichnis voraus. Der Schlüssel gehört deshalb erst dann auf
+den Server, wenn beides vorliegt.
+
+Was übertragen wird:
+
+| Funktion             | Übertragen wird                                              |
+| -------------------- | ------------------------------------------------------------ |
+| Antwortentwürfe      | Buchungsdaten inkl. Name und Kennzeichen, keine Kontaktdaten |
+| Fragen zu den Zahlen | Buchungsliste ohne Namen                                     |
+| Website-Texte        | nur das eingegebene Thema                                    |
+| Bildbewertung        | ausgewählte Fotos, Fahrzeug, Kennzeichen, Zustandstext       |
+
+Die Bildbewertung unter `/admin/zustand` ist die einzige Stelle, an der
+Fotos aus dem privaten Bucket den Server verlassen. Sie läuft ausschließlich
+auf ausdrücklichen Knopfdruck, nie automatisch beim Eingang einer Meldung.
+Videos und Dateien über rund 3,7 MB werden übersprungen und im Ergebnis
+benannt. Die Datenschutzerklärung führt diese Übermittlung in Abschnitt 7
+auf — wird der Assistent abgeschaltet, gehört dieser Abschnitt entfernt.
+
 ## Posteingang im Adminbereich
 
 Der Adminbereich kann das bestehende Postfach unter `/admin/posteingang`
