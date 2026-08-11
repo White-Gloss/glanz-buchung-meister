@@ -289,6 +289,42 @@ export type PhotoContext = {
   ausgelassen?: string[];
 };
 
+/**
+ * Die tatsächliche Preisliste des Betriebs, frisch aus der Datenbank.
+ *
+ * Ohne sie würde das Modell Beträge erfinden — und eine erfundene Preisspanne
+ * ist schlimmer als gar keine, weil sie plausibel aussieht und am Ende einer
+ * Kundschaft gegenüber genannt wird. Scheitert die Abfrage, gelten die im
+ * Code hinterlegten Standardwerte; die sind falsch aktualisiert, aber nie
+ * frei erfunden.
+ */
+async function preisliste(): Promise<string> {
+  try {
+    const { readServicePrices } = await import("./pricing.server");
+    const { applyPriceOverrides } = await import("./servicesConfig");
+    applyPriceOverrides(await readServicePrices());
+  } catch {
+    // Standardwerte aus dem Code.
+  }
+
+  const { servicePackages, addOns, vehicleTypes } = await import("./servicesConfig");
+
+  return [
+    "Preisliste des Betriebs (Grundpreis gilt für die Kompaktklasse):",
+    ...servicePackages.map((p) => `- ${p.name}: ${currency(p.basePrice)}, ${p.duration}`),
+    "",
+    "Aufschlag nach Fahrzeuggröße (Faktor auf den Grundpreis):",
+    ...vehicleTypes.map((v) => `- ${v.name}: ×${v.factor}`),
+    "",
+    "Zusatzleistungen:",
+    ...addOns.map((a) => `- ${a.name}: ${a.distanceBased ? "nach Entfernung" : currency(a.price)}`),
+    "",
+    "Rechne ausschließlich mit diesen Werten. Erfinde keine Beträge und keine",
+    "Leistungen, die hier nicht stehen. Braucht das Fahrzeug etwas, das nicht",
+    "im Angebot ist, benenne es als offenen Punkt statt es zu bepreisen.",
+  ].join("\n");
+}
+
 export async function assessPhotos(params: {
   context: PhotoContext;
   photos: PhotoInput[];
@@ -297,27 +333,49 @@ export async function assessPhotos(params: {
 
   const system = [
     "Du siehst Fotos eines Fahrzeugs, das zur Aufbereitung angefragt wurde, und",
-    "schätzt den Aufwand ein.",
+    "erstellst daraus eine GROBKALKULATION für den Betrieb.",
     "",
-    "Gliedere deine Antwort in drei Teile:",
-    "1. Was auf den Bildern erkennbar ist — nur das, was du wirklich siehst.",
-    "2. Was sich daraus für den Aufwand ergibt: welche Arbeitsschritte nötig",
-    "   wären und womit an Zeit zu rechnen ist.",
+    "Beginne deine Antwort mit genau dieser Zeile:",
+    "GROBKALKULATION — Schätzung anhand von Fotos, keine verbindliche Zusage.",
+    "",
+    "Gliedere den Rest in vier Teile:",
+    "",
+    "1. BEFUND — was auf den Bildern erkennbar ist. Nur das, was du wirklich",
+    "   siehst, Bild für Bild oder Bereich für Bereich.",
+    "",
+    "2. WAS GEMACHT WERDEN MUSS — eine vollständige Liste der Arbeitsschritte,",
+    "   in der Reihenfolge, in der sie anfallen. Keine Sammelbegriffe wie",
+    '   „Aufbereitung", sondern die einzelnen Handgriffe: Vorwäsche, Felgen und',
+    "   Radhäuser, Insekten- und Teerentfernung, Knetreinigung, Abkleben,",
+    "   Schleifen bzw. Politurstufen, Politurreste entfernen, Versiegelung oder",
+    "   Wachs, Scheiben, Gummi- und Kunststoffpflege, Innenraum nach Bereichen,",
+    '   Endkontrolle. Nenne je Schritt eine Zeitspanne (z. B. „45–60 min") und',
+    "   markiere Schritte, die nur unter Vorbehalt nötig sind, ausdrücklich mit",
+    '   „nur falls". Lasse Schritte weg, die dieses Fahrzeug erkennbar nicht',
+    "   braucht — aber sage dann, warum.",
+    "",
+    "3. ZEIT UND MATERIAL — die Summe der Zeitspannen als Von-bis-Wert, dazu",
+    "   das Verbrauchsmaterial, das dabei nennenswert anfällt.",
+    "",
     mitBuchung
-      ? "3. Ob der berechnete Preis dazu passt, oder ob ein Gegenangebot sinnvoll wäre — mit Betrag und Begründung."
-      : "3. Welche Leistung du vorschlagen würdest und welche Preisspanne dazu passt. Es liegt keine Buchung vor, also nenne keine feste Summe, sondern einen Rahmen.",
+      ? "4. PREIS — ob der berechnete Preis zu diesem Aufwand passt, oder ob ein Gegenangebot sinnvoll wäre. Mit Betrag und Begründung, ausdrücklich als Grobwert."
+      : "4. PREIS — welche Leistung du vorschlagen würdest und welche Preisspanne dazu passt. Es liegt keine Buchung vor, also nenne keine feste Summe, sondern einen Rahmen von–bis.",
     "",
     "WICHTIG: Fotos zeigen weder Lackdicke noch Vorschäden unter der",
     "Oberfläche, und Beleuchtung täuscht über Kratzer hinweg. Deine",
     "Einschätzung ist eine Vorsortierung für den Meister, keine Begutachtung.",
-    "Benenne ausdrücklich, was sich auf den Bildern NICHT beurteilen lässt.",
-    "Wenn ein Bild zu unscharf oder zu dunkel für eine Aussage ist, sage das.",
+    'Schließe deshalb mit einem kurzen Absatz „Am Fahrzeug zu prüfen", der',
+    "auflistet, was sich erst vor Ort klären lässt und die Kalkulation kippen",
+    "könnte. Wenn ein Bild zu unscharf oder zu dunkel für eine Aussage ist,",
+    "sage das, statt zu raten.",
     "",
     "Schreibe für den Betrieb, nicht für die Kundschaft — dieser Text geht",
     "nicht hinaus.",
   ].join("\n");
 
   const beschreibung = [
+    await preisliste(),
+    "",
     `Fahrzeug: ${params.context.vehicle || "(nicht angegeben)"}`,
     params.context.plate ? `Kennzeichen: ${params.context.plate}` : null,
     "",

@@ -406,18 +406,20 @@ function ReportCard({
                 className="gap-1.5"
               >
                 <Sparkles className="size-3.5" />
-                Fotos einschätzen lassen
+                Grobkalkulation aus den Fotos
               </Button>
               <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                Die Fotos werden dafür einmalig an den KI-Dienst übertragen. Das Ergebnis ist eine
-                Vorsortierung für Sie, keine Begutachtung — und es geht nicht an die Kundschaft.
+                Liefert eine Liste der Arbeitsschritte mit Zeitansatz und eine grobe Preisspanne,
+                gerechnet mit Ihrer hinterlegten Preisliste. Die Fotos werden dafür einmalig an den
+                KI-Dienst übertragen. Es bleibt eine Schätzung nach Bildern — keine Begutachtung,
+                und nichts davon geht an die Kundschaft.
               </p>
             </>
           ) : (
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
               <p className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-primary">
                 <Sparkles aria-hidden className="size-3.5" />
-                Einschätzung des Assistenten
+                Grobkalkulation — Schätzung nach Fotos, keine verbindliche Zusage
               </p>
 
               {bewertung.ausgelassen.length > 0 && (
