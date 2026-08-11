@@ -46,13 +46,12 @@ export const Route = createFileRoute("/leistungen/$service/$city")({
       };
     }
 
-    const { service, city, meta, jsonLd } = loaderData;
+    const { meta, jsonLd } = loaderData;
     return {
       meta: [
         ...standardPageMeta({
           title: meta.title,
           description: meta.description,
-          path: `/leistungen/${service.slug}/${city.slug}`,
           url: meta.canonical,
         }),
         { name: "robots", content: "noindex,follow" },

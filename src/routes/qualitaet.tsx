@@ -58,8 +58,12 @@ function QualityPage() {
               <Link to="/" className="transition-colors hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Qualität</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Qualität
+              </span>
             </nav>
             <p className="eyebrow mt-10">Unser Qualitätsanspruch</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">

@@ -42,8 +42,12 @@ function PickupOverview() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Abholservice</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Abholservice
+              </span>
             </nav>
             <p className="eyebrow mt-6">Hol- & Bringservice</p>
             <h1 className="text-gradient display-page mt-3 max-w-4xl">

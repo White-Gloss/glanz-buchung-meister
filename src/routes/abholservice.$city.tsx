@@ -39,13 +39,12 @@ export const Route = createFileRoute("/abholservice/$city")({
         meta: [{ title: "Seite nicht gefunden" }, { name: "robots", content: "noindex" }],
       };
     }
-    const { city, meta } = loaderData;
+    const { meta } = loaderData;
     return {
       meta: [
         ...standardPageMeta({
           title: meta.title,
           description: meta.description,
-          path: `/abholservice/${city.slug}`,
           url: meta.canonical,
         }),
       ],

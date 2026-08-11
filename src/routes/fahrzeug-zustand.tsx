@@ -105,8 +105,12 @@ function ConditionPage() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Zustand prüfen lassen</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Zustand prüfen lassen
+              </span>
             </nav>
 
             {/* Greift die Bezeichnung aus dem Hauptmenü auf, damit klar ist,

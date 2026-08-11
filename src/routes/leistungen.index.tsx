@@ -79,8 +79,12 @@ function ServicesOverview() {
               <Link to="/" className="transition-colors hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Leistungen</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Leistungen
+              </span>
             </nav>
             <p className="eyebrow mt-10">Leistungsspektrum</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">

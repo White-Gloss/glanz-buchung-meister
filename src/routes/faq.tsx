@@ -79,8 +79,12 @@ function FaqPage() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Häufige Fragen</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Häufige Fragen
+              </span>
             </nav>
 
             <p className="eyebrow mt-7">Antworten vorab</p>

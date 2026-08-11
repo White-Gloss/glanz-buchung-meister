@@ -74,8 +74,12 @@ function BlogIndexPage() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Ratgeber</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Ratgeber
+              </span>
             </nav>
 
             <p className="eyebrow mt-7">Wissen aus der Werkstatt</p>
