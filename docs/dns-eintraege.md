@@ -21,16 +21,16 @@ _Eintrag hinzufügen_.
 
 ## Stand heute
 
-| Eintrag                 | Wert                                    | Bewertung                     |
-| ----------------------- | --------------------------------------- | ----------------------------- |
-| A (`@` und `www`)       | `217.154.124.239`                       | richtig, nicht anfassen       |
-| MX                      | `mx00.ionos.de`, `mx01.ionos.de`        | richtig, nicht anfassen       |
-| TXT (SPF)               | `v=spf1 include:_spf-eu.ionos.com ~all` | richtig, nicht anfassen       |
-| TXT `resend._domainkey` | DKIM-Schlüssel                          | richtig, nicht anfassen       |
-| TXT `send` + MX `send`  | Resend-Versandweg                       | richtig, nicht anfassen       |
-| TXT `_dmarc`            | `v=DMARC1; p=none;`                     | **unvollständig — Schritt 2** |
-| CAA                     | fehlt                                   | **Schritt 3**                 |
-| AAAA                    | fehlt                                   | optional — Schritt 4          |
+| Eintrag                 | Wert                                    | Bewertung                   |
+| ----------------------- | --------------------------------------- | --------------------------- |
+| A (`@` und `www`)       | `217.154.124.239`                       | richtig, nicht anfassen     |
+| MX                      | `mx00.ionos.de`, `mx01.ionos.de`        | richtig, nicht anfassen     |
+| TXT (SPF)               | `v=spf1 include:_spf-eu.ionos.com ~all` | richtig, nicht anfassen     |
+| TXT `resend._domainkey` | DKIM-Schlüssel                          | richtig, nicht anfassen     |
+| TXT `send` + MX `send`  | Resend-Versandweg                       | richtig, nicht anfassen     |
+| `_dmarc`                | CNAME auf `dmarc.ionos.de`              | **wirkungslos — Schritt 2** |
+| CAA                     | fehlt                                   | **Schritt 3**               |
+| AAAA                    | fehlt                                   | optional — Schritt 4        |
 
 Zwei `google-site-verification`-Einträge sind vorhanden. Einer stammt
 vermutlich aus einem früheren Versuch. **Bitte beide stehen lassen** — sie
@@ -61,17 +61,35 @@ Notieren Sie diesen Namen. Üblich sind:
 ## Schritt 2 – DMARC vervollständigen
 
 DMARC sagt anderen Mailservern, was mit Nachrichten geschehen soll, die
-vorgeben, von Ihnen zu kommen. Der vorhandene Eintrag hat zwei Schwächen:
-Er ordnet nichts an (`p=none`), und er nennt keine Adresse für Berichte —
-Sie erfahren also nicht einmal, ob jemand Ihren Absender missbraucht.
+vorgeben, von Ihnen zu kommen.
+
+**Der Ausgangszustand ist eine Falle.** Unter `_dmarc` steht kein eigener
+Eintrag, sondern ein **CNAME auf `dmarc.ionos.de`**. Dort liegt ein
+Sammeleintrag von IONOS, den alle Kunden teilen:
+
+```
+v=DMARC1; p=none;
+```
+
+Er gehört nicht diesem Betrieb, ordnet nichts an und nennt keine Adresse für
+Berichte. In jeder Prüfung sieht das nach einem vorhandenen DMARC-Eintrag
+aus — wirksam ist er nicht.
+
+**Deshalb bietet die IONOS-Maske hier kein TXT an.** Im DNS gilt: Ein Name mit
+CNAME darf keinen weiteren Eintrag tragen. Der Typ lässt sich also nicht
+umstellen, solange der CNAME existiert.
 
 **Vorbereitung:** Legen Sie im IONOS-Postfachbereich eine Adresse
 `dmarc@white-gloss.de` an — als Alias oder eigenes Postfach. Dorthin kommen
 täglich technische Berichte als XML-Anhang. In Ihrem Hauptpostfach wären die
 nur lästig.
 
-Dann in der DNS-Verwaltung den **vorhandenen** Eintrag mit dem Hostnamen
-`_dmarc` **bearbeiten** (nicht neu anlegen):
+**Dann in dieser Reihenfolge:**
+
+1. Den Eintrag `_dmarc` vom Typ **CNAME löschen**. Das ist gefahrlos: Mit
+   `p=none` ordnet er ohnehin nichts an, es wird also keine einzige Mail
+   anders behandelt.
+2. Über _Eintrag hinzufügen_ einen **neuen TXT-Eintrag** anlegen:
 
 | Feld     | Wert                                                      |
 | -------- | --------------------------------------------------------- |
@@ -79,6 +97,11 @@ Dann in der DNS-Verwaltung den **vorhandenen** Eintrag mit dem Hostnamen
 | Hostname | `_dmarc`                                                  |
 | Wert     | `v=DMARC1; p=none; rua=mailto:dmarc@white-gloss.de; fo=1` |
 | TTL      | Standard belassen                                         |
+
+Legt IONOS den CNAME nach kurzer Zeit selbsttätig wieder an, ist in den Mail-
+oder Sicherheitseinstellungen eine Option wie „DMARC verwalten" aktiv. Die
+muss erst abgeschaltet werden, sonst überschreibt IONOS den eigenen Eintrag
+immer wieder.
 
 `p=none` bleibt zunächst bewusst stehen: In dieser Stufe wird nur beobachtet,
 nichts abgewiesen. So kann der Eintrag keine echte Post blockieren.
