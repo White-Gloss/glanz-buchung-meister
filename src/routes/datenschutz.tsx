@@ -66,11 +66,12 @@ function PrivacyPage() {
           <section>
             <h2>2. Hosting und Server-Protokolle</h2>
             <p>
-              Diese Website wird über Hostinger bereitgestellt. Beim Aufruf können technisch
-              erforderliche Informationen wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse,
-              übertragene Datenmenge, Referrer sowie Browser- und Betriebssystemangaben in
-              Server-Protokollen verarbeitet werden. Die Verarbeitung dient der sicheren, stabilen
-              und fehlerfreien Bereitstellung der Website.
+              Diese Website wird auf einem Server der IONOS SE (Elgendorfer Straße 57, 56410
+              Montabaur) in Deutschland betrieben. Beim Aufruf können technisch erforderliche
+              Informationen wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, übertragene
+              Datenmenge, Referrer sowie Browser- und Betriebssystemangaben in Server-Protokollen
+              verarbeitet werden. Die Verarbeitung dient der sicheren, stabilen und fehlerfreien
+              Bereitstellung der Website.
             </p>
             <p>
               Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt im
