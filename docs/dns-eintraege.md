@@ -47,16 +47,25 @@ der CAA-Eintrag die Website bei der nächsten Zertifikatserneuerung lahmlegen.
 1. `https://white-gloss.de` im Browser öffnen.
 2. Auf das Schloss-Symbol links in der Adresszeile klicken.
 3. _Verbindung ist sicher_ → _Zertifikat ist gültig_ (Edge/Chrome) wählen.
-4. Unter **Ausgestellt von** steht der Name der ausstellenden Stelle.
+4. Unter **Ausgestellt von** die Zeile **Organisation (O)** ablesen.
 
-Notieren Sie diesen Namen. Üblich sind:
+**Nur die Organisationszeile zählt.** Darüber steht der Name des
+Zwischenzertifikats — Kürzel wie `R10`, `E5` oder `YE1`. Die werden von den
+Ausstellern regelmäßig ausgetauscht und sagen nichts darüber aus, was in den
+CAA-Eintrag gehört. Ein Kürzel, das hier nicht aufgeführt ist, bedeutet also
+nicht, dass etwas nicht stimmt.
 
-| Angezeigter Name                          | Gehört zu         |
-| ----------------------------------------- | ----------------- |
-| `Let's Encrypt`, `R10`, `R11`, `E5`, `E6` | `letsencrypt.org` |
-| `ZeroSSL`                                 | `sectigo.com`     |
-| `Google Trust Services`, `WE1`, `WR1`     | `pki.goog`        |
-| `DigiCert`, `GeoTrust`, `Thawte`          | `digicert.com`    |
+| Organisation (O)        | Wert für den CAA-Eintrag |
+| ----------------------- | ------------------------ |
+| `Let's Encrypt`         | `letsencrypt.org`        |
+| `ZeroSSL`               | `sectigo.com`            |
+| `Google Trust Services` | `pki.goog`               |
+| `DigiCert`              | `digicert.com`           |
+
+Einzutragen ist immer der **Domainname** aus der rechten Spalte, niemals der
+Anzeigename. `Let's Encrypt` als Wert passt auf keine Zertifizierungsstelle
+und verbietet damit allen die Ausstellung — der Fehler fällt erst bei der
+nächsten Erneuerung auf.
 
 ## Schritt 2 – DMARC vervollständigen
 
