@@ -5,7 +5,7 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 import {
   addOns,
   currency,
@@ -23,16 +23,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/preise")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/preise") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-    ],
+    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/preise" })],
     links: [
       { rel: "canonical", href: absUrl("/preise") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/preise") },

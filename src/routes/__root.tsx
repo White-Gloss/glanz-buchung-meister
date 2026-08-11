@@ -9,6 +9,8 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import barlow400Woff2 from "@fontsource/barlow/files/barlow-latin-400-normal.woff2?url";
+import bebasNeue400Woff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
@@ -161,6 +163,20 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "preload",
+        href: bebasNeue400Woff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: barlow400Woff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
       // 48×48 zuerst: Googles Suchergebnisse bevorzugen ein quadratisches Icon
       // in einem Vielfachen von 48 px. Die Versionskennung umgeht alte Favicon-Caches.

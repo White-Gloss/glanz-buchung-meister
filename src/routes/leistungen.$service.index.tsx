@@ -11,7 +11,7 @@ import {
   type ServicePage,
 } from "@/lib/servicePages";
 import { currency, servicePackages, vatNoticeShort } from "@/lib/servicesConfig";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { listPublishedCustomServices, toServicePage } from "@/lib/customServices.functions";
 
@@ -47,18 +47,11 @@ export const Route = createFileRoute("/leistungen/$service/")({
     const canonical = absUrl(`/leistungen/${service.slug}`);
     return {
       meta: [
-        { title: service.metaTitle },
-        { name: "description", content: service.metaDescription },
-        { property: "og:title", content: service.metaTitle },
-        { property: "og:description", content: service.metaDescription },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: canonical },
-        { property: "og:image", content: OG_IMAGE },
-        { property: "og:image:alt", content: OG_IMAGE_ALT },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: service.metaTitle },
-        { name: "twitter:description", content: service.metaDescription },
-        { name: "twitter:image", content: OG_IMAGE },
+        ...standardPageMeta({
+          title: service.metaTitle,
+          description: service.metaDescription,
+          path: `/leistungen/${service.slug}`,
+        }),
       ],
       links: [
         { rel: "canonical", href: canonical },

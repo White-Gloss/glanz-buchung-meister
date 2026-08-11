@@ -6,7 +6,7 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { listPublishedBlogPosts, type BlogPostSummary } from "@/lib/blog.functions";
 import { buildBlogIndexJsonLd, BLOG_INDEX_URL } from "@/lib/blogSeo";
 import { imageAttributes } from "@/lib/blogContent";
-import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { standardPageMeta } from "@/lib/seo";
 
 /**
  * RATGEBER-ÜBERSICHT
@@ -34,18 +34,11 @@ export const Route = createFileRoute("/ratgeber/")({
 
   head: ({ loaderData }) => ({
     meta: [
-      { title: META_TITLE },
-      { name: "description", content: META_DESCRIPTION },
-      { property: "og:title", content: META_TITLE },
-      { property: "og:description", content: META_DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: BLOG_INDEX_URL },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: META_TITLE },
-      { name: "twitter:description", content: META_DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
+      ...standardPageMeta({
+        title: META_TITLE,
+        description: META_DESCRIPTION,
+        path: "/ratgeber",
+      }),
     ],
     links: [
       { rel: "canonical", href: BLOG_INDEX_URL },

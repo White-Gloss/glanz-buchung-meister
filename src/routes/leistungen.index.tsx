@@ -15,7 +15,7 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 import { servicePages as coreServicePages, type ServicePage } from "@/lib/servicePages";
 import { ServiceCityMatrix } from "@/components/ServiceCityMatrix";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
@@ -38,16 +38,7 @@ export const Route = createFileRoute("/leistungen/")({
   head: ({ loaderData }) => {
     const allServices = [...coreServicePages, ...(loaderData?.customServices ?? [])];
     return {
-      meta: [
-        { title: TITLE },
-        { name: "description", content: DESCRIPTION },
-        { property: "og:title", content: TITLE },
-        { property: "og:description", content: DESCRIPTION },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: absUrl("/leistungen") },
-        { property: "og:image", content: OG_IMAGE },
-        { property: "og:image:alt", content: OG_IMAGE_ALT },
-      ],
+      meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/leistungen" })],
       links: [
         { rel: "canonical", href: absUrl("/leistungen") },
         { rel: "alternate", hrefLang: "de-DE", href: absUrl("/leistungen") },

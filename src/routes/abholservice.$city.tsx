@@ -24,7 +24,7 @@ import {
   servicePackages,
   vatNoticeShort,
 } from "@/lib/servicesConfig";
-import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { standardPageMeta } from "@/lib/seo";
 import { servicePages } from "@/lib/servicePages";
 
 export const Route = createFileRoute("/abholservice/$city")({
@@ -39,21 +39,15 @@ export const Route = createFileRoute("/abholservice/$city")({
         meta: [{ title: "Seite nicht gefunden" }, { name: "robots", content: "noindex" }],
       };
     }
-    const { meta } = loaderData;
+    const { city, meta } = loaderData;
     return {
       meta: [
-        { title: meta.title },
-        { name: "description", content: meta.description },
-        { property: "og:title", content: meta.title },
-        { property: "og:description", content: meta.description },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: meta.canonical },
-        { property: "og:image", content: OG_IMAGE },
-        { property: "og:image:alt", content: OG_IMAGE_ALT },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: meta.title },
-        { name: "twitter:description", content: meta.description },
-        { name: "twitter:image", content: OG_IMAGE },
+        ...standardPageMeta({
+          title: meta.title,
+          description: meta.description,
+          path: `/abholservice/${city.slug}`,
+          url: meta.canonical,
+        }),
       ],
       links: [
         { rel: "canonical", href: meta.canonical },
