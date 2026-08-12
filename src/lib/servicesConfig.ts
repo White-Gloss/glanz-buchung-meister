@@ -53,7 +53,14 @@ export const company = {
   legalDetailsVerified: false,
   owner: "Lars Hägele",
   street: "Arnistal 27",
-  city: "72160 Horb-Dettingen",
+  /**
+   * Muss zeichengenau mit dem Google-Unternehmensprofil übereinstimmen.
+   * Google gleicht Impressum, strukturierte Daten und Profil miteinander ab;
+   * zwei Schreibweisen desselben Ortes schwächen die lokale Auffindbarkeit.
+   * Die strukturierten Daten führen den Standort ebenfalls als
+   * „Horb am Neckar" (siehe `serviceCityPages.ts`).
+   */
+  city: "72160 Horb am Neckar",
   country: "Deutschland",
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
