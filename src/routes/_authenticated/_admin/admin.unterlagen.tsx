@@ -1,7 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, CheckCircle2, Download, FilePlus2, Printer, Search, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  BellRing,
+  CheckCircle2,
+  Download,
+  FilePlus2,
+  FileText,
+  Printer,
+  ReceiptText,
+  Search,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -211,8 +222,9 @@ function DocumentsPage() {
             <p className="text-xs uppercase tracking-[0.22em] text-primary">White Gloss Admin</p>
             <h1 className="display-sub mt-2 text-3xl sm:text-4xl">Unterlagen & Preis</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Vereinbarten Preis festhalten, Buchungen aus WhatsApp/Telefon/vor Ort erfassen und für
-              jeden Auftrag druckbare PDF-Unterlagen speichern.
+              Preise festhalten, Buchungen aus WhatsApp/Telefon/vor Ort erfassen und PDFs im
+              White-Gloss-Briefbogen erstellen. Fehlende Kunden-, Bank- und Steuerdaten werden in
+              Entwürfen sichtbar als „wird nachgereicht“ markiert.
             </p>
           </div>
           <Button onClick={() => setShowManual((value) => !value)}>
@@ -477,7 +489,50 @@ function DocumentsPage() {
                           )
                         }
                       >
-                        <Download className="size-4" /> PDF
+                        <Download className="size-4" /> Auftrags-PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          downloadBookingDocumentPdf(booking, "offer").catch((error) =>
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Angebot konnte nicht erstellt werden",
+                            ),
+                          )
+                        }
+                      >
+                        <FileText className="size-4" /> Angebot
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          downloadBookingDocumentPdf(booking, "invoice-draft").catch((error) =>
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Rechnungsentwurf konnte nicht erstellt werden",
+                            ),
+                          )
+                        }
+                      >
+                        <ReceiptText className="size-4" /> Rechnung (Entwurf)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          downloadBookingDocumentPdf(booking, "payment-reminder-draft").catch(
+                            (error) =>
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Zahlungserinnerung konnte nicht erstellt werden",
+                              ),
+                          )
+                        }
+                      >
+                        <BellRing className="size-4" /> Zahlungserinnerung
                       </Button>
                       <Button
                         variant="outline"
