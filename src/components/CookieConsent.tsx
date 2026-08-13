@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  loadGoogleAdsTag,
+  googleTrackingConfigured,
+  loadGoogleTags,
   readStoredConsent,
   storeAdsConsent,
   type AdsConsent,
 } from "@/lib/adsConsent";
 
 /**
- * COOKIE-CONSENT FÜR GOOGLE ADS CONVERSION-TRACKING
- * ---------------------------------------------------
- * Diese Seite lädt außer dem Google-Ads-Tag keine weiteren Tracking-Skripte.
- * Das Banner regelt ausschließlich die dafür nötigen Cookies und ähnlichen
+ * COOKIE-CONSENT FÜR DIE REICHWEITENMESSUNG
+ * ------------------------------------------
+ * Betroffen sind ausschließlich Google (Ads-Conversions und Analytics, beide
+ * über gtag.js) sowie der Meta-Pixel. Weitere Tracking-Skripte lädt diese
+ * Seite nicht. Das Banner regelt die dafür nötigen Cookies und ähnlichen
  * Speichertechnologien.
  *
  * Rechtlicher Kern (TDDDG § 25, DSGVO Art. 6 Abs. 1 lit. a):
@@ -37,7 +39,7 @@ export function CookieConsentBanner() {
 
   useEffect(() => {
     if (consent !== "granted") return;
-    loadGoogleAdsTag();
+    loadGoogleTags();
     // Meta Pixel erst nach der Einwilligung nachladen – gleiche Regel wie
     // beim Google-Tag. Dynamischer Import, damit der Pixel-Code auf
     // Seiten ohne Einwilligung gar nicht erst im Bundle landet.
@@ -46,7 +48,7 @@ export function CookieConsentBanner() {
 
   if (!ready || consent !== null) return null;
   // Ohne konfiguriertes Ziel gibt es nichts zu erlauben – kein Banner nötig.
-  if (!import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID && !import.meta.env.VITE_META_PIXEL_ID) {
+  if (!googleTrackingConfigured() && !import.meta.env.VITE_META_PIXEL_ID) {
     return null;
   }
 
@@ -64,10 +66,10 @@ export function CookieConsentBanner() {
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p id="cookie-consent-text" className="text-sm leading-6 text-muted-foreground">
-          Mit Ihrer Einwilligung nutzen wir Cookies und ähnliche Technologien von Google Ads sowie
-          Meta (Facebook und Instagram), um zu messen, über welche Anzeige eine Terminanfrage
-          zustande kommt. Ohne Einwilligung funktionieren Website und Buchung unverändert – nur die
-          Anzeigenmessung entfällt. Details in der{" "}
+          Mit Ihrer Einwilligung nutzen wir Cookies und ähnliche Technologien von Google (Ads und
+          Analytics) sowie Meta (Facebook und Instagram), um zu messen, wie unsere Website genutzt
+          wird und über welche Anzeige eine Terminanfrage zustande kommt. Ohne Einwilligung
+          funktionieren Website und Buchung unverändert – nur die Messung entfällt. Details in der{" "}
           <a href="/datenschutz" className="text-primary underline underline-offset-2">
             Datenschutzerklärung
           </a>

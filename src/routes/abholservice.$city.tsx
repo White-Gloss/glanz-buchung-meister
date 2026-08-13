@@ -1,23 +1,16 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  CalendarCheck,
-  Car,
-  CheckCircle2,
-  MapPin,
-  Route as RouteIcon,
-  Timer,
-} from "lucide-react";
+import { ArrowRight, CalendarCheck, Car, MapPin, Route as RouteIcon, Timer } from "lucide-react";
 import { ConversionBand } from "@/components/ConversionBand";
 import { Button } from "@/components/ui/button";
-import { PickupCityGrid } from "@/components/PickupCityGrid";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
   buildCityFaqItems,
   buildCityJsonLd,
   buildCityMeta,
-  getNeighbourCities,
+  distanceRank,
+  neighbourComparison,
+  pickupFigures,
   getPickupCity,
   homeBase,
 } from "@/lib/pickupLocations";
@@ -31,7 +24,7 @@ import {
   servicePackages,
   vatNoticeShort,
 } from "@/lib/servicesConfig";
-import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { standardPageMeta } from "@/lib/seo";
 import { servicePages } from "@/lib/servicePages";
 
 export const Route = createFileRoute("/abholservice/$city")({
@@ -49,18 +42,11 @@ export const Route = createFileRoute("/abholservice/$city")({
     const { meta } = loaderData;
     return {
       meta: [
-        { title: meta.title },
-        { name: "description", content: meta.description },
-        { property: "og:title", content: meta.title },
-        { property: "og:description", content: meta.description },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: meta.canonical },
-        { property: "og:image", content: OG_IMAGE },
-        { property: "og:image:alt", content: OG_IMAGE_ALT },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: meta.title },
-        { name: "twitter:description", content: meta.description },
-        { name: "twitter:image", content: OG_IMAGE },
+        ...standardPageMeta({
+          title: meta.title,
+          description: meta.description,
+          url: meta.canonical,
+        }),
       ],
       links: [
         { rel: "canonical", href: meta.canonical },
@@ -89,7 +75,9 @@ function CityNotFound() {
 
 function CityPage() {
   const { city } = Route.useLoaderData();
-  const neighbours = getNeighbourCities(city.slug);
+  const nachbarn = neighbourComparison(city.slug);
+  const zahlen = pickupFigures(city);
+  const rang = distanceRank(city);
   const isHome = city.distanceKm === 0;
 
   const facts: [typeof MapPin, string, string][] = [
@@ -206,11 +194,56 @@ function CityPage() {
                 ))}
               </ol>
 
+              {/*
+                ABHOLUNG IN ZAHLEN – der Abschnitt, der diese Seite von den
+                zwölf anderen Stadtseiten unterscheidet. Alle Werte sind aus
+                Entfernung und Preisstaffel berechnet, nichts ist erfunden.
+              */}
+              {!isHome && (
+                <>
+                  <h2 className="mt-14 display-section uppercase">
+                    Abholung aus {city.short} in Zahlen
+                  </h2>
+                  <p className="mt-4 text-muted-foreground">
+                    Für eine Aufbereitung legen wir zweimal die Strecke zurück – einmal zur Abholung
+                    in {city.name}, einmal zur Rückgabe. Das sind rund{" "}
+                    <strong className="text-foreground">{zahlen.roundTripKm} km</strong> und etwa{" "}
+                    {Math.round(zahlen.roundTripMinutes / 60) >= 1
+                      ? `${(zahlen.roundTripMinutes / 60).toFixed(1).replace(".", ",")} Stunden`
+                      : `${zahlen.roundTripMinutes} Minuten`}{" "}
+                    reine Fahrzeit, die Sie sich sparen.
+                  </p>
+                  <p className="mt-4 text-muted-foreground">
+                    {city.name} ist damit die {rang.rank}. von {rang.total} Städten in unserem
+                    Abholgebiet – gemessen an der Entfernung zur Werkstatt.{" "}
+                    {zahlen.price === null
+                      ? `Die Strecke liegt außerhalb der festen Preisstaffel; wir kalkulieren die Abholung hier individuell auf Anfrage.`
+                      : zahlen.price === 0
+                        ? `Für diese Entfernung ist die Abholung kostenlos.`
+                        : `Die Abholung kostet ${zahlen.priceText}.`}
+                    {zahlen.freeWithPackage &&
+                      ` Im Paket High-End Keramik ist sie bis ${pickupPricing.freeUpToKm} km ohnehin enthalten – für ${city.short} also inklusive.`}
+                  </p>
+                </>
+              )}
+
               <h2 className="mt-14 display-section uppercase">
                 Was Fahrzeuge aus {city.short} besonders beansprucht
               </h2>
               <p className="mt-4 text-muted-foreground">{city.demand}</p>
               <p className="mt-4 text-muted-foreground">{city.localBenefit}</p>
+
+              {/*
+                Echte Belege aus dem Betrieb. Steht in `localProof` nichts,
+                entfällt der Abschnitt – lieber gar kein Absatz als ein
+                erfundener.
+              */}
+              {city.localProof && (
+                <>
+                  <h3 className="display-sub mt-10 uppercase">Aus unserer Arbeit in {city.name}</h3>
+                  <p className="mt-3 text-muted-foreground">{city.localProof}</p>
+                </>
+              )}
 
               <h3 className="display-sub mt-10 uppercase">Abholgebiet in und um {city.name}</h3>
               <p className="mt-3 text-sm text-muted-foreground">
@@ -254,33 +287,41 @@ function CityPage() {
             {/* Pakete */}
             <aside className="space-y-3">
               <h2 className="display-sub uppercase">Pakete für Kundschaft aus {city.short}</h2>
-              {servicePackages.map((p) => (
-                <article
-                  key={p.id}
-                  className="hairline-gold rounded-2xl bg-card/70 p-5 backdrop-blur-xl"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="display-card uppercase">{p.name}</h3>
-                    <span className="display-price text-base text-primary">
-                      ab {currency(p.basePrice)}
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        {vatNoticeShort()}
+              {/*
+                Bewusst nur Name, Preis und Dauer – ohne die vollständigen
+                Leistungslisten. Die standen zuvor wortgleich auf allen
+                dreizehn Stadtseiten und waren damit der größte Einzelblock
+                doppelten Textes. Die Beschreibung gehört auf die Preisseite,
+                die dafür die eine, gebündelte Adresse ist; hier zählt die
+                Frage „was kostet das für mich in dieser Stadt".
+              */}
+              <ul className="space-y-2">
+                {servicePackages.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      to="/preise"
+                      className="hairline-gold flex items-baseline justify-between gap-3 rounded-2xl bg-card/70 px-5 py-4 backdrop-blur-xl transition-colors hover:text-primary"
+                    >
+                      <span>
+                        <span className="display-card uppercase">{p.name}</span>
+                        <span className="mt-0.5 block text-xs uppercase tracking-widest text-muted-foreground">
+                          {p.duration}
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
-                    {p.tagline} · {p.duration}
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {p.features.slice(0, 4).map((f) => (
-                      <li key={f} className="flex gap-2 text-sm text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+                      <span className="display-price shrink-0 text-base text-primary">
+                        ab {currency(p.basePrice)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                {vatNoticeShort()} Alle enthaltenen Leistungen im Detail auf der{" "}
+                <Link to="/preise" className="text-primary hover:underline">
+                  Preisübersicht
+                </Link>
+                .
+              </p>
               <Button asChild className="w-full" size="lg">
                 <Link to="/" hash="buchung">
                   <CalendarCheck className="size-4" />
@@ -308,10 +349,81 @@ function CityPage() {
 
         {/* Interne Verlinkung */}
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <h2 className="display-sub uppercase">Weitere Städte im Abholgebiet</h2>
-          <div className="mt-6">
-            <PickupCityGrid cities={neighbours} compact />
+          <h2 className="display-sub uppercase">
+            {city.short} im Vergleich zum übrigen Abholgebiet
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            Entfernung und Abholpreis der Orte, die {city.short} am nächsten liegen. So sehen Sie
+            auf einen Blick, wo Sie stehen – und finden den richtigen Ort, falls Ihr Fahrzeug
+            woanders steht.
+          </p>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[34rem] border-collapse text-sm">
+              <caption className="sr-only">
+                Entfernung und Abholpreis für {city.name} und die nächstgelegenen Orte
+              </caption>
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  <th scope="col" className="py-3 pr-4 font-medium">
+                    Ort
+                  </th>
+                  <th scope="col" className="py-3 pr-4 font-medium">
+                    Entfernung
+                  </th>
+                  <th scope="col" className="py-3 pr-4 font-medium">
+                    Fahrzeit
+                  </th>
+                  <th scope="col" className="py-3 font-medium">
+                    Abholung
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Die aktuelle Stadt zuerst und hervorgehoben – sie ist der Bezugspunkt. */}
+                <tr className="border-b border-border/60 bg-primary/5">
+                  <th scope="row" className="py-3 pr-4 text-left font-semibold text-foreground">
+                    {city.name}
+                    <span className="ml-2 text-xs font-normal text-primary">diese Seite</span>
+                  </th>
+                  <td className="py-3 pr-4 tabular-nums text-muted-foreground">
+                    {isHome ? "Standort" : `${city.distanceKm} km`}
+                  </td>
+                  <td className="py-3 pr-4 tabular-nums text-muted-foreground">
+                    {city.driveMinutes} Min.
+                  </td>
+                  <td className="py-3 text-muted-foreground">
+                    {isHome ? "kostenlos" : zahlen.priceText}
+                  </td>
+                </tr>
+                {nachbarn.map(({ city: nachbar, figures }) => (
+                  <tr key={nachbar.slug} className="border-b border-border/40">
+                    <th scope="row" className="py-3 pr-4 text-left font-normal">
+                      <Link
+                        to="/abholservice/$city"
+                        params={{ city: nachbar.slug }}
+                        className="text-foreground hover:text-primary hover:underline"
+                      >
+                        {nachbar.name}
+                      </Link>
+                    </th>
+                    <td className="py-3 pr-4 tabular-nums text-muted-foreground">
+                      {nachbar.distanceKm === 0 ? "Standort" : `${nachbar.distanceKm} km`}
+                    </td>
+                    <td className="py-3 pr-4 tabular-nums text-muted-foreground">
+                      {nachbar.driveMinutes} Min.
+                    </td>
+                    <td className="py-3 text-muted-foreground">
+                      {nachbar.distanceKm === 0 ? "kostenlos" : figures.priceText}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            {vatNoticeShort()} Die Staffel gilt einheitlich für alle Fahrzeugklassen:{" "}
+            {pickupTierSummary()}.
+          </p>
           <Link
             to="/abholservice"
             className="mt-6 inline-flex items-center gap-2 text-sm text-primary hover:underline"

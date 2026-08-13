@@ -367,7 +367,7 @@ function ServiceForm({
                 updateField("slug", slugify(v));
               }}
               placeholder="cabrio-verdeckpflege"
-              hint={`whitegloss.de/leistungen/${form.slug || "…"}`}
+              hint={`white-gloss.de/leistungen/${form.slug || "…"}`}
               maxLength={60}
             />
             <LabeledInput

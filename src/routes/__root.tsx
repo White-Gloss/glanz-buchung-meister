@@ -9,10 +9,13 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import barlow400Woff2 from "@fontsource/barlow/files/barlow-latin-400-normal.woff2?url";
+import bebasNeue400Woff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
-import { WhatsAppFloat } from "../components/WhatsAppFloat";
+import { HashScrollFix } from "../components/HashScrollFix";
+import { MetaPageViews } from "../components/MetaPageViews";
 
 function NotFoundComponent() {
   return (
@@ -122,11 +125,20 @@ export const Route = createRootRoute({
           "Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur und Keramikversiegelung mit Hol- und Bringservice. Jetzt Termin anfragen.",
       },
       { name: "author", content: "White Gloss Detailing" },
-      {
-        name: "google-site-verification",
-        content: "I2I9Ia4K3SCzXzilf34_sahgjjzHaEOqkKW-_-f7XBk",
-      },
       { name: "robots", content: "index,follow,max-image-preview:large" },
+      // Nachweis gegenüber der Google Search Console. Google zeigt beim
+      // Einrichten einen Bestätigungscode an; dieser gehört in die
+      // Umgebungsvariable VITE_GOOGLE_SITE_VERIFICATION (nur der Code, nicht
+      // das ganze meta-Tag). Ohne Wert entfällt das Tag ersatzlos — ein
+      // leeres content-Attribut würde Google als ungültig ablehnen.
+      ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
+        ? [
+            {
+              name: "google-site-verification",
+              content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION,
+            },
+          ]
+        : []),
       { name: "theme-color", content: "#080a0d" },
       { name: "color-scheme", content: "dark" },
       { name: "format-detection", content: "telephone=no" },
@@ -151,6 +163,20 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "preload",
+        href: bebasNeue400Woff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: barlow400Woff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
       // 48×48 zuerst: Googles Suchergebnisse bevorzugen ein quadratisches Icon
       // in einem Vielfachen von 48 px. Die Versionskennung umgeht alte Favicon-Caches.
@@ -213,8 +239,9 @@ function RootComponent() {
   return (
     <>
       <Outlet />
+      <HashScrollFix />
+      <MetaPageViews />
       <CookieConsentBanner />
-      <WhatsAppFloat />
     </>
   );
 }

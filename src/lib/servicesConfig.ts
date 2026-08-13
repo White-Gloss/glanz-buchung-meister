@@ -41,53 +41,47 @@ export const company = {
   name: "White Gloss Detailing",
   claim: "No Compromises. Only Results.",
   /**
-   * Erst auf true setzen, wenn Inhaber, Anschrift, Steuerstatus und Bankdaten
-   * geprüft wurden. Bis dahin bleiben Rechnungsdownloads gesperrt.
+   * Merker für den Betrieb: Sind Inhaber, Anschrift, Steuerstatus und
+   * Bankdaten geprüft?
+   *
+   * ACHTUNG — dieses Feld sperrt nichts. Der Rechnungsdownload ist an anderer
+   * Stelle vollständig abgeschaltet (`invoice.ts`), und die vor dem Termin
+   * erzeugte Unterlage trägt ausdrücklich den Vermerk „Kein Rechnungs- oder
+   * Steuerbeleg". Ein früherer Kommentar behauptete hier eine Sperre, die es
+   * im Code nie gab; wer das Feld auf `true` setzt, ändert damit nichts.
    */
   legalDetailsVerified: false,
   owner: "Lars Hägele",
   street: "Arnistal 27",
-  city: "72160 Horb-Dettingen",
+  /**
+   * Muss zeichengenau mit dem Google-Unternehmensprofil übereinstimmen.
+   * Google gleicht Impressum, strukturierte Daten und Profil miteinander ab;
+   * zwei Schreibweisen desselben Ortes schwächen die lokale Auffindbarkeit.
+   * Die strukturierten Daten führen den Standort ebenfalls als
+   * „Horb am Neckar" (siehe `serviceCityPages.ts`).
+   */
+  city: "72160 Horb am Neckar",
   country: "Deutschland",
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   whatsappHref: "https://wa.me/4915233540284",
-  /** WhatsApp Business API (Cloud API) – für automatisierte Nachrichten */
   whatsapp: {
-    wabaId: "1870045597301726",
-    /** Phone Number ID (aus Meta Business Suite → WhatsApp → API Setup) */
+    number: "4915233540284",
+    defaultMessage: "Hallo White Gloss, ich möchte einen Samstagstermin persönlich anfragen.",
     phoneNumberId: "",
-    /** Permanent Access Token (System User Token aus Meta Business App) */
     accessToken: "",
-    /** Template-Nachrichten (genehmigt in Meta Business Suite) */
     templates: {
       bookingConfirmation: "",
       followUpAfterService: "",
       reminderDayBefore: "",
     },
   },
-  /** Meta Pixel, Conversions API & Werbekonto */
   meta: {
-    /** Werbekonto-ID (Ad Account) */
-    adAccountId: "1676726026310355",
-    /** Pixel-ID aus Meta Events Manager */
-    pixelId: "1371250097882121",
-    /** CAPI System User ID */
-    systemUserId: "61592688045541",
-    /** CAPI Access Token (Conversions API → Einstellungen → Token) */
+    pixelId: "",
     capiToken: "",
   },
-  /** Instagram Feed (Basic Display API) */
-  instagramBusiness: {
-    /** Instagram Business Account ID */
-    accountId: "1272278672627760",
-    /** Facebook Page ID (verbunden mit dem Instagram-Konto) */
-    pageId: "1263688256824658",
-    /** Long-lived Access Token (Meta Graph API Explorer) */
-    accessToken: "",
-  },
-  email: "info@whitegloss.de",
-  web: "https://whitegloss.de",
+  email: "info@white-gloss.de",
+  web: "https://white-gloss.de",
   instagram: "",
   taxId: "", // USt-IdNr.
   taxNumber: "", // Steuernummer
@@ -104,8 +98,7 @@ export const taxConfig = {
   smallBusiness: false,
   smallBusinessNote:
     "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).",
-  paymentTerms:
-    "Ohne abweichende Vereinbarung ist der Rechnungsbetrag vor Ort in bar oder spätestens innerhalb von 7 Tagen nach Leistungserbringung per Überweisung zahlbar.",
+  paymentTerms: "Zahlbar innerhalb von 14 Tagen ohne Abzug nach Leistungserbringung.",
   invoicePrefix: "WGD-2026-",
   invoiceStartNumber: 1001,
 };
@@ -132,9 +125,9 @@ export function vatNoticeShort(): string {
 /** Anzahlung für Neukunden */
 export const depositConfig = {
   /** Anteil des Bruttobetrags, der von Neukunden im Voraus zu zahlen ist */
-  rate: 0.1,
-  label: "Anzahlung Neukunde (10 %)",
-  note: "Bei Erstbuchungen wird nach Annahme des Auftrags eine Anzahlung von 10 % des verbindlich vereinbarten Gesamtbetrags fällig. Der Restbetrag ist vor Ort in bar oder spätestens innerhalb von 7 Tagen nach Leistungserbringung per Überweisung zu zahlen.",
+  rate: 0.2,
+  label: "Anzahlung Neukunde (20 %)",
+  note: "Bei Erstbuchungen wird eine Anzahlung von 20 % des Gesamtbetrags fällig. Der Restbetrag ist nach Leistungserbringung zu zahlen.",
 };
 
 export const vehicleTypes: VehicleType[] = [

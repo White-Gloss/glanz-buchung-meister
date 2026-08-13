@@ -145,7 +145,7 @@ export const Route = createFileRoute("/kalender/$token")({
 
             const termin = [
               "BEGIN:VEVENT",
-              `UID:${row.id}@whitegloss.de`,
+              `UID:${row.id}@white-gloss.de`,
               `DTSTAMP:${now}`,
               `DTSTART;VALUE=DATE:${start}`,
               `DTEND;VALUE=DATE:${end}`,
@@ -169,7 +169,7 @@ export const Route = createFileRoute("/kalender/$token")({
 
             const erinnerung = [
               "BEGIN:VEVENT",
-              `UID:${row.id}-erinnerung@whitegloss.de`,
+              `UID:${row.id}-erinnerung@white-gloss.de`,
               `DTSTAMP:${now}`,
               `DTSTART;VALUE=DATE:${erinnerungStart}`,
               `DTEND;VALUE=DATE:${erinnerungEnde}`,
@@ -208,6 +208,10 @@ export const Route = createFileRoute("/kalender/$token")({
             "Content-Type": "text/calendar; charset=utf-8",
             "Content-Disposition": 'inline; filename="whitegloss-buchungen.ics"',
             "Cache-Control": "private, max-age=300",
+            // Der Feed enthält Kundendaten und gehört niemals in eine
+            // Suchmaschine. Ein meta-Tag ist hier nicht möglich — die Antwort
+            // ist kein HTML. Die Kopfzeile wirkt dagegen bei jedem Dateityp.
+            "X-Robots-Tag": "noindex, nofollow, noarchive",
           },
         });
       },

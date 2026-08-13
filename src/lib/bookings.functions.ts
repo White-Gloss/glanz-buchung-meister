@@ -41,7 +41,7 @@ type Row = {
   vehicle_id: string;
   package_id: string;
   add_on_ids: string[] | null;
-  booking_date: string;
+  booking_date: string | Date;
   booking_time: string | null;
   customer_name: string;
   customer_email: string;
@@ -62,6 +62,15 @@ type Row = {
   access_token_expires_at?: string | null;
 };
 
+function toIsoDate(value: string | Date): string {
+  if (typeof value === "string") return value.slice(0, 10);
+
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function toBooking(row: Row): Booking {
   return {
     id: row.id,
@@ -70,7 +79,7 @@ function toBooking(row: Row): Booking {
     vehicleId: row.vehicle_id,
     packageId: row.package_id,
     addOnIds: row.add_on_ids ?? [],
-    date: row.booking_date,
+    date: toIsoDate(row.booking_date),
     time: row.booking_time ?? null,
     pickupCity: row.pickup_city ?? null,
     customer: {
@@ -165,6 +174,11 @@ function validate(input: BookingInput): BookingInput {
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
+  if (!isOnlineBookingDate(date)) {
+    throw new Error(
+      "Online sind Termine nur Montag bis Freitag möglich. Für Samstag schreiben Sie uns bitte persönlich per WhatsApp.",
+    );
+  }
   if (!isOnlineBookingDate(date)) {
     throw new Error(
       "Online sind Termine nur Montag bis Freitag möglich. Für Samstag schreiben Sie uns bitte persönlich per WhatsApp.",

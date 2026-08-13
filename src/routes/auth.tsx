@@ -127,7 +127,7 @@ function AuthPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 bg-secondary/40"
-                  placeholder="admin@whitegloss.de"
+                  placeholder="admin@white-gloss.de"
                 />
               </div>
               {mode !== "forgot" && (

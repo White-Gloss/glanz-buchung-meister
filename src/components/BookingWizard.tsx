@@ -17,7 +17,6 @@ import {
   Truck,
   User,
 } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -40,9 +39,9 @@ import {
 } from "@/lib/bookings";
 import { submitConditionReport } from "@/lib/conditionReports.functions";
 import { isOnlineBookingDay } from "@/lib/bookingAvailability";
-import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
-import { reportAdsConversion } from "@/lib/adsConsent";
+import { reportBookingRequest } from "@/lib/adsConsent";
 import { trackLeadFromContent } from "@/lib/metaPixel";
+import { validateCustomer, validateCustomerField, type CustomerField } from "@/lib/customerSchema";
 import { pickupCitiesByDistance } from "@/lib/pickupLocations";
 import {
   addOns,
@@ -172,7 +171,6 @@ function MiniCalendar({
 }
 
 export function BookingWizard() {
-  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [packageId, setPackageId] = useState<string | null>(null);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
@@ -184,6 +182,7 @@ export function BookingWizard() {
   const [date, setDate] = useState<string | null>(null);
   const [preferredContact, setPreferredContact] = useState<ContactChannel>("E-Mail");
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
+  const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
@@ -339,19 +338,20 @@ export function BookingWizard() {
         console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
       }
 
+      // Erfolgreich abgeschickte Anfrage an die Werbekonten melden. Beide
+      // Aufrufe prüfen selbst, ob eine Einwilligung vorliegt und ob das
+      // jeweilige Konto überhaupt konfiguriert ist — ohne beides passiert
+      // nichts. Fehler dürfen die Bestätigung nie verhindern, deshalb
+      // gekapselt.
+      try {
+        reportBookingRequest({ value: totals.gross, bookingId: booking.id });
+        trackLeadFromContent("buchungsassistent", totals.gross);
+      } catch (error) {
+        console.error("[Messung] Conversion konnte nicht gemeldet werden", error);
+      }
+
+      setConfirmed(booking);
       toast.success("Anfrage gesendet – White Gloss prüft jetzt Ihren Wunschtermin.");
-      // Conversion ausschließlich im erfolgreichen Submit-Kontext senden. Die
-      // öffentliche Danke-Seite kann so nicht für fremde Conversion-Events
-      // missbraucht werden; die Referenz dedupliziert Google Ads.
-      reportAdsConversion({ value: 0, invoiceNumber: booking.invoiceNumber });
-      trackLeadFromContent("Terminanfrage", 0);
-      navigate({
-        to: "/danke",
-        search: {
-          nr: booking.invoiceNumber,
-          name: customer.name.trim().split(/\s+/)[0] || undefined,
-        },
-      });
     } catch (error) {
       const info = diagnoseBackendError(error);
       setSubmitError(info);
@@ -359,6 +359,15 @@ export function BookingWizard() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (confirmed) {
+    return (
+      <>
+        <Confirmation booking={confirmed} onReset={() => window.location.reload()} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
   }
 
   return (
@@ -979,6 +988,83 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
     <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="text-right font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
+  const items = calcLineItems(booking);
+  const totals = calcTotals(items);
+  const pickupCityName = booking.pickupCity
+    ? (pickupCitiesByDistance.find((city) => city.slug === booking.pickupCity)?.name ?? null)
+    : null;
+
+  return (
+    <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
+      <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
+        <CheckCircle2 className="size-8 text-primary" />
+      </div>
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        Anfrage erfolgreich gesendet
+      </p>
+      <h3 className="display-sub mt-2">Wir prüfen jetzt Ihre Buchung</h3>
+      <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground">
+        Vielen Dank, {booking.customer.name}. Ihre Anfrage und der Wunschtermin sind bei White Gloss
+        eingegangen. Erst die anschließende E-Mail nach unserer Prüfung bestätigt den Termin
+        verbindlich.
+      </p>
+
+      <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
+        <Detail label="Anfragenummer" value={booking.invoiceNumber} />
+        <Detail label="Wunschtermin" value={formatBookingDate(booking.date)} />
+        <Detail label="Kennzeichen" value={booking.customer.plate} />
+        {pickupCityName && <Detail label="Gewünschte Abholung" value={pickupCityName} />}
+        {items.map((item) => (
+          <Detail key={item.label} label={item.label} value={currency(item.total)} />
+        ))}
+        <div className="mt-2 flex justify-between gap-4 border-t border-border pt-3 font-semibold">
+          <span>Voraussichtlicher Gesamtpreis</span>
+          <span className="text-primary">{currency(totals.gross)}</span>
+        </div>
+        <p className="text-xs text-muted-foreground">{vatNotice()}</p>
+      </dl>
+
+      <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-left">
+        <p className="font-semibold">So geht es weiter</p>
+        <ol className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+          <li>1. White Gloss prüft Ihre Fahrzeugfotos, Leistungen und den Wunschtermin.</li>
+          <li>
+            2. Sie erhalten die verbindliche Bestätigung oder ein Gegenangebot mit Ersatzterminen
+            per E-Mail.
+          </li>
+          <li>
+            3. Erst nach Ihrer bzw. unserer finalen Bestätigung ist der Termin fest reserviert.
+          </li>
+        </ol>
+      </div>
+
+      {booking.depositAmount > 0 && (
+        <p className="mx-auto mt-4 max-w-xl rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
+          Für Neukunden wird nach der Terminfreigabe eine Anzahlung von{" "}
+          <strong>{currency(booking.depositAmount)}</strong> fällig. Die Zahlungsinformationen
+          erhalten Sie erst mit der verbindlichen Bestätigung.
+        </p>
+      )}
+
+      <p className="mt-5 text-sm leading-6 text-muted-foreground">{TIME_NOTICE}</p>
+
+      <Button className="mt-7" variant="outline" onClick={onReset}>
+        Neue Anfrage
+      </Button>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="min-w-0 text-muted-foreground">{label}</dt>
+      <dd className="shrink-0 text-right font-medium">{value}</dd>
     </div>
   );
 }

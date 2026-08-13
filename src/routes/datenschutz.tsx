@@ -66,11 +66,12 @@ function PrivacyPage() {
           <section>
             <h2>2. Hosting und Server-Protokolle</h2>
             <p>
-              Diese Website wird über Hostinger bereitgestellt. Beim Aufruf können technisch
-              erforderliche Informationen wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse,
-              übertragene Datenmenge, Referrer sowie Browser- und Betriebssystemangaben in
-              Server-Protokollen verarbeitet werden. Die Verarbeitung dient der sicheren, stabilen
-              und fehlerfreien Bereitstellung der Website.
+              Diese Website wird auf einem Server der IONOS SE (Elgendorfer Straße 57, 56410
+              Montabaur) in Deutschland betrieben. Beim Aufruf können technisch erforderliche
+              Informationen wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, übertragene
+              Datenmenge, Referrer sowie Browser- und Betriebssystemangaben in Server-Protokollen
+              verarbeitet werden. Die Verarbeitung dient der sicheren, stabilen und fehlerfreien
+              Bereitstellung der Website.
             </p>
             <p>
               Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt im
@@ -125,13 +126,16 @@ function PrivacyPage() {
             </p>
             <p>
               Mit Ihrer Einwilligung nutzen wir außerdem Cookies und ähnliche Technologien von
-              Google Ads (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland), um
-              zu messen, über welche Anzeige eine Terminanfrage zustande kommt. Diese werden erst
-              aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei „Ablehnen“
-              oder ohne Auswahl bleibt die Anzeigenmessung deaktiviert. Rechtsgrundlage ist Ihre
-              Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG. Dabei können Daten in
-              die USA übermittelt werden; Google hat sich den EU-Standardvertragsklauseln
-              unterworfen.
+              Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irland). Das betrifft
+              zwei Dienste, die über dasselbe Skript (gtag.js) laufen: Google Ads misst, über welche
+              Anzeige eine Terminanfrage zustande kommt; Google Analytics 4 wertet aus, wie unsere
+              Website genutzt wird (aufgerufene Seiten, Verweildauer, ungefähre Herkunftsregion,
+              Angaben zu Browser und Endgerät). Ihre IP-Adresse wird dabei gekürzt. Beide Dienste
+              werden erst aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei
+              „Ablehnen“ oder ohne Auswahl bleiben sie deaktiviert und es wird kein Google-Skript
+              geladen. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25
+              Abs. 1 TDDDG. Dabei können Daten in die USA übermittelt werden; Google hat sich den
+              EU-Standardvertragsklauseln unterworfen.
             </p>
             <p>
               Ebenfalls nur mit Ihrer Einwilligung setzen wir den Meta-Pixel und die Conversions API
@@ -163,7 +167,38 @@ function PrivacyPage() {
           </section>
 
           <section>
-            <h2>7. Speicherdauer</h2>
+            <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
+            <p>
+              Über die Seite „Zustand prüfen lassen“ können Sie uns Fotos oder kurze Videos Ihres
+              Fahrzeugs sowie eine Beschreibung des Zustands übermitteln. Wir verarbeiten diese
+              Aufnahmen ausschließlich, um den Aufwand einzuschätzen und Ihnen ein Angebot zu
+              machen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
+            </p>
+            <p>
+              Die Aufnahmen liegen in einem nicht öffentlich zugänglichen Speicherbereich bei
+              Supabase und sind ausschließlich für uns über zeitlich begrenzte Links abrufbar. Ein
+              öffentlicher Abruf ist nicht möglich.
+            </p>
+            <p>
+              Zur Vorsortierung setzen wir für die Einschätzung der Fotos einen KI-Dienst der
+              Anthropic PBC (San Francisco, USA) als Auftragsverarbeiter ein. Dabei werden
+              ausgewählte Fotos zusammen mit der Fahrzeugbezeichnung, dem Kennzeichen und Ihrer
+              Zustandsbeschreibung an den Dienst übertragen; Name, E-Mail-Adresse und Telefonnummer
+              werden nicht übermittelt. Die Übertragung erfolgt nur, wenn wir die Einschätzung im
+              Einzelfall ausdrücklich anfordern — nicht automatisch beim Eingang Ihrer Meldung. Es
+              besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO; die Übermittlung in
+              die USA wird auf die Standardvertragsklauseln der Europäischen Kommission nach Art. 46
+              Abs. 2 lit. c DSGVO gestützt. Die Einschätzung ersetzt keine Begutachtung und dient
+              allein unserer internen Vorbereitung.
+            </p>
+            <p>
+              Wenn Sie mit dieser Übermittlung nicht einverstanden sind, teilen Sie uns das bitte
+              mit — wir beurteilen die Aufnahmen dann ausschließlich selbst.
+            </p>
+          </section>
+
+          <section>
+            <h2>8. Speicherdauer</h2>
             <p>
               Personenbezogene Daten werden nur so lange gespeichert, wie sie zur Bearbeitung der
               Anfrage, zur Vertragsdurchführung oder zur Erfüllung gesetzlicher
@@ -173,7 +208,7 @@ function PrivacyPage() {
           </section>
 
           <section>
-            <h2>8. Ihre Rechte</h2>
+            <h2>9. Ihre Rechte</h2>
             <p>
               Sie haben im Rahmen der gesetzlichen Voraussetzungen das Recht auf Auskunft,
               Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und
@@ -188,14 +223,14 @@ function PrivacyPage() {
           </section>
 
           <section>
-            <h2>9. Sicherheit und Aktualisierung</h2>
+            <h2>10. Sicherheit und Aktualisierung</h2>
             <p>
               Die Website wird verschlüsselt über HTTPS übertragen. Wir passen diese Hinweise an,
               wenn sich Funktionen, eingesetzte Dienste oder rechtliche Anforderungen ändern.
             </p>
           </section>
 
-          <p className="text-xs text-muted-foreground">Stand: 31. Juli 2026</p>
+          <p className="text-xs text-muted-foreground">Stand: 11. August 2026</p>
         </article>
       </main>
       <SiteFooter />

@@ -6,7 +6,13 @@
  * Seiten, Meta-Daten, JSON-LD, Übersicht und Sitemap ziehen automatisch nach.
  */
 
-import { company, pickupPricing, pickupPriceText, pickupTierSummary } from "./servicesConfig";
+import {
+  company,
+  getPickupPrice,
+  pickupPricing,
+  pickupPriceText,
+  pickupTierSummary,
+} from "./servicesConfig";
 import { absUrl, SITE_URL } from "./seo";
 
 export type PickupCity = {
@@ -38,6 +44,19 @@ export type PickupCity = {
   focusKeyword: string;
   /** Individueller FAQ-Zusatz */
   faqExtra: string;
+  /**
+   * ECHTER ÖRTLICHER BELEG – der stärkste Rankingfaktor dieser Seiten.
+   *
+   * Zwei bis vier Sätze über tatsächlich in diesem Ort betreute Fahrzeuge:
+   * ein konkreter Auftrag, eine wiederkehrende Kundschaft, eine Besonderheit
+   * der Übergabe vor Ort. Alles, was ein Wettbewerber nicht abschreiben kann.
+   *
+   * Bleibt das Feld leer, entfällt der Abschnitt ersatzlos. Er darf NICHT mit
+   * erfundenen Angaben gefüllt werden: Das wären falsche Aussagen über den
+   * Betrieb auf der Website eines realen Unternehmens. Diese Sätze können nur
+   * aus dem Betrieb selbst kommen.
+   */
+  localProof?: string;
 };
 
 /** Hauptstandort der Werkstatt */
@@ -341,6 +360,67 @@ export function getNeighbourCities(slug: string, count = 4): PickupCity[] {
         Math.abs(a.distanceKm - current.distanceKm) - Math.abs(b.distanceKm - current.distanceKm),
     )
     .slice(0, count);
+}
+
+/* -------------------------------------------------------------------------
+ * ABHOLUNG IN ZAHLEN – JE STADT UNTERSCHIEDLICH
+ *
+ * Alle 13 Stadtseiten teilten sich rund 82 % ihres Wortbestands: Ablauf,
+ * Pakete und FAQ sind überall gleich, individuell waren nur wenige Sätze.
+ * Für die lokale Suche ist das zu wenig – nahezu gleiche Seiten konkurrieren
+ * miteinander, statt sich zu ergänzen.
+ *
+ * Die folgenden Werte sind aus Entfernung und Preisstaffel BERECHNET. Sie
+ * sind damit überprüfbar richtig, für jede Stadt verschieden und für einen
+ * Wettbewerber nicht abschreibbar – ohne dass irgendetwas erfunden wird.
+ * ---------------------------------------------------------------------- */
+
+export type PickupFigures = {
+  /** Strecke einer Richtung in km. */
+  distanceKm: number;
+  /** Abhol- UND Rückgabefahrt zusammen. */
+  roundTripKm: number;
+  /** Reine Fahrzeit für beide Wege in Minuten. */
+  roundTripMinutes: number;
+  /** Preis der Abholung, `null` außerhalb der Staffel. */
+  price: number | null;
+  /** Ausformulierter Preis für den Fließtext. */
+  priceText: string;
+  /** Ist die Abholung im Paket High-End Keramik enthalten? */
+  freeWithPackage: boolean;
+};
+
+export function pickupFigures(city: PickupCity): PickupFigures {
+  return {
+    distanceKm: city.distanceKm,
+    roundTripKm: city.distanceKm * 2,
+    roundTripMinutes: city.driveMinutes * 2,
+    price: getPickupPrice(city.distanceKm),
+    priceText: pickupPriceText(city.distanceKm),
+    freeWithPackage: city.distanceKm <= pickupPricing.freeUpToKm,
+  };
+}
+
+/**
+ * Einordnung der Entfernung innerhalb des gesamten Abholgebiets, z. B.
+ * „die drittkürzeste von 13 Strecken". Auf jeder Seite ein anderer Satz,
+ * und er beantwortet die Frage, die Kundschaft tatsächlich hat: Bin ich
+ * für diese Werkstatt weit weg?
+ */
+export function distanceRank(city: PickupCity): { rank: number; total: number } {
+  const sorted = [...pickupCities].sort((a, b) => a.distanceKm - b.distanceKm);
+  return {
+    rank: sorted.findIndex((c) => c.slug === city.slug) + 1,
+    total: sorted.length,
+  };
+}
+
+/** Nachbarstädte mit ihren eigenen Zahlen – Grundlage der Vergleichstabelle. */
+export function neighbourComparison(slug: string, count = 4) {
+  return getNeighbourCities(slug, count).map((city) => ({
+    city,
+    figures: pickupFigures(city),
+  }));
 }
 
 /* -------------------------------------------------------------------------

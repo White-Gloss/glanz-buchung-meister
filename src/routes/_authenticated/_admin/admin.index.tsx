@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CalendarFeedCard } from "@/components/CalendarFeedCard";
 import { MailStatusCard } from "@/components/MailStatusCard";
+import { AssistantPanel } from "@/components/AssistantPanel";
 import {
   ArrowLeft,
   CircleDollarSign,
@@ -22,6 +23,7 @@ import {
   HelpCircle,
   FileText,
   Camera,
+  Inbox,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -394,10 +396,27 @@ function AdminPage() {
                   Media setzen.
                 </p>
               </Link>
+              <Link
+                to="/admin/posteingang"
+                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Inbox className="size-4 text-primary" />
+                  <h2 className="display-card text-sm uppercase">Posteingang</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Das Firmenpostfach mitlesen, ohne das Mailprogramm zu wechseln. Nur lesend —
+                  geantwortet wird weiterhin in Outlook.
+                </p>
+              </Link>
             </div>
 
             <ErrorBoundary title="Der E-Mail-Status konnte nicht geladen werden">
               <MailStatusCard />
+            </ErrorBoundary>
+
+            <ErrorBoundary title="Der Assistent konnte nicht geladen werden">
+              <AssistantPanel />
             </ErrorBoundary>
 
             <ErrorBoundary title="Die Preisverwaltung konnte nicht geladen werden">

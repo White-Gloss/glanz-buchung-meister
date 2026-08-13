@@ -1,66 +1,199 @@
-# Produktion & Deployment
+# Deployment auf IONOS – technische Vorgaben
 
-Die Domain **white-gloss.de** und ihre DNS-Verwaltung bleiben bei **IONOS**. Diese Anleitung verändert weder Domain, Nameserver noch DNS-Einträge. Die Anwendung kann unabhängig davon auf einer Node-fähigen Deployment-Plattform betrieben werden.
+Die Website wird auf `white-gloss.de` betrieben und soll vollständig zu IONOS umziehen. Dieses Projekt ist **keine rein statische Website**, sondern eine Node-/SSR-Anwendung (TanStack Start + Nitro). Deshalb wird die endgültige Deployment-Methode erst festgelegt, wenn der konkrete IONOS-Tarif und dessen Node-/Server-Funktionen bestätigt sind.
 
-## Build und Start
+Die hier dokumentierten technischen Anforderungen gelten unabhängig davon, ob IONOS später eine native Git-Anbindung, einen VPS/Cloud-Server oder eine andere Node-fähige Laufzeit bereitstellt.
 
-| Einstellung | Wert |
-|---|---|
-| Branch | `main` |
-| Node.js | `20.19` oder neuer, empfohlen: 22 |
-| Installieren | `npm ci` |
-| Prüfen | `npm run test && npm run lint` |
-| Bauen | `npm run build` |
-| Start | `node .output/server/index.mjs` |
+## Deployment-Vertrag
 
-`.output` wird bei jedem Deployment frisch erzeugt und gehört nicht ins Repository.
+| Was                         | Wert                            |
+| --------------------------- | ------------------------------- |
+| Produktionsbranch           | `main`                          |
+| Referenz-Node-Version in CI | `24`                            |
+| Installationsbefehl         | `npm ci`                        |
+| Build-Befehl                | `npm run build`                 |
+| Build-Ausgabe               | `.output/`                      |
+| Server-Einstieg             | `.output/server/index.mjs`      |
+| Startbefehl                 | `node .output/server/index.mjs` |
+| Hauptdomain                 | `https://white-gloss.de`        |
+
+`vite.config.ts` baut im Produktionsmodus mit Nitro als `node-server`. Eine Hosting-Variante, die nur statische HTML-/JS-Dateien ausliefert, reicht daher für die vollständige Anwendung nicht aus.
+
+## Mindestanforderungen an den IONOS-Tarif
+
+Der endgültige Tarif muss für die bestehende Architektur mindestens Folgendes ermöglichen:
+
+- einen dauerhaft laufenden Node-Prozess oder eine gleichwertige Node-Server-Laufzeit,
+- geschützte serverseitige Umgebungsvariablen,
+- `npm ci` und `npm run build` während des Deployments,
+- Neustart bzw. Rollout des Node-Prozesses nach erfolgreichem Build,
+- HTTPS für `white-gloss.de`,
+- reproduzierbares Rollback auf einen vorherigen Git-Stand.
+
+Der aktive IONOS-Tarif wurde am 10. August 2026 als Ubuntu-24.04-VPS mit
+Root-/SSH-Zugang bestätigt. Er ist für die Node-/SSR-Anwendung geeignet; das
+Deployment erfolgt deshalb über GitHub Actions, den separaten Benutzer
+`white-gloss-ci` und einen root-eigenen, streng validierenden
+Aktivierungshelfer. Der bereits laufende Caddy-/systemd-Aufbau und die
+Servervorbereitung stehen in
+[`docs/ionos-vps-bootstrap.md`](ionos-vps-bootstrap.md).
+
+## Zielablauf eines Deployments
+
+1. Änderung über Pull Request prüfen.
+2. CI muss erfolgreich sein (`npm audit`, ESLint, Quality-Skripte, Produktions-Build).
+3. Änderung nach `main` mergen.
+4. IONOS übernimmt genau diesen `main`-Stand.
+5. Auf dem Zielsystem laufen `npm ci` und `npm run build`.
+6. Erst nach erfolgreichem Build wird der neue Node-Stand aktiviert.
+7. Direkt danach läuft `npm run smoke:production` gegen die Live-Domain.
+8. Bei fehlgeschlagenem Build oder Smoke-Test bleibt bzw. wird der letzte funktionierende Stand wieder aktiv.
+
+Damit ist das gewünschte Ziel klar: **Merge nach `main` → automatisch zu IONOS → Build → Neustart → Smoke-Test**.
 
 ## Umgebungsvariablen
 
-### Öffentliche Werte beim Build
+Variablen mit `VITE_`-Präfix werden beim Build in Browser-Dateien eingebettet. Sie müssen deshalb bereits vorhanden sein, wenn `npm run build` läuft. Geheimnisse dürfen niemals ein `VITE_`-Präfix erhalten.
 
-`VITE_`-Variablen werden in das Browser-Bundle eingebaut. Sie dürfen deshalb ausschließlich nicht geheime Werte enthalten und müssen bereits beim Build verfügbar sein.
+### Öffentliche Werte im Repository
 
+Die eingecheckte `.env` enthält nur Werte, die im Browser ohnehin öffentlich sind:
+
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
-- optional: `VITE_GOOGLE_ADS_CONVERSION_ID`, `VITE_GOOGLE_ADS_CONVERSION_LABEL`
-- optional: `VITE_META_PIXEL_ID`
+- `VITE_META_PIXEL_ID` (derzeit leer)
+- `VITE_GOOGLE_SITE_VERIFICATION` (derzeit leer)
+- `VITE_GOOGLE_ADS_CONVERSION_ID` (derzeit leer)
+- `VITE_GOOGLE_ADS_CONVERSION_LABEL` (derzeit leer)
+- `VITE_GA4_MEASUREMENT_ID` (derzeit leer)
 
-### Serverwerte
+### Geheimnisse nur im Produktionshosting
 
-Diese Werte gehören ausschließlich in die geschützte Umgebungsverwaltung der Deployment-Plattform, **nie** in Git oder Browser-Variablen:
+Folgende Werte gehören ausschließlich in die root-eigene Datei
+`/etc/white-gloss/environment` auf dem IONOS-VPS und **niemals** ins Repository:
 
-- `DATABASE_URL`, `POSTGRES_URL` oder `SUPABASE_DB_URL`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` – erforderlich für serverseitig geprüfte Fahrzeugfoto-/Video-Uploads
-- `RESEND_API_KEY`, `MAIL_FROM`, optional `MAIL_TO_OWNER`
-- optional: `META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `META_TEST_EVENT_CODE`
+| Variable                                            | Zweck                                   |
+| --------------------------------------------------- | --------------------------------------- |
+| `META_PIXEL_ID`                                     | serverseitige Meta-Conversions          |
+| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Meta Conversions API  |
+| `RESEND_API_KEY`                                    | E-Mail-Versand                          |
+| `MAIL_FROM`                                         | Absender der Kundenmails                |
+| `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
+| `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
+| `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
+| `IMAP_HOST`                                         | Posteingang im Adminbereich             |
+| `IMAP_USER`                                         | Postfachname für den Posteingang        |
+| `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
+| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
 
-> Das Setzen oder Ändern dieser Werte erfolgt in **hPanel → Hermes Agent → Dashboard → Environment**, nicht in Shell-Profilen oder einer eingecheckten `.env`.
+## KI-Assistent und Bildbewertung
 
-## Supabase vor dem App-Deployment
+Ohne `ANTHROPIC_API_KEY` ist der Assistent vollständig inaktiv und im
+Adminbereich unsichtbar — es erscheint kein Knopf, der nur Fehler wirft.
 
-1. Alle Migrationen in `supabase/migrations/` über den normalen Supabase-Workflow ausführen.
-2. Besonders wichtig ist `20260812231500_security_hardening.sql`. Sie schließt direkte anonyme Medien-Uploads, verhindert den ersten öffentlichen Admin, begrenzt Angebotslinks und schützt vor Dubletten.
-3. Prüfen, dass mindestens ein berechtigter Admin vorhanden ist, bevor die Migration ausgerollt wird.
-4. Sicherstellen, dass `SUPABASE_SERVICE_ROLE_KEY` als geschützte Servervariable gesetzt ist.
+Ist der Schlüssel gesetzt, gilt: Für jede Anfrage werden Daten an Anthropic
+übertragen. Das ist eine **Auftragsverarbeitung nach Art. 28 DSGVO** und
+setzt einen entsprechenden Vertrag mit dem Anbieter sowie einen Eintrag im
+Verarbeitungsverzeichnis voraus. Der Schlüssel gehört deshalb erst dann auf
+den Server, wenn beides vorliegt.
 
-## DNS bei IONOS: E-Mail-Domain für Resend
+Was übertragen wird:
 
-Falls Resend für E-Mails verwendet wird:
+| Funktion             | Übertragen wird                                              |
+| -------------------- | ------------------------------------------------------------ |
+| Antwortentwürfe      | Buchungsdaten inkl. Name und Kennzeichen, keine Kontaktdaten |
+| Fragen zu den Zahlen | Buchungsliste ohne Namen                                     |
+| Website-Texte        | nur das eingegebene Thema                                    |
+| Bildbewertung        | ausgewählte Fotos, Fahrzeug, Kennzeichen, Zustandstext       |
 
-1. In Resend `white-gloss.de` als Domain hinzufügen.
-2. Die von Resend vorgegebenen SPF-/DKIM-/MX-Einträge **in IONOS** übernehmen.
-3. Erst nach der Resend-Verifizierung `MAIL_FROM` auf eine Adresse dieser Domain setzen.
-4. Testmail an Gmail, Outlook und WEB.DE senden und Spam-Ordner prüfen.
+Die Bildbewertung unter `/admin/zustand` ist die einzige Stelle, an der
+Fotos aus dem privaten Bucket den Server verlassen. Sie läuft ausschließlich
+auf ausdrücklichen Knopfdruck, nie automatisch beim Eingang einer Meldung.
+Videos und Dateien über rund 3,7 MB werden übersprungen und im Ergebnis
+benannt. Die Datenschutzerklärung führt diese Übermittlung in Abschnitt 7
+auf — wird der Assistent abgeschaltet, gehört dieser Abschnitt entfernt.
 
-## Prüfung nach dem Deployment
+## Posteingang im Adminbereich
 
-- `https://white-gloss.de/`
-- `https://white-gloss.de/faq`
-- `https://white-gloss.de/ratgeber`
-- `https://white-gloss.de/sitemap.xml`
-- `https://white-gloss.de/admin`
-- eine echte Testanfrage: Eingangsbestätigung, Admin-Anzeige, Danke-Seite und ggf. Conversion-Event prüfen
+Der Adminbereich kann das bestehende Postfach unter `/admin/posteingang`
+anzeigen. Dafür sind drei Werte nötig; optional kommen zwei weitere hinzu:
 
-Bei einem fehlerhaften Build die vorige Release-Version beibehalten und den fehlerhaften Commit gezielt zurückrollen.
+| Variable        | Pflicht | Bedeutung                                                  | IONOS-Vorgabe   |
+| --------------- | ------- | ---------------------------------------------------------- | --------------- |
+| `IMAP_HOST`     | ja      | Adresse des Mailservers                                    | `imap.ionos.de` |
+| `IMAP_USER`     | ja      | vollständige Mailadresse, z. B. `info@white-gloss.de`      | –               |
+| `IMAP_PASSWORD` | ja      | Passwort dieses Postfachs                                  | –               |
+| `IMAP_PORT`     | nein    | Port des Mailservers                                       | `993`           |
+| `IMAP_SECURE`   | nein    | direkte Verschlüsselung; leiten sich sonst aus dem Port ab | `true`          |
+
+`IMAP_PASSWORD` ist das Passwort des echten Firmenpostfachs und damit eines der
+empfindlichsten Geheimnisse überhaupt. Es gehört ausschließlich in
+`/etc/white-gloss/environment`, niemals ins Repository, niemals mit
+`VITE_`-Präfix und niemals in einen Chatverlauf.
+
+Fehlt einer der drei Pflichtwerte, zeigt die Seite einen Einrichtungshinweis
+statt einer Fehlermeldung; der übrige Adminbereich bleibt unberührt.
+
+Die Verbindung öffnet das Postfach **schreibgeschützt**. Nachrichten werden
+weder als gelesen markiert noch verschoben, gelöscht oder in der Datenbank
+gespeichert; Anhänge werden nur mit Namen und Größe aufgeführt und nicht zum
+Herunterladen angeboten.
+
+## E-Mail-Versand mit Resend
+
+Ohne `RESEND_API_KEY` und `MAIL_FROM` wird keine Kundenmail versendet. Buchungen können trotzdem gespeichert werden; der Mailversand meldet dann die fehlende Konfiguration. Die Variablennamen sind auf dem VPS vorhanden; ihre geheimen Werte werden beim Deployment weder gelesen noch übertragen.
+
+Im geprüften Resend-Konto ist `white-gloss.de` in der Region `eu-west-1`
+vollständig verifiziert. DKIM, SPF-MX und SPF-TXT wurden am 10. August 2026
+über die IONOS-DNS-Verwaltung bestätigt; eine reale Produktionstestmail von
+`buchung@white-gloss.de` wurde anschließend erfolgreich zugestellt. Die
+Deployment-Automation überträgt weiterhin weder Resend-Schlüssel noch andere
+Produktionsgeheimnisse.
+
+Empfohlene Produktionswerte:
+
+| Variable        | Beispiel                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `MAIL_FROM`     | `White Gloss Detailing <info@white-gloss.de>` oder eine andere tatsächlich genutzte Adresse der verifizierten Domain |
+| `MAIL_TO_OWNER` | `info@white-gloss.de`                                                                                                |
+
+Der eigentliche API-Key bleibt geheim.
+
+## Quality Gates nach dem Deployment
+
+Die technischen Prüfungen sind in `docs/quality-gates.md` dokumentiert. Wichtig sind insbesondere:
+
+```bash
+npm run smoke:production
+npm run audit:domain-migration
+npm run lighthouse:mobile
+npm run lighthouse:desktop
+```
+
+Der Produktions-Smoke-Test prüft unter anderem Startseite, Preise, Leistungen, Admin-Erreichbarkeit, Sitemap, robots.txt und Canonicals. Zusätzlich existiert ein regelmäßiger read-only Smoke-Workflow in GitHub Actions.
+
+## CI
+
+GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Requests und `main` mit:
+
+1. `npm ci --ignore-scripts`
+2. `npm audit --omit=dev --audit-level=moderate`
+3. `npm run lint`
+4. Syntaxprüfung der Quality-Skripte
+5. `npm run build`
+
+Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
+einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,
+reproduziert den Build, verifiziert Archiv und Server-Helfer per SHA-256 und
+prüft zusätzlich die versionierte systemd-Unit auf Konfigurationsdrift. Untätige
+PostgreSQL-Verbindungen halten den Prozess nach dem Schließen des HTTP-Servers
+nicht mehr offen; zusätzlich bleibt der Produktionsneustart auf 15 Sekunden
+begrenzt. Danach führt der Workflow den Produktions-Smoke-Test aus. Ohne die
+explizite Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der
+Deployment-Job vollständig übersprungen.
+
+## Rollback-Grundsatz
+
+Ein Rollback muss immer auf einen bekannten Git-Stand erfolgen. Keine Produktionsdateien werden manuell „repariert“, ohne dass dieselbe Änderung auch im Repository existiert. So bleiben GitHub, IONOS und die tatsächlich laufende Version nachvollziehbar synchron.

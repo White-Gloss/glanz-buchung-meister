@@ -2,11 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, CircleGauge, Plus } from "lucide-react";
 
 import { ConversionBand } from "@/components/ConversionBand";
-import { TrustSignals } from "@/components/TrustSignals";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 import {
   addOns,
   currency,
@@ -24,20 +23,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/preise")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/preise") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
-    ],
+    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/preise" })],
     links: [
       { rel: "canonical", href: absUrl("/preise") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/preise") },
@@ -59,8 +45,12 @@ function PricingPage() {
               <Link to="/" className="transition-colors hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Preise</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Preise
+              </span>
             </nav>
             <p className="eyebrow mt-10">Pakete &amp; Preise</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">
@@ -78,8 +68,6 @@ function PricingPage() {
             </Button>
           </div>
         </section>
-
-        <TrustSignals />
 
         <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <div className="grid gap-5 lg:grid-cols-3">

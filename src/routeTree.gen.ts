@@ -42,6 +42,7 @@ import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
 import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
+import { Route as AuthenticatedAdminAdminPosteingangRouteImport } from './routes/_authenticated/_admin/admin.posteingang'
 import { Route as AuthenticatedAdminAdminUnterlagenRouteImport } from './routes/_authenticated/_admin/admin.unterlagen'
 import { Route as AuthenticatedAdminAdminZustandRouteImport } from './routes/_authenticated/_admin/admin.zustand'
 
@@ -215,6 +216,12 @@ const AuthenticatedAdminAdminLeistungenRoute =
     path: '/leistungen',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminPosteingangRoute =
+  AuthenticatedAdminAdminPosteingangRouteImport.update({
+    id: '/posteingang',
+    path: '/posteingang',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminUnterlagenRoute =
   AuthenticatedAdminAdminUnterlagenRouteImport.update({
     id: '/unterlagen',
@@ -259,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
   '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin/': typeof AuthenticatedAdminAdminIndexRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
   '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/admin': typeof AuthenticatedAdminAdminIndexRoute
@@ -331,6 +340,7 @@ export interface FileRoutesById {
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
   '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
+  '/_authenticated/_admin/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
   '/_authenticated/_admin/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
   '/_authenticated/_admin/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
   '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
     | '/admin/'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/admin/galerie'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
     | '/admin'
@@ -439,6 +451,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
     | '/_authenticated/_admin/admin/leistungen'
+    | '/_authenticated/_admin/admin/posteingang'
     | '/_authenticated/_admin/admin/unterlagen'
     | '/_authenticated/_admin/admin/zustand'
     | '/_authenticated/_admin/admin/'
@@ -704,6 +717,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLeistungenRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/posteingang': {
+      id: '/_authenticated/_admin/admin/posteingang'
+      path: '/posteingang'
+      fullPath: '/admin/posteingang'
+      preLoaderRoute: typeof AuthenticatedAdminAdminPosteingangRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/unterlagen': {
       id: '/_authenticated/_admin/admin/unterlagen'
       path: '/unterlagen'
@@ -728,6 +748,7 @@ interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
   AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
+  AuthenticatedAdminAdminPosteingangRoute: typeof AuthenticatedAdminAdminPosteingangRoute
   AuthenticatedAdminAdminUnterlagenRoute: typeof AuthenticatedAdminAdminUnterlagenRoute
   AuthenticatedAdminAdminZustandRoute: typeof AuthenticatedAdminAdminZustandRoute
   AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
@@ -743,6 +764,8 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
     AuthenticatedAdminAdminLeistungenRoute:
       AuthenticatedAdminAdminLeistungenRoute,
+    AuthenticatedAdminAdminPosteingangRoute:
+      AuthenticatedAdminAdminPosteingangRoute,
     AuthenticatedAdminAdminUnterlagenRoute:
       AuthenticatedAdminAdminUnterlagenRoute,
     AuthenticatedAdminAdminZustandRoute: AuthenticatedAdminAdminZustandRoute,

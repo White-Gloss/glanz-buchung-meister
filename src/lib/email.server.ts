@@ -42,9 +42,50 @@ export function mailSettingsSummary(): {
   apiKeySet: boolean;
   from: string | null;
   ownerTo: string | null;
+  selfAddressed: boolean;
 } {
   const { apiKey, from, ownerTo } = config();
-  return { apiKeySet: Boolean(apiKey), from: from || null, ownerTo: ownerTo || null };
+  return {
+    apiKeySet: Boolean(apiKey),
+    from: from || null,
+    ownerTo: ownerTo || null,
+    selfAddressed: isSelfAddressed(from, ownerTo),
+  };
+}
+
+/** Holt die reine Adresse aus `Name <adresse@beispiel.de>`. */
+export function bareAddress(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const inSpitzklammern = value.match(/<([^>]+)>/);
+  return (inSpitzklammern ? inSpitzklammern[1] : value).trim().toLowerCase() || null;
+}
+
+/**
+ * SPAM-FALLE: ABSENDER UND EMPFÄNGER SIND DIESELBE ADRESSE
+ *
+ * Die internen Benachrichtigungen gehen von `MAIL_FROM` an `MAIL_TO_OWNER`.
+ * Sind beide identisch, verschickt die Website eine Nachricht, die von
+ * derselben Adresse zu kommen scheint, an die sie zugestellt wird — und das
+ * über einen fremden Server (Resend).
+ *
+ * Genau dieses Muster nutzen Betrüger, um Absender zu fälschen. Viele
+ * Mailanbieter, darunter IONOS und Microsoft, sortieren solche Nachrichten
+ * deshalb aus, selbst wenn SPF und DKIM einwandfrei sind. Kundenmails an
+ * fremde Adressen sind davon nicht betroffen — was genau zu dem Bild passt,
+ * dass die Bestätigung ankommt und die interne Meldung im Spam landet.
+ *
+ * ABHILFE: Für den Versand eine eigene Adresse verwenden, die nicht das Ziel
+ * ist, etwa `buchung@white-gloss.de` als MAIL_FROM und `info@white-gloss.de`
+ * als MAIL_TO_OWNER. Beide Adressen dürfen zur selben verifizierten Domain
+ * gehören.
+ */
+export function isSelfAddressed(
+  from: string | null | undefined,
+  ownerTo: string | null | undefined,
+): boolean {
+  const a = bareAddress(from);
+  const b = bareAddress(ownerTo);
+  return Boolean(a && b && a === b);
 }
 
 /**

@@ -128,6 +128,24 @@ export function trackMetaEvent(eventName: string, options: TrackOptions = {}): s
   return eventId;
 }
 
+/**
+ * Seitenaufruf melden.
+ *
+ * WARUM ES DAS BRAUCHT: Der Ladeschnipsel von Meta sendet „PageView" genau
+ * einmal — beim Einbinden des Skripts. Bei einer klassischen Website ist das
+ * richtig, weil jeder Klick ein neues Dokument lädt. Diese Seite wechselt die
+ * Ansicht aber im Browser, ohne neu zu laden. Ohne diesen Aufruf sähe Meta
+ * pro Besuch also genau einen Seitenaufruf, egal wie viele Seiten jemand
+ * durchblättert — Zielgruppen wie „hat die Preisseite gesehen" blieben leer.
+ *
+ * Google Analytics 4 hat dieses Problem nicht: Dort erfasst die erweiterte
+ * Messung Ansichtswechsel über den Verlauf des Browsers von selbst.
+ */
+export function trackPageView() {
+  if (!trackingAllowed()) return;
+  window.fbq?.("track", "PageView");
+}
+
 /** Aufruf einer Ratgeber-Seite melden (Lesen eines Blogartikels). */
 export function trackArticleView(article: { slug: string; title: string }) {
   trackMetaEvent("ViewContent", {
@@ -154,6 +172,21 @@ export function trackContactFromContent(source: string) {
   });
 }
 
+/**
+ * Klick auf „Termin anfragen" aus einem Inhaltsabschnitt heraus. Das ist
+ * ausdrücklich KEIN Lead: Der Besucher steht damit erst am Anfang des
+ * Buchungsassistenten und hat noch nichts abgeschickt. Würde man hier
+ * ebenfalls „Lead" melden, zählte eine einzige Anfrage doppelt — die
+ * Ereigniskennungen unterscheiden sich, Meta kann sie also nicht als
+ * Dublette erkennen.
+ */
+export function trackBookingStart(source: string) {
+  trackMetaEvent("InitiateCheckout", {
+    params: { content_category: META_CONTENT_CATEGORY, content_name: source },
+  });
+}
+
+/** Abgeschickte Terminanfrage — der eigentliche Lead. */
 export function trackLeadFromContent(source: string, value?: number) {
   trackMetaEvent("Lead", {
     params: {

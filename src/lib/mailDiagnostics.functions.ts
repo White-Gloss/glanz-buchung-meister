@@ -41,6 +41,12 @@ export type MailSetupStatus = {
   ownerTo: string | null;
   /** Adresse, an die eine Testmail ginge */
   testTo: string | null;
+  /**
+   * Absender und internes Ziel sind dieselbe Adresse. Häufigste Ursache
+   * dafür, dass ausgerechnet die interne Meldung im Spam landet, während
+   * Kundenmails ankommen.
+   */
+  selfAddressed: boolean;
 };
 
 export const getMailSetupStatus = createServerFn({ method: "GET" })
@@ -55,6 +61,7 @@ export const getMailSetupStatus = createServerFn({ method: "GET" })
       from: summary.from,
       ownerTo: summary.ownerTo,
       testTo: typeof context.claims.email === "string" ? context.claims.email : null,
+      selfAddressed: summary.selfAddressed,
     };
   });
 
