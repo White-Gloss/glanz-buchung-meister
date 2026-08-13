@@ -97,6 +97,7 @@ export const Route = createFileRoute("/ratgeber/$slug")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
+        { name: "twitter:image:alt", content: post.title || OG_IMAGE_ALT },
       ],
       links: [
         { rel: "canonical", href: canonical },

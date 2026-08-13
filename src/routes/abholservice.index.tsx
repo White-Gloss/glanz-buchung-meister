@@ -12,7 +12,7 @@ import {
   pickupPriceRangeText,
   pickupTierSummary,
 } from "@/lib/servicesConfig";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 
 const TITLE = "Abholservice Fahrzeugaufbereitung | Horb & Umgebung";
 const DESCRIPTION =
@@ -20,20 +20,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/abholservice/")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/abholservice") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
-    ],
+    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/abholservice" })],
     links: [
       { rel: "canonical", href: absUrl("/abholservice") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") },
@@ -55,8 +42,12 @@ function PickupOverview() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Abholservice</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Abholservice
+              </span>
             </nav>
             <p className="eyebrow mt-6">Hol- & Bringservice</p>
             <h1 className="text-gradient display-page mt-3 max-w-4xl">

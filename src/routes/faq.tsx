@@ -5,7 +5,7 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { FaqSection } from "@/components/FaqSection";
 import { listPublishedFaqs, type FaqRow } from "@/lib/faqs.functions";
 import { buildFaqPageWithBreadcrumbJsonLd, FAQ_PAGE_URL } from "@/lib/blogSeo";
-import { OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { standardPageMeta } from "@/lib/seo";
 import { slugifyHeading } from "@/lib/blogContent";
 
 /**
@@ -34,20 +34,7 @@ export const Route = createFileRoute("/faq")({
   staleTime: 60_000,
 
   head: ({ loaderData }) => ({
-    meta: [
-      { title: META_TITLE },
-      { name: "description", content: META_DESCRIPTION },
-      { property: "og:title", content: META_TITLE },
-      { property: "og:description", content: META_DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: FAQ_PAGE_URL },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: META_TITLE },
-      { name: "twitter:description", content: META_DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
-    ],
+    meta: [...standardPageMeta({ title: META_TITLE, description: META_DESCRIPTION, path: "/faq" })],
     links: [
       { rel: "canonical", href: FAQ_PAGE_URL },
       { rel: "alternate", hrefLang: "de-DE", href: FAQ_PAGE_URL },
@@ -92,8 +79,12 @@ function FaqPage() {
               <Link to="/" className="hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Häufige Fragen</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Häufige Fragen
+              </span>
             </nav>
 
             <p className="eyebrow mt-7">Antworten vorab</p>

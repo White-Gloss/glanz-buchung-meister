@@ -44,7 +44,15 @@ function mb(bytes: number): string {
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      const base64 = result.split(",")[1];
+      if (!base64) {
+        reject(new Error("Das Dateiformat konnte nicht verarbeitet werden."));
+        return;
+      }
+      resolve(base64);
+    };
     reader.onerror = () => reject(new Error("Die Datei konnte nicht gelesen werden."));
     reader.readAsDataURL(file);
   });
@@ -134,21 +142,28 @@ async function videoDuration(
 ): Promise<{ video: CaptureVideo; url: string; duration: number }> {
   const url = URL.createObjectURL(file);
   const video = document.createElement("video") as CaptureVideo;
-  video.preload = "metadata";
-  video.playsInline = true;
-  video.muted = true;
-  video.src = url;
-  await new Promise<void>((resolve, reject) => {
-    video.onloadedmetadata = () => resolve();
-    video.onerror = () =>
-      reject(new Error("Das Videoformat kann auf diesem Gerät nicht gelesen werden."));
-  });
-  const duration = Number(video.duration);
-  if (!Number.isFinite(duration) || duration <= 0) {
+  try {
+    video.preload = "metadata";
+    video.playsInline = true;
+    video.muted = true;
+    video.src = url;
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () =>
+        reject(new Error("Das Videoformat kann auf diesem Gerät nicht gelesen werden."));
+    });
+    const duration = Number(video.duration);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      URL.revokeObjectURL(url);
+      throw new Error("Die Videolänge konnte nicht bestimmt werden.");
+    }
+    return { video, url, duration };
+  } catch (error) {
+    video.removeAttribute("src");
+    video.load();
     URL.revokeObjectURL(url);
-    throw new Error("Die Videolänge konnte nicht bestimmt werden.");
+    throw error;
   }
-  return { video, url, duration };
 }
 
 function bestRecorderMime(): string | null {
@@ -334,51 +349,60 @@ export function ConditionPhotoUpload({
 
     setUploading(true);
     const added: UploadedPhoto[] = [];
+    try {
+      for (const original of files.slice(0, free)) {
+        try {
+          setProcessingName(original.name);
+          if (original.type.startsWith("video/") && original.size > MAX_MEDIA_BYTES) {
+            toast.info("Das Video wird vor dem Upload automatisch verkleinert.");
+          } else if (
+            original.type.startsWith("image/") &&
+            original.size > IMAGE_COMPRESSION_TRIGGER
+          ) {
+            toast.info("Das Foto wird vor dem Upload automatisch verkleinert.");
+          }
 
-    for (const original of files.slice(0, free)) {
-      try {
-        setProcessingName(original.name);
-        if (original.type.startsWith("video/") && original.size > MAX_MEDIA_BYTES) {
-          toast.info("Das Video wird vor dem Upload automatisch verkleinert.");
-        } else if (
-          original.type.startsWith("image/") &&
-          original.size > IMAGE_COMPRESSION_TRIGGER
-        ) {
-          toast.info("Das Foto wird vor dem Upload automatisch verkleinert.");
+          const file = await prepareMedia(original);
+          if (file.size < original.size * 0.92) {
+            toast.success(`${original.name}: ${mb(original.size)} → ${mb(file.size)}`);
+          }
+
+          const base64Data = await fileToBase64(file);
+          const result = await upload({
+            data: { fileName: file.name, contentType: file.type, base64Data },
+          });
+          added.push({
+            path: result.path,
+            previewUrl: URL.createObjectURL(file),
+            name: file.name,
+            kind: file.type.startsWith("video/") ? "video" : "image",
+            sizeBytes: file.size,
+          });
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : `„${original.name}“ konnte nicht geladen werden.`,
+          );
         }
-
-        const file = await prepareMedia(original);
-        if (file.size < original.size * 0.92) {
-          toast.success(`${original.name}: ${mb(original.size)} → ${mb(file.size)}`);
-        }
-
-        const base64Data = await fileToBase64(file);
-        const result = await upload({
-          data: { fileName: file.name, contentType: file.type, base64Data },
-        });
-        added.push({
-          path: result.path,
-          previewUrl: URL.createObjectURL(file),
-          name: file.name,
-          kind: file.type.startsWith("video/") ? "video" : "image",
-          sizeBytes: file.size,
-        });
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : `„${original.name}“ konnte nicht geladen werden.`,
-        );
       }
-    }
 
-    if (added.length > 0) onChange([...photos, ...added]);
-    if (files.length > free) {
-      toast.warning(`Nur die ersten ${free} Medien wurden übernommen.`);
+      if (added.length > 0) {
+        try {
+          onChange([...photos, ...added]);
+        } catch {
+          added.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+          toast.error("Die Aufnahmen konnten nicht übernommen werden. Bitte erneut versuchen.");
+        }
+      }
+      if (files.length > free) {
+        toast.warning(`Nur die ersten ${free} Medien wurden übernommen.`);
+      }
+    } finally {
+      setProcessingName(null);
+      setUploading(false);
+      input.value = "";
     }
-    setProcessingName(null);
-    setUploading(false);
-    input.value = "";
   }
 
   function removePhoto(path: string) {

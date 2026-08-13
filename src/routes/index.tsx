@@ -15,7 +15,7 @@ import { VehicleGallery } from "@/components/VehicleGallery";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT, SITE_URL } from "@/lib/seo";
+import { absUrl, SITE_URL, standardPageMeta } from "@/lib/seo";
 import {
   company,
   currency,
@@ -36,18 +36,11 @@ const HOME_DESCRIPTION =
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: HOME_TITLE },
-      { name: "description", content: HOME_DESCRIPTION },
-      { property: "og:title", content: HOME_TITLE },
-      { property: "og:description", content: HOME_DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: HOME_TITLE },
-      { name: "twitter:description", content: HOME_DESCRIPTION },
-      { name: "twitter:image", content: OG_IMAGE },
+      ...standardPageMeta({
+        title: HOME_TITLE,
+        description: HOME_DESCRIPTION,
+        path: "/",
+      }),
     ],
     links: [
       { rel: "canonical", href: absUrl("/") },

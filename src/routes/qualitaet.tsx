@@ -5,7 +5,7 @@ import { ConversionBand } from "@/components/ConversionBand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { absUrl, OG_IMAGE, OG_IMAGE_ALT } from "@/lib/seo";
+import { absUrl, standardPageMeta } from "@/lib/seo";
 
 const TITLE = "Qualitätsanspruch & Ablauf | White Gloss Detailing";
 const DESCRIPTION =
@@ -13,16 +13,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/qualitaet")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: absUrl("/qualitaet") },
-      { property: "og:image", content: OG_IMAGE },
-      { property: "og:image:alt", content: OG_IMAGE_ALT },
-    ],
+    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/qualitaet" })],
     links: [
       { rel: "canonical", href: absUrl("/qualitaet") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/qualitaet") },
@@ -67,8 +58,12 @@ function QualityPage() {
               <Link to="/" className="transition-colors hover:text-foreground">
                 Startseite
               </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Qualität</span>
+              <span aria-hidden className="px-2">
+                /
+              </span>
+              <span className="text-foreground" aria-current="page">
+                Qualität
+              </span>
             </nav>
             <p className="eyebrow mt-10">Unser Qualitätsanspruch</p>
             <h1 className="display-page mt-3 max-w-5xl uppercase">
