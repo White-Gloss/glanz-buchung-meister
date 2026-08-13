@@ -15,6 +15,7 @@ import { VehicleGallery } from "@/components/VehicleGallery";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
+import { parseHomeSearch } from "@/lib/homeSearch";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { absUrl, OG_IMAGE, SITE_URL, standardPageMeta } from "@/lib/seo";
 import {
@@ -34,6 +35,7 @@ const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
   "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.";
 export const Route = createFileRoute("/")({
+  validateSearch: parseHomeSearch,
   head: () => ({
     meta: [
       ...standardPageMeta({
@@ -116,6 +118,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const { paket } = Route.useSearch();
+
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
@@ -125,7 +129,7 @@ function Landing() {
         <Packages />
         <VehicleGallery />
         <QualityJourney />
-        <Booking />
+        <Booking initialPackageId={paket} />
         <B2BServices />
         <ConversionBand variant="band" />
         <DiscoveryHub />
@@ -136,7 +140,7 @@ function Landing() {
   );
 }
 
-function DeferredBookingWizard() {
+function DeferredBookingWizard({ initialPackageId }: { initialPackageId?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
 
@@ -164,7 +168,7 @@ function DeferredBookingWizard() {
     <div ref={containerRef}>
       {shouldLoad ? (
         <Suspense fallback={<BookingWizardSkeleton />}>
-          <BookingWizard />
+          <BookingWizard initialPackageId={initialPackageId} />
         </Suspense>
       ) : (
         <BookingWizardSkeleton />
@@ -400,7 +404,7 @@ function QualityJourney() {
   );
 }
 
-function Booking() {
+function Booking({ initialPackageId }: { initialPackageId?: string }) {
   return (
     <section
       id="buchung"
@@ -420,7 +424,7 @@ function Booking() {
           title="Der Buchungsassistent konnte nicht geladen werden"
           description="Bitte laden Sie die Seite neu. Alternativ nehmen wir Ihre Anfrage per Telefon, WhatsApp oder E-Mail entgegen."
         >
-          <DeferredBookingWizard />
+          <DeferredBookingWizard initialPackageId={initialPackageId} />
         </ErrorBoundary>
 
         {/*

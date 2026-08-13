@@ -55,6 +55,7 @@ import {
   vatNoticeShort,
   vehicleTypes,
 } from "@/lib/servicesConfig";
+import { navigateAfterBooking } from "@/lib/bookingSuccess";
 
 const steps = ["Paket", "Fahrzeug", "Extras", "Fotos", "Wunschtermin", "Anfrage"];
 const pickupAddOn = addOns.find((addOn) => addOn.distanceBased);
@@ -169,16 +170,10 @@ function MiniCalendar({
   );
 }
 
-function initialPackageFromLocation(): string | null {
-  if (typeof window === "undefined") return null;
-  const packageId = new URLSearchParams(window.location.search).get("paket");
-  return servicePackages.some((pkg) => pkg.id === packageId) ? packageId : null;
-}
-
-export function BookingWizard() {
+export function BookingWizard({ initialPackageId }: { initialPackageId?: string }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [packageId, setPackageId] = useState<string | null>(initialPackageFromLocation);
+  const [packageId, setPackageId] = useState<string | null>(initialPackageId ?? null);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [pickupCity, setPickupCity] = useState("");
@@ -359,14 +354,16 @@ export function BookingWizard() {
       }
 
       toast.success("Anfrage gesendet – White Gloss prüft jetzt Ihren Wunschtermin.");
-      await navigate({
-        to: "/danke",
-        search: {
-          nr: booking.invoiceNumber,
-          name: booking.customer.name.trim().split(/\s+/)[0] || undefined,
+      setSubmitting(false);
+      await navigateAfterBooking(
+        {
+          invoiceNumber: booking.invoiceNumber,
+          customerName: booking.customer.name,
         },
-        replace: true,
-      });
+        (href) => navigate({ href, replace: true }),
+        (href) => window.location.replace(href),
+      );
+      return;
     } catch (error) {
       const info = diagnoseBackendError(error);
       setSubmitError(info);
