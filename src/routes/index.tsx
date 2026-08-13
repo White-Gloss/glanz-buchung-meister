@@ -12,6 +12,7 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VehicleGallery } from "@/components/VehicleGallery";
+import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
@@ -132,6 +133,7 @@ function Landing() {
         <DiscoveryHub />
       </main>
       <SiteFooter />
+      <WhatsAppFloat />
     </div>
   );
 }

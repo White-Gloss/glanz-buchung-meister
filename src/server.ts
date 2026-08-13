@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { cacheControlForPath } from "./lib/responseCache";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -10,14 +11,6 @@ type ServerEntry = {
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 const CANONICAL_HOST = "white-gloss.de";
-const PUBLIC_PAGE_PREFIXES = [
-  "/abholservice",
-  "/leistungen",
-  "/preise",
-  "/qualitaet",
-  "/impressum",
-  "/datenschutz",
-];
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -62,13 +55,6 @@ function canonicalRedirect(request: Request): Response | undefined {
   return Response.redirect(url, 308);
 }
 
-function isPublicPage(pathname: string): boolean {
-  if (pathname === "/" || pathname === "/sitemap.xml") return true;
-  return PUBLIC_PAGE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
-
 function withProductionHeaders(request: Request, response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
@@ -97,17 +83,12 @@ function withProductionHeaders(request: Request, response: Response): Response {
   );
 
   const url = new URL(request.url);
-  if (request.method === "GET" && response.status === 200 && isPublicPage(url.pathname)) {
+  const cacheControl = cacheControlForPath(url.pathname);
+  if (request.method === "GET" && response.status === 200 && cacheControl) {
     // HTML nach Deployments nicht im CDN festhalten. Alte HTML-Antworten können
     // sonst auf bereits entfernte, gehashte JS-Chunks zeigen und einzelne
     // Routen wie /preise mit einem Ladefehler abbrechen lassen.
-    headers.set("Cache-Control", "no-cache, must-revalidate");
-  } else if (
-    url.pathname.startsWith("/admin") ||
-    url.pathname.startsWith("/auth") ||
-    url.pathname.startsWith("/reset-password")
-  ) {
-    headers.set("Cache-Control", "private, no-store");
+    headers.set("Cache-Control", cacheControl);
   }
 
   return new Response(response.body, {

@@ -28,7 +28,12 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { currency, type Booking, type BookingStatus } from "@/lib/bookings";
+import { bookingStatuses, currency, type Booking, type BookingStatus } from "@/lib/bookings";
+import {
+  filterAndSortBookings,
+  type BookingSort,
+  type BookingStatusFilter,
+} from "@/lib/adminBookingView";
 import {
   confirmBooking,
   deleteBooking,
@@ -90,6 +95,8 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>("alle");
+  const [sort, setSort] = useState<BookingSort>("prioritaet");
   const [loading, setLoading] = useState(true);
   const [pdfFor, setPdfFor] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
@@ -247,16 +254,10 @@ function AdminPage() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return bookings;
-    return bookings.filter((b) =>
-      [b.invoiceNumber, b.customer.name, b.customer.plate, b.customer.email]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [bookings, query]);
+  const filtered = useMemo(
+    () => filterAndSortBookings(bookings, { query, status: statusFilter, sort }),
+    [bookings, query, sort, statusFilter],
+  );
 
   const revenue = bookings.filter((b) => b.status !== "Storniert").reduce((s, b) => s + b.total, 0);
   const pendingConfirmation = bookings.filter((b) => b.status === "Wartend auf Prüfung").length;
@@ -425,48 +426,96 @@ function AdminPage() {
               </Suspense>
             </ErrorBoundary>
 
-            <div className="mt-8 flex items-center gap-3">
-              <div className="relative w-full max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  maxLength={80}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Suche nach Name, Kennzeichen, Rechnung …"
-                  className="h-11 bg-secondary/40 pl-9"
-                />
-              </div>
-            </div>
+            <section className="mt-8" aria-labelledby="booking-list-title">
+              <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/25 p-4 sm:p-5">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="eyebrow">Tagesgeschäft</p>
+                    <h2 id="booking-list-title" className="display-sub mt-1 uppercase">
+                      Buchungen bearbeiten
+                    </h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground" aria-live="polite">
+                    {filtered.length} von {bookings.length} Buchungen
+                  </p>
+                </div>
 
-            {loading ? (
-              <BookingListSkeleton />
-            ) : filtered.length === 0 ? (
-              <div className="glass mt-6 rounded-3xl p-12 text-center">
-                <p className="display-card">Keine Buchungen vorhanden</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Neue Buchungen erscheinen hier automatisch, sobald sie über die Website eingehen.
-                </p>
+                <div className="grid gap-3 lg:grid-cols-[minmax(15rem,1fr)_minmax(12rem,0.55fr)_minmax(12rem,0.55fr)]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      aria-label="Buchungen durchsuchen"
+                      value={query}
+                      maxLength={80}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Name, Kennzeichen, E-Mail, Telefon …"
+                      className="h-11 bg-secondary/40 pl-9"
+                    />
+                  </div>
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    Status
+                    <select
+                      value={statusFilter}
+                      onChange={(event) =>
+                        setStatusFilter(event.target.value as BookingStatusFilter)
+                      }
+                      className="h-11 rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground"
+                    >
+                      <option value="alle">Alle Status</option>
+                      {bookingStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    Sortierung
+                    <select
+                      value={sort}
+                      onChange={(event) => setSort(event.target.value as BookingSort)}
+                      className="h-11 rounded-lg border border-border bg-secondary/40 px-3 text-sm text-foreground"
+                    >
+                      <option value="prioritaet">Wichtigste zuerst</option>
+                      <option value="eingang-neu">Neuester Eingang</option>
+                      <option value="termin">Nächster Termin</option>
+                      <option value="preis-hoch">Höchster Preis</option>
+                    </select>
+                  </label>
+                </div>
               </div>
-            ) : (
-              <div className="mt-6 space-y-4">
-                {filtered.map((b) => (
-                  <BookingCard
-                    key={b.id}
-                    booking={b}
-                    dayLoad={dayLoad}
-                    photoCount={photoCounts[b.id] ?? 0}
-                    actions={{
-                      onStatus: setStatus,
-                      onConfirm: confirmDirect,
-                      onCounterOffer: sendOffer,
-                      onDepositPaid: markDepositPaid,
-                      onDelete: remove,
-                      onLoadPhotos: loadPhotos,
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+
+              {loading ? (
+                <BookingListSkeleton />
+              ) : filtered.length === 0 ? (
+                <div className="glass mt-6 rounded-3xl p-12 text-center">
+                  <p className="display-card">Keine Buchungen vorhanden</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Neue Buchungen erscheinen hier automatisch, sobald sie über die Website
+                    eingehen.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {filtered.map((b) => (
+                    <BookingCard
+                      key={b.id}
+                      booking={b}
+                      dayLoad={dayLoad}
+                      photoCount={photoCounts[b.id] ?? 0}
+                      actions={{
+                        onStatus: setStatus,
+                        onConfirm: confirmDirect,
+                        onCounterOffer: sendOffer,
+                        onDepositPaid: markDepositPaid,
+                        onDelete: remove,
+                        onLoadPhotos: loadPhotos,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
             <ErrorBoundary title="Das Audit-Log konnte nicht geladen werden">
               <Suspense fallback={<AuditLogSkeleton />}>
                 <AuditLogPanel key={auditKey} />
