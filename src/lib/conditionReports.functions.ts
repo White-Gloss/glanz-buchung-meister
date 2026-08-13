@@ -1,10 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "@/lib/db.server";
+import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
+
+const conditionUploadRateLimiter = createBookingRateLimiter({
+  // Eine Meldung erlaubt maximal fünf Aufnahmen. Das Zeitfenster lässt einen
+  // abgebrochenen Upload erneut zu, blockiert aber Speicher-Missbrauch.
+  limit: 8,
+  windowMs: 15 * 60_000,
+});
 
 /**
  * ZUSTANDSMELDUNGEN
@@ -160,6 +168,13 @@ function extensionForContentType(contentType: string): string {
 export const uploadConditionPhoto = createServerFn({ method: "POST" })
   .validator((data: { fileName: string; contentType: string; base64Data: string }) => data)
   .handler(async ({ data }) => {
+    const rateLimit = conditionUploadRateLimiter.check(clientAddress(getRequest()?.headers));
+    if (!rateLimit.allowed) {
+      throw new Error(
+        `Zu viele Uploads. Bitte warten Sie noch etwa ${rateLimit.retryAfterSeconds} Sekunden und versuchen Sie es erneut.`,
+      );
+    }
+
     if (!ALLOWED_MEDIA_TYPES.has(data.contentType)) {
       throw new Error("Unterstützt werden JPEG, PNG, WebP sowie MP4, MOV und WebM.");
     }
@@ -177,12 +192,14 @@ export const uploadConditionPhoto = createServerFn({ method: "POST" })
 
     const { createClient } = await import("@supabase/supabase-js");
     const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-    if (!url || !key) throw new Error("Der Upload ist derzeit nicht verfügbar.");
+    // Die Service-Role verlässt nie den Server. Damit kann der private Bucket
+    // ohne eine anonyme Storage-Policy beschrieben werden; direkte Uploads an
+    // die öffentliche Supabase-API umgehen unsere Datei-Prüfung nicht mehr.
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceRoleKey) throw new Error("Der Upload ist derzeit nicht verfügbar.");
 
-    const client = createClient(url, key, {
+    const client = createClient(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      global: { fetch: createSupabasePublishableFetch(key) },
     });
 
     const ext = extensionForContentType(data.contentType);

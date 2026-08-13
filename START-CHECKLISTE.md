@@ -101,7 +101,7 @@ Geplanter Ablauf:
 ### Wichtig
 In Hermes wurde kein eigener Cronjob gefunden. Wenn bei dir schon ein Cronjob existiert, läuft er also wahrscheinlich im Hosting oder in Supabase.
 
-Bitte prüfe im Hostinger-hPanel:
+Bitte prüfe in deiner Deployment-Plattform:
 1. Öffne die Website bzw. das Hosting.
 2. Suche nach **Cron Jobs** oder **Geplante Aufgaben**.
 3. Mache einen Screenshot mit dem Jobnamen und dem Zeitplan — keine Geheimnisse oder Tokens sichtbar lassen.

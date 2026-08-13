@@ -11,8 +11,8 @@ VITE_META_PIXEL_ID="DEINE_PIXEL_ID"
 
 Die Pixel-ID ist öffentlich – sie steht ohnehin im Quelltext jeder Seite. Du findest sie im Meta Events Manager unter **Datenquellen → Web → Pixel**.
 
-### Server-Seite (in den Hostinger-Umgebungsvariablen – GEHEIM!):
-Im hPanel unter **Website → whitegloss.de → Umgebungsvariablen**:
+### Server-Seite (in den geschützten Umgebungsvariablen der Deployment-Plattform – GEHEIM!):
+In **hPanel → Hermes Agent → Dashboard → Environment**:
 ```env
 META_PIXEL_ID=DEINE_PIXEL_ID
 META_CAPI_ACCESS_TOKEN=DEIN_TOKEN
@@ -23,7 +23,7 @@ Das CAPI-Token erstellst du im Meta Events Manager unter **Einstellungen → Con
 ### Nach dem Setzen:
 1. Im Repo die `.env` aktualisieren
 2. Nach `main` pushen
-3. Hostinger-Deployment auslösen
+3. Git-Deployment auslösen
 
 > **Testen**: Nach dem Deployment auf https://whitegloss.de gehen, im Cookie-Banner "Akzeptieren" klicken und in der Browser-Console prüfen, ob `fbq` geladen wird. Im Meta Events Manager sollten "Aktiv (Browser)" und "Aktiv (Server)" erscheinen.
 
@@ -33,7 +33,7 @@ Das CAPI-Token erstellst du im Meta Events Manager unter **Einstellungen → Con
 1. Gehe zu https://search.google.com/search-console
 2. Eigenschaft **"whitegloss.de"** (Domain-Property) hinzufügen
 3. Als Verifikationsmethode **"DNS-Eintrag"** wählen
-4. Den TXT-Record bei Hostinger im DNS-Manager eintragen
+4. Den TXT-Record im IONOS-DNS-Manager eintragen
 
 Alternativ: Meta-Tag-Verifikation. Dafür müsste in den `<head>`-Bereich der Seite ein Tag eingefügt werden. Bei Bedarf den Code-Ort nennen.
 

@@ -32,7 +32,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -69,15 +69,6 @@ function AuthPage() {
         await router.invalidate();
         toast.success("Willkommen zurück");
         navigate({ to: "/admin", replace: true });
-      } else if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
-        });
-        if (error) throw error;
-        toast.success("Konto erstellt. Bitte E-Mail bestätigen, falls erforderlich.");
-        navigate({ to: "/admin", replace: true });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -101,12 +92,7 @@ function AuthPage() {
     );
   }
 
-  const heading =
-    mode === "login"
-      ? "Team-Login"
-      : mode === "signup"
-        ? "Team-Konto erstellen"
-        : "Passwort zurücksetzen";
+  const heading = mode === "login" ? "Team-Login" : "Passwort zurücksetzen";
 
   return (
     <>
@@ -162,26 +148,11 @@ function AuthPage() {
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading
-                  ? "Bitte warten …"
-                  : mode === "login"
-                    ? "Anmelden"
-                    : mode === "signup"
-                      ? "Konto erstellen"
-                      : "Link senden"}
+                {loading ? "Bitte warten …" : mode === "login" ? "Anmelden" : "Link senden"}
               </Button>
             </form>
 
             <div className="mt-5 space-y-2 text-center">
-              <button
-                type="button"
-                onClick={() => setMode(mode === "signup" ? "login" : "signup")}
-                className="w-full text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                {mode === "signup"
-                  ? "Bereits registriert? Zum Login"
-                  : "Noch kein Konto? Jetzt registrieren"}
-              </button>
               {mode !== "forgot" && (
                 <button
                   type="button"

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -22,6 +23,13 @@ import {
   vehicleTypes,
 } from "./servicesConfig";
 import { getPickupDistanceKm } from "./pickupLocations";
+import { isOnlineBookingDate } from "./bookingAvailability";
+import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
+
+const publicBookingRateLimiter = createBookingRateLimiter({
+  limit: 5,
+  windowMs: 10 * 60_000,
+});
 
 // ---------------------------------------------------------------------------
 // Row shape returned by the DB (snake_case) and the create_booking_public fn
@@ -51,6 +59,7 @@ type Row = {
   deposit_amount: number | string;
   deposit_status: string;
   access_token: string;
+  access_token_expires_at?: string | null;
 };
 
 function toBooking(row: Row): Booking {
@@ -109,6 +118,7 @@ const SELECT_COLS = [
   "deposit_amount",
   "deposit_status",
   "access_token",
+  "access_token_expires_at",
 ].join(", ");
 
 // ---------------------------------------------------------------------------
@@ -155,6 +165,11 @@ function validate(input: BookingInput): BookingInput {
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
+  if (!isOnlineBookingDate(date)) {
+    throw new Error(
+      "Online sind Termine nur Montag bis Freitag möglich. Für Samstag schreiben Sie uns bitte persönlich per WhatsApp.",
+    );
+  }
   if (name.length < 2) throw new Error("Bitte einen gültigen Namen angeben");
   if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error("Ungültige E-Mail-Adresse");
   if (phone.length < 6) throw new Error("Ungültige Telefonnummer");
@@ -196,6 +211,14 @@ function validate(input: BookingInput): BookingInput {
 export const createBooking = createServerFn({ method: "POST" })
   .validator((data: BookingInput) => validate(data))
   .handler(async ({ data }) => {
+    const request = getRequest();
+    const rateLimit = publicBookingRateLimiter.check(clientAddress(request?.headers));
+    if (!rateLimit.allowed) {
+      throw new Error(
+        `Zu viele Anfragen. Bitte warten Sie noch etwa ${rateLimit.retryAfterSeconds} Sekunden und versuchen Sie es erneut.`,
+      );
+    }
+
     const result = await queryOne<{ create_booking_public: string }>(
       `SELECT public.create_booking_public($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
@@ -734,7 +757,10 @@ export const getOfferByToken = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<OfferView | null> => {
     if (!UUID.test(String(data.token ?? ""))) return null;
     const row = await queryOne<Row>(
-      `SELECT ${SELECT_COLS} FROM public.bookings WHERE access_token = $1`,
+      `SELECT ${SELECT_COLS}
+         FROM public.bookings
+        WHERE access_token = $1
+          AND access_token_expires_at > now()`,
       [data.token],
     );
     if (!row) return null;
@@ -767,7 +793,10 @@ export const acceptOffer = createServerFn({ method: "POST" })
     if (!ISO_DATE.test(gewaehlt)) throw new Error("Ungültiges Datum.");
 
     const row = await queryOne<Row>(
-      `SELECT ${SELECT_COLS} FROM public.bookings WHERE access_token = $1`,
+      `SELECT ${SELECT_COLS}
+         FROM public.bookings
+        WHERE access_token = $1
+          AND access_token_expires_at > now()`,
       [data.token],
     );
     if (!row) throw new Error("Zu diesem Link gibt es keine Anfrage.");

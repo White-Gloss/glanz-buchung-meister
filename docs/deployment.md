@@ -1,175 +1,66 @@
-# Deployment auf Hostinger
+# Produktion & Deployment
 
-Die Website läuft bei Hostinger als Node-Anwendung. Der Code wird über die
-Git-Bereitstellung im hPanel geholt — Hostinger zieht sich den Stand also
-selbst aus GitHub. Zugangsdaten müssen dafür nirgends hinterlegt werden.
+Die Domain **white-gloss.de** und ihre DNS-Verwaltung bleiben bei **IONOS**. Diese Anleitung verändert weder Domain, Nameserver noch DNS-Einträge. Die Anwendung kann unabhängig davon auf einer Node-fähigen Deployment-Plattform betrieben werden.
 
-Diese Datei beschreibt, was die Anwendung zum Bauen und Starten braucht.
-Die genauen Menüpfade im hPanel sind hier bewusst nicht abgebildet: Hostinger
-ändert die Oberfläche regelmäßig, und eine veraltete Klickanleitung wäre
-schlimmer als keine. Die Werte unten sind das, was Sie dort eintragen.
+## Build und Start
 
-## Kurzfassung
+| Einstellung | Wert |
+|---|---|
+| Branch | `main` |
+| Node.js | `20.19` oder neuer, empfohlen: 22 |
+| Installieren | `npm ci` |
+| Prüfen | `npm run test && npm run lint` |
+| Bauen | `npm run build` |
+| Start | `node .output/server/index.mjs` |
 
-| Was                 | Wert                               |
-| ------------------- | ---------------------------------- |
-| Branch              | `main`                             |
-| Node-Version        | `20.19` oder neuer (empfohlen: 22) |
-| Installationsbefehl | `npm ci`                           |
-| Build-Befehl        | `npm run build`                    |
-| Startdatei          | `.output/server/index.mjs`         |
-| Startbefehl         | `node .output/server/index.mjs`    |
-
-## Ablauf eines Deployments
-
-1. Änderungen werden nach `main` gemergt.
-2. Hostinger holt den neuen Stand (manuell im hPanel oder automatisch, siehe
-   unten).
-3. Auf dem Server laufen `npm ci` und `npm run build`. Dabei entsteht der
-   Ordner `.output`.
-4. Der Node-Prozess wird neu gestartet und bedient die Seite aus `.output`.
-
-`.output` liegt bewusst nicht im Repository (siehe `.gitignore`) — der Build
-entsteht immer frisch aus dem Quellcode.
+`.output` wird bei jedem Deployment frisch erzeugt und gehört nicht ins Repository.
 
 ## Umgebungsvariablen
 
-Hier gibt es einen Stolperstein, der leicht zu übersehen ist: **Variablen mit
-`VITE_`-Präfix werden beim Bauen fest in die Browser-Dateien eingebacken.**
-Sie müssen also bereits vorhanden sein, wenn `npm run build` läuft — ein
-späteres Setzen ändert nichts mehr. Alle anderen Variablen liest der Server
-erst zur Laufzeit.
+### Öffentliche Werte beim Build
 
-### Öffentliche Werte — stehen in `.env` im Repository
+`VITE_`-Variablen werden in das Browser-Bundle eingebaut. Sie dürfen deshalb ausschließlich nicht geheime Werte enthalten und müssen bereits beim Build verfügbar sein.
 
-Diese Datei liegt absichtlich im Git, weil Hostinger sie beim Bauen braucht.
-Sie enthält ausschließlich Werte, die ohnehin im Quelltext jeder Seite
-sichtbar sind:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- optional: `VITE_GOOGLE_ADS_CONVERSION_ID`, `VITE_GOOGLE_ADS_CONVERSION_LABEL`
+- optional: `VITE_META_PIXEL_ID`
 
-- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `VITE_META_PIXEL_ID` — sobald hier eine ID steht, lädt der Meta-Pixel
-  (weiterhin nur nach erteilter Cookie-Einwilligung)
+### Serverwerte
 
-### Geheimnisse — ausschließlich in den Hostinger-Umgebungsvariablen
+Diese Werte gehören ausschließlich in die geschützte Umgebungsverwaltung der Deployment-Plattform, **nie** in Git oder Browser-Variablen:
 
-Diese Werte dürfen **niemals** in `.env` oder sonst ins Repository:
+- `DATABASE_URL`, `POSTGRES_URL` oder `SUPABASE_DB_URL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` – erforderlich für serverseitig geprüfte Fahrzeugfoto-/Video-Uploads
+- `RESEND_API_KEY`, `MAIL_FROM`, optional `MAIL_TO_OWNER`
+- optional: `META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `META_TEST_EVENT_CODE`
 
-| Variable                                            | Wofür                                     |
-| --------------------------------------------------- | ----------------------------------------- |
-| `META_PIXEL_ID`                                     | Conversions API, serverseitig             |
-| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Conversions API         |
-| `RESEND_API_KEY`                                    | E-Mail-Versand                            |
-| `MAIL_FROM`                                         | Absender der Kundenmails                  |
-| `MAIL_TO_OWNER`                                     | Zieladresse der internen Benachrichtigung |
-| `SUPABASE_SERVICE_ROLE_KEY`                         | optional, serverseitige Vollzugriffe      |
-| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung               |
+> Das Setzen oder Ändern dieser Werte erfolgt in **hPanel → Hermes Agent → Dashboard → Environment**, nicht in Shell-Profilen oder einer eingecheckten `.env`.
 
-Ein Token mit `VITE_`-Präfix zu setzen würde es in den öffentlichen
-Browser-Dateien veröffentlichen. Deshalb heißen die serverseitigen Variablen
-bewusst ohne dieses Präfix.
+## Supabase vor dem App-Deployment
 
-### E-Mail-Versand einrichten (Resend)
+1. Alle Migrationen in `supabase/migrations/` über den normalen Supabase-Workflow ausführen.
+2. Besonders wichtig ist `20260812231500_security_hardening.sql`. Sie schließt direkte anonyme Medien-Uploads, verhindert den ersten öffentlichen Admin, begrenzt Angebotslinks und schützt vor Dubletten.
+3. Prüfen, dass mindestens ein berechtigter Admin vorhanden ist, bevor die Migration ausgerollt wird.
+4. Sicherstellen, dass `SUPABASE_SERVICE_ROLE_KEY` als geschützte Servervariable gesetzt ist.
 
-Ohne `RESEND_API_KEY` und `MAIL_FROM` verschickt die Seite keine einzige
-Mail — weder die Eingangsbestätigung noch die Terminbestätigung. Der Server
-protokolliert dann nur `RESEND_API_KEY oder MAIL_FROM fehlt`; Buchungen
-werden trotzdem gespeichert.
+## DNS bei IONOS: E-Mail-Domain für Resend
 
-1. Auf <https://resend.com> ein Konto anlegen.
-2. **Domains → Add Domain** → `whitegloss.de` eintragen. Resend zeigt
-   danach drei bis vier DNS-Einträge an (DKIM als `TXT`, ein `MX` und ein
-   `TXT` für den Rückkanal, optional DMARC).
-3. Diese Einträge im Hostinger-hPanel unter **Domains → DNS-Zonenverwaltung**
-   anlegen — Typ, Name und Wert genau so übernehmen, wie Resend sie zeigt.
-   Bis Resend „Verified" meldet, dauert es meist Minuten, in Einzelfällen
-   bis zu 24 Stunden.
-4. **API Keys → Create API Key**, Berechtigung _Sending access_ genügt. Der
-   Schlüssel beginnt mit `re_` und ist **nur einmal** sichtbar.
-5. Im hPanel unter den Umgebungsvariablen setzen:
+Falls Resend für E-Mails verwendet wird:
 
-   | Variable         | Beispielwert                                    |
-   | ---------------- | ----------------------------------------------- |
-   | `RESEND_API_KEY` | `re_…` (der Schlüssel aus Schritt 4)            |
-   | `MAIL_FROM`      | `White Gloss Detailing <termine@whitegloss.de>` |
-   | `MAIL_TO_OWNER`  | `info@whitegloss.de`                            |
+1. In Resend `white-gloss.de` als Domain hinzufügen.
+2. Die von Resend vorgegebenen SPF-/DKIM-/MX-Einträge **in IONOS** übernehmen.
+3. Erst nach der Resend-Verifizierung `MAIL_FROM` auf eine Adresse dieser Domain setzen.
+4. Testmail an Gmail, Outlook und WEB.DE senden und Spam-Ordner prüfen.
 
-`MAIL_FROM` ist keine Zugangsdatei und kein Postfach, sondern nur die
-Absenderzeile. Die Domain im spitzen Klammernteil **muss** die in Schritt 2
-verifizierte Domain sein — sonst weist Resend den Versand ab. Ein Postfach
-für diese Adresse braucht es nicht; Antworten der Kundschaft landen dort
-allerdings ins Leere, deshalb besser eine Adresse verwenden, die tatsächlich
-existiert.
+## Prüfung nach dem Deployment
 
-`MAIL_TO_OWNER` ist optional: ohne diesen Wert geht die interne
-Benachrichtigung an die in `servicesConfig` hinterlegte Firmenadresse.
+- `https://white-gloss.de/`
+- `https://white-gloss.de/faq`
+- `https://white-gloss.de/ratgeber`
+- `https://white-gloss.de/sitemap.xml`
+- `https://white-gloss.de/admin`
+- eine echte Testanfrage: Eingangsbestätigung, Admin-Anzeige, Danke-Seite und ggf. Conversion-Event prüfen
 
-Solange die Domain nicht verifiziert ist, erlaubt Resend nur den Versand an
-die eigene Registrierungsadresse. Ein Test mit einer Kundenadresse schlägt
-in diesem Zustand also fehl, ohne dass am Code etwas falsch wäre.
-
-## Automatisches Deployment einrichten
-
-Damit ein Merge nach `main` von selbst ankommt:
-
-1. Im hPanel bei der Git-Bereitstellung die **Webhook-URL** kopieren.
-2. In GitHub unter **Settings → Webhooks → Add webhook** einfügen:
-   - Payload URL: die kopierte Adresse
-   - Content type: `application/json`
-   - Trigger: „Just the push event"
-3. Speichern. Ab dann löst jeder Push auf `main` ein Deployment aus.
-
-Ohne diesen Schritt funktioniert alles genauso, nur muss die Bereitstellung
-im hPanel jedes Mal von Hand angestoßen werden.
-
-## Nach dem Deployment prüfen
-
-Diese Adressen sollten erreichbar sein:
-
-- `https://whitegloss.de/` — Startseite
-- `https://whitegloss.de/faq` — FAQ-Seite
-- `https://whitegloss.de/ratgeber` — Ratgeber-Übersicht
-- `https://whitegloss.de/sitemap.xml` — enthält `/faq` und `/ratgeber`
-- `https://whitegloss.de/admin` — Anmeldung als Administrator
-
-Solange im Admin-Panel noch keine Inhalte angelegt sind, zeigen `/faq` und
-`/ratgeber` einen freundlichen Hinweistext statt einer leeren Seite. Das ist
-so gewollt und kein Fehler.
-
-Die strukturierten Daten lassen sich anschließend im
-[Test für Rich-Suchergebnisse](https://search.google.com/test/rich-results)
-prüfen — dort sollten bei einem Ratgeber-Beitrag `BlogPosting`,
-`BreadcrumbList` und, sofern FAQs zugeordnet sind, `FAQPage` erscheinen.
-
-## Wenn etwas schiefgeht
-
-Der Build bricht ab und die alte Version läuft weiter — Hostinger tauscht erst
-nach einem erfolgreichen Build. Führt ein Deployment trotzdem zu einem Fehler
-auf der Seite:
-
-1. Im hPanel das Build-Protokoll ansehen. `npm ci` scheitert zum Beispiel,
-   wenn `package.json` und `package-lock.json` nicht zusammenpassen.
-2. Zurückrollen, indem in GitHub der letzte Commit auf `main` revertiert und
-   erneut bereitgestellt wird.
-
-Fehlen die Supabase-Variablen, zeigt die Seite bewusst einen Hinweis statt
-einer weißen Seite — dann stimmt etwas an der Konfiguration nicht.
-
-## Hinweis zu GitHub Actions
-
-Im Repository gibt es bewusst keine GitHub-Actions-Workflows: In diesem
-GitHub-Konto lassen sich derzeit keine Actions ausführen. Jeder Lauf bricht
-nach wenigen Sekunden ab, ohne einen Runner zu bekommen — das betrifft auch
-GitHubs eigene Sicherheitsprüfungen und ist unabhängig vom Projektcode.
-
-Für das Deployment spielt das keine Rolle, weil Hostinger den Code selbst
-holt und baut. Vor einem Merge sollten die Prüfungen aber lokal laufen:
-
-```sh
-npm run lint
-npx tsc --noEmit
-npm run build
-```
-
-Sobald Actions im Konto verfügbar sind, lohnt sich ein CI-Workflow, der genau
-diese drei Befehle bei jedem Pull Request ausführt.
+Bei einem fehlerhaften Build die vorige Release-Version beibehalten und den fehlerhaften Commit gezielt zurückrollen.

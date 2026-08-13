@@ -2,7 +2,7 @@
 
 Website und Buchungssystem für White Gloss Detailing, gebaut mit TanStack Start,
 React, TypeScript, Tailwind CSS und Nitro. Der Produktionsbetrieb läuft als
-Node-Anwendung bei Hostinger.
+Node-Anwendung auf einer Deployment-Plattform; die Domainverwaltung bleibt bei IONOS.
 
 ## Lokal installieren
 
@@ -43,13 +43,14 @@ Cookie-Einwilligung. Ohne Zustimmung wird weder ein Skript geladen noch ein
 Ereignis gesendet — auch serverseitig nicht.
 
 Zugangsdaten gehören in die lokale `.env` beziehungsweise in die
-Umgebungsvariablen von Hostinger. Geheimnisse dürfen nicht in Git veröffentlicht
+Umgebungsvariablen der Deployment-Plattform. Geheimnisse dürfen nicht in Git veröffentlicht
 werden. `META_CAPI_ACCESS_TOKEN` darf nicht mit `VITE_`-Präfix gesetzt werden,
 sonst landet das Token im öffentlichen Browser-Bundle.
 
 ## Prüfen und bauen
 
 ```sh
+npm run test
 npm run lint
 npx tsc --noEmit
 npm run build
@@ -63,7 +64,6 @@ node .output/server/index.mjs
 
 ## Deployment
 
-Die Website wird bei Hostinger über die Git-Bereitstellung im hPanel
-ausgerollt. Build- und Startbefehle, die Aufteilung der Umgebungsvariablen in
+Die Anwendung wird per Git-Deployment auf einer Node-fähigen Plattform ausgerollt; die Domain und DNS-Verwaltung bleiben bei IONOS. Build- und Startbefehle, die Aufteilung der Umgebungsvariablen in
 öffentliche und geheime Werte sowie die Einrichtung des automatischen
 Deployments stehen in [`docs/deployment.md`](docs/deployment.md).
