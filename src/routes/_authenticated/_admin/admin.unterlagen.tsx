@@ -8,10 +8,13 @@ import {
   Download,
   FilePlus2,
   FileText,
+  Pencil,
   Printer,
   ReceiptText,
+  Save,
   Search,
   Send,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +36,12 @@ import {
   updateBookingStatus,
 } from "@/lib/bookings.functions";
 import { downloadBookingDocumentPdf, printBookingDocumentPdf } from "@/lib/bookingDocument";
+import {
+  bookingDocumentDraftStorageKey,
+  createBookingDocumentDraft,
+  mergeBookingDocumentDraft,
+  type BookingDocumentDraft,
+} from "@/lib/bookingDocumentDraft";
 import { addOns, servicePackages, vehicleTypes } from "@/lib/servicesConfig";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 
@@ -77,6 +86,8 @@ function DocumentsPage() {
   const [showManual, setShowManual] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [documentDrafts, setDocumentDrafts] = useState<Record<string, BookingDocumentDraft>>({});
   const [manual, setManual] = useState({
     source: "whatsapp" as BookingSource,
     name: "",
@@ -207,6 +218,46 @@ function DocumentsPage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function openDocumentEditor(booking: Booking) {
+    let draft = documentDrafts[booking.id];
+    if (!draft && typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(bookingDocumentDraftStorageKey(booking.id));
+      if (saved) {
+        try {
+          draft = { ...createBookingDocumentDraft(booking), ...JSON.parse(saved) };
+        } catch {
+          window.localStorage.removeItem(bookingDocumentDraftStorageKey(booking.id));
+        }
+      }
+    }
+    setDocumentDrafts((current) => ({
+      ...current,
+      [booking.id]: draft ?? createBookingDocumentDraft(booking),
+    }));
+    setEditingId(booking.id);
+  }
+
+  function updateDocumentDraft(booking: Booking, field: keyof BookingDocumentDraft, value: string) {
+    setDocumentDrafts((current) => ({
+      ...current,
+      [booking.id]: {
+        ...(current[booking.id] ?? createBookingDocumentDraft(booking)),
+        [field]: value,
+      },
+    }));
+  }
+
+  function saveDocumentDraft(booking: Booking) {
+    const draft = documentDrafts[booking.id] ?? createBookingDocumentDraft(booking);
+    window.localStorage.setItem(bookingDocumentDraftStorageKey(booking.id), JSON.stringify(draft));
+    toast.success("Dokumententwurf auf diesem Gerät gespeichert");
+  }
+
+  function documentBooking(booking: Booking) {
+    const draft = documentDrafts[booking.id];
+    return draft ? mergeBookingDocumentDraft(booking, draft) : booking;
   }
 
   return (
@@ -477,15 +528,19 @@ function DocumentsPage() {
                       >
                         Preis speichern
                       </Button>
+                      <Button variant="outline" onClick={() => openDocumentEditor(booking)}>
+                        <Pencil className="size-4" /> Dokument bearbeiten
+                      </Button>
                       <Button
                         variant="outline"
                         onClick={() =>
-                          downloadBookingDocumentPdf(booking, "admin").catch((error) =>
-                            toast.error(
-                              error instanceof Error
-                                ? error.message
-                                : "PDF konnte nicht erstellt werden",
-                            ),
+                          downloadBookingDocumentPdf(documentBooking(booking), "admin").catch(
+                            (error) =>
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "PDF konnte nicht erstellt werden",
+                              ),
                           )
                         }
                       >
@@ -494,12 +549,13 @@ function DocumentsPage() {
                       <Button
                         variant="outline"
                         onClick={() =>
-                          downloadBookingDocumentPdf(booking, "offer").catch((error) =>
-                            toast.error(
-                              error instanceof Error
-                                ? error.message
-                                : "Angebot konnte nicht erstellt werden",
-                            ),
+                          downloadBookingDocumentPdf(documentBooking(booking), "offer").catch(
+                            (error) =>
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Angebot konnte nicht erstellt werden",
+                              ),
                           )
                         }
                       >
@@ -508,7 +564,10 @@ function DocumentsPage() {
                       <Button
                         variant="outline"
                         onClick={() =>
-                          downloadBookingDocumentPdf(booking, "invoice-draft").catch((error) =>
+                          downloadBookingDocumentPdf(
+                            documentBooking(booking),
+                            "invoice-draft",
+                          ).catch((error) =>
                             toast.error(
                               error instanceof Error
                                 ? error.message
@@ -522,13 +581,15 @@ function DocumentsPage() {
                       <Button
                         variant="outline"
                         onClick={() =>
-                          downloadBookingDocumentPdf(booking, "payment-reminder-draft").catch(
-                            (error) =>
-                              toast.error(
-                                error instanceof Error
-                                  ? error.message
-                                  : "Zahlungserinnerung konnte nicht erstellt werden",
-                              ),
+                          downloadBookingDocumentPdf(
+                            documentBooking(booking),
+                            "payment-reminder-draft",
+                          ).catch((error) =>
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Zahlungserinnerung konnte nicht erstellt werden",
+                            ),
                           )
                         }
                       >
@@ -537,7 +598,7 @@ function DocumentsPage() {
                       <Button
                         variant="outline"
                         onClick={() =>
-                          printBookingDocumentPdf(booking).catch((error) =>
+                          printBookingDocumentPdf(documentBooking(booking)).catch((error) =>
                             toast.error(
                               error instanceof Error
                                 ? error.message
@@ -564,6 +625,15 @@ function DocumentsPage() {
                       )}
                     </div>
                   </div>
+                  {editingId === booking.id && (
+                    <DocumentEditor
+                      booking={booking}
+                      draft={documentDrafts[booking.id] ?? createBookingDocumentDraft(booking)}
+                      onChange={(field, value) => updateDocumentDraft(booking, field, value)}
+                      onSave={() => saveDocumentDraft(booking)}
+                      onClose={() => setEditingId(null)}
+                    />
+                  )}
                 </article>
               );
             })
@@ -571,6 +641,85 @@ function DocumentsPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function DocumentEditor({
+  booking,
+  draft,
+  onChange,
+  onSave,
+  onClose,
+}: {
+  booking: Booking;
+  draft: BookingDocumentDraft;
+  onChange: (field: keyof BookingDocumentDraft, value: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const fields: Array<{
+    key: keyof BookingDocumentDraft;
+    label: string;
+    type?: string;
+    placeholder?: string;
+  }> = [
+    {
+      key: "documentNumber",
+      label: "Eigene Dokumentnummer",
+      placeholder: "optional – Standardnummer bleibt erhalten",
+    },
+    { key: "customerName", label: "Kundenname" },
+    { key: "customerCompany", label: "Firma / Ansprechpartner", placeholder: "optional" },
+    { key: "customerStreet", label: "Straße / Hausnummer", placeholder: "für Rechnungsanschrift" },
+    { key: "customerCity", label: "PLZ / Ort", placeholder: "für Rechnungsanschrift" },
+    { key: "customerEmail", label: "E-Mail", type: "email" },
+    { key: "customerPhone", label: "Telefon" },
+    { key: "customerPlate", label: "Kennzeichen" },
+    { key: "serviceDate", label: "Leistungsdatum", type: "date" },
+    { key: "agreedPrice", label: "Dokumentbetrag in EUR" },
+    { key: "validUntil", label: "Angebot gültig bis", type: "date" },
+    { key: "dueDate", label: "Zahlbar bis", type: "date" },
+  ];
+
+  return (
+    <section
+      className="mt-5 border-t border-border pt-5"
+      aria-label={`Dokument für ${booking.invoiceNumber} bearbeiten`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="display-card">Dokumentangaben bearbeiten</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Die Änderungen gelten für die PDF-Schaltflächen dieser Buchung und verändern nicht die
+            ursprüngliche Kundenakte.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Dokumenteditor schließen">
+          <X className="size-4" /> Schließen
+        </Button>
+      </div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {fields.map((field) => (
+          <Field key={field.key} label={field.label}>
+            <Input
+              type={field.type ?? "text"}
+              value={draft[field.key]}
+              placeholder={field.placeholder}
+              onChange={(event) => onChange(field.key, event.target.value)}
+            />
+          </Field>
+        ))}
+      </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Button onClick={onSave}>
+          <Save className="size-4" /> Entwurf speichern
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Speicherung lokal auf diesem Gerät. PDF danach über Angebot, Rechnung oder
+          Zahlungserinnerung erzeugen.
+        </p>
+      </div>
+    </section>
   );
 }
 

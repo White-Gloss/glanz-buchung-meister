@@ -38,6 +38,7 @@ import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$
 import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
 import { Route as AuthenticatedAdminAdminAutomatisierungRouteImport } from './routes/_authenticated/_admin/admin.automatisierung'
 import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
+import { Route as AuthenticatedAdminAdminEinstellungenRouteImport } from './routes/_authenticated/_admin/admin.einstellungen'
 import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
@@ -192,6 +193,12 @@ const AuthenticatedAdminAdminBlogRoute =
     path: '/blog',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminEinstellungenRoute =
+  AuthenticatedAdminAdminEinstellungenRouteImport.update({
+    id: '/einstellungen',
+    path: '/einstellungen',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminFaqsRoute =
   AuthenticatedAdminAdminFaqsRouteImport.update({
     id: '/faqs',
@@ -262,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -297,6 +305,7 @@ export interface FileRoutesByTo {
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
   '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -336,6 +345,7 @@ export interface FileRoutesById {
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/_authenticated/_admin/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/_authenticated/_admin/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service/'
     | '/admin/automatisierung'
     | '/admin/blog'
+    | '/admin/einstellungen'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service'
     | '/admin/automatisierung'
     | '/admin/blog'
+    | '/admin/einstellungen'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
@@ -447,6 +459,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service/'
     | '/_authenticated/_admin/admin/automatisierung'
     | '/_authenticated/_admin/admin/blog'
+    | '/_authenticated/_admin/admin/einstellungen'
     | '/_authenticated/_admin/admin/faqs'
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
@@ -689,6 +702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminBlogRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/einstellungen': {
+      id: '/_authenticated/_admin/admin/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/admin/einstellungen'
+      preLoaderRoute: typeof AuthenticatedAdminAdminEinstellungenRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/faqs': {
       id: '/_authenticated/_admin/admin/faqs'
       path: '/faqs'
@@ -744,6 +764,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminAutomatisierungRoute: typeof AuthenticatedAdminAdminAutomatisierungRoute
   AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
+  AuthenticatedAdminAdminEinstellungenRoute: typeof AuthenticatedAdminAdminEinstellungenRoute
   AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
@@ -759,6 +780,8 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminAutomatisierungRoute:
       AuthenticatedAdminAdminAutomatisierungRoute,
     AuthenticatedAdminAdminBlogRoute: AuthenticatedAdminAdminBlogRoute,
+    AuthenticatedAdminAdminEinstellungenRoute:
+      AuthenticatedAdminAdminEinstellungenRoute,
     AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
     AuthenticatedAdminAdminGalerieRoute: AuthenticatedAdminAdminGalerieRoute,
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,

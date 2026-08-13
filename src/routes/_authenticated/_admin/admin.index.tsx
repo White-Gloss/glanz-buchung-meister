@@ -17,13 +17,9 @@ import {
   LogOut,
   Wallet,
   ShieldAlert,
-  Sparkles,
   Users,
-  ImageIcon,
-  HelpCircle,
   FileText,
-  Camera,
-  Inbox,
+  Settings,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -315,100 +311,50 @@ function AdminPage() {
               <Stat icon={CircleDollarSign} label="Umsatz (brutto)" value={currency(revenue)} />
             </div>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <CalendarFeedCard />
-              <Link
-                to="/admin/kunden"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Kundenakten</h2>
+            <section className="mt-8" aria-labelledby="admin-main-areas">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="eyebrow">Arbeitsbereiche</p>
+                  <h2 id="admin-main-areas" className="display-sub mt-1 uppercase">
+                    Schnellzugriff
+                  </h2>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Historie, Umsatz und Notizen je Kunde — automatisch aus den Buchungen
-                  zusammengestellt.
-                </p>
-              </Link>
-              <Link
-                to="/admin/leistungen"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Eigene Leistungen</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Zusätzliche Dienstleistungen selbst anlegen, bearbeiten oder als Entwurf
-                  speichern.
-                </p>
-              </Link>
-              <Link
-                to="/admin/galerie"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Fahrzeuggalerie</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Vorher/Nachher-Fotos hochladen — erscheinen auf der Startseite als
-                  Referenzgalerie.
-                </p>
-              </Link>
-              <Link
-                to="/admin/zustand"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <Camera className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Zustandsmeldungen</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Fotos und Zustandsbeschreibungen, die Interessenten vor der Buchung geschickt
-                  haben.
-                </p>
-              </Link>
-              <Link
-                to="/admin/faqs"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">FAQs</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Häufige Fragen pflegen und sortieren — erscheinen auf /faq und als FAQ-Rich-Result
-                  bei Google.
-                </p>
-              </Link>
-              <Link
-                to="/admin/blog"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <FileText className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Ratgeber</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Blog-Beiträge schreiben, Bilder hochladen und Meta-Angaben für Google und Social
-                  Media setzen.
-                </p>
-              </Link>
-              <Link
-                to="/admin/posteingang"
-                className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <Inbox className="size-4 text-primary" />
-                  <h2 className="display-card text-sm uppercase">Posteingang</h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Das Firmenpostfach mitlesen, ohne das Mailprogramm zu wechseln. Nur lesend —
-                  geantwortet wird weiterhin in Outlook.
-                </p>
-              </Link>
-            </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin/einstellungen">
+                    <Settings className="size-4" /> Einstellungen
+                  </Link>
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <CalendarFeedCard />
+                <Link
+                  to="/admin/kunden"
+                  className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="size-4 text-primary" />
+                    <h2 className="display-card text-sm uppercase">Kundenakten</h2>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Historie, Umsatz und Notizen je Kunde — automatisch aus den Buchungen
+                    zusammengestellt.
+                  </p>
+                </Link>
+                <Link
+                  to="/admin/unterlagen"
+                  className="glass flex flex-col justify-between rounded-2xl p-5 transition-colors hover:border-primary/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="size-4 text-primary" />
+                    <h2 className="display-card text-sm uppercase">Dokumente</h2>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Angebote, Rechnungsentwürfe und Zahlungserinnerungen bearbeiten und als PDF
+                    ausgeben.
+                  </p>
+                </Link>
+              </div>
+            </section>
 
             <ErrorBoundary title="Der E-Mail-Status konnte nicht geladen werden">
               <MailStatusCard />

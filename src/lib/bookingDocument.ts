@@ -1,6 +1,7 @@
 import { calcLineItems, calcTotals, effectivePrice, type Booking } from "./bookings";
 import { company, depositConfig, servicePackages, taxConfig, vehicleTypes } from "./servicesConfig";
 import { getPickupCity } from "./pickupLocations";
+import type { BookingDocumentDraft, BookingWithDocumentDraft } from "./bookingDocumentDraft";
 
 export type BookingDocumentKind =
   "request" | "confirmation" | "admin" | "offer" | "invoice-draft" | "payment-reminder-draft";
@@ -44,6 +45,8 @@ function today() {
 }
 
 function documentNumber(booking: Booking, kind: BookingDocumentKind) {
+  const editedNumber = documentDraft(booking)?.documentNumber.trim();
+  if (editedNumber) return editedNumber;
   const suffix = booking.invoiceNumber.replace(/^[A-Za-z-]+/, "") || booking.invoiceNumber;
   if (kind === "offer") return `AN-${suffix}`;
   if (kind === "invoice-draft" || kind === "payment-reminder-draft") return `RE-${suffix}`;
@@ -52,6 +55,10 @@ function documentNumber(booking: Booking, kind: BookingDocumentKind) {
 
 function placeholder(value: string | null | undefined, fallback = "wird nachgereicht") {
   return value?.trim() || fallback;
+}
+
+function documentDraft(booking: Booking): BookingDocumentDraft | undefined {
+  return (booking as BookingWithDocumentDraft).documentDraft;
 }
 
 function sourceLabel(source: Booking["bookingSource"]) {
@@ -146,6 +153,7 @@ function drawHeader(
   kind: BookingDocumentKind,
   number: string,
   logo: string | null,
+  booking: Booking,
 ) {
   const { left: L, right: R } = PAGE;
   if (logo) {
@@ -171,14 +179,14 @@ function drawHeader(
       ? [
           `Angebotsnummer: ${number}`,
           `Angebotsdatum: ${today()}`,
-          "Gültig bis: wird nachgereicht",
+          `Gültig bis: ${deDate(documentDraft(booking)?.validUntil)}`,
           "Kundennummer: wird nachgereicht",
         ]
       : kind === "invoice-draft"
         ? [
             `Rechnungsnummer: ${number}`,
             `Rechnungsdatum: ${today()}`,
-            "Leistungsdatum: wird nachgereicht",
+            `Leistungsdatum: ${deDate(documentDraft(booking)?.serviceDate || booking.date)}`,
             "Kundennummer: wird nachgereicht",
           ]
         : kind === "payment-reminder-draft"
@@ -193,6 +201,7 @@ function drawHeader(
 
 function drawAddressBlocks(doc: InstanceType<(typeof import("jspdf"))["jsPDF"]>, booking: Booking) {
   const { left: L, right: R } = PAGE;
+  const draft = documentDraft(booking);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.2);
   doc.setTextColor(...COLORS.muted);
@@ -202,9 +211,9 @@ function drawAddressBlocks(doc: InstanceType<(typeof import("jspdf"))["jsPDF"]>,
   doc.setFontSize(9);
   [
     placeholder(booking.customer.name),
-    "Firma / Ansprechpartner: wird nachgereicht",
-    "Straße / Hausnummer: wird nachgereicht",
-    "PLZ / Ort: wird nachgereicht",
+    placeholder(draft?.customerCompany, "Firma / Ansprechpartner: wird nachgereicht"),
+    placeholder(draft?.customerStreet, "Straße / Hausnummer: wird nachgereicht"),
+    placeholder(draft?.customerCity, "PLZ / Ort: wird nachgereicht"),
   ].forEach((line, index) => doc.text(line, L, 69 + index * 5));
 
   [
@@ -225,7 +234,7 @@ function drawTemplateDocument(
   logo: string | null,
 ) {
   const number = documentNumber(booking, kind);
-  drawHeader(doc, kind, number, logo);
+  drawHeader(doc, kind, number, logo, booking);
   drawAddressBlocks(doc, booking);
 
   if (kind === "payment-reminder-draft") {
@@ -417,7 +426,7 @@ function drawInvoicePayment(
   doc.setTextColor(...COLORS.ink);
   doc.setFont("helvetica", "normal");
   doc.text(
-    `Leistungsdatum: ${deDate(booking.date)} · Steuer-/USt.-Angaben: wird nachgereicht`,
+    `Leistungsdatum: ${deDate(documentDraft(booking)?.serviceDate || booking.date)} · Steuer-/USt.-Angaben: wird nachgereicht`,
     PAGE.left,
     noteY + 5,
   );
@@ -471,7 +480,7 @@ function drawPaymentReminder(
 
   doc.setFont("helvetica", "normal");
   doc.text(
-    "Bitte überweisen Sie den offenen Betrag bis spätestens: wird nachgereicht.",
+    `Bitte überweisen Sie den offenen Betrag bis spätestens: ${deDate(documentDraft(booking)?.dueDate)}.`,
     PAGE.left,
     y,
   );
@@ -516,7 +525,7 @@ function drawBookingDocument(
 ) {
   const { left: L, right: R, width: W } = PAGE;
   const number = documentNumber(booking, kind);
-  drawHeader(doc, kind, number, logo);
+  drawHeader(doc, kind, number, logo, booking);
   let y = 62;
   const vehicle = vehicleTypes.find((item) => item.id === booking.vehicleId);
   const pkg = servicePackages.find((item) => item.id === booking.packageId);

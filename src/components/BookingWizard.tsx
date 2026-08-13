@@ -56,6 +56,7 @@ import {
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { navigateAfterBooking } from "@/lib/bookingSuccess";
+import { stepAfterPackageSelection } from "@/lib/bookingWizardFlow";
 
 const steps = ["Paket", "Fahrzeug", "Extras", "Fotos", "Wunschtermin", "Anfrage"];
 const pickupAddOn = addOns.find((addOn) => addOn.distanceBased);
@@ -407,7 +408,10 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
                     <button
                       key={pkg.id}
                       type="button"
-                      onClick={() => setPackageId(pkg.id)}
+                      onClick={() => {
+                        setPackageId(pkg.id);
+                        setStep((current) => stepAfterPackageSelection(current));
+                      }}
                       aria-pressed={active}
                       className={[
                         "relative rounded-2xl border p-5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring sm:p-6",
@@ -849,7 +853,7 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
             </section>
           )}
 
-          <div className="mt-8 flex flex-col-reverse items-stretch justify-center gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+          <div className="sticky bottom-0 z-20 -mx-5 mt-8 flex flex-col-reverse items-stretch justify-center gap-3 border-t border-border bg-background/95 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-16px_32px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:static sm:mx-0 sm:flex-row sm:items-center sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-6 sm:shadow-none">
             {step > 0 && (
               <Button
                 variant="ghost"

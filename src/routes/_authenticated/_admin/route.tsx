@@ -1,6 +1,7 @@
-import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
-import { FileText, ShieldAlert, Workflow } from "lucide-react";
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
+import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminPrimaryNavigation } from "@/components/AdminPrimaryNavigation";
 import { getSupabaseClient } from "@/integrations/supabase/get-client";
 
 export const Route = createFileRoute("/_authenticated/_admin")({
@@ -56,37 +57,8 @@ function AdminGate() {
 
   return (
     <>
+      <AdminPrimaryNavigation />
       <Outlet />
-      <AdminShortcuts />
     </>
-  );
-}
-
-function AdminShortcuts() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-
-  return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
-      {!pathname.startsWith("/admin/unterlagen") && (
-        <Link
-          to="/admin/unterlagen"
-          aria-label="Unterlagen und Preis öffnen"
-          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-2.5 text-sm font-medium text-foreground shadow-xl backdrop-blur transition-colors hover:border-primary/60 hover:bg-secondary"
-        >
-          <FileText aria-hidden className="size-4 text-primary" />
-          <span className="hidden sm:inline">Unterlagen & Preis</span>
-        </Link>
-      )}
-      {!pathname.startsWith("/admin/automatisierung") && (
-        <Link
-          to="/admin/automatisierung"
-          aria-label="Automatisierung öffnen"
-          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-2.5 text-sm font-medium text-foreground shadow-xl backdrop-blur transition-colors hover:border-primary/60 hover:bg-secondary"
-        >
-          <Workflow aria-hidden className="size-4 text-primary" />
-          <span className="hidden sm:inline">Automatisierung</span>
-        </Link>
-      )}
-    </div>
   );
 }
