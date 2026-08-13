@@ -12,6 +12,10 @@ const statusPriority: Record<BookingStatus, number> = {
   Storniert: 5,
 };
 
+function compareCreatedAtNewestFirst(a: Booking, b: Booking): number {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
 export function filterAndSortBookings(
   bookings: Booking[],
   options: { query: string; status: BookingStatusFilter; sort: BookingSort },
@@ -36,11 +40,11 @@ export function filterAndSortBookings(
     .sort((a, b) => {
       if (options.sort === "termin") return a.date.localeCompare(b.date);
       if (options.sort === "preis-hoch") return b.total - a.total;
-      if (options.sort === "eingang-neu") return b.createdAt.localeCompare(a.createdAt);
+      if (options.sort === "eingang-neu") return compareCreatedAtNewestFirst(a, b);
 
       const priority = statusPriority[a.status] - statusPriority[b.status];
       if (priority !== 0) return priority;
-      if (a.status === "Wartend auf Prüfung") return b.createdAt.localeCompare(a.createdAt);
+      if (a.status === "Wartend auf Prüfung") return compareCreatedAtNewestFirst(a, b);
       return a.date.localeCompare(b.date);
     });
 }

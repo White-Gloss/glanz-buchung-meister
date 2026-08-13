@@ -84,4 +84,17 @@ describe("filterAndSortBookings", () => {
       filterAndSortBookings(rows, { query: "", status: "alle", sort: "termin" }).map((b) => b.id),
     ).toEqual(["confirmed", "paid", "waiting-new", "waiting-old"]);
   });
+
+  it("sortiert Eingänge auch dann, wenn der Server Zeitstempel als Date liefert", () => {
+    const dateRows = rows.map((row) => ({
+      ...row,
+      createdAt: new Date(row.createdAt),
+    })) as unknown as Booking[];
+
+    expect(
+      filterAndSortBookings(dateRows, { query: "", status: "alle", sort: "eingang-neu" }).map(
+        (b) => b.id,
+      ),
+    ).toEqual(["waiting-new", "waiting-old", "paid", "confirmed"]);
+  });
 });
