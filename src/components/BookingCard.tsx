@@ -300,6 +300,7 @@ export function BookingCard({
   const [photos, setPhotos] = useState<string[] | null>(null);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const vehicle = vehicleTypes.find((v) => v.id === booking.vehicleId);
   const pkg = servicePackages.find((p) => p.id === booking.packageId);
@@ -521,14 +522,32 @@ export function BookingCard({
           </Link>
         </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-label={`Buchung ${booking.invoiceNumber} löschen`}
-          onClick={() => actions.onDelete(booking.id)}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        {confirmDelete ? (
+          <div
+            role="group"
+            aria-label={`Löschen von Buchung ${booking.invoiceNumber} bestätigen`}
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-2"
+          >
+            <span className="px-1 text-xs text-destructive">
+              {booking.invoiceNumber} wirklich löschen?
+            </span>
+            <Button size="sm" variant="destructive" onClick={() => actions.onDelete(booking.id)}>
+              Endgültig löschen
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+              Abbrechen
+            </Button>
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label={`Buchung ${booking.invoiceNumber} löschen`}
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        )}
       </div>
 
       {showOffer && (

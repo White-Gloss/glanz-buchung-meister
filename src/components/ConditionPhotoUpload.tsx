@@ -282,7 +282,6 @@ export function ConditionPhotoUpload({
 }: {
   photos: UploadedPhoto[];
   onChange: (photos: UploadedPhoto[]) => void;
-  /** Im Buchungsassistenten bedeutet true auch: Pflichtmedium fehlt. */
   onUploadingChange?: (uploading: boolean) => void;
   inputId?: string;
   hint?: string;
@@ -291,49 +290,11 @@ export function ConditionPhotoUpload({
   const [processingName, setProcessingName] = useState<string | null>(null);
   const upload = useServerFn(uploadConditionPhoto);
 
-  const mediaRequired = inputId === "buchung-zustand-fotos";
-  const requirementMissing = mediaRequired && photos.length === 0;
+  const isBookingUpload = inputId === "buchung-zustand-fotos";
 
   useEffect(() => {
-    onUploadingChange?.(uploading || requirementMissing);
-  }, [onUploadingChange, requirementMissing, uploading]);
-
-  // Die Pflicht- und Hilfetexte des Buchungsschritts werden hier synchron
-  // gehalten, weil diese Komponente sowohl dort als auch auf der separaten
-  // Zustandsseite verwendet wird.
-  useEffect(() => {
-    if (!mediaRequired) return;
-    const anchor = document.getElementById(inputId);
-    const section = anchor?.closest("section");
-    if (!section) return;
-
-    const heading = section.querySelector("h3");
-    if (heading) heading.textContent = "Fahrzeugzustand";
-    const headerText = heading?.parentElement?.querySelector("p");
-    if (headerText) {
-      headerText.textContent =
-        "Bitte laden Sie mindestens ein aktuelles Foto oder Video Ihres Fahrzeugs hoch. So können wir Zustand und Aufwand vor der Terminbestätigung realistisch einschätzen.";
-    }
-
-    const noteLabel = section.querySelector('label[for="buchung-zustand-notiz"]');
-    if (noteLabel) {
-      noteLabel.textContent = "Unsicher, was gemacht werden soll? (optional)";
-    }
-    const note = section.querySelector<HTMLTextAreaElement>("#buchung-zustand-notiz");
-    if (note) {
-      note.placeholder =
-        "Sie müssen keine Fachbegriffe kennen: Schreiben Sie einfach, was Sie am Fahrzeug stört oder welches Ergebnis Sie sich wünschen. Zum Beispiel: Lack wirkt stumpf, Innenraum riecht, Sitze haben Flecken oder ich weiß nicht, welches Paket sinnvoll ist.";
-    }
-
-    const paragraphs = Array.from(section.querySelectorAll(":scope > p"));
-    const optionalHint = paragraphs.find((element) =>
-      element.textContent?.includes("Dieser Schritt ist freiwillig"),
-    );
-    if (optionalHint) {
-      optionalHint.textContent =
-        "Mindestens eine aktuelle Aufnahme (Foto oder Video) ist erforderlich. Wenn Sie nicht wissen, welche Behandlung sinnvoll ist, beschreiben Sie einfach kurz Ihr Ziel – wir empfehlen Ihnen die passende Lösung.";
-    }
-  }, [inputId, mediaRequired]);
+    onUploadingChange?.(uploading);
+  }, [onUploadingChange, uploading]);
 
   async function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -418,18 +379,16 @@ export function ConditionPhotoUpload({
 
   return (
     <div className="space-y-4">
-      {mediaRequired && (
+      {isBookingUpload && (
         <div
           className={[
             "rounded-xl border px-4 py-3 text-sm",
-            requirementMissing
-              ? "border-amber-500/35 bg-amber-500/10 text-amber-100"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-100",
+            "border-primary/30 bg-primary/5 text-foreground",
           ].join(" ")}
-          role={requirementMissing ? "alert" : "status"}
+          role="status"
         >
-          {requirementMissing
-            ? "Pflichtangabe: Bitte laden Sie mindestens ein aktuelles Foto oder Video des Fahrzeugs hoch."
+          {photos.length === 0
+            ? "Optional: Fotos oder ein kurzes Video ermöglichen eine genauere Einschätzung."
             : "Fahrzeugzustand erfasst – Sie können weitere Aufnahmen ergänzen oder fortfahren."}
         </div>
       )}
@@ -509,7 +468,7 @@ export function ConditionPhotoUpload({
         <Button
           asChild
           type="button"
-          variant={mediaRequired ? "default" : "outline"}
+          variant={isBookingUpload ? "default" : "outline"}
           disabled={disabled}
           className="gap-2"
         >

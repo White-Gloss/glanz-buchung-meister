@@ -16,7 +16,7 @@ import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
-import { absUrl, SITE_URL, standardPageMeta } from "@/lib/seo";
+import { absUrl, OG_IMAGE, SITE_URL, standardPageMeta } from "@/lib/seo";
 import {
   company,
   currency,
@@ -33,8 +33,6 @@ const BookingWizard = lazy(() =>
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
   "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.";
-const OG_IMAGE = absUrl("/hero-car.jpg");
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -343,7 +341,9 @@ function Packages() {
               variant={servicePackage.highlight ? "default" : "outline"}
               className="mt-8 rounded-lg"
             >
-              <a href="#buchung">Paket konfigurieren</a>
+              <a href={`/?paket=${encodeURIComponent(servicePackage.id)}#buchung`}>
+                Paket konfigurieren
+              </a>
             </Button>
           </article>
         ))}

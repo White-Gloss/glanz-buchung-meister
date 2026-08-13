@@ -20,4 +20,8 @@ describe("cacheControlForPath", () => {
     expect(cacheControlForPath("/_serverFn/listBookings")).toBeNull();
     expect(cacheControlForPath("/api/automation-cron")).toBeNull();
   });
+
+  it("respektiert den eigenen öffentlichen Cache der Sitemap", () => {
+    expect(cacheControlForPath("/sitemap.xml")).toBeNull();
+  });
 });

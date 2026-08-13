@@ -234,14 +234,12 @@ function AdminPage() {
   }
 
   async function remove(id: string) {
-    const previous = bookings;
-    setBookings((list) => list.filter((b) => b.id !== id));
     try {
       await removeFn({ data: { id } });
+      setBookings((list) => list.filter((b) => b.id !== id));
       setAuditKey((k) => k + 1);
       toast.success("Buchung gelöscht");
     } catch (error) {
-      setBookings(previous);
       reportError(error);
     }
   }

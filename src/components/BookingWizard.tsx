@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -34,7 +35,6 @@ import {
   contactChannels,
   MAX_BOOKINGS_PER_DAY,
   TIME_NOTICE,
-  type Booking,
   type ContactChannel,
 } from "@/lib/bookings";
 import { submitConditionReport } from "@/lib/conditionReports.functions";
@@ -47,7 +47,6 @@ import {
   addOns,
   company,
   currency,
-  depositConfig,
   getPickupPrice,
   isPickupIncluded,
   pickupTierSummary,
@@ -170,9 +169,16 @@ function MiniCalendar({
   );
 }
 
+function initialPackageFromLocation(): string | null {
+  if (typeof window === "undefined") return null;
+  const packageId = new URLSearchParams(window.location.search).get("paket");
+  return servicePackages.some((pkg) => pkg.id === packageId) ? packageId : null;
+}
+
 export function BookingWizard() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [packageId, setPackageId] = useState<string | null>(null);
+  const [packageId, setPackageId] = useState<string | null>(initialPackageFromLocation);
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [pickupCity, setPickupCity] = useState("");
@@ -182,7 +188,7 @@ export function BookingWizard() {
   const [date, setDate] = useState<string | null>(null);
   const [preferredContact, setPreferredContact] = useState<ContactChannel>("E-Mail");
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", plate: "" });
-  const [confirmed, setConfirmed] = useState<Booking | null>(null);
+
   const [touched, setTouched] = useState<Partial<Record<CustomerField, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<CustomerField, string>>>({});
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
@@ -250,7 +256,7 @@ export function BookingWizard() {
     !!packageId,
     !!vehicleId,
     pickupStepValid,
-    conditionPhotos.length > 0 && !photosUploading,
+    !photosUploading,
     !!date,
     Object.keys(validateCustomer(customer)).length === 0 && pickupStepValid,
   ][step];
@@ -296,9 +302,9 @@ export function BookingWizard() {
       return;
     }
 
-    if (conditionPhotos.length === 0 || photosUploading) {
+    if (photosUploading) {
       setStep(3);
-      toast.error("Bitte laden Sie mindestens ein Fahrzeugfoto hoch.");
+      toast.error("Bitte warten Sie, bis der Medien-Upload abgeschlossen ist.");
       return;
     }
 
@@ -321,21 +327,23 @@ export function BookingWizard() {
         },
       });
 
-      try {
-        await sendConditionReport({
-          data: {
-            name: customer.name.trim(),
-            email: customer.email.trim(),
-            phone: customer.phone.trim(),
-            vehicle: selectedVehicle?.name ?? "",
-            plate: customer.plate.trim().toUpperCase(),
-            conditionText: conditionNote.trim(),
-            photoPaths: conditionPhotos.map((photo) => photo.path),
-            bookingId: booking.id,
-          },
-        });
-      } catch (error) {
-        console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
+      if (conditionPhotos.length > 0 || conditionNote.trim()) {
+        try {
+          await sendConditionReport({
+            data: {
+              name: customer.name.trim(),
+              email: customer.email.trim(),
+              phone: customer.phone.trim(),
+              vehicle: selectedVehicle?.name ?? "",
+              plate: customer.plate.trim().toUpperCase(),
+              conditionText: conditionNote.trim(),
+              photoPaths: conditionPhotos.map((photo) => photo.path),
+              bookingId: booking.id,
+            },
+          });
+        } catch (error) {
+          console.error("[Zustandsmeldung] konnte nicht gespeichert werden", error);
+        }
       }
 
       // Erfolgreich abgeschickte Anfrage an die Werbekonten melden. Beide
@@ -350,8 +358,15 @@ export function BookingWizard() {
         console.error("[Messung] Conversion konnte nicht gemeldet werden", error);
       }
 
-      setConfirmed(booking);
       toast.success("Anfrage gesendet – White Gloss prüft jetzt Ihren Wunschtermin.");
+      await navigate({
+        to: "/danke",
+        search: {
+          nr: booking.invoiceNumber,
+          name: booking.customer.name.trim().split(/\s+/)[0] || undefined,
+        },
+        replace: true,
+      });
     } catch (error) {
       const info = diagnoseBackendError(error);
       setSubmitError(info);
@@ -359,15 +374,6 @@ export function BookingWizard() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (confirmed) {
-    return (
-      <>
-        <Confirmation booking={confirmed} onReset={() => window.location.reload()} />
-        <Toaster position="top-center" richColors />
-      </>
-    );
   }
 
   return (
@@ -633,8 +639,8 @@ export function BookingWizard() {
             <section>
               <StepHeader
                 eyebrow="4 · Fahrzeugzustand"
-                title="Jetzt die Fotos – danach können wir seriös prüfen"
-                text="Mindestens ein Foto ist erforderlich. Ideal sind Gesamtansichten und Nahaufnahmen von Kratzern, Flecken oder besonders verschmutzten Stellen."
+                title="Fotos helfen uns bei einer genaueren Einschätzung"
+                text="Dieser Schritt ist freiwillig. Ideal sind Gesamtansichten und Nahaufnahmen von Kratzern, Flecken oder besonders verschmutzten Stellen."
               />
 
               <div className="mx-auto max-w-2xl">
@@ -676,7 +682,7 @@ export function BookingWizard() {
 
                 <p className="mt-4 text-center text-xs text-muted-foreground">
                   {conditionPhotos.length === 0
-                    ? "Bitte laden Sie mindestens eine Aufnahme hoch, um fortzufahren."
+                    ? "Keine Aufnahme hinzugefügt – Sie können trotzdem fortfahren."
                     : `${conditionPhotos.length} Aufnahme${conditionPhotos.length === 1 ? "" : "n"} bereit.`}
                 </p>
               </div>
@@ -730,6 +736,7 @@ export function BookingWizard() {
                     icon={User}
                     value={customer.name}
                     placeholder="Max Mustermann"
+                    autoComplete="name"
                     onChange={(value) => updateCustomer("name", value)}
                     onBlur={() => blurCustomer("name")}
                     error={errors.name}
@@ -739,6 +746,8 @@ export function BookingWizard() {
                     label="E-Mail"
                     icon={Mail}
                     type="email"
+                    autoComplete="email"
+                    inputMode="email"
                     value={customer.email}
                     placeholder="max@beispiel.de"
                     onChange={(value) => updateCustomer("email", value)}
@@ -749,6 +758,9 @@ export function BookingWizard() {
                     id="phone"
                     label="Telefon"
                     icon={Phone}
+                    type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
                     value={customer.phone}
                     placeholder="+49 176 12345678"
                     onChange={(value) => updateCustomer("phone", value)}
@@ -759,6 +771,8 @@ export function BookingWizard() {
                     id="plate"
                     label="Kennzeichen"
                     icon={Car}
+                    autoComplete="off"
+                    autoCapitalize="characters"
                     value={customer.plate}
                     placeholder="FDS-WG 26"
                     onChange={(value) => updateCustomer("plate", value)}
@@ -895,6 +909,9 @@ function Field({
   onChange,
   placeholder,
   type = "text",
+  autoComplete,
+  inputMode,
+  autoCapitalize,
   onBlur,
   error,
 }: {
@@ -905,6 +922,9 @@ function Field({
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  autoComplete?: string;
+  inputMode?: "email" | "tel" | "text";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   onBlur?: () => void;
   error?: string;
 }) {
@@ -918,6 +938,9 @@ function Field({
         <Input
           id={id}
           type={type}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          autoCapitalize={autoCapitalize}
           value={value}
           maxLength={120}
           placeholder={placeholder}
@@ -988,83 +1011,6 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
     <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="text-right font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
-
-function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
-  const items = calcLineItems(booking);
-  const totals = calcTotals(items);
-  const pickupCityName = booking.pickupCity
-    ? (pickupCitiesByDistance.find((city) => city.slug === booking.pickupCity)?.name ?? null)
-    : null;
-
-  return (
-    <div className="glass-strong mx-auto max-w-2xl rounded-3xl p-6 text-center sm:p-10">
-      <div className="mx-auto grid size-16 place-items-center rounded-full bg-primary/15 glow-ring">
-        <CheckCircle2 className="size-8 text-primary" />
-      </div>
-      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-        Anfrage erfolgreich gesendet
-      </p>
-      <h3 className="display-sub mt-2">Wir prüfen jetzt Ihre Buchung</h3>
-      <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground">
-        Vielen Dank, {booking.customer.name}. Ihre Anfrage und der Wunschtermin sind bei White Gloss
-        eingegangen. Erst die anschließende E-Mail nach unserer Prüfung bestätigt den Termin
-        verbindlich.
-      </p>
-
-      <dl className="mt-8 grid gap-3 rounded-2xl bg-secondary/40 p-5 text-left text-sm">
-        <Detail label="Anfragenummer" value={booking.invoiceNumber} />
-        <Detail label="Wunschtermin" value={formatBookingDate(booking.date)} />
-        <Detail label="Kennzeichen" value={booking.customer.plate} />
-        {pickupCityName && <Detail label="Gewünschte Abholung" value={pickupCityName} />}
-        {items.map((item) => (
-          <Detail key={item.label} label={item.label} value={currency(item.total)} />
-        ))}
-        <div className="mt-2 flex justify-between gap-4 border-t border-border pt-3 font-semibold">
-          <span>Voraussichtlicher Gesamtpreis</span>
-          <span className="text-primary">{currency(totals.gross)}</span>
-        </div>
-        <p className="text-xs text-muted-foreground">{vatNotice()}</p>
-      </dl>
-
-      <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-left">
-        <p className="font-semibold">So geht es weiter</p>
-        <ol className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-          <li>1. White Gloss prüft Ihre Fahrzeugfotos, Leistungen und den Wunschtermin.</li>
-          <li>
-            2. Sie erhalten die verbindliche Bestätigung oder ein Gegenangebot mit Ersatzterminen
-            per E-Mail.
-          </li>
-          <li>
-            3. Erst nach Ihrer bzw. unserer finalen Bestätigung ist der Termin fest reserviert.
-          </li>
-        </ol>
-      </div>
-
-      {booking.depositAmount > 0 && (
-        <p className="mx-auto mt-4 max-w-xl rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left text-sm text-amber-200">
-          Für Neukunden wird nach der Terminfreigabe eine Anzahlung von{" "}
-          <strong>{currency(booking.depositAmount)}</strong> fällig. Die Zahlungsinformationen
-          erhalten Sie erst mit der verbindlichen Bestätigung.
-        </p>
-      )}
-
-      <p className="mt-5 text-sm leading-6 text-muted-foreground">{TIME_NOTICE}</p>
-
-      <Button className="mt-7" variant="outline" onClick={onReset}>
-        Neue Anfrage
-      </Button>
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="min-w-0 text-muted-foreground">{label}</dt>
-      <dd className="shrink-0 text-right font-medium">{value}</dd>
     </div>
   );
 }
