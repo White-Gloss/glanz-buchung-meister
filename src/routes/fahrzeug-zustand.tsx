@@ -38,6 +38,7 @@ export const Route = createFileRoute("/fahrzeug-zustand")({
     links: [
       { rel: "canonical", href: CANONICAL },
       { rel: "alternate", hrefLang: "de-DE", href: CANONICAL },
+      { rel: "alternate", hrefLang: "x-default", href: CANONICAL },
     ],
   }),
   component: ConditionPage,

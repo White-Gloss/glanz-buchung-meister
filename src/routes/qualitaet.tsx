@@ -17,6 +17,7 @@ export const Route = createFileRoute("/qualitaet")({
     links: [
       { rel: "canonical", href: absUrl("/qualitaet") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/qualitaet") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/qualitaet") },
     ],
   }),
   component: QualityPage,

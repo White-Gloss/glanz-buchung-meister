@@ -21,6 +21,7 @@ export const Route = createFileRoute("/datenschutz")({
     links: [
       { rel: "canonical", href: absUrl("/datenschutz") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/datenschutz") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/datenschutz") },
     ],
   }),
   component: PrivacyPage,

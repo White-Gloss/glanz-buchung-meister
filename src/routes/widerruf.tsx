@@ -20,6 +20,7 @@ export const Route = createFileRoute("/widerruf")({
     links: [
       { rel: "canonical", href: absUrl("/widerruf") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/widerruf") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/widerruf") },
     ],
   }),
   component: WithdrawalPage,

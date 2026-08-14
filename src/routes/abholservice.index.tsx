@@ -24,6 +24,7 @@ export const Route = createFileRoute("/abholservice/")({
     links: [
       { rel: "canonical", href: absUrl("/abholservice") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/abholservice") },
     ],
     scripts: [{ type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) }],
   }),

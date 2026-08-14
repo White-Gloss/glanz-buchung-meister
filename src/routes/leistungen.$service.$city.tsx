@@ -59,6 +59,7 @@ export const Route = createFileRoute("/leistungen/$service/$city")({
       links: [
         { rel: "canonical", href: meta.canonical },
         { rel: "alternate", hrefLang: "de-DE", href: meta.canonical },
+        { rel: "alternate", hrefLang: "x-default", href: meta.canonical },
       ],
       scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
     };

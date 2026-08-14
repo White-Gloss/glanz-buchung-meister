@@ -35,7 +35,7 @@ const services = [
   },
 ] as const;
 
-const whatsappHref = `${company.whatsappHref}?text=${encodeURIComponent(
+const whatsappHref = `${company.whatsappHref}&text=${encodeURIComponent(
   "Hallo White Gloss, ich möchte ein individuelles B2B-Angebot für Fahrzeugaufbereitung anfragen.",
 )}`;
 

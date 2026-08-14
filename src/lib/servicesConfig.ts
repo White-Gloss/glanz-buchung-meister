@@ -64,7 +64,7 @@ export const company = {
   country: "Deutschland",
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
-  whatsappHref: "https://wa.me/4915233540284",
+  whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
   whatsapp: {
     number: "4915233540284",
     defaultMessage: "Hallo White Gloss, ich möchte einen Samstagstermin persönlich anfragen.",

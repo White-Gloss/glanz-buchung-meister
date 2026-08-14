@@ -26,9 +26,30 @@ export function blogPostUrl(slug: string): string {
 export const BLOG_INDEX_URL = absUrl("/ratgeber");
 export const FAQ_PAGE_URL = absUrl("/faq");
 
-/** Meta-Titel mit Rückfall auf den Beitragstitel. */
+/** Kürzt SEO-Texte an einer Wortgrenze und vermeidet abgeschnittene Wörter. */
+function truncateSeoText(value: string, maxLength: number): string {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length <= maxLength) return normalized;
+
+  const candidate = normalized.slice(0, maxLength - 1).trimEnd();
+  const lastSpace = candidate.lastIndexOf(" ");
+  const shortened = lastSpace > maxLength * 0.7 ? candidate.slice(0, lastSpace) : candidate;
+  return `${shortened.replace(/[\s,;:–—-]+$/u, "")}…`;
+}
+
+/** Meta-Titel mit Rückfall auf den Beitragstitel und stabiler Snippet-Länge. */
 export function effectiveMetaTitle(post: { title: string; meta_title: string }): string {
-  return post.meta_title || `${post.title} | White Gloss Detailing`;
+  const title = post.meta_title || `${post.title} | White Gloss Detailing`;
+  const brandSeparator = " | ";
+  const brandIndex = title.lastIndexOf(brandSeparator);
+
+  if (title.length > 60 && brandIndex > 0) {
+    const brand = title.slice(brandIndex);
+    const subject = truncateSeoText(title.slice(0, brandIndex), 60 - brand.length);
+    return `${subject}${brand}`;
+  }
+
+  return truncateSeoText(title, 60);
 }
 
 /**
@@ -40,7 +61,7 @@ export function effectiveMetaDescription(
   post: { meta_description: string; excerpt: string },
   plainText = "",
 ): string {
-  return post.meta_description || post.excerpt || excerptFrom(plainText, 160);
+  return truncateSeoText(post.meta_description || post.excerpt || excerptFrom(plainText, 155), 155);
 }
 
 /** Bild für Social-Vorschau: eigenes OG-Bild, sonst Beitragsbild, sonst Standard. */

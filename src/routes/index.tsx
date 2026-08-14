@@ -47,6 +47,7 @@ export const Route = createFileRoute("/")({
     links: [
       { rel: "canonical", href: absUrl("/") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/") },
       {
         rel: "preload",
         as: "image",

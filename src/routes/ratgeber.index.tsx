@@ -43,6 +43,7 @@ export const Route = createFileRoute("/ratgeber/")({
     links: [
       { rel: "canonical", href: BLOG_INDEX_URL },
       { rel: "alternate", hrefLang: "de-DE", href: BLOG_INDEX_URL },
+      { rel: "alternate", hrefLang: "x-default", href: BLOG_INDEX_URL },
     ],
     scripts: loaderData?.posts.length
       ? [{ type: "application/ld+json", children: JSON.stringify(loaderData.jsonLd) }]

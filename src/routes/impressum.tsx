@@ -20,6 +20,7 @@ export const Route = createFileRoute("/impressum")({
     links: [
       { rel: "canonical", href: absUrl("/impressum") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/impressum") },
     ],
   }),
   component: ImprintPage,

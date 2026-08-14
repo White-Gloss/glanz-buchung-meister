@@ -38,6 +38,7 @@ export const Route = createFileRoute("/faq")({
     links: [
       { rel: "canonical", href: FAQ_PAGE_URL },
       { rel: "alternate", hrefLang: "de-DE", href: FAQ_PAGE_URL },
+      { rel: "alternate", hrefLang: "x-default", href: FAQ_PAGE_URL },
     ],
     // Nur auszeichnen, wenn tatsächlich Fragen vorliegen — eine leere
     // FAQPage wertet Google als fehlerhaftes Rich Result.

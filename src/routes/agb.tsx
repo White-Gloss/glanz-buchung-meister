@@ -21,6 +21,7 @@ export const Route = createFileRoute("/agb")({
     links: [
       { rel: "canonical", href: absUrl("/agb") },
       { rel: "alternate", hrefLang: "de-DE", href: absUrl("/agb") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/agb") },
     ],
   }),
   component: TermsPage,

@@ -44,7 +44,11 @@ export const Route = createFileRoute("/dellen-hagelschaden")({
       description: DESCRIPTION,
       path: "/dellen-hagelschaden",
     }),
-    links: [{ rel: "canonical", href: absUrl("/dellen-hagelschaden") }],
+    links: [
+      { rel: "canonical", href: absUrl("/dellen-hagelschaden") },
+      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/dellen-hagelschaden") },
+      { rel: "alternate", hrefLang: "x-default", href: absUrl("/dellen-hagelschaden") },
+    ],
     scripts: [
       {
         type: "application/ld+json",

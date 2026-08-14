@@ -42,6 +42,7 @@ export const Route = createFileRoute("/leistungen/")({
       links: [
         { rel: "canonical", href: absUrl("/leistungen") },
         { rel: "alternate", hrefLang: "de-DE", href: absUrl("/leistungen") },
+        { rel: "alternate", hrefLang: "x-default", href: absUrl("/leistungen") },
       ],
       scripts: [
         {

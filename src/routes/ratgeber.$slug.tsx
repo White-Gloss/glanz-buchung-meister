@@ -102,6 +102,7 @@ export const Route = createFileRoute("/ratgeber/$slug")({
       links: [
         { rel: "canonical", href: canonical },
         { rel: "alternate", hrefLang: "de-DE", href: canonical },
+        { rel: "alternate", hrefLang: "x-default", href: canonical },
       ],
       scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
     };

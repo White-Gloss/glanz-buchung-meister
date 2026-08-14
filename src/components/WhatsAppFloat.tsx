@@ -6,7 +6,7 @@ const defaultMessage = encodeURIComponent(
 );
 
 export function WhatsAppFloat() {
-  const href = `${company.whatsappHref}?text=${defaultMessage}`;
+  const href = `${company.whatsappHref}&text=${defaultMessage}`;
 
   return (
     <a
