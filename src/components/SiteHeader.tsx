@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Building2,
   ChevronDown,
+  Gem,
   MapPin,
   Menu,
   MessageCircle,
@@ -179,6 +180,15 @@ export function SiteHeader() {
               )}
             </div>
             <Link
+              to="/luxusfahrzeuge"
+              className={`${NAV_LINK} border border-primary/25 bg-primary/[0.08] text-foreground hover:border-primary/45 hover:bg-primary/[0.12]`}
+              activeProps={{ className: "border-primary/50 bg-primary/[0.15] text-primary" }}
+              onClick={closeMenus}
+            >
+              <Gem aria-hidden className="mr-1.5 size-3.5 text-primary" />
+              Luxusfahrzeuge
+            </Link>
+            <Link
               to="/preise"
               className={NAV_LINK}
               activeProps={{ className: ACTIVE_NAV }}
@@ -217,14 +227,6 @@ export function SiteHeader() {
               onClick={closeMenus}
             >
               Ratgeber
-            </Link>
-            <Link
-              to="/faq"
-              className={NAV_LINK}
-              activeProps={{ className: ACTIVE_NAV }}
-              onClick={closeMenus}
-            >
-              FAQ
             </Link>
             <Link to="/" hash="b2b" className={NAV_LINK} onClick={closeMenus}>
               B2B &amp; Flotten
@@ -294,6 +296,19 @@ export function SiteHeader() {
                     </div>
                   )}
                 </div>
+                <Link
+                  to="/luxusfahrzeuge"
+                  className={`${MOBILE_NAV_LINK} border border-primary/30 bg-primary/[0.08]`}
+                  onClick={closeMenus}
+                >
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    <Gem aria-hidden className="size-4 text-primary" />
+                    Luxusfahrzeuge
+                  </span>
+                  <span className="text-[0.62rem] uppercase tracking-[0.14em] text-primary">
+                    Nur auf Anruf
+                  </span>
+                </Link>
                 <Link to="/preise" className={MOBILE_NAV_LINK} onClick={closeMenus}>
                   Preise &amp; Pakete
                 </Link>

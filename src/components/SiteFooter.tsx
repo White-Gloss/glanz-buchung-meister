@@ -40,6 +40,11 @@ export function SiteFooter() {
             </Link>
           </p>
           <p>
+            <Link to="/luxusfahrzeuge" className={`${FOOTER_LINK} text-primary`}>
+              Luxusfahrzeuge
+            </Link>
+          </p>
+          <p>
             <Link to="/preise" className={FOOTER_LINK}>
               Preise &amp; Pakete
             </Link>

@@ -105,6 +105,28 @@ function ServicesOverview() {
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+          <article className="metal-panel mb-8 rounded-3xl border-primary/35 p-6 sm:p-8 lg:p-10">
+            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+              <div>
+                <p className="eyebrow flex items-center gap-2">
+                  <Gem aria-hidden className="size-4" /> Private Client Service
+                </p>
+                <h2 className="display-section mt-3 uppercase">
+                  Luxusfahrzeuge ab ca. 80.000 € Fahrzeugwert
+                </h2>
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+                  Persönlich geplante Komplettpflege mit hochwertigen Pflegesystemen – je nach
+                  Material beispielsweise auch mit Premium-Produkten von Swissvax. Ausschließlich
+                  nach Telefonberatung und Begutachtung des Fahrzeugs, nicht online buchbar.
+                </p>
+              </div>
+              <Button asChild className="rounded-full">
+                <Link to="/luxusfahrzeuge">
+                  Luxusbereich ansehen <ArrowRight aria-hidden className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          </article>
           <div className="grid gap-5 md:grid-cols-2">
             <article className="feature-card flex flex-col rounded-3xl border-primary/30 p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">

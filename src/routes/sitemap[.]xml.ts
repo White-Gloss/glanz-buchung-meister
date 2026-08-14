@@ -40,6 +40,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: SitemapEntry[] = [
           { path: "/" },
           { path: "/leistungen" },
+          { path: "/luxusfahrzeuge" },
           { path: "/preise" },
           { path: "/qualitaet" },
           { path: "/abholservice" },

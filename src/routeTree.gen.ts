@@ -20,6 +20,7 @@ import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelsch
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as LuxusfahrzeugeRouteImport } from './routes/luxusfahrzeuge'
 import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -102,6 +103,11 @@ const FaqRoute = FaqRouteImport.update({
 const ImpressumRoute = ImpressumRouteImport.update({
   id: '/impressum',
   path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LuxusfahrzeugeRoute = LuxusfahrzeugeRouteImport.update({
+  id: '/luxusfahrzeuge',
+  path: '/luxusfahrzeuge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreiseRoute = PreiseRouteImport.update({
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
     | '/reset-password'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
     | '/reset-password'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
     | '/reset-password'
@@ -519,6 +531,7 @@ export interface RootRouteChildren {
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
   ImpressumRoute: typeof ImpressumRoute
+  LuxusfahrzeugeRoute: typeof LuxusfahrzeugeRoute
   PreiseRoute: typeof PreiseRoute
   QualitaetRoute: typeof QualitaetRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -613,6 +626,13 @@ declare module '@tanstack/react-router' {
       path: '/impressum'
       fullPath: '/impressum'
       preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/luxusfahrzeuge': {
+      id: '/luxusfahrzeuge'
+      path: '/luxusfahrzeuge'
+      fullPath: '/luxusfahrzeuge'
+      preLoaderRoute: typeof LuxusfahrzeugeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preise': {
@@ -899,6 +919,7 @@ const rootRouteChildren: RootRouteChildren = {
   FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
   ImpressumRoute: ImpressumRoute,
+  LuxusfahrzeugeRoute: LuxusfahrzeugeRoute,
   PreiseRoute: PreiseRoute,
   QualitaetRoute: QualitaetRoute,
   ResetPasswordRoute: ResetPasswordRoute,
