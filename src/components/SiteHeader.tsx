@@ -61,6 +61,13 @@ function ServiceMenu({ id, mobile = false, onNavigate }: ServiceMenuProps) {
           {service.name}
         </Link>
       ))}
+      <Link
+        to="/dellen-hagelschaden"
+        onClick={onNavigate}
+        className="rounded-xl px-3 py-2.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-white/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Dellen &amp; Hagelschaden
+      </Link>
     </div>
   );
 }

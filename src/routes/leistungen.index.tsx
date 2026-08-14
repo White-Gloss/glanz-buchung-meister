@@ -105,6 +105,48 @@ function ServicesOverview() {
 
         <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <div className="grid gap-5 md:grid-cols-2">
+            <article className="feature-card flex flex-col rounded-3xl border-primary/30 p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <Hammer aria-hidden className="size-8 text-primary" />
+                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
+                  Eigenständig anfragbar
+                </span>
+              </div>
+              <p className="eyebrow mt-10">Smart Repair</p>
+              <h2 className="display-sub mt-3 uppercase">
+                Dellenentfernung &amp; Hagelschaden-Reparatur
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                Parkdellen, kleinere Karosseriedellen und Hagelschäden – lackschadenfrei ausgebeult,
+                sofern technisch möglich. Ohne Aufbereitungspaket buchbar.
+              </p>
+              <ul className="mt-6 grid gap-2 sm:grid-cols-2">
+                {[
+                  "Mehrere Schadensfotos",
+                  "Begutachtung auch per Foto",
+                  "Individuelle Preisermittlung",
+                  "Reparatur erst nach Zustimmung",
+                ].map((benefit) => (
+                  <li key={benefit} className="flex gap-2 text-xs leading-5 text-foreground/75">
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <p className="font-semibold text-primary">Preis nach Begutachtung</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Kein Preis und keine Reparatur ohne persönliche Prüfung und ausdrückliche
+                  Zustimmung.
+                </p>
+              </div>
+              <Link
+                to="/dellen-hagelschaden"
+                className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
+              >
+                Begutachtung anfragen <ArrowRight className="size-4" />
+              </Link>
+            </article>
             {servicePages.map((service, index) => {
               const Icon = icons[index] ?? Sparkles;
               return (

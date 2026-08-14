@@ -308,6 +308,7 @@ export const listConditionReports = createServerFn({ method: "GET" })
       `SELECT ${SELECT_COLS}
          FROM public.condition_reports r
          LEFT JOIN public.bookings b ON b.id = r.booking_id
+        WHERE r.condition_text NOT LIKE '[DENT_REPAIR_V1]%'
         ORDER BY r.created_at DESC`,
     );
   });

@@ -46,6 +46,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/faq" },
           { path: "/ratgeber" },
           { path: "/fahrzeug-zustand" },
+          { path: "/dellen-hagelschaden" },
           ...blogEntries,
           ...servicePages.map<SitemapEntry>((service) => ({
             path: `/leistungen/${service.slug}`,

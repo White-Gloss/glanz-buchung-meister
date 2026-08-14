@@ -169,10 +169,14 @@ function PrivacyPage() {
           <section>
             <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
             <p>
-              Über die Seite „Zustand prüfen lassen“ können Sie uns Fotos oder kurze Videos Ihres
-              Fahrzeugs sowie eine Beschreibung des Zustands übermitteln. Wir verarbeiten diese
-              Aufnahmen ausschließlich, um den Aufwand einzuschätzen und Ihnen ein Angebot zu
-              machen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
+              Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung &
+              Hagelschaden-Reparatur“ können Sie uns Fotos oder kurze Videos Ihres Fahrzeugs sowie
+              eine Beschreibung des Zustands oder Schadens übermitteln. Bei Dellen-Anfragen
+              verarbeiten wir zusätzlich Schadensart, betroffenen Fahrzeugbereich, ungefähre Anzahl
+              und Größe der Dellen, Fahrzeugmarke und Modell sowie den gewünschten
+              Begutachtungstermin. Wir verwenden diese Angaben ausschließlich zur Prüfung des
+              Schadens, zur Terminabstimmung und zur individuellen Preisermittlung. Rechtsgrundlage
+              ist Art. 6 Abs. 1 lit. b DSGVO.
             </p>
             <p>
               Die Aufnahmen liegen in einem nicht öffentlich zugänglichen Speicherbereich bei

@@ -427,6 +427,23 @@ function Booking({ initialPackageId }: { initialPackageId?: string }) {
           <DeferredBookingWizard initialPackageId={initialPackageId} />
         </ErrorBoundary>
 
+        <div className="glass mt-10 grid gap-5 rounded-2xl border-primary/30 p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <div>
+            <p className="eyebrow">Unabhängig von Aufbereitungspaketen</p>
+            <h3 className="display-card mt-2 uppercase">
+              Dellenentfernung &amp; Hagelschaden-Reparatur
+            </h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Parkdellen, kleinere Karosseriedellen und Hagelschäden begutachten lassen. Bei kleinen
+              Schäden ist die Einschätzung oft anhand mehrerer Fotos möglich. Preis nach
+              Begutachtung.
+            </p>
+          </div>
+          <Button asChild size="lg" className="shrink-0">
+            <Link to="/dellen-hagelschaden">Begutachtung anfragen</Link>
+          </Button>
+        </div>
+
         {/*
           Zweiter Weg für alle, die vor der Buchung erst eine Einschätzung
           möchten: Fotos hochladen statt Paket auswählen.

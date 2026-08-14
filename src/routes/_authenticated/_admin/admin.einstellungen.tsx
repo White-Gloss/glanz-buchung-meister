@@ -4,6 +4,7 @@ import {
   BookOpenText,
   Bot,
   Camera,
+  CircleDotDashed,
   CircleHelp,
   ImageIcon,
   Inbox,
@@ -68,6 +69,12 @@ const groups = [
         label: "Zustandsmeldungen",
         text: "Kundenfotos und Zustandsbeschreibungen prüfen.",
         icon: Camera,
+      },
+      {
+        to: "/admin/dellen" as const,
+        label: "Dellen & Hagelschäden",
+        text: "Begutachtungsanfragen, Schadensfotos und Rückmeldungen bearbeiten.",
+        icon: CircleDotDashed,
       },
       {
         to: "/admin/automatisierung" as const,

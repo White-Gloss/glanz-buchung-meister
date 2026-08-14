@@ -13,6 +13,15 @@ import { calcLineItems, calcTotals, TIME_NOTICE, type Booking } from "./bookings
 import { company, currency, depositConfig, vatNotice } from "./servicesConfig";
 import { getPickupCity } from "./pickupLocations";
 import { createBookingDocumentPdfBytes, type BookingDocumentKind } from "./bookingDocument";
+import {
+  DENT_REPAIR_PRICE_HEADING,
+  DENT_REPAIR_PRICE_LABEL,
+  DENT_REPAIR_PRICE_NOTICE,
+  DENT_REPAIR_SERVICE_NAME,
+  buildDentRepairSummary,
+  formatDentAssessmentDate,
+  type NormalizedDentRepairRequest,
+} from "./dentRepair";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
@@ -640,6 +649,97 @@ export async function sendConditionReportNotification(
     text,
     replyTo: report.email,
   });
+}
+
+export async function sendDentRepairRequestMails(
+  request: NormalizedDentRepairRequest & { id: string; reference: string },
+): Promise<void> {
+  const { ownerTo } = config();
+  const firstName = request.name.split(" ")[0] || request.name;
+  const summary = buildDentRepairSummary(request);
+  const detailsHtml = `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+    <tr><td style="padding:6px 0;color:#71717a;">Anfragenummer</td><td style="padding:6px 0;text-align:right;"><strong>${escapeHtml(request.reference)}</strong></td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Dienstleistung</td><td style="padding:6px 0;text-align:right;">${escapeHtml(DENT_REPAIR_SERVICE_NAME)}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Schadensart</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.damageType)}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Fahrzeugbereich</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.vehicleArea)}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Anzahl / Größe</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.dentCount)} / ${escapeHtml(request.dentSize)}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Fahrzeug</td><td style="padding:6px 0;text-align:right;">${escapeHtml(`${request.vehicleMake} ${request.vehicleModel}`)}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Begutachtung</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.assessmentMode)} · ${escapeHtml(formatDentAssessmentDate(request.preferredDate))}</td></tr>
+    <tr><td style="padding:6px 0;color:#71717a;">Fotos</td><td style="padding:6px 0;text-align:right;">${request.photoPaths.length}</td></tr>
+    <tr><td style="padding:12px 0 0;border-top:1px solid #e4e4e7;"><strong>Preis</strong></td><td style="padding:12px 0 0;text-align:right;border-top:1px solid #e4e4e7;"><strong>${escapeHtml(DENT_REPAIR_PRICE_LABEL)}</strong></td></tr>
+  </table>`;
+  const priceNoticeHtml = `<div style="margin:0 0 20px;padding:14px 16px;border-radius:8px;background:#f4f4f5;">
+    <p style="margin:0 0 5px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#52525b;">${escapeHtml(DENT_REPAIR_PRICE_HEADING)}</p>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#52525b;">${escapeHtml(DENT_REPAIR_PRICE_NOTICE)}</p>
+  </div>`;
+
+  const customerHtml = layout(
+    "Ihre Begutachtungsanfrage ist eingegangen",
+    `Hallo ${escapeHtml(firstName)}, vielen Dank für Ihre Anfrage. Der gewünschte Termin dient zunächst der Schadenbegutachtung und individuellen Preisermittlung. <strong>Eine Reparatur erfolgt erst nach Ihrer ausdrücklichen Zustimmung.</strong>`,
+    detailsHtml +
+      priceNoticeHtml +
+      `<p style="margin:0;font-size:14px;line-height:1.6;">Bei kleinen Schäden kann die Begutachtung anhand Ihrer Fotos möglich sein. Wir prüfen die Aufnahmen und melden uns, ob ein Vor-Ort-Termin erforderlich ist.</p>`,
+  );
+
+  const ownerHtml = layout(
+    `Neue Dellen-Begutachtung: ${request.name}`,
+    `${escapeHtml(request.damageType)} · ${escapeHtml(`${request.vehicleMake} ${request.vehicleModel}`)}`,
+    `<table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
+      <tr><td style="padding:6px 0;color:#71717a;">Name</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.name)}</td></tr>
+      <tr><td style="padding:6px 0;color:#71717a;">E-Mail</td><td style="padding:6px 0;text-align:right;"><a href="mailto:${escapeHtml(request.email)}">${escapeHtml(request.email)}</a></td></tr>
+      <tr><td style="padding:6px 0;color:#71717a;">Telefon</td><td style="padding:6px 0;text-align:right;">${escapeHtml(request.phone)}</td></tr>
+    </table>` +
+      detailsHtml +
+      (request.note
+        ? `<p style="white-space:pre-wrap;padding:14px 16px;background:#f4f4f5;border-radius:8px;">${escapeHtml(request.note)}</p>`
+        : "") +
+      `<p style="margin:20px 0 0;font-size:14px;"><a href="${company.web}/admin/dellen" style="display:inline-block;background:#18181b;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;">Anfrage und Fotos ansehen</a></p>`,
+  );
+
+  const customerText = [
+    `Hallo ${firstName},`,
+    "",
+    "Ihre Begutachtungsanfrage ist eingegangen.",
+    "Der gewünschte Termin dient zunächst der Schadenbegutachtung und individuellen Preisermittlung.",
+    "Eine Reparatur erfolgt erst nach Ihrer ausdrücklichen Zustimmung.",
+    "",
+    summary,
+    "",
+    `${DENT_REPAIR_PRICE_HEADING}: ${DENT_REPAIR_PRICE_NOTICE}`,
+    "",
+    "Bei kleinen Schäden kann die Begutachtung auch anhand Ihrer Fotos erfolgen. Wir melden uns, ob ein Vor-Ort-Termin erforderlich ist.",
+  ].join("\n");
+  const ownerText = [
+    `Neue Begutachtungsanfrage von ${request.name}`,
+    `E-Mail: ${request.email}`,
+    `Telefon: ${request.phone}`,
+    "",
+    summary,
+    ...(request.note ? ["", `Hinweis: ${request.note}`] : []),
+    "",
+    `Admin: ${company.web}/admin/dellen`,
+  ].join("\n");
+
+  const [customer, owner] = await Promise.all([
+    send({
+      to: request.email,
+      subject: `Begutachtungsanfrage ${request.reference} – ${company.name}`,
+      html: customerHtml,
+      text: customerText,
+      replyTo: company.email,
+    }),
+    send({
+      to: ownerTo,
+      subject: `Neue Dellen-Begutachtung ${request.reference} · ${request.name}`,
+      html: ownerHtml,
+      text: ownerText,
+      replyTo: request.email,
+    }),
+  ]);
+  if (!customer.sent)
+    console.error(`[mail] Kundenbestätigung Dellenanfrage fehlgeschlagen: ${customer.reason}`);
+  if (!owner.sent)
+    console.error(`[mail] Betriebsbenachrichtigung Dellenanfrage fehlgeschlagen: ${owner.reason}`);
 }
 
 /* ------------------------------------------------------------------ */

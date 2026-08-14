@@ -14,7 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AgbRouteImport } from './routes/agb'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DankeRouteImport } from './routes/danke'
+import { Route as DankeDellenRouteImport } from './routes/danke-dellen'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ImpressumRouteImport } from './routes/impressum'
@@ -38,6 +40,7 @@ import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$
 import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
 import { Route as AuthenticatedAdminAdminAutomatisierungRouteImport } from './routes/_authenticated/_admin/admin.automatisierung'
 import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
+import { Route as AuthenticatedAdminAdminDellenRouteImport } from './routes/_authenticated/_admin/admin.dellen'
 import { Route as AuthenticatedAdminAdminEinstellungenRouteImport } from './routes/_authenticated/_admin/admin.einstellungen'
 import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
@@ -71,9 +74,19 @@ const DankeRoute = DankeRouteImport.update({
   path: '/danke',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DankeDellenRoute = DankeDellenRouteImport.update({
+  id: '/danke-dellen',
+  path: '/danke-dellen',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DellenHagelschadenRoute = DellenHagelschadenRouteImport.update({
+  id: '/dellen-hagelschaden',
+  path: '/dellen-hagelschaden',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FahrzeugZustandRoute = FahrzeugZustandRouteImport.update({
@@ -193,6 +206,12 @@ const AuthenticatedAdminAdminBlogRoute =
     path: '/blog',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminDellenRoute =
+  AuthenticatedAdminAdminDellenRouteImport.update({
+    id: '/dellen',
+    path: '/dellen',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminEinstellungenRoute =
   AuthenticatedAdminAdminEinstellungenRouteImport.update({
     id: '/einstellungen',
@@ -247,7 +266,9 @@ export interface FileRoutesByFullPath {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/danke': typeof DankeRoute
+  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
@@ -269,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
@@ -284,7 +306,9 @@ export interface FileRoutesByTo {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/danke': typeof DankeRoute
+  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
@@ -305,6 +329,7 @@ export interface FileRoutesByTo {
   '/leistungen/$service': typeof LeistungenServiceIndexRoute
   '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
@@ -322,7 +347,9 @@ export interface FileRoutesById {
   '/agb': typeof AgbRoute
   '/auth': typeof AuthRoute
   '/danke': typeof DankeRoute
+  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
@@ -345,6 +372,7 @@ export interface FileRoutesById {
   '/leistungen/$service/': typeof LeistungenServiceIndexRoute
   '/_authenticated/_admin/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
   '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
+  '/_authenticated/_admin/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/_authenticated/_admin/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
   '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
@@ -362,7 +390,9 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/danke'
+    | '/danke-dellen'
     | '/datenschutz'
+    | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
@@ -384,6 +414,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service/'
     | '/admin/automatisierung'
     | '/admin/blog'
+    | '/admin/dellen'
     | '/admin/einstellungen'
     | '/admin/faqs'
     | '/admin/galerie'
@@ -399,7 +430,9 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/danke'
+    | '/danke-dellen'
     | '/datenschutz'
+    | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
@@ -420,6 +453,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service'
     | '/admin/automatisierung'
     | '/admin/blog'
+    | '/admin/dellen'
     | '/admin/einstellungen'
     | '/admin/faqs'
     | '/admin/galerie'
@@ -436,7 +470,9 @@ export interface FileRouteTypes {
     | '/agb'
     | '/auth'
     | '/danke'
+    | '/danke-dellen'
     | '/datenschutz'
+    | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
@@ -459,6 +495,7 @@ export interface FileRouteTypes {
     | '/leistungen/$service/'
     | '/_authenticated/_admin/admin/automatisierung'
     | '/_authenticated/_admin/admin/blog'
+    | '/_authenticated/_admin/admin/dellen'
     | '/_authenticated/_admin/admin/einstellungen'
     | '/_authenticated/_admin/admin/faqs'
     | '/_authenticated/_admin/admin/galerie'
@@ -476,7 +513,9 @@ export interface RootRouteChildren {
   AgbRoute: typeof AgbRoute
   AuthRoute: typeof AuthRoute
   DankeRoute: typeof DankeRoute
+  DankeDellenRoute: typeof DankeDellenRoute
   DatenschutzRoute: typeof DatenschutzRoute
+  DellenHagelschadenRoute: typeof DellenHagelschadenRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
   ImpressumRoute: typeof ImpressumRoute
@@ -534,11 +573,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DankeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/danke-dellen': {
+      id: '/danke-dellen'
+      path: '/danke-dellen'
+      fullPath: '/danke-dellen'
+      preLoaderRoute: typeof DankeDellenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/datenschutz': {
       id: '/datenschutz'
       path: '/datenschutz'
       fullPath: '/datenschutz'
       preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dellen-hagelschaden': {
+      id: '/dellen-hagelschaden'
+      path: '/dellen-hagelschaden'
+      fullPath: '/dellen-hagelschaden'
+      preLoaderRoute: typeof DellenHagelschadenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fahrzeug-zustand': {
@@ -702,6 +755,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminBlogRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/dellen': {
+      id: '/_authenticated/_admin/admin/dellen'
+      path: '/dellen'
+      fullPath: '/admin/dellen'
+      preLoaderRoute: typeof AuthenticatedAdminAdminDellenRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/einstellungen': {
       id: '/_authenticated/_admin/admin/einstellungen'
       path: '/einstellungen'
@@ -764,6 +824,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminAutomatisierungRoute: typeof AuthenticatedAdminAdminAutomatisierungRoute
   AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
+  AuthenticatedAdminAdminDellenRoute: typeof AuthenticatedAdminAdminDellenRoute
   AuthenticatedAdminAdminEinstellungenRoute: typeof AuthenticatedAdminAdminEinstellungenRoute
   AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
@@ -780,6 +841,7 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminAutomatisierungRoute:
       AuthenticatedAdminAdminAutomatisierungRoute,
     AuthenticatedAdminAdminBlogRoute: AuthenticatedAdminAdminBlogRoute,
+    AuthenticatedAdminAdminDellenRoute: AuthenticatedAdminAdminDellenRoute,
     AuthenticatedAdminAdminEinstellungenRoute:
       AuthenticatedAdminAdminEinstellungenRoute,
     AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
@@ -831,7 +893,9 @@ const rootRouteChildren: RootRouteChildren = {
   AgbRoute: AgbRoute,
   AuthRoute: AuthRoute,
   DankeRoute: DankeRoute,
+  DankeDellenRoute: DankeDellenRoute,
   DatenschutzRoute: DatenschutzRoute,
+  DellenHagelschadenRoute: DellenHagelschadenRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
   ImpressumRoute: ImpressumRoute,
