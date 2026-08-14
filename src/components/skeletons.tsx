@@ -48,11 +48,10 @@ export function AuditLogSkeleton({ rows = 4 }: { rows?: number }) {
 /** Platzhalter in Struktur des Buchungs-Assistenten. */
 export function BookingWizardSkeleton() {
   return (
-    <div
-      className="glass rounded-3xl p-5 sm:p-8"
-      aria-busy="true"
-      aria-label="Buchungsassistent wird geladen"
-    >
+    <div className="glass rounded-3xl p-5 sm:p-8" aria-busy="true">
+      <span className="sr-only" role="status">
+        Buchungsassistent wird geladen
+      </span>
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-8 w-24 rounded-full" />
