@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   CalendarClock,
@@ -67,24 +67,50 @@ function Lightbox({
   onClose: () => void;
   onNavigate: (next: number) => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, []);
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowRight") onNavigate((index + 1) % urls.length);
       if (event.key === "ArrowLeft") onNavigate((index - 1 + urls.length) % urls.length);
+      if (event.key === "Tab") {
+        const controls = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (!controls?.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     }
     document.addEventListener("keydown", onKey);
-    // Hintergrund darf nicht mitscrollen, solange das Bild offen ist.
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [index, urls.length, onClose, onNavigate]);
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={`Foto ${index + 1} von ${urls.length}`}
@@ -119,8 +145,14 @@ function Lightbox({
             </Button>
           </>
         )}
-        <Button size="sm" variant="outline" onClick={onClose} aria-label="Großansicht schließen">
-          <X className="size-4" />
+        <Button
+          ref={closeButtonRef}
+          size="sm"
+          variant="outline"
+          onClick={onClose}
+          aria-label="Großansicht schließen"
+        >
+          <X aria-hidden className="size-4" />
           Schließen
         </Button>
       </div>

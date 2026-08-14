@@ -256,11 +256,14 @@ function UploadForm({
         className="hidden"
         id="gallery-file-input"
       />
-      <Button asChild loading={uploading} className="gap-1.5">
-        <label htmlFor="gallery-file-input" className="cursor-pointer">
-          <Upload className="size-4" />
-          {uploading ? "Wird hochgeladen …" : "Bild auswählen und hochladen"}
-        </label>
+      <Button
+        type="button"
+        loading={uploading}
+        onClick={() => fileInputRef.current?.click()}
+        className="gap-1.5"
+      >
+        <Upload aria-hidden className="size-4" />
+        {uploading ? "Wird hochgeladen …" : "Bild auswählen und hochladen"}
       </Button>
     </div>
   );

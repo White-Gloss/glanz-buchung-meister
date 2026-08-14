@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarCheck, Camera, CheckCircle2, MapPin, Sparkles } from "lucide-react";
 
-import heroCarAvif from "@/assets/hero-car.avif";
 import heroCar from "@/assets/hero-car.jpg";
 import heroCarWebp from "@/assets/hero-car.webp";
 import { B2BServices } from "@/components/B2BServices";
@@ -11,11 +10,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { VehicleGallery } from "@/components/VehicleGallery";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { BookingWizardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
+import { deferUntilNearViewport } from "@/lib/deferredLoad";
 import { parseHomeSearch } from "@/lib/homeSearch";
+import { heroImageSources } from "@/lib/heroImage";
 import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
 import { absUrl, OG_IMAGE, SITE_URL, standardPageMeta } from "@/lib/seo";
 import {
@@ -29,6 +29,9 @@ import {
 
 const BookingWizard = lazy(() =>
   import("@/components/BookingWizard").then((module) => ({ default: module.BookingWizard })),
+);
+const VehicleGallery = lazy(() =>
+  import("@/components/VehicleGallery").then((module) => ({ default: module.VehicleGallery })),
 );
 
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
@@ -51,8 +54,17 @@ export const Route = createFileRoute("/")({
       {
         rel: "preload",
         as: "image",
-        href: heroCarAvif,
+        href: heroImageSources.mobile.src,
         type: "image/avif",
+        media: heroImageSources.mobile.media,
+        fetchPriority: "high",
+      },
+      {
+        rel: "preload",
+        as: "image",
+        href: heroImageSources.desktop.src,
+        type: "image/avif",
+        media: "(min-width: 768px)",
         fetchPriority: "high",
       },
     ],
@@ -128,7 +140,7 @@ function Landing() {
         <Hero />
         <ProofStrip />
         <Packages />
-        <VehicleGallery />
+        <DeferredVehicleGallery />
         <QualityJourney />
         <Booking initialPackageId={paket} />
         <B2BServices />
@@ -148,21 +160,7 @@ function DeferredBookingWizard({ initialPackageId }: { initialPackageId?: string
   useEffect(() => {
     const element = containerRef.current;
     if (!element || shouldLoad) return;
-    if (!("IntersectionObserver" in window)) {
-      setShouldLoad(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setShouldLoad(true);
-        observer.disconnect();
-      },
-      { rootMargin: "700px 0px" },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
+    return deferUntilNearViewport(element, () => setShouldLoad(true));
   }, [shouldLoad]);
 
   return (
@@ -178,11 +176,39 @@ function DeferredBookingWizard({ initialPackageId }: { initialPackageId?: string
   );
 }
 
+function DeferredVehicleGallery() {
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const element = triggerRef.current;
+    if (!element || shouldLoad) return;
+    return deferUntilNearViewport(element, () => setShouldLoad(true));
+  }, [shouldLoad]);
+
+  return (
+    <div ref={triggerRef}>
+      {shouldLoad && (
+        <Suspense fallback={null}>
+          <VehicleGallery />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
 function Hero() {
   return (
     <section className="hero-stage relative isolate flex min-h-[42rem] overflow-hidden border-b border-border sm:min-h-[46rem] lg:min-h-[calc(100svh-7.25rem)]">
       <picture className="absolute inset-0 -z-20">
-        <source srcSet={heroCarAvif} type="image/avif" />
+        <source
+          srcSet={heroImageSources.mobile.src}
+          media={heroImageSources.mobile.media}
+          type="image/avif"
+          width={heroImageSources.mobile.width}
+          height={heroImageSources.mobile.height}
+        />
+        <source srcSet={heroImageSources.desktop.src} type="image/avif" />
         <source srcSet={heroCarWebp} type="image/webp" />
         <img
           src={heroCar}

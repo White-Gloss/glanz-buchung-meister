@@ -56,6 +56,7 @@ import {
   vehicleTypes,
 } from "@/lib/servicesConfig";
 import { navigateAfterBooking } from "@/lib/bookingSuccess";
+import { bookingProgress } from "@/lib/bookingProgress";
 import { stepAfterPackageSelection } from "@/lib/bookingWizardFlow";
 
 const steps = ["Paket", "Fahrzeug", "Extras", "Fotos", "Wunschtermin", "Anfrage"];
@@ -112,9 +113,13 @@ function MiniCalendar({
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
           className="grid size-11 place-items-center rounded-xl border border-border bg-background/40 outline-none transition-colors hover:border-primary/50 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ChevronLeft className="size-4" />
+          <ChevronLeft aria-hidden className="size-4" />
         </button>
-        <p className="text-center text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
+        <p
+          className="text-center text-sm font-semibold uppercase tracking-[0.18em] text-foreground"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {cursor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
         </p>
         <button
@@ -123,7 +128,7 @@ function MiniCalendar({
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
           className="grid size-11 place-items-center rounded-xl border border-border bg-background/40 outline-none transition-colors hover:border-primary/50 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ChevronRight className="size-4" />
+          <ChevronRight aria-hidden className="size-4" />
         </button>
       </div>
 
@@ -247,6 +252,7 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
     [vehicleId, packageId, addOnIds, pickupCity],
   );
   const totals = calcTotals(items);
+  const progress = bookingProgress(step, steps.length);
 
   const canContinue = [
     !!packageId,
@@ -378,16 +384,26 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
     <>
       <div id="booking-active-step" className="mx-auto w-full max-w-4xl scroll-mt-28">
         <div className="mb-5 px-1 sm:mb-7">
-          <div className="mb-3 flex items-center justify-between gap-4 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <span>
-              Schritt {step + 1} von {steps.length}
-            </span>
+          <div
+            className="mb-3 flex items-center justify-between gap-4 text-xs uppercase tracking-[0.16em] text-muted-foreground"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span>{progress.label}</span>
             <span className="font-semibold text-foreground">{steps[step]}</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-secondary"
+            role="progressbar"
+            aria-label="Fortschritt der Terminanfrage"
+            aria-valuemin={progress.min}
+            aria-valuemax={progress.max}
+            aria-valuenow={progress.now}
+            aria-valuetext={progress.label}
+          >
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-500"
-              style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+              style={{ width: `${progress.percent}%` }}
             />
           </div>
         </div>
@@ -939,7 +955,10 @@ function Field({
         {label}
       </Label>
       <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Icon
+          aria-hidden
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           id={id}
           type={type}
@@ -985,7 +1004,7 @@ function ReviewSummary({
   return (
     <div className="mt-6 rounded-2xl border border-border bg-secondary/20 p-5">
       <p className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        <Sparkles className="size-4 text-primary" />
+        <Sparkles aria-hidden className="size-4 text-primary" />
         Ihre Anfrage im Überblick
       </p>
       <dl className="mt-5 space-y-3 text-sm">

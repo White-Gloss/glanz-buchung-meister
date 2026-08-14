@@ -96,11 +96,14 @@ function AuthPage() {
 
   return (
     <>
-      <main className="grid min-h-dvh place-items-center bg-background px-4 py-16">
+      <main
+        id="main-content"
+        className="grid min-h-dvh place-items-center bg-background px-4 py-16"
+      >
         <div className="w-full max-w-md">
           <Button asChild variant="ghost" size="sm" className="mb-6">
             <Link to="/">
-              <ArrowLeft className="size-4" />
+              <ArrowLeft aria-hidden className="size-4" />
               Zur Website
             </Link>
           </Button>

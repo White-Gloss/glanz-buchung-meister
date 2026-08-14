@@ -224,8 +224,14 @@ function CustomerDetail({
       </div>
 
       <div className="glass rounded-2xl p-5">
-        <h3 className="display-card text-sm uppercase">Notiz</h3>
+        <label
+          htmlFor={`customer-note-${customer.email}`}
+          className="display-card text-sm uppercase"
+        >
+          Notiz
+        </label>
         <textarea
+          id={`customer-note-${customer.email}`}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={3}
@@ -239,7 +245,7 @@ function CustomerDetail({
           size="sm"
           className="mt-3 gap-1.5"
         >
-          <Save className="size-3.5" />
+          <Save aria-hidden className="size-3.5" />
           Speichern
         </Button>
       </div>

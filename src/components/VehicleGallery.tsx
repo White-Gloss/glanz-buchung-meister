@@ -46,6 +46,8 @@ export function VehicleGallery() {
                   src={galleryPublicUrl(item.storage_path)}
                   alt={item.title || item.vehicle || "Aufbereitetes Fahrzeug"}
                   loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   className="size-full object-cover"
                   width={640}
                   height={360}

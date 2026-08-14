@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Camera, Images, Loader2, Video, X } from "lucide-react";
 import { toast } from "sonner";
@@ -373,6 +373,9 @@ export function ConditionPhotoUpload({
   }
 
   const disabled = uploading || photos.length >= MAX_PHOTOS;
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputId = `${inputId}-camera`;
   const videoInputId = `${inputId}-video`;
   const galleryInputId = `${inputId}-gallery`;
@@ -432,6 +435,7 @@ export function ConditionPhotoUpload({
       )}
 
       <input
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
@@ -442,6 +446,7 @@ export function ConditionPhotoUpload({
         id={cameraInputId}
       />
       <input
+        ref={videoInputRef}
         type="file"
         accept="video/*"
         capture="environment"
@@ -452,6 +457,7 @@ export function ConditionPhotoUpload({
         id={videoInputId}
       />
       <input
+        ref={galleryInputRef}
         type="file"
         accept="image/*,video/*"
         multiple
@@ -466,34 +472,40 @@ export function ConditionPhotoUpload({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
-          asChild
           type="button"
           variant={isBookingUpload ? "default" : "outline"}
           disabled={disabled}
+          onClick={() => cameraInputRef.current?.click()}
           className="gap-2"
         >
-          <label htmlFor={cameraInputId} className="cursor-pointer">
-            {uploading ? (
-              <Loader2 aria-hidden className="size-4 animate-spin" />
-            ) : (
-              <Camera aria-hidden className="size-4" />
-            )}
-            {uploading ? "Wird verarbeitet …" : "Foto aufnehmen"}
-          </label>
+          {uploading ? (
+            <Loader2 aria-hidden className="size-4 animate-spin" />
+          ) : (
+            <Camera aria-hidden className="size-4" />
+          )}
+          {uploading ? "Wird verarbeitet …" : "Foto aufnehmen"}
         </Button>
 
-        <Button asChild type="button" variant="outline" disabled={disabled} className="gap-2">
-          <label htmlFor={videoInputId} className="cursor-pointer">
-            <Video aria-hidden className="size-4" />
-            Video aufnehmen
-          </label>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          onClick={() => videoInputRef.current?.click()}
+          className="gap-2"
+        >
+          <Video aria-hidden className="size-4" />
+          Video aufnehmen
         </Button>
 
-        <Button asChild type="button" variant="outline" disabled={disabled} className="gap-2">
-          <label htmlFor={galleryInputId} className="cursor-pointer">
-            <Images aria-hidden className="size-4" />
-            Aus Galerie wählen
-          </label>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          onClick={() => galleryInputRef.current?.click()}
+          className="gap-2"
+        >
+          <Images aria-hidden className="size-4" />
+          Aus Galerie wählen
         </Button>
 
         <p className="text-xs text-muted-foreground">
