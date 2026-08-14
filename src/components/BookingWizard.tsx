@@ -439,11 +439,15 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
                             {vatNoticeShort()} · {pkg.duration}
                           </p>
                         </div>
-                        {active && (
-                          <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                            <CheckCircle2 className="size-4" /> Ausgewählt
-                          </span>
-                        )}
+                        <span
+                          aria-hidden={!active}
+                          className={[
+                            "inline-flex items-center gap-2 text-sm font-medium text-primary",
+                            active ? "visible" : "invisible",
+                          ].join(" ")}
+                        >
+                          <CheckCircle2 className="size-4" /> Ausgewählt
+                        </span>
                       </div>
                       <ul className="mt-5 grid gap-2 text-sm text-foreground/80 sm:grid-cols-2">
                         {pkg.features.slice(0, 4).map((feature) => (
