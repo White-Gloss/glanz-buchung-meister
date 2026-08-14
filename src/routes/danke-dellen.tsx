@@ -54,13 +54,11 @@ function DentThankYouPage() {
             <div>
               <h2 className="display-card uppercase">Wie geht es weiter?</h2>
               <ol className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
-                <li>1. Wir prüfen Ihre Schadensangaben und hochgeladenen Fotos.</li>
-                <li>2. Bei kleinen Schäden kann die Begutachtung vollständig per Foto erfolgen.</li>
+                <li>Wir prüfen Ihre Schadensangaben und hochgeladenen Fotos.</li>
+                <li>Bei kleinen Schäden kann die Begutachtung vollständig per Foto erfolgen.</li>
+                <li>Andernfalls stimmen wir den persönlichen Begutachtungstermin mit Ihnen ab.</li>
                 <li>
-                  3. Andernfalls stimmen wir den persönlichen Begutachtungstermin mit Ihnen ab.
-                </li>
-                <li>
-                  4. Sie erhalten den individuellen Preis. Die Reparatur erfolgt erst nach Ihrer
+                  Sie erhalten den individuellen Preis. Die Reparatur erfolgt erst nach Ihrer
                   ausdrücklichen Zustimmung.
                 </li>
               </ol>
