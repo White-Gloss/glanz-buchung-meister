@@ -279,14 +279,14 @@ export const createBooking = createServerFn({ method: "POST" })
       console.error("[mail] Versand übersprungen:", error);
     }
 
-    // Zusätzlich aufs Geschäftshandy. Getrennt abgefangen, damit ein Problem
-    // bei WhatsApp den Mailversand nicht mitreißt und umgekehrt.
+    // Zusätzlich aufs Geschäftshandy, über alle eingerichteten Wege. Getrennt
+    // abgefangen, damit ein Problem dort den Mailversand nicht mitreißt.
     try {
-      const { notifyOwner } = await import("./whatsapp.server");
-      const { bookingWhatsAppText } = await import("./whatsappTexts");
-      await notifyOwner(bookingWhatsAppText(booking), `Buchung ${booking.invoiceNumber}`);
+      const { notifyOwner } = await import("./ownerNotify.server");
+      const { bookingNotifyText } = await import("./notifyTexts");
+      await notifyOwner(bookingNotifyText(booking), `Buchung ${booking.invoiceNumber}`);
     } catch (error) {
-      console.error("[whatsapp] Benachrichtigung übersprungen:", error);
+      console.error("[benachrichtigung] übersprungen:", error);
     }
 
     return booking;

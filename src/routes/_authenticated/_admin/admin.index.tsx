@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CalendarFeedCard } from "@/components/CalendarFeedCard";
 import { MailStatusCard } from "@/components/MailStatusCard";
-import { WhatsAppStatusCard } from "@/components/WhatsAppStatusCard";
+import { OwnerNotifyCard } from "@/components/OwnerNotifyCard";
 import { AssistantPanel } from "@/components/AssistantPanel";
 import {
   ArrowLeft,
@@ -361,8 +361,8 @@ function AdminPage() {
               <MailStatusCard />
             </ErrorBoundary>
 
-            <ErrorBoundary title="Der WhatsApp-Status konnte nicht geladen werden">
-              <WhatsAppStatusCard />
+            <ErrorBoundary title="Der Benachrichtigungsstatus konnte nicht geladen werden">
+              <OwnerNotifyCard />
             </ErrorBoundary>
 
             <ErrorBoundary title="Der Assistent konnte nicht geladen werden">

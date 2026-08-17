@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bookingWhatsAppText, conditionReportWhatsAppText } from "./whatsappTexts";
+import { bookingNotifyText, conditionReportNotifyText } from "./notifyTexts";
 import type { Booking } from "./bookings";
 
 /**
@@ -36,53 +36,53 @@ const basis: Booking = {
   },
 } as unknown as Booking;
 
-describe("bookingWhatsAppText", () => {
+describe("bookingNotifyText", () => {
   it("enthält Vorgangsnummer, Name und Wunschtermin", () => {
-    const text = bookingWhatsAppText(basis);
+    const text = bookingNotifyText(basis);
     expect(text).toContain("WGD-2026-1001");
     expect(text).toContain("Max Mustermann");
     expect(text).toContain("03.09.2026");
   });
 
   it("nennt weder E-Mail-Adresse noch Telefonnummer", () => {
-    const text = bookingWhatsAppText(basis);
+    const text = bookingNotifyText(basis);
     expect(text).not.toContain("max@example.de");
     expect(text).not.toContain("0170");
   });
 
   it("kommt ohne Zeilenumbruch und ohne doppeltes Leerzeichen aus", () => {
-    const text = bookingWhatsAppText({ ...basis, pickupCity: "Nagold" } as Booking);
+    const text = bookingNotifyText({ ...basis, pickupCity: "Nagold" } as Booking);
     expect(text).not.toMatch(/\n/);
     expect(text).not.toMatch(/ {2}/);
   });
 
   it("lässt die Abholung weg, wenn keine gewünscht ist", () => {
-    expect(bookingWhatsAppText(basis)).not.toContain("Abholung");
+    expect(bookingNotifyText(basis)).not.toContain("Abholung");
   });
 });
 
-describe("conditionReportWhatsAppText", () => {
+describe("conditionReportNotifyText", () => {
   it("zählt Aufnahmen im Singular und Plural richtig", () => {
-    expect(conditionReportWhatsAppText({ name: "A", vehicle: "Golf", photoCount: 1 })).toContain(
+    expect(conditionReportNotifyText({ name: "A", vehicle: "Golf", photoCount: 1 })).toContain(
       "1 Aufnahme",
     );
-    expect(conditionReportWhatsAppText({ name: "A", vehicle: "Golf", photoCount: 3 })).toContain(
+    expect(conditionReportNotifyText({ name: "A", vehicle: "Golf", photoCount: 3 })).toContain(
       "3 Aufnahmen",
     );
-    expect(conditionReportWhatsAppText({ name: "A", vehicle: "Golf", photoCount: 0 })).toContain(
+    expect(conditionReportNotifyText({ name: "A", vehicle: "Golf", photoCount: 0 })).toContain(
       "ohne Aufnahmen",
     );
   });
 
   it("fällt bei fehlendem Fahrzeug auf einen Hinweis zurück", () => {
-    expect(conditionReportWhatsAppText({ name: "A", vehicle: "", photoCount: 2 })).toContain(
+    expect(conditionReportNotifyText({ name: "A", vehicle: "", photoCount: 2 })).toContain(
       "Fahrzeug nicht angegeben",
     );
   });
 
   it("kommt ohne Zeilenumbruch aus", () => {
     expect(
-      conditionReportWhatsAppText({ name: "A B", vehicle: "VW  Golf", photoCount: 2 }),
+      conditionReportNotifyText({ name: "A B", vehicle: "VW  Golf", photoCount: 2 }),
     ).not.toMatch(/\n| {2}/);
   });
 });

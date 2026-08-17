@@ -148,18 +148,15 @@ async function senden(text: string): Promise<WhatsAppResult> {
   }
 }
 
-/** Öffentlicher Einstieg. Wirft nie — der Aufrufer soll nicht scheitern. */
-export async function notifyOwner(text: string, anlass: string): Promise<WhatsAppResult> {
-  if (!whatsappConfigured()) {
-    console.warn(`[whatsapp] Nicht eingerichtet — keine Nachricht zu ${anlass} verschickt.`);
-    return { sent: false, reason: "nicht eingerichtet" };
-  }
-
-  const ergebnis = await senden(text);
-  if (!ergebnis.sent) {
-    console.error(`[whatsapp] Nachricht zu ${anlass} fehlgeschlagen: ${ergebnis.reason}`);
-  }
-  return ergebnis;
+/**
+ * Öffentlicher Einstieg. Wirft nie.
+ *
+ * Aufgerufen wird das nicht direkt aus der Buchungsstrecke, sondern über
+ * `ownerNotify.server.ts` — dort liegt die Entscheidung, welche Wege aktiv
+ * sind.
+ */
+export async function sendWhatsApp(text: string): Promise<WhatsAppResult> {
+  return senden(text);
 }
 
 /** Test aus dem Adminbereich. Hier darf der Fehler nach außen. */

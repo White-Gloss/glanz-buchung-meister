@@ -2,9 +2,9 @@ import { currency, servicePackages, vehicleTypes } from "./servicesConfig";
 import type { Booking } from "./bookings";
 
 /**
- * TEXTE DER WHATSAPP-BENACHRICHTIGUNGEN
+ * TEXTE DER SOFORTBENACHRICHTIGUNGEN
  * ======================================
- * Bewusst von `whatsapp.server.ts` getrennt: Diese Datei enthält nur
+ * Bewusst von den Versandwegen getrennt: Diese Datei enthält nur
  * Zeichenketten und ist damit ohne Netzwerkzugriff testbar.
  *
  * WAS NICHT DRINSTEHT: E-Mail-Adresse und Telefonnummer der Kundschaft. Die
@@ -34,7 +34,7 @@ function datum(iso: string): string {
   return tag && monat && jahr ? `${tag}.${monat}.${jahr}` : iso;
 }
 
-export function bookingWhatsAppText(booking: Booking): string {
+export function bookingNotifyText(booking: Booking): string {
   return [
     `Neue Terminanfrage ${booking.invoiceNumber}`,
     booking.customer.name,
@@ -49,7 +49,7 @@ export function bookingWhatsAppText(booking: Booking): string {
     .trim();
 }
 
-export function conditionReportWhatsAppText(report: {
+export function conditionReportNotifyText(report: {
   name: string;
   vehicle: string;
   photoCount: number;

@@ -295,14 +295,14 @@ export const submitConditionReport = createServerFn({ method: "POST" })
 
     // Zusätzlich aufs Geschäftshandy, getrennt abgefangen.
     try {
-      const { notifyOwner } = await import("./whatsapp.server");
-      const { conditionReportWhatsAppText } = await import("./whatsappTexts");
+      const { notifyOwner } = await import("./ownerNotify.server");
+      const { conditionReportNotifyText } = await import("./notifyTexts");
       await notifyOwner(
-        conditionReportWhatsAppText({ name, vehicle, photoCount: photoPaths.length }),
+        conditionReportNotifyText({ name, vehicle, photoCount: photoPaths.length }),
         "Zustandsmeldung",
       );
     } catch (error) {
-      console.error("[whatsapp] Benachrichtigung zur Zustandsmeldung übersprungen", error);
+      console.error("[benachrichtigung] Benachrichtigung zur Zustandsmeldung übersprungen", error);
     }
 
     return { ok: true, id: row.id };
