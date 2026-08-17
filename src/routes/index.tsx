@@ -91,6 +91,8 @@ export const Route = createFileRoute("/")({
               image: OG_IMAGE,
               logo: absUrl("/wgd-logo-760.webp"),
               priceRange: "€€–€€€",
+              // Verknüpft Website und Profil für Google.
+              ...(company.instagram ? { sameAs: [company.instagram] } : {}),
               address: {
                 "@type": "PostalAddress",
                 streetAddress: company.street,

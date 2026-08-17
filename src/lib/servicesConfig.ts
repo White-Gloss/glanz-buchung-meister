@@ -65,16 +65,22 @@ export const company = {
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
+  /**
+   * ACHTUNG — hier gehören keine Zugangsdaten hin.
+   *
+   * Diese Datei wird von Kopfzeile, Buchungsassistent und Fußzeile importiert
+   * und landet damit vollständig im Browser-Bündel. Was hier steht, kann
+   * jeder Besucher lesen.
+   *
+   * Frühere Felder `phoneNumberId`, `accessToken` und `templates` wurden
+   * deshalb entfernt: Ein dort eingetragenes Token hätte fremden Versand in
+   * Ihrem Namen erlaubt. Die WhatsApp-Anbindung liegt jetzt in
+   * `whatsapp.server.ts` und liest ausschließlich Umgebungsvariablen des
+   * Servers.
+   */
   whatsapp: {
     number: "4915233540284",
     defaultMessage: "Hallo White Gloss, ich möchte einen Samstagstermin persönlich anfragen.",
-    phoneNumberId: "",
-    accessToken: "",
-    templates: {
-      bookingConfirmation: "",
-      followUpAfterService: "",
-      reminderDayBefore: "",
-    },
   },
   meta: {
     pixelId: "",
@@ -82,7 +88,20 @@ export const company = {
   },
   email: "info@white-gloss.de",
   web: "https://white-gloss.de",
-  instagram: "",
+  /**
+   * Vollständige Profiladresse, nicht nur der Name.
+   *
+   * Sie wird an zwei Stellen gebraucht: als Link in der Fußzeile und als
+   * `sameAs` in den strukturierten Daten. Letzteres sagt Google, dass
+   * Website und Profil zum selben Betrieb gehören — genau der Abgleich, über
+   * den die örtliche Auffindbarkeit mit entschieden wird.
+   *
+   * Leer lassen, wenn kein Profil existiert. Ein Link ins Leere schadet mehr
+   * als ein fehlender.
+   */
+  instagram: "https://www.instagram.com/white_gloss.detailing/",
+  /** Anzeigename ohne @ — nur für die Beschriftung des Links. */
+  instagramHandle: "white_gloss.detailing",
   taxId: "", // USt-IdNr.
   taxNumber: "", // Steuernummer
   bank: {

@@ -293,6 +293,18 @@ export const submitConditionReport = createServerFn({ method: "POST" })
       console.error("[mail] Benachrichtigung zur Zustandsmeldung fehlgeschlagen", error);
     }
 
+    // Zusätzlich aufs Geschäftshandy, getrennt abgefangen.
+    try {
+      const { notifyOwner } = await import("./ownerNotify.server");
+      const { conditionReportNotifyText } = await import("./notifyTexts");
+      await notifyOwner(
+        conditionReportNotifyText({ name, vehicle, photoCount: photoPaths.length }),
+        "Zustandsmeldung",
+      );
+    } catch (error) {
+      console.error("[benachrichtigung] Benachrichtigung zur Zustandsmeldung übersprungen", error);
+    }
+
     return { ok: true, id: row.id };
   });
 
