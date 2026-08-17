@@ -102,6 +102,24 @@ schlicht nichts mehr ein — was von dort aus nicht von einer ruhigen Woche zu
 unterscheiden ist. Die Seite **Zustandsmeldungen** im Adminbereich zeigt
 deshalb einen roten Hinweis, sobald der Schlüssel fehlt.
 
+Derselbe Schlüssel trägt das Aufräumen verwaister Aufnahmen (siehe unten).
+
+### Verwaiste Aufnahmen aufräumen
+
+Aufnahmen wandern schon beim Auswählen in den Speicher, damit das Absenden
+später schnell geht. Bricht jemand das Formular danach ab, bleibt die Datei
+liegen, ohne dass je eine Meldung dazu entsteht.
+
+Unten auf der Seite **Zustandsmeldungen** steht dafür „Speicher aufräumen":
+erst **Nachsehen** — das zählt nur —, dann bei Bedarf löschen. Verschont
+bleiben immer Aufnahmen, die zu einer Meldung gehören, sowie alles aus den
+letzten sieben Tagen, weil dort ein Formular noch offen sein kann.
+
+**Nicht per Datenbankbefehl aufräumen.** Ein `DELETE` auf `storage.objects`
+entfernt nur den Verzeichniseintrag, nicht die Datei — der Platz bliebe
+belegt, nur eben unsichtbar. Löschen darf ausschließlich die
+Storage-Schnittstelle, und die verlangt den Serverschlüssel.
+
 ## KI-Assistent und Bildbewertung
 
 Ohne `ANTHROPIC_API_KEY` ist der Assistent vollständig inaktiv und im

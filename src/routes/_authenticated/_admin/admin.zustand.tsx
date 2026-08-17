@@ -9,12 +9,14 @@ import {
   listConditionReports,
   getConditionPhotoUrls,
   getConditionUploadStatus,
+  cleanupOrphanedConditionMedia,
   updateConditionReport,
   deleteConditionReport,
   CONDITION_STATUSES,
   type ConditionReport,
   type ConditionStatus,
   type ConditionUploadStatus,
+  type OrphanCleanupResult,
 } from "@/lib/conditionReports.functions";
 import { assessConditionPhotos, getAssistantStatus } from "@/lib/assistant.functions";
 import { diagnoseBackendError } from "@/lib/backendErrors";
@@ -218,7 +220,106 @@ function ConditionAdminPage() {
             ))}
           </ul>
         )}
+
+        {upload?.ready && <OrphanCleanup />}
       </main>
+    </div>
+  );
+}
+
+/**
+ * SPEICHER AUFRÄUMEN
+ * -------------------
+ * Aufnahmen wandern schon beim Auswählen in den Speicher, damit das Absenden
+ * später schnell geht. Bricht jemand danach ab, bleibt die Datei liegen.
+ *
+ * Bewusst zweistufig: erst zählen, dann löschen. Gelöschte Aufnahmen sind
+ * unwiederbringlich weg, deshalb soll niemand versehentlich mit einem
+ * einzigen Klick etwas entfernen.
+ */
+function OrphanCleanup() {
+  const [ergebnis, setErgebnis] = useState<OrphanCleanupResult | null>(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [erledigt, setErledigt] = useState(false);
+  const aufraeumen = useServerFn(cleanupOrphanedConditionMedia);
+
+  async function ausfuehren(loeschen: boolean) {
+    setLaeuft(true);
+    try {
+      const r = await aufraeumen({ data: { loeschen } });
+      setErgebnis(r);
+      if (!loeschen) return;
+      if (r.fehler) toast.error(`Nicht alles konnte entfernt werden: ${r.fehler}`);
+      else {
+        setErledigt(true);
+        toast.success(
+          r.geloescht === 0
+            ? "Es gab nichts zu entfernen."
+            : `${r.geloescht} Aufnahmen entfernt, ${r.megabyte} MB frei.`,
+        );
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Das Aufräumen ist fehlgeschlagen.");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  return (
+    <section className="glass mt-10 rounded-2xl p-5">
+      <div className="flex items-center gap-2">
+        <Trash2 aria-hidden className="size-4 text-primary" />
+        <h2 className="display-card text-sm uppercase">Speicher aufräumen</h2>
+      </div>
+
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+        Wer Fotos auswählt und das Formular dann abbricht, hinterlässt Dateien ohne zugehörige
+        Meldung. Die zählen hier nirgends mit, belegen aber Platz. Aufnahmen, die zu einer Meldung
+        gehören, werden nie angefasst — ebenso wenig solche aus den letzten sieben Tagen, denn dort
+        kann ein Formular noch offen sein.
+      </p>
+
+      {ergebnis && (
+        <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+          <Kennzahl
+            label="Ohne Meldung"
+            wert={`${ergebnis.gefunden}${ergebnis.gefunden > 0 ? ` · ${ergebnis.megabyte} MB` : ""}`}
+          />
+          <Kennzahl label="Zu Meldungen gehörend" wert={String(ergebnis.inVerwendung)} />
+          <Kennzahl label="Noch geschont" wert={String(ergebnis.geschont)} />
+        </dl>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button variant="outline" size="sm" loading={laeuft} onClick={() => void ausfuehren(false)}>
+          Nachsehen
+        </Button>
+        {ergebnis && ergebnis.gefunden > 0 && !erledigt && (
+          <Button
+            variant="outline"
+            size="sm"
+            loading={laeuft}
+            onClick={() => void ausfuehren(true)}
+          >
+            {ergebnis.gefunden} Aufnahmen endgültig löschen
+          </Button>
+        )}
+      </div>
+
+      {ergebnis && ergebnis.gefunden === 0 && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Nichts zu tun — es liegt keine Aufnahme ohne Meldung im Speicher.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function Kennzahl({ label, wert }: { label: string; wert: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
+      <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-foreground">{wert}</dd>
     </div>
   );
 }
