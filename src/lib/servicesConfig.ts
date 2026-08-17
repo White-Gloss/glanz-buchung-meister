@@ -65,16 +65,22 @@ export const company = {
   phone: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
+  /**
+   * ACHTUNG — hier gehören keine Zugangsdaten hin.
+   *
+   * Diese Datei wird von Kopfzeile, Buchungsassistent und Fußzeile importiert
+   * und landet damit vollständig im Browser-Bündel. Was hier steht, kann
+   * jeder Besucher lesen.
+   *
+   * Frühere Felder `phoneNumberId`, `accessToken` und `templates` wurden
+   * deshalb entfernt: Ein dort eingetragenes Token hätte fremden Versand in
+   * Ihrem Namen erlaubt. Die WhatsApp-Anbindung liegt jetzt in
+   * `whatsapp.server.ts` und liest ausschließlich Umgebungsvariablen des
+   * Servers.
+   */
   whatsapp: {
     number: "4915233540284",
     defaultMessage: "Hallo White Gloss, ich möchte einen Samstagstermin persönlich anfragen.",
-    phoneNumberId: "",
-    accessToken: "",
-    templates: {
-      bookingConfirmation: "",
-      followUpAfterService: "",
-      reminderDayBefore: "",
-    },
   },
   meta: {
     pixelId: "",

@@ -293,6 +293,18 @@ export const submitConditionReport = createServerFn({ method: "POST" })
       console.error("[mail] Benachrichtigung zur Zustandsmeldung fehlgeschlagen", error);
     }
 
+    // Zusätzlich aufs Geschäftshandy, getrennt abgefangen.
+    try {
+      const { notifyOwner } = await import("./whatsapp.server");
+      const { conditionReportWhatsAppText } = await import("./whatsappTexts");
+      await notifyOwner(
+        conditionReportWhatsAppText({ name, vehicle, photoCount: photoPaths.length }),
+        "Zustandsmeldung",
+      );
+    } catch (error) {
+      console.error("[whatsapp] Benachrichtigung zur Zustandsmeldung übersprungen", error);
+    }
+
     return { ok: true, id: row.id };
   });
 
