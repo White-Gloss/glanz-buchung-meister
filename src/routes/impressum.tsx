@@ -15,7 +15,18 @@ export const Route = createFileRoute("/impressum")({
         name: "description",
         content: "Anbieterkennzeichnung und Kontaktdaten von White Gloss Detailing.",
       },
-      { name: "robots", content: "noindex,follow" },
+      /*
+        Als einzige der vier Rechtsseiten indexierbar. Das Impressum ist
+        keine Textbaustein-Seite, sondern die Stelle, an der Firmenname,
+        Anschrift und Telefonnummer verbindlich stehen. Genau diese Angaben
+        gleicht Google mit dem Unternehmensprofil und mit Branchenbüchern
+        ab — bei einem jungen Betrieb, den Google noch nicht kennt, ist das
+        ein Beleg und kein Ballast.
+
+        Datenschutz, AGB und Widerruf bleiben bewusst auf noindex: reine
+        Rechtstexte ohne eigenen Suchwert.
+      */
+      { name: "robots", content: "index,follow,max-image-preview:large" },
     ],
     links: [
       { rel: "canonical", href: absUrl("/impressum") },

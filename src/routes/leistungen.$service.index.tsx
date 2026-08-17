@@ -22,16 +22,28 @@ import { listPublishedCustomServices, toServicePage } from "@/lib/customServices
  */
 export const Route = createFileRoute("/leistungen/$service/")({
   loader: async ({ params }) => {
+    // Die sieben Kern-Leistungen stehen im Code und sind immer da.
+    const kernLeistung = getServicePage(params.service);
+
     let customServices: ServicePage[] = [];
     try {
       const rows = await listPublishedCustomServices();
       customServices = rows.map(toServicePage);
-    } catch {
-      // eigene Leistungen bleiben dann einfach weg, kein Fehler für den Besuch
+    } catch (error) {
+      // Bei einer Kern-Leistung sind die eigenen Leistungen nur Beiwerk für
+      // die Querverweise — die Seite bleibt vollständig.
+      //
+      // Bei jeder anderen Adresse aber entschiede diese Liste darüber, ob es
+      // die Seite gibt. Sie wegen eines Datenbankausfalls als „nicht
+      // gefunden" auszuliefern, hiesse gegenüber Google „diese Seite gibt es
+      // nicht mehr" — 404 mit noindex, und die Seite fliegt aus dem Index.
+      // Deshalb hier weiterreichen: Daraus wird eine 5xx-Antwort, und die
+      // versteht Google als „später nochmal versuchen".
+      if (!kernLeistung) throw error;
     }
+
     const service =
-      getServicePage(params.service) ??
-      customServices.find((candidate) => candidate.slug === params.service);
+      kernLeistung ?? customServices.find((candidate) => candidate.slug === params.service);
     if (!service) throw notFound();
     const allServices = [...servicePages, ...customServices];
     return { service, jsonLd: buildServiceJsonLd(service), allServices };
