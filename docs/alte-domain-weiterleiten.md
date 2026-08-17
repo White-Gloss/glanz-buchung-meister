@@ -41,7 +41,22 @@ Website auszuliefern.
 
 ---
 
-## Weg A – über die Oberfläche (einfacher)
+## Erst nachsehen: Welcher Weg gilt für Sie?
+
+hPanel öffnen → links **Websites**. Steht `whitegloss.de` dort in der Liste?
+
+| Antwort | Ihr Weg |
+| --- | --- |
+| **Ja, die alte Seite läuft noch** | Weg B (`.htaccess`) |
+| **Nein, nur die Domain ist da** | Weg A (Weiterleitung im hPanel) |
+
+Der Grund: Solange eine Website an der Domain hängt, beantwortet der
+Webserver die Aufrufe selbst — die Weiterleitung aus Weg A käme gar nicht
+zum Zug. Man könnte die Website dafür vom Domainnamen trennen, aber das ist
+der Umweg. Hängt die Website ohnehin dort, ist `.htaccess` der kürzere und
+zugleich bessere Weg, weil dabei jede Unterseite richtig landet.
+
+## Weg A – Weiterleitung im hPanel (wenn keine Website mehr dranhängt)
 
 1. Bei [hpanel.hostinger.com](https://hpanel.hostinger.com) anmelden
 2. Oben **Domains** → **Weiterleitungen** (englisch: *Redirects*)
@@ -50,20 +65,16 @@ Website auszuliefern.
    - Weiterleiten zu: `https://white-gloss.de`
 4. Speichern
 
-Läuft die alte Seite noch als Hosting-Paket, muss sie vorher unter
-**Websites** vom Domainnamen getrennt oder gelöscht werden — sonst gewinnt
-die Website gegen die Weiterleitung. Die Dateien dürfen liegenbleiben, sie
-werden nur nicht mehr ausgeliefert.
-
 **Einschränkung:** Diese Variante schickt in der Regel *alles* auf die
 Startseite. `whitegloss.de/abholservice/calw` landet dann auf
 `white-gloss.de` statt auf der passenden Unterseite. Für den Umzug bei
-Google reicht das, ideal ist es nicht — siehe Weg B.
+Google reicht das, ideal ist es nicht.
 
-## Weg B – über `.htaccess` (besser, jede Seite landet richtig)
+## Weg B – über `.htaccess` (wenn die alte Website noch läuft)
 
 Die Adressen sind auf beiden Domains gleich aufgebaut. Damit lässt sich
-jede alte Unterseite exakt auf ihr neues Gegenstück schicken.
+jede alte Unterseite exakt auf ihr neues Gegenstück schicken — besser als
+Weg A, und die Website darf dabei stehenbleiben.
 
 1. hPanel → **Dateien** → **Dateimanager**
 2. In den Ordner `public_html` der alten Domain wechseln
