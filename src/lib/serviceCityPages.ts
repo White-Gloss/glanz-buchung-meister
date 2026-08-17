@@ -348,6 +348,8 @@ export function buildServiceCityJsonLd(service: ServicePage, city: PickupCity) {
     telephone: company.phoneHref.replace("tel:", ""),
     email: company.email,
     priceRange: "€€–€€€",
+    // Verknüpft Website und Profil für Google.
+    ...(company.instagram ? { sameAs: [company.instagram] } : {}),
     // Physischer Standort bleibt immer Horb am Neckar.
     address: {
       "@type": "PostalAddress",

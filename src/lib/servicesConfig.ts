@@ -88,7 +88,20 @@ export const company = {
   },
   email: "info@white-gloss.de",
   web: "https://white-gloss.de",
-  instagram: "",
+  /**
+   * Vollständige Profiladresse, nicht nur der Name.
+   *
+   * Sie wird an zwei Stellen gebraucht: als Link in der Fußzeile und als
+   * `sameAs` in den strukturierten Daten. Letzteres sagt Google, dass
+   * Website und Profil zum selben Betrieb gehören — genau der Abgleich, über
+   * den die örtliche Auffindbarkeit mit entschieden wird.
+   *
+   * Leer lassen, wenn kein Profil existiert. Ein Link ins Leere schadet mehr
+   * als ein fehlender.
+   */
+  instagram: "https://www.instagram.com/white_gloss.detailing/",
+  /** Anzeigename ohne @ — nur für die Beschriftung des Links. */
+  instagramHandle: "white_gloss.detailing",
   taxId: "", // USt-IdNr.
   taxNumber: "", // Steuernummer
   bank: {

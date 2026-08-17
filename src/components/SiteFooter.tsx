@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock3, Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
 import { company, features } from "@/lib/servicesConfig";
 
@@ -115,6 +115,17 @@ export function SiteFooter() {
             <Mail aria-hidden className="size-4 shrink-0 text-primary" />
             {company.email}
           </a>
+          {company.instagram && (
+            <a
+              href={company.instagram}
+              target="_blank"
+              rel="noreferrer"
+              className={`${FOOTER_LINK} gap-2`}
+            >
+              <Instagram aria-hidden className="size-4 shrink-0 text-primary" />
+              {company.instagramHandle}
+            </a>
+          )}
           <p className="flex min-h-8 items-center gap-2 text-sm text-muted-foreground">
             <MapPin aria-hidden className="size-4 shrink-0 text-primary" />
             {company.city}

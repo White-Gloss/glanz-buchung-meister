@@ -78,6 +78,8 @@ export const Route = createFileRoute("/luxusfahrzeuge")({
             name: company.name,
             telephone: company.phone,
             url: company.web,
+            // Verknüpft Website und Profil für Google.
+            ...(company.instagram ? { sameAs: [company.instagram] } : {}),
           },
         }),
       },
