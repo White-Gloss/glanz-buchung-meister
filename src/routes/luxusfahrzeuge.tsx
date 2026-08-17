@@ -19,8 +19,12 @@ import { absUrl, standardPageMeta } from "@/lib/seo";
 import { company } from "@/lib/servicesConfig";
 
 const TITLE = "Luxusfahrzeug-Aufbereitung ab 80.000 € | White Gloss";
+// 156 Zeichen. Google kürzt die Beschreibung in der Trefferliste bei rund
+// 165; die vorherige Fassung lag bei 174 und verlor dabei ausgerechnet den
+// Ortsnamen am Ende — also genau das Wort, das für die örtliche Suche zählt.
+// Deshalb steht „Horb am Neckar" jetzt weiter vorn.
 const DESCRIPTION =
-  "Individuelle Premium-Aufbereitung für Luxusfahrzeuge ab ca. 80.000 € Fahrzeugwert. Ausschließlich nach telefonischer Beratung und persönlicher Begutachtung in Horb am Neckar.";
+  "Individuelle Premium-Aufbereitung für Luxus- und Sammlerfahrzeuge ab ca. 80.000 € Wert. In Horb am Neckar, nur nach telefonischer Beratung und Begutachtung.";
 
 const processSteps = [
   {
