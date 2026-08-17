@@ -403,7 +403,7 @@ export function BookingCard({
               <a href={`tel:${booking.customer.phone}`} className="hover:text-primary">
                 {booking.customer.phone}
               </a>
-              <span className="rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-[0.68rem] uppercase tracking-wider text-muted-foreground">
+              <span className="rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-xs uppercase tracking-wider text-muted-foreground">
                 bevorzugt: {booking.preferredContact}
               </span>
             </div>
@@ -426,7 +426,7 @@ export function BookingCard({
             <CalendarClock aria-hidden className="size-3.5 shrink-0 text-primary" />
             <span className="text-foreground">{formatDate(booking.date)}</span>
             <span
-              className={`rounded-full border px-2 py-0.5 text-[0.68rem] ${
+              className={`rounded-full border px-2 py-0.5 text-xs ${
                 belegt >= MAX_BOOKINGS_PER_DAY
                   ? "border-destructive/40 bg-destructive/15 text-destructive"
                   : "border-border bg-secondary/40 text-muted-foreground"

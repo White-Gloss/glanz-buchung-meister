@@ -142,7 +142,13 @@ export function SiteHeader() {
               <span className="font-display text-[1.65rem] uppercase tracking-[0.13em] text-foreground sm:text-[1.8rem]">
                 White Gloss
               </span>
-              <span className="mt-1 text-[0.5rem] font-medium uppercase tracking-[0.5em] text-primary sm:text-[0.54rem]">
+              {/*
+                Am Telefon 10px statt vorher 8px. Acht Pixel sind auch mit
+                guten Augen kaum noch zu entziffern; die Laufweite geht im
+                Gegenzug von 0,5em auf 0,42em zurück, damit die Zeile weiter
+                schmaler bleibt als der Schriftzug darüber.
+              */}
+              <span className="mt-1 text-[0.625rem] font-medium uppercase tracking-[0.42em] text-primary sm:text-[0.6875rem] sm:tracking-[0.46em]">
                 Detailing
               </span>
             </span>
@@ -265,7 +271,7 @@ export function SiteHeader() {
                 aria-label="Mobile Navigation"
                 className="metal-panel absolute right-0 top-[calc(100%+0.65rem)] grid max-h-[calc(100dvh-7rem)] w-[min(23rem,calc(100vw-2rem))] gap-1 overflow-y-auto rounded-2xl p-3 shadow-2xl"
               >
-                <p className="px-4 pb-1 pt-2 text-[0.62rem] uppercase tracking-[0.2em] text-muted-foreground">
+                <p className="px-4 pb-1 pt-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                   Navigation
                 </p>
                 <Link
@@ -305,7 +311,7 @@ export function SiteHeader() {
                     <Gem aria-hidden className="size-4 text-primary" />
                     Luxusfahrzeuge
                   </span>
-                  <span className="text-[0.62rem] uppercase tracking-[0.14em] text-primary">
+                  <span className="text-xs uppercase tracking-[0.12em] text-primary">
                     Nur auf Anruf
                   </span>
                 </Link>
@@ -371,7 +377,7 @@ export function SiteHeader() {
           <Link
             to="/"
             hash="b2b"
-            className="group inline-flex min-h-8 items-center justify-center gap-2 rounded-sm text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            className="group inline-flex min-h-10 items-center justify-center gap-2 rounded-sm text-center font-medium text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Building2 aria-hidden className="size-3.5 shrink-0 text-primary" />
             <span className="sm:hidden">

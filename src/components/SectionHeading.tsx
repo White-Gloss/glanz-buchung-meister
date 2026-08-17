@@ -38,8 +38,15 @@ export function SectionHeading({
   className,
   titleClassName,
 }: Props) {
+  // Überschriften blenden sich beim Scrollen sanft ein — außer der ersten
+  // Überschrift einer Seite. Die steht sofort im Bild, ist das größte Element
+  // und damit das, woran Google die Ladezeit misst; sie darf nicht auf eine
+  // Animation warten. Die Bewegung selbst ist rein über CSS gelöst und
+  // entfällt in Browsern ohne Unterstützung sowie bei reduzierter Bewegung.
+  const einblenden = Tag !== "h1";
+
   return (
-    <div className={cn("headline-stack", className)}>
+    <div className={cn("headline-stack", einblenden && "reveal", className)}>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <Tag className={cn(levelClass[level], titleClassName)}>{title}</Tag>
       {text && <p className="text-muted-foreground">{text}</p>}

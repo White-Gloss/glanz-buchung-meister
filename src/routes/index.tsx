@@ -252,11 +252,18 @@ function Hero() {
               <Link to="/preise">Pakete &amp; Preise</Link>
             </Button>
           </div>
-          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[0.66rem] uppercase tracking-[0.14em] text-white/58 sm:text-xs">
+          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs uppercase tracking-[0.12em] text-white/70 sm:tracking-[0.14em]">
             {["Klare Startpreise", "Unverbindliche Anfrage", "Hol- & Bringservice"].map(
               (item, index) => (
                 <li key={item} className="inline-flex items-center gap-2">
-                  {index > 0 && <span aria-hidden className="size-1 rounded-full bg-primary" />}
+                  {/*
+                    Der Trennpunkt entfällt am Telefon: Dort bricht die Liste
+                    auf zwei Zeilen um, und ein Punkt am Zeilenanfang sieht
+                    aus wie ein versehentliches Aufzählungszeichen.
+                  */}
+                  {index > 0 && (
+                    <span aria-hidden className="hidden size-1 rounded-full bg-primary sm:block" />
+                  )}
                   {item}
                 </li>
               ),
@@ -340,13 +347,13 @@ function Packages() {
             ].join(" ")}
           >
             {servicePackage.highlight && (
-              <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-primary-foreground sm:left-8">
+              <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-primary-foreground sm:left-8">
                 Beliebteste Wahl
               </span>
             )}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[0.62rem] uppercase tracking-[0.18em] text-primary">
+                <p className="text-xs uppercase tracking-[0.16em] text-primary">
                   {servicePackage.tagline}
                 </p>
                 <h3 className="display-sub mt-4 uppercase">{servicePackage.name}</h3>
@@ -435,8 +442,12 @@ function QualityJourney() {
 
 function Booking({ initialPackageId }: { initialPackageId?: string }) {
   return (
+    /* data-hide-whatsapp: Solange der Assistent im Bild ist, blendet sich die
+       schwebende WhatsApp-Schaltfläche aus — sie liegt sonst über der
+       Fußleiste mit „Terminanfrage senden". */
     <section
       id="buchung"
+      data-hide-whatsapp
       className="content-auto relative isolate scroll-mt-28 overflow-hidden bg-surface/25"
     >
       <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />

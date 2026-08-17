@@ -148,7 +148,7 @@ function CityPage() {
                   key={label}
                   className="hairline-gold rounded-2xl bg-card/70 p-4 backdrop-blur-xl"
                 >
-                  <dt className="flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
+                  <dt className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     <Icon className="size-3.5 text-primary" />
                     {label}
                   </dt>

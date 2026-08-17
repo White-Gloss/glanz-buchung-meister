@@ -81,12 +81,26 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `RESEND_API_KEY`                                    | E-Mail-Versand                          |
 | `MAIL_FROM`                                         | Absender der Kundenmails                |
 | `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
-| `SUPABASE_SERVICE_ROLE_KEY`                         | optionale serverseitige Vollzugriffe    |
+| `SUPABASE_SERVICE_ROLE_KEY`                         | **Pflicht** — Foto-Upload der Kundschaft |
 | `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
 | `IMAP_HOST`                                         | Posteingang im Adminbereich             |
 | `IMAP_USER`                                         | Postfachname für den Posteingang        |
 | `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
 | `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
+
+### Warum `SUPABASE_SERVICE_ROLE_KEY` nicht optional ist
+
+Interessenten haben im privaten Foto-Speicher keine eigene Schreib-
+berechtigung mehr — die anonyme Regel wurde mit der Sicherheitshärtung
+entfernt, damit niemand am Server vorbei beliebige Dateien ablegen kann.
+Jeder Upload läuft seither über den Server, der sich dafür mit diesem
+Schlüssel ausweist.
+
+Fehlt der Wert, schlägt **jeder** Foto- und Video-Upload fehl. Die Kundschaft
+sieht nur „Der Upload ist derzeit nicht verfügbar", und im Adminbereich geht
+schlicht nichts mehr ein — was von dort aus nicht von einer ruhigen Woche zu
+unterscheiden ist. Die Seite **Zustandsmeldungen** im Adminbereich zeigt
+deshalb einen roten Hinweis, sobald der Schlüssel fehlt.
 
 ## KI-Assistent und Bildbewertung
 

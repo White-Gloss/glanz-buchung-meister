@@ -8,11 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   listConditionReports,
   getConditionPhotoUrls,
+  getConditionUploadStatus,
   updateConditionReport,
   deleteConditionReport,
   CONDITION_STATUSES,
   type ConditionReport,
   type ConditionStatus,
+  type ConditionUploadStatus,
 } from "@/lib/conditionReports.functions";
 import { assessConditionPhotos, getAssistantStatus } from "@/lib/assistant.functions";
 import { diagnoseBackendError } from "@/lib/backendErrors";
@@ -73,8 +75,10 @@ function ConditionAdminPage() {
   const [reports, setReports] = useState<ConditionReport[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [assistent, setAssistent] = useState(false);
+  const [upload, setUpload] = useState<ConditionUploadStatus | null>(null);
   const fetchAll = useServerFn(listConditionReports);
   const fetchAssistentStatus = useServerFn(getAssistantStatus);
+  const fetchUploadStatus = useServerFn(getConditionUploadStatus);
 
   const reload = useCallback(() => {
     setLoadError(null);
@@ -116,6 +120,20 @@ function ConditionAdminPage() {
     };
   }, [fetchAssistentStatus]);
 
+  // Ob der Upload überhaupt funktionieren kann. Ohne diesen Hinweis fiele ein
+  // fehlender Serverschlüssel erst dadurch auf, dass wochenlang keine Meldung
+  // mehr eingeht — und das sieht von hier aus genauso aus wie eine ruhige
+  // Woche.
+  useEffect(() => {
+    let active = true;
+    void fetchUploadStatus()
+      .then((status) => active && setUpload(status))
+      .catch(() => active && setUpload(null));
+    return () => {
+      active = false;
+    };
+  }, [fetchUploadStatus]);
+
   const offen = reports?.filter((report) => report.status === "Neu").length ?? 0;
 
   return (
@@ -153,6 +171,30 @@ function ConditionAdminPage() {
             )}
           </p>
         </div>
+
+        {upload && !upload.ready && (
+          <div className="mb-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5 text-sm leading-6">
+            <p className="font-medium text-destructive">
+              Der Foto-Upload ist auf dem Server nicht eingerichtet.
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              Kundschaft kann derzeit keine Fotos oder Videos senden — der Versuch endet mit „Der
+              Upload ist derzeit nicht verfügbar“. Hier kommt dann gar keine Meldung an, was von
+              außen wie eine ruhige Woche aussieht.
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              Es fehlt in <code>/etc/white-gloss/environment</code>:{" "}
+              {[
+                !upload.supabaseUrlSet && "SUPABASE_URL",
+                !upload.serviceRoleKeySet && "SUPABASE_SERVICE_ROLE_KEY",
+              ]
+                .filter(Boolean)
+                .join(" und ")}
+              . Nach dem Eintragen den Dienst neu starten. Einzelheiten stehen in{" "}
+              <code>docs/deployment.md</code>.
+            </p>
+          </div>
+        )}
 
         {loadError ? (
           <div className="glass rounded-2xl border border-destructive/30 p-5 text-sm">

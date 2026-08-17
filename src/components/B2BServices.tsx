@@ -114,7 +114,7 @@ export function B2BServices() {
                 className="grid gap-5 border-b border-border py-6 last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:items-start sm:py-7"
               >
                 <div className="flex items-center gap-3 sm:block">
-                  <span className="text-[0.62rem] tracking-[0.2em] text-primary">
+                  <span className="text-xs tracking-[0.18em] text-primary">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <Icon aria-hidden className="mt-0 size-5 text-primary sm:mt-3" />
