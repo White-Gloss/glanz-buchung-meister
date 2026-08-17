@@ -426,7 +426,7 @@ export function ConditionPhotoUpload({
               >
                 <X aria-hidden className="size-4" />
               </button>
-              <p className="mt-1 truncate text-[11px] text-muted-foreground">
+              <p className="mt-1 truncate text-xs text-muted-foreground">
                 {photo.kind === "video" ? "Video" : "Foto"} · {mb(photo.sizeBytes)}
               </p>
             </li>

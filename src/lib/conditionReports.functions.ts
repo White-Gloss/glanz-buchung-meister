@@ -213,6 +213,39 @@ export const uploadConditionPhoto = createServerFn({ method: "POST" })
     return { ok: true, path };
   });
 
+export type ConditionUploadStatus = {
+  /** Beide Werte gesetzt — der Server kann in den privaten Speicher schreiben. */
+  ready: boolean;
+  supabaseUrlSet: boolean;
+  serviceRoleKeySet: boolean;
+};
+
+/**
+ * Ob der Foto-Upload überhaupt funktionieren kann.
+ *
+ * Seit der Sicherheitshärtung schreibt ausschließlich der Server in den
+ * privaten Speicher — Interessenten haben dort keine eigene Berechtigung
+ * mehr. Fehlt `SUPABASE_SERVICE_ROLE_KEY` in der Serverumgebung, scheitert
+ * deshalb jeder Foto-Upload, und zwar lautlos: Die Kundschaft sieht nur
+ * „Der Upload ist derzeit nicht verfügbar", im Adminbereich kommt schlicht
+ * nie eine Meldung an. Genau das macht diese Funktion sichtbar.
+ *
+ * Zurückgegeben werden nur Ja/Nein-Angaben, niemals der Wert eines
+ * Schlüssels.
+ */
+export const getConditionUploadStatus = createServerFn({ method: "GET" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ConditionUploadStatus> => {
+    await assertAdmin(context);
+    const supabaseUrlSet = Boolean(process.env.SUPABASE_URL);
+    const serviceRoleKeySet = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    return {
+      ready: supabaseUrlSet && serviceRoleKeySet,
+      supabaseUrlSet,
+      serviceRoleKeySet,
+    };
+  });
+
 export type ConditionReportInput = {
   name: string;
   email: string;

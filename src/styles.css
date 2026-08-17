@@ -271,15 +271,18 @@
   }
 }
 
-/** Kleiner Eyebrow-Text über einer Sektionsüberschrift */
+/** Kleiner Eyebrow-Text über einer Sektionsüberschrift
+ *  Am Telefon 12px statt vorher 11px: Versalien mit weiter Laufweite lesen
+ *  sich deutlich schlechter als gemischte Schreibweise, kleine Grade werden
+ *  dadurch zusätzlich bestraft. Die Laufweite bleibt am Telefon enger,
+ *  damit die Zeile trotz des größeren Grades nicht umbricht. */
 @utility eyebrow {
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   color: var(--color-primary);
 
   @media (width >= 40rem) {
-    font-size: var(--text-xs);
     letter-spacing: 0.3em;
   }
 }
@@ -370,6 +373,47 @@
   contain-intrinsic-size: auto 800px;
 }
 
+/* -------------------------------------------------------------------------
+ * EINBLENDEN BEIM SCROLLEN
+ *
+ * Bewusst ohne JavaScript, über eine scrollgesteuerte Animation. Browser,
+ * die `animation-timeline` nicht kennen, ignorieren die gesamte Regel — die
+ * Seite bleibt dort exakt wie vorher, nur ohne Bewegung. Damit kann kein
+ * Inhalt unsichtbar hängenbleiben, wenn eine Datei nicht lädt oder eine
+ * Erweiterung dazwischenfunkt; genau das ist bei der üblichen
+ * JavaScript-Variante das Risiko.
+ *
+ * Der Bereich `cover 0% cover 18%` ist absichtlich so gewählt, dass er auch
+ * bei Elementen greift, die höher sind als der Bildschirm: „cover" beginnt,
+ * sobald das Element den Bildschirm berührt, und ist bei 18 % längst
+ * erreicht. Ein Bereich über `entry` würde bei sehr hohen Elementen nie
+ * fertig werden und sie halb durchsichtig stehen lassen.
+ * ---------------------------------------------------------------------- */
+@utility reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 18%;
+  }
+}
+
+/* Bewegt wird über `translate`, nicht über `transform`. Das ist Absicht:
+   Die Karten heben sich beim Überfahren per `transform: translateY(-3px)`
+   an. Eine Animation gewinnt in der Kaskade gegen eine normale Regel — mit
+   `transform` in den Keyframes wäre der Hover-Effekt nach dem Einblenden
+   also tot. `translate` ist eine eigenständige Eigenschaft und kommt sich
+   mit `transform` nicht in die Quere. */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 1rem;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
 @utility text-chrome {
   background: linear-gradient(
     105deg,
@@ -416,6 +460,15 @@
       inset 0 1px 0 oklch(1 0 0 / 6%),
       0 24px 70px -36px color-mix(in oklab, var(--primary) 48%, transparent);
   }
+
+  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
+     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
+     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 18%;
+  }
 }
 
 @utility package-card {
@@ -433,6 +486,15 @@
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 6%),
       0 24px 70px -36px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+
+  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
+     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
+     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 18%;
   }
 }
 
@@ -487,6 +549,27 @@
   background: color-mix(in oklab, var(--primary) 18%, transparent);
   filter: blur(100px);
   pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------
+ * BROTKRUMEN – Trefferfläche am Telefon
+ *
+ * Die Links sind nur so hoch wie ihre Textzeile, am Telefon also rund 14px.
+ * Das ist mit dem Daumen kaum sicher zu treffen. Die Trefferfläche wächst
+ * hier auf 36px, ohne dass sich am Aussehen etwas ändert — Schriftgrad,
+ * Farbe und Abstand bleiben, wie sie sind.
+ *
+ * Zentral gelöst, weil die Brotkrumen in 16 Seiten einzeln stehen. Eine
+ * Regel an einer Stelle bleibt verlässlich gleich; 16 gleichlautende
+ * Änderungen laufen früher oder später auseinander.
+ * ---------------------------------------------------------------------- */
+@media (width < 40rem) {
+  nav[aria-label="Brotkrumen"] a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    vertical-align: middle;
+  }
 }
 
 .prose-legal {

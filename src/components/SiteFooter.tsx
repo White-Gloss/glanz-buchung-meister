@@ -3,8 +3,15 @@ import { Clock3, Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-re
 
 import { company, features } from "@/lib/servicesConfig";
 
+// Am Telefon 40px hoch statt 32px: In der Fußzeile stehen die Links dicht
+// untereinander, und 32px liegen unter dem, was sich mit dem Daumen sicher
+// treffen lässt. Ab Tablet reichen 32px, weil dort mit der Maus geklickt wird.
 const FOOTER_LINK =
-  "inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground";
+  "inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground sm:min-h-8";
+
+// Die Rechtsleiste steht ganz unten in einer Zeile nebeneinander. Ohne
+// Mindesthöhe sind das 15px hohe Trefferflächen — zu wenig für den Daumen.
+const LEGAL_LINK = "inline-flex min-h-10 items-center transition-colors hover:text-foreground";
 
 export function SiteFooter() {
   return (
@@ -126,7 +133,7 @@ export function SiteFooter() {
               {company.instagramHandle}
             </a>
           )}
-          <p className="flex min-h-8 items-center gap-2 text-sm text-muted-foreground">
+          <p className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground sm:min-h-8">
             <MapPin aria-hidden className="size-4 shrink-0 text-primary" />
             {company.city}
           </p>
@@ -145,17 +152,17 @@ export function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {company.name}. Alle Rechte vorbehalten.
           </p>
-          <nav aria-label="Rechtliches" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link to="/impressum" className="transition-colors hover:text-foreground">
+          <nav aria-label="Rechtliches" className="flex flex-wrap gap-x-5">
+            <Link to="/impressum" className={LEGAL_LINK}>
               Impressum
             </Link>
-            <Link to="/datenschutz" className="transition-colors hover:text-foreground">
+            <Link to="/datenschutz" className={LEGAL_LINK}>
               Datenschutz
             </Link>
-            <Link to="/agb" className="transition-colors hover:text-foreground">
+            <Link to="/agb" className={LEGAL_LINK}>
               AGB
             </Link>
-            <Link to="/widerruf" className="transition-colors hover:text-foreground">
+            <Link to="/widerruf" className={LEGAL_LINK}>
               Widerruf
             </Link>
           </nav>
