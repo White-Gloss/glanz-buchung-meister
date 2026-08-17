@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "@/lib/db.server";
 import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
+import { megabyte, planCleanup, type StoredMedia } from "./conditionMediaCleanup";
 
 const conditionUploadRateLimiter = createBookingRateLimiter({
   // Eine Meldung erlaubt maximal fünf Aufnahmen. Das Zeitfenster lässt einen
@@ -432,4 +433,114 @@ export const deleteConditionReport = createServerFn({ method: "POST" })
     if (!deleted) throw new Error("Die Meldung wurde nicht gefunden oder bereits gelöscht.");
 
     return { ok: true, storageWarning };
+  });
+
+// =====================================================================
+// Verwaiste Aufnahmen aufräumen
+// =====================================================================
+
+/**
+ * Aufnahmen wandern sofort beim Auswählen in den Speicher, damit das
+ * Absenden später schnell geht. Bricht jemand das Formular danach ab,
+ * bleibt die Datei liegen, ohne dass je eine Meldung dazu entsteht. Das ist
+ * kein Fehler, aber der Speicher wächst dadurch still mit.
+ *
+ * WICHTIG — warum das hier und nicht per Datenbankbefehl passiert:
+ * Ein `DELETE` auf der Storage-Tabelle entfernt nur den Eintrag im
+ * Verzeichnis, nicht die Datei selbst. Der Platz wäre also weiterhin belegt,
+ * nur nicht mehr sichtbar — schlimmer als gar nichts zu tun. Löschen darf
+ * ausschließlich die Storage-Schnittstelle, und die verlangt den
+ * Serverschlüssel, der den Server nie verlässt.
+ */
+export type OrphanCleanupResult = {
+  /** Dateien ohne zugehörige Meldung, älter als die Schonfrist. */
+  gefunden: number;
+  /** Tatsächlich gelöscht — bei einer reinen Prüfung immer 0. */
+  geloescht: number;
+  /** Freigewordener Platz in Megabyte, auf zwei Stellen gerundet. */
+  megabyte: number;
+  /** Jünger als die Schonfrist und deshalb bewusst stehengelassen. */
+  geschont: number;
+  /** Dateien, die zu einer Meldung gehören und nie angefasst werden. */
+  inVerwendung: number;
+  fehler: string | null;
+};
+
+/**
+ * Verwaiste Aufnahmen finden und auf Wunsch löschen.
+ *
+ * Standardmäßig wird nur gezählt. Erst `loeschen: true` entfernt etwas —
+ * und auch dann nur Dateien, die älter als sieben Tage sind. Die Schonfrist
+ * schützt ein Formular, das gerade offen ist: Dort liegen die Aufnahmen
+ * bereits im Speicher, während die Meldung noch nicht abgeschickt ist.
+ */
+export const cleanupOrphanedConditionMedia = createServerFn({ method: "POST" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .validator((data: { loeschen?: boolean }) => data ?? {})
+  .handler(async ({ data, context }): Promise<OrphanCleanupResult> => {
+    await assertAdmin(context);
+
+    const url = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceRoleKey) {
+      throw new Error(
+        "Zum Aufräumen fehlt der Serverschlüssel (SUPABASE_SERVICE_ROLE_KEY). Siehe Hinweis oben auf dieser Seite.",
+      );
+    }
+
+    const { createClient } = await import("@supabase/supabase-js");
+    const client = createClient(url, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    // Alles, was zu einer Meldung gehört, ist tabu.
+    const rows = await query<{ pfad: string }>(
+      `SELECT unnest(photo_paths) AS pfad FROM public.condition_reports`,
+    );
+    const inVerwendung = new Set(rows.map((row) => row.pfad));
+
+    // Der Speicher ist zweistufig abgelegt: <uuid>/<datei>. Deshalb erst die
+    // Ordner auflisten, dann je Ordner die Dateien darin.
+    const { data: ordner, error: ordnerFehler } = await client.storage
+      .from(CONDITION_PHOTO_BUCKET)
+      .list("", { limit: 1000 });
+    if (ordnerFehler) throw new Error(ordnerFehler.message);
+
+    const gefundeneDateien: StoredMedia[] = [];
+    for (const eintrag of ordner ?? []) {
+      const { data: dateien, error } = await client.storage
+        .from(CONDITION_PHOTO_BUCKET)
+        .list(eintrag.name, { limit: 1000 });
+      if (error) continue;
+
+      for (const datei of dateien ?? []) {
+        gefundeneDateien.push({
+          path: `${eintrag.name}/${datei.name}`,
+          createdAt: datei.created_at,
+          sizeBytes: Number(datei.metadata?.size ?? 0),
+        });
+      }
+    }
+
+    // Die eigentliche Entscheidung steht in conditionMediaCleanup.ts und ist
+    // dort einzeln durchgetestet.
+    const plan = planCleanup(gefundeneDateien, inVerwendung);
+    const basis = {
+      gefunden: plan.loeschen.length,
+      megabyte: megabyte(plan.bytes),
+      geschont: plan.geschont,
+      inVerwendung: plan.inVerwendung,
+    };
+
+    if (!data.loeschen || plan.loeschen.length === 0) {
+      return { ...basis, geloescht: 0, fehler: null };
+    }
+
+    const { error } = await client.storage.from(CONDITION_PHOTO_BUCKET).remove(plan.loeschen);
+    if (error) return { ...basis, geloescht: 0, fehler: error.message };
+
+    console.info(
+      `[zustand] ${plan.loeschen.length} verwaiste Aufnahmen entfernt (${basis.megabyte} MB), ausgelöst von ${context.userId}`,
+    );
+    return { ...basis, geloescht: plan.loeschen.length, fehler: null };
   });

@@ -99,6 +99,27 @@ Der normale CI-Workflow prüft bei Pull Requests und auf `main`:
 
 Dadurch können fehlerhafte Quality-Gates nicht unbemerkt in `main` gelangen.
 
+### Erzwungene Abhängigkeiten (`overrides` in `package.json`)
+
+| Paket          | erzwungen auf | Grund                                                                                |
+| -------------- | ------------- | ------------------------------------------------------------------------------------ |
+| `deepmerge-ts` | `^8.0.1`      | [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx) in Version 7 |
+
+Der Weg dorthin führt über `mailparser → html-to-text → deepmerge-ts`, also
+über den Posteingang. `html-to-text` ist in seiner neuesten Fassung (10.0.0)
+weiterhin auf `deepmerge-ts@^7` festgelegt; es gibt stromaufwärts also noch
+keine Lösung. Der Ausweg `npm audit fix --force` würde `mailparser`
+zurückstufen — eine Rückstufung, um einer Meldung auszuweichen, ist die
+schlechtere Wahl.
+
+**Eine erzwungene Hauptversion kann Verhalten ändern, ohne dass etwas
+abstürzt.** Konkret hinge daran, ob HTML-Mails im Posteingang noch als
+lesbarer Text ankommen. `src/lib/inboxMailParsing.test.ts` prüft genau das:
+Umlaute, Listen, Links und dass kein rohes Markup im Klartext landet.
+Schlägt dieser Test nach einem Abhängigkeits-Update fehl, ist der Override
+die erste Stelle zum Nachsehen — er darf entfallen, sobald `html-to-text`
+selbst auf `deepmerge-ts@^8` geht.
+
 ## Noch offen
 
 Folgende Quality-Gates werden ergänzt, sobald die jeweils nötige Grundlage vorhanden ist:
