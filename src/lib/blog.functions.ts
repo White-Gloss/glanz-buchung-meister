@@ -4,6 +4,7 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 import type { Database } from "@/integrations/supabase/types";
+import { ContentUnavailableError } from "./contentAvailability";
 import type { FaqRow } from "./faqs.functions";
 
 /**
@@ -115,11 +116,13 @@ async function assertAdmin(context: { supabase: SupabaseClient<Database>; userId
 }
 
 /** Anonymer Client für öffentliche Leseabfragen (RLS filtert Entwürfe weg). */
-async function createPublicClient(): Promise<SupabaseClient<Database> | null> {
+async function createPublicClient(): Promise<SupabaseClient<Database>> {
   const { createClient } = await import("@supabase/supabase-js");
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
+  if (!url || !key) {
+    throw new ContentUnavailableError("SUPABASE_URL oder SUPABASE_PUBLISHABLE_KEY fehlt");
+  }
 
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -141,7 +144,6 @@ async function createPublicClient(): Promise<SupabaseClient<Database> | null> {
 export const listPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
   async (): Promise<BlogPostSummary[]> => {
     const client = await createPublicClient();
-    if (!client) return [];
 
     const { data, error } = await client
       .from("blog_posts")
@@ -149,7 +151,9 @@ export const listPublishedBlogPosts = createServerFn({ method: "GET" }).handler(
       .not("published_at", "is", null)
       .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false });
-    if (error) return [];
+    // Eine leere Liste auszuliefern hiesse gegenueber Google „der Ratgeber
+    // ist leer" — und die Beitraege verschwaenden aus der Sitemap.
+    if (error) throw new ContentUnavailableError(error.message);
     return data ?? [];
   },
 );
@@ -168,7 +172,6 @@ export const getPublishedBlogPost = createServerFn({ method: "GET" })
     if (!SLUG_PATTERN.test(slug)) return null;
 
     const client = await createPublicClient();
-    if (!client) return null;
 
     const { data: post, error } = await client
       .from("blog_posts")
@@ -177,7 +180,9 @@ export const getPublishedBlogPost = createServerFn({ method: "GET" })
       .not("published_at", "is", null)
       .lte("published_at", new Date().toISOString())
       .maybeSingle();
-    if (error || !post) return null;
+    // Fehler != nicht vorhanden. Nur das saubere „keine Zeile" ist ein 404.
+    if (error) throw new ContentUnavailableError(error.message);
+    if (!post) return null;
 
     // Zugeordnete FAQs über die Verknüpfungstabelle. Unveröffentlichte
     // FAQs filtert bereits die RLS-Policy der faqs-Tabelle heraus; der

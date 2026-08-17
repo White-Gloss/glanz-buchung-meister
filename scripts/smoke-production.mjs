@@ -105,6 +105,9 @@ for (const check of pageChecks) {
 }
 
 try {
+  // Merkt sich den Stand vor den Prüfungen, damit unten nicht „PASS"
+  // gemeldet wird, obwohl gerade etwas fehlgeschlagen ist.
+  const fehlerVorher = failures.length;
   const { response, body } = await get("/sitemap.xml");
   if (!response.ok) fail("/sitemap.xml", `HTTP ${response.status}`);
   const contentType = response.headers.get("content-type") || "";
@@ -122,7 +125,47 @@ try {
   if (body.includes("https://whitegloss.de")) {
     fail("/sitemap.xml", "alte Domain whitegloss.de ist noch enthalten");
   }
-  console.log(`PASS /sitemap.xml -> ${response.status}, ${locations.length} URLs`);
+  if (failures.length === fehlerVorher) {
+    console.log(`PASS /sitemap.xml -> ${response.status}, ${locations.length} URLs`);
+  }
+
+  /*
+    JEDE ADRESSE AUS DER SITEMAP MUSS AUCH INDEXIERBAR SEIN.
+
+    Eine Seite anzumelden und ihr dann „noindex" mitzugeben, ist für Google
+    ein Widerspruch — und im schlimmsten Fall die Anweisung, sie aus dem
+    Index zu werfen. Genau das ist am 11.08.2026 mit dem Ratgeber-Beitrag
+    passiert: Die Datenbank war kurz nicht erreichbar, die Route lieferte
+    „Beitrag nicht gefunden" samt noindex, und Google hat den Beitrag
+    ausgetragen.
+
+    Dieser Test greift ab sofort nach jedem Deployment und würde denselben
+    Zustand sofort melden, statt ihn wochenlang unbemerkt zu lassen.
+  */
+  const indexProbleme = [];
+  for (const location of locations) {
+    const pfad = new URL(location).pathname;
+    try {
+      const seite = await get(pfad);
+      if (!seite.response.ok) {
+        indexProbleme.push(`${pfad} -> HTTP ${seite.response.status}`);
+        continue;
+      }
+      const robotsTags = [...seite.body.matchAll(/<meta[^>]+name=["']robots["'][^>]*>/gi)].map(
+        (treffer) => treffer[0],
+      );
+      if (robotsTags.some((tag) => /noindex/i.test(tag))) {
+        indexProbleme.push(`${pfad} -> steht in der Sitemap, liefert aber noindex`);
+      }
+    } catch (error) {
+      indexProbleme.push(`${pfad} -> ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (indexProbleme.length > 0) {
+    for (const problem of indexProbleme) fail("/sitemap.xml", problem);
+  } else if (locations.length > 0) {
+    console.log(`PASS Indexierbarkeit -> alle ${locations.length} Sitemap-URLs sind indexierbar`);
+  }
 } catch (error) {
   fail("/sitemap.xml", error instanceof Error ? error.message : String(error));
 }

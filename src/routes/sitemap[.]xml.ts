@@ -16,25 +16,36 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        /*
+          EINE UNVOLLSTÄNDIGE SITEMAP IST SCHÄDLICHER ALS GAR KEINE.
+
+          Früher wurden Datenbankfehler hier verschluckt: Die Sitemap kam
+          dann mit Status 200 heraus, nur ohne Ratgeber-Beiträge und ohne
+          eigene Leistungen. Für Google ist das keine Störung, sondern eine
+          Aussage — „diese Adressen gehören nicht mehr dazu".
+
+          Mit einer 503-Antwort behält Google stattdessen die zuletzt
+          gelesene Fassung und versucht es später erneut. Die fest im Code
+          stehenden Seiten allein auszuliefern, wäre der schlechtere Weg.
+        */
         let customServiceEntries: SitemapEntry[] = [];
+        let blogEntries: SitemapEntry[] = [];
         try {
           const rows = await listPublishedCustomServices();
           customServiceEntries = rows.map((row) => ({
             path: `/leistungen/${row.slug}`,
           }));
-        } catch {
-          // Sitemap bleibt ohne eigene Leistungen funktionsfähig, falls die
-          // Datenbank kurzzeitig nicht erreichbar ist.
-        }
 
-        // Ratgeber-Beiträge: nur veröffentlichte, geplante bleiben außen vor
-        // (das übernimmt bereits die Abfrage selbst).
-        let blogEntries: SitemapEntry[] = [];
-        try {
+          // Ratgeber-Beiträge: nur veröffentlichte, geplante bleiben außen
+          // vor (das übernimmt bereits die Abfrage selbst).
           const posts = await listPublishedBlogPosts();
           blogEntries = posts.map((post) => ({ path: `/ratgeber/${post.slug}` }));
-        } catch {
-          // Auch ohne Beiträge bleibt die Sitemap gültig.
+        } catch (error) {
+          console.error("[sitemap] Inhalte nicht abrufbar — 503 statt Kürzung", error);
+          return new Response("Sitemap derzeit nicht verfügbar", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "3600" },
+          });
         }
 
         const entries: SitemapEntry[] = [
@@ -48,6 +59,10 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/ratgeber" },
           { path: "/fahrzeug-zustand" },
           { path: "/dellen-hagelschaden" },
+          // Einzige indexierbare Rechtsseite — siehe Begründung in
+          // impressum.tsx. Datenschutz, AGB und Widerruf stehen auf noindex
+          // und gehören deshalb auch nicht in die Sitemap.
+          { path: "/impressum" },
           ...blogEntries,
           ...servicePages.map<SitemapEntry>((service) => ({
             path: `/leistungen/${service.slug}`,

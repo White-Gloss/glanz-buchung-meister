@@ -4,6 +4,7 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createSupabasePublishableFetch } from "@/integrations/supabase/publishable-key-fetch";
 import type { Database } from "@/integrations/supabase/types";
+import { ContentUnavailableError } from "./contentAvailability";
 import type { ServicePage } from "./servicePages";
 import { servicePackages } from "./servicesConfig";
 
@@ -62,7 +63,12 @@ export const listPublishedCustomServices = createServerFn({ method: "GET" }).han
     const { createClient } = await import("@supabase/supabase-js");
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-    if (!url || !key) return [];
+    // Ein technischer Ausfall darf nicht wie „es gibt keine eigenen
+    // Leistungen" aussehen: Diese Liste steht in der Sitemap, und eine
+    // stillschweigend gekuerzte Sitemap nimmt Google als Aussage.
+    if (!url || !key) {
+      throw new ContentUnavailableError("SUPABASE_URL oder SUPABASE_PUBLISHABLE_KEY fehlt");
+    }
 
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -76,7 +82,7 @@ export const listPublishedCustomServices = createServerFn({ method: "GET" }).han
       .eq("is_published", true)
       .order("sort_order")
       .order("created_at");
-    if (error) return [];
+    if (error) throw new ContentUnavailableError(error.message);
     return data ?? [];
   },
 );
