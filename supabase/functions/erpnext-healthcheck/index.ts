@@ -9,6 +9,13 @@ const json = (body: unknown, status = 200) =>
     },
   });
 
+type ProbeResult = {
+  ok: boolean;
+  status: number | null;
+  count?: number;
+  expected_found?: boolean;
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "GET" && req.method !== "POST") {
     return json({ ok: false, error: "method_not_allowed" }, 405);
@@ -30,40 +37,92 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "missing_configuration", missing }, 500);
   }
 
-  try {
-    const response = await fetch(`${baseUrl}/api/method/frappe.auth.get_logged_user`, {
+  const headers = {
+    Authorization: `token ${apiKey}:${apiSecret}`,
+    Accept: "application/json",
+  };
+
+  const getJson = async (path: string) => {
+    const response = await fetch(`${baseUrl}${path}`, {
       method: "GET",
-      headers: {
-        Authorization: `token ${apiKey}:${apiSecret}`,
-        Accept: "application/json",
-      },
+      headers,
       signal: AbortSignal.timeout(8_000),
     });
+    const payload = await response.json().catch(() => null);
+    return { response, payload };
+  };
 
-    if (!response.ok) {
+  const probeList = async (doctype: string, expected?: string): Promise<ProbeResult> => {
+    try {
+      const fields = encodeURIComponent(JSON.stringify(["name"]));
+      const { response, payload } = await getJson(
+        `/api/resource/${encodeURIComponent(doctype)}?fields=${fields}&limit_page_length=100`,
+      );
+      if (!response.ok) return { ok: false, status: response.status };
+      const rows = Array.isArray(payload?.data) ? payload.data : [];
+      return {
+        ok: true,
+        status: response.status,
+        count: rows.length,
+        ...(expected
+          ? {
+              expected_found: rows.some(
+                (row: unknown) => (row as { name?: unknown })?.name === expected,
+              ),
+            }
+          : {}),
+      };
+    } catch {
+      return { ok: false, status: null };
+    }
+  };
+
+  try {
+    const { response: authResponse, payload: authPayload } = await getJson(
+      "/api/method/frappe.auth.get_logged_user",
+    );
+
+    if (!authResponse.ok) {
       return json(
         {
           ok: false,
           error: "erpnext_auth_failed",
-          upstream_status: response.status,
+          upstream_status: authResponse.status,
         },
         502,
       );
     }
 
-    const payload = await response.json().catch(() => null);
     const authenticated = Boolean(
-      payload && typeof payload === "object" && "message" in payload && payload.message,
+      authPayload &&
+        typeof authPayload === "object" &&
+        "message" in authPayload &&
+        authPayload.message,
     );
 
-    return json(
-      {
-        ok: authenticated,
-        upstream_status: response.status,
-        authenticated,
+    if (!authenticated) {
+      return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
+    }
+
+    const [company, customerGroup, territory] = await Promise.all([
+      probeList("Company", "WHITE GLOSS"),
+      probeList("Customer Group", "Individual"),
+      probeList("Territory", "All Territories"),
+    ]);
+
+    const permissionsReady = company.ok && customerGroup.ok && territory.ok;
+
+    return json({
+      ok: true,
+      authenticated: true,
+      upstream_status: authResponse.status,
+      permissions_ready: permissionsReady,
+      checks: {
+        company,
+        customer_group: customerGroup,
+        territory,
       },
-      authenticated ? 200 : 502,
-    );
+    });
   } catch (error) {
     const timeout = error instanceof DOMException && error.name === "TimeoutError";
     return json(
