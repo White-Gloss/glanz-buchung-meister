@@ -35,8 +35,8 @@ function ErpNextDiagnosticsPage() {
       <main id="main-content" className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="glass rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
           <p>
-            Geschützter Verbindungstest zwischen dem WHITE-GLOSS-Adminbereich, Supabase und
-            ERPNext. Der Test verändert keine Kunden-, Auftrags- oder Finanzdaten.
+            Geschützter Verbindungstest zwischen dem WHITE-GLOSS-Adminbereich, Supabase und ERPNext.
+            Der Test verändert keine Kunden-, Auftrags- oder Finanzdaten.
           </p>
         </div>
         <ErpNextStatusCard />
