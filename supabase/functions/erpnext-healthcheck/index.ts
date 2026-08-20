@@ -44,8 +44,12 @@ const safeUrl = (value: string | undefined) => {
 };
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-  if (req.method !== "GET" && req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  if (req.method !== "GET" && req.method !== "POST") {
+    return json({ ok: false, error: "method_not_allowed" }, 405);
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -59,8 +63,13 @@ Deno.serve(async (req: Request) => {
     ["ERPNEXT_BASE_URL", baseUrl],
     ["ERPNEXT_API_KEY", apiKey],
     ["ERPNEXT_API_SECRET", apiSecret],
-  ].filter(([, value]) => !value).map(([name]) => name);
-  if (missing.length) return json({ ok: false, error: "missing_configuration", missing }, 500);
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    return json({ ok: false, error: "missing_configuration", missing }, 500);
+  }
 
   const authorization = req.headers.get("authorization") ?? "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
@@ -73,24 +82,34 @@ Deno.serve(async (req: Request) => {
   const recordState = async (
     stage: string,
     ok: boolean,
-    options: { upstreamStatus?: number | null; permissionsReady?: boolean | null; detail?: string | null } = {},
+    options: {
+      upstreamStatus?: number | null;
+      permissionsReady?: boolean | null;
+      detail?: string | null;
+    } = {},
   ) => {
     try {
-      await supabase.from("erpnext_healthcheck_state").upsert({
-        id: true,
-        checked_at: new Date().toISOString(),
-        stage,
-        ok,
-        upstream_status: options.upstreamStatus ?? null,
-        permissions_ready: options.permissionsReady ?? null,
-        detail: options.detail ?? null,
-      }, { onConflict: "id" });
+      await supabase.from("erpnext_healthcheck_state").upsert(
+        {
+          id: true,
+          checked_at: new Date().toISOString(),
+          stage,
+          ok,
+          upstream_status: options.upstreamStatus ?? null,
+          permissions_ready: options.permissionsReady ?? null,
+          detail: options.detail ?? null,
+        },
+        { onConflict: "id" },
+      );
     } catch {
       // Diagnostics must never change the healthcheck result.
     }
   };
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(token);
   if (userError || !user) return json({ ok: false, error: "invalid_session" }, 401);
 
   const { data: role, error: roleError } = await supabase
@@ -124,6 +143,7 @@ Deno.serve(async (req: Request) => {
         location = "invalid_location";
       }
     }
+
     const text = await response.text();
     let payload: unknown = null;
     let isJson = false;
@@ -133,6 +153,7 @@ Deno.serve(async (req: Request) => {
     } catch {
       payload = null;
     }
+
     return { response, payload, contentType, isJson, location };
   };
 
@@ -142,14 +163,21 @@ Deno.serve(async (req: Request) => {
       const { response, payload, isJson } = await getJson(
         `/api/resource/${encodeURIComponent(doctype)}?fields=${fields}&limit_page_length=100`,
       );
-      const rows = isJson && payload && typeof payload === "object" && Array.isArray((payload as { data?: unknown }).data)
-        ? (payload as { data: Array<{ name?: unknown }> }).data
-        : null;
+      const rows =
+        isJson &&
+        payload &&
+        typeof payload === "object" &&
+        Array.isArray((payload as { data?: unknown }).data)
+          ? (payload as { data: Array<{ name?: unknown }> }).data
+          : null;
+
       if (!response.ok || !rows) return { ok: false, status: response.status };
+
       const names = rows
-        .map((row) => typeof row?.name === "string" ? row.name : "")
+        .map((row) => (typeof row?.name === "string" ? row.name : ""))
         .filter(Boolean)
         .slice(0, 10);
+
       return {
         ok: true,
         status: response.status,
@@ -168,19 +196,48 @@ Deno.serve(async (req: Request) => {
 
     const auth = await getJson("/api/method/frappe.auth.get_logged_user");
     if (!auth.response.ok) {
-      const detail = `base=${baseHint};content_type=${auth.contentType || "none"};json=${auth.isJson};location=${auth.location ?? "none"}`;
-      await recordState("erpnext_auth_failed", false, { upstreamStatus: auth.response.status, detail });
-      return json({ ok: false, error: "erpnext_auth_failed", upstream_status: auth.response.status }, 502);
+      const detail =
+        `base=${baseHint};content_type=${auth.contentType || "none"};` +
+        `json=${auth.isJson};location=${auth.location ?? "none"}`;
+      await recordState("erpnext_auth_failed", false, {
+        upstreamStatus: auth.response.status,
+        detail,
+      });
+      return json(
+        { ok: false, error: "erpnext_auth_failed", upstream_status: auth.response.status },
+        502,
+      );
     }
 
     const payload = auth.payload as { message?: unknown } | null;
-    const authenticated = Boolean(payload && typeof payload === "object" && typeof payload.message === "string" && payload.message.length > 0 && payload.message !== "Guest");
+    const authenticated = Boolean(
+      payload &&
+        typeof payload === "object" &&
+        typeof payload.message === "string" &&
+        payload.message.length > 0 &&
+        payload.message !== "Guest",
+    );
+
     if (!authenticated) {
-      const keys = payload && typeof payload === "object" ? Object.keys(payload).slice(0, 8).join(",") : "none";
-      const messageType = payload && typeof payload === "object" && "message" in payload ? typeof payload.message : "missing";
-      const detail = `base=${baseHint};content_type=${auth.contentType || "none"};json=${auth.isJson};keys=${keys};message_type=${messageType};location=${auth.location ?? "none"}`;
-      await recordState("erpnext_auth_unconfirmed", false, { upstreamStatus: auth.response.status, detail });
-      return json({ ok: false, error: "erpnext_auth_unconfirmed", upstream_status: auth.response.status }, 502);
+      const keys =
+        payload && typeof payload === "object"
+          ? Object.keys(payload).slice(0, 8).join(",")
+          : "none";
+      const messageType =
+        payload && typeof payload === "object" && "message" in payload
+          ? typeof payload.message
+          : "missing";
+      const detail =
+        `base=${baseHint};content_type=${auth.contentType || "none"};json=${auth.isJson};` +
+        `keys=${keys};message_type=${messageType};location=${auth.location ?? "none"}`;
+      await recordState("erpnext_auth_unconfirmed", false, {
+        upstreamStatus: auth.response.status,
+        detail,
+      });
+      return json(
+        { ok: false, error: "erpnext_auth_unconfirmed", upstream_status: auth.response.status },
+        502,
+      );
     }
 
     const [company, customerGroup, territory] = await Promise.all([
@@ -188,13 +245,23 @@ Deno.serve(async (req: Request) => {
       probeList("Customer Group", "Individual"),
       probeList("Territory", "All Territories"),
     ]);
-    const permissionsReady = company.ok && company.expected_found === true && customerGroup.ok && customerGroup.expected_found === true && territory.ok && territory.expected_found === true;
+
+    const permissionsReady =
+      company.ok &&
+      company.expected_found === true &&
+      customerGroup.ok &&
+      customerGroup.expected_found === true &&
+      territory.ok &&
+      territory.expected_found === true;
 
     const companyNames = company.names?.join("|") || "none";
     await recordState("complete", permissionsReady, {
       upstreamStatus: auth.response.status,
       permissionsReady,
-      detail: permissionsReady ? "readiness_checks_passed" : `company=${company.status};company_names=${companyNames};customer_group=${customerGroup.status};territory=${territory.status}`,
+      detail: permissionsReady
+        ? "readiness_checks_passed"
+        : `company=${company.status};company_names=${companyNames};` +
+          `customer_group=${customerGroup.status};territory=${territory.status}`,
     });
 
     return json({
@@ -207,7 +274,9 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     const timeout = error instanceof DOMException && error.name === "TimeoutError";
     const stage = timeout ? "erpnext_timeout" : "erpnext_unreachable";
-    await recordState(stage, false, { detail: timeout ? "upstream_timeout" : "upstream_network_error" });
+    await recordState(stage, false, {
+      detail: timeout ? "upstream_timeout" : "upstream_network_error",
+    });
     return json({ ok: false, error: stage }, 502);
   }
 });
