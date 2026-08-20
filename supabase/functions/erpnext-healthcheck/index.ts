@@ -1,10 +1,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: {
+      ...corsHeaders,
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
     },
@@ -18,6 +25,9 @@ type ProbeResult = {
 };
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
   if (req.method !== "GET" && req.method !== "POST") {
     return json({ ok: false, error: "method_not_allowed" }, 405);
   }
@@ -129,12 +139,19 @@ Deno.serve(async (req: Request) => {
       probeList("Customer Group", "Individual"),
       probeList("Territory", "All Territories"),
     ]);
+    const permissionsReady =
+      company.ok &&
+      company.expected_found === true &&
+      customerGroup.ok &&
+      customerGroup.expected_found === true &&
+      territory.ok &&
+      territory.expected_found === true;
 
     return json({
       ok: true,
       authenticated: true,
       upstream_status: authResponse.status,
-      permissions_ready: company.ok && customerGroup.ok && territory.ok,
+      permissions_ready: permissionsReady,
       checks: { company, customer_group: customerGroup, territory },
     });
   } catch (error) {
