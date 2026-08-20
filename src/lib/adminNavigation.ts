@@ -1,12 +1,7 @@
 export type AdminNavigationItem = {
   label: string;
   description: string;
-  to:
-    | "/admin"
-    | "/admin/kunden"
-    | "/admin/unterlagen"
-    | "/admin/einstellungen"
-    | "/admin/erpnext";
+  to: "/admin" | "/admin/kunden" | "/admin/unterlagen" | "/admin/einstellungen" | "/admin/erpnext";
 };
 
 export type AdminNavigationGroup = {
