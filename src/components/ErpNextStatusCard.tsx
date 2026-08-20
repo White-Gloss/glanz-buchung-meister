@@ -20,16 +20,21 @@ type ErpNextHealth = {
   error?: string;
   checks?: {
     company: ProbeResult;
+    customer: ProbeResult;
+    contact: ProbeResult;
+    address: ProbeResult;
+    item: ProbeResult;
     customer_group: ProbeResult;
     territory: ProbeResult;
   };
 };
 
-function checkText(result: ProbeResult | undefined, expectedLabel: string) {
+function checkText(result: ProbeResult | undefined, expectedLabel?: string) {
   if (!result) return "nicht geprüft";
-  if (!result.ok)
+  if (!result.ok) {
     return result.status ? `kein Zugriff (HTTP ${result.status})` : "nicht erreichbar";
-  if (result.expected_found === false) return `${expectedLabel} fehlt`;
+  }
+  if (expectedLabel && result.expected_found === false) return `${expectedLabel} fehlt`;
   return "bereit";
 }
 
@@ -56,9 +61,13 @@ export function ErpNextStatusCard() {
       if (!data) throw new Error("ERPNext hat keine Statusantwort geliefert.");
       setStatus(data);
       if (notify) {
-        if (data.ok && data.permissions_ready) toast.success("ERPNext-Verbindung ist bereit.");
-        else if (data.ok) toast.warning("ERPNext ist erreichbar, aber Berechtigungen fehlen noch.");
-        else toast.error("ERPNext-Verbindung ist noch nicht bereit.");
+        if (data.ok && data.permissions_ready) {
+          toast.success("ERPNext-Leserechte sind bereit.");
+        } else if (data.ok) {
+          toast.warning("ERPNext ist erreichbar, aber Leserechte fehlen noch.");
+        } else {
+          toast.error("ERPNext-Verbindung ist noch nicht bereit.");
+        }
       }
     } catch (error) {
       setStatus({
@@ -90,7 +99,7 @@ export function ErpNextStatusCard() {
             {ready ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300">
                 <CheckCircle2 aria-hidden className="size-3" />
-                bereit
+                Leserechte bereit
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-xs text-amber-300">
@@ -101,8 +110,8 @@ export function ErpNextStatusCard() {
           </div>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Der Test läuft ausschließlich serverseitig über Supabase. API-Key und API-Secret werden
-            nicht an den Browser übertragen.
+            Serverseitiger Nur-Lese-Test. API-Key und API-Secret werden nicht an den Browser
+            übertragen und es werden keine ERPNext-Datensätze verändert.
           </p>
 
           {status?.checks ? (
@@ -115,6 +124,14 @@ export function ErpNextStatusCard() {
               <dd className="text-foreground/85">
                 {checkText(status.checks.company, "White-Gloss")}
               </dd>
+              <dt className="text-muted-foreground">Kunden</dt>
+              <dd className="text-foreground/85">{checkText(status.checks.customer)}</dd>
+              <dt className="text-muted-foreground">Kontakte</dt>
+              <dd className="text-foreground/85">{checkText(status.checks.contact)}</dd>
+              <dt className="text-muted-foreground">Adressen</dt>
+              <dd className="text-foreground/85">{checkText(status.checks.address)}</dd>
+              <dt className="text-muted-foreground">Artikel</dt>
+              <dd className="text-foreground/85">{checkText(status.checks.item)}</dd>
               <dt className="text-muted-foreground">Kundengruppe</dt>
               <dd className="text-foreground/85">
                 {checkText(status.checks.customer_group, "Individual")}
@@ -140,7 +157,7 @@ export function ErpNextStatusCard() {
           onClick={() => void check(true)}
         >
           {checking ? null : <RefreshCw aria-hidden className="size-4" />}
-          Verbindung prüfen
+          Leserechte prüfen
         </Button>
       </div>
     </section>

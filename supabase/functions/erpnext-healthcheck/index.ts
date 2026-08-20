@@ -56,6 +56,7 @@ Deno.serve(async (req: Request) => {
   const baseUrl = Deno.env.get("ERPNEXT_BASE_URL")?.trim().replace(/\/$/, "");
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
+  const companyName = Deno.env.get("ERPNEXT_COMPANY")?.trim() || "White-Gloss";
 
   const missing = [
     ["SUPABASE_URL", supabaseUrl],
@@ -173,18 +174,22 @@ Deno.serve(async (req: Request) => {
 
       if (!response.ok || !rows) return { ok: false, status: response.status };
 
-      const names = rows
-        .map((row) => (typeof row?.name === "string" ? row.name : ""))
-        .filter(Boolean)
-        .slice(0, 10);
-
-      return {
+      const result: ProbeResult = {
         ok: true,
         status: response.status,
         count: rows.length,
-        names,
-        ...(expected ? { expected_found: names.includes(expected) } : {}),
       };
+
+      if (expected) {
+        const names = rows
+          .map((row) => (typeof row?.name === "string" ? row.name : ""))
+          .filter(Boolean)
+          .slice(0, 10);
+        result.names = names;
+        result.expected_found = names.includes(expected);
+      }
+
+      return result;
     } catch {
       return { ok: false, status: null };
     }
@@ -240,15 +245,25 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const [company, customerGroup, territory] = await Promise.all([
-      probeList("Company", "White-Gloss"),
-      probeList("Customer Group", "Individual"),
-      probeList("Territory", "All Territories"),
-    ]);
+    const [company, customer, contact, address, item, customerGroup, territory] = await Promise.all(
+      [
+        probeList("Company", companyName),
+        probeList("Customer"),
+        probeList("Contact"),
+        probeList("Address"),
+        probeList("Item"),
+        probeList("Customer Group", "Individual"),
+        probeList("Territory", "All Territories"),
+      ],
+    );
 
     const permissionsReady =
       company.ok &&
       company.expected_found === true &&
+      customer.ok &&
+      contact.ok &&
+      address.ok &&
+      item.ok &&
       customerGroup.ok &&
       customerGroup.expected_found === true &&
       territory.ok &&
@@ -259,8 +274,9 @@ Deno.serve(async (req: Request) => {
       upstreamStatus: auth.response.status,
       permissionsReady,
       detail: permissionsReady
-        ? "readiness_checks_passed"
-        : `company=${company.status};company_names=${companyNames};` +
+        ? "expanded_readiness_checks_passed"
+        : `company=${company.status};company_names=${companyNames};customer=${customer.status};` +
+          `contact=${contact.status};address=${address.status};item=${item.status};` +
           `customer_group=${customerGroup.status};territory=${territory.status}`,
     });
 
@@ -269,7 +285,15 @@ Deno.serve(async (req: Request) => {
       authenticated: true,
       upstream_status: auth.response.status,
       permissions_ready: permissionsReady,
-      checks: { company, customer_group: customerGroup, territory },
+      checks: {
+        company,
+        customer,
+        contact,
+        address,
+        item,
+        customer_group: customerGroup,
+        territory,
+      },
     });
   } catch (error) {
     const timeout = error instanceof DOMException && error.name === "TimeoutError";
