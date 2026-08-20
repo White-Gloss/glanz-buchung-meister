@@ -17,8 +17,7 @@ const json = (body: unknown, status = 200) =>
     },
   });
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type RequestBody = {
   bookingId?: unknown;
@@ -138,10 +137,7 @@ Deno.serve(async (req: Request) => {
     return { response, payload, isJson, location };
   };
 
-  const probeDoctype = async (
-    doctype: string,
-    expectedName?: string,
-  ): Promise<ProbeResult> => {
+  const probeDoctype = async (doctype: string, expectedName?: string): Promise<ProbeResult> => {
     try {
       const fields = encodeURIComponent(JSON.stringify(["name"]));
       const result = await getJson(
@@ -201,16 +197,16 @@ Deno.serve(async (req: Request) => {
     const authPayload = auth.payload as { message?: unknown } | null;
     const authenticated = Boolean(
       authPayload &&
-        typeof authPayload.message === "string" &&
-        authPayload.message.length > 0 &&
-        authPayload.message !== "Guest",
+      typeof authPayload.message === "string" &&
+      authPayload.message.length > 0 &&
+      authPayload.message !== "Guest",
     );
     if (!authenticated) {
       return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
     }
 
-    const [company, customer, contact, address, item, customerGroup, territory] =
-      await Promise.all([
+    const [company, customer, contact, address, item, customerGroup, territory] = await Promise.all(
+      [
         probeDoctype("Company", companyName),
         probeDoctype("Customer"),
         probeDoctype("Contact"),
@@ -218,7 +214,8 @@ Deno.serve(async (req: Request) => {
         probeDoctype("Item"),
         probeDoctype("Customer Group", "Individual"),
         probeDoctype("Territory", "All Territories"),
-      ]);
+      ],
+    );
 
     const readReady =
       company.ok &&
