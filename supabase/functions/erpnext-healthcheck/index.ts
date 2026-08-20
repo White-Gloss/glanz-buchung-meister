@@ -118,9 +118,9 @@ Deno.serve(async (req: Request) => {
 
     const authenticated = Boolean(
       authPayload &&
-        typeof authPayload === "object" &&
-        "message" in authPayload &&
-        authPayload.message,
+      typeof authPayload === "object" &&
+      "message" in authPayload &&
+      authPayload.message,
     );
     if (!authenticated) return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
 
@@ -139,9 +139,6 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     const timeout = error instanceof DOMException && error.name === "TimeoutError";
-    return json(
-      { ok: false, error: timeout ? "erpnext_timeout" : "erpnext_unreachable" },
-      502,
-    );
+    return json({ ok: false, error: timeout ? "erpnext_timeout" : "erpnext_unreachable" }, 502);
   }
 });
