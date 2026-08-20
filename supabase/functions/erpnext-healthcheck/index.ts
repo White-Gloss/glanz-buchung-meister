@@ -217,10 +217,10 @@ Deno.serve(async (req: Request) => {
     const payload = auth.payload as { message?: unknown } | null;
     const authenticated = Boolean(
       payload &&
-        typeof payload === "object" &&
-        typeof payload.message === "string" &&
-        payload.message.length > 0 &&
-        payload.message !== "Guest",
+      typeof payload === "object" &&
+      typeof payload.message === "string" &&
+      payload.message.length > 0 &&
+      payload.message !== "Guest",
     );
 
     if (!authenticated) {
@@ -245,15 +245,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const [company, customer, contact, address, item, customerGroup, territory] = await Promise.all([
-      probeList("Company", companyName),
-      probeList("Customer"),
-      probeList("Contact"),
-      probeList("Address"),
-      probeList("Item"),
-      probeList("Customer Group", "Individual"),
-      probeList("Territory", "All Territories"),
-    ]);
+    const [company, customer, contact, address, item, customerGroup, territory] =
+      await Promise.all([
+        probeList("Company", companyName),
+        probeList("Customer"),
+        probeList("Contact"),
+        probeList("Address"),
+        probeList("Item"),
+        probeList("Customer Group", "Individual"),
+        probeList("Territory", "All Territories"),
+      ]);
 
     const permissionsReady =
       company.ok &&
