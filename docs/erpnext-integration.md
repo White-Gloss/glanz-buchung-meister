@@ -1,10 +1,10 @@
 # WHITE GLOSS OS · ERPNext Integration
 
-Status: foundation in progress
+Status: connectivity gate passed; sync remains preview-only
 
 ## Scope
 
-ERPNext/Frappe v16 at `https://white-gloss-os.frappe.cloud` is the target system of record for the operational WHITE GLOSS OS. The existing website and Supabase booking database remain the public intake layer during migration.
+ERPNext/Frappe v16 at `https://white-gloss-os.f.frappe.cloud` is the target system of record for the operational WHITE GLOSS OS. The existing website and Supabase booking database remain the public intake layer during migration.
 
 The first integration phase is deliberately narrow:
 
@@ -14,6 +14,15 @@ The first integration phase is deliberately narrow:
 4. only after a read/write permission probe succeeds, synchronize customer and order data;
 5. keep Lexware running as the invoice fallback until German accounting/e-invoice compatibility is validated independently.
 
+## Verified ERPNext identifiers
+
+- Site: `https://white-gloss-os.f.frappe.cloud`
+- Company record: `White-Gloss`
+- Customer Group default: `Individual`
+- Territory default: `All Territories`
+
+The public brand remains WHITE GLOSS. Integration code must use ERPNext's exact internal Company name where an ERPNext document requires it.
+
 ## Secrets
 
 The following values are Supabase Edge Function secrets and must never be committed to Git or exposed to browser code:
@@ -21,8 +30,9 @@ The following values are Supabase Edge Function secrets and must never be commit
 - `ERPNEXT_BASE_URL`
 - `ERPNEXT_API_KEY`
 - `ERPNEXT_API_SECRET`
+- optional `ERPNEXT_COMPANY` override; current safe default in the preview worker is `White-Gloss`
 
-The tracked `.env` file contains only public Supabase/analytics identifiers. ERPNext credentials must not be added there.
+The tracked `.env` file must never receive ERPNext credentials.
 
 ## Authentication model
 
@@ -98,38 +108,48 @@ Verify:
 
 ## Current gates
 
-### Connectivity
+### Connectivity — PASS
 
 Deployed Edge Function: `erpnext-healthcheck`
 
-Properties:
+Verified on 2026-08-20:
+
+- Supabase admin session accepted;
+- ERPNext token authentication accepted;
+- upstream ERPNext status `200`;
+- Company `White-Gloss` found;
+- Customer Group `Individual` found;
+- Territory `All Territories` found;
+- health state recorded `stage=complete`, `ok=true`, `permissions_ready=true`, `detail=readiness_checks_passed`.
+
+The function:
 
 - requires a valid Supabase JWT;
 - additionally requires application `admin` role;
 - reads ERPNext credentials only from server-side Edge Function secrets;
 - calls `frappe.auth.get_logged_user`;
-- probes `Company`, `Customer Group` and `Territory` read access;
-- requires the expected `WHITE GLOSS`, `Individual` and `All Territories` records before reporting readiness;
+- rejects redirects/HTML as successful authentication;
 - returns only safe status information;
 - never returns or logs the API key/secret;
 - supports browser CORS preflight;
-- 8 second timeout;
-- `Cache-Control: no-store`.
+- uses an 8 second timeout;
+- sends `Cache-Control: no-store`.
 
 Protected admin diagnostics route: `/admin/erpnext`.
 
-A live authenticated invocation is still required before ERPNext writes are enabled.
+### Sync preview — NO WRITES
 
-### Sync preview
-
-Deployed Edge Function: `erpnext-sync-booking`
+Edge Function: `erpnext-sync-booking`
 
 Properties:
 
 - requires Supabase JWT and application `admin` role;
 - loads the selected booking server-side;
-- checks ERPNext authentication;
+- confirms ERPNext returned authenticated JSON rather than merely checking HTTP 200;
+- rejects redirects and invalid/non-JSON upstream responses;
+- read-probes Company, Customer, Contact, Address, Item, Customer Group and Territory;
 - returns a customer/vehicle/order mapping preview only;
+- uses exact ERPNext Company `White-Gloss` in the order mapping;
 - preserves date-only customer appointments;
 - `mode: commit` is hard-disabled with HTTP 409;
 - does not create or update any ERPNext document yet.
@@ -160,14 +180,16 @@ Unused-index notices are not being acted on while the production dataset is smal
 
 Do not enable customer/order creation until all of the following pass:
 
-- healthcheck returns authenticated = true;
-- integration user can read Company;
-- integration user can read/create Customer as required;
-- ERPNext customer group/territory defaults are confirmed;
+- connectivity gate remains green;
+- integration user can read Customer, Contact, Address and Item;
+- integration user has only the required create/write permissions for Customer, Contact and Address;
 - service Items for detailing packages/add-ons are defined;
+- vehicle representation for phase 1 is explicitly chosen;
 - order external-reference mapping is confirmed;
-- a test booking can be created without generating a financial document;
+- a controlled test booking can be created without generating a financial document;
 - retry simulation proves that the same booking creates exactly one ERPNext order.
+
+Sales Invoice, Payment Entry, bank, chart of accounts, User, Role and System Settings remain outside this integration phase.
 
 ## Rollback
 
