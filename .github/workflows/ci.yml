@@ -37,6 +37,9 @@ jobs:
       - name: Codequalität prüfen
         run: npm run lint
 
+      - name: Automatisierte Tests ausführen
+        run: npm test
+
       - name: Qualitätsskripte syntaktisch prüfen
         run: |
           bash -n scripts/deploy-ionos-release.sh

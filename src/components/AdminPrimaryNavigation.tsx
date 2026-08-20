@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpenText, CalendarDays, Settings, Users } from "lucide-react";
+import { BookOpenText, CalendarDays, Database, Settings, Users } from "lucide-react";
 import { adminNavigationGroups } from "@/lib/adminNavigation";
 
 const icons: Record<string, typeof CalendarDays> = {
   Buchungen: CalendarDays,
   Kundenakten: Users,
   Dokumente: BookOpenText,
+  ERPNext: Database,
   Einstellungen: Settings,
 };
 

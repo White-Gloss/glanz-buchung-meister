@@ -1,1 +1,7 @@
 project_id = "mvlhoibkkvmudxlevtlt"
+
+[functions.erpnext-healthcheck]
+verify_jwt = true
+
+[functions.erpnext-sync-booking]
+verify_jwt = true

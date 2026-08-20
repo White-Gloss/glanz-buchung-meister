@@ -1,7 +1,7 @@
 export type AdminNavigationItem = {
   label: string;
   description: string;
-  to: "/admin" | "/admin/kunden" | "/admin/unterlagen" | "/admin/einstellungen";
+  to: "/admin" | "/admin/kunden" | "/admin/unterlagen" | "/admin/einstellungen" | "/admin/erpnext";
 };
 
 export type AdminNavigationGroup = {
@@ -33,6 +33,11 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Verwaltung",
     items: [
+      {
+        label: "ERPNext",
+        description: "Verbindung und Berechtigungen von WHITE GLOSS OS prüfen",
+        to: "/admin/erpnext",
+      },
       {
         label: "Einstellungen",
         description: "Leistungen, Inhalte, Kommunikation und Abläufe",
