@@ -27,7 +27,8 @@ type ErpNextHealth = {
 
 function checkText(result: ProbeResult | undefined, expectedLabel: string) {
   if (!result) return "nicht geprüft";
-  if (!result.ok) return result.status ? `kein Zugriff (HTTP ${result.status})` : "nicht erreichbar";
+  if (!result.ok)
+    return result.status ? `kein Zugriff (HTTP ${result.status})` : "nicht erreichbar";
   if (result.expected_found === false) return `${expectedLabel} fehlt`;
   return "bereit";
 }
@@ -45,9 +46,12 @@ export function ErpNextStatusCard() {
     setChecking(true);
     try {
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.functions.invoke<ErpNextHealth>("erpnext-healthcheck", {
-        body: {},
-      });
+      const { data, error } = await supabase.functions.invoke<ErpNextHealth>(
+        "erpnext-healthcheck",
+        {
+          body: {},
+        },
+      );
       if (error) throw error;
       if (!data) throw new Error("ERPNext hat keine Statusantwort geliefert.");
       setStatus(data);
@@ -104,9 +108,13 @@ export function ErpNextStatusCard() {
           {status?.checks ? (
             <dl className="mt-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
               <dt className="text-muted-foreground">Anmeldung</dt>
-              <dd className="text-foreground/85">{status.authenticated ? "bereit" : "fehlgeschlagen"}</dd>
+              <dd className="text-foreground/85">
+                {status.authenticated ? "bereit" : "fehlgeschlagen"}
+              </dd>
               <dt className="text-muted-foreground">Firma</dt>
-              <dd className="text-foreground/85">{checkText(status.checks.company, "WHITE GLOSS")}</dd>
+              <dd className="text-foreground/85">
+                {checkText(status.checks.company, "WHITE GLOSS")}
+              </dd>
               <dt className="text-muted-foreground">Kundengruppe</dt>
               <dd className="text-foreground/85">
                 {checkText(status.checks.customer_group, "Individual")}
