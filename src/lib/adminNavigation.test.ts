@@ -8,7 +8,7 @@ describe("adminNavigationGroups", () => {
       "Verwaltung",
     ]);
     expect(adminNavigationGroups.flatMap((group) => group.items.map((item) => item.label))).toEqual(
-      expect.arrayContaining(["Buchungen", "Kundenakten", "Dokumente", "Einstellungen"]),
+      expect.arrayContaining(["Buchungen", "Kundenakten", "Dokumente", "ERPNext", "Einstellungen"]),
     );
   });
 });
