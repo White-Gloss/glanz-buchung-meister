@@ -64,7 +64,8 @@ export function ErpNextServiceCatalogCard() {
         toast.warning(data.error ?? "Service-Katalog konnte nicht geprüft werden.");
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Service-Katalog-Prüfung fehlgeschlagen.";
+      const message =
+        error instanceof Error ? error.message : "Service-Katalog-Prüfung fehlgeschlagen.";
       setResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -119,13 +120,17 @@ export function ErpNextServiceCatalogCard() {
                   {result.ok ? (
                     <>
                       <p>
-                        ERPNext-Katalog: {result.existing_count ?? 0}/{result.expected_count ?? 0} definierte Codes vorhanden.
+                        ERPNext-Katalog: {result.existing_count ?? 0}/
+                        {result.expected_count ?? 0} definierte Codes vorhanden.
                       </p>
                       <p className="mt-1 text-xs opacity-80">
-                        Item anlegen: {permissionText(result.item_permissions?.create)} · Item ändern: {permissionText(result.item_permissions?.write)}
+                        Item anlegen: {permissionText(result.item_permissions?.create)} · Item ändern:{" "}
+                        {permissionText(result.item_permissions?.write)}
                       </p>
                       {missing.length > 0 ? (
-                        <p className="mt-2 break-words text-xs">Fehlend: {missing.join(", ")}</p>
+                        <p className="mt-2 break-words text-xs">
+                          Fehlend: {missing.join(", ")}
+                        </p>
                       ) : null}
                       {invalid.length > 0 ? (
                         <p className="mt-2 break-words text-xs">Prüfen: {invalid.join(", ")}</p>
