@@ -113,7 +113,7 @@ export function ErpNextStatusCard() {
               </dd>
               <dt className="text-muted-foreground">Firma</dt>
               <dd className="text-foreground/85">
-                {checkText(status.checks.company, "WHITE GLOSS")}
+                {checkText(status.checks.company, "White-Gloss")}
               </dd>
               <dt className="text-muted-foreground">Kundengruppe</dt>
               <dd className="text-foreground/85">
