@@ -59,7 +59,9 @@ function errorText(code: string | undefined) {
     case "erpnext_auth_unconfirmed":
       return "ERPNext-Anmeldung konnte für die Vorschau nicht bestätigt werden.";
     default:
-      return code ? `Vorschau abgebrochen: ${code}` : "Die Vorschau konnte nicht ausgeführt werden.";
+      return code
+        ? `Vorschau abgebrochen: ${code}`
+        : "Die Vorschau konnte nicht ausgeführt werden.";
   }
 }
 
@@ -90,7 +92,9 @@ export function ErpNextCustomerPreviewCard() {
       });
       setResult(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.");
+      toast.error(
+        error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.",
+      );
     } finally {
       setLoadingBookings(false);
     }
@@ -122,7 +126,8 @@ export function ErpNextCustomerPreviewCard() {
         toast.warning(errorText(data.error));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Kundensync-Vorschau fehlgeschlagen.";
+      const message =
+        error instanceof Error ? error.message : "Kundensync-Vorschau fehlgeschlagen.";
       setResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -211,7 +216,8 @@ export function ErpNextCustomerPreviewCard() {
                   <p>{result.ok ? stateText(result.customer_state) : errorText(result.error)}</p>
                   {result.ok ? (
                     <p className="mt-1 text-xs opacity-80">
-                      Produktions-Schreibschalter: {result.writes_enabled ? "aktiv" : "weiterhin aus"}.
+                      Produktions-Schreibschalter:{" "}
+                      {result.writes_enabled ? "aktiv" : "weiterhin aus"}.
                     </p>
                   ) : null}
                 </div>
