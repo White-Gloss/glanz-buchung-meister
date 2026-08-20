@@ -124,7 +124,12 @@ Deno.serve(async (req: Request) => {
         perm_type: permission,
       });
       const result = await getJson(`/api/method/frappe.client.has_permission?${params.toString()}`);
-      if (!result.response.ok || !result.isJson || !result.payload || typeof result.payload !== "object") {
+      if (
+        !result.response.ok ||
+        !result.isJson ||
+        !result.payload ||
+        typeof result.payload !== "object"
+      ) {
         return { ok: false, status: result.response.status };
       }
       const message = (result.payload as { message?: unknown }).message;
@@ -172,7 +177,12 @@ Deno.serve(async (req: Request) => {
         const result = await getJson(
           `/api/resource/Item?fields=${fields}&filters=${filters}&limit_page_length=2`,
         );
-        if (!result.response.ok || !result.isJson || !result.payload || typeof result.payload !== "object") {
+        if (
+          !result.response.ok ||
+          !result.isJson ||
+          !result.payload ||
+          typeof result.payload !== "object"
+        ) {
           throw new Error(`item_lookup_failed:${entry.code}:${result.response.status}`);
         }
         const rows = Array.isArray((result.payload as { data?: unknown }).data)
