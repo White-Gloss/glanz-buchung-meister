@@ -130,7 +130,11 @@ export function ErpNextStatusCard() {
             ) : (
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-xs text-amber-300">
                 <AlertTriangle aria-hidden className="size-3" />
-                {readReady ? "Schreibrechte prüfen" : reachable ? "Berechtigungen prüfen" : "nicht verbunden"}
+                {readReady
+                  ? "Schreibrechte prüfen"
+                  : reachable
+                    ? "Berechtigungen prüfen"
+                    : "nicht verbunden"}
               </span>
             )}
           </div>
