@@ -32,7 +32,7 @@ ERPNext requests use Frappe token authentication:
 
 The credentials belong to the dedicated technical ERPNext user. The integration user must follow least privilege and must not be Administrator/System Manager.
 
-Supabase Edge Functions that expose integration actions use platform JWT verification. Write-capable functions must additionally verify that the caller is an application admin before performing any ERPNext mutation.
+Supabase Edge Functions use platform JWT verification and independently verify the caller's Supabase session plus application `admin` role before exposing ERPNext diagnostics or sync actions. Browser preflight requests are supported, but authentication and authorization remain mandatory for the actual request.
 
 ## Current database state
 
@@ -105,18 +105,48 @@ Deployed Edge Function: `erpnext-healthcheck`
 Properties:
 
 - requires a valid Supabase JWT;
+- additionally requires application `admin` role;
 - reads ERPNext credentials only from server-side Edge Function secrets;
 - calls `frappe.auth.get_logged_user`;
+- probes `Company`, `Customer Group` and `Territory` read access;
+- requires the expected `WHITE GLOSS`, `Individual` and `All Territories` records before reporting readiness;
 - returns only safe status information;
 - never returns or logs the API key/secret;
+- supports browser CORS preflight;
 - 8 second timeout;
 - `Cache-Control: no-store`.
 
-A live invocation is still required before ERPNext writes are enabled.
+Protected admin diagnostics route: `/admin/erpnext`.
+
+A live authenticated invocation is still required before ERPNext writes are enabled.
+
+### Sync preview
+
+Deployed Edge Function: `erpnext-sync-booking`
+
+Properties:
+
+- requires Supabase JWT and application `admin` role;
+- loads the selected booking server-side;
+- checks ERPNext authentication;
+- returns a customer/vehicle/order mapping preview only;
+- preserves date-only customer appointments;
+- `mode: commit` is hard-disabled with HTTP 409;
+- does not create or update any ERPNext document yet.
 
 ### Database security hardening
 
-Direct RPC execution of `public.reject_duplicate_booking_submission()` was revoked from `public`, `anon`, and `authenticated`. The function is a trigger function; its booking trigger behavior remains intact while the exposed RPC attack surface is removed.
+Direct RPC execution of `public.reject_duplicate_booking_submission()` was revoked from `public`, `anon`, and `authenticated`. The function is a trigger function; its booking trigger remains enabled on `public.bookings` while the exposed RPC attack surface is removed.
+
+Privilege verification shows only `postgres` and `service_role` retain EXECUTE for both the duplicate-booking trigger function and the ERPNext sync-claim function.
+
+The atomic claim was tested inside a rolled-back transaction against an existing booking:
+
+- first claim: `true`;
+- immediate second claim: `false`;
+- post-rollback rows with ERPNext processing state: `0`.
+
+This confirms mutual exclusion without altering production booking state.
 
 The remaining Supabase security advisor items are intentionally tracked:
 
@@ -143,7 +173,7 @@ Do not enable customer/order creation until all of the following pass:
 
 The current Supabase changes are additive. Rollback consists of:
 
-- disabling/removing the Edge Function from callers;
+- disabling/removing the Edge Functions from callers;
 - dropping the ERPNext sync columns/index and claim function if necessary;
 - leaving existing website bookings and Lexware state untouched.
 
