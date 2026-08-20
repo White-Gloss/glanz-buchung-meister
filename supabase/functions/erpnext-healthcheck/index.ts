@@ -25,6 +25,12 @@ type ProbeResult = {
   names?: string[];
 };
 
+type PermissionProbe = {
+  ok: boolean;
+  status: number | null;
+  allowed?: boolean;
+};
+
 type FetchResult = {
   response: Response;
   payload: unknown;
@@ -41,6 +47,11 @@ const safeUrl = (value: string | undefined) => {
   } catch {
     return "invalid_url";
   }
+};
+
+const permissionSummary = (probe: PermissionProbe) => {
+  if (!probe.ok) return probe.status ? `http-${probe.status}` : "unreachable";
+  return probe.allowed ? "yes" : "no";
 };
 
 Deno.serve(async (req: Request) => {
@@ -195,6 +206,39 @@ Deno.serve(async (req: Request) => {
     }
   };
 
+  const probePermission = async (
+    doctype: string,
+    permission: "create" | "write",
+  ): Promise<PermissionProbe> => {
+    try {
+      const params = new URLSearchParams({
+        doctype,
+        docname: "",
+        perm_type: permission,
+      });
+      const { response, payload, isJson } = await getJson(
+        `/api/method/frappe.client.has_permission?${params.toString()}`,
+      );
+      if (!response.ok || !isJson || !payload || typeof payload !== "object") {
+        return { ok: false, status: response.status };
+      }
+
+      const message = (payload as { message?: unknown }).message;
+      if (!message || typeof message !== "object" || !("has_permission" in message)) {
+        return { ok: false, status: response.status };
+      }
+
+      const rawAllowed = (message as { has_permission?: unknown }).has_permission;
+      return {
+        ok: true,
+        status: response.status,
+        allowed: rawAllowed === true || rawAllowed === 1,
+      };
+    } catch {
+      return { ok: false, status: null };
+    }
+  };
+
   try {
     const baseHint = safeUrl(baseUrl);
     await recordState("erpnext_connecting", true, { detail: `base=${baseHint}` });
@@ -245,19 +289,37 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const [company, customer, contact, address, item, customerGroup, territory] = await Promise.all(
-      [
-        probeList("Company", companyName),
-        probeList("Customer"),
-        probeList("Contact"),
-        probeList("Address"),
-        probeList("Item"),
-        probeList("Customer Group", "Individual"),
-        probeList("Territory", "All Territories"),
-      ],
-    );
+    const [
+      company,
+      customer,
+      contact,
+      address,
+      item,
+      customerGroup,
+      territory,
+      customerCreate,
+      customerWrite,
+      contactCreate,
+      contactWrite,
+      addressCreate,
+      addressWrite,
+    ] = await Promise.all([
+      probeList("Company", companyName),
+      probeList("Customer"),
+      probeList("Contact"),
+      probeList("Address"),
+      probeList("Item"),
+      probeList("Customer Group", "Individual"),
+      probeList("Territory", "All Territories"),
+      probePermission("Customer", "create"),
+      probePermission("Customer", "write"),
+      probePermission("Contact", "create"),
+      probePermission("Contact", "write"),
+      probePermission("Address", "create"),
+      probePermission("Address", "write"),
+    ]);
 
-    const permissionsReady =
+    const readPermissionsReady =
       company.ok &&
       company.expected_found === true &&
       customer.ok &&
@@ -269,22 +331,46 @@ Deno.serve(async (req: Request) => {
       territory.ok &&
       territory.expected_found === true;
 
+    const writePermissionsReady =
+      customerCreate.ok &&
+      customerCreate.allowed === true &&
+      customerWrite.ok &&
+      customerWrite.allowed === true &&
+      contactCreate.ok &&
+      contactCreate.allowed === true &&
+      contactWrite.ok &&
+      contactWrite.allowed === true &&
+      addressCreate.ok &&
+      addressCreate.allowed === true &&
+      addressWrite.ok &&
+      addressWrite.allowed === true;
+
     const companyNames = company.names?.join("|") || "none";
-    await recordState("complete", permissionsReady, {
+    const readDetail = readPermissionsReady
+      ? "read=pass"
+      : `read=fail;company=${company.status};company_names=${companyNames};customer=${customer.status};` +
+        `contact=${contact.status};address=${address.status};item=${item.status};` +
+        `customer_group=${customerGroup.status};territory=${territory.status}`;
+    const writeDetail =
+      `customer_create=${permissionSummary(customerCreate)};` +
+      `customer_write=${permissionSummary(customerWrite)};` +
+      `contact_create=${permissionSummary(contactCreate)};` +
+      `contact_write=${permissionSummary(contactWrite)};` +
+      `address_create=${permissionSummary(addressCreate)};` +
+      `address_write=${permissionSummary(addressWrite)}`;
+
+    await recordState("complete", readPermissionsReady, {
       upstreamStatus: auth.response.status,
-      permissionsReady,
-      detail: permissionsReady
-        ? "expanded_readiness_checks_passed"
-        : `company=${company.status};company_names=${companyNames};customer=${customer.status};` +
-          `contact=${contact.status};address=${address.status};item=${item.status};` +
-          `customer_group=${customerGroup.status};territory=${territory.status}`,
+      permissionsReady: readPermissionsReady,
+      detail: `${readDetail};${writeDetail}`,
     });
 
     return json({
       ok: true,
       authenticated: true,
       upstream_status: auth.response.status,
-      permissions_ready: permissionsReady,
+      permissions_ready: readPermissionsReady,
+      write_permissions_ready: writePermissionsReady,
       checks: {
         company,
         customer,
@@ -293,6 +379,14 @@ Deno.serve(async (req: Request) => {
         item,
         customer_group: customerGroup,
         territory,
+      },
+      write_checks: {
+        customer_create: customerCreate,
+        customer_write: customerWrite,
+        contact_create: contactCreate,
+        contact_write: contactWrite,
+        address_create: addressCreate,
+        address_write: addressWrite,
       },
     });
   } catch (error) {
