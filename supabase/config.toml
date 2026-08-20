@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.erpnext-sync-booking]
 verify_jwt = true
+
+[functions.erpnext-sync-customer]
+verify_jwt = true
