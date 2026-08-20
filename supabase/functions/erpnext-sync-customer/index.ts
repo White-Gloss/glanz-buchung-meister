@@ -52,11 +52,7 @@ type ContactMatch = {
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 const splitName = (value: string) => {
-  const parts = value
-    .trim()
-    .replace(/\s+/g, " ")
-    .split(" ")
-    .filter(Boolean);
+  const parts = value.trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
   if (parts.length === 0) return { firstName: "Kunde", lastName: "" };
   if (parts.length === 1) return { firstName: parts[0], lastName: "" };
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
@@ -227,7 +223,10 @@ Deno.serve(async (req: Request) => {
     const contactId = typeof rows[0]?.name === "string" ? rows[0].name : "";
     if (!contactId) throw new Error("contact_lookup_invalid_name");
 
-    const detail = await erpRequest("GET", `/api/resource/Contact/${encodeURIComponent(contactId)}`);
+    const detail = await erpRequest(
+      "GET",
+      `/api/resource/Contact/${encodeURIComponent(contactId)}`,
+    );
     if (!detail.response.ok || !detail.isJson) throw new Error("contact_detail_failed");
     const data =
       detail.payload && typeof detail.payload === "object"
@@ -281,7 +280,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const authPayload = auth.payload as { message?: unknown } | null;
-    if (!authPayload || typeof authPayload.message !== "string" || authPayload.message === "Guest") {
+    if (
+      !authPayload ||
+      typeof authPayload.message !== "string" ||
+      authPayload.message === "Guest"
+    ) {
       return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
     }
 
@@ -329,16 +332,14 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (!mapping?.erpnext_customer_id && exactContact) {
-      if (mode === "preview") {
-        return json({
-          ok: true,
-          mode,
-          booking_id: booking.id,
-          writes_enabled: writeEnabled,
-          customer_state: "existing_exact_email_contact",
-        });
-      }
+    if (!mapping?.erpnext_customer_id && exactContact && mode === "preview") {
+      return json({
+        ok: true,
+        mode,
+        booking_id: booking.id,
+        writes_enabled: writeEnabled,
+        customer_state: "existing_exact_email_contact",
+      });
     }
 
     if (mode === "preview") {
@@ -421,9 +422,10 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!created.response.ok || !created.isJson) {
-        const code = created.response.status >= 500
-          ? "uncertain_customer_create_upstream"
-          : "customer_create_rejected";
+        const code =
+          created.response.status >= 500
+            ? "uncertain_customer_create_upstream"
+            : "customer_create_rejected";
         await persistFailure(code, created.response.status);
         return json(
           { ok: false, error: code, upstream_status: created.response.status },
@@ -478,9 +480,10 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!createdContact.response.ok || !createdContact.isJson) {
-        const code = createdContact.response.status >= 500
-          ? "uncertain_contact_create_upstream"
-          : "contact_create_rejected";
+        const code =
+          createdContact.response.status >= 500
+            ? "uncertain_contact_create_upstream"
+            : "contact_create_rejected";
         await persistFailure(code, createdContact.response.status);
         return json(
           { ok: false, error: code, upstream_status: createdContact.response.status },
