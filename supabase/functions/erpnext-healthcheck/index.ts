@@ -245,8 +245,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const [company, customer, contact, address, item, customerGroup, territory] =
-      await Promise.all([
+    const [company, customer, contact, address, item, customerGroup, territory] = await Promise.all(
+      [
         probeList("Company", companyName),
         probeList("Customer"),
         probeList("Contact"),
@@ -254,7 +254,8 @@ Deno.serve(async (req: Request) => {
         probeList("Item"),
         probeList("Customer Group", "Individual"),
         probeList("Territory", "All Territories"),
-      ]);
+      ],
+    );
 
     const permissionsReady =
       company.ok &&
