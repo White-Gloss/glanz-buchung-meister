@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -21,11 +22,15 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "method_not_allowed" }, 405);
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const baseUrl = Deno.env.get("ERPNEXT_BASE_URL")?.replace(/\/$/, "");
   const apiKey = Deno.env.get("ERPNEXT_API_KEY");
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET");
 
   const missing = [
+    ["SUPABASE_URL", supabaseUrl],
+    ["SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey],
     ["ERPNEXT_BASE_URL", baseUrl],
     ["ERPNEXT_API_KEY", apiKey],
     ["ERPNEXT_API_SECRET", apiSecret],
@@ -36,6 +41,28 @@ Deno.serve(async (req: Request) => {
   if (missing.length > 0) {
     return json({ ok: false, error: "missing_configuration", missing }, 500);
   }
+
+  const authorization = req.headers.get("authorization") ?? "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  if (!token) return json({ ok: false, error: "authentication_required" }, 401);
+
+  const supabase = createClient(supabaseUrl!, serviceRoleKey!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(token);
+  if (userError || !user) return json({ ok: false, error: "invalid_session" }, 401);
+
+  const { data: role, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (roleError) return json({ ok: false, error: "role_check_failed" }, 500);
+  if (!role) return json({ ok: false, error: "admin_required" }, 403);
 
   const headers = {
     Authorization: `token ${apiKey}:${apiSecret}`,
@@ -84,11 +111,7 @@ Deno.serve(async (req: Request) => {
 
     if (!authResponse.ok) {
       return json(
-        {
-          ok: false,
-          error: "erpnext_auth_failed",
-          upstream_status: authResponse.status,
-        },
+        { ok: false, error: "erpnext_auth_failed", upstream_status: authResponse.status },
         502,
       );
     }
@@ -99,10 +122,7 @@ Deno.serve(async (req: Request) => {
         "message" in authPayload &&
         authPayload.message,
     );
-
-    if (!authenticated) {
-      return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
-    }
+    if (!authenticated) return json({ ok: false, error: "erpnext_auth_unconfirmed" }, 502);
 
     const [company, customerGroup, territory] = await Promise.all([
       probeList("Company", "WHITE GLOSS"),
@@ -110,26 +130,17 @@ Deno.serve(async (req: Request) => {
       probeList("Territory", "All Territories"),
     ]);
 
-    const permissionsReady = company.ok && customerGroup.ok && territory.ok;
-
     return json({
       ok: true,
       authenticated: true,
       upstream_status: authResponse.status,
-      permissions_ready: permissionsReady,
-      checks: {
-        company,
-        customer_group: customerGroup,
-        territory,
-      },
+      permissions_ready: company.ok && customerGroup.ok && territory.ok,
+      checks: { company, customer_group: customerGroup, territory },
     });
   } catch (error) {
     const timeout = error instanceof DOMException && error.name === "TimeoutError";
     return json(
-      {
-        ok: false,
-        error: timeout ? "erpnext_timeout" : "erpnext_unreachable",
-      },
+      { ok: false, error: timeout ? "erpnext_timeout" : "erpnext_unreachable" },
       502,
     );
   }
