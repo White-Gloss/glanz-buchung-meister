@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Database } from "lucide-react";
 
+import { ErpNextCustomerPreviewCard } from "@/components/ErpNextCustomerPreviewCard";
 import { ErpNextStatusCard } from "@/components/ErpNextStatusCard";
 import { Button } from "@/components/ui/button";
 
@@ -36,10 +37,12 @@ function ErpNextDiagnosticsPage() {
         <div className="glass rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
           <p>
             Geschützter Verbindungstest zwischen dem WHITE-GLOSS-Adminbereich, Supabase und ERPNext.
-            Der Test verändert keine Kunden-, Auftrags- oder Finanzdaten.
+            Berechtigungsprüfung und Kundensync-Vorschau verändern keine Kunden-, Auftrags- oder
+            Finanzdaten.
           </p>
         </div>
         <ErpNextStatusCard />
+        <ErpNextCustomerPreviewCard />
       </main>
     </div>
   );
