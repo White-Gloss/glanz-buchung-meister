@@ -164,7 +164,9 @@ Deno.serve(async (req: Request) => {
     }
     const rows = (result.payload as { data?: unknown }).data;
     if (!Array.isArray(rows)) throw new Error(`erpnext_lookup_invalid:${doctype}`);
-    return rows.filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"));
+    return rows.filter((row): row is Record<string, unknown> =>
+      Boolean(row && typeof row === "object"),
+    );
   };
 
   const verifyAuth = async () => {
@@ -245,7 +247,8 @@ Deno.serve(async (req: Request) => {
       .eq("booking_id", booking.id)
       .maybeSingle();
     if (stateError) return json({ ok: false, error: "booking_state_load_failed" }, 500);
-    const customerId = typeof state?.erpnext_customer_id === "string" ? state.erpnext_customer_id : "";
+    const customerId =
+      typeof state?.erpnext_customer_id === "string" ? state.erpnext_customer_id : "";
     if (!customerId) return json({ ok: false, error: "customer_not_synced" }, 409);
 
     const normalizedEmail = normalizeEmail(String(booking.customer_email ?? ""));
@@ -316,7 +319,13 @@ Deno.serve(async (req: Request) => {
 
     const vehicleRows = await listRows(
       VEHICLE_DOCTYPE,
-      ["name", "customer", "registration_plate", "registration_plate_normalized", "external_reference"],
+      [
+        "name",
+        "customer",
+        "registration_plate",
+        "registration_plate_normalized",
+        "external_reference",
+      ],
       [["registration_plate_normalized", "=", normalizedPlate]],
       2,
     );
