@@ -61,24 +61,18 @@ export function ErpNextServiceCatalogCard() {
   const [writing, setWriting] = useState(false);
   const [result, setResult] = useState<CatalogResult | null>(null);
 
-  const invokeCatalog = useCallback(
-    async (mode: "preview" | "commit") => {
-      const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.functions.invoke<CatalogResult>(
-        "erpnext-service-catalog",
-        {
-          body:
-            mode === "commit"
-              ? { mode, confirmation: WRITE_CONFIRMATION }
-              : { mode },
-        },
-      );
-      if (error) throw error;
-      if (!data) throw new Error("ERPNext hat keine Katalogantwort geliefert.");
-      return data;
-    },
-    [],
-  );
+  const invokeCatalog = useCallback(async (mode: "preview" | "commit") => {
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase.functions.invoke<CatalogResult>(
+      "erpnext-service-catalog",
+      {
+        body: mode === "commit" ? { mode, confirmation: WRITE_CONFIRMATION } : { mode },
+      },
+    );
+    if (error) throw error;
+    if (!data) throw new Error("ERPNext hat keine Katalogantwort geliefert.");
+    return data;
+  }, []);
 
   const runCheck = useCallback(async () => {
     setLoading(true);
