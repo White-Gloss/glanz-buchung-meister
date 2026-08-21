@@ -4,6 +4,7 @@ import { ArrowLeft, Database } from "lucide-react";
 import { ErpNextCustomerPreviewCard } from "@/components/ErpNextCustomerPreviewCard";
 import { ErpNextServiceCatalogCard } from "@/components/ErpNextServiceCatalogCard";
 import { ErpNextStatusCard } from "@/components/ErpNextStatusCard";
+import { ErpNextVehicleOrderReadinessCard } from "@/components/ErpNextVehicleOrderReadinessCard";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/erpnext")({
@@ -38,13 +39,14 @@ function ErpNextDiagnosticsPage() {
         <div className="glass rounded-2xl p-5 text-sm leading-6 text-muted-foreground">
           <p>
             Geschützter Verbindungstest zwischen dem WHITE-GLOSS-Adminbereich, Supabase und ERPNext.
-            Berechtigungsprüfung, Kundensync-Vorschau und Service-Katalog-Gate verändern keine
-            Auftrags- oder Finanzdaten.
+            Berechtigungsprüfung, Kundensync-Vorschau, Service-Katalog und Fahrzeug-/Auftragsmodell-
+            Gate verändern keine Finanzdaten.
           </p>
         </div>
         <ErpNextStatusCard />
         <ErpNextCustomerPreviewCard />
         <ErpNextServiceCatalogCard />
+        <ErpNextVehicleOrderReadinessCard />
       </main>
     </div>
   );
