@@ -133,7 +133,9 @@ export function ErpNextVehicleOrderReadinessCard() {
                   {result.ok ? (
                     <>
                       <div>
-                        <p className="font-medium">{result.vehicle?.doctype ?? "WHITE GLOSS Vehicle"}</p>
+                        <p className="font-medium">
+                          {result.vehicle?.doctype ?? "WHITE GLOSS Vehicle"}
+                        </p>
                         <p className="text-xs opacity-80">
                           Status: {resourceText(result.vehicle?.resource)} · Anlegen:{" "}
                           {permissionText(result.vehicle?.permissions.create)} · Ändern:{" "}
@@ -141,7 +143,9 @@ export function ErpNextVehicleOrderReadinessCard() {
                         </p>
                       </div>
                       <div>
-                        <p className="font-medium">{result.order?.doctype ?? "WHITE GLOSS Order"}</p>
+                        <p className="font-medium">
+                          {result.order?.doctype ?? "WHITE GLOSS Order"}
+                        </p>
                         <p className="text-xs opacity-80">
                           Status: {resourceText(result.order?.resource)} · Anlegen:{" "}
                           {permissionText(result.order?.permissions.create)} · Ändern:{" "}
