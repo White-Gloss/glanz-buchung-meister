@@ -121,7 +121,9 @@ export function ErpNextVehicleOrderPreviewCard() {
       });
       setResult(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.");
+      toast.error(
+        error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.",
+      );
     } finally {
       setLoadingBookings(false);
     }
@@ -177,9 +179,9 @@ export function ErpNextVehicleOrderPreviewCard() {
           </div>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Prüft eine bestätigte oder bezahlte Buchung vollständig gegen den bereits synchronisierten
-            ERPNext-Kunden, das Kundenfahrzeug, den operativen Auftrag und den freigegebenen
-            Service-Katalog. Es werden keine Datensätze angelegt oder verändert.
+            Prüft eine bestätigte oder bezahlte Buchung vollständig gegen den bereits
+            synchronisierten ERPNext-Kunden, das Kundenfahrzeug, den operativen Auftrag und den
+            freigegebenen Service-Katalog. Es werden keine Datensätze angelegt oder verändert.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -278,18 +280,22 @@ export function ErpNextVehicleOrderPreviewCard() {
                         {result.order?.payload?.status ? ` · ${result.order.payload.status}` : ""}
                       </p>
                       <p className="text-xs opacity-85">
-                        Leistungen: {(result.services ?? []).map((service) => service.item).join(", ")}
+                        Leistungen:{" "}
+                        {(result.services ?? []).map((service) => service.item).join(", ")}
                       </p>
                       {result.notes?.pickup_tier_not_inferred ? (
                         <p className="text-xs text-amber-200/90">
-                          Hol-/Bringservice erkannt. Der konkrete Entfernungs-Tarif wird bewusst nicht
-                          aus Ortsnamen oder Gesamtpreis geraten; die operative Vorschau verwendet nur
-                          den freigegebenen Hol-/Bringservice-Code.
+                          Hol-/Bringservice erkannt. Der konkrete Entfernungs-Tarif wird bewusst
+                          nicht aus Ortsnamen oder Gesamtpreis geraten; die operative Vorschau
+                          verwendet nur den freigegebenen Hol-/Bringservice-Code.
                         </p>
                       ) : null}
                       <p className="text-xs opacity-80">
                         Schreibvorgänge: {result.writes_performed ? "ja" : "keine"} · Schreib-Gate:{" "}
-                        {result.write_ready ? "für kontrollierten Test vorbereitet" : "nicht bereit"}.
+                        {result.write_ready
+                          ? "für kontrollierten Test vorbereitet"
+                          : "nicht bereit"}
+                        .
                       </p>
                     </div>
                   ) : (
