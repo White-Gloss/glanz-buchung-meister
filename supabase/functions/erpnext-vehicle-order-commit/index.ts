@@ -408,7 +408,12 @@ Deno.serve(async (req: Request) => {
         created = null;
       }
 
-      if (created?.response.ok && created.isJson && created.payload && typeof created.payload === "object") {
+      if (
+        created?.response.ok &&
+        created.isJson &&
+        created.payload &&
+        typeof created.payload === "object"
+      ) {
         const data = (created.payload as { data?: { name?: unknown } }).data;
         vehicleId = data && typeof data.name === "string" ? data.name : "";
       }
@@ -454,7 +459,8 @@ Deno.serve(async (req: Request) => {
 
     if (!orderId) {
       const agreedTotalRaw = Number(booking.agreed_price ?? booking.total ?? 0);
-      const agreedTotal = Number.isFinite(agreedTotalRaw) && agreedTotalRaw >= 0 ? agreedTotalRaw : null;
+      const agreedTotal =
+        Number.isFinite(agreedTotalRaw) && agreedTotalRaw >= 0 ? agreedTotalRaw : null;
       const services = serviceChecks.map((service) => ({
         item: service.code,
         item_code_snapshot: service.code,
@@ -485,7 +491,12 @@ Deno.serve(async (req: Request) => {
         created = null;
       }
 
-      if (created?.response.ok && created.isJson && created.payload && typeof created.payload === "object") {
+      if (
+        created?.response.ok &&
+        created.isJson &&
+        created.payload &&
+        typeof created.payload === "object"
+      ) {
         const data = (created.payload as { data?: { name?: unknown } }).data;
         orderId = data && typeof data.name === "string" ? data.name : "";
       }
