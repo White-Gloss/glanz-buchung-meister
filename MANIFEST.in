@@ -1,0 +1,2 @@
+include README.md
+recursive-include white_gloss_os *.json *.py *.txt

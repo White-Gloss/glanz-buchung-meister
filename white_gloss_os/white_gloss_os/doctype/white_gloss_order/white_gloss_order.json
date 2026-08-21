@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:WGO-{YYYY}-{#####}",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["customer", "vehicle", "booking_id", "source_reference", "status", "service_date", "date_only", "handover_time", "pickup_city", "preferred_contact", "booking_source", "services", "agreed_gross_total", "sales_invoice", "payment_status", "internal_notes"],
+ "fields": [
+  {"fieldname": "customer", "fieldtype": "Link", "label": "Customer", "options": "Customer", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "vehicle", "fieldtype": "Link", "label": "Vehicle", "options": "WHITE GLOSS Vehicle", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "booking_id", "fieldtype": "Data", "label": "Booking ID", "reqd": 1, "unique": 1, "in_standard_filter": 1},
+  {"fieldname": "source_reference", "fieldtype": "Data", "label": "Source Reference"},
+  {"default": "Neue Buchung", "fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Neue Buchung\nPrüfung\nBestätigt\nFahrzeug angenommen\nIn Arbeit\nQualitätskontrolle\nFertig\nRechnung\nBezahlt\nAbgeschlossen\nStorniert", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "service_date", "fieldtype": "Date", "label": "Service Date", "reqd": 1, "in_list_view": 1},
+  {"default": "1", "fieldname": "date_only", "fieldtype": "Check", "label": "Date Only", "reqd": 1},
+  {"fieldname": "handover_time", "fieldtype": "Time", "label": "Handover Time"},
+  {"fieldname": "pickup_city", "fieldtype": "Data", "label": "Pickup City"},
+  {"fieldname": "preferred_contact", "fieldtype": "Data", "label": "Preferred Contact"},
+  {"fieldname": "booking_source", "fieldtype": "Data", "label": "Booking Source"},
+  {"fieldname": "services", "fieldtype": "Table", "label": "Services", "options": "WHITE GLOSS Order Service", "reqd": 1},
+  {"fieldname": "agreed_gross_total", "fieldtype": "Currency", "label": "Agreed Gross Total"},
+  {"fieldname": "sales_invoice", "fieldtype": "Link", "label": "Sales Invoice", "options": "Sales Invoice"},
+  {"default": "Unbekannt", "fieldname": "payment_status", "fieldtype": "Select", "label": "Payment Status", "options": "Unbekannt\nAusstehend\nTeilbezahlt\nBezahlt\nStorniert"},
+  {"fieldname": "internal_notes", "fieldtype": "Small Text", "label": "Internal Notes"}
+ ],
+ "links": [],
+ "module": "White Gloss OS",
+ "name": "WHITE GLOSS Order",
+ "naming_rule": "Expression",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "report": 1, "share": 1},
+  {"role": "WHITE GLOSS Integration", "read": 1, "write": 1, "create": 1}
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

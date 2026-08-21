@@ -1,0 +1,36 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:WGV-{YYYY}-{#####}",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["customer", "registration_plate", "registration_plate_normalized", "vin", "make", "model", "model_year", "vehicle_class_id", "vehicle_class_label", "external_reference", "last_service_date", "notes", "disabled"],
+ "fields": [
+  {"fieldname": "customer", "fieldtype": "Link", "label": "Customer", "options": "Customer", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "registration_plate", "fieldtype": "Data", "label": "Registration Plate", "in_list_view": 1},
+  {"fieldname": "registration_plate_normalized", "fieldtype": "Data", "label": "Registration Plate Normalized", "unique": 1, "read_only": 1},
+  {"fieldname": "vin", "fieldtype": "Data", "label": "VIN", "unique": 1, "in_standard_filter": 1},
+  {"fieldname": "make", "fieldtype": "Data", "label": "Make", "in_list_view": 1},
+  {"fieldname": "model", "fieldtype": "Data", "label": "Model", "in_list_view": 1},
+  {"fieldname": "model_year", "fieldtype": "Int", "label": "Model Year"},
+  {"fieldname": "vehicle_class_id", "fieldtype": "Data", "label": "Vehicle Class ID"},
+  {"fieldname": "vehicle_class_label", "fieldtype": "Data", "label": "Vehicle Class Label"},
+  {"fieldname": "external_reference", "fieldtype": "Data", "label": "External Reference", "reqd": 1, "unique": 1, "in_standard_filter": 1},
+  {"fieldname": "last_service_date", "fieldtype": "Date", "label": "Last Service Date"},
+  {"fieldname": "notes", "fieldtype": "Small Text", "label": "Internal Notes"},
+  {"default": "0", "fieldname": "disabled", "fieldtype": "Check", "label": "Disabled"}
+ ],
+ "links": [],
+ "module": "White Gloss OS",
+ "name": "WHITE GLOSS Vehicle",
+ "naming_rule": "Expression",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "report": 1, "share": 1},
+  {"role": "WHITE GLOSS Integration", "read": 1, "write": 1, "create": 1}
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
