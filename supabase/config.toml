@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.erpnext-vehicle-order-readiness]
 verify_jwt = true
+
+[functions.erpnext-vehicle-order-preview]
+verify_jwt = true
