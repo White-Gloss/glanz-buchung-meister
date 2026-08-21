@@ -14,6 +14,5 @@ def after_install():
             "doctype": "Role",
             "role_name": INTEGRATION_ROLE,
             "desk_access": 0,
-            "is_custom": 1,
         }
     ).insert(ignore_permissions=True)
