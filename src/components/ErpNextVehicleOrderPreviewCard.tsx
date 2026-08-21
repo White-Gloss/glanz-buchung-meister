@@ -88,11 +88,11 @@ function errorText(code: string | undefined) {
   return `Vorschau abgebrochen: ${code}`;
 }
 
-function stateText(state: PreviewResult["vehicle"] extends infer _T ? string | undefined : never) {
+function stateText(state: string | undefined) {
   if (state === "existing_exact_plate") return "vorhanden · exaktes Kennzeichen";
-  if (state === "create_needed") return "würde neu angelegt";
   if (state === "existing_booking_order") return "vorhanden · gleiche Buchungs-ID";
-  return "würde neu angelegt";
+  if (state === "create_needed") return "würde neu angelegt";
+  return "nicht eindeutig";
 }
 
 export function ErpNextVehicleOrderPreviewCard() {
@@ -150,7 +150,8 @@ export function ErpNextVehicleOrderPreviewCard() {
         toast.warning(errorText(data.error));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Fahrzeug-/Auftragsvorschau fehlgeschlagen.";
+      const message =
+        error instanceof Error ? error.message : "Fahrzeug-/Auftragsvorschau fehlgeschlagen.";
       setResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -166,7 +167,9 @@ export function ErpNextVehicleOrderPreviewCard() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Eye aria-hidden className="size-4 text-primary" />
-            <h2 className="display-card text-sm uppercase">Buchung → Fahrzeug → Auftrag · Vorschau</h2>
+            <h2 className="display-card text-sm uppercase">
+              Buchung → Fahrzeug → Auftrag · Vorschau
+            </h2>
             <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs text-sky-300">
               <ShieldCheck aria-hidden className="size-3" />
               ohne Schreibzugriff
@@ -197,7 +200,9 @@ export function ErpNextVehicleOrderPreviewCard() {
                   bookings.map((booking) => (
                     <option key={booking.id} value={booking.id}>
                       {booking.booking_date} · {booking.customer_name} · {booking.status}
-                      {booking.customer_ready ? " · Kunde bereit" : " · Kunde zuerst synchronisieren"}
+                      {booking.customer_ready
+                        ? " · Kunde bereit"
+                        : " · Kunde zuerst synchronisieren"}
                     </option>
                   ))
                 )}
