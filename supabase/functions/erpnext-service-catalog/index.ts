@@ -272,7 +272,9 @@ Deno.serve(async (req: Request) => {
     ]);
     const items = itemResults as ItemState[];
     const missing = items.filter((item) => !item.present).map((item) => item.code);
-    const invalid = items.filter((item) => item.present && !isValidCatalogItem(item)).map((item) => item.code);
+    const invalid = items
+      .filter((item) => item.present && !isValidCatalogItem(item))
+      .map((item) => item.code);
     return {
       itemCreate,
       itemWrite,
@@ -306,8 +308,7 @@ Deno.serve(async (req: Request) => {
 
     const snapshot = await buildSnapshot();
     const prerequisitesReady = snapshot.itemGroupReady && snapshot.uomReady;
-    const createPermissionReady =
-      snapshot.itemCreate.ok && snapshot.itemCreate.allowed === true;
+    const createPermissionReady = snapshot.itemCreate.ok && snapshot.itemCreate.allowed === true;
 
     if (mode === "preview") {
       return json({
@@ -346,7 +347,11 @@ Deno.serve(async (req: Request) => {
     }
     if (snapshot.invalid.length > 0) {
       return json(
-        { ok: false, error: "existing_catalog_items_require_review", invalid_codes: snapshot.invalid },
+        {
+          ok: false,
+          error: "existing_catalog_items_require_review",
+          invalid_codes: snapshot.invalid,
+        },
         409,
       );
     }
