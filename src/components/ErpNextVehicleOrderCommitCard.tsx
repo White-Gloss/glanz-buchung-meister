@@ -226,10 +226,12 @@ export function ErpNextVehicleOrderCommitCard() {
                     <div className="space-y-1">
                       <p className="font-medium">Kontrollierter Schreibtest erfolgreich.</p>
                       <p className="text-xs opacity-85">
-                        Fahrzeug: {result.vehicle_id ?? "unbekannt"} · {result.vehicle_created ? "neu angelegt" : "wiederverwendet"}
+                        Fahrzeug: {result.vehicle_id ?? "unbekannt"} ·{" "}
+                        {result.vehicle_created ? "neu angelegt" : "wiederverwendet"}
                       </p>
                       <p className="text-xs opacity-85">
-                        Auftrag: {result.order_id ?? "unbekannt"} · {result.order_created ? "neu angelegt" : "wiederverwendet"}
+                        Auftrag: {result.order_id ?? "unbekannt"} ·{" "}
+                        {result.order_created ? "neu angelegt" : "wiederverwendet"}
                       </p>
                       <p className="text-xs opacity-80">
                         Finanzschreibvorgänge: {result.financial_writes ? "ja" : "keine"}
