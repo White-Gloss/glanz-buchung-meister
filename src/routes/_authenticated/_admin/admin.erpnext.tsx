@@ -4,6 +4,7 @@ import { ArrowLeft, Database } from "lucide-react";
 import { ErpNextCustomerPreviewCard } from "@/components/ErpNextCustomerPreviewCard";
 import { ErpNextServiceCatalogCard } from "@/components/ErpNextServiceCatalogCard";
 import { ErpNextStatusCard } from "@/components/ErpNextStatusCard";
+import { ErpNextVehicleOrderCommitCard } from "@/components/ErpNextVehicleOrderCommitCard";
 import { ErpNextVehicleOrderPreviewCard } from "@/components/ErpNextVehicleOrderPreviewCard";
 import { ErpNextVehicleOrderReadinessCard } from "@/components/ErpNextVehicleOrderReadinessCard";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ function ErpNextDiagnosticsPage() {
         <ErpNextServiceCatalogCard />
         <ErpNextVehicleOrderReadinessCard />
         <ErpNextVehicleOrderPreviewCard />
+        <ErpNextVehicleOrderCommitCard />
       </main>
     </div>
   );
