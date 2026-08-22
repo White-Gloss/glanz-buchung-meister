@@ -12,12 +12,7 @@ import {
 
 /**
  * Zeigt im Admin-Bereich, ob der E-Mail-Versand eingerichtet ist, und
- * erlaubt eine Testmail an die eigene Adresse.
- *
- * Hintergrund: Ob Mails ankommen, hängt an den Umgebungsvariablen beim
- * Hoster und an der Domainverifizierung bei Resend — beides außerhalb des
- * Codes. Ohne diese Karte wäre die einzige Fehlerquelle das Server-
- * Protokoll, an das man ohne Hosting-Zugang nicht herankommt.
+ * erlaubt eine Testmail an die serverseitig konfigurierte interne Zieladresse.
  */
 export function MailStatusCard() {
   const [status, setStatus] = useState<MailSetupStatus | null>(null);
@@ -42,8 +37,6 @@ export function MailStatusCard() {
       if (result.sent) {
         toast.success(`Testmail an ${result.to} versendet.`);
       } else {
-        // Der Grund kommt unverändert von Resend und ist die eigentliche
-        // Information — z. B. „domain is not verified".
         toast.error(result.reason || "Der Versand ist fehlgeschlagen.");
       }
     } catch (error) {
@@ -81,6 +74,8 @@ export function MailStatusCard() {
               <dd className="truncate text-foreground/85">{status.from}</dd>
               <dt className="text-muted-foreground">Interne Meldungen an</dt>
               <dd className="truncate text-foreground/85">{status.ownerTo}</dd>
+              <dt className="text-muted-foreground">Testmail an</dt>
+              <dd className="truncate text-foreground/85">{status.testTo}</dd>
             </dl>
           ) : (
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -90,12 +85,6 @@ export function MailStatusCard() {
             </p>
           )}
 
-          {/*
-            Absender und Ziel identisch: erklärt, warum ausgerechnet die
-            interne Meldung im Spam landet, während Kundenmails ankommen.
-            Die Ursache liegt beim Hoster, nicht im Code — deshalb steht die
-            Abhilfe direkt daneben.
-          */}
           {status.configured && status.selfAddressed && (
             <div className="mt-4 max-w-2xl rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
               <p className="flex items-center gap-2 text-sm font-medium text-amber-300">
@@ -129,13 +118,13 @@ export function MailStatusCard() {
           disabled={!status.configured || !status.testTo}
           title={
             status.configured
-              ? `Testmail an ${status.testTo ?? "die eigene Adresse"} senden`
+              ? `Testmail an ${status.testTo ?? "die interne Adresse"} senden`
               : "Zuerst RESEND_API_KEY und MAIL_FROM hinterlegen"
           }
           onClick={handleTest}
         >
           {sending ? null : <Send aria-hidden className="size-4" />}
-          Testmail an mich
+          Testmail senden
         </Button>
       </div>
     </section>
