@@ -77,7 +77,9 @@ export function ErpNextVehicleOrderVerifyCard() {
       setResult(null);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Synchronisierte Buchungen konnten nicht geladen werden.",
+        error instanceof Error
+          ? error.message
+          : "Synchronisierte Buchungen konnten nicht geladen werden.",
       );
     } finally {
       setLoading(false);
@@ -204,15 +206,14 @@ export function ErpNextVehicleOrderVerifyCard() {
                       <p className="text-xs opacity-85">Fahrzeug: {result.vehicle_id ?? "–"}</p>
                       <p className="text-xs opacity-85">Auftrag: {result.order_id ?? "–"}</p>
                       <p className="text-xs opacity-85">
-                        Dubletten: Fahrzeug {result.duplicate_counts?.vehicle_by_plate ?? "?"} · Auftrag{" "}
-                        {result.duplicate_counts?.order_by_booking ?? "?"}
+                        Dubletten: Fahrzeug {result.duplicate_counts?.vehicle_by_plate ?? "?"} ·
+                        Auftrag {result.duplicate_counts?.order_by_booking ?? "?"}
                       </p>
                       <p className="text-xs opacity-85">
                         Leistungen: {(result.services ?? []).join(", ") || "–"}
                       </p>
                       <p className="text-xs opacity-80">
-                        Verknüpfte ERPNext-Rechnung: {result.financial_links?.sales_invoice ?? "keine"} ·
-                        Schreibvorgänge: {result.writes_performed ? "ja" : "keine"}
+                        {`Verknüpfte ERPNext-Rechnung: ${result.financial_links?.sales_invoice ?? "keine"} · Schreibvorgänge: ${result.writes_performed ? "ja" : "keine"}`}
                       </p>
                     </div>
                   ) : (
