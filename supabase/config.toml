@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.erpnext-vehicle-order-commit]
 verify_jwt = true
+
+[functions.erpnext-vehicle-order-verify]
+verify_jwt = true
