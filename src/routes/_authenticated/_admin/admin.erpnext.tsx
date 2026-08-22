@@ -7,6 +7,7 @@ import { ErpNextStatusCard } from "@/components/ErpNextStatusCard";
 import { ErpNextVehicleOrderCommitCard } from "@/components/ErpNextVehicleOrderCommitCard";
 import { ErpNextVehicleOrderPreviewCard } from "@/components/ErpNextVehicleOrderPreviewCard";
 import { ErpNextVehicleOrderReadinessCard } from "@/components/ErpNextVehicleOrderReadinessCard";
+import { ErpNextVehicleOrderVerifyCard } from "@/components/ErpNextVehicleOrderVerifyCard";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/erpnext")({
@@ -51,6 +52,7 @@ function ErpNextDiagnosticsPage() {
         <ErpNextVehicleOrderReadinessCard />
         <ErpNextVehicleOrderPreviewCard />
         <ErpNextVehicleOrderCommitCard />
+        <ErpNextVehicleOrderVerifyCard />
       </main>
     </div>
   );
