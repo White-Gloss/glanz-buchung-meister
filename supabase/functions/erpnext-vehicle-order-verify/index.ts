@@ -188,7 +188,9 @@ Deno.serve(async (req: Request) => {
   if (body.action === "list") {
     const { data, error } = await supabase
       .from("booking_automation_state")
-      .select("booking_id, erpnext_customer_id, erpnext_vehicle_id, erpnext_order_id, erpnext_synced_at")
+      .select(
+        "booking_id, erpnext_customer_id, erpnext_vehicle_id, erpnext_order_id, erpnext_synced_at",
+      )
       .not("erpnext_vehicle_id", "is", null)
       .not("erpnext_order_id", "is", null)
       .order("erpnext_synced_at", { ascending: false })
@@ -242,7 +244,9 @@ Deno.serve(async (req: Request) => {
 
   const { data: state, error: stateError } = await supabase
     .from("booking_automation_state")
-    .select("erpnext_customer_id, erpnext_vehicle_id, erpnext_order_id, erpnext_synced_at, erpnext_last_error")
+    .select(
+      "erpnext_customer_id, erpnext_vehicle_id, erpnext_order_id, erpnext_synced_at, erpnext_last_error",
+    )
     .eq("booking_id", bookingId)
     .maybeSingle();
   if (stateError) return json({ ok: false, error: "booking_state_load_failed" }, 500);
@@ -327,7 +331,8 @@ Deno.serve(async (req: Request) => {
       order_customer_matches: asText(order.customer) === String(state.erpnext_customer_id),
       order_vehicle_matches: asText(order.vehicle) === String(state.erpnext_vehicle_id),
       order_unique_by_booking: orderMatches.length === 1,
-      service_date_matches: asText(order.service_date).slice(0, 10) === String(booking.booking_date).slice(0, 10),
+      service_date_matches:
+        asText(order.service_date).slice(0, 10) === String(booking.booking_date).slice(0, 10),
       date_only_preserved: asBoolean(order.date_only),
       handover_time_empty: !order.handover_time,
       services_match_booking: serviceSetMatches,
