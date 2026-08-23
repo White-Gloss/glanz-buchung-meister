@@ -59,6 +59,18 @@ type PreviewResult = {
   };
 };
 
+type CommitResult = {
+  ok: boolean;
+  error?: string;
+  writes_performed?: boolean;
+  idempotent_reuse?: boolean;
+  vehicle_created?: boolean;
+  order_created?: boolean;
+  vehicle_id?: string;
+  order_id?: string;
+  financial_writes?: boolean;
+};
+
 function errorText(code: string | undefined) {
   if (!code) return "Vorschau konnte nicht abgeschlossen werden.";
   if (code === "customer_not_synced" || code === "customer_mapping_not_ready") {
@@ -79,13 +91,19 @@ function errorText(code: string | undefined) {
   if (code === "service_catalog_not_ready_for_booking") {
     return "Mindestens eine Leistung dieser Buchung ist im ERPNext-Servicekatalog nicht sauber verfügbar.";
   }
+  if (code === "erpnext_sync_requires_manual_review") {
+    return "Der ERPNext-Sync ist wegen eines vorherigen Fehlers gesperrt und muss manuell geprüft werden.";
+  }
+  if (code === "booking_sync_busy_or_blocked") {
+    return "Diese Buchung wird bereits verarbeitet oder ist nach einem Fehler gesperrt.";
+  }
   if (code.startsWith("unknown_addon_mapping:") || code === "unknown_package_mapping") {
     return "Die Buchung enthält eine Leistung, für die noch keine sichere ERPNext-Zuordnung existiert.";
   }
   if (code.startsWith("erpnext_")) {
-    return "ERPNext konnte für diese Vorschau nicht vollständig geprüft werden.";
+    return "ERPNext konnte für diesen Vorgang nicht vollständig geprüft werden.";
   }
-  return `Vorschau abgebrochen: ${code}`;
+  return `Vorgang abgebrochen: ${code}`;
 }
 
 function stateText(state: string | undefined) {
@@ -100,7 +118,9 @@ export function ErpNextVehicleOrderPreviewCard() {
   const [selectedId, setSelectedId] = useState("");
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [committing, setCommitting] = useState(false);
   const [result, setResult] = useState<PreviewResult | null>(null);
+  const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
 
   const loadBookings = useCallback(async () => {
     setLoadingBookings(true);
@@ -120,6 +140,7 @@ export function ErpNextVehicleOrderPreviewCard() {
         return next.find((booking) => booking.customer_ready)?.id ?? next[0]?.id ?? "";
       });
       setResult(null);
+      setCommitResult(null);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.",
@@ -161,6 +182,51 @@ export function ErpNextVehicleOrderPreviewCard() {
     }
   }, [selectedId]);
 
+  const runCommit = useCallback(async () => {
+    if (!selectedId || !result?.ok || !result.write_ready) return;
+
+    const confirmed = window.confirm(
+      "Kontrollierten ERPNext-Schreibtest starten? Es werden nur das Kundenfahrzeug und der operative WHITE GLOSS Auftrag angelegt oder eindeutig wiederverwendet. Keine Rechnung, Zahlung, GL- oder Lagerbuchung.",
+    );
+    if (!confirmed) return;
+
+    setCommitting(true);
+    setCommitResult(null);
+    try {
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase.functions.invoke<CommitResult>(
+        "erpnext-vehicle-order-commit",
+        {
+          body: {
+            bookingId: selectedId,
+            confirmation: "CREATE_WHITE_GLOSS_VEHICLE_ORDER_V1",
+          },
+        },
+      );
+      if (error) throw error;
+      if (!data) throw new Error("ERPNext hat keine Schreibantwort geliefert.");
+      setCommitResult(data);
+      if (!data.ok) {
+        toast.warning(errorText(data.error));
+        return;
+      }
+
+      toast.success(
+        data.idempotent_reuse
+          ? "ERPNext-Zuordnung bestätigt. Es wurde kein Duplikat erzeugt."
+          : "Fahrzeug und Auftrag wurden kontrolliert in ERPNext angelegt.",
+      );
+      await runPreview();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Kontrollierter ERPNext-Schreibtest fehlgeschlagen.";
+      setCommitResult({ ok: false, error: message });
+      toast.error(message);
+    } finally {
+      setCommitting(false);
+    }
+  }, [result, runPreview, selectedId]);
+
   const selected = bookings.find((booking) => booking.id === selectedId);
 
   return (
@@ -174,14 +240,14 @@ export function ErpNextVehicleOrderPreviewCard() {
             </h2>
             <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs text-sky-300">
               <ShieldCheck aria-hidden className="size-3" />
-              ohne Schreibzugriff
+              Vorschau ohne Schreibzugriff
             </span>
           </div>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Prüft eine bestätigte oder bezahlte Buchung vollständig gegen den bereits
             synchronisierten ERPNext-Kunden, das Kundenfahrzeug, den operativen Auftrag und den
-            freigegebenen Service-Katalog. Es werden keine Datensätze angelegt oder verändert.
+            freigegebenen Service-Katalog. Die Vorschau legt nichts an und verändert nichts.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -192,8 +258,9 @@ export function ErpNextVehicleOrderPreviewCard() {
                 onChange={(event) => {
                   setSelectedId(event.target.value);
                   setResult(null);
+                  setCommitResult(null);
                 }}
-                disabled={loadingBookings || bookings.length === 0}
+                disabled={loadingBookings || bookings.length === 0 || committing}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {bookings.length === 0 ? (
@@ -217,6 +284,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                 variant="outline"
                 size="sm"
                 loading={loadingBookings}
+                disabled={committing}
                 onClick={() => void loadBookings()}
               >
                 {loadingBookings ? null : <RefreshCw aria-hidden className="size-4" />}
@@ -226,7 +294,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                 type="button"
                 size="sm"
                 loading={previewing}
-                disabled={!selectedId || selected?.customer_ready === false}
+                disabled={!selectedId || selected?.customer_ready === false || committing}
                 onClick={() => void runPreview()}
               >
                 {previewing ? null : <Eye aria-hidden className="size-4" />}
@@ -300,6 +368,71 @@ export function ErpNextVehicleOrderPreviewCard() {
                     </div>
                   ) : (
                     <p>{errorText(result.error)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {result?.ok && result.write_ready ? (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
+              <div className="flex items-start gap-2">
+                <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">Kontrollierter Schreibtest</p>
+                  <p className="mt-1 text-xs opacity-90">
+                    Legt ausschließlich das eindeutige Kundenfahrzeug und den operativen WHITE GLOSS
+                    Auftrag an oder verwendet bereits vorhandene eindeutige Datensätze. Rechnungen,
+                    Zahlungen, GL- und Lagerbuchungen bleiben unberührt.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3"
+                    loading={committing}
+                    disabled={previewing}
+                    onClick={() => void runCommit()}
+                  >
+                    {committing ? null : <ShieldCheck aria-hidden className="size-4" />}
+                    Fahrzeug & Auftrag anlegen
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {commitResult ? (
+            <div
+              className={`mt-4 rounded-xl border p-4 text-sm leading-6 ${
+                commitResult.ok
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-100"
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                {commitResult.ok ? (
+                  <CheckCircle2 aria-hidden className="mt-1 size-4 shrink-0" />
+                ) : (
+                  <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  {commitResult.ok ? (
+                    <div className="space-y-1 text-xs">
+                      <p className="text-sm font-medium">
+                        {commitResult.idempotent_reuse
+                          ? "Eindeutige ERPNext-Zuordnung wiederverwendet."
+                          : "Kontrollierter ERPNext-Schreibtest erfolgreich."}
+                      </p>
+                      <p>Fahrzeug: {commitResult.vehicle_id ?? "nicht bestätigt"}</p>
+                      <p>Auftrag: {commitResult.order_id ?? "nicht bestätigt"}</p>
+                      <p>
+                        Neu angelegt: Fahrzeug {commitResult.vehicle_created ? "ja" : "nein"} ·
+                        Auftrag {commitResult.order_created ? "ja" : "nein"}
+                      </p>
+                      <p>Finanzbuchungen: {commitResult.financial_writes ? "ja" : "keine"}</p>
+                    </div>
+                  ) : (
+                    <p>{errorText(commitResult.error)}</p>
                   )}
                 </div>
               </div>
