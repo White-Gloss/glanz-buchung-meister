@@ -219,7 +219,9 @@ export function ErpNextVehicleOrderPreviewCard() {
       await runPreview();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Kontrollierter ERPNext-Schreibtest fehlgeschlagen.";
+        error instanceof Error
+          ? error.message
+          : "Kontrollierter ERPNext-Schreibtest fehlgeschlagen.";
       setCommitResult({ ok: false, error: message });
       toast.error(message);
     } finally {
