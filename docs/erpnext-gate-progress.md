@@ -54,7 +54,7 @@ Verified result:
 - no synchronization error persisted;
 - no order, invoice, payment or accounting document created.
 
-The permanent customer synchronization function remains default-deny. A new controlled run requires the customer-write switch, an exact one-booking allowlist, a server-signed five-minute preview confirmation bound to the booking revision and a fenced 15-minute database claim that blocks booking mutation during the ERPNext call. Customer and Contact POSTs additionally recheck current token ownership and lease expiry immediately before the external write. The controlled historical test did not enable broad automatic writes.
+The permanent customer synchronization function remains default-deny. A new controlled run requires the customer-write switch, an exact one-booking allowlist, a server-signed five-minute preview confirmation bound to the booking revision and a fenced 15-minute database claim that blocks booking mutation during the ERPNext call. Customer and Contact POSTs additionally recheck current token ownership and lease expiry immediately before the external write. Before Customer creation, a durable uncertain-outcome marker blocks automatic retry across a hard worker exit; the marker is cleared only after the returned Customer ID is stored. Final success stores the booking-specific Customer mapping before publishing the shared mapping as synchronized. The controlled historical test did not enable broad automatic writes.
 
 ### Next customer prerequisite
 
@@ -102,4 +102,3 @@ The permanent commit endpoint is default-deny. A write requires all of the follo
 The server switch and booking allowlist remain unset until explicit approval. Financial documents remain outside this phase.
 
 The preview confirmation is HMAC-signed with a server-only key, carries a cryptographic nonce and expires after five minutes; it cannot be constructed from browser-visible booking data. The claim then verifies the approved `bookings.updated_at` value while holding a row lock. A database trigger blocks booking updates and deletion until the ERPNext commit succeeds, records a reviewable failure or its 15-minute crash-recovery lease expires. Together these controls prevent a bypassed preview or stale approved snapshot from reaching the vehicle/order write calls without leaving a crashed worker able to lock a booking permanently.
-
