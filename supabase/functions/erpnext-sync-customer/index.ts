@@ -25,7 +25,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const COMMIT_STATUSES = new Set(["Bestätigt", "Bezahlt"]);
+const COMMIT_STATUSES = new Set(["Bestätigt", "Bezahlt"]);\nconst CUSTOMER_SYNC_LEASE_SECONDS = 15 * 60;
 
 type RequestBody = {
   bookingId?: unknown;
@@ -262,6 +262,31 @@ Deno.serve(async (req: Request) => {
     return !error && Boolean(data);
   };
 
+  const assertCustomerSyncLease = async () => {
+    if (!syncToken) throw new Error("customer_sync_lease_missing");
+
+    const now = new Date().toISOString();
+    const [bookingLease, mappingLease] = await Promise.all([
+      supabase
+        .from("booking_automation_state")
+        .select("booking_id")
+        .eq("booking_id", booking.id)
+        .eq("erpnext_customer_processing_token", syncToken)
+        .gt("erpnext_customer_processing_expires_at", now)
+        .maybeSingle(),
+      supabase
+        .from("erpnext_customer_mappings")
+        .select("normalized_email")
+        .eq("normalized_email", normalizedEmail)
+        .eq("processing_token", syncToken)
+        .maybeSingle(),
+    ]);
+
+    if (bookingLease.error || mappingLease.error || !bookingLease.data || !mappingLease.data) {
+      throw new Error("customer_sync_lease_lost_before_write");
+    }
+  };
+
   const upsertBookingCustomerId = async (customerId: string) => {
     const { error } = await supabase.from("booking_automation_state").upsert(
       {
@@ -439,7 +464,7 @@ Deno.serve(async (req: Request) => {
         p_booking_id: bookingId,
         p_booking_revision: bookingRevision,
         p_normalized_email: normalizedEmail,
-        p_ttl_seconds: 300,
+        p_ttl_seconds: CUSTOMER_SYNC_LEASE_SECONDS,
       },
     );
     if (claimError) return json({ ok: false, error: "customer_claim_failed" }, 500);
