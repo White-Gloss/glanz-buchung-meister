@@ -47,10 +47,15 @@ function config(): InboxConfig | null {
 
   // IONOS nutzt 993 mit direkter Verschlüsselung. Port 143 (STARTTLS) wird
   // unterstützt, ist aber nicht die Voreinstellung.
-  const port = Number(process.env.IMAP_PORT ?? 993);
+  // Einmal auf den tatsaechlich verwendeten Port festlegen. Bei einem
+  // Schreibfehler in IMAP_PORT stuende hier sonst NaN: der Port fiele auf 993
+  // zurueck, die daraus abgeleitete Verschluesselung aber auf "aus" — die
+  // Verbindung liefe dann unverschluesselt gegen den TLS-Port.
+  const angegebenerPort = Number(process.env.IMAP_PORT ?? 993);
+  const port = Number.isFinite(angegebenerPort) ? angegebenerPort : 993;
   return {
     host,
-    port: Number.isFinite(port) ? port : 993,
+    port,
     user,
     password,
     secure: process.env.IMAP_SECURE ? process.env.IMAP_SECURE === "true" : port === 993,
