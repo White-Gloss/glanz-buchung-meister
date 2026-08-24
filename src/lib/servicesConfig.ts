@@ -102,8 +102,14 @@ export const company = {
   instagram: "https://www.instagram.com/white_gloss.detailing/",
   /** Anzeigename ohne @ — nur für die Beschriftung des Links. */
   instagramHandle: "white_gloss.detailing",
-  taxId: "", // USt-IdNr.
-  taxNumber: "", // Steuernummer
+  taxId: "", // USt-IdNr. — erscheint im Impressum, sobald sie gesetzt ist.
+  /**
+   * Steuernummer. Reiner Datenplatz: Sie wird derzeit nirgends ausgegeben.
+   * Ins Impressum gehört sie nicht (dort verlangt § 5 TMG nur die
+   * USt-IdNr., falls vorhanden), und die verbindliche Rechnung stellt
+   * Lexware aus — dort ist sie im Konto hinterlegt.
+   */
+  taxNumber: "",
   bank: {
     holder: "White Gloss Detailing",
     iban: "",
@@ -118,9 +124,18 @@ export const taxConfig = {
   smallBusinessNote:
     "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).",
   paymentTerms: "Zahlbar innerhalb von 14 Tagen ohne Abzug nach Leistungserbringung.",
-  invoicePrefix: "WGD-2026-",
-  invoiceStartNumber: 1001,
 };
+
+/*
+ * KEINE RECHNUNGSNUMMERN HIER.
+ *
+ * Hier standen `invoicePrefix: "WGD-2026-"` und `invoiceStartNumber: 1001`.
+ * Gelesen hat sie nie jemand, und sie widersprachen dem tatsächlichen
+ * Verhalten: Die Nummer entsteht in `create_booking_public` als
+ * `WGD-` + laufendes Jahr + `-` + `nextval('invoice_number_seq')`. Der
+ * Zähler gehört damit der Datenbank — eine zweite Angabe im Code hätte nur
+ * wieder auseinanderlaufen können.
+ */
 
 /**
  * Pflichtangabe nach Preisangabenverordnung (PAngV): Bei Angeboten gegenüber
