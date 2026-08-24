@@ -1,6 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
+import {
+  evaluateCustomerWriteGate,
+  getCustomerWriteGateStatus,
+  issueCustomerWriteConfirmation,
+  verifyCustomerWriteConfirmation,
+} from "../_shared/erpnextCustomerWriteGate.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -19,10 +26,12 @@ const json = (body: unknown, status = 200) =>
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const COMMIT_STATUSES = new Set(["Bestätigt", "Bezahlt"]);
+const CUSTOMER_SYNC_LEASE_SECONDS = 15 * 60;
 
 type RequestBody = {
   bookingId?: unknown;
   mode?: unknown;
+  confirmation?: unknown;
 };
 
 type ErpResponse = {
@@ -38,6 +47,7 @@ type CustomerMapping = {
   erpnext_customer_id: string | null;
   erpnext_contact_id: string | null;
   processing_at: string | null;
+  processing_token: string | null;
   synced_at: string | null;
   last_error: string | null;
   last_http_status: number | null;
@@ -70,6 +80,7 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
   const writeEnabled = Deno.env.get("ERPNEXT_CUSTOMER_WRITE_ENABLED") === "true";
+  const approvedBookingId = Deno.env.get("ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID")?.trim() ?? "";
 
   if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
@@ -109,20 +120,10 @@ Deno.serve(async (req: Request) => {
   if (!UUID_RE.test(bookingId)) return json({ ok: false, error: "invalid_booking_id" }, 400);
 
   const mode = body.mode === "commit" ? "commit" : "preview";
-  if (mode === "commit" && !writeEnabled) {
-    return json(
-      {
-        ok: false,
-        error: "customer_write_not_enabled",
-        writes_enabled: false,
-      },
-      409,
-    );
-  }
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, customer_name, customer_email, customer_phone, status")
+    .select("id, customer_name, customer_email, customer_phone, status, updated_at")
     .eq("id", bookingId)
     .maybeSingle();
   if (bookingError) return json({ ok: false, error: "booking_load_failed" }, 500);
@@ -136,6 +137,55 @@ Deno.serve(async (req: Request) => {
   if (mode === "commit" && !COMMIT_STATUSES.has(String(booking.status ?? ""))) {
     return json({ ok: false, error: "booking_not_commit_eligible" }, 409);
   }
+
+  const bookingRevision = String(booking.updated_at ?? "");
+  if (!bookingRevision) return json({ ok: false, error: "booking_revision_missing" }, 409);
+
+  const gateStatus = getCustomerWriteGateStatus({
+    enabledValue: writeEnabled ? "true" : "false",
+    approvedBookingId,
+    bookingId,
+  });
+
+  if (mode === "commit") {
+    const confirmationValid = await verifyCustomerWriteConfirmation({
+      secret: serviceRoleKey,
+      bookingId,
+      bookingRevision,
+      confirmation: body.confirmation,
+    });
+    const gate = evaluateCustomerWriteGate({
+      enabledValue: writeEnabled ? "true" : "false",
+      approvedBookingId,
+      bookingId,
+      confirmationValid,
+    });
+    if (!gate.ready) return json({ ok: false, error: gate.error }, 409);
+  }
+
+  const previewResponse = async (customerState: string) => {
+    const confirmation = gateStatus.ready
+      ? await issueCustomerWriteConfirmation({
+          secret: serviceRoleKey,
+          bookingId,
+          bookingRevision,
+        })
+      : null;
+
+    return json({
+      ok: true,
+      mode: "preview",
+      booking_id: booking.id,
+      writes_enabled: gateStatus.enabled,
+      customer_state: customerState,
+      production_write: {
+        enabled: gateStatus.enabled,
+        booking_approved: gateStatus.bookingApproved,
+        ready: gateStatus.ready,
+        confirmation,
+      },
+    });
+  };
 
   const erpHeaders = {
     Authorization: `token ${apiKey}:${apiSecret}`,
@@ -174,7 +224,7 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await supabase
       .from("erpnext_customer_mappings")
       .select(
-        "normalized_email, source_name, erpnext_customer_id, erpnext_contact_id, processing_at, synced_at, last_error, last_http_status, attempts",
+        "normalized_email, source_name, erpnext_customer_id, erpnext_contact_id, processing_at, processing_token, synced_at, last_error, last_http_status, attempts",
       )
       .eq("normalized_email", normalizedEmail)
       .maybeSingle();
@@ -182,12 +232,60 @@ Deno.serve(async (req: Request) => {
     return (data as CustomerMapping | null) ?? null;
   };
 
+  let syncToken = "";
+
   const updateMapping = async (values: Record<string, unknown>) => {
-    const { error } = await supabase
+    if (!syncToken) throw new Error("customer_sync_lease_missing");
+    const { data, error } = await supabase
       .from("erpnext_customer_mappings")
       .update({ ...values, updated_at: new Date().toISOString() })
-      .eq("normalized_email", normalizedEmail);
-    if (error) throw new Error("mapping_update_failed");
+      .eq("normalized_email", normalizedEmail)
+      .eq("processing_token", syncToken)
+      .select("normalized_email")
+      .maybeSingle();
+    if (error || !data) throw new Error("customer_sync_lease_lost");
+  };
+
+  const releaseBookingLease = async () => {
+    if (!syncToken) return true;
+    const { data, error } = await supabase
+      .from("booking_automation_state")
+      .update({
+        erpnext_customer_processing_at: null,
+        erpnext_customer_processing_expires_at: null,
+        erpnext_customer_processing_token: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("booking_id", booking.id)
+      .eq("erpnext_customer_processing_token", syncToken)
+      .select("booking_id")
+      .maybeSingle();
+    return !error && Boolean(data);
+  };
+
+  const assertCustomerSyncLease = async () => {
+    if (!syncToken) throw new Error("customer_sync_lease_missing");
+
+    const now = new Date().toISOString();
+    const [bookingLease, mappingLease] = await Promise.all([
+      supabase
+        .from("booking_automation_state")
+        .select("booking_id")
+        .eq("booking_id", booking.id)
+        .eq("erpnext_customer_processing_token", syncToken)
+        .gt("erpnext_customer_processing_expires_at", now)
+        .maybeSingle(),
+      supabase
+        .from("erpnext_customer_mappings")
+        .select("normalized_email")
+        .eq("normalized_email", normalizedEmail)
+        .eq("processing_token", syncToken)
+        .maybeSingle(),
+    ]);
+
+    if (bookingLease.error || mappingLease.error || !bookingLease.data || !mappingLease.data) {
+      throw new Error("customer_sync_lease_lost_before_write");
+    }
   };
 
   const upsertBookingCustomerId = async (customerId: string) => {
@@ -258,12 +356,34 @@ Deno.serve(async (req: Request) => {
     try {
       await updateMapping({
         processing_at: null,
+        processing_token: null,
         last_error: code,
         last_http_status: status,
       });
+      return await releaseBookingLease();
     } catch {
-      // Do not replace the original synchronization error with a logging error.
+      await releaseBookingLease();
+      return false;
     }
+  };
+
+  const failWithReviewState = async (
+    code: string,
+    responseStatus: number,
+    upstreamStatus: number | null = null,
+  ) => {
+    if (await persistFailure(code, upstreamStatus)) {
+      return json({ ok: false, error: code, upstream_status: upstreamStatus }, responseStatus);
+    }
+    return json(
+      {
+        ok: false,
+        error: "customer_sync_failure_persist_failed",
+        operation_error: code,
+        upstream_status: upstreamStatus,
+      },
+      500,
+    );
   };
 
   try {
@@ -293,11 +413,12 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "customer_mapping_requires_manual_review" }, 409);
     }
     if (mapping?.synced_at && mapping.erpnext_customer_id && mapping.erpnext_contact_id) {
+      if (mode === "preview") return await previewResponse("already_synced");
       return json({
         ok: true,
         mode,
         booking_id: booking.id,
-        writes_enabled: writeEnabled,
+        writes_enabled: true,
         customer_state: "already_synced",
       });
     }
@@ -322,60 +443,50 @@ Deno.serve(async (req: Request) => {
         return json({ ok: false, error: "customer_mapping_conflict" }, 409);
       }
       if (mode === "preview") {
-        return json({
-          ok: true,
-          mode,
-          booking_id: booking.id,
-          writes_enabled: writeEnabled,
-          customer_state: "existing_mapping_and_contact",
-        });
+        return await previewResponse("existing_mapping_and_contact");
       }
     }
 
     if (!mapping?.erpnext_customer_id && exactContact && mode === "preview") {
-      return json({
-        ok: true,
-        mode,
-        booking_id: booking.id,
-        writes_enabled: writeEnabled,
-        customer_state: "existing_exact_email_contact",
-      });
+      return await previewResponse("existing_exact_email_contact");
     }
 
     if (mode === "preview") {
-      return json({
-        ok: true,
-        mode,
-        booking_id: booking.id,
-        writes_enabled: writeEnabled,
-        customer_state: mapping?.erpnext_customer_id
+      return await previewResponse(
+        mapping?.erpnext_customer_id
           ? "contact_create_needed"
           : "customer_and_contact_create_needed",
-      });
+      );
     }
 
-    const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_customer_sync", {
-      _normalized_email: normalizedEmail,
-      _ttl_seconds: 300,
-    });
+    const { data: claimedToken, error: claimError } = await supabase.rpc(
+      "claim_erpnext_customer_booking_sync",
+      {
+        p_booking_id: bookingId,
+        p_booking_revision: bookingRevision,
+        p_normalized_email: normalizedEmail,
+        p_ttl_seconds: CUSTOMER_SYNC_LEASE_SECONDS,
+      },
+    );
     if (claimError) return json({ ok: false, error: "customer_claim_failed" }, 500);
-    if (!claimed) return json({ ok: false, error: "customer_sync_busy_or_blocked" }, 409);
+    if (typeof claimedToken !== "string" || !claimedToken) {
+      return json({ ok: false, error: "customer_sync_busy_blocked_or_revision_changed" }, 409);
+    }
+    syncToken = claimedToken;
 
     mapping = await loadMapping();
-    if (!mapping) {
-      await persistFailure("mapping_missing_after_claim");
-      return json({ ok: false, error: "mapping_missing_after_claim" }, 500);
+    if (!mapping || mapping.processing_token !== syncToken) {
+      return await failWithReviewState("mapping_missing_after_claim", 500);
     }
     if (mapping.last_error) {
-      return json({ ok: false, error: "customer_mapping_requires_manual_review" }, 409);
+      return await failWithReviewState("customer_mapping_requires_manual_review", 409);
     }
 
     try {
       exactContact = await findContactByExactEmail();
     } catch (error) {
       const code = error instanceof Error ? error.message : "contact_lookup_failed";
-      await persistFailure(code);
-      return json({ ok: false, error: code }, 409);
+      return await failWithReviewState(code, 409);
     }
 
     let customerId = mapping.erpnext_customer_id;
@@ -383,8 +494,7 @@ Deno.serve(async (req: Request) => {
 
     if (exactContact) {
       if (customerId && customerId !== exactContact.customerId) {
-        await persistFailure("customer_mapping_conflict");
-        return json({ ok: false, error: "customer_mapping_conflict" }, 409);
+        return await failWithReviewState("customer_mapping_conflict", 409);
       }
       customerId = exactContact.customerId;
       contactId = exactContact.contactId;
@@ -393,11 +503,15 @@ Deno.serve(async (req: Request) => {
         erpnext_customer_id: customerId,
         erpnext_contact_id: contactId,
         processing_at: null,
+        processing_token: null,
         synced_at: new Date().toISOString(),
         last_error: null,
         last_http_status: 200,
       });
       await upsertBookingCustomerId(customerId);
+      if (!(await releaseBookingLease())) {
+        return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
+      }
       return json({
         ok: true,
         mode,
@@ -417,8 +531,7 @@ Deno.serve(async (req: Request) => {
           territory: "All Territories",
         });
       } catch {
-        await persistFailure("uncertain_customer_create_network");
-        return json({ ok: false, error: "uncertain_customer_create_network" }, 502);
+        return await failWithReviewState("uncertain_customer_create_network", 502);
       }
 
       if (!created.response.ok || !created.isJson) {
@@ -426,10 +539,10 @@ Deno.serve(async (req: Request) => {
           created.response.status >= 500
             ? "uncertain_customer_create_upstream"
             : "customer_create_rejected";
-        await persistFailure(code, created.response.status);
-        return json(
-          { ok: false, error: code, upstream_status: created.response.status },
+        return await failWithReviewState(
+          code,
           created.response.status >= 500 ? 502 : 409,
+          created.response.status,
         );
       }
 
@@ -439,8 +552,11 @@ Deno.serve(async (req: Request) => {
           : null;
       customerId = createdData && typeof createdData.name === "string" ? createdData.name : "";
       if (!customerId) {
-        await persistFailure("uncertain_customer_create_missing_id", created.response.status);
-        return json({ ok: false, error: "uncertain_customer_create_missing_id" }, 502);
+        return await failWithReviewState(
+          "uncertain_customer_create_missing_id",
+          502,
+          created.response.status,
+        );
       }
 
       await updateMapping({
@@ -475,8 +591,7 @@ Deno.serve(async (req: Request) => {
       try {
         createdContact = await erpRequest("POST", "/api/resource/Contact", contactPayload);
       } catch {
-        await persistFailure("uncertain_contact_create_network");
-        return json({ ok: false, error: "uncertain_contact_create_network" }, 502);
+        return await failWithReviewState("uncertain_contact_create_network", 502);
       }
 
       if (!createdContact.response.ok || !createdContact.isJson) {
@@ -484,10 +599,10 @@ Deno.serve(async (req: Request) => {
           createdContact.response.status >= 500
             ? "uncertain_contact_create_upstream"
             : "contact_create_rejected";
-        await persistFailure(code, createdContact.response.status);
-        return json(
-          { ok: false, error: code, upstream_status: createdContact.response.status },
+        return await failWithReviewState(
+          code,
           createdContact.response.status >= 500 ? 502 : 409,
+          createdContact.response.status,
         );
       }
 
@@ -497,8 +612,11 @@ Deno.serve(async (req: Request) => {
           : null;
       contactId = contactData && typeof contactData.name === "string" ? contactData.name : "";
       if (!contactId) {
-        await persistFailure("uncertain_contact_create_missing_id", createdContact.response.status);
-        return json({ ok: false, error: "uncertain_contact_create_missing_id" }, 502);
+        return await failWithReviewState(
+          "uncertain_contact_create_missing_id",
+          502,
+          createdContact.response.status,
+        );
       }
     }
 
@@ -507,11 +625,15 @@ Deno.serve(async (req: Request) => {
       erpnext_customer_id: customerId,
       erpnext_contact_id: contactId,
       processing_at: null,
+      processing_token: null,
       synced_at: new Date().toISOString(),
       last_error: null,
       last_http_status: 200,
     });
     await upsertBookingCustomerId(customerId);
+    if (!(await releaseBookingLease())) {
+      return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
+    }
 
     return json({
       ok: true,
@@ -522,7 +644,9 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "customer_sync_failed";
-    if (mode === "commit") await persistFailure(code);
+    if (mode === "commit" && syncToken) {
+      return await failWithReviewState(code, 500);
+    }
     return json({ ok: false, error: code }, 500);
   }
 });

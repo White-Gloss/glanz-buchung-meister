@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Eye, RefreshCw, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Eye, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,15 @@ type PreviewResult = {
     | "existing_mapping_and_contact"
     | "existing_exact_email_contact"
     | "contact_create_needed"
-    | "customer_and_contact_create_needed";
+    | "customer_and_contact_create_needed"
+    | "reused_exact_email_contact"
+    | "synced";
+  production_write?: {
+    enabled: boolean;
+    booking_approved: boolean;
+    ready: boolean;
+    confirmation?: string | null;
+  };
   error?: string;
 };
 
@@ -38,6 +46,10 @@ function stateText(state: PreviewResult["customer_state"]) {
       return "Der ERPNext-Kunde ist bereits zugeordnet; nur der Kontakt müsste angelegt werden.";
     case "customer_and_contact_create_needed":
       return "Für diese Buchung müssten ein ERPNext-Kunde und ein Kontakt angelegt werden.";
+    case "reused_exact_email_contact":
+      return "Der eindeutige ERPNext-Kontakt wurde sicher der Buchung zugeordnet.";
+    case "synced":
+      return "Kunde und Kontakt wurden kontrolliert in ERPNext synchronisiert.";
     default:
       return "Vorschau abgeschlossen.";
   }
@@ -55,6 +67,16 @@ function errorText(code: string | undefined) {
       return "Die gespeicherte Kundenzuordnung widerspricht dem gefundenen ERPNext-Kontakt.";
     case "customer_mapping_requires_manual_review":
       return "Diese Kundenzuordnung ist wegen eines früheren unsicheren Fehlers für automatische Verarbeitung gesperrt.";
+    case "customer_write_gate_disabled":
+      return "Der kontrollierte Kundensync ist serverseitig gesperrt.";
+    case "customer_write_booking_not_approved":
+      return "Diese Buchung ist nicht als kontrollierter Kundensync freigegeben.";
+    case "explicit_customer_write_confirmation_required":
+      return "Die buchungsgebundene Kundensync-Bestätigung fehlt oder ist nicht mehr gültig.";
+    case "customer_sync_busy_blocked_or_revision_changed":
+      return "Die Buchung wurde geändert oder wird bereits verarbeitet. Bitte die Vorschau neu laden.";
+    case "customer_sync_lease_lost_before_write":
+      return "Die sichere Verarbeitungssperre ist abgelaufen. Es wurde kein neuer ERPNext-Datensatz angelegt; bitte die Vorschau neu laden.";
     case "erpnext_auth_failed":
     case "erpnext_auth_unconfirmed":
       return "ERPNext-Anmeldung konnte für die Vorschau nicht bestätigt werden.";
@@ -70,6 +92,7 @@ export function ErpNextCustomerPreviewCard() {
   const [selectedId, setSelectedId] = useState("");
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [committing, setCommitting] = useState(false);
   const [result, setResult] = useState<PreviewResult | null>(null);
 
   const loadBookings = useCallback(async () => {
@@ -135,13 +158,67 @@ export function ErpNextCustomerPreviewCard() {
     }
   }, [selectedId]);
 
+  const runCommit = useCallback(async () => {
+    const confirmation = result?.production_write?.confirmation;
+    if (
+      !selectedId ||
+      !result?.ok ||
+      result.mode !== "preview" ||
+      !result.production_write?.ready ||
+      !confirmation ||
+      result.customer_state === "already_synced"
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Kontrollierten ERPNext-Kundensync starten? Je nach Vorschau wird ein Kunde und Kontakt angelegt oder ein vorhandener eindeutiger Kontakt wiederverwendet. Fahrzeug, Auftrag und Finanzdaten bleiben unberührt.",
+    );
+    if (!confirmed) return;
+
+    setCommitting(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase.functions.invoke<PreviewResult>(
+        "erpnext-sync-customer",
+        {
+          body: {
+            bookingId: selectedId,
+            mode: "commit",
+            confirmation,
+          },
+        },
+      );
+
+      if (error) throw error;
+      if (!data) throw new Error("ERPNext hat keine Kundensync-Antwort geliefert.");
+      setResult(data);
+      if (data.ok) {
+        toast.success(
+          data.customer_state === "reused_exact_email_contact"
+            ? "Bestehender ERPNext-Kontakt wurde eindeutig zugeordnet."
+            : "Kunde und Kontakt wurden kontrolliert synchronisiert.",
+        );
+      } else {
+        toast.warning(errorText(data.error));
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Kontrollierter Kundensync fehlgeschlagen.";
+      setResult({ ok: false, error: message });
+      toast.error(message);
+    } finally {
+      setCommitting(false);
+    }
+  }, [result, selectedId]);
+
   return (
     <section className="glass mt-8 rounded-2xl p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Eye aria-hidden className="size-4 text-primary" />
-            <h2 className="display-card text-sm uppercase">Kundensync · Vorschau</h2>
+            <h2 className="display-card text-sm uppercase">Kundensync · Vorschau & Gate</h2>
             <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs text-sky-300">
               <ShieldCheck aria-hidden className="size-3" />
               ohne Schreibzugriff
@@ -150,8 +227,9 @@ export function ErpNextCustomerPreviewCard() {
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Prüft für eine bestätigte oder bezahlte Buchung, ob in ERPNext bereits ein eindeutiger
-            Kontakt existiert und welche Datensätze später angelegt werden müssten. Diese Vorschau
-            legt nichts an und ändert nichts.
+            Kontakt existiert und welche Datensätze angelegt werden müssten. Nur eine frische,
+            serverseitig signierte Vorschau für die exakt freigegebene Buchung kann anschließend den
+            kontrollierten Kundensync öffnen.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -163,7 +241,7 @@ export function ErpNextCustomerPreviewCard() {
                   setSelectedId(event.target.value);
                   setResult(null);
                 }}
-                disabled={loadingBookings || bookings.length === 0}
+                disabled={loadingBookings || bookings.length === 0 || committing}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {bookings.length === 0 ? (
@@ -184,6 +262,7 @@ export function ErpNextCustomerPreviewCard() {
                 variant="outline"
                 size="sm"
                 loading={loadingBookings}
+                disabled={committing}
                 onClick={() => void loadBookings()}
               >
                 {loadingBookings ? null : <RefreshCw aria-hidden className="size-4" />}
@@ -193,7 +272,7 @@ export function ErpNextCustomerPreviewCard() {
                 type="button"
                 size="sm"
                 loading={previewing}
-                disabled={!selectedId}
+                disabled={!selectedId || committing}
                 onClick={() => void runPreview()}
               >
                 {previewing ? null : <Eye aria-hidden className="size-4" />}
@@ -211,15 +290,72 @@ export function ErpNextCustomerPreviewCard() {
               }`}
             >
               <div className="flex items-start gap-2">
-                {result.ok ? <CheckCircle2 aria-hidden className="mt-1 size-4 shrink-0" /> : null}
+                {result.ok ? (
+                  <CheckCircle2 aria-hidden className="mt-1 size-4 shrink-0" />
+                ) : (
+                  <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
+                )}
                 <div>
                   <p>{result.ok ? stateText(result.customer_state) : errorText(result.error)}</p>
                   {result.ok ? (
                     <p className="mt-1 text-xs opacity-80">
-                      Produktions-Schreibschalter:{" "}
-                      {result.writes_enabled ? "aktiv" : "weiterhin aus"}.
+                      {result.mode === "preview"
+                        ? `Produktions-Gate: ${
+                            result.production_write?.ready
+                              ? "für diese Buchung freigegeben"
+                              : "gesperrt"
+                          }.`
+                        : "Kundensync abgeschlossen; Gate wird für den nächsten Lauf neu geprüft."}
                     </p>
                   ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {result?.ok &&
+          result.mode === "preview" &&
+          result.customer_state !== "already_synced" &&
+          !result.production_write?.ready ? (
+            <div className="mt-4 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm leading-6 text-sky-100">
+              <div className="flex items-start gap-2">
+                <ShieldCheck aria-hidden className="mt-1 size-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Kundensync technisch gesperrt</p>
+                  <p className="mt-1 text-xs opacity-90">
+                    Die Vorschau ist sicher. Ein echter Kundensync wird erst möglich, wenn der
+                    serverseitige Schalter und die exakte Buchungs-ID gemeinsam freigegeben sind.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {result?.ok &&
+          result.mode === "preview" &&
+          result.customer_state !== "already_synced" &&
+          result.production_write?.ready &&
+          result.production_write.confirmation ? (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
+              <div className="flex items-start gap-2">
+                <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Kontrollierter Kundensync</p>
+                  <p className="mt-1 text-xs opacity-90">
+                    Verarbeitet ausschließlich den Kunden und Kontakt dieser Buchungsrevision.
+                    Fahrzeug, Auftrag, Rechnung, Zahlung und Buchhaltung bleiben unberührt.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3"
+                    loading={committing}
+                    disabled={previewing}
+                    onClick={() => void runCommit()}
+                  >
+                    {committing ? null : <ShieldCheck aria-hidden className="size-4" />}
+                    Kunde & Kontakt synchronisieren
+                  </Button>
                 </div>
               </div>
             </div>

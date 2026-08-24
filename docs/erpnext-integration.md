@@ -31,10 +31,12 @@ The following values are Supabase Edge Function secrets and must never be commit
 - `ERPNEXT_API_KEY`
 - `ERPNEXT_API_SECRET`
 - optional `ERPNEXT_COMPANY` override; current safe default in the preview worker is `White-Gloss`
+- `ERPNEXT_CUSTOMER_WRITE_ENABLED`; must be exactly `true` for any permanent customer/contact write
+- `ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID`; exact UUID of the one explicitly approved customer-sync booking
 - `ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED`; must be exactly `true` for any permanent vehicle/order write
-- `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`; exact UUID of the one explicitly approved booking
+- `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`; exact UUID of the one explicitly approved vehicle/order booking
 
-The two vehicle/order gate values must remain unset or disabled during normal preview work. Enabling the switch without the exact booking allowlist does not permit a write, and allowing a booking while the switch is disabled does not permit a write.
+Both write paths use two independent gate values that must remain unset or disabled during normal preview work. Enabling a switch without its exact booking allowlist does not permit a write, and allowing a booking while its switch is disabled does not permit a write.
 
 The tracked `.env` file must never receive ERPNext credentials.
 
@@ -57,6 +59,9 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 - `erpnext_order_id`
 - `erpnext_processing_at`
 - `erpnext_processing_expires_at`
+- `erpnext_customer_processing_at`
+- `erpnext_customer_processing_expires_at`
+- `erpnext_customer_processing_token`
 - `erpnext_synced_at`
 - `erpnext_last_error`
 - `erpnext_last_http_status`
@@ -162,6 +167,14 @@ Properties:
 - `mode: commit` is hard-disabled with HTTP 409;
 - does not create or update any ERPNext document yet.
 
+### Customer commit — DEFAULT-DENY
+
+Edge Function: `erpnext-sync-customer`
+
+A permanent customer/contact synchronization now requires an authenticated admin request, `ERPNEXT_CUSTOMER_WRITE_ENABLED=true`, an exact match in `ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID` and a server-signed five-minute preview confirmation bound to the booking UUID and current `bookings.updated_at` revision. The database claim rechecks that revision under a row lock, fences the mapping and 15-minute booking lease with one token and blocks booking updates or deletion during the external ERPNext write window. Immediately before every ERPNext Customer or Contact POST, the function rechecks that both fencing tokens still belong to the worker and that the booking lease has not expired.
+
+The Admin UI exposes the commit action only from a successful fresh preview. Customer, contact and mapping writes remain independently gated from vehicle/order writes.
+
 ### Vehicle/order readiness and mapping preview — PASS, NO WRITES
 
 Edge Functions:
@@ -201,7 +214,7 @@ The atomic claim was tested inside a rolled-back transaction against an existing
 
 This confirms mutual exclusion without altering production booking state.
 
-The revision-aware claim additionally rejects a stale `updated_at` value before existing-pair reconciliation or any external create. While a claim lease is active, the booking-mutation trigger rejects concurrent edits and deletion; clearing the processing fields releases that protection immediately, and lease expiry provides bounded crash recovery.
+The revision-aware vehicle/order claim rejects a stale `updated_at` value before existing-pair reconciliation or any external create. The customer claim independently binds the exact booking revision to the normalized-email mapping and assigns the same unguessable fencing token to both leases. While either lease is active, the booking-mutation trigger rejects concurrent edits and deletion; token-matched cleanup releases that protection immediately, and lease expiry provides bounded crash recovery.
 
 The remaining Supabase security advisor items are intentionally tracked:
 
@@ -235,3 +248,4 @@ The current Supabase changes are additive. Rollback consists of:
 - leaving existing website bookings and Lexware state untouched.
 
 No current migration rewrites customer or booking data.
+
