@@ -1,6 +1,9 @@
 -- Prevent a booking from changing between production-write approval and the
 -- corresponding ERPNext vehicle/order commit.
 
+alter table public.booking_automation_state
+  add column if not exists erpnext_processing_expires_at timestamptz;
+
 create or replace function public.block_booking_mutation_during_erpnext_sync()
 returns trigger
 language plpgsql
@@ -13,6 +16,7 @@ begin
       from public.booking_automation_state state
      where state.booking_id = old.id
        and state.erpnext_processing_at is not null
+       and state.erpnext_processing_expires_at > now()
   ) then
     raise exception using
       errcode = '55000',
@@ -73,14 +77,16 @@ begin
 
   update public.booking_automation_state
      set erpnext_processing_at = now(),
+         erpnext_processing_expires_at =
+           now() + make_interval(mins => least(greatest(coalesce(p_ttl_minutes, 10), 1), 60)),
          erpnext_attempts = erpnext_attempts + 1,
          updated_at = now()
    where booking_id = p_booking_id
-     and erpnext_order_id is null
      and erpnext_last_error is null
      and (
        erpnext_processing_at is null
-       or erpnext_processing_at < now() - make_interval(mins => greatest(p_ttl_minutes, 1))
+       or erpnext_processing_expires_at is null
+       or erpnext_processing_expires_at <= now()
      )
   returning true into v_claimed;
 
@@ -94,4 +100,4 @@ revoke all on function public.claim_erpnext_booking_sync(uuid, timestamptz, inte
 grant execute on function public.claim_erpnext_booking_sync(uuid, timestamptz, integer) to service_role;
 
 comment on function public.claim_erpnext_booking_sync(uuid, timestamptz, integer) is
-  'Atomically claims one booking revision for ERPNext sync and blocks booking updates until processing is cleared.';
+  'Atomically claims one booking revision for ERPNext sync and leases its update/delete lock until processing is cleared or expires.';
