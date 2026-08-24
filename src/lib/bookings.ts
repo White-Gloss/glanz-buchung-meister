@@ -118,7 +118,12 @@ export function calcLineItems(input: {
     });
   }
 
-  input.addOnIds.forEach((id) => {
+  // Doppelte Kennungen nur einmal berechnen. Die Liste kommt aus einer
+  // Anfrage; dieselbe Leistung zweimal darin würde sonst zweimal im
+  // Angebot, in der Mail, im PDF und in der Lexware-Rechnung stehen.
+  const eindeutigeAddOnIds = [...new Set(input.addOnIds)];
+
+  eindeutigeAddOnIds.forEach((id) => {
     const add: AddOn | undefined = addOns.find((a) => a.id === id);
     if (!add) return;
 

@@ -162,7 +162,12 @@ function validate(input: BookingInput): BookingInput {
     .toUpperCase();
   const vehicleId = String(input.vehicleId ?? "");
   const packageId = String(input.packageId ?? "");
-  const addOnIds = Array.isArray(input.addOnIds) ? input.addOnIds.slice(0, 20).map(String) : [];
+  // Erst vereinheitlichen, dann begrenzen: Die Datenbank rechnet jede
+  // Kennung der Liste einzeln ab, doppelte Einträge würden den Preis
+  // vervielfachen.
+  const addOnIds = Array.isArray(input.addOnIds)
+    ? [...new Set(input.addOnIds.map(String))].slice(0, 20)
+    : [];
   const date = String(input.date ?? "");
   const pickupCity = input.pickupCity ? String(input.pickupCity) : null;
   const preferredContact = contactChannels.includes(input.preferredContact)
@@ -174,11 +179,6 @@ function validate(input: BookingInput): BookingInput {
   if (!addOnIds.every((id) => addOns.some((a) => a.id === id)))
     throw new Error("Ungültige Zusatzleistung");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Ungültiges Datum");
-  if (!isOnlineBookingDate(date)) {
-    throw new Error(
-      "Online sind Termine nur Montag bis Freitag möglich. Für Samstag schreiben Sie uns bitte persönlich per WhatsApp.",
-    );
-  }
   if (!isOnlineBookingDate(date)) {
     throw new Error(
       "Online sind Termine nur Montag bis Freitag möglich. Für Samstag schreiben Sie uns bitte persönlich per WhatsApp.",
