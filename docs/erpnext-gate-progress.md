@@ -54,7 +54,7 @@ Verified result:
 - no synchronization error persisted;
 - no order, invoice, payment or accounting document created.
 
-The permanent customer synchronization function remains default-deny. A new controlled run requires the customer-write switch, an exact one-booking allowlist, a server-signed five-minute preview confirmation bound to the booking revision and a fenced database claim that blocks booking mutation during the ERPNext call. The controlled historical test did not enable broad automatic writes.
+The permanent customer synchronization function remains default-deny. A new controlled run requires the customer-write switch, an exact one-booking allowlist, a server-signed five-minute preview confirmation bound to the booking revision and a fenced 15-minute database claim that blocks booking mutation during the ERPNext call. Customer and Contact POSTs additionally recheck current token ownership and lease expiry immediately before the external write. The controlled historical test did not enable broad automatic writes.
 
 ### Next customer prerequisite
 
