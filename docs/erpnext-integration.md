@@ -171,7 +171,7 @@ Properties:
 
 Edge Function: `erpnext-sync-customer`
 
-A permanent customer/contact synchronization now requires an authenticated admin request, `ERPNEXT_CUSTOMER_WRITE_ENABLED=true`, an exact match in `ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID` and a server-signed five-minute preview confirmation bound to the booking UUID and current `bookings.updated_at` revision. The database claim rechecks that revision under a row lock, fences the mapping and booking leases with one token and blocks booking updates or deletion during the external ERPNext write window.
+A permanent customer/contact synchronization now requires an authenticated admin request, `ERPNEXT_CUSTOMER_WRITE_ENABLED=true`, an exact match in `ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID` and a server-signed five-minute preview confirmation bound to the booking UUID and current `bookings.updated_at` revision. The database claim rechecks that revision under a row lock, fences the mapping and 15-minute booking lease with one token and blocks booking updates or deletion during the external ERPNext write window. Immediately before every ERPNext Customer or Contact POST, the function rechecks that both fencing tokens still belong to the worker and that the booking lease has not expired.
 
 The Admin UI exposes the commit action only from a successful fresh preview. Customer, contact and mapping writes remain independently gated from vehicle/order writes.
 
