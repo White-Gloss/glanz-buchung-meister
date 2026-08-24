@@ -37,6 +37,23 @@ const VehicleGallery = lazy(() =>
 const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
 const HOME_DESCRIPTION =
   "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.";
+
+/*
+  Beschreibung des Betriebs für die strukturierten Daten.
+
+  Bewusst ein eigener Text und nicht die Meta-Beschreibung: Die Meta-
+  Beschreibung bewirbt die Startseite, diese hier beschreibt den Betrieb.
+  Sie ist wortgleich mit dem Textbaustein aus
+  `docs/sichtbarkeit-sofortmassnahmen.md`, der auch in Verzeichnissen
+  eingetragen wird — Google gleicht solche Angaben zwischen Website,
+  Unternehmensprofil und Verzeichnissen ab, und abweichende Fassungen
+  schwächen genau diesen Abgleich.
+*/
+const HOME_BUSINESS_DESCRIPTION =
+  "White Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung in Horb am Neckar. " +
+  "Wir übernehmen Innen- und Außenreinigung, mehrstufige Lackkorrektur, Keramikversiegelung " +
+  "und Lederpflege — für Privatkunden ebenso wie für Flotten und Leasingrückläufer. " +
+  "Auf Wunsch holen wir das Fahrzeug ab und bringen es zurück.";
 export const Route = createFileRoute("/")({
   validateSearch: parseHomeSearch,
   head: () => ({
@@ -80,6 +97,10 @@ export const Route = createFileRoute("/")({
               url: SITE_URL,
               name: company.name,
               inLanguage: "de-DE",
+              // Ohne diese Verknüpfung stehen Website und Betrieb als zwei
+              // unverbundene Angaben nebeneinander. Erst der Verweis sagt
+              // Google, dass die Seite zu genau diesem Betrieb gehört.
+              publisher: { "@id": `${SITE_URL}/#business` },
             },
             {
               "@type": "AutomotiveBusiness",
@@ -91,6 +112,23 @@ export const Route = createFileRoute("/")({
               image: OG_IMAGE,
               logo: absUrl("/wgd-logo-760.webp"),
               priceRange: "€€–€€€",
+              currenciesAccepted: "EUR",
+              slogan: company.claim,
+              description: HOME_BUSINESS_DESCRIPTION,
+              // Der Betrieb wird vom Inhaber persönlich geführt; die Angabe
+              // deckt sich zeichengenau mit dem Impressum.
+              founder: { "@type": "Person", name: company.owner },
+              knowsLanguage: "de-DE",
+              // Ein ausgewiesener Kontaktweg macht aus der Telefonnummer eine
+              // Angabe, die Google einer Zuständigkeit zuordnen kann.
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "customer service",
+                telephone: company.phoneHref.replace("tel:", ""),
+                email: company.email,
+                areaServed: "DE",
+                availableLanguage: "German",
+              },
               // Verknüpft Website und Profil für Google.
               ...(company.instagram ? { sameAs: [company.instagram] } : {}),
               address: {

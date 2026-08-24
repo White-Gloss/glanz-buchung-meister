@@ -16,6 +16,7 @@ import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig
 import { CookieConsentBanner } from "../components/CookieConsent";
 import { HashScrollFix } from "../components/HashScrollFix";
 import { MetaPageViews } from "../components/MetaPageViews";
+import { googleSiteVerificationMeta } from "../lib/googleSiteVerification";
 
 function NotFoundComponent() {
   return (
@@ -126,19 +127,17 @@ export const Route = createRootRoute({
       },
       { name: "author", content: "White Gloss Detailing" },
       { name: "robots", content: "index,follow,max-image-preview:large" },
-      // Nachweis gegenüber der Google Search Console. Google zeigt beim
-      // Einrichten einen Bestätigungscode an; dieser gehört in die
-      // Umgebungsvariable VITE_GOOGLE_SITE_VERIFICATION (nur der Code, nicht
-      // das ganze meta-Tag). Ohne Wert entfällt das Tag ersatzlos — ein
-      // leeres content-Attribut würde Google als ungültig ablehnen.
-      ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
-        ? [
-            {
-              name: "google-site-verification",
-              content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION,
-            },
-          ]
-        : []),
+      /*
+        Der Nachweis gegenüber der Google Search Console steht bewusst NICHT
+        hier, sondern in RootShell weiter unten.
+
+        Grund: Diese Liste wird nach `name` dedupliziert — von mehreren
+        Einträgen `google-site-verification` überlebt nur der letzte. Beim
+        Domainumzug sind aber zwei Properties gleichzeitig zu bestätigen,
+        und der stillschweigend verworfene Code ist als Fehler praktisch
+        nicht zu erkennen: Die Seite sieht richtig aus, Google meldet nur
+        „nicht bestätigt".
+      */
       { name: "theme-color", content: "#080a0d" },
       { name: "color-scheme", content: "dark" },
       { name: "format-detection", content: "telephone=no" },
@@ -214,6 +213,15 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="de" className="dark">
       <head>
+        {/*
+          Bestätigungscodes der Google Search Console — hier und nicht in
+          head(), weil dort mehrere Tags gleichen Namens zusammenfallen
+          (siehe Begründung oben). Ohne Code entsteht kein Tag: Ein leeres
+          content-Attribut lehnt Google als ungültig ab.
+        */}
+        {googleSiteVerificationMeta(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION).map((tag) => (
+          <meta key={tag.content} name={tag.name} content={tag.content} />
+        ))}
         <HeadContent />
       </head>
       <body>
