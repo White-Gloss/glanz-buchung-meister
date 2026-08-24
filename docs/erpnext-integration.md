@@ -183,7 +183,7 @@ Verified behavior:
 
 Edge Function: `erpnext-vehicle-order-commit`
 
-A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and a server-signed preview confirmation bound to both booking UUID and current `bookings.updated_at` revision. The opaque confirmation contains a cryptographic nonce and expires after five minutes; browser-visible booking data is insufficient to construct it. Any booking change invalidates it. The function then performs duplicate-safe lookups, claims that exact revision under a database lock, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
+A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and a server-signed preview confirmation bound to both booking UUID and current `bookings.updated_at` revision. The signed confirmation contains a cryptographic nonce and expires after five minutes; browser-visible booking data is insufficient to forge it. Any booking change invalidates it. The function then performs duplicate-safe lookups, claims that exact revision under a database lock, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
 
 The admin page has one write path only: a successful fresh preview. The previous separate direct commit card is no longer rendered.
 

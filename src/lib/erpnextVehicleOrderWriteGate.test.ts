@@ -46,10 +46,11 @@ describe("ERPNext vehicle/order production write gate", () => {
     expect(result.error).toBe("production_write_booking_not_approved");
   });
 
-  it("issues an opaque server-signed confirmation for one booking revision", async () => {
+  it("issues a server-signed confirmation for one booking revision", async () => {
     const confirmation = await issueConfirmation();
 
-    expect(confirmation).not.toContain(BOOKING_ID);
+    expect(confirmation.split(".")).toHaveLength(3);
+    expect(confirmation).toMatch(/^WGVO3\./);
     await expect(
       verifyVehicleOrderWriteConfirmation({
         secret: SECRET,
