@@ -1,7 +1,7 @@
 -- Prevent a booking from changing between production-write approval and the
 -- corresponding ERPNext vehicle/order commit.
 
-create or replace function public.block_booking_update_during_erpnext_sync()
+create or replace function public.block_booking_mutation_during_erpnext_sync()
 returns trigger
 language plpgsql
 security definer
@@ -19,23 +19,28 @@ begin
       message = 'booking_locked_for_erpnext_sync';
   end if;
 
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+
   return new;
 end;
 $$;
 
-revoke all on function public.block_booking_update_during_erpnext_sync() from public;
-revoke all on function public.block_booking_update_during_erpnext_sync() from anon;
-revoke all on function public.block_booking_update_during_erpnext_sync() from authenticated;
+revoke all on function public.block_booking_mutation_during_erpnext_sync() from public;
+revoke all on function public.block_booking_mutation_during_erpnext_sync() from anon;
+revoke all on function public.block_booking_mutation_during_erpnext_sync() from authenticated;
 
-drop trigger if exists block_booking_update_during_erpnext_sync on public.bookings;
-create trigger block_booking_update_during_erpnext_sync
-before update on public.bookings
+drop trigger if exists block_booking_mutation_during_erpnext_sync on public.bookings;
+create trigger block_booking_mutation_during_erpnext_sync
+before update or delete on public.bookings
 for each row
-execute function public.block_booking_update_during_erpnext_sync();
+execute function public.block_booking_mutation_during_erpnext_sync();
 
 -- Replace the old claim with a revision-aware claim. The row lock serializes
 -- the claim with a concurrent booking update; the trigger above protects the
--- booking for the remainder of the external ERPNext commit.
+-- booking against updates and deletion for the remainder of the external
+-- ERPNext commit.
 drop function if exists public.claim_erpnext_booking_sync(uuid, integer);
 
 create function public.claim_erpnext_booking_sync(

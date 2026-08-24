@@ -65,7 +65,7 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 
 A live-state audit on 2026-08-24 found one existing vehicle/order mapping synchronized on 2026-08-21. The next controlled operation is therefore a subsequent production run, not the first historical vehicle/order write.
 
-The function `public.claim_erpnext_booking_sync(uuid, timestamptz, integer)` atomically claims one exact booking revision for a sync worker. It is executable only by `service_role`. The claim locks the booking row while comparing `bookings.updated_at`; a database trigger blocks booking updates until the worker clears `erpnext_processing_at` after success or a reviewable failure.
+The function `public.claim_erpnext_booking_sync(uuid, timestamptz, integer)` atomically claims one exact booking revision for a sync worker. It is executable only by `service_role`. The claim locks the booking row while comparing `bookings.updated_at`; a database trigger blocks booking updates and deletion until the worker clears `erpnext_processing_at` after success or a reviewable failure.
 
 A failed ERPNext write is intentionally not retried automatically while `erpnext_last_error` is set. This protects against duplicate external documents when an upstream POST may have succeeded but its response was lost.
 
@@ -200,7 +200,7 @@ The atomic claim was tested inside a rolled-back transaction against an existing
 
 This confirms mutual exclusion without altering production booking state.
 
-The revision-aware claim additionally rejects a stale `updated_at` value before any external create. While a claim is active, the booking-update trigger rejects concurrent edits; clearing `erpnext_processing_at` releases that protection.
+The revision-aware claim additionally rejects a stale `updated_at` value before any external create. While a claim is active, the booking-mutation trigger rejects concurrent edits and deletion; clearing `erpnext_processing_at` releases that protection.
 
 The remaining Supabase security advisor items are intentionally tracked:
 
