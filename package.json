@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "typecheck:functions": "npx --yes deno@2.9.5 check --config supabase/functions/deno.json --node-modules-dir=none supabase/functions/",
     "format": "prettier --write .",
     "smoke:production": "node scripts/smoke-production.mjs",
     "audit:domain-migration": "node scripts/audit-domain-migration.mjs",

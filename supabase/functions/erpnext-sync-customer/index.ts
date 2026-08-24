@@ -502,13 +502,18 @@ Deno.serve(async (req: Request) => {
       }
       customerId = exactContact.customerId;
       contactId = exactContact.contactId;
+      // Festgehalten, bevor die Rückrufe gebaut werden: eine später
+      // veränderte Variable würde sonst eine andere ID schreiben als die
+      // hier geprüfte — und der Typ ließe auch `null` durch.
+      const matchedCustomerId = exactContact.customerId;
+      const matchedContactId = exactContact.contactId;
       await completeCustomerSyncDurably({
-        persistBookingCustomerId: () => upsertBookingCustomerId(customerId),
+        persistBookingCustomerId: () => upsertBookingCustomerId(matchedCustomerId),
         publishMappingSynced: () =>
           updateMapping({
             source_name: booking.customer_name,
-            erpnext_customer_id: customerId,
-            erpnext_contact_id: contactId,
+            erpnext_customer_id: matchedCustomerId,
+            erpnext_contact_id: matchedContactId,
             processing_at: null,
             processing_token: null,
             synced_at: new Date().toISOString(),

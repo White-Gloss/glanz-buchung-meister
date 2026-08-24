@@ -37,6 +37,17 @@ jobs:
       - name: Codequalität prüfen
         run: npm run lint
 
+      # Vor dem Build, damit ein veralteter eingecheckter Route-Tree hier
+      # auffällt und nicht erst auf einem fremden Rechner. Der Build würde die
+      # Datei neu schreiben und den Fehler damit verdecken.
+      - name: Typen der Anwendung prüfen
+        run: npm run typecheck
+
+      # Die Edge Functions laufen unter Deno und liegen ausserhalb von
+      # tsconfig.json — ohne diesen Schritt pruefte sie niemand.
+      - name: Typen der Edge Functions prüfen
+        run: npm run typecheck:functions
+
       - name: Automatisierte Tests ausführen
         run: npm test
 
