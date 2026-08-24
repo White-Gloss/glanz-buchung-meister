@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminAdminAutomatisierungRouteImport } from './ro
 import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
 import { Route as AuthenticatedAdminAdminDellenRouteImport } from './routes/_authenticated/_admin/admin.dellen'
 import { Route as AuthenticatedAdminAdminEinstellungenRouteImport } from './routes/_authenticated/_admin/admin.einstellungen'
+import { Route as AuthenticatedAdminAdminErpnextRouteImport } from './routes/_authenticated/_admin/admin.erpnext'
 import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
 import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
 import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
@@ -224,6 +225,12 @@ const AuthenticatedAdminAdminEinstellungenRoute =
     path: '/einstellungen',
     getParentRoute: () => AuthenticatedAdminAdminRoute,
   } as any)
+const AuthenticatedAdminAdminErpnextRoute =
+  AuthenticatedAdminAdminErpnextRouteImport.update({
+    id: '/erpnext',
+    path: '/erpnext',
+    getParentRoute: () => AuthenticatedAdminAdminRoute,
+  } as any)
 const AuthenticatedAdminAdminFaqsRoute =
   AuthenticatedAdminAdminFaqsRouteImport.update({
     id: '/faqs',
@@ -299,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
+  '/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -339,6 +347,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
+  '/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
   '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -383,6 +392,7 @@ export interface FileRoutesById {
   '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
   '/_authenticated/_admin/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
   '/_authenticated/_admin/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
+  '/_authenticated/_admin/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
   '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
   '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
   '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/dellen'
     | '/admin/einstellungen'
+    | '/admin/erpnext'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/dellen'
     | '/admin/einstellungen'
+    | '/admin/erpnext'
     | '/admin/faqs'
     | '/admin/galerie'
     | '/admin/kunden'
@@ -509,6 +521,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_admin/admin/blog'
     | '/_authenticated/_admin/admin/dellen'
     | '/_authenticated/_admin/admin/einstellungen'
+    | '/_authenticated/_admin/admin/erpnext'
     | '/_authenticated/_admin/admin/faqs'
     | '/_authenticated/_admin/admin/galerie'
     | '/_authenticated/_admin/admin/kunden'
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminEinstellungenRouteImport
       parentRoute: typeof AuthenticatedAdminAdminRoute
     }
+    '/_authenticated/_admin/admin/erpnext': {
+      id: '/_authenticated/_admin/admin/erpnext'
+      path: '/erpnext'
+      fullPath: '/admin/erpnext'
+      preLoaderRoute: typeof AuthenticatedAdminAdminErpnextRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminRoute
+    }
     '/_authenticated/_admin/admin/faqs': {
       id: '/_authenticated/_admin/admin/faqs'
       path: '/faqs'
@@ -846,6 +866,7 @@ interface AuthenticatedAdminAdminRouteChildren {
   AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
   AuthenticatedAdminAdminDellenRoute: typeof AuthenticatedAdminAdminDellenRoute
   AuthenticatedAdminAdminEinstellungenRoute: typeof AuthenticatedAdminAdminEinstellungenRoute
+  AuthenticatedAdminAdminErpnextRoute: typeof AuthenticatedAdminAdminErpnextRoute
   AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
   AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
   AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
@@ -864,6 +885,7 @@ const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren
     AuthenticatedAdminAdminDellenRoute: AuthenticatedAdminAdminDellenRoute,
     AuthenticatedAdminAdminEinstellungenRoute:
       AuthenticatedAdminAdminEinstellungenRoute,
+    AuthenticatedAdminAdminErpnextRoute: AuthenticatedAdminAdminErpnextRoute,
     AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
     AuthenticatedAdminAdminGalerieRoute: AuthenticatedAdminAdminGalerieRoute,
     AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,

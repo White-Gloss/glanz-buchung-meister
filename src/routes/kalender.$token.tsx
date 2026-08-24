@@ -1,5 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import {
+  escapeIcsText,
+  icsMultiline,
+  icsTimestamp,
+  shiftIcsDate,
+  toIcsDate,
+} from "@/lib/calendarIcs";
 
 /**
  * PRIVATER KALENDER-FEED (.ics)
@@ -17,33 +24,6 @@ import type {} from "@tanstack/react-start";
  * werden nicht rückwirkend eingetragen, damit der Kalender beim ersten
  * Abonnieren nicht mit Alt-Terminen vollläuft.
  */
-
-function escapeIcsText(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
-}
-
-/** YYYY-MM-DD -> YYYYMMDD für Ganztagestermine. */
-function toIcsDate(dateIso: string): string {
-  return dateIso.slice(0, 10).replace(/-/g, "");
-}
-
-/** Verschiebt ein ISO-Datum um n Tage und gibt es im ICS-Format zurück. */
-function shiftIcsDate(dateIso: string, days: number): string {
-  const d = new Date(`${dateIso.slice(0, 10)}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10).replace(/-/g, "");
-}
-
-function icsTimestamp(date: Date): string {
-  return date
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d+Z$/, "Z");
-}
 
 /**
  * Erinnerung zur Uhrzeit-Absprache: drei Tage vor dem Termin.
@@ -141,7 +121,7 @@ export const Route = createFileRoute("/kalender/$token")({
               `Telefon: ${row.customer_phone}`,
               `Betrag: ${Number(row.total).toFixed(2)} €`,
               "Uhrzeit wird individuell abgestimmt.",
-            ].filter(Boolean);
+            ];
 
             const termin = [
               "BEGIN:VEVENT",
@@ -150,7 +130,7 @@ export const Route = createFileRoute("/kalender/$token")({
               `DTSTART;VALUE=DATE:${start}`,
               `DTEND;VALUE=DATE:${end}`,
               `SUMMARY:${escapeIcsText(summary)}`,
-              `DESCRIPTION:${escapeIcsText(descriptionLines.join("\\n"))}`,
+              `DESCRIPTION:${icsMultiline(descriptionLines)}`,
               pickup
                 ? `LOCATION:${escapeIcsText(pickup.name)}`
                 : `LOCATION:${escapeIcsText(company.city)}`,
@@ -174,13 +154,11 @@ export const Route = createFileRoute("/kalender/$token")({
               `DTSTART;VALUE=DATE:${erinnerungStart}`,
               `DTEND;VALUE=DATE:${erinnerungEnde}`,
               `SUMMARY:${escapeIcsText(erinnerungText)}`,
-              `DESCRIPTION:${escapeIcsText(
-                [
-                  erinnerungText,
-                  `Termin: ${datum.split("-").reverse().join(".")}`,
-                  `Rechnung: ${row.invoice_number}`,
-                ].join("\\n"),
-              )}`,
+              `DESCRIPTION:${icsMultiline([
+                erinnerungText,
+                `Termin: ${datum.split("-").reverse().join(".")}`,
+                `Rechnung: ${row.invoice_number}`,
+              ])}`,
               "END:VEVENT",
             ].join("\r\n");
 

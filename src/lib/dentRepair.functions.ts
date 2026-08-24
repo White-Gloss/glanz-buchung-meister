@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "./db.server";
+import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
 import {
   dentRequestStatuses,
   normalizeDentRepairRequest,
@@ -12,6 +14,13 @@ import {
   type NormalizedDentRepairRequest,
 } from "./dentRepair";
 import { CONDITION_PHOTO_BUCKET } from "./conditionReports.functions";
+
+const dentRequestRateLimiter = createBookingRateLimiter({
+  // Wie bei der Zustandsmeldung: jede Anfrage schreibt einen Datensatz und
+  // verschickt Mails an Betrieb und Interessent.
+  limit: 5,
+  windowMs: 15 * 60_000,
+});
 
 const DENT_MARKER = "[DENT_REPAIR_V1]";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -122,6 +131,13 @@ function decodeRow(row: ConditionRow): DentRepairRequest {
 export const submitDentRepairRequest = createServerFn({ method: "POST" })
   .validator((data: DentRepairRequestInput) => normalizeDentRepairRequest(data))
   .handler(async ({ data }) => {
+    const rateLimit = dentRequestRateLimiter.check(clientAddress(getRequest()?.headers));
+    if (!rateLimit.allowed) {
+      throw new Error(
+        `Zu viele Anfragen. Bitte warten Sie noch etwa ${rateLimit.retryAfterSeconds} Sekunden und versuchen Sie es erneut.`,
+      );
+    }
+
     const row = await queryOne<{ id: string }>(
       `INSERT INTO public.condition_reports
          (customer_name, customer_email, customer_phone, vehicle, plate, condition_text, photo_paths)
