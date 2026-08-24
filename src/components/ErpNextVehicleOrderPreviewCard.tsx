@@ -25,6 +25,12 @@ type PreviewResult = {
   writes_performed?: boolean;
   booking_id?: string;
   error?: string;
+  production_write?: {
+    enabled?: boolean;
+    booking_approved?: boolean;
+    ready?: boolean;
+    confirmation?: string | null;
+  };
   customer?: {
     erpnext_customer_id?: string | null;
     state?: string;
@@ -88,6 +94,9 @@ function errorText(code: string | undefined) {
   if (code === "order_customer_conflict" || code === "order_vehicle_conflict") {
     return "Ein vorhandener Auftrag widerspricht der erwarteten Kunden-/Fahrzeugzuordnung.";
   }
+  if (code === "existing_order_without_exact_vehicle_match") {
+    return "Zu dieser Buchung existiert bereits ein Auftrag, aber kein exakt passendes Fahrzeug. Manuelle Prüfung erforderlich.";
+  }
   if (code === "service_catalog_not_ready_for_booking") {
     return "Mindestens eine Leistung dieser Buchung ist im ERPNext-Servicekatalog nicht sauber verfügbar.";
   }
@@ -96,6 +105,15 @@ function errorText(code: string | undefined) {
   }
   if (code === "booking_sync_busy_or_blocked") {
     return "Diese Buchung wird bereits verarbeitet oder ist nach einem Fehler gesperrt.";
+  }
+  if (code === "production_write_gate_disabled") {
+    return "Das Produktions-Schreib-Gate ist serverseitig gesperrt.";
+  }
+  if (code === "production_write_booking_not_approved") {
+    return "Diese Buchung ist nicht als kontrollierter Produktions-Schreibtest freigegeben.";
+  }
+  if (code === "explicit_write_confirmation_required") {
+    return "Die buchungsgebundene Schreibbestätigung fehlt oder ist nicht mehr gültig.";
   }
   if (code.startsWith("unknown_addon_mapping:") || code === "unknown_package_mapping") {
     return "Die Buchung enthält eine Leistung, für die noch keine sichere ERPNext-Zuordnung existiert.";
@@ -183,7 +201,16 @@ export function ErpNextVehicleOrderPreviewCard() {
   }, [selectedId]);
 
   const runCommit = useCallback(async () => {
-    if (!selectedId || !result?.ok || !result.write_ready) return;
+    const confirmation = result?.production_write?.confirmation;
+    if (
+      !selectedId ||
+      !result?.ok ||
+      !result.write_ready ||
+      !result.production_write?.ready ||
+      !confirmation
+    ) {
+      return;
+    }
 
     const confirmed = window.confirm(
       "Kontrollierten ERPNext-Schreibtest starten? Es werden nur das Kundenfahrzeug und der operative WHITE GLOSS Auftrag angelegt oder eindeutig wiederverwendet. Keine Rechnung, Zahlung, GL- oder Lagerbuchung.",
@@ -199,7 +226,7 @@ export function ErpNextVehicleOrderPreviewCard() {
         {
           body: {
             bookingId: selectedId,
-            confirmation: "CREATE_WHITE_GLOSS_VEHICLE_ORDER_V1",
+            confirmation,
           },
         },
       );
@@ -361,11 +388,9 @@ export function ErpNextVehicleOrderPreviewCard() {
                         </p>
                       ) : null}
                       <p className="text-xs opacity-80">
-                        Schreibvorgänge: {result.writes_performed ? "ja" : "keine"} · Schreib-Gate:{" "}
-                        {result.write_ready
-                          ? "für kontrollierten Test vorbereitet"
-                          : "nicht bereit"}
-                        .
+                        Schreibvorgänge: {result.writes_performed ? "ja" : "keine"} · Mapping-Gate:{" "}
+                        {result.write_ready ? "bereit" : "nicht bereit"} · Produktions-Gate:{" "}
+                        {result.production_write?.ready ? "freigegeben" : "gesperrt"}.
                       </p>
                     </div>
                   ) : (
@@ -376,7 +401,26 @@ export function ErpNextVehicleOrderPreviewCard() {
             </div>
           ) : null}
 
-          {result?.ok && result.write_ready ? (
+          {result?.ok && result.write_ready && !result.production_write?.ready ? (
+            <div className="mt-4 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm leading-6 text-sky-100">
+              <div className="flex items-start gap-2">
+                <ShieldCheck aria-hidden className="mt-1 size-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">Produktions-Write technisch gesperrt</p>
+                  <p className="mt-1 text-xs opacity-90">
+                    Die Mapping-Vorschau ist vollständig. Ein echter Schreibvorgang wird erst
+                    möglich, wenn der serverseitige Schalter aktiviert und genau diese Buchungs-ID
+                    separat freigegeben wurde.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {result?.ok &&
+          result.write_ready &&
+          result.production_write?.ready &&
+          result.production_write.confirmation ? (
             <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
               <div className="flex items-start gap-2">
                 <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
