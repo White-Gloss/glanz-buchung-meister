@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  CheckCircle2,
-  Eye,
-  RefreshCw,
-  ShieldCheck,
-  TriangleAlert,
-} from "lucide-react";
+import { CheckCircle2, Eye, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -114,16 +108,13 @@ export function ErpNextCustomerPreviewCard() {
       const next = (data ?? []) as EligibleBooking[];
       setBookings(next);
       setSelectedId((current) => {
-        if (current && next.some((booking) => booking.id === current))
-          return current;
+        if (current && next.some((booking) => booking.id === current)) return current;
         return next[0]?.id ?? "";
       });
       setResult(null);
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Buchungen konnten nicht geladen werden.",
+        error instanceof Error ? error.message : "Buchungen konnten nicht geladen werden.",
       );
     } finally {
       setLoadingBookings(false);
@@ -148,21 +139,16 @@ export function ErpNextCustomerPreviewCard() {
       );
 
       if (error) throw error;
-      if (!data)
-        throw new Error("ERPNext hat keine Vorschauantwort geliefert.");
+      if (!data) throw new Error("ERPNext hat keine Vorschauantwort geliefert.");
       setResult(data);
       if (data.ok) {
-        toast.success(
-          "Kundensync-Vorschau abgeschlossen. Es wurde nichts geschrieben.",
-        );
+        toast.success("Kundensync-Vorschau abgeschlossen. Es wurde nichts geschrieben.");
       } else {
         toast.warning(errorText(data.error));
       }
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Kundensync-Vorschau fehlgeschlagen.";
+        error instanceof Error ? error.message : "Kundensync-Vorschau fehlgeschlagen.";
       setResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -203,8 +189,7 @@ export function ErpNextCustomerPreviewCard() {
       );
 
       if (error) throw error;
-      if (!data)
-        throw new Error("ERPNext hat keine Kundensync-Antwort geliefert.");
+      if (!data) throw new Error("ERPNext hat keine Kundensync-Antwort geliefert.");
       setResult(data);
       if (data.ok) {
         toast.success(
@@ -217,9 +202,7 @@ export function ErpNextCustomerPreviewCard() {
       }
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Kontrollierter Kundensync fehlgeschlagen.";
+        error instanceof Error ? error.message : "Kontrollierter Kundensync fehlgeschlagen.";
       setResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -233,9 +216,7 @@ export function ErpNextCustomerPreviewCard() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Eye aria-hidden className="size-4 text-primary" />
-            <h2 className="display-card text-sm uppercase">
-              Kundensync · Vorschau & Gate
-            </h2>
+            <h2 className="display-card text-sm uppercase">Kundensync · Vorschau & Gate</h2>
             <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs text-sky-300">
               <ShieldCheck aria-hidden className="size-3" />
               ohne Schreibzugriff
@@ -243,38 +224,30 @@ export function ErpNextCustomerPreviewCard() {
           </div>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Prüft für eine bestätigte oder bezahlte Buchung, ob in ERPNext
-            bereits ein eindeutiger Kontakt existiert und welche Datensätze
-            angelegt werden müssten. Nur eine frische, serverseitig signierte
-            Vorschau für die exakt freigegebene Buchung kann anschließend den
+            Prüft für eine bestätigte oder bezahlte Buchung, ob in ERPNext bereits ein eindeutiger
+            Kontakt existiert und welche Datensätze angelegt werden müssten. Nur eine frische,
+            serverseitig signierte Vorschau für die exakt freigegebene Buchung kann anschließend den
             kontrollierten Kundensync öffnen.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="min-w-0 flex-1 text-sm">
-              <span className="mb-1.5 block text-muted-foreground">
-                Buchung auswählen
-              </span>
+              <span className="mb-1.5 block text-muted-foreground">Buchung auswählen</span>
               <select
                 value={selectedId}
                 onChange={(event) => {
                   setSelectedId(event.target.value);
                   setResult(null);
                 }}
-                disabled={
-                  loadingBookings || bookings.length === 0 || committing
-                }
+                disabled={loadingBookings || bookings.length === 0 || committing}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {bookings.length === 0 ? (
-                  <option value="">
-                    Keine bestätigte/bezahlte Buchung gefunden
-                  </option>
+                  <option value="">Keine bestätigte/bezahlte Buchung gefunden</option>
                 ) : (
                   bookings.map((booking) => (
                     <option key={booking.id} value={booking.id}>
-                      {booking.booking_date} · {booking.customer_name} ·{" "}
-                      {booking.status}
+                      {booking.booking_date} · {booking.customer_name} · {booking.status}
                     </option>
                   ))
                 )}
@@ -290,9 +263,7 @@ export function ErpNextCustomerPreviewCard() {
                 disabled={committing}
                 onClick={() => void loadBookings()}
               >
-                {loadingBookings ? null : (
-                  <RefreshCw aria-hidden className="size-4" />
-                )}
+                {loadingBookings ? null : <RefreshCw aria-hidden className="size-4" />}
                 Aktualisieren
               </Button>
               <Button
@@ -323,11 +294,7 @@ export function ErpNextCustomerPreviewCard() {
                   <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
                 )}
                 <div>
-                  <p>
-                    {result.ok
-                      ? stateText(result.customer_state)
-                      : errorText(result.error)}
-                  </p>
+                  <p>{result.ok ? stateText(result.customer_state) : errorText(result.error)}</p>
                   {result.ok ? (
                     <p className="mt-1 text-xs opacity-80">
                       {result.mode === "preview"
@@ -354,9 +321,8 @@ export function ErpNextCustomerPreviewCard() {
                 <div>
                   <p className="font-medium">Kundensync technisch gesperrt</p>
                   <p className="mt-1 text-xs opacity-90">
-                    Die Vorschau ist sicher. Ein echter Kundensync wird erst
-                    möglich, wenn der serverseitige Schalter und die exakte
-                    Buchungs-ID gemeinsam freigegeben sind.
+                    Die Vorschau ist sicher. Ein echter Kundensync wird erst möglich, wenn der
+                    serverseitige Schalter und die exakte Buchungs-ID gemeinsam freigegeben sind.
                   </p>
                 </div>
               </div>
@@ -374,9 +340,8 @@ export function ErpNextCustomerPreviewCard() {
                 <div>
                   <p className="font-medium">Kontrollierter Kundensync</p>
                   <p className="mt-1 text-xs opacity-90">
-                    Verarbeitet ausschließlich den Kunden und Kontakt dieser
-                    Buchungsrevision. Fahrzeug, Auftrag, Rechnung, Zahlung und
-                    Buchhaltung bleiben unberührt.
+                    Verarbeitet ausschließlich den Kunden und Kontakt dieser Buchungsrevision.
+                    Fahrzeug, Auftrag, Rechnung, Zahlung und Buchhaltung bleiben unberührt.
                   </p>
                   <Button
                     type="button"
@@ -386,9 +351,7 @@ export function ErpNextCustomerPreviewCard() {
                     disabled={previewing}
                     onClick={() => void runCommit()}
                   >
-                    {committing ? null : (
-                      <ShieldCheck aria-hidden className="size-4" />
-                    )}
+                    {committing ? null : <ShieldCheck aria-hidden className="size-4" />}
                     Kunde & Kontakt synchronisieren
                   </Button>
                 </div>
@@ -400,4 +363,3 @@ export function ErpNextCustomerPreviewCard() {
     </section>
   );
 }
-
