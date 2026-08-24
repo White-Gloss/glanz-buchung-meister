@@ -72,13 +72,10 @@ const base64UrlToBytes = (value: string) => {
 };
 
 const importHmacKey = (secret: string) =>
-  crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign", "verify"],
-  );
+  crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
+    "sign",
+    "verify",
+  ]);
 
 export async function issueVehicleOrderWriteConfirmation({
   secret,
@@ -136,9 +133,9 @@ export async function verifyVehicleOrderWriteConfirmation({
       return false;
     }
 
-    const parsed = JSON.parse(new TextDecoder().decode(base64UrlToBytes(encodedPayload))) as Partial<
-      ConfirmationPayload
-    >;
+    const parsed = JSON.parse(
+      new TextDecoder().decode(base64UrlToBytes(encodedPayload)),
+    ) as Partial<ConfirmationPayload>;
     const nowSeconds = Math.floor(nowMs / 1_000);
     const payloadValid =
       parsed.version === VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION &&
