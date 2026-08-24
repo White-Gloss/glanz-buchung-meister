@@ -59,10 +59,7 @@ const encoder = new TextEncoder();
 const bytesToBase64Url = (bytes: Uint8Array) => {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 };
 
 const base64UrlToBytes = (value: string) => {
@@ -75,13 +72,10 @@ const base64UrlToBytes = (value: string) => {
 };
 
 const importHmacKey = (secret: string) =>
-  crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign", "verify"],
-  );
+  crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
+    "sign",
+    "verify",
+  ]);
 
 export async function issueCustomerWriteConfirmation({
   secret,
@@ -90,12 +84,7 @@ export async function issueCustomerWriteConfirmation({
   nowMs = Date.now(),
   nonce = crypto.randomUUID(),
 }: IssueConfirmationInput) {
-  if (
-    !secret.trim() ||
-    !bookingId.trim() ||
-    !bookingRevision.trim() ||
-    !nonce.trim()
-  ) {
+  if (!secret.trim() || !bookingId.trim() || !bookingRevision.trim() || !nonce.trim()) {
     throw new Error("invalid_confirmation_input");
   }
 
@@ -108,15 +97,9 @@ export async function issueCustomerWriteConfirmation({
     expiresAt: issuedAt + CUSTOMER_WRITE_CONFIRMATION_TTL_SECONDS,
     nonce,
   };
-  const encodedPayload = bytesToBase64Url(
-    encoder.encode(JSON.stringify(payload)),
-  );
+  const encodedPayload = bytesToBase64Url(encoder.encode(JSON.stringify(payload)));
   const key = await importHmacKey(secret);
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(encodedPayload),
-  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(encodedPayload));
 
   return `${CUSTOMER_WRITE_CONFIRMATION_VERSION}.${encodedPayload}.${bytesToBase64Url(
     new Uint8Array(signature),
@@ -140,8 +123,7 @@ export async function verifyCustomerWriteConfirmation({
   }
 
   try {
-    const [version, encodedPayload, encodedSignature, ...rest] =
-      confirmation.split(".");
+    const [version, encodedPayload, encodedSignature, ...rest] = confirmation.split(".");
     if (
       rest.length > 0 ||
       version !== CUSTOMER_WRITE_CONFIRMATION_VERSION ||
@@ -163,8 +145,7 @@ export async function verifyCustomerWriteConfirmation({
       Number.isInteger(parsed.expiresAt) &&
       typeof parsed.nonce === "string" &&
       parsed.nonce.length >= 16 &&
-      (parsed.issuedAt as number) <=
-        nowSeconds + CONFIRMATION_CLOCK_SKEW_SECONDS &&
+      (parsed.issuedAt as number) <= nowSeconds + CONFIRMATION_CLOCK_SKEW_SECONDS &&
       (parsed.expiresAt as number) - (parsed.issuedAt as number) ===
         CUSTOMER_WRITE_CONFIRMATION_TTL_SECONDS &&
       nowSeconds < (parsed.expiresAt as number);
@@ -189,8 +170,7 @@ export function getCustomerWriteGateStatus({
 }: GateStatusInput): CustomerWriteGateStatus {
   const enabled = normalize(enabledValue).toLowerCase() === "true";
   const bookingApproved =
-    normalize(approvedBookingId).length > 0 &&
-    normalize(approvedBookingId) === bookingId;
+    normalize(approvedBookingId).length > 0 && normalize(approvedBookingId) === bookingId;
 
   return {
     enabled,
@@ -225,4 +205,3 @@ export function evaluateCustomerWriteGate({
 
   return { ...evaluation, error: null };
 }
-
