@@ -1,5 +1,4 @@
-export const VEHICLE_ORDER_WRITE_CONFIRMATION_PREFIX =
-  "CREATE_WHITE_GLOSS_VEHICLE_ORDER_V2";
+export const VEHICLE_ORDER_WRITE_CONFIRMATION_PREFIX = "CREATE_WHITE_GLOSS_VEHICLE_ORDER_V2";
 
 type GateStatusInput = {
   enabledValue?: string | null;
@@ -29,10 +28,8 @@ export type VehicleOrderWriteGateEvaluation = VehicleOrderWriteGateStatus & {
 
 const normalize = (value?: string | null) => value?.trim() ?? "";
 
-export const buildVehicleOrderWriteConfirmation = (
-  bookingId: string,
-  bookingRevision: string,
-) => `${VEHICLE_ORDER_WRITE_CONFIRMATION_PREFIX}:${bookingId}:${bookingRevision}`;
+export const buildVehicleOrderWriteConfirmation = (bookingId: string, bookingRevision: string) =>
+  `${VEHICLE_ORDER_WRITE_CONFIRMATION_PREFIX}:${bookingId}:${bookingRevision}`;
 
 export function getVehicleOrderWriteGateStatus({
   enabledValue,
@@ -58,8 +55,7 @@ export function evaluateVehicleOrderWriteGate({
   const status = getVehicleOrderWriteGateStatus(statusInput);
   const confirmationValid =
     normalize(bookingRevision).length > 0 &&
-    confirmation ===
-    buildVehicleOrderWriteConfirmation(statusInput.bookingId, bookingRevision);
+    confirmation === buildVehicleOrderWriteConfirmation(statusInput.bookingId, bookingRevision);
   const evaluation = {
     ...status,
     ready: status.ready && confirmationValid,
