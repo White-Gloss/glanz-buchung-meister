@@ -1,12 +1,12 @@
 # WHITE GLOSS Frappe App Blueprint
 
-Status: Gate 4 (service catalog) passed. Gate 5 confirmed that the custom DocTypes `WHITE GLOSS Vehicle` and `WHITE GLOSS Order` are not installed on the current ERPNext site.
+Status: Gate 4 passed. The private Frappe bench is active, `white_gloss_os` is installed, and Gate 5 confirms that `WHITE GLOSS Vehicle` and `WHITE GLOSS Order` are readable with the required create/write permissions.
 
 ## Decision
 
 The production model must be version-controlled in a dedicated Frappe app named `white_gloss_os`. Do not use ERPNext's standard fleet `Vehicle` DocType for customer vehicles. Do not create a temporary parallel order model in Supabase as the long-term source of truth.
 
-The app targets Frappe/ERPNext v16 and should be installed on a Frappe Cloud private bench. Until the app is installed and Gate 5 passes, operational vehicle/order writes remain disabled.
+The app targets Frappe/ERPNext v16 and is installed on the Frappe Cloud private bench. Operational vehicle/order writes remain default-deny until one exact booking is explicitly allowed by the server-side production-write gate.
 
 ## Module
 
@@ -159,7 +159,7 @@ The current approved catalog is:
 
 ## Deployment gate
 
-Do not enable vehicle/order commit mode until all are true:
+The app installation, migration, permission readiness and mapping preview are complete. Do not enable vehicle/order commit mode for another booking until all are true:
 
 1. `white_gloss_os` app exists in a dedicated Git repository.
 2. Frappe Cloud private bench is available for the production site.
@@ -167,10 +167,12 @@ Do not enable vehicle/order commit mode until all are true:
 4. `bench migrate`/site migration completes successfully.
 5. Gate 5 reports both custom DocTypes readable with create/write permissions.
 6. A preview maps one confirmed booking to Customer + Vehicle + Order + service rows without writes.
-7. One controlled write test is explicitly approved.
+7. One controlled write test is explicitly approved and its confirmation is bound to the current booking revision.
 8. Re-run same booking and prove idempotency: exactly one vehicle identity and one order for the booking.
 9. No Sales Invoice, Payment Entry, stock ledger, GL Entry or accounting changes occur during Gate 5.
 
+Live Supabase state inspected on 2026-08-24 already contains one vehicle/order mapping from 2026-08-21. Any further write is a subsequent controlled production run and must use the exact-booking server allowlist; it must not be described as the first historical write.
+
 ## Frappe Cloud constraint
 
-Public/shared benches cannot install arbitrary custom apps. If the production site is not already on a private bench, a plan/private-bench migration decision is required before installation. That is an infrastructure/billing change and must be explicitly approved before execution.
+Public/shared benches cannot install arbitrary custom apps. WHITE GLOSS now uses the required private bench. Any later bench or billing change still requires explicit approval before execution.
