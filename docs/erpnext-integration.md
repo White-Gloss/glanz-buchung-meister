@@ -173,6 +173,8 @@ Edge Function: `erpnext-sync-customer`
 
 A permanent customer/contact synchronization now requires an authenticated admin request, `ERPNEXT_CUSTOMER_WRITE_ENABLED=true`, an exact match in `ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID` and a server-signed five-minute preview confirmation bound to the booking UUID and current `bookings.updated_at` revision. The database claim rechecks that revision under a row lock, fences the mapping and 15-minute booking lease with one token and blocks booking updates or deletion during the external ERPNext write window. Immediately before every ERPNext Customer or Contact POST, the function rechecks that both fencing tokens still belong to the worker and that the booking lease has not expired.
 
+Before the non-idempotent Customer POST, the worker durably records `uncertain_customer_create_started` and then checks the lease again. If the worker exits after ERPNext accepts the request but before the returned Customer ID is stored, the marker blocks automatic retry and forces manual reconciliation instead of risking a duplicate Customer. Once the Customer ID is durable, the marker is cleared and safe Contact recovery may continue. Completion persists the booking-specific Customer ID before publishing the shared customer mapping as synchronized, so a failed booking-state update cannot leave a false `already_synced` state.
+
 The Admin UI exposes the commit action only from a successful fresh preview. Customer, contact and mapping writes remain independently gated from vehicle/order writes.
 
 ### Vehicle/order readiness and mapping preview — PASS, NO WRITES
@@ -248,4 +250,3 @@ The current Supabase changes are additive. Rollback consists of:
 - leaving existing website bookings and Lexware state untouched.
 
 No current migration rewrites customer or booking data.
-
