@@ -103,8 +103,20 @@ function errorText(code: string | undefined) {
   if (code === "erpnext_sync_requires_manual_review") {
     return "Der ERPNext-Sync ist wegen eines vorherigen Fehlers gesperrt und muss manuell geprüft werden.";
   }
-  if (code === "booking_sync_busy_or_blocked") {
-    return "Diese Buchung wird bereits verarbeitet oder ist nach einem Fehler gesperrt.";
+  if (
+    code === "booking_sync_busy_or_blocked" ||
+    code === "booking_sync_busy_blocked_or_revision_changed"
+  ) {
+    return "Diese Buchung wird bereits verarbeitet, ist gesperrt oder wurde seit der Vorschau geändert.";
+  }
+  if (
+    code === "stored_vehicle_identity_not_found_in_erpnext" ||
+    code === "stored_order_identity_not_found_in_erpnext"
+  ) {
+    return "Die gespeicherte ERPNext-Zuordnung stimmt nicht mit dem aktuellen Bestand überein. Manuelle Prüfung erforderlich.";
+  }
+  if (code === "sync_state_failure_persist_failed") {
+    return "Der sichere ERPNext-Fehlerstatus konnte nicht bestätigt werden. Keine Wiederholung starten; manuelle Prüfung erforderlich.";
   }
   if (code === "production_write_gate_disabled") {
     return "Das Produktions-Schreib-Gate ist serverseitig gesperrt.";

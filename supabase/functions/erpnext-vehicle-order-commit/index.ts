@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 import {
   evaluateVehicleOrderWriteGate,
   getVehicleOrderWriteGateStatus,
+  verifyVehicleOrderWriteConfirmation,
 } from "../_shared/erpnextVehicleOrderWriteGate.ts";
 
 const corsHeaders = {
@@ -158,12 +159,17 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "booking_not_write_eligible" }, 409);
   }
 
+  const confirmationValid = await verifyVehicleOrderWriteConfirmation({
+    secret: serviceRoleKey,
+    bookingId,
+    bookingRevision: String(booking.updated_at ?? ""),
+    confirmation: body.confirmation,
+  });
   const writeGate = evaluateVehicleOrderWriteGate({
     enabledValue: writeGateEnabled,
     approvedBookingId,
     bookingId,
-    bookingRevision: booking.updated_at,
-    confirmation: body.confirmation,
+    confirmationValid,
   });
   if (writeGate.error) {
     return json(
@@ -353,18 +359,41 @@ Deno.serve(async (req: Request) => {
 
   const persistFailure = async (code: string, status: number | null = null) => {
     try {
-      await supabase
+      const { data, error } = await supabase
         .from("booking_automation_state")
         .update({
           erpnext_processing_at: null,
+          erpnext_processing_expires_at: null,
           erpnext_last_error: code,
           erpnext_last_http_status: status,
           updated_at: new Date().toISOString(),
         })
-        .eq("booking_id", bookingId);
+        .eq("booking_id", bookingId)
+        .select("booking_id")
+        .maybeSingle();
+      return !error && Boolean(data);
     } catch {
-      // Preserve the original synchronization failure.
+      return false;
     }
+  };
+
+  const failWithReviewState = async (
+    code: string,
+    responseStatus: number,
+    upstreamStatus: number | null = null,
+  ) => {
+    const recorded = await persistFailure(code, upstreamStatus);
+    if (!recorded) {
+      return json(
+        {
+          ok: false,
+          error: "sync_state_failure_persist_failed",
+          operation_error: code,
+        },
+        500,
+      );
+    }
+    return json({ ok: false, error: code }, responseStatus);
   };
 
   let syncClaimed = false;
@@ -397,6 +426,8 @@ Deno.serve(async (req: Request) => {
 
     const customerId =
       typeof state?.erpnext_customer_id === "string" ? state.erpnext_customer_id : "";
+    const stateVehicleId = asText(state?.erpnext_vehicle_id);
+    const stateOrderId = asText(state?.erpnext_order_id);
     if (!customerId) return json({ ok: false, error: "customer_not_synced" }, 409);
 
     const normalizedEmail = normalizeEmail(String(booking.customer_email ?? ""));
@@ -466,32 +497,42 @@ Deno.serve(async (req: Request) => {
     const paymentStatus = booking.status === "Bezahlt" ? "Bezahlt" : "Ausstehend";
     const expectedServiceCodes = serviceChecks.map((service) => service.code).sort();
 
+    const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_booking_sync", {
+      p_booking_id: bookingId,
+      p_booking_revision: booking.updated_at,
+      p_ttl_minutes: 15,
+    });
+    if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
+    if (!claimed) {
+      return json({ ok: false, error: "booking_sync_busy_blocked_or_revision_changed" }, 409);
+    }
+    syncClaimed = true;
+
     const customerRows = await listRows("Customer", ["name"], [["name", "=", customerId]], 2);
     if (customerRows.length !== 1) {
-      return json({ ok: false, error: "mapped_customer_missing_in_erpnext" }, 409);
+      return await failWithReviewState("mapped_customer_missing_in_erpnext", 409);
     }
 
     let vehicleRows = await loadVehicleByPlate(normalizedPlate);
     if (vehicleRows.length > 1) {
-      return json({ ok: false, error: "multiple_vehicle_plate_matches" }, 409);
+      return await failWithReviewState("multiple_vehicle_plate_matches", 409);
     }
     if (vehicleRows[0] && vehicleRows[0].customer !== customerId) {
-      return json({ ok: false, error: "vehicle_customer_conflict" }, 409);
+      return await failWithReviewState("vehicle_customer_conflict", 409);
     }
 
     let orderRows = await loadOrderByBooking(bookingId);
     if (orderRows.length > 1) {
-      return json({ ok: false, error: "multiple_booking_order_matches" }, 409);
+      return await failWithReviewState("multiple_booking_order_matches", 409);
     }
 
     const existingOrder = orderRows[0] ?? null;
     const existingVehicle = vehicleRows[0] ?? null;
     if (existingOrder && existingOrder.customer !== customerId) {
-      return json({ ok: false, error: "order_customer_conflict" }, 409);
+      return await failWithReviewState("order_customer_conflict", 409);
     }
     if (existingOrder && !existingVehicle) {
-      await persistFailure("existing_order_without_exact_vehicle_match");
-      return json({ ok: false, error: "existing_order_without_exact_vehicle_match" }, 409);
+      return await failWithReviewState("existing_order_without_exact_vehicle_match", 409);
     }
     if (
       existingOrder &&
@@ -499,15 +540,20 @@ Deno.serve(async (req: Request) => {
       typeof existingOrder.vehicle === "string" &&
       existingOrder.vehicle !== existingVehicle.name
     ) {
-      return json({ ok: false, error: "order_vehicle_conflict" }, 409);
+      return await failWithReviewState("order_vehicle_conflict", 409);
+    }
+    if (stateVehicleId && asText(existingVehicle?.name) !== stateVehicleId) {
+      return await failWithReviewState("stored_vehicle_identity_not_found_in_erpnext", 409);
+    }
+    if (stateOrderId && asText(existingOrder?.name) !== stateOrderId) {
+      return await failWithReviewState("stored_order_identity_not_found_in_erpnext", 409);
     }
 
     if (existingOrder && existingVehicle) {
       const existingVehicleId = asText(existingVehicle.name);
       const existingOrderId = asText(existingOrder.name);
       if (!existingVehicleId || !existingOrderId) {
-        await persistFailure("existing_erpnext_identity_invalid");
-        return json({ ok: false, error: "existing_erpnext_identity_invalid" }, 409);
+        return await failWithReviewState("existing_erpnext_identity_invalid", 409);
       }
       const [vehicleVerified, orderVerified] = await Promise.all([
         verifyPersistedVehicle(existingVehicleId, customerId, normalizedPlate),
@@ -523,8 +569,7 @@ Deno.serve(async (req: Request) => {
         }),
       ]);
       if (!vehicleVerified || !orderVerified) {
-        await persistFailure("existing_erpnext_pair_verification_failed");
-        return json({ ok: false, error: "existing_erpnext_pair_verification_failed" }, 409);
+        return await failWithReviewState("existing_erpnext_pair_verification_failed", 409);
       }
 
       const now = new Date().toISOString();
@@ -534,6 +579,7 @@ Deno.serve(async (req: Request) => {
           erpnext_vehicle_id: existingVehicleId,
           erpnext_order_id: existingOrderId,
           erpnext_processing_at: null,
+          erpnext_processing_expires_at: null,
           erpnext_synced_at: now,
           erpnext_last_error: null,
           erpnext_last_http_status: 200,
@@ -543,7 +589,7 @@ Deno.serve(async (req: Request) => {
         .select("booking_id")
         .maybeSingle();
       if (reconcileError || !reconciledState) {
-        return json({ ok: false, error: "sync_state_reconcile_failed" }, 500);
+        return await failWithReviewState("sync_state_reconcile_failed", 500);
       }
       return json({
         ok: true,
@@ -555,44 +601,30 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_booking_sync", {
-      p_booking_id: bookingId,
-      p_ttl_minutes: 10,
-    });
-    if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
-    if (!claimed) return json({ ok: false, error: "booking_sync_busy_or_blocked" }, 409);
-    syncClaimed = true;
-
     vehicleRows = await loadVehicleByPlate(normalizedPlate);
     if (vehicleRows.length > 1) {
-      await persistFailure("multiple_vehicle_plate_matches");
-      return json({ ok: false, error: "multiple_vehicle_plate_matches" }, 409);
+      return await failWithReviewState("multiple_vehicle_plate_matches", 409);
     }
     if (vehicleRows[0] && vehicleRows[0].customer !== customerId) {
-      await persistFailure("vehicle_customer_conflict");
-      return json({ ok: false, error: "vehicle_customer_conflict" }, 409);
+      return await failWithReviewState("vehicle_customer_conflict", 409);
     }
 
     orderRows = await loadOrderByBooking(bookingId);
     if (orderRows.length > 1) {
-      await persistFailure("multiple_booking_order_matches");
-      return json({ ok: false, error: "multiple_booking_order_matches" }, 409);
+      return await failWithReviewState("multiple_booking_order_matches", 409);
     }
     if (orderRows[0] && orderRows[0].customer !== customerId) {
-      await persistFailure("order_customer_conflict");
-      return json({ ok: false, error: "order_customer_conflict" }, 409);
+      return await failWithReviewState("order_customer_conflict", 409);
     }
     if (orderRows[0] && !vehicleRows[0]) {
-      await persistFailure("existing_order_without_exact_vehicle_match");
-      return json({ ok: false, error: "existing_order_without_exact_vehicle_match" }, 409);
+      return await failWithReviewState("existing_order_without_exact_vehicle_match", 409);
     }
     if (
       orderRows[0] &&
       typeof orderRows[0].vehicle === "string" &&
       orderRows[0].vehicle !== vehicleRows[0]?.name
     ) {
-      await persistFailure("order_vehicle_conflict");
-      return json({ ok: false, error: "order_vehicle_conflict" }, 409);
+      return await failWithReviewState("order_vehicle_conflict", 409);
     }
 
     let vehicleId = typeof vehicleRows[0]?.name === "string" ? vehicleRows[0].name : "";
@@ -635,8 +667,7 @@ Deno.serve(async (req: Request) => {
           vehicleId = verifyRows[0].name;
         } else {
           const status = created?.response.status ?? null;
-          await persistFailure("uncertain_vehicle_create", status);
-          return json({ ok: false, error: "uncertain_vehicle_create" }, 502);
+          return await failWithReviewState("uncertain_vehicle_create", 502, status);
         }
       } else {
         vehicleCreated = true;
@@ -644,26 +675,22 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!(await verifyPersistedVehicle(vehicleId, customerId, normalizedPlate))) {
-      await persistFailure("vehicle_post_write_verification_failed");
-      return json({ ok: false, error: "vehicle_post_write_verification_failed" }, 502);
+      return await failWithReviewState("vehicle_post_write_verification_failed", 502);
     }
 
     orderRows = await loadOrderByBooking(bookingId);
     if (orderRows.length > 1) {
-      await persistFailure("multiple_booking_order_matches");
-      return json({ ok: false, error: "multiple_booking_order_matches" }, 409);
+      return await failWithReviewState("multiple_booking_order_matches", 409);
     }
     if (orderRows[0] && orderRows[0].customer !== customerId) {
-      await persistFailure("order_customer_conflict");
-      return json({ ok: false, error: "order_customer_conflict" }, 409);
+      return await failWithReviewState("order_customer_conflict", 409);
     }
     if (
       orderRows[0] &&
       typeof orderRows[0].vehicle === "string" &&
       orderRows[0].vehicle !== vehicleId
     ) {
-      await persistFailure("order_vehicle_conflict");
-      return json({ ok: false, error: "order_vehicle_conflict" }, 409);
+      return await failWithReviewState("order_vehicle_conflict", 409);
     }
 
     let orderId = typeof orderRows[0]?.name === "string" ? orderRows[0].name : "";
@@ -721,8 +748,7 @@ Deno.serve(async (req: Request) => {
           orderId = verifyRows[0].name;
         } else {
           const status = created?.response.status ?? null;
-          await persistFailure("uncertain_order_create", status);
-          return json({ ok: false, error: "uncertain_order_create" }, 502);
+          return await failWithReviewState("uncertain_order_create", 502, status);
         }
       } else {
         orderCreated = true;
@@ -740,8 +766,7 @@ Deno.serve(async (req: Request) => {
       paymentStatus,
     });
     if (!orderVerified) {
-      await persistFailure("order_post_write_verification_failed");
-      return json({ ok: false, error: "order_post_write_verification_failed" }, 502);
+      return await failWithReviewState("order_post_write_verification_failed", 502);
     }
 
     const now = new Date().toISOString();
@@ -751,6 +776,7 @@ Deno.serve(async (req: Request) => {
         erpnext_vehicle_id: vehicleId,
         erpnext_order_id: orderId,
         erpnext_processing_at: null,
+        erpnext_processing_expires_at: null,
         erpnext_synced_at: now,
         erpnext_last_error: null,
         erpnext_last_http_status: 200,
@@ -760,8 +786,7 @@ Deno.serve(async (req: Request) => {
       .select("booking_id")
       .maybeSingle();
     if (stateUpdateError || !updatedState) {
-      await persistFailure("sync_state_update_failed_after_erpnext_write");
-      return json({ ok: false, error: "sync_state_update_failed_after_erpnext_write" }, 500);
+      return await failWithReviewState("sync_state_update_failed_after_erpnext_write", 500);
     }
 
     return json({
@@ -781,7 +806,16 @@ Deno.serve(async (req: Request) => {
       : error instanceof Error
         ? error.message
         : "erpnext_vehicle_order_write_failed";
-    if (syncClaimed) await persistFailure(code);
+    if (syncClaimed && !(await persistFailure(code))) {
+      return json(
+        {
+          ok: false,
+          error: "sync_state_failure_persist_failed",
+          operation_error: code,
+        },
+        500,
+      );
+    }
     return json({ ok: false, error: code }, 502);
   }
 });

@@ -56,6 +56,7 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 - `erpnext_vehicle_id`
 - `erpnext_order_id`
 - `erpnext_processing_at`
+- `erpnext_processing_expires_at`
 - `erpnext_synced_at`
 - `erpnext_last_error`
 - `erpnext_last_http_status`
@@ -65,7 +66,7 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 
 A live-state audit on 2026-08-24 found one existing vehicle/order mapping synchronized on 2026-08-21. The next controlled operation is therefore a subsequent production run, not the first historical vehicle/order write.
 
-The function `public.claim_erpnext_booking_sync(uuid, integer)` atomically claims a booking for one sync worker. It is executable only by `service_role`.
+The function `public.claim_erpnext_booking_sync(uuid, timestamptz, integer)` atomically claims one exact booking revision for a sync worker. It is executable only by `service_role`. The claim locks the booking row while comparing `bookings.updated_at`; a database trigger blocks booking updates and deletion until the worker clears the processing lease after success or a reviewable failure. The vehicle/order worker uses a 15-minute lease, which also releases the mutation guard automatically after a hard worker exit.
 
 A failed ERPNext write is intentionally not retried automatically while `erpnext_last_error` is set. This protects against duplicate external documents when an upstream POST may have succeeded but its response was lost.
 
@@ -182,7 +183,7 @@ Verified behavior:
 
 Edge Function: `erpnext-vehicle-order-commit`
 
-A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and the preview-derived confirmation bound to both booking UUID and current `bookings.updated_at` revision. Any booking change invalidates the prior preview confirmation. The function then performs duplicate-safe lookups, claims the booking atomically, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
+A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and a server-signed preview confirmation bound to both booking UUID and current `bookings.updated_at` revision. The signed confirmation contains a cryptographic nonce and expires after five minutes; browser-visible booking data is insufficient to forge it. Any booking change invalidates it. The function then performs duplicate-safe lookups, claims that exact revision under a database lock, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
 
 The admin page has one write path only: a successful fresh preview. The previous separate direct commit card is no longer rendered.
 
@@ -199,6 +200,8 @@ The atomic claim was tested inside a rolled-back transaction against an existing
 - post-rollback rows with ERPNext processing state: `0`.
 
 This confirms mutual exclusion without altering production booking state.
+
+The revision-aware claim additionally rejects a stale `updated_at` value before existing-pair reconciliation or any external create. While a claim lease is active, the booking-mutation trigger rejects concurrent edits and deletion; clearing the processing fields releases that protection immediately, and lease expiry provides bounded crash recovery.
 
 The remaining Supabase security advisor items are intentionally tracked:
 

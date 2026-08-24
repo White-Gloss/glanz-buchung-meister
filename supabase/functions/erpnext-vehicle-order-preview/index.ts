@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
 import {
-  buildVehicleOrderWriteConfirmation,
   getVehicleOrderWriteGateStatus,
+  issueVehicleOrderWriteConfirmation,
 } from "../_shared/erpnextVehicleOrderWriteGate.ts";
 
 const corsHeaders = {
@@ -380,6 +380,13 @@ Deno.serve(async (req: Request) => {
       approvedBookingId,
       bookingId: booking.id,
     });
+    const productionWriteConfirmation = productionWriteGate.ready
+      ? await issueVehicleOrderWriteConfirmation({
+          secret: serviceRoleKey,
+          bookingId: booking.id,
+          bookingRevision: String(booking.updated_at ?? ""),
+        })
+      : null;
 
     return json({
       ok: true,
@@ -390,9 +397,7 @@ Deno.serve(async (req: Request) => {
         enabled: productionWriteGate.enabled,
         booking_approved: productionWriteGate.bookingApproved,
         ready: productionWriteGate.ready,
-        confirmation: productionWriteGate.ready
-          ? buildVehicleOrderWriteConfirmation(booking.id, booking.updated_at)
-          : null,
+        confirmation: productionWriteConfirmation,
       },
       booking_id: booking.id,
       customer: {
