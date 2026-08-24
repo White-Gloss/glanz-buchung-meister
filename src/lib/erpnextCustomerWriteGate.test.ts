@@ -142,4 +142,3 @@ describe("ERPNext customer production write gate", () => {
     });
   });
 });
-
