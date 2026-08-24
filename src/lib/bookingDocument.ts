@@ -104,7 +104,9 @@ async function loadLetterheadLogo(): Promise<string | null> {
       typeof window === "undefined"
         ? `${company.web}/wgd-document-logo.png`
         : "/wgd-document-logo.png";
-    const response = await fetch(logoUrl);
+    // Ohne Frist blockiert ein haengender Abruf die gesamte
+    // Dokumenterstellung. Fehlt das Logo, entsteht das PDF trotzdem.
+    const response = await fetch(logoUrl, { signal: AbortSignal.timeout(5_000) });
     if (!response.ok) return null;
     const blob = await response.blob();
     const bytes = new Uint8Array(await blob.arrayBuffer());

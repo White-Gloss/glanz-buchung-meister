@@ -24,6 +24,7 @@ import {
 } from "./dentRepair";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
+const MAIL_TIMEOUT_MS = 20_000;
 
 export type MailResult = { sent: boolean; reason?: string };
 type MailAttachment = { filename: string; content: string };
@@ -143,6 +144,10 @@ async function send(params: {
   try {
     const response = await fetch(RESEND_ENDPOINT, {
       method: "POST",
+      // Grosszuegiger als bei den kurzen Benachrichtigungen: an einer Mail
+      // kann ein PDF haengen. Aber begrenzt — sonst haelt ein haengender
+      // Versand die Buchungsanfrage der Kundschaft offen.
+      signal: AbortSignal.timeout(MAIL_TIMEOUT_MS),
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",

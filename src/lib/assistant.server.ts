@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+import { interpretAssistantAnswer } from "./assistantAnswer";
 import { company, currency } from "./servicesConfig";
 import { effectivePrice, type Booking } from "./bookings";
 
@@ -74,7 +75,13 @@ export function bookingSummary(booking: Booking): string {
   return zeilen.filter(Boolean).join("\n");
 }
 
-export type AssistantResult = { text: string; inputTokens: number; outputTokens: number };
+export type AssistantResult = {
+  text: string;
+  /** Der Text bricht an der Längengrenze ab und ist unvollständig. */
+  truncated: boolean;
+  inputTokens: number;
+  outputTokens: number;
+};
 
 /**
  * Ein Durchlauf gegen das Modell.
@@ -92,7 +99,11 @@ async function frage(params: {
 }): Promise<AssistantResult> {
   const stream = client().messages.stream({
     model: MODEL,
-    max_tokens: params.maxTokens ?? 4000,
+    // Reichlich bemessen: Die Überlegung des Modells zählt gegen dieselbe
+    // Grenze wie der sichtbare Text. Eine knappe Obergrenze schneidet daher
+    // ausgerechnet die längeren, sorgfältigeren Antworten ab. Abgerechnet
+    // wird, was tatsächlich entsteht — die Grenze selbst kostet nichts.
+    max_tokens: params.maxTokens ?? 16000,
     thinking: { type: "adaptive" },
     output_config: { effort: params.effort ?? "medium" },
     system: `${GRUNDHALTUNG}\n\n${params.system}`,
@@ -101,26 +112,21 @@ async function frage(params: {
 
   const antwort = await stream.finalMessage();
 
-  // Ablehnungen kommen als erfolgreiche Antwort ohne Inhalt zurück — vor dem
-  // Auslesen prüfen, sonst greift man ins Leere.
-  if (antwort.stop_reason === "refusal") {
-    throw new Error(
-      "Die Anfrage wurde abgelehnt. Bitte formulieren Sie sie anders oder ohne heikle Inhalte.",
-    );
-  }
-
-  const text = antwort.content
+  const rohtext = antwort.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
     .map((block) => block.text)
-    .join("\n")
-    .trim();
+    .join("\n");
 
-  if (!text) {
-    throw new Error("Das Modell hat keine verwertbare Antwort geliefert. Bitte erneut versuchen.");
-  }
+  // Ablehnung, leere Antwort und abgeschnittener Text werden getrennt
+  // behandelt — siehe assistantAnswer.ts.
+  const ausgewertet = interpretAssistantAnswer({
+    stopReason: antwort.stop_reason,
+    text: rohtext,
+  });
 
   return {
-    text,
+    text: ausgewertet.text,
+    truncated: ausgewertet.truncated,
     inputTokens: antwort.usage.input_tokens,
     outputTokens: antwort.usage.output_tokens,
   };
@@ -254,7 +260,6 @@ export async function draftWebsiteText(params: {
   return frage({
     system,
     inhalt: [{ type: "text", text: `Thema: ${params.thema}` }],
-    maxTokens: 8000,
     effort: "medium",
   });
 }
@@ -410,5 +415,5 @@ export async function assessPhotos(params: {
 
   // Höherer Aufwand: Hier hängt eine Preisempfehlung dran, und die Bilder
   // wollen genau angesehen werden.
-  return frage({ system, inhalt, maxTokens: 6000, effort: "high" });
+  return frage({ system, inhalt, effort: "high" });
 }
