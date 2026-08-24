@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import barlow400Woff2 from "@fontsource/barlow/files/barlow-latin-400-normal.woff2?url";
 import bebasNeue400Woff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
+import { ahrefsAnalyticsScripts } from "../lib/ahrefsAnalytics";
 import { listServicePrices } from "../lib/pricing.functions";
 import { applyPriceOverrides, type ServicePriceRow } from "../lib/servicesConfig";
 import { CookieConsentBanner } from "../components/CookieConsent";
@@ -202,6 +203,9 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       { rel: "manifest", href: "/site.webmanifest" },
     ],
+    // Cookielose Reichweitenmessung. Ohne gesetzten Schlüssel bleibt die
+    // Liste leer und es steht kein Skript im Quelltext.
+    scripts: ahrefsAnalyticsScripts(),
   }),
 
   shellComponent: RootShell,

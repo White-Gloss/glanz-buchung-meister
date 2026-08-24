@@ -63,18 +63,19 @@ function withProductionHeaders(request: Request, response: Response): Response {
   headers.set("X-Frame-Options", "SAMEORIGIN");
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
-  // Schriften bleiben self-hosted. Externe Verbindungen sind auf Supabase
-  // sowie die erst nach Einwilligung geladenen Google-Ads- und Meta-Skripte
-  // beschränkt. 'unsafe-inline' ist für JSON-LD und Hydration-State nötig.
+  // Schriften bleiben self-hosted. Externe Verbindungen sind auf Supabase,
+  // die erst nach Einwilligung geladenen Google-Ads- und Meta-Skripte sowie
+  // die cookielose Reichweitenmessung von Ahrefs beschränkt. 'unsafe-inline'
+  // ist für JSON-LD und Hydration-State nötig.
   headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.ahrefs.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://*.supabase.co https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.facebook.com",
       "font-src 'self'",
-      "connect-src 'self' https://*.supabase.co https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.facebook.com",
+      "connect-src 'self' https://*.supabase.co https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.facebook.com https://analytics.ahrefs.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",

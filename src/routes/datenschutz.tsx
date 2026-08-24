@@ -153,7 +153,19 @@ function PrivacyPage() {
               in die USA übermittelt werden.
             </p>
             <p>
-              Ihre Entscheidung können Sie jederzeit widerrufen:{" "}
+              Unabhängig davon setzen wir Ahrefs Web Analytics der Ahrefs Pte. Ltd. (16 Raffles
+              Quay, Singapur) zur Reichweitenmessung ein. Der Dienst arbeitet ohne Cookies und ohne
+              Speicherung auf Ihrem Endgerät; erfasst werden die aufgerufene Seite, die verweisende
+              Seite, ungefähre Herkunftsregion sowie Angaben zu Browser und Endgerät. Ihre
+              IP-Adresse wird zur Auswertung verarbeitet, nach Angaben des Anbieters jedoch nicht
+              gespeichert. Weil kein Zugriff auf Ihr Endgerät erfolgt, ist hierfür keine
+              Einwilligung nach § 25 Abs. 1 TDDDG erforderlich; Rechtsgrundlage ist unser
+              berechtigtes Interesse an einer datensparsamen Reichweitenmessung nach Art. 6 Abs. 1
+              lit. f DSGVO. Sie können dieser Verarbeitung nach Art. 21 DSGVO widersprechen — eine
+              Nachricht an die oben genannte Adresse genügt.
+            </p>
+            <p>
+              Ihre Entscheidung zu Google und Meta können Sie jederzeit widerrufen:{" "}
               <button
                 type="button"
                 onClick={() => {
