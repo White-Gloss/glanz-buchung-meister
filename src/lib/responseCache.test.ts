@@ -12,6 +12,8 @@ describe("cacheControlForPath", () => {
     expect(cacheControlForPath("/admin")).toBe("private, no-store");
     expect(cacheControlForPath("/auth")).toBe("private, no-store");
     expect(cacheControlForPath("/danke")).toBe("private, no-store");
+    // Die Dellen-Dankeseite zeigt denselben Kundennamen aus der Adresse.
+    expect(cacheControlForPath("/danke-dellen")).toBe("private, no-store");
   });
 
   it("überschreibt private Token- und Serverantworten nicht", () => {

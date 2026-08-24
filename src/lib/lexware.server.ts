@@ -5,6 +5,10 @@ import { query, queryOne } from "./db.server";
 
 const BASE_URL = "https://api.lexware.io/v1";
 const CLAIM_TTL_MINUTES = 10;
+// Ohne Frist wartet der Aufruf unbegrenzt. Der Abgleich haengt an der
+// Statusaenderung im Adminbereich — eine haengende Antwort blockiert dort
+// den laufenden Vorgang.
+const TIMEOUT_MS = 15_000;
 
 type AutomationState = {
   booking_id: string;
@@ -35,6 +39,7 @@ function apiKey(): string {
 
 async function lexwareFetch(path: string, init?: RequestInit): Promise<Response> {
   const response = await fetch(`${BASE_URL}${path}`, {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     ...init,
     headers: {
       Authorization: `Bearer ${apiKey()}`,

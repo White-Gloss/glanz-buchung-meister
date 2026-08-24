@@ -24,6 +24,7 @@ import { getRequest } from "@tanstack/react-start/server";
  */
 
 const GRAPH_API_VERSION = "v21.0";
+const TIMEOUT_MS = 5_000;
 
 /**
  * Meta erwartet personenbezogene Merkmale ausschließlich als SHA-256-Hash
@@ -135,6 +136,11 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
         )}`,
         {
           method: "POST",
+          // Kurz gehalten: Die Messung laeuft aus einer oeffentlichen Seite
+          // heraus. Eine haengende Antwort von Meta darf keine Serveranfrage
+          // der Besucherin offenhalten — eine verlorene Messung ist der
+          // deutlich kleinere Schaden.
+          signal: AbortSignal.timeout(TIMEOUT_MS),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },

@@ -4,6 +4,7 @@ import { company, currency, servicePackages, vehicleTypes } from "./servicesConf
 import { getPickupCity } from "./pickupLocations";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
+const MAIL_TIMEOUT_MS = 20_000;
 
 export type AutomationMailResult = { sent: boolean; reason?: string };
 
@@ -59,6 +60,9 @@ async function send(params: {
   try {
     const response = await fetch(RESEND_ENDPOINT, {
       method: "POST",
+      // Begrenzt, damit ein haengender Versand den Reminder-Lauf nicht
+      // anhaelt: der arbeitet bis zu 50 Buchungen nacheinander ab.
+      signal: AbortSignal.timeout(MAIL_TIMEOUT_MS),
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",

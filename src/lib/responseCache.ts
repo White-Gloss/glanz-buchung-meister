@@ -12,7 +12,11 @@ const PUBLIC_PAGE_PREFIXES = [
   "/fahrzeug-zustand",
 ];
 
-const PRIVATE_PAGE_PREFIXES = ["/admin", "/auth", "/reset-password", "/danke"];
+// Beide Dankeseiten führen Name und Vorgangsnummer in der Adresse und zeigen
+// den Namen an. "/danke" deckt "/danke-dellen" nicht mit ab: der Abgleich
+// verlangt den vollständigen Abschnitt, sonst geriete auch "/dankeschoen"
+// hinein.
+const PRIVATE_PAGE_PREFIXES = ["/admin", "/auth", "/reset-password", "/danke", "/danke-dellen"];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
