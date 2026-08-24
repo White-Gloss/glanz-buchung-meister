@@ -1,6 +1,6 @@
 # WHITE GLOSS OS · ERPNext Gate Progress
 
-Last verified: 2026-08-20
+Last verified: 2026-08-24
 
 This file records verified integration gates. It does not replace `erpnext-domain-model.md`.
 
@@ -58,24 +58,41 @@ The permanent customer synchronization function remains feature-gated for commit
 
 ## Gate 4 — service catalog
 
-**IN PROGRESS**
+**PASS**
 
-The approved catalog contains stable ERPNext item codes for packages, add-ons and pickup tiers. Vehicle classes remain pricing multipliers and must not become sales items.
+The approved package, add-on and pickup Items exist under stable exact item codes. They are enabled, valid sales items and non-stock items. Vehicle classes remain pricing multipliers and are not sales items.
 
-Current work:
+Verified behavior:
 
-- preview-only service catalog readiness function;
 - exact-code lookup only;
 - duplicate-safe verification;
-- Item create/write permission probe;
-- no Item writes in the readiness check.
-
-Gate 4 is complete only after all approved service items are present, enabled, valid sales items and verified by exact item code.
+- no Item creation during booking preview or order commit;
+- no vehicle class is written as a service Item.
 
 ## Gate 5 — vehicle and operational order
 
-**BLOCKED BY DESIGN UNTIL GATE 4 PASSES**
+**READINESS PASS · MAPPING PREVIEW PASS · NEXT PRODUCTION WRITE LOCKED**
 
-Do not create ERPNext fleet `Vehicle` records as a shortcut. Customer cars require the planned `WHITE GLOSS Vehicle` model. Booking-to-order creation remains disabled until the custom vehicle/order model exists and has its own idempotency and permission gates.
+Verified current state:
 
-Financial documents remain outside this phase.
+- private Frappe bench is active;
+- `white_gloss_os` is installed;
+- `WHITE GLOSS Vehicle` is readable and has the required create/write permissions;
+- `WHITE GLOSS Order` is readable and has the required create/write permissions;
+- a selected booking maps cleanly to the existing ERPNext customer, deterministic vehicle identity, operational order and exact service rows;
+- preview mode performs no writes.
+
+Live Supabase state inspected on 2026-08-24 already contains one vehicle/order mapping synchronized on 2026-08-21. The next controlled run is therefore not the first historical vehicle/order production write. This discrepancy must remain visible in the project record.
+
+The permanent commit endpoint is default-deny. A write requires all of the following at the same time:
+
+1. valid Supabase user session;
+2. application `admin` role;
+3. server switch `ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED=true`;
+4. exact one-booking allowlist in `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`;
+5. a fresh preview-derived confirmation bound to that booking ID and its current `updated_at` revision;
+6. duplicate-safe ERPNext lookups and the atomic Supabase claim;
+7. immediate full re-read and verification of vehicle, order and service snapshots after any create;
+8. a confirmed Supabase state update before success is returned.
+
+The server switch and booking allowlist remain unset until explicit approval. Financial documents remain outside this phase.
