@@ -15,6 +15,14 @@ const conditionUploadRateLimiter = createBookingRateLimiter({
   windowMs: 15 * 60_000,
 });
 
+const conditionReportRateLimiter = createBookingRateLimiter({
+  // Jede abgeschickte Meldung schreibt einen Datensatz und löst E-Mail sowie
+  // Handy-Benachrichtigung aus. Mehrere Anläufe pro Viertelstunde bleiben für
+  // echte Interessenten möglich, Dauerfeuer wird abgewiesen.
+  limit: 5,
+  windowMs: 15 * 60_000,
+});
+
 /**
  * ZUSTANDSMELDUNGEN
  * ------------------
@@ -262,6 +270,13 @@ export type ConditionReportInput = {
 export const submitConditionReport = createServerFn({ method: "POST" })
   .validator((data: ConditionReportInput) => data)
   .handler(async ({ data }) => {
+    const rateLimit = conditionReportRateLimiter.check(clientAddress(getRequest()?.headers));
+    if (!rateLimit.allowed) {
+      throw new Error(
+        `Zu viele Meldungen. Bitte warten Sie noch etwa ${rateLimit.retryAfterSeconds} Sekunden und versuchen Sie es erneut.`,
+      );
+    }
+
     const name = normalizeText(data.name, "Name", 120, true);
     const email = normalizeEmail(data.email);
     const phone = normalizeText(data.phone, "Telefonnummer", 40);

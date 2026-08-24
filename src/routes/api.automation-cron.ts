@@ -1,10 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-function authorized(request: Request): boolean {
+/**
+ * Vergleicht ohne verräterische Laufzeit: ein früh abbrechender
+ * Zeichenvergleich verrät über die Antwortzeit, wie viele Zeichen des
+ * Geheimnisses bereits stimmen.
+ */
+async function secretsMatch(actual: string, expected: string): Promise<boolean> {
+  const { createHash, timingSafeEqual } = await import("node:crypto");
+  // Der Hash gleicht die Länge an — timingSafeEqual wirft bei
+  // unterschiedlich langen Puffern und würde die Länge sonst preisgeben.
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  return timingSafeEqual(digest(actual), digest(expected));
+}
+
+async function authorized(request: Request): Promise<boolean> {
   const expected = process.env.REMINDER_CRON_SECRET?.trim();
   if (!expected) return false;
   const auth = request.headers.get("authorization") || "";
-  return auth === `Bearer ${expected}`;
+  return secretsMatch(auth, `Bearer ${expected}`);
 }
 
 export const Route = createFileRoute("/api/automation-cron")({
@@ -17,7 +30,7 @@ export const Route = createFileRoute("/api/automation-cron")({
             { status: 503 },
           );
         }
-        if (!authorized(request)) {
+        if (!(await authorized(request))) {
           return Response.json({ ok: false, error: "Nicht autorisiert." }, { status: 401 });
         }
 
