@@ -121,6 +121,10 @@ aufzugeben. Während des Verfahrens nichts am Profil ändern.
 
 ## Schritt 3 – Nach der Freigabe
 
+> Das vollständige Ausfüllblatt — jedes Feld mit fertigem Text zum
+> Übernehmen — steht in
+> [`google-unternehmensprofil-ausfuellen.md`](google-unternehmensprofil-ausfuellen.md).
+
 Erst wenn das Profil wieder erreichbar ist, diese vier Angaben korrigieren:
 
 | Angabe      | Soll                                                                         |
