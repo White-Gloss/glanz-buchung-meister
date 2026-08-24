@@ -497,14 +497,11 @@ Deno.serve(async (req: Request) => {
     const paymentStatus = booking.status === "Bezahlt" ? "Bezahlt" : "Ausstehend";
     const expectedServiceCodes = serviceChecks.map((service) => service.code).sort();
 
-    const { data: claimed, error: claimError } = await supabase.rpc(
-      "claim_erpnext_booking_sync",
-      {
-        p_booking_id: bookingId,
-        p_booking_revision: booking.updated_at,
-        p_ttl_minutes: 15,
-      },
-    );
+    const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_booking_sync", {
+      p_booking_id: bookingId,
+      p_booking_revision: booking.updated_at,
+      p_ttl_minutes: 15,
+    });
     if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
     if (!claimed) {
       return json({ ok: false, error: "booking_sync_busy_blocked_or_revision_changed" }, 409);
