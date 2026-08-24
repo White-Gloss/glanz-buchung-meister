@@ -299,7 +299,9 @@ Deno.serve(async (req: Request) => {
           [["item_code", "=", service.code]],
           2,
         );
-        if (rows.length !== 1) return { ...service, ready: false };
+        // Gleiche Form wie im Erfolgsfall: sonst fehlt `item_name` im Typ
+        // des Rückgabewerts und der spätere Zugriff ist nicht mehr geprüft.
+        if (rows.length !== 1) return { ...service, ready: false, item_name: service.label };
         const row = rows[0];
         const ready =
           row.item_code === service.code &&
