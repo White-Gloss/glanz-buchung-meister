@@ -75,6 +75,8 @@ function errorText(code: string | undefined) {
       return "Die buchungsgebundene Kundensync-Bestätigung fehlt oder ist nicht mehr gültig.";
     case "customer_sync_busy_blocked_or_revision_changed":
       return "Die Buchung wurde geändert oder wird bereits verarbeitet. Bitte die Vorschau neu laden.";
+    case "customer_sync_lease_lost_before_write":
+      return "Die sichere Verarbeitungssperre ist abgelaufen. Es wurde kein neuer ERPNext-Datensatz angelegt; bitte die Vorschau neu laden.";
     case "erpnext_auth_failed":
     case "erpnext_auth_unconfirmed":
       return "ERPNext-Anmeldung konnte für die Vorschau nicht bestätigt werden.";
