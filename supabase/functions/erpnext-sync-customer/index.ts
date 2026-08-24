@@ -7,6 +7,10 @@ import {
   issueCustomerWriteConfirmation,
   verifyCustomerWriteConfirmation,
 } from "../_shared/erpnextCustomerWriteGate.ts";
+import {
+  completeCustomerSyncDurably,
+  createCustomerDurably,
+} from "../_shared/erpnextCustomerSyncDurability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -498,17 +502,20 @@ Deno.serve(async (req: Request) => {
       }
       customerId = exactContact.customerId;
       contactId = exactContact.contactId;
-      await updateMapping({
-        source_name: booking.customer_name,
-        erpnext_customer_id: customerId,
-        erpnext_contact_id: contactId,
-        processing_at: null,
-        processing_token: null,
-        synced_at: new Date().toISOString(),
-        last_error: null,
-        last_http_status: 200,
+      await completeCustomerSyncDurably({
+        persistBookingCustomerId: () => upsertBookingCustomerId(customerId),
+        publishMappingSynced: () =>
+          updateMapping({
+            source_name: booking.customer_name,
+            erpnext_customer_id: customerId,
+            erpnext_contact_id: contactId,
+            processing_at: null,
+            processing_token: null,
+            synced_at: new Date().toISOString(),
+            last_error: null,
+            last_http_status: 200,
+          }),
       });
-      await upsertBookingCustomerId(customerId);
       if (!(await releaseBookingLease())) {
         return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
       }
@@ -524,11 +531,20 @@ Deno.serve(async (req: Request) => {
     if (!customerId) {
       let created: ErpResponse;
       try {
-        created = await erpRequest("POST", "/api/resource/Customer", {
-          customer_name: String(booking.customer_name ?? "").trim() || "Kunde",
-          customer_type: "Individual",
-          customer_group: "Individual",
-          territory: "All Territories",
+        created = await createCustomerDurably({
+          assertLease: assertCustomerSyncLease,
+          persistUncertainIntent: (marker) =>
+            updateMapping({
+              last_error: marker,
+              last_http_status: null,
+            }),
+          createCustomer: () =>
+            erpRequest("POST", "/api/resource/Customer", {
+              customer_name: String(booking.customer_name ?? "").trim() || "Kunde",
+              customer_type: "Individual",
+              customer_group: "Individual",
+              territory: "All Territories",
+            }),
         });
       } catch {
         return await failWithReviewState("uncertain_customer_create_network", 502);
@@ -562,12 +578,14 @@ Deno.serve(async (req: Request) => {
       await updateMapping({
         source_name: booking.customer_name,
         erpnext_customer_id: customerId,
+        last_error: null,
         last_http_status: created.response.status,
       });
       await upsertBookingCustomerId(customerId);
     }
 
     if (!contactId) {
+      await assertCustomerSyncLease();
       const { firstName, lastName } = splitName(String(booking.customer_name ?? ""));
       const phone = String(booking.customer_phone ?? "").trim();
       const contactPayload: Record<string, unknown> = {
@@ -620,17 +638,20 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    await updateMapping({
-      source_name: booking.customer_name,
-      erpnext_customer_id: customerId,
-      erpnext_contact_id: contactId,
-      processing_at: null,
-      processing_token: null,
-      synced_at: new Date().toISOString(),
-      last_error: null,
-      last_http_status: 200,
+    await completeCustomerSyncDurably({
+      persistBookingCustomerId: () => upsertBookingCustomerId(customerId),
+      publishMappingSynced: () =>
+        updateMapping({
+          source_name: booking.customer_name,
+          erpnext_customer_id: customerId,
+          erpnext_contact_id: contactId,
+          processing_at: null,
+          processing_token: null,
+          synced_at: new Date().toISOString(),
+          last_error: null,
+          last_http_status: 200,
+        }),
     });
-    await upsertBookingCustomerId(customerId);
     if (!(await releaseBookingLease())) {
       return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
     }
