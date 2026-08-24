@@ -10,8 +10,7 @@ import {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -25,8 +24,7 @@ const json = (body: unknown, status = 200) =>
     },
   });
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const COMMIT_STATUSES = new Set(["Bestätigt", "Bezahlt"]);
 
 type RequestBody = {
@@ -73,27 +71,22 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
-  if (req.method !== "POST")
-    return json({ ok: false, error: "method_not_allowed" }, 405);
+  if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const baseUrl = Deno.env.get("ERPNEXT_BASE_URL")?.trim().replace(/\/$/, "");
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
-  const writeEnabled =
-    Deno.env.get("ERPNEXT_CUSTOMER_WRITE_ENABLED") === "true";
-  const approvedBookingId =
-    Deno.env.get("ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID")?.trim() ?? "";
+  const writeEnabled = Deno.env.get("ERPNEXT_CUSTOMER_WRITE_ENABLED") === "true";
+  const approvedBookingId = Deno.env.get("ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID")?.trim() ?? "";
 
   if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
   }
 
   const authorization = req.headers.get("authorization") ?? "";
-  const token = authorization.startsWith("Bearer ")
-    ? authorization.slice(7).trim()
-    : "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
   if (!token) return json({ ok: false, error: "authentication_required" }, 401);
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -104,8 +97,7 @@ Deno.serve(async (req: Request) => {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser(token);
-  if (userError || !user)
-    return json({ ok: false, error: "invalid_session" }, 401);
+  if (userError || !user) return json({ ok: false, error: "invalid_session" }, 401);
 
   const { data: role, error: roleError } = await supabase
     .from("user_roles")
@@ -123,22 +115,17 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "invalid_json" }, 400);
   }
 
-  const bookingId =
-    typeof body.bookingId === "string" ? body.bookingId.trim() : "";
-  if (!UUID_RE.test(bookingId))
-    return json({ ok: false, error: "invalid_booking_id" }, 400);
+  const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
+  if (!UUID_RE.test(bookingId)) return json({ ok: false, error: "invalid_booking_id" }, 400);
 
   const mode = body.mode === "commit" ? "commit" : "preview";
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select(
-      "id, customer_name, customer_email, customer_phone, status, updated_at",
-    )
+    .select("id, customer_name, customer_email, customer_phone, status, updated_at")
     .eq("id", bookingId)
     .maybeSingle();
-  if (bookingError)
-    return json({ ok: false, error: "booking_load_failed" }, 500);
+  if (bookingError) return json({ ok: false, error: "booking_load_failed" }, 500);
   if (!booking) return json({ ok: false, error: "booking_not_found" }, 404);
 
   const normalizedEmail = normalizeEmail(String(booking.customer_email ?? ""));
@@ -151,8 +138,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const bookingRevision = String(booking.updated_at ?? "");
-  if (!bookingRevision)
-    return json({ ok: false, error: "booking_revision_missing" }, 409);
+  if (!bookingRevision) return json({ ok: false, error: "booking_revision_missing" }, 409);
 
   const gateStatus = getCustomerWriteGateStatus({
     enabledValue: writeEnabled ? "true" : "false",
@@ -289,15 +275,12 @@ Deno.serve(async (req: Request) => {
 
   const findContactByExactEmail = async (): Promise<ContactMatch | null> => {
     const fields = encodeURIComponent(JSON.stringify(["name", "email_id"]));
-    const filters = encodeURIComponent(
-      JSON.stringify([["email_id", "=", normalizedEmail]]),
-    );
+    const filters = encodeURIComponent(JSON.stringify([["email_id", "=", normalizedEmail]]));
     const list = await erpRequest(
       "GET",
       `/api/resource/Contact?fields=${fields}&filters=${filters}&limit_page_length=3`,
     );
-    if (!list.response.ok || !list.isJson)
-      throw new Error("contact_lookup_failed");
+    if (!list.response.ok || !list.isJson) throw new Error("contact_lookup_failed");
 
     const rows =
       list.payload &&
@@ -316,8 +299,7 @@ Deno.serve(async (req: Request) => {
       "GET",
       `/api/resource/Contact/${encodeURIComponent(contactId)}`,
     );
-    if (!detail.response.ok || !detail.isJson)
-      throw new Error("contact_detail_failed");
+    if (!detail.response.ok || !detail.isJson) throw new Error("contact_detail_failed");
     const data =
       detail.payload && typeof detail.payload === "object"
         ? (detail.payload as { data?: { links?: unknown } }).data
@@ -365,10 +347,7 @@ Deno.serve(async (req: Request) => {
     upstreamStatus: number | null = null,
   ) => {
     if (await persistFailure(code, upstreamStatus)) {
-      return json(
-        { ok: false, error: code, upstream_status: upstreamStatus },
-        responseStatus,
-      );
+      return json({ ok: false, error: code, upstream_status: upstreamStatus }, responseStatus);
     }
     return json(
       {
@@ -382,10 +361,7 @@ Deno.serve(async (req: Request) => {
   };
 
   try {
-    const auth = await erpRequest(
-      "GET",
-      "/api/method/frappe.auth.get_logged_user",
-    );
+    const auth = await erpRequest("GET", "/api/method/frappe.auth.get_logged_user");
     if (!auth.response.ok || !auth.isJson || auth.location) {
       return json(
         {
@@ -408,16 +384,9 @@ Deno.serve(async (req: Request) => {
 
     let mapping = await loadMapping();
     if (mapping?.last_error) {
-      return json(
-        { ok: false, error: "customer_mapping_requires_manual_review" },
-        409,
-      );
+      return json({ ok: false, error: "customer_mapping_requires_manual_review" }, 409);
     }
-    if (
-      mapping?.synced_at &&
-      mapping.erpnext_customer_id &&
-      mapping.erpnext_contact_id
-    ) {
+    if (mapping?.synced_at && mapping.erpnext_customer_id && mapping.erpnext_contact_id) {
       if (mode === "preview") return await previewResponse("already_synced");
       return json({
         ok: true,
@@ -432,8 +401,7 @@ Deno.serve(async (req: Request) => {
     try {
       exactContact = await findContactByExactEmail();
     } catch (error) {
-      const code =
-        error instanceof Error ? error.message : "contact_lookup_failed";
+      const code = error instanceof Error ? error.message : "contact_lookup_failed";
       if (
         code === "multiple_exact_email_contacts" ||
         code === "email_contact_without_customer_link" ||
@@ -474,13 +442,9 @@ Deno.serve(async (req: Request) => {
         p_ttl_seconds: 300,
       },
     );
-    if (claimError)
-      return json({ ok: false, error: "customer_claim_failed" }, 500);
+    if (claimError) return json({ ok: false, error: "customer_claim_failed" }, 500);
     if (typeof claimedToken !== "string" || !claimedToken) {
-      return json(
-        { ok: false, error: "customer_sync_busy_blocked_or_revision_changed" },
-        409,
-      );
+      return json({ ok: false, error: "customer_sync_busy_blocked_or_revision_changed" }, 409);
     }
     syncToken = claimedToken;
 
@@ -489,17 +453,13 @@ Deno.serve(async (req: Request) => {
       return await failWithReviewState("mapping_missing_after_claim", 500);
     }
     if (mapping.last_error) {
-      return await failWithReviewState(
-        "customer_mapping_requires_manual_review",
-        409,
-      );
+      return await failWithReviewState("customer_mapping_requires_manual_review", 409);
     }
 
     try {
       exactContact = await findContactByExactEmail();
     } catch (error) {
-      const code =
-        error instanceof Error ? error.message : "contact_lookup_failed";
+      const code = error instanceof Error ? error.message : "contact_lookup_failed";
       return await failWithReviewState(code, 409);
     }
 
@@ -524,10 +484,7 @@ Deno.serve(async (req: Request) => {
       });
       await upsertBookingCustomerId(customerId);
       if (!(await releaseBookingLease())) {
-        return json(
-          { ok: false, error: "customer_booking_lease_release_failed" },
-          500,
-        );
+        return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
       }
       return json({
         ok: true,
@@ -548,10 +505,7 @@ Deno.serve(async (req: Request) => {
           territory: "All Territories",
         });
       } catch {
-        return await failWithReviewState(
-          "uncertain_customer_create_network",
-          502,
-        );
+        return await failWithReviewState("uncertain_customer_create_network", 502);
       }
 
       if (!created.response.ok || !created.isJson) {
@@ -570,10 +524,7 @@ Deno.serve(async (req: Request) => {
         created.payload && typeof created.payload === "object"
           ? (created.payload as { data?: { name?: unknown } }).data
           : null;
-      customerId =
-        createdData && typeof createdData.name === "string"
-          ? createdData.name
-          : "";
+      customerId = createdData && typeof createdData.name === "string" ? createdData.name : "";
       if (!customerId) {
         return await failWithReviewState(
           "uncertain_customer_create_missing_id",
@@ -591,9 +542,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!contactId) {
-      const { firstName, lastName } = splitName(
-        String(booking.customer_name ?? ""),
-      );
+      const { firstName, lastName } = splitName(String(booking.customer_name ?? ""));
       const phone = String(booking.customer_phone ?? "").trim();
       const contactPayload: Record<string, unknown> = {
         first_name: firstName,
@@ -614,16 +563,9 @@ Deno.serve(async (req: Request) => {
 
       let createdContact: ErpResponse;
       try {
-        createdContact = await erpRequest(
-          "POST",
-          "/api/resource/Contact",
-          contactPayload,
-        );
+        createdContact = await erpRequest("POST", "/api/resource/Contact", contactPayload);
       } catch {
-        return await failWithReviewState(
-          "uncertain_contact_create_network",
-          502,
-        );
+        return await failWithReviewState("uncertain_contact_create_network", 502);
       }
 
       if (!createdContact.response.ok || !createdContact.isJson) {
@@ -642,10 +584,7 @@ Deno.serve(async (req: Request) => {
         createdContact.payload && typeof createdContact.payload === "object"
           ? (createdContact.payload as { data?: { name?: unknown } }).data
           : null;
-      contactId =
-        contactData && typeof contactData.name === "string"
-          ? contactData.name
-          : "";
+      contactId = contactData && typeof contactData.name === "string" ? contactData.name : "";
       if (!contactId) {
         return await failWithReviewState(
           "uncertain_contact_create_missing_id",
@@ -667,10 +606,7 @@ Deno.serve(async (req: Request) => {
     });
     await upsertBookingCustomerId(customerId);
     if (!(await releaseBookingLease())) {
-      return json(
-        { ok: false, error: "customer_booking_lease_release_failed" },
-        500,
-      );
+      return json({ ok: false, error: "customer_booking_lease_release_failed" }, 500);
     }
 
     return json({
@@ -681,12 +617,10 @@ Deno.serve(async (req: Request) => {
       customer_state: "synced",
     });
   } catch (error) {
-    const code =
-      error instanceof Error ? error.message : "customer_sync_failed";
+    const code = error instanceof Error ? error.message : "customer_sync_failed";
     if (mode === "commit" && syncToken) {
       return await failWithReviewState(code, 500);
     }
     return json({ ok: false, error: code }, 500);
   }
 });
-
