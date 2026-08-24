@@ -1,15 +1,28 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildVehicleOrderWriteConfirmation,
   evaluateVehicleOrderWriteGate,
   getVehicleOrderWriteGateStatus,
+  issueVehicleOrderWriteConfirmation,
+  verifyVehicleOrderWriteConfirmation,
 } from "../../supabase/functions/_shared/erpnextVehicleOrderWriteGate";
 
 const BOOKING_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_BOOKING_ID = "22222222-2222-4222-8222-222222222222";
 const BOOKING_REVISION = "2026-08-24T10:00:00.000Z";
 const OTHER_REVISION = "2026-08-24T10:01:00.000Z";
+const SECRET = "server-only-test-secret";
+const NOW_MS = Date.parse("2026-08-24T10:02:00.000Z");
+const NONCE = "test-nonce-1234567890";
+
+const issueConfirmation = () =>
+  issueVehicleOrderWriteConfirmation({
+    secret: SECRET,
+    bookingId: BOOKING_ID,
+    bookingRevision: BOOKING_REVISION,
+    nowMs: NOW_MS,
+    nonce: NONCE,
+  });
 
 describe("ERPNext vehicle/order production write gate", () => {
   it("is default-deny when the server switch is missing", () => {
@@ -26,62 +39,88 @@ describe("ERPNext vehicle/order production write gate", () => {
       enabledValue: "true",
       approvedBookingId: OTHER_BOOKING_ID,
       bookingId: BOOKING_ID,
-      bookingRevision: BOOKING_REVISION,
-      confirmation: buildVehicleOrderWriteConfirmation(BOOKING_ID, BOOKING_REVISION),
+      confirmationValid: true,
     });
 
     expect(result.ready).toBe(false);
     expect(result.error).toBe("production_write_booking_not_approved");
   });
 
-  it("binds the confirmation to the exact booking", () => {
-    const result = evaluateVehicleOrderWriteGate({
-      enabledValue: "true",
-      approvedBookingId: BOOKING_ID,
-      bookingId: BOOKING_ID,
-      bookingRevision: BOOKING_REVISION,
-      confirmation: buildVehicleOrderWriteConfirmation(OTHER_BOOKING_ID, BOOKING_REVISION),
-    });
+  it("issues an opaque server-signed confirmation for one booking revision", async () => {
+    const confirmation = await issueConfirmation();
 
-    expect(result.ready).toBe(false);
-    expect(result.confirmationValid).toBe(false);
-    expect(result.error).toBe("explicit_write_confirmation_required");
+    expect(confirmation).not.toContain(BOOKING_ID);
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(true);
   });
 
-  it("invalidates the confirmation when the booking revision changes", () => {
-    const result = evaluateVehicleOrderWriteGate({
-      enabledValue: "true",
-      approvedBookingId: BOOKING_ID,
-      bookingId: BOOKING_ID,
-      bookingRevision: OTHER_REVISION,
-      confirmation: buildVehicleOrderWriteConfirmation(BOOKING_ID, BOOKING_REVISION),
-    });
+  it("rejects a confirmation for a different booking or revision", async () => {
+    const confirmation = await issueConfirmation();
 
-    expect(result.ready).toBe(false);
-    expect(result.confirmationValid).toBe(false);
-    expect(result.error).toBe("explicit_write_confirmation_required");
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: SECRET,
+        bookingId: OTHER_BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: OTHER_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
   });
 
-  it("rejects an empty booking revision", () => {
-    const result = evaluateVehicleOrderWriteGate({
-      enabledValue: "true",
-      approvedBookingId: BOOKING_ID,
-      bookingId: BOOKING_ID,
-      bookingRevision: "",
-      confirmation: buildVehicleOrderWriteConfirmation(BOOKING_ID, ""),
-    });
+  it("rejects a forged, expired or missing confirmation", async () => {
+    const confirmation = await issueConfirmation();
 
-    expect(result.ready).toBe(false);
-    expect(result.error).toBe("explicit_write_confirmation_required");
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: "different-server-secret",
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 5 * 60_000,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      verifyVehicleOrderWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        nowMs: NOW_MS,
+      }),
+    ).resolves.toBe(false);
   });
 
-  it("passes only with switch, booking allowlist and matching confirmation", () => {
+  it("passes only with switch, booking allowlist and a verified confirmation", () => {
     const result = evaluateVehicleOrderWriteGate({
       enabledValue: " TRUE ",
       approvedBookingId: ` ${BOOKING_ID} `,
       bookingId: BOOKING_ID,
-      bookingRevision: BOOKING_REVISION,
-      confirmation: buildVehicleOrderWriteConfirmation(BOOKING_ID, BOOKING_REVISION),
+      confirmationValid: true,
     });
 
     expect(result).toEqual({

@@ -90,9 +90,11 @@ The permanent commit endpoint is default-deny. A write requires all of the follo
 2. application `admin` role;
 3. server switch `ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED=true`;
 4. exact one-booking allowlist in `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`;
-5. a fresh preview-derived confirmation bound to that booking ID and its current `updated_at` revision;
-6. duplicate-safe ERPNext lookups and the atomic Supabase claim;
+5. a server-signed preview confirmation with a five-minute lifetime, bound to that booking ID and its current `updated_at` revision;
+6. duplicate-safe ERPNext lookups and the revision-locked atomic Supabase claim;
 7. immediate full re-read and verification of vehicle, order and service snapshots after any create;
 8. a confirmed Supabase state update before success is returned.
 
 The server switch and booking allowlist remain unset until explicit approval. Financial documents remain outside this phase.
+
+The preview confirmation is HMAC-signed with a server-only key, carries a cryptographic nonce and expires after five minutes; it cannot be constructed from browser-visible booking data. The claim then verifies the approved `bookings.updated_at` value while holding a row lock. A database trigger blocks booking changes until the ERPNext commit succeeds or records a reviewable failure. Together these controls prevent a bypassed preview or stale approved snapshot from reaching the vehicle/order write calls.

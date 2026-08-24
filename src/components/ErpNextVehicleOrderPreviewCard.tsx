@@ -103,8 +103,11 @@ function errorText(code: string | undefined) {
   if (code === "erpnext_sync_requires_manual_review") {
     return "Der ERPNext-Sync ist wegen eines vorherigen Fehlers gesperrt und muss manuell geprüft werden.";
   }
-  if (code === "booking_sync_busy_or_blocked") {
-    return "Diese Buchung wird bereits verarbeitet oder ist nach einem Fehler gesperrt.";
+  if (
+    code === "booking_sync_busy_or_blocked" ||
+    code === "booking_sync_busy_blocked_or_revision_changed"
+  ) {
+    return "Diese Buchung wird bereits verarbeitet, ist gesperrt oder wurde seit der Vorschau geändert.";
   }
   if (code === "production_write_gate_disabled") {
     return "Das Produktions-Schreib-Gate ist serverseitig gesperrt.";

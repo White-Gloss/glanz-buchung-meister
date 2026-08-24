@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 import {
   evaluateVehicleOrderWriteGate,
   getVehicleOrderWriteGateStatus,
+  verifyVehicleOrderWriteConfirmation,
 } from "../_shared/erpnextVehicleOrderWriteGate.ts";
 
 const corsHeaders = {
@@ -158,12 +159,17 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "booking_not_write_eligible" }, 409);
   }
 
+  const confirmationValid = await verifyVehicleOrderWriteConfirmation({
+    secret: serviceRoleKey,
+    bookingId,
+    bookingRevision: String(booking.updated_at ?? ""),
+    confirmation: body.confirmation,
+  });
   const writeGate = evaluateVehicleOrderWriteGate({
     enabledValue: writeGateEnabled,
     approvedBookingId,
     bookingId,
-    bookingRevision: booking.updated_at,
-    confirmation: body.confirmation,
+    confirmationValid,
   });
   if (writeGate.error) {
     return json(
@@ -557,10 +563,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_booking_sync", {
       p_booking_id: bookingId,
+      p_booking_revision: booking.updated_at,
       p_ttl_minutes: 10,
     });
     if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
-    if (!claimed) return json({ ok: false, error: "booking_sync_busy_or_blocked" }, 409);
+    if (!claimed) {
+      return json({ ok: false, error: "booking_sync_busy_blocked_or_revision_changed" }, 409);
+    }
     syncClaimed = true;
 
     vehicleRows = await loadVehicleByPlate(normalizedPlate);
