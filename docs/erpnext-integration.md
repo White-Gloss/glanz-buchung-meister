@@ -1,6 +1,6 @@
 # WHITE GLOSS OS · ERPNext Integration
 
-Status: connectivity gate passed; sync remains preview-only
+Status: connectivity, service catalog and vehicle/order readiness passed; permanent production writes remain default-deny
 
 ## Scope
 
@@ -31,6 +31,10 @@ The following values are Supabase Edge Function secrets and must never be commit
 - `ERPNEXT_API_KEY`
 - `ERPNEXT_API_SECRET`
 - optional `ERPNEXT_COMPANY` override; current safe default in the preview worker is `White-Gloss`
+- `ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED`; must be exactly `true` for any permanent vehicle/order write
+- `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`; exact UUID of the one explicitly approved booking
+
+The two vehicle/order gate values must remain unset or disabled during normal preview work. Enabling the switch without the exact booking allowlist does not permit a write, and allowing a booking while the switch is disabled does not permit a write.
 
 The tracked `.env` file must never receive ERPNext credentials.
 
@@ -49,6 +53,7 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 `public.booking_automation_state` contains additive ERPNext fields:
 
 - `erpnext_customer_id`
+- `erpnext_vehicle_id`
 - `erpnext_order_id`
 - `erpnext_processing_at`
 - `erpnext_synced_at`
@@ -58,13 +63,15 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 
 `erpnext_order_id` is unique when present.
 
+A live-state audit on 2026-08-24 found one existing vehicle/order mapping synchronized on 2026-08-21. The next controlled operation is therefore a subsequent production run, not the first historical vehicle/order write.
+
 The function `public.claim_erpnext_booking_sync(uuid, integer)` atomically claims a booking for one sync worker. It is executable only by `service_role`.
 
 A failed ERPNext write is intentionally not retried automatically while `erpnext_last_error` is set. This protects against duplicate external documents when an upstream POST may have succeeded but its response was lost.
 
 ## Idempotency strategy
 
-Before any external create operation the worker must search ERPNext for an existing external reference. During the first phase the Supabase booking `invoice_number` is used as a stable external order reference. When the custom WHITE GLOSS Frappe app is available, this will be replaced by a dedicated unique `external_booking_id` field.
+Before any external create operation the worker searches ERPNext for an existing deterministic identity. `WHITE GLOSS Order.booking_id` uses the Supabase booking UUID as the permanent unique idempotency key. Vehicle matching uses the exact normalized registration plate until a stronger VIN or stable external vehicle identity is available.
 
 The synchronization sequence is:
 
@@ -154,6 +161,31 @@ Properties:
 - `mode: commit` is hard-disabled with HTTP 409;
 - does not create or update any ERPNext document yet.
 
+### Vehicle/order readiness and mapping preview — PASS, NO WRITES
+
+Edge Functions:
+
+- `erpnext-vehicle-order-readiness`
+- `erpnext-vehicle-order-preview`
+
+Verified behavior:
+
+- both custom DocTypes are readable with create/write permission;
+- exact customer mapping is required;
+- exact normalized vehicle plate is required and conflicts stop processing;
+- package/add-on Items are revalidated by exact code;
+- booking UUID maps to `WHITE GLOSS Order.booking_id`;
+- customer appointment remains date-only and no handover time is invented;
+- preview returns the complete Customer → Vehicle → Order → services payload without writes.
+
+### Vehicle/order commit — DEFAULT-DENY
+
+Edge Function: `erpnext-vehicle-order-commit`
+
+A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and the preview-derived confirmation bound to both booking UUID and current `bookings.updated_at` revision. Any booking change invalidates the prior preview confirmation. The function then performs duplicate-safe lookups, claims the booking atomically, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
+
+The admin page has one write path only: a successful fresh preview. The previous separate direct commit card is no longer rendered.
+
 ### Database security hardening
 
 Direct RPC execution of `public.reject_duplicate_booking_submission()` was revoked from `public`, `anon`, and `authenticated`. The function is a trigger function; its booking trigger remains enabled on `public.bookings` while the exposed RPC attack surface is removed.
@@ -176,18 +208,18 @@ The remaining Supabase security advisor items are intentionally tracked:
 
 Unused-index notices are not being acted on while the production dataset is small; index usage statistics are not yet representative.
 
-## ERPNext write prerequisites
+## ERPNext write prerequisites and continuing constraints
 
-Do not enable customer/order creation until all of the following pass:
+The foundational prerequisites below have passed. They remain regression constraints for every controlled run:
 
 - connectivity gate remains green;
 - integration user can read Customer, Contact, Address and Item;
 - integration user has only the required create/write permissions for Customer, Contact and Address;
 - service Items for detailing packages/add-ons are defined;
-- vehicle representation for phase 1 is explicitly chosen;
+- the phase-1 customer vehicle is represented by `WHITE GLOSS Vehicle`;
 - order external-reference mapping is confirmed;
-- a controlled test booking can be created without generating a financial document;
-- retry simulation proves that the same booking creates exactly one ERPNext order.
+- a controlled operational order can be created without generating a financial document;
+- every controlled run is followed by an idempotent re-read proving one vehicle identity and exactly one ERPNext order for the booking.
 
 Sales Invoice, Payment Entry, bank, chart of accounts, User, Role and System Settings remain outside this integration phase.
 

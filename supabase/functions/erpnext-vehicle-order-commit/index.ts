@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
+import {
+  evaluateVehicleOrderWriteGate,
+  getVehicleOrderWriteGateStatus,
+} from "../_shared/erpnextVehicleOrderWriteGate.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -19,7 +24,6 @@ const json = (body: unknown, status = 200) =>
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ELIGIBLE_STATUSES = new Set(["Bestätigt", "Bezahlt"]);
-const CONFIRMATION = "CREATE_WHITE_GLOSS_VEHICLE_ORDER_V1";
 const VEHICLE_DOCTYPE = "WHITE GLOSS Vehicle";
 const ORDER_DOCTYPE = "WHITE GLOSS Order";
 
@@ -68,6 +72,8 @@ const vehicleClassLabels: Record<string, string> = {
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const normalizePlate = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+const asText = (value: unknown) => (typeof value === "string" ? value : "");
+const asBoolean = (value: unknown) => value === true || value === 1 || value === "1";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -80,8 +86,10 @@ Deno.serve(async (req: Request) => {
   const baseUrl = Deno.env.get("ERPNEXT_BASE_URL")?.trim().replace(/\/$/, "");
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
+  const writeGateEnabled = Deno.env.get("ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED");
+  const approvedBookingId = Deno.env.get("ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID");
 
-  if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
   }
 
@@ -117,8 +125,60 @@ Deno.serve(async (req: Request) => {
 
   const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
   if (!UUID_RE.test(bookingId)) return json({ ok: false, error: "invalid_booking_id" }, 400);
-  if (body.confirmation !== CONFIRMATION) {
-    return json({ ok: false, error: "explicit_write_confirmation_required" }, 409);
+
+  const writeGateStatus = getVehicleOrderWriteGateStatus({
+    enabledValue: writeGateEnabled,
+    approvedBookingId,
+    bookingId,
+  });
+  if (!writeGateStatus.enabled || !writeGateStatus.bookingApproved) {
+    return json(
+      {
+        ok: false,
+        error: !writeGateStatus.enabled
+          ? "production_write_gate_disabled"
+          : "production_write_booking_not_approved",
+        writes_performed: false,
+        financial_writes: false,
+      },
+      409,
+    );
+  }
+
+  const { data: booking, error: bookingError } = await supabase
+    .from("bookings")
+    .select(
+      "id, invoice_number, vehicle_id, package_id, add_on_ids, booking_date, booking_time, pickup_city, customer_name, customer_email, customer_plate, preferred_contact, total, agreed_price, status, booking_source, updated_at",
+    )
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (bookingError) return json({ ok: false, error: "booking_load_failed" }, 500);
+  if (!booking) return json({ ok: false, error: "booking_not_found" }, 404);
+  if (!ELIGIBLE_STATUSES.has(String(booking.status ?? ""))) {
+    return json({ ok: false, error: "booking_not_write_eligible" }, 409);
+  }
+
+  const writeGate = evaluateVehicleOrderWriteGate({
+    enabledValue: writeGateEnabled,
+    approvedBookingId,
+    bookingId,
+    bookingRevision: booking.updated_at,
+    confirmation: body.confirmation,
+  });
+  if (writeGate.error) {
+    return json(
+      {
+        ok: false,
+        error: writeGate.error,
+        writes_performed: false,
+        financial_writes: false,
+      },
+      409,
+    );
+  }
+
+  if (!baseUrl || !apiKey || !apiSecret) {
+    return json({ ok: false, error: "missing_server_configuration" }, 500);
   }
 
   const erpHeaders = {
@@ -185,6 +245,96 @@ Deno.serve(async (req: Request) => {
     );
   };
 
+  const resource = async (doctype: string, name: string): Promise<Record<string, unknown>> => {
+    const result = await erpRequest(
+      "GET",
+      `/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`,
+    );
+    if (
+      !result.response.ok ||
+      !result.isJson ||
+      result.location ||
+      !result.payload ||
+      typeof result.payload !== "object"
+    ) {
+      throw new Error(`erpnext_resource_failed:${doctype}:${result.response.status}`);
+    }
+    const data = (result.payload as { data?: unknown }).data;
+    if (!data || typeof data !== "object") {
+      throw new Error(`erpnext_resource_invalid:${doctype}`);
+    }
+    return data as Record<string, unknown>;
+  };
+
+  const verifyPersistedVehicle = async (
+    vehicleId: string,
+    customerId: string,
+    normalizedPlate: string,
+  ) => {
+    const vehicle = await resource(VEHICLE_DOCTYPE, vehicleId);
+    return (
+      asText(vehicle.name) === vehicleId &&
+      asText(vehicle.customer) === customerId &&
+      asText(vehicle.registration_plate_normalized) === normalizedPlate &&
+      asText(vehicle.external_reference) === `plate:${normalizedPlate}`
+    );
+  };
+
+  const verifyPersistedOrder = async ({
+    orderId,
+    bookingId,
+    customerId,
+    vehicleId,
+    serviceDate,
+    expectedServiceCodes,
+    agreedTotal,
+    paymentStatus,
+  }: {
+    orderId: string;
+    bookingId: string;
+    customerId: string;
+    vehicleId: string;
+    serviceDate: string;
+    expectedServiceCodes: string[];
+    agreedTotal: number;
+    paymentStatus: string;
+  }) => {
+    const order = await resource(ORDER_DOCTYPE, orderId);
+    const serviceRows = Array.isArray(order.services)
+      ? order.services.filter((row): row is Record<string, unknown> =>
+          Boolean(row && typeof row === "object"),
+        )
+      : [];
+    const actualCodes = serviceRows.map((row) => asText(row.item)).sort();
+    const servicesMatch =
+      expectedServiceCodes.length === actualCodes.length &&
+      expectedServiceCodes.every((code, index) => code === actualCodes[index]);
+    const snapshotsValid = serviceRows.every(
+      (row) =>
+        asText(row.item).length > 0 &&
+        asText(row.item_code_snapshot) === asText(row.item) &&
+        asText(row.item_name_snapshot).length > 0 &&
+        Number(row.qty) > 0,
+    );
+    const actualTotal = Number(order.agreed_gross_total ?? 0);
+
+    return (
+      asText(order.name) === orderId &&
+      asText(order.booking_id) === bookingId &&
+      asText(order.customer) === customerId &&
+      asText(order.vehicle) === vehicleId &&
+      asText(order.service_date).slice(0, 10) === serviceDate.slice(0, 10) &&
+      asBoolean(order.date_only) &&
+      !order.handover_time &&
+      servicesMatch &&
+      snapshotsValid &&
+      Number.isFinite(actualTotal) &&
+      Math.abs(actualTotal - agreedTotal) < 0.005 &&
+      asText(order.payment_status) === paymentStatus &&
+      !order.sales_invoice
+    );
+  };
+
   const loadVehicleByPlate = async (normalizedPlate: string) =>
     listRows(
       VEHICLE_DOCTYPE,
@@ -217,6 +367,8 @@ Deno.serve(async (req: Request) => {
     }
   };
 
+  let syncClaimed = false;
+
   try {
     const auth = await erpRequest("GET", "/api/method/frappe.auth.get_logged_user");
     const authMessage =
@@ -231,19 +383,6 @@ Deno.serve(async (req: Request) => {
       authMessage === "Guest"
     ) {
       return json({ ok: false, error: "erpnext_auth_failed" }, 502);
-    }
-
-    const { data: booking, error: bookingError } = await supabase
-      .from("bookings")
-      .select(
-        "id, invoice_number, vehicle_id, package_id, add_on_ids, booking_date, booking_time, pickup_city, customer_name, customer_email, customer_plate, preferred_contact, total, agreed_price, status, booking_source",
-      )
-      .eq("id", bookingId)
-      .maybeSingle();
-    if (bookingError) return json({ ok: false, error: "booking_load_failed" }, 500);
-    if (!booking) return json({ ok: false, error: "booking_not_found" }, 404);
-    if (!ELIGIBLE_STATUSES.has(String(booking.status ?? ""))) {
-      return json({ ok: false, error: "booking_not_write_eligible" }, 409);
     }
 
     const { data: state, error: stateError } = await supabase
@@ -316,6 +455,17 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "service_catalog_not_ready_for_booking" }, 409);
     }
 
+    const serviceDate = String(booking.booking_date ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}/.test(serviceDate)) {
+      return json({ ok: false, error: "invalid_service_date" }, 409);
+    }
+    const agreedTotal = Number(booking.agreed_price ?? booking.total ?? 0);
+    if (!Number.isFinite(agreedTotal) || agreedTotal < 0) {
+      return json({ ok: false, error: "invalid_agreed_total" }, 409);
+    }
+    const paymentStatus = booking.status === "Bezahlt" ? "Bezahlt" : "Ausstehend";
+    const expectedServiceCodes = serviceChecks.map((service) => service.code).sort();
+
     const customerRows = await listRows("Customer", ["name"], [["name", "=", customerId]], 2);
     if (customerRows.length !== 1) {
       return json({ ok: false, error: "mapped_customer_missing_in_erpnext" }, 409);
@@ -339,6 +489,10 @@ Deno.serve(async (req: Request) => {
     if (existingOrder && existingOrder.customer !== customerId) {
       return json({ ok: false, error: "order_customer_conflict" }, 409);
     }
+    if (existingOrder && !existingVehicle) {
+      await persistFailure("existing_order_without_exact_vehicle_match");
+      return json({ ok: false, error: "existing_order_without_exact_vehicle_match" }, 409);
+    }
     if (
       existingOrder &&
       existingVehicle &&
@@ -349,26 +503,55 @@ Deno.serve(async (req: Request) => {
     }
 
     if (existingOrder && existingVehicle) {
+      const existingVehicleId = asText(existingVehicle.name);
+      const existingOrderId = asText(existingOrder.name);
+      if (!existingVehicleId || !existingOrderId) {
+        await persistFailure("existing_erpnext_identity_invalid");
+        return json({ ok: false, error: "existing_erpnext_identity_invalid" }, 409);
+      }
+      const [vehicleVerified, orderVerified] = await Promise.all([
+        verifyPersistedVehicle(existingVehicleId, customerId, normalizedPlate),
+        verifyPersistedOrder({
+          orderId: existingOrderId,
+          bookingId,
+          customerId,
+          vehicleId: existingVehicleId,
+          serviceDate,
+          expectedServiceCodes,
+          agreedTotal,
+          paymentStatus,
+        }),
+      ]);
+      if (!vehicleVerified || !orderVerified) {
+        await persistFailure("existing_erpnext_pair_verification_failed");
+        return json({ ok: false, error: "existing_erpnext_pair_verification_failed" }, 409);
+      }
+
       const now = new Date().toISOString();
-      const { error: reconcileError } = await supabase
+      const { data: reconciledState, error: reconcileError } = await supabase
         .from("booking_automation_state")
         .update({
-          erpnext_vehicle_id: existingVehicle.name,
-          erpnext_order_id: existingOrder.name,
+          erpnext_vehicle_id: existingVehicleId,
+          erpnext_order_id: existingOrderId,
           erpnext_processing_at: null,
           erpnext_synced_at: now,
           erpnext_last_error: null,
           erpnext_last_http_status: 200,
           updated_at: now,
         })
-        .eq("booking_id", bookingId);
-      if (reconcileError) return json({ ok: false, error: "sync_state_reconcile_failed" }, 500);
+        .eq("booking_id", bookingId)
+        .select("booking_id")
+        .maybeSingle();
+      if (reconcileError || !reconciledState) {
+        return json({ ok: false, error: "sync_state_reconcile_failed" }, 500);
+      }
       return json({
         ok: true,
         writes_performed: false,
         idempotent_reuse: true,
-        vehicle_id: existingVehicle.name,
-        order_id: existingOrder.name,
+        vehicle_id: existingVehicleId,
+        order_id: existingOrderId,
+        financial_writes: false,
       });
     }
 
@@ -378,6 +561,7 @@ Deno.serve(async (req: Request) => {
     });
     if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
     if (!claimed) return json({ ok: false, error: "booking_sync_busy_or_blocked" }, 409);
+    syncClaimed = true;
 
     vehicleRows = await loadVehicleByPlate(normalizedPlate);
     if (vehicleRows.length > 1) {
@@ -387,6 +571,28 @@ Deno.serve(async (req: Request) => {
     if (vehicleRows[0] && vehicleRows[0].customer !== customerId) {
       await persistFailure("vehicle_customer_conflict");
       return json({ ok: false, error: "vehicle_customer_conflict" }, 409);
+    }
+
+    orderRows = await loadOrderByBooking(bookingId);
+    if (orderRows.length > 1) {
+      await persistFailure("multiple_booking_order_matches");
+      return json({ ok: false, error: "multiple_booking_order_matches" }, 409);
+    }
+    if (orderRows[0] && orderRows[0].customer !== customerId) {
+      await persistFailure("order_customer_conflict");
+      return json({ ok: false, error: "order_customer_conflict" }, 409);
+    }
+    if (orderRows[0] && !vehicleRows[0]) {
+      await persistFailure("existing_order_without_exact_vehicle_match");
+      return json({ ok: false, error: "existing_order_without_exact_vehicle_match" }, 409);
+    }
+    if (
+      orderRows[0] &&
+      typeof orderRows[0].vehicle === "string" &&
+      orderRows[0].vehicle !== vehicleRows[0]?.name
+    ) {
+      await persistFailure("order_vehicle_conflict");
+      return json({ ok: false, error: "order_vehicle_conflict" }, 409);
     }
 
     let vehicleId = typeof vehicleRows[0]?.name === "string" ? vehicleRows[0].name : "";
@@ -400,6 +606,7 @@ Deno.serve(async (req: Request) => {
         created = await erpRequest("POST", `/api/resource/${encodeURIComponent(VEHICLE_DOCTYPE)}`, {
           customer: customerId,
           registration_plate: plate,
+          registration_plate_normalized: normalizedPlate,
           vehicle_class_id: vehicleClassId,
           vehicle_class_label: vehicleClassLabel,
           external_reference: `plate:${normalizedPlate}`,
@@ -436,6 +643,11 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    if (!(await verifyPersistedVehicle(vehicleId, customerId, normalizedPlate))) {
+      await persistFailure("vehicle_post_write_verification_failed");
+      return json({ ok: false, error: "vehicle_post_write_verification_failed" }, 502);
+    }
+
     orderRows = await loadOrderByBooking(bookingId);
     if (orderRows.length > 1) {
       await persistFailure("multiple_booking_order_matches");
@@ -458,9 +670,6 @@ Deno.serve(async (req: Request) => {
     let orderCreated = false;
 
     if (!orderId) {
-      const agreedTotalRaw = Number(booking.agreed_price ?? booking.total ?? 0);
-      const agreedTotal =
-        Number.isFinite(agreedTotalRaw) && agreedTotalRaw >= 0 ? agreedTotalRaw : null;
       const services = serviceChecks.map((service) => ({
         item: service.code,
         item_code_snapshot: service.code,
@@ -477,7 +686,7 @@ Deno.serve(async (req: Request) => {
           booking_id: bookingId,
           source_reference: booking.invoice_number,
           status: "Bestätigt",
-          service_date: booking.booking_date,
+          service_date: serviceDate,
           date_only: 1,
           handover_time: null,
           pickup_city: booking.pickup_city,
@@ -485,7 +694,7 @@ Deno.serve(async (req: Request) => {
           booking_source: booking.booking_source,
           services,
           agreed_gross_total: agreedTotal,
-          payment_status: booking.status === "Bezahlt" ? "Bezahlt" : "Ausstehend",
+          payment_status: paymentStatus,
         });
       } catch {
         created = null;
@@ -520,8 +729,23 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    const orderVerified = await verifyPersistedOrder({
+      orderId,
+      bookingId,
+      customerId,
+      vehicleId,
+      serviceDate,
+      expectedServiceCodes,
+      agreedTotal,
+      paymentStatus,
+    });
+    if (!orderVerified) {
+      await persistFailure("order_post_write_verification_failed");
+      return json({ ok: false, error: "order_post_write_verification_failed" }, 502);
+    }
+
     const now = new Date().toISOString();
-    const { error: stateUpdateError } = await supabase
+    const { data: updatedState, error: stateUpdateError } = await supabase
       .from("booking_automation_state")
       .update({
         erpnext_vehicle_id: vehicleId,
@@ -532,8 +756,11 @@ Deno.serve(async (req: Request) => {
         erpnext_last_http_status: 200,
         updated_at: now,
       })
-      .eq("booking_id", bookingId);
-    if (stateUpdateError) {
+      .eq("booking_id", bookingId)
+      .select("booking_id")
+      .maybeSingle();
+    if (stateUpdateError || !updatedState) {
+      await persistFailure("sync_state_update_failed_after_erpnext_write");
       return json({ ok: false, error: "sync_state_update_failed_after_erpnext_write" }, 500);
     }
 
@@ -554,7 +781,7 @@ Deno.serve(async (req: Request) => {
       : error instanceof Error
         ? error.message
         : "erpnext_vehicle_order_write_failed";
-    await persistFailure(code);
+    if (syncClaimed) await persistFailure(code);
     return json({ ok: false, error: code }, 502);
   }
 });
