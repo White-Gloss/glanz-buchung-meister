@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.110.8";
 
+import {
+  buildVehicleOrderWriteConfirmation,
+  getVehicleOrderWriteGateStatus,
+} from "../_shared/erpnextVehicleOrderWriteGate.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -79,6 +84,8 @@ Deno.serve(async (req: Request) => {
   const baseUrl = Deno.env.get("ERPNEXT_BASE_URL")?.trim().replace(/\/$/, "");
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
+  const writeGateEnabled = Deno.env.get("ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED");
+  const approvedBookingId = Deno.env.get("ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID");
 
   if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
@@ -231,7 +238,7 @@ Deno.serve(async (req: Request) => {
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .select(
-        "id, invoice_number, vehicle_id, package_id, add_on_ids, booking_date, booking_time, pickup_city, customer_name, customer_email, customer_plate, preferred_contact, total, agreed_price, status, booking_source",
+        "id, invoice_number, vehicle_id, package_id, add_on_ids, booking_date, booking_time, pickup_city, customer_name, customer_email, customer_plate, preferred_contact, total, agreed_price, status, booking_source, updated_at",
       )
       .eq("id", bookingId)
       .maybeSingle();
@@ -352,6 +359,9 @@ Deno.serve(async (req: Request) => {
     if (existingOrder && existingOrder.customer !== customerId) {
       return json({ ok: false, error: "order_customer_conflict" }, 409);
     }
+    if (existingOrder && !existingVehicle) {
+      return json({ ok: false, error: "existing_order_without_exact_vehicle_match" }, 409);
+    }
     if (
       existingOrder &&
       existingVehicle &&
@@ -365,12 +375,25 @@ Deno.serve(async (req: Request) => {
     const vehicleClassId = String(booking.vehicle_id ?? "");
     const vehicleClassLabel = vehicleClassLabels[vehicleClassId] ?? vehicleClassId;
     const total = Number(booking.agreed_price ?? booking.total ?? 0);
+    const productionWriteGate = getVehicleOrderWriteGateStatus({
+      enabledValue: writeGateEnabled,
+      approvedBookingId,
+      bookingId: booking.id,
+    });
 
     return json({
       ok: true,
       mode: "preview",
       writes_performed: false,
       write_ready: true,
+      production_write: {
+        enabled: productionWriteGate.enabled,
+        booking_approved: productionWriteGate.bookingApproved,
+        ready: productionWriteGate.ready,
+        confirmation: productionWriteGate.ready
+          ? buildVehicleOrderWriteConfirmation(booking.id, booking.updated_at)
+          : null,
+      },
       booking_id: booking.id,
       customer: {
         erpnext_customer_id: customerId,
