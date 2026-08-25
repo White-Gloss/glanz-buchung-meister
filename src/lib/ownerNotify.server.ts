@@ -22,6 +22,8 @@
  * nur ein Hinweis im Serverprotokoll.
  */
 
+import { protokollFehler, protokollHinweis } from "./serverLog";
+
 export type NotifyChannel = "telegram" | "whatsapp";
 
 export type NotifyOutcome = {
@@ -67,7 +69,7 @@ export async function notifyOwner(text: string, anlass: string): Promise<NotifyO
   const status = await ownerNotifyStatus();
 
   if (!status.any) {
-    console.warn(`[benachrichtigung] Kein Weg eingerichtet — nichts verschickt zu ${anlass}.`);
+    protokollHinweis("benachrichtigung", "Kein Weg eingerichtet — nichts verschickt", { anlass });
     return [];
   }
 
@@ -103,7 +105,13 @@ export async function notifyOwner(text: string, anlass: string): Promise<NotifyO
 
   for (const e of ergebnisse) {
     if (!e.sent) {
-      console.error(`[benachrichtigung/${e.channel}] ${anlass} fehlgeschlagen: ${e.reason}`);
+      // Der Grund stammt aus der Antwort von Telegram beziehungsweise Meta
+      // und kann die Zielnummer enthalten — deshalb über die redigierende
+      // Ablage statt direkt auf die Konsole.
+      protokollFehler("benachrichtigung", "Meldung fehlgeschlagen", e.reason, {
+        kanal: e.channel,
+        anlass,
+      });
     }
   }
 

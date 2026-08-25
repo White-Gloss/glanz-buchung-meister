@@ -149,8 +149,11 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
 
       if (!response.ok) {
         // Antworttext bewusst nicht weiterreichen: er kann Teile der
-        // Konfiguration enthalten.
-        console.error(`[Meta CAPI] Ereignis abgelehnt (HTTP ${response.status})`);
+        // Konfiguration enthalten. Nur der Statuscode, dafür sichtbar im
+        // Störungsprotokoll des Adminbereichs.
+        protokollFehler("meta-capi", "Ereignis abgelehnt", undefined, {
+          status: response.status,
+        });
         return { ok: false, skipped: false };
       }
       return { ok: true, skipped: false };

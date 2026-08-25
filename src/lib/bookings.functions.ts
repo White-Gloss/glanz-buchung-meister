@@ -26,7 +26,7 @@ import {
 import { getPickupDistanceKm } from "./pickupLocations";
 import { isOnlineBookingDate } from "./bookingAvailability";
 import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
-import { protokollFehler } from "./serverLog";
+import { protokollFehler, protokollHinweis } from "./serverLog";
 
 const publicBookingRateLimiter = createBookingRateLimiter({
   limit: 5,
@@ -499,12 +499,14 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
         if (mailConfigured()) {
           const ergebnis = await sendBookingConfirmed(booking);
           if (!ergebnis.sent) {
-            console.error(`[mail] Terminbestätigung nicht zugestellt: ${ergebnis.reason}`);
+            protokollFehler("mail", "Terminbestätigung nicht zugestellt", ergebnis.reason, {
+              rechnung: booking.invoiceNumber,
+            });
           }
         } else {
-          console.warn(
-            `[mail] Versand nicht konfiguriert — keine Terminbestätigung zu ${booking.invoiceNumber} verschickt.`,
-          );
+          protokollHinweis("mail", "Versand nicht konfiguriert — keine Terminbestätigung", {
+            rechnung: booking.invoiceNumber,
+          });
         }
       } catch (error) {
         protokollFehler("mail", "Terminbestätigung fehlgeschlagen", error);
