@@ -5,6 +5,7 @@ import { servicePages } from "@/lib/servicePages";
 import { listPublishedCustomServices } from "@/lib/customServices.functions";
 import { listPublishedBlogPosts } from "@/lib/blog.functions";
 import { SITE_URL } from "@/lib/seo";
+import { protokollFehler } from "@/lib/serverLog";
 
 const BASE_URL = SITE_URL;
 
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           const posts = await listPublishedBlogPosts();
           blogEntries = posts.map((post) => ({ path: `/ratgeber/${post.slug}` }));
         } catch (error) {
-          console.error("[sitemap] Inhalte nicht abrufbar — 503 statt Kürzung", error);
+          protokollFehler("sitemap", "Inhalte nicht abrufbar — 503 statt Kürzung", error);
           return new Response("Sitemap derzeit nicht verfügbar", {
             status: 503,
             headers: { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "3600" },

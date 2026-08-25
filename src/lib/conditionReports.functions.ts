@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "@/lib/db.server";
 import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
 import { megabyte, planCleanup, type StoredMedia } from "./conditionMediaCleanup";
+import { protokollFehler } from "./serverLog";
 
 const conditionUploadRateLimiter = createBookingRateLimiter({
   // Eine Meldung erlaubt maximal fünf Aufnahmen. Das Zeitfenster lässt einen
@@ -339,7 +340,7 @@ export const submitConditionReport = createServerFn({ method: "POST" })
         );
       }
     } catch (error) {
-      console.error("[mail] Benachrichtigung zur Zustandsmeldung fehlgeschlagen", error);
+      protokollFehler("mail", "Zustandsmeldung fehlgeschlagen", error);
     }
 
     // Zusätzlich aufs Geschäftshandy, getrennt abgefangen.
@@ -351,7 +352,7 @@ export const submitConditionReport = createServerFn({ method: "POST" })
         "Zustandsmeldung",
       );
     } catch (error) {
-      console.error("[benachrichtigung] Benachrichtigung zur Zustandsmeldung übersprungen", error);
+      protokollFehler("benachrichtigung", "Zustandsmeldung übersprungen", error);
     }
 
     return { ok: true, id: row.id };

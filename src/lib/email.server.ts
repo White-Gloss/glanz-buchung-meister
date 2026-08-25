@@ -22,6 +22,7 @@ import {
   formatDentAssessmentDate,
   type NormalizedDentRepairRequest,
 } from "./dentRepair";
+import { protokollFehler } from "./serverLog";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const MAIL_TIMEOUT_MS = 20_000;
@@ -355,7 +356,7 @@ async function bookingPdfAttachment(
       content: Buffer.from(bytes).toString("base64"),
     };
   } catch (error) {
-    console.error("[mail] PDF-Unterlage konnte nicht erstellt werden", error);
+    protokollFehler("mail", "PDF-Unterlage nicht erstellt", error);
     return undefined;
   }
 }

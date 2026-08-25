@@ -25,6 +25,7 @@ import {
 import { getPickupDistanceKm } from "./pickupLocations";
 import { isOnlineBookingDate } from "./bookingAvailability";
 import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
+import { protokollFehler } from "./serverLog";
 
 const publicBookingRateLimiter = createBookingRateLimiter({
   limit: 5,
@@ -276,7 +277,9 @@ export const createBooking = createServerFn({ method: "POST" })
       const { sendBookingMails } = await import("./email.server");
       await sendBookingMails(booking);
     } catch (error) {
-      console.error("[mail] Versand übersprungen:", error);
+      protokollFehler("mail", "Buchungsmails übersprungen", error, {
+        vorgang: booking.invoiceNumber,
+      });
     }
 
     // Zusätzlich aufs Geschäftshandy, über alle eingerichteten Wege. Getrennt
@@ -286,7 +289,9 @@ export const createBooking = createServerFn({ method: "POST" })
       const { bookingNotifyText } = await import("./notifyTexts");
       await notifyOwner(bookingNotifyText(booking), `Buchung ${booking.invoiceNumber}`);
     } catch (error) {
-      console.error("[benachrichtigung] übersprungen:", error);
+      protokollFehler("benachrichtigung", "übersprungen", error, {
+        vorgang: booking.invoiceNumber,
+      });
     }
 
     return booking;
@@ -493,7 +498,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
           );
         }
       } catch (error) {
-        console.error("[mail] Terminbestätigung fehlgeschlagen", error);
+        protokollFehler("mail", "Terminbestätigung fehlgeschlagen", error);
       }
     }
 
@@ -657,7 +662,7 @@ export const confirmBooking = createServerFn({ method: "POST" })
       const { sendBookingConfirmed, mailConfigured } = await import("./email.server");
       if (mailConfigured()) await sendBookingConfirmed(booking);
     } catch (error) {
-      console.error("[mail] Bestätigung übersprungen:", error);
+      protokollFehler("mail", "Bestätigung übersprungen", error);
     }
 
     return booking;
@@ -749,7 +754,7 @@ export const sendCounterOffer = createServerFn({ method: "POST" })
       const { sendCounterOfferMail, mailConfigured } = await import("./email.server");
       if (mailConfigured()) await sendCounterOfferMail(booking);
     } catch (error) {
-      console.error("[mail] Gegenangebot übersprungen:", error);
+      protokollFehler("mail", "Gegenangebot übersprungen", error);
     }
 
     return booking;
@@ -863,7 +868,7 @@ export const acceptOffer = createServerFn({ method: "POST" })
         await sendOfferAcceptedToOwner(toBooking(aktualisiert));
       }
     } catch (error) {
-      console.error("[mail] Zusage-Benachrichtigung übersprungen:", error);
+      protokollFehler("mail", "Zusage-Benachrichtigung übersprungen", error);
     }
 
     return { ok: true, date: gewaehlt };

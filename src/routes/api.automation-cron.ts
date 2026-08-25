@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { protokollFehler } from "@/lib/serverLog";
 
 /**
  * Vergleicht ohne verräterische Laufzeit: ein früh abbrechender
@@ -53,7 +54,7 @@ export const Route = createFileRoute("/api/automation-cron")({
             { status: 200 },
           );
         } catch (error) {
-          console.error("[automation-cron] Reminder-Lauf fehlgeschlagen", error);
+          protokollFehler("automation-cron", "Reminder-Lauf fehlgeschlagen", error);
           return Response.json(
             { ok: false, error: "Reminder-Lauf fehlgeschlagen." },
             { status: 500 },
