@@ -153,14 +153,6 @@ function PrivacyPage() {
               in die USA übermittelt werden.
             </p>
             <p>
-              Wenn Sie den Buchungsassistenten ausfüllen, hält Ihr Browser Ihre bisherigen Eingaben
-              lokal auf Ihrem Gerät fest, damit eine unterbrochene Anfrage nicht verloren geht.
-              Diese Angaben werden nicht an uns übermittelt, verfallen nach sieben Tagen und lassen
-              sich mit „Neu beginnen“ sofort löschen. Da die Speicherung für den von Ihnen
-              angeforderten Dienst erforderlich ist, ist hierfür keine Einwilligung nach § 25 Abs. 1
-              TDDDG nötig.
-            </p>
-            <p>
               Unabhängig davon setzen wir Ahrefs Web Analytics der Ahrefs Pte. Ltd. (16 Raffles
               Quay, Singapur) zur Reichweitenmessung ein. Der Dienst arbeitet ohne Cookies und ohne
               Speicherung auf Ihrem Endgerät; erfasst werden die aufgerufene Seite, die verweisende
