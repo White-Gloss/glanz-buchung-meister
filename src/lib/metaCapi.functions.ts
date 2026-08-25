@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
+import { protokollFehler } from "./serverLog";
 
 /**
  * META CONVERSIONS API (CAPI)
@@ -154,7 +155,7 @@ export const sendMetaConversion = createServerFn({ method: "POST" })
       }
       return { ok: true, skipped: false };
     } catch (error) {
-      console.error("[Meta CAPI] Ereignis konnte nicht gesendet werden", error);
+      protokollFehler("meta-capi", "Ereignis nicht gesendet", error);
       return { ok: false, skipped: false };
     }
   });

@@ -14,6 +14,7 @@ import {
   type NormalizedDentRepairRequest,
 } from "./dentRepair";
 import { CONDITION_PHOTO_BUCKET } from "./conditionReports.functions";
+import { protokollFehler } from "./serverLog";
 
 const dentRequestRateLimiter = createBookingRateLimiter({
   // Wie bei der Zustandsmeldung: jede Anfrage schreibt einen Datensatz und
@@ -158,7 +159,7 @@ export const submitDentRepairRequest = createServerFn({ method: "POST" })
       const { mailConfigured, sendDentRepairRequestMails } = await import("./email.server");
       if (mailConfigured()) await sendDentRepairRequestMails({ ...data, id: row.id, reference });
     } catch (error) {
-      console.error("[mail] Dellen-Begutachtungsanfrage konnte nicht versendet werden", error);
+      protokollFehler("mail", "Dellen-Begutachtungsanfrage nicht versendet", error);
     }
     return { ok: true as const, id: row.id, reference, customerName: data.name };
   });
