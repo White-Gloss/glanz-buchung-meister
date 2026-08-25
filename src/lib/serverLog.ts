@@ -18,8 +18,16 @@
  * aussieht, wird ersetzt.
  *
  * Das ist bewusst kein Fremdsystem. Die Zeilen gehen in das Prozessprotokoll
- * des Servers; eine dauerhafte Ablage mit Ansicht im Adminbereich ist der
- * nächste Schritt und baut auf dieser Form auf.
+ * des Servers und zusätzlich — bestmöglich, niemals blockierend — in die
+ * Tabelle `public.system_events`, damit der Betrieb eine Störung im
+ * Adminbereich sieht, ohne sich auf den Server zu verbinden.
+ *
+ * DIE ABLAGE DARF NIEMALS STÖREN. Sie läuft nach der Konsolenzeile, ohne auf
+ * sie gewartet wird, und verschluckt jeden eigenen Fehler. Fehlt die Tabelle,
+ * weil die Migration noch nicht eingespielt ist, oder ist die Datenbank
+ * gerade nicht erreichbar, bleibt es bei der Konsolenzeile — genau wie
+ * vorher. Ein Protokoll, das die Anwendung zum Stehen bringt, wäre schlimmer
+ * als kein Protokoll.
  */
 
 /** Längere Meldungen bringen im Protokoll keinen Erkenntnisgewinn mehr. */
@@ -102,6 +110,67 @@ export function protokollZeile(
   return teile.join(" ");
 }
 
+/** Wie viele Zeilen im Adminbereich Sinn ergeben, bevor gekürzt wird. */
+const MAX_KONTEXT = 500;
+
+/** Aufbewahrung des Störungsprotokolls. */
+const AUFBEWAHRUNG_TAGE = 90;
+
+/**
+ * Legt eine Zeile zusätzlich in der Datenbank ab.
+ *
+ * Bewusst ohne `await` beim Aufrufer und ohne jede Fehlerweitergabe. Der
+ * dynamische Import hält den Datenbanktreiber aus Bündeln heraus, die ihn
+ * nicht brauchen.
+ */
+function ablegen(
+  bereich: string,
+  vorgang: string,
+  schwere: "fehler" | "hinweis",
+  kontextText: string | null,
+  fehlerText: string | null,
+): void {
+  void (async () => {
+    try {
+      const { query } = await import("./db.server");
+      await query(
+        `INSERT INTO public.system_events (area, event, severity, context, error)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          bereich.slice(0, 60),
+          vorgang.slice(0, 200),
+          schwere,
+          kontextText ? kontextText.slice(0, MAX_KONTEXT) : null,
+          fehlerText ? fehlerText.slice(0, MAX_KONTEXT) : null,
+        ],
+      );
+
+      // Gelegentlich mit abräumen — ohne eigenen Zeitplandienst.
+      if (Math.random() < 0.01) {
+        await query(
+          `DELETE FROM public.system_events
+            WHERE occurred_at < now() - ($1 || ' days')::interval`,
+          [String(AUFBEWAHRUNG_TAGE)],
+        );
+      }
+    } catch {
+      // Absicht: Die Konsolenzeile steht bereits. Ein Fehler beim Ablegen
+      // darf weder die Anfrage noch den Aufrufer beeinträchtigen.
+    }
+  })();
+}
+
+/** Nur die Kontextangaben als Text, bereits redigiert. */
+function kontextText(
+  kontext?: Record<string, string | number | boolean | null | undefined>,
+): string | null {
+  if (!kontext) return null;
+  const teile = Object.entries(kontext)
+    .filter(([, wert]) => wert !== undefined && wert !== null && wert !== "")
+    .map(([schluessel, wert]) => `${schluessel}=${redigieren(String(wert)).slice(0, 120)}`);
+  return teile.length ? teile.join(" ") : null;
+}
+
 /** Störung: etwas ist fehlgeschlagen und jemand sollte es sehen. */
 export function protokollFehler(
   bereich: string,
@@ -110,6 +179,13 @@ export function protokollFehler(
   kontext?: Record<string, string | number | boolean | null | undefined>,
 ): void {
   console.error(protokollZeile(bereich, vorgang, fehler, kontext));
+  ablegen(
+    bereich,
+    vorgang,
+    "fehler",
+    kontextText(kontext),
+    fehler === undefined ? null : fehlerBeschreiben(fehler),
+  );
 }
 
 /**
@@ -118,6 +194,8 @@ export function protokollFehler(
  */
 export function protokollAusnahme(bereich: string, vorgang: string, fehler: unknown): void {
   console.error(`[${bereich}] ${vorgang} ${fehlerBeschreiben(fehler, { mitStack: true })}`);
+  // In der Ablage ohne Stack: dort zählt, dass es passiert ist.
+  ablegen(bereich, vorgang, "fehler", null, fehlerBeschreiben(fehler));
 }
 
 /** Hinweis: nicht kaputt, aber erwähnenswert — etwa fehlende Konfiguration. */
@@ -127,4 +205,5 @@ export function protokollHinweis(
   kontext?: Record<string, string | number | boolean | null | undefined>,
 ): void {
   console.warn(protokollZeile(bereich, vorgang, undefined, kontext));
+  ablegen(bereich, vorgang, "hinweis", kontextText(kontext), null);
 }

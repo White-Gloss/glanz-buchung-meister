@@ -23,7 +23,9 @@ import { SupabaseConfigNotice } from "@/components/SupabaseConfigNotice";
 import { diagnoseBackendError } from "@/lib/backendErrors";
 import {
   getAutomationSetupStatus,
+  listSystemEvents,
   type AutomationSetupStatus,
+  type SystemEvent,
 } from "@/lib/automationDiagnostics.functions";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 
@@ -78,6 +80,85 @@ function SetupCard({ icon: Icon, title, status, tone, description, detail }: Set
           {detail}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function StoerungsProtokoll() {
+  const [zustand, setZustand] = useState<
+    { verfuegbar: boolean; events: SystemEvent[] } | "laedt" | "fehler"
+  >("laedt");
+  const laden = useServerFn(listSystemEvents);
+
+  useEffect(() => {
+    let aktiv = true;
+    laden({})
+      .then((ergebnis) => {
+        if (aktiv) setZustand(ergebnis);
+      })
+      .catch(() => {
+        if (aktiv) setZustand("fehler");
+      });
+    return () => {
+      aktiv = false;
+    };
+  }, [laden]);
+
+  return (
+    <section className="glass mt-6 rounded-3xl p-6 sm:p-8">
+      <h2 className="display-sub text-xl">Letzte Störungen</h2>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+        Fehlgeschlagene Mails, Abgleiche und Hintergrundläufe — die jüngsten 100 Einträge.
+        Kundendaten stehen hier nicht: Adressen, Telefonnummern und Schlüssel werden bereits beim
+        Schreiben ersetzt. Eine leere Liste ist die gute Nachricht.
+      </p>
+
+      {zustand === "laedt" ? (
+        <p className="mt-5 text-sm text-muted-foreground">Wird geladen …</p>
+      ) : zustand === "fehler" ? (
+        <p className="mt-5 text-sm text-muted-foreground">
+          Das Protokoll konnte nicht geladen werden.
+        </p>
+      ) : !zustand.verfuegbar ? (
+        <p className="mt-5 text-sm text-muted-foreground">
+          Das Protokoll steht noch nicht bereit. Es entsteht, sobald die zugehörige
+          Datenbank-Migration eingespielt ist; bis dahin stehen Störungen ausschließlich im
+          Serverprotokoll.
+        </p>
+      ) : zustand.events.length === 0 ? (
+        <p className="mt-5 text-sm text-muted-foreground">Keine Störungen verzeichnet.</p>
+      ) : (
+        <ul className="mt-5 space-y-2">
+          {zustand.events.map((eintrag) => (
+            <li
+              key={eintrag.id}
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                eintrag.severity === "fehler"
+                  ? "border-destructive/30 bg-destructive/10"
+                  : "border-border bg-secondary/20"
+              }`}
+            >
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <time className="text-xs tabular-nums text-muted-foreground">
+                  {new Date(eintrag.occurredAt).toLocaleString("de-DE")}
+                </time>
+                <span className="text-xs uppercase tracking-wider text-primary">
+                  {eintrag.area}
+                </span>
+                <span className="font-medium">{eintrag.event}</span>
+              </div>
+              {eintrag.context ? (
+                <p className="mt-1 break-words text-xs text-muted-foreground">{eintrag.context}</p>
+              ) : null}
+              {eintrag.error ? (
+                <p className="mt-1 break-words font-mono text-xs text-foreground/80">
+                  {eintrag.error}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -248,6 +329,8 @@ function AutomationPage() {
             </div>
           ) : null}
         </section>
+
+        <StoerungsProtokoll />
       </main>
     </div>
   );
