@@ -83,7 +83,38 @@ export function createBookingRateLimiter({
   };
 }
 
+/**
+ * Adresse des Absenders, so wie sie sich für eine Drosselung verwenden lässt.
+ *
+ * ES IST DER LETZTE EINTRAG, NICHT DER ERSTE.
+ *
+ * `X-Forwarded-For` ist eine Liste, in der jeder durchlaufene Proxy hinten
+ * anhängt. Der vorderste Eintrag stammt damit von dem, der die Anfrage
+ * gestellt hat — er ist frei erfunden, wenn der Absender den Header schon
+ * selbst mitschickt. Genau das war hier der Fall: Wer bei jeder Anfrage eine
+ * andere Fantasieadresse voranstellt, bekommt jedes Mal einen frischen
+ * Zähler und läuft an der Drosselung vorbei.
+ *
+ * Verlässlich ist nur der Eintrag, den der eigene Proxy angehängt hat, und
+ * das ist der letzte. Ersetzt der Proxy den Header stattdessen vollständig,
+ * gibt es nur einen Eintrag — dann sind erster und letzter derselbe, die
+ * Regel stimmt also in beiden Fällen.
+ *
+ * ANNAHME: Genau ein eigener Proxy vor der Anwendung (Caddy auf demselben
+ * Rechner, siehe `docs/ionos-vps-bootstrap.md`). Käme später ein Dienst wie
+ * ein CDN davor, wäre der letzte Eintrag dessen Adresse und alle Besucher
+ * teilten sich einen Zähler; dann muss hier der vorletzte Eintrag gewählt
+ * werden.
+ */
 export function clientAddress(headers: Headers | undefined): string {
-  const forwarded = headers?.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || headers?.get("x-real-ip")?.trim() || "unbekannt";
+  const kette = headers?.get("x-forwarded-for");
+  if (kette) {
+    const eintraege = kette
+      .split(",")
+      .map((teil) => teil.trim())
+      .filter(Boolean);
+    const letzter = eintraege.at(-1);
+    if (letzter) return letzter;
+  }
+  return headers?.get("x-real-ip")?.trim() || "unbekannt";
 }

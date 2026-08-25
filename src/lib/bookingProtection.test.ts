@@ -89,10 +89,33 @@ describe("createBookingRateLimiter", () => {
 });
 
 describe("clientAddress", () => {
-  it("uses the first forwarded address from a reverse proxy", () => {
+  it("takes the entry the own proxy appended, not the one the caller sent", () => {
+    // Der eigene Proxy hängt hinten an. Der vorderste Eintrag stammt vom
+    // Absender selbst und ist damit frei wählbar.
     expect(clientAddress(new Headers({ "x-forwarded-for": "203.0.113.4, 10.0.0.1" }))).toBe(
-      "203.0.113.4",
+      "10.0.0.1",
     );
+  });
+
+  it("cannot be shaken off by a forged chain", () => {
+    const erste = clientAddress(new Headers({ "x-forwarded-for": "1.1.1.1, 198.51.100.7" }));
+    const zweite = clientAddress(new Headers({ "x-forwarded-for": "2.2.2.2, 198.51.100.7" }));
+    const dritte = clientAddress(
+      new Headers({ "x-forwarded-for": "3.3.3.3, 4.4.4.4, 198.51.100.7" }),
+    );
+
+    // Trotz wechselnder Fantasieadressen immer derselbe Zähler.
+    expect(erste).toBe("198.51.100.7");
+    expect(zweite).toBe("198.51.100.7");
+    expect(dritte).toBe("198.51.100.7");
+  });
+
+  it("works the same when the proxy replaces the header instead of appending", () => {
+    expect(clientAddress(new Headers({ "x-forwarded-for": "198.51.100.7" }))).toBe("198.51.100.7");
+  });
+
+  it("ignores empty entries in the chain", () => {
+    expect(clientAddress(new Headers({ "x-forwarded-for": "1.1.1.1, , " }))).toBe("1.1.1.1");
   });
 
   it("falls back to x-real-ip and a safe default", () => {
