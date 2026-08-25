@@ -1,6 +1,6 @@
 # WHITE GLOSS OS · ERPNext Integration
 
-Status: connectivity, service catalog and vehicle/order readiness passed; permanent production writes remain default-deny
+Status: controlled customer/contact and vehicle/order production verification passed; permanent production writes remain default-deny
 
 ## Scope
 
@@ -69,7 +69,7 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 
 `erpnext_order_id` is unique when present.
 
-A live-state audit on 2026-08-24 found one existing vehicle/order mapping synchronized on 2026-08-21. The next controlled operation is therefore a subsequent production run, not the first historical vehicle/order write.
+A live-state audit on 2026-08-25 found two fully synchronized customer mappings and two fully synchronized vehicle/order mappings, including the controlled production run for the booking with service date 2026-08-29. The earlier mapping synchronized on 2026-08-21 remains recorded, so the 2026-08-25 operation was a subsequent production run, not the first historical vehicle/order write.
 
 The function `public.claim_erpnext_booking_sync(uuid, timestamptz, integer)` atomically claims one exact booking revision for a sync worker. It is executable only by `service_role`. The claim locks the booking row while comparing `bookings.updated_at`; a database trigger blocks booking updates and deletion until the worker clears the processing lease after success or a reviewable failure. The vehicle/order worker uses a 15-minute lease, which also releases the mutation guard automatically after a hard worker exit.
 
@@ -201,6 +201,23 @@ Edge Function: `erpnext-vehicle-order-commit`
 A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and a server-signed preview confirmation bound to both booking UUID and current `bookings.updated_at` revision. The signed confirmation contains a cryptographic nonce and expires after five minutes; browser-visible booking data is insufficient to forge it. Any booking change invalidates it. The function then performs duplicate-safe lookups, claims that exact revision under a database lock, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
 
 The admin page has one write path only: a successful fresh preview. The previous separate direct commit card is no longer rendered.
+
+### Controlled end-to-end production verification — PASS
+
+On 2026-08-25, one explicitly approved booking with service date 2026-08-29 passed the complete customer/contact and vehicle/order sequence.
+
+Verified result:
+
+- the signed customer preview was bound to the current booking revision;
+- one Customer and one linked Contact were synchronized;
+- `WHITE GLOSS Vehicle` `WGV-2026-00003` and `WHITE GLOSS Order` `WGO-2026-00004` were created;
+- the order contains exactly `WG-PKG-KERAMIK`, `WG-ADD-HOLBRING` and `WG-ADD-SCHEINWERFER`;
+- all 18 post-write checks passed;
+- exact identity re-reads returned one vehicle and one order;
+- `financial_writes=false` and `sales_invoice=null`;
+- Supabase records HTTP 200, synchronized timestamps, no errors and no active leases.
+
+The temporary execution window was bound to the exact booking and had an automatic expiry. Immediately after verification, all three write-path Functions were restored byte-for-byte to current `main`; their normal server-secret gates remain default-deny. The short-lived runner and diagnostic endpoints now return `410` and contain no booking UUID, service-role logic or run token.
 
 ### Database security hardening
 
