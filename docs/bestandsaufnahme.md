@@ -20,6 +20,14 @@ wenige Hosts zu. Alles, was echte Verbindungen zu diesen Diensten braucht, ist
 deshalb **nicht prüfbar** und unten ausdrücklich so markiert. Das ist keine
 Entwarnung, sondern eine offene Lücke in dieser Analyse.
 
+**Diese Grenze war anfangs zu weit gezogen.** Sie galt zunächst auch für alles
+Datenbanknahe. Das war ein Irrtum: In der Umgebung ist ein PostgreSQL 16
+vorhanden. Es ist nicht _die_ Datenbank — es enthält keine echten Daten und
+kein Supabase — aber es genügt, um das Schema aus den Migrationen aufzubauen
+und die Zugriffsregeln anzugreifen. Beides läuft inzwischen bei jeder Änderung
+in der CI mit (siehe Abschnitt 4). Was sich daraus ergab, steht in
+Abschnitt 12.
+
 ---
 
 ## 1. Architektur-Zusammenfassung
@@ -130,16 +138,19 @@ ausschließlich über `process.env` bzw. `Deno.env` gelesen, nie mit
 
 ## 4. Prüfungen, die in dieser Umgebung liefen
 
-| Prüfung                                                               | Ergebnis                                                               |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `npm run lint`                                                        | sauber                                                                 |
-| `npm run typecheck`                                                   | sauber                                                                 |
-| `npm run typecheck:functions` (Deno)                                  | in dieser Umgebung durch gesperrtes `jsr.io` blockiert; in der CI grün |
-| `npm test`                                                            | 28 Dateien, 109 Tests                                                  |
-| `npm run build`                                                       | erfolgreich                                                            |
-| `npm audit --omit=dev`                                                | 0 Schwachstellen                                                       |
-| 25 öffentliche Routen per HTTP                                        | alle erreichbar                                                        |
-| Horizontales Scrollen, 5 Seiten × 5 Viewports (360/430/768/1280/1920) | **kein Überlauf**, 25 von 25                                           |
+| Prüfung                                                                                       | Ergebnis                                                               |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `npm run lint`                                                                                | sauber                                                                 |
+| `npm run typecheck`                                                                           | sauber                                                                 |
+| `npm run typecheck:functions` (Deno)                                                          | in dieser Umgebung durch gesperrtes `jsr.io` blockiert; in der CI grün |
+| `npm test`                                                                                    | 28 Dateien, 109 Tests                                                  |
+| `npm run build`                                                                               | erfolgreich                                                            |
+| `npm audit --omit=dev`                                                                        | 0 Schwachstellen                                                       |
+| 25 öffentliche Routen per HTTP                                                                | alle erreichbar                                                        |
+| Horizontales Scrollen, 5 Seiten × 5 Viewports (360/430/768/1280/1920)                         | **kein Überlauf**, 25 von 25                                           |
+| `npm run check:migrations` gegen PostgreSQL 16.13                                             | Datenbank vollständig aus den Migrationen aufgebaut                    |
+| `npm run check:rls` — 34 Zugriffsversuche als `anon` und als angemeldeter Nicht-Administrator | alle abgewehrt                                                         |
+| 73 Serverfunktionen auf Anmeldepflicht durchgesehen                                           | 14 ohne, alle absichtlich; als Test festgehalten                       |
 
 Die Viewport-Prüfung ist eine Messung, keine Gestaltungsbewertung: Sie zeigt,
 dass nichts horizontal überläuft. Ob Abstände, Typografie und Tap-Ziele auf
@@ -279,3 +290,32 @@ Offen ist allein, welche **Übergänge** zwischen diesen Werten erlaubt sein
 sollen. Das ist keine technische Ableitung, sondern eine Frage an den Betrieb:
 Darf eine stornierte Buchung wieder bestätigt werden? Darf „Bezahlt" zurück?
 Solange das nicht entschieden ist, wäre jede Übergangstabelle geraten.
+
+### Zweiter Nachtrag: „nicht prüfbar" war teilweise voreilig
+
+Dieses Dokument führte Schema und Zugriffsregeln als nicht prüfbar. Beides war
+prüfbar; es hat nur niemand versucht. Aus dem Nachholen ergab sich:
+
+- **Das Schema ließ sich aus den Migrationen nicht wiederherstellen.**
+  `calendar_feed_tokens` und `customer_notes` waren direkt in der Datenbank
+  entstanden. Eine spätere Migration brach deshalb mittendrin ab, wodurch alle
+  folgenden Policy-Optimierungen stillschweigend ausblieben. Nachgetragen und
+  durch eine CI-Prüfung abgesichert.
+- **Die Zugriffsregeln halten.** 34 Lese- und Schreibversuche als nicht
+  angemeldeter Besucher und als angemeldeter Nicht-Administrator scheitern
+  alle. Das gilt ausdrücklich **nur** für den Supabase-Weg; der direkte
+  `pg`-Weg umgeht RLS bauartbedingt (Abschnitt 5), dort trägt `assertAdmin`
+  allein. Für diesen Weg ist jetzt festgehalten, welche Serverfunktionen ohne
+  Anmeldung erreichbar sein dürfen.
+- **Ein Vorgabewert widersprach seiner eigenen Prüfbedingung.**
+  `bookings.status` stand auf `'Angefragt'`, einem Wert, den die Umbenennung
+  abgeschafft hatte. Im Quelltext war das nicht zu sehen, weil dort niemand die
+  Vorgabe benutzt.
+
+Die Lehre ist allgemeiner als die drei Funde: **„nicht prüfbar" ist eine
+Behauptung, die selbst geprüft gehört.** Zweimal in dieser Analyse stand sie
+da, ohne dass jemand es versucht hatte.
+
+Die Zahlen zu Tests, Migrationen und Zugriffsversuchen sind Stände zum
+Zeitpunkt der jeweiligen Prüfung, keine Zusicherung für heute — verbindlich
+ist, was die CI meldet.
