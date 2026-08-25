@@ -13,6 +13,7 @@ import {
   type BookingSource,
   type BookingStatus,
   type ContactChannel,
+  bookingStatuses,
 } from "./bookings";
 import {
   addOns,
@@ -454,6 +455,14 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   .validator((data: { id: string; status: BookingStatus }) => data)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+
+    // Die Datenbank lässt über `bookings_status_check` ohnehin nur diese
+    // sechs Werte zu. Ohne die Prüfung hier bekäme der Betrieb bei einem
+    // unbekannten Wert aber die rohe Meldung der Datenbank zu sehen statt
+    // eines verständlichen Satzes.
+    if (!bookingStatuses.includes(data.status)) {
+      throw new Error("Unbekannter Status.");
+    }
 
     // Den bisherigen Status und den vom Admin vereinbarten Preis mitlesen.
     // Ein Termin darf ausdrücklich erst bestätigt werden, wenn der konkrete
