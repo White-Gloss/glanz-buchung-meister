@@ -12,6 +12,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check:migrations": "bash scripts/check-migrations.sh",
+    "check:rls": "bash scripts/check-rls.sh",
     "typecheck:functions": "npx --yes deno@2.9.5 check --config supabase/functions/deno.json --node-modules-dir=none supabase/functions/",
     "format": "prettier --write .",
     "smoke:production": "node scripts/smoke-production.mjs",

@@ -59,6 +59,18 @@ jobs:
           PGPASSWORD: postgres
         run: npm run check:migrations
 
+      # Greift die Zugriffsregeln an, statt sie nur zu lesen: als nicht
+      # angemeldeter Besucher und als angemeldeter Benutzer OHNE
+      # Administratorrolle. Faengt eine gelockerte Regel und eine neue
+      # Tabelle ohne Regel.
+      - name: Zugriffsregeln angreifen
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: npm run check:rls
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -104,6 +116,7 @@ jobs:
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs
           bash -n scripts/check-migrations.sh
+          bash -n scripts/check-rls.sh
 
       - name: Produktions-Build erstellen
         run: npm run build
