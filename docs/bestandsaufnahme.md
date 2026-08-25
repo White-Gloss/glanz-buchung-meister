@@ -107,24 +107,23 @@ ausschließlich über `process.env` bzw. `Deno.env` gelesen, nie mit
 
 ### Bestätigt tragfähig
 
-| Bereich              | Befund                                                                                                                                  | Methode          |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Adminautorisierung   | alle 89 Server-Funktionen mit Anmeldepflicht prüfen zusätzlich die Adminrolle serverseitig; kein Frontend-Verstecken als einzige Sperre | statisch geprüft |
-| RLS                  | auf allen 12 Tabellen aktiviert                                                                                                         | statisch geprüft |
-| Fahrzeugfotos        | privater Bucket, anonym nur `INSERT`, Lesen und Löschen nur Admin, Anzeige über kurzlebige signierte Links                              | statisch geprüft |
-| CSRF                 | Middleware für alle zustandsändernden Server-Funktionen                                                                                 | statisch geprüft |
-| Preisberechnung      | verbindlich in der Datenbank, nicht im Browser                                                                                          | statisch geprüft |
-| Buchungs-Wettlauf    | `pg_advisory_xact_lock` je Kalendertag plus Tageslimit                                                                                  | statisch geprüft |
-| ERPNext-Schreibpfade | default-deny, revisionsgebundene Freigabe, Lease vor jedem externen Schreibvorgang                                                      | statisch geprüft |
+| Bereich              | Befund                                                                                                                                                                                                                                                                                                   | Methode          |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Adminautorisierung   | alle 89 Server-Funktionen mit Anmeldepflicht prüfen zusätzlich die Adminrolle serverseitig; kein Frontend-Verstecken als einzige Sperre                                                                                                                                                                  | statisch geprüft |
+| RLS                  | auf allen 12 Tabellen aktiviert                                                                                                                                                                                                                                                                          | statisch geprüft |
+| Fahrzeugfotos        | privater Bucket. Die anonyme Upload-Policy wurde in `20260812231500_security_hardening.sql` wieder entfernt; geschrieben wird ausschließlich serverseitig mit der Service-Role, nach Prüfung von MIME-Typ, Größe und Dateisignatur. Lesen und Löschen nur Admin, Anzeige über kurzlebige signierte Links | statisch geprüft |
+| CSRF                 | Middleware für alle zustandsändernden Server-Funktionen                                                                                                                                                                                                                                                  | statisch geprüft |
+| Preisberechnung      | verbindlich in der Datenbank, nicht im Browser                                                                                                                                                                                                                                                           | statisch geprüft |
+| Buchungs-Wettlauf    | `pg_advisory_xact_lock` je Kalendertag plus Tageslimit                                                                                                                                                                                                                                                   | statisch geprüft |
+| ERPNext-Schreibpfade | default-deny, revisionsgebundene Freigabe, Lease vor jedem externen Schreibvorgang                                                                                                                                                                                                                       | statisch geprüft |
 
 ### Offene Risiken
 
-| Stufe             | Befund                                                                                                                                                                     | Wirkung                                                                   |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **mittel**        | Anonyme dürfen in `condition-photos` beliebige Pfade anlegen. Die Pfadprüfung liegt nur in der Server-Funktion; mit dem öffentlichen Anon-Key ließe sich direkt hochladen. | Speichermissbrauch und Kosten, **keine** Datenoffenlegung (Bucket privat) |
-| **mittel**        | Die Drosselung öffentlicher Schreibpfade liegt im Arbeitsspeicher **je Prozess**. Bei mehreren Instanzen oder wechselnden Adressen greift sie schwächer als sie aussieht.  | Missbrauch von Formularen und Uploads                                     |
-| **niedrig**       | Nitro läuft auf `3.0.260603-beta`.                                                                                                                                         | siehe Abschnitt 6                                                         |
-| **nicht prüfbar** | Session-Ablauf, Brute-Force-Schutz und Passwort-Reset liegen bei Supabase Auth und sind hier nicht beobachtbar.                                                            | offen                                                                     |
+| Stufe             | Befund                                                                                                                                                                    | Wirkung                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **mittel**        | Die Drosselung öffentlicher Schreibpfade liegt im Arbeitsspeicher **je Prozess**. Bei mehreren Instanzen oder wechselnden Adressen greift sie schwächer als sie aussieht. | Missbrauch von Formularen und Uploads |
+| **niedrig**       | Nitro läuft auf `3.0.260603-beta`.                                                                                                                                        | siehe Abschnitt 6                     |
+| **nicht prüfbar** | Session-Ablauf, Brute-Force-Schutz und Passwort-Reset liegen bei Supabase Auth und sind hier nicht beobachtbar.                                                           | offen                                 |
 
 ---
 
@@ -211,7 +210,6 @@ Diese Bereiche funktionieren, sind bewusst gebaut und brauchen keinen Umbau:
 
 | Aufwand | Nutzen | Maßnahme                                                                                                          |
 | ------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
-| klein   | mittel | Pfadmuster für `condition-photos` in die Storage-Policy heben, statt es nur in der Server-Funktion zu prüfen      |
 | klein   | mittel | `.env.example` mit allen 28 Servervariablen als Platzhalter — heute muss man sie aus dem Quelltext zusammensuchen |
 | klein   | klein  | Steuernummer in die Belegentwürfe, sobald sie vorliegt                                                            |
 | mittel  | hoch   | Diagnoseseite, die je Dienst zeigt: konfiguriert, erreichbar, letzter Fehler                                      |
@@ -220,30 +218,28 @@ Diese Bereiche funktionieren, sind bewusst gebaut und brauchen keinen Umbau:
 
 ## 9. Priorisierte Tabelle
 
-| Prio | Bereich      | Problem                                             | Ursache                       | Auswirkung                                    | Risiko  | Lösung                                                       | Aufwand | Abhängigkeiten    | Prüfung                            |
-| ---- | ------------ | --------------------------------------------------- | ----------------------------- | --------------------------------------------- | ------- | ------------------------------------------------------------ | ------- | ----------------- | ---------------------------------- |
-| P0   | —            | keine kritischen Funde                              | —                             | —                                             | —       | —                                                            | —       | —                 | Abschnitt 3                        |
-| P1   | Storage      | anonymer Upload ohne Pfadbindung                    | Policy prüft nur `bucket_id`  | Speichermissbrauch, Kosten                    | mittel  | Pfadmuster in die Policy, Größe je Absender begrenzen        | S       | Migration         | Upload echt und manipuliert testen |
-| P1   | Drosselung   | greift nur je Prozess                               | In-Memory-Zähler              | Formularmissbrauch bei mehreren Instanzen     | mittel  | Zähler in die Datenbank oder vorgelagerte WAF                | M       | Deployment        | Lasttest über zwei Instanzen       |
-| P1   | Betrieb      | kein Fehler-Monitoring                              | nie eingerichtet              | Störungen fallen erst durch Kundenmeldung auf | mittel  | Sentry o. ä. für Client und Server                           | M       | Hosting-Variablen | Fehler künstlich auslösen          |
-| P1   | ERPNext      | Datenhoheit noch nicht verbindlich festgelegt       | Übergangszustand              | doppelte Wahrheit bei Kunde/Auftrag           | hoch    | Zielmodell je Datentyp schriftlich festlegen, dann migrieren | L       | ERPNext-Zugang    | Abgleich beider Seiten             |
-| P2   | Statusmodell | Status als Zeichenketten, Übergänge nicht erzwungen | historisch gewachsen          | unzulässige Sprünge möglich                   | mittel  | zentrales Modell mit erlaubten Übergängen                    | M       | Buchungen, Admin  | Übergangstabelle testen            |
-| P2   | Buchung      | keine Zwischenspeicherung bei Abbruch               | nie gebaut                    | abgebrochene Anfragen gehen verloren          | mittel  | Entwurf lokal sichern und wiederaufnehmen                    | M       | Wizard            | Abbruch und Rückkehr testen        |
-| P3   | Belege       | Entwürfe ohne Steuernummer                          | Daten fehlen noch             | Beleg unvollständig                           | niedrig | Feld ausgeben, sobald hinterlegt                             | S       | Steuernummer      | PDF sichten                        |
-| P4   | Tracking     | Funnel nicht durchgängig messbar                    | Ereignisse nur teilweise      | Werbewirkung nicht beurteilbar                | niedrig | Ereignismodell definieren und umsetzen                       | M       | Consent           | Ereignisse zählen                  |
-| P5   | Performance  | jsPDF und html2canvas im Client (585 kB)            | Beleg wird im Browser erzeugt | langsamer Erststart                           | niedrig | erst bei Bedarf nachladen oder serverseitig erzeugen         | M       | Unterlagen-Seite  | Bundle vorher/nachher              |
+| Prio | Bereich      | Problem                                             | Ursache                       | Auswirkung                                    | Risiko  | Lösung                                                       | Aufwand | Abhängigkeiten    | Prüfung                      |
+| ---- | ------------ | --------------------------------------------------- | ----------------------------- | --------------------------------------------- | ------- | ------------------------------------------------------------ | ------- | ----------------- | ---------------------------- |
+| P0   | —            | keine kritischen Funde                              | —                             | —                                             | —       | —                                                            | —       | —                 | Abschnitt 3                  |
+| P1   | Drosselung   | greift nur je Prozess                               | In-Memory-Zähler              | Formularmissbrauch bei mehreren Instanzen     | mittel  | Zähler in die Datenbank oder vorgelagerte WAF                | M       | Deployment        | Lasttest über zwei Instanzen |
+| P1   | Betrieb      | kein Fehler-Monitoring                              | nie eingerichtet              | Störungen fallen erst durch Kundenmeldung auf | mittel  | Sentry o. ä. für Client und Server                           | M       | Hosting-Variablen | Fehler künstlich auslösen    |
+| P1   | ERPNext      | Datenhoheit noch nicht verbindlich festgelegt       | Übergangszustand              | doppelte Wahrheit bei Kunde/Auftrag           | hoch    | Zielmodell je Datentyp schriftlich festlegen, dann migrieren | L       | ERPNext-Zugang    | Abgleich beider Seiten       |
+| P2   | Statusmodell | Status als Zeichenketten, Übergänge nicht erzwungen | historisch gewachsen          | unzulässige Sprünge möglich                   | mittel  | zentrales Modell mit erlaubten Übergängen                    | M       | Buchungen, Admin  | Übergangstabelle testen      |
+| P2   | Buchung      | keine Zwischenspeicherung bei Abbruch               | nie gebaut                    | abgebrochene Anfragen gehen verloren          | mittel  | Entwurf lokal sichern und wiederaufnehmen                    | M       | Wizard            | Abbruch und Rückkehr testen  |
+| P3   | Belege       | Entwürfe ohne Steuernummer                          | Daten fehlen noch             | Beleg unvollständig                           | niedrig | Feld ausgeben, sobald hinterlegt                             | S       | Steuernummer      | PDF sichten                  |
+| P4   | Tracking     | Funnel nicht durchgängig messbar                    | Ereignisse nur teilweise      | Werbewirkung nicht beurteilbar                | niedrig | Ereignismodell definieren und umsetzen                       | M       | Consent           | Ereignisse zählen            |
+| P5   | Performance  | jsPDF und html2canvas im Client (585 kB)            | Beleg wird im Browser erzeugt | langsamer Erststart                           | niedrig | erst bei Bedarf nachladen oder serverseitig erzeugen         | M       | Unterlagen-Seite  | Bundle vorher/nachher        |
 
 ---
 
 ## 10. Empfohlene Reihenfolge
 
-1. **P1 Storage-Policy** — kleinste Änderung mit echtem Sicherheitsgewinn, isoliert testbar.
+1. **P1 Monitoring** — ab hier sieht man Fehler, statt sie zu vermuten. Sollte vor größeren Umbauten stehen, weil es alle folgenden Schritte absichert.
 2. **P1 Drosselung** — hängt an der Frage, ob mehr als eine Instanz läuft; die ist vorher zu klären.
-3. **P1 Monitoring** — ab hier sieht man Fehler, statt sie zu vermuten. Sollte vor größeren Umbauten stehen.
-4. **P1 Datenhoheit ERPNext** — erst schriftlich festlegen, dann Code. Ohne ERPNext-Zugang nicht abschließbar.
-5. **P2 Statusmodell** — Voraussetzung für verlässliche Kennzahlen im Adminbereich.
-6. **P2 Buchungsentwurf sichern** — direkter Conversion-Effekt.
-7. danach P3 bis P5.
+3. **P1 Datenhoheit ERPNext** — erst schriftlich festlegen, dann Code. Ohne ERPNext-Zugang nicht abschließbar.
+4. **P2 Statusmodell** — Voraussetzung für verlässliche Kennzahlen im Adminbereich.
+5. **P2 Buchungsentwurf sichern** — direkter Conversion-Effekt.
+6. danach P3 bis P5.
 
 ## 11. Was diese Analyse offen lässt
 
@@ -254,3 +250,18 @@ Diese Bereiche funktionieren, sind bewusst gebaut und brauchen keinen Umbau:
 - gestalterische Qualität auf kleinen Geräten
 - Core Web Vitals unter realen Bedingungen
 - Backup- und Wiederherstellungsfähigkeit
+
+---
+
+## 12. Korrektur an dieser Analyse
+
+Die erste Fassung dieses Dokuments führte als P1 auf, anonyme Aufrufer dürften
+in `condition-photos` beliebige Pfade anlegen. **Das ist falsch.** Die Policy
+aus `20260806120000_condition_reports.sql` wurde in
+`20260812231500_security_hardening.sql` wieder entfernt; seitdem schreibt
+ausschließlich der Server mit der Service-Role, nach Prüfung von MIME-Typ,
+Größe und Dateisignatur.
+
+Ursache: Ich hatte die anlegende Migration gelesen, aber nicht die spätere, die
+sie zurücknimmt. Maßgeblich ist immer die Summe aller Migrationen, nie eine
+einzelne.
