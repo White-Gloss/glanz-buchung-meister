@@ -80,10 +80,20 @@ export function slugifyHeading(text: string): string {
 /**
  * Nur Ziele zulassen, die im Browser eine Navigation auslösen. Verhindert
  * `javascript:`- und `data:`-URLs in Links und Bildquellen.
+ *
+ * PROTOKOLLRELATIVE ZIELE SIND AUSGESCHLOSSEN. `//fremde-seite.de` beginnt
+ * mit einem Schrägstrich und sah damit aus wie ein Pfad auf der eigenen
+ * Seite — führte aber zu einem fremden Host, im selben Tab und ohne
+ * `rel="noopener"`, weil die Erkennung „extern" nur auf `https://`
+ * anspricht. Ein Link mit der Beschriftung „Impressum" hätte so unbemerkt
+ * woanders hingeführt. Der Schrägstrich steht hier ausschließlich für einen
+ * Pfad auf der eigenen Seite; ein zweiter Schrägstrich (oder ein
+ * Backslash, den manche Browser genauso lesen) ist keiner.
  */
 function safeUrl(rawUrl: string): string | null {
   const url = unescapeHtml(rawUrl).trim();
   if (!url) return null;
+  if (/^[/\\]{2}/.test(url)) return null;
   if (/^(https?:\/\/|\/|#|mailto:|tel:)/i.test(url)) return escapeHtml(url);
   return null;
 }

@@ -37,6 +37,14 @@ const REMINDER_DAYS_BEFORE = 3;
 /** Nur für Termine, die tatsächlich stattfinden. */
 const CONFIRMED_STATUSES = new Set(["Bestätigt", "Ausstehend", "Bezahlt"]);
 
+/**
+ * Vollständige UUID-Form. Bewusst nicht die strengere Variante mit
+ * festgelegten Versions- und Variantenziffern: Jeder Wert, den PostgreSQL
+ * als uuid annimmt, soll auch hier durchkommen — sonst würde ein gültiger,
+ * bereits vergebener Token abgewiesen.
+ */
+const UUID_FORM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const Route = createFileRoute("/kalender/$token")({
   server: {
     handlers: {
@@ -50,7 +58,15 @@ export const Route = createFileRoute("/kalender/$token")({
         // falls der Token so ankommt.
         const rawToken = params.token ?? "";
         const token = rawToken.replace(/\.ics$/i, "");
-        if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
+
+        // DIE FORM MUSS GENAU STIMMEN, NICHT NUR DIE LAENGE.
+        // Die frühere Prüfung verlangte 36 Zeichen aus [0-9a-f-] — das
+        // erfüllen auch 36 Bindestriche. Die Spalte ist vom Typ uuid; ein
+        // solcher Wert kommt bis zur Abfrage durch und lässt PostgreSQL mit
+        // "invalid input syntax for type uuid" abbrechen. Aus einem 404
+        // wurde so ein Serverfehler, den jeder von außen beliebig oft
+        // auslösen konnte. Deshalb hier die vollständige UUID-Form.
+        if (!UUID_FORM.test(token)) {
           return new Response("Not found", { status: 404 });
         }
 

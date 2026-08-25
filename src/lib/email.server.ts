@@ -22,7 +22,7 @@ import {
   formatDentAssessmentDate,
   type NormalizedDentRepairRequest,
 } from "./dentRepair";
-import { protokollFehler } from "./serverLog";
+import { protokollFehler, protokollHinweis } from "./serverLog";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const MAIL_TIMEOUT_MS = 20_000;
@@ -565,9 +565,9 @@ export async function sendOwnerNotification(booking: Booking): Promise<MailResul
 
 export async function sendBookingMails(booking: Booking): Promise<void> {
   if (!mailConfigured()) {
-    console.warn(
-      `[mail] Versand nicht konfiguriert – keine E-Mail zu ${booking.invoiceNumber} verschickt.`,
-    );
+    protokollHinweis("mail", "Versand nicht konfiguriert – keine Buchungsmail verschickt", {
+      rechnung: booking.invoiceNumber,
+    });
     return;
   }
 
@@ -576,8 +576,16 @@ export async function sendBookingMails(booking: Booking): Promise<void> {
     sendOwnerNotification(booking),
   ]);
 
-  if (!customer.sent) console.error(`[mail] Kundenmail fehlgeschlagen: ${customer.reason}`);
-  if (!owner.sent) console.error(`[mail] Betriebsmail fehlgeschlagen: ${owner.reason}`);
+  // Der Grund kommt als Antworttext von Resend zurück und kann die
+  // Empfängeradresse enthalten — deshalb über die redigierende Ablage.
+  if (!customer.sent)
+    protokollFehler("mail", "Kundenmail fehlgeschlagen", customer.reason, {
+      rechnung: booking.invoiceNumber,
+    });
+  if (!owner.sent)
+    protokollFehler("mail", "Betriebsmail fehlgeschlagen", owner.reason, {
+      rechnung: booking.invoiceNumber,
+    });
 }
 
 /* ------------------------------------------------------------------ */
@@ -743,9 +751,13 @@ export async function sendDentRepairRequestMails(
     }),
   ]);
   if (!customer.sent)
-    console.error(`[mail] Kundenbestätigung Dellenanfrage fehlgeschlagen: ${customer.reason}`);
+    protokollFehler("mail", "Kundenbestätigung Dellenanfrage fehlgeschlagen", customer.reason, {
+      referenz: request.reference,
+    });
   if (!owner.sent)
-    console.error(`[mail] Betriebsbenachrichtigung Dellenanfrage fehlgeschlagen: ${owner.reason}`);
+    protokollFehler("mail", "Betriebsbenachrichtigung Dellenanfrage fehlgeschlagen", owner.reason, {
+      referenz: request.reference,
+    });
 }
 
 /* ------------------------------------------------------------------ */

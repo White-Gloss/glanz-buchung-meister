@@ -37,6 +37,27 @@ export default tseslint.config(
     },
   },
   {
+    /**
+     * Serverseitige Module protokollieren ausschliesslich ueber
+     * `src/lib/serverLog.ts`.
+     *
+     * Ein direktes `console.error(text, fehler)` gibt aus, was der Fehler
+     * mitbringt: PostgreSQL hängt den auslösenden Wert an, und Antworttexte
+     * fremder Dienste — Resend, Telegram, Meta — können die
+     * Empfängeradresse oder -nummer enthalten. So landen Kundendaten im
+     * Prozessprotokoll. Ausserdem sieht der Betrieb solche Zeilen nicht im
+     * Störungsprotokoll des Adminbereichs.
+     *
+     * `serverLog.ts` selbst ist ausgenommen: dort steht die einzige Stelle,
+     * die tatsaechlich auf die Konsole schreibt.
+     */
+    files: ["src/lib/*.server.ts", "src/lib/*.functions.ts", "src/routes/api.*.ts"],
+    ignores: ["src/lib/serverLog.ts"],
+    rules: {
+      "no-console": "error",
+    },
+  },
+  {
     files: ["supabase/functions/**/*.ts"],
     languageOptions: {
       globals: {

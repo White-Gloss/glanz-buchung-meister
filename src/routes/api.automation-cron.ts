@@ -40,8 +40,17 @@ export const Route = createFileRoute("/api/automation-cron")({
           // Rechnungen werden bewusst NICHT automatisch aus einem Zeitplan erzeugt.
           // Die spätere Endrechnung benötigt eine ausdrückliche Admin-Freigabe
           // nach dem Termin und einen vom Admin gesetzten Endpreis.
-          const { runDueAppointmentReminders } = await import("@/lib/automation.server");
+          const { runDueAppointmentReminders, recordAutomationHeartbeat } =
+            await import("@/lib/automation.server");
           const reminders = await runDueAppointmentReminders();
+          // Lebenszeichen NACH dem Lauf und mit dessen Zaehlern: nur so
+          // unterscheidet der Adminbereich "laeuft, hatte nichts zu tun" von
+          // "wird gar nicht angestossen".
+          await recordAutomationHeartbeat(
+            "automation-cron",
+            `kandidaten=${reminders.candidates} versendet=${reminders.sent} ` +
+              `fehlgeschlagen=${reminders.failed} uebersprungen=${reminders.skipped}`,
+          );
           return Response.json(
             {
               ok: true,

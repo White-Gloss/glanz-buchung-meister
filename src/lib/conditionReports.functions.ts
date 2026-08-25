@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { query, queryOne } from "@/lib/db.server";
 import { clientAddress, createBookingRateLimiter } from "./bookingProtection";
 import { megabyte, planCleanup, type StoredMedia } from "./conditionMediaCleanup";
-import { protokollFehler } from "./serverLog";
+import { protokollFehler, protokollHinweis } from "./serverLog";
 
 const conditionUploadRateLimiter = createBookingRateLimiter({
   // Eine Meldung erlaubt maximal fünf Aufnahmen. Das Zeitfenster lässt einen
@@ -332,12 +332,10 @@ export const submitConditionReport = createServerFn({ method: "POST" })
           photoCount: photoPaths.length,
         });
         if (!result.sent) {
-          console.error(`[mail] Zustandsmeldung nicht zugestellt: ${result.reason}`);
+          protokollFehler("mail", "Zustandsmeldung nicht zugestellt", result.reason);
         }
       } else {
-        console.warn(
-          "[mail] Versand nicht konfiguriert — keine Benachrichtigung zur Zustandsmeldung verschickt.",
-        );
+        protokollHinweis("mail", "Versand nicht konfiguriert — keine Zustandsmeldung verschickt");
       }
     } catch (error) {
       protokollFehler("mail", "Zustandsmeldung fehlgeschlagen", error);
@@ -555,8 +553,14 @@ export const cleanupOrphanedConditionMedia = createServerFn({ method: "POST" })
     const { error } = await client.storage.from(CONDITION_PHOTO_BUCKET).remove(plan.loeschen);
     if (error) return { ...basis, geloescht: 0, fehler: error.message };
 
-    console.info(
-      `[zustand] ${plan.loeschen.length} verwaiste Aufnahmen entfernt (${basis.megabyte} MB), ausgelöst von ${context.userId}`,
-    );
+    // Aufräumvermerk, kein Fehler: er soll im Adminbereich nachvollziehbar
+    // sein. Vom Akteur nur die ersten acht Zeichen — sie genügen, um unter
+    // einer Handvoll Administratoren zu unterscheiden, und die vollständige
+    // Kennung würde ohnehin als möglicher Schlüssel ersetzt.
+    protokollHinweis("zustand", "Verwaiste Aufnahmen entfernt", {
+      anzahl: plan.loeschen.length,
+      megabyte: basis.megabyte,
+      akteur: context.userId.slice(0, 8),
+    });
     return { ...basis, geloescht: plan.loeschen.length, fehler: null };
   });

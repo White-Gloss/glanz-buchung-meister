@@ -21,16 +21,26 @@ _Eintrag hinzufügen_.
 
 ## Stand heute
 
-| Eintrag                 | Wert                                    | Bewertung                   |
-| ----------------------- | --------------------------------------- | --------------------------- |
-| A (`@` und `www`)       | `217.154.124.239`                       | richtig, nicht anfassen     |
-| MX                      | `mx00.ionos.de`, `mx01.ionos.de`        | richtig, nicht anfassen     |
-| TXT (SPF)               | `v=spf1 include:_spf-eu.ionos.com ~all` | richtig, nicht anfassen     |
-| TXT `resend._domainkey` | DKIM-Schlüssel                          | richtig, nicht anfassen     |
-| TXT `send` + MX `send`  | Resend-Versandweg                       | richtig, nicht anfassen     |
-| `_dmarc`                | CNAME auf `dmarc.ionos.de`              | **wirkungslos — Schritt 2** |
-| CAA                     | fehlt                                   | **Schritt 3**               |
-| AAAA                    | fehlt                                   | optional — Schritt 4        |
+**Gemessen am 25.08.2026** durch direkte DNS-Abfrage, nicht aus der
+IONOS-Oberfläche abgelesen. Die vorherige Fassung dieser Tabelle beschrieb an
+drei Stellen einen anderen Zustand als den tatsächlichen — siehe die Hinweise
+in der Spalte.
+
+| Eintrag                 | Tatsächlicher Wert                                            | Bewertung                          |
+| ----------------------- | ------------------------------------------------------------- | ---------------------------------- |
+| A (`@` und `www`)       | `217.154.124.239`                                             | richtig, nicht anfassen            |
+| MX                      | `mx00.ionos.de`, `mx01.ionos.de`                              | richtig, nicht anfassen            |
+| **TXT (SPF) am `@`**    | **existiert nicht**                                           | **fehlt — Schritt 5**              |
+| TXT `resend._domainkey` | DKIM-Schlüssel vorhanden                                      | richtig, nicht anfassen            |
+| TXT `send`              | `v=spf1 include:amazonses.com ~all`                           | richtig, nicht anfassen            |
+| MX `send`               | `feedback-smtp.eu-west-1.amazonses.com`                       | richtig, nicht anfassen            |
+| `_dmarc`                | TXT `v=DMARC1; p=none; rua=mailto:dmarc@white-gloss.de; fo=1` | **erledigt** — Schritt 2 ist getan |
+| CAA                     | `letsencrypt.org`, `sectigo.com`                              | **erledigt** — Schritt 3 ist getan |
+| AAAA                    | fehlt                                                         | optional — Schritt 4               |
+
+Die beiden früher als offen geführten Schritte 2 (DMARC) und 3 (CAA) sind
+inzwischen ausgeführt. Sie sind unten aus historischen Gründen stehen
+geblieben; wer sie erneut abarbeitet, ändert nichts.
 
 Zwei `google-site-verification`-Einträge sind vorhanden. Einer stammt
 vermutlich aus einem früheren Versuch. **Bitte beide stehen lassen** — sie
@@ -177,3 +187,61 @@ Nach etwa einer halben Stunde lässt sich das Ergebnis kostenlos prüfen:
 - <https://mxtoolbox.com/dmarc.aspx> — DMARC
 - <https://mxtoolbox.com/CAATest.aspx> — CAA
 - <https://mxtoolbox.com/spf.aspx> — SPF, sollte weiterhin genau einen Eintrag melden
+
+---
+
+## Schritt 5 – SPF für die Hauptdomain anlegen
+
+**Das ist der einzige offene Punkt beim Mailversand.**
+
+Eine frühere Fassung dieser Anleitung führte den Eintrag
+`v=spf1 include:_spf-eu.ionos.com ~all` als „richtig, nicht anfassen". Die
+Messung am 25.08.2026 zeigt: Unter `white-gloss.de` liegen **nur zwei
+`google-site-verification`-Einträge**, kein SPF.
+
+### Was das bedeutet — und was nicht
+
+**Die Mails aus der Website sind nicht betroffen.** Resend versendet über
+`send.white-gloss.de`; dort steht ein gültiger SPF-Eintrag, und der
+DKIM-Schlüssel unter `resend._domainkey` passt zur Absenderdomain. DMARC
+verlangt, dass _eine_ der beiden Prüfungen zur Absenderadresse passt — über
+DKIM ist das erfüllt. Buchungsbestätigungen kommen also an.
+
+**Betroffen sind Mails, die Sie selbst schreiben.** Alles, was aus dem
+IONOS-Postfach hinausgeht — Outlook, Handy, Webmail — hat derzeit keine
+Absenderberechtigung hinterlegt. Empfangende Server finden nichts vor und
+bewerten die Nachricht misstrauischer. Zusätzlich fehlt die Aussage, dass
+sonst niemand in Ihrem Namen versenden darf.
+
+### Der Eintrag
+
+| Feld     | Wert                                    |
+| -------- | --------------------------------------- |
+| Typ      | `TXT`                                   |
+| Hostname | `@`                                     |
+| Wert     | `v=spf1 include:_spf-eu.ionos.com ~all` |
+
+**Resend gehört hier nicht hinein.** Der Versandweg läuft über die
+Subdomain `send`, die ihren eigenen SPF-Eintrag hat. Ein zusätzlicher
+`include` für Amazon SES am `@` bringt nichts und verbraucht eine der zehn
+DNS-Abfragen, die ein SPF-Eintrag höchstens auslösen darf.
+
+**Prüfen Sie vorher, ob wirklich keiner da ist.** Zwei SPF-Einträge auf
+demselben Namen machen beide ungültig — das ist Regel 1 ganz oben.
+
+### Danach: DMARC verschärfen
+
+Der DMARC-Eintrag steht auf `p=none`. Das beobachtet nur und ordnet nichts
+an. Sobald der SPF-Eintrag ein paar Tage steht und die Berichte an
+`dmarc@white-gloss.de` keine Auffälligkeiten zeigen, ist `p=quarantine` der
+nächste Schritt. **Nicht vorher** — wer verschärft, bevor alle eigenen
+Versandwege sauber sind, sortiert seine eigenen Mails in den Spamordner.
+
+---
+
+## Zur alten Domain `whitegloss.de`
+
+Dort steht noch `v=spf1 include:_spf.mail.hostinger.com ~all` — ein Rest aus
+der Zeit vor dem Umzug. Er schadet nicht, solange über die alte Domain keine
+Mail läuft, beschreibt aber einen Anbieter, der nicht mehr im Einsatz ist.
+Aufräumen kann warten; wissen sollte man es.

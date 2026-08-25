@@ -27,6 +27,7 @@ import {
   type AutomationSetupStatus,
   type SystemEvent,
 } from "@/lib/automationDiagnostics.functions";
+import { bewerteHeartbeat } from "@/lib/automationHeartbeat";
 import { getSupabaseConfigStatus } from "@/lib/supabaseConfig";
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/automatisierung")({
@@ -185,7 +186,13 @@ function AutomationPage() {
   }, [fetchStatus]);
 
   const lexwareReady = Boolean(status?.lexwareApiKeySet);
-  const reminderReady = Boolean(status?.reminderCronSecretSet);
+  // Nicht mehr „Geheimnis gesetzt = bereit": Bewertet wird, ob der Endpunkt
+  // tatsächlich gelaufen ist. Siehe automationHeartbeat.ts.
+  const erinnerung = bewerteHeartbeat({
+    secretGesetzt: Boolean(status?.reminderCronSecretSet),
+    letzterLauf: status?.letzterLauf ?? null,
+    letzterLaufDetail: status?.letzterLaufDetail ?? null,
+  });
 
   return (
     <div className="min-h-dvh bg-background">
@@ -270,20 +277,10 @@ function AutomationPage() {
           <SetupCard
             icon={BellRing}
             title="Erinnerungen"
-            status={
-              statusError
-                ? "Statusfehler"
-                : reminderReady
-                  ? "bereit für Scheduler"
-                  : "noch nicht aktiv"
-            }
-            tone={reminderReady ? "ready" : "pending"}
+            status={statusError ? "Statusfehler" : erinnerung.status}
+            tone={statusError ? "off" : erinnerung.tone}
             description="Die Versandroutine für bestätigte Termine ist vorhanden und schützt gegen Doppelversand. Für den vollautomatischen Betrieb muss der geschützte Cron-Endpunkt regelmäßig aufgerufen werden."
-            detail={
-              reminderReady
-                ? "REMINDER_CRON_SECRET ist hinterlegt. Jetzt muss nur noch der stündliche Cronjob beim Hosting aktiviert sein."
-                : "Server-Variable REMINDER_CRON_SECRET fehlt noch; ohne sie lehnt der Cron-Endpunkt jeden Automationslauf ab."
-            }
+            detail={erinnerung.detail}
           />
         </div>
 

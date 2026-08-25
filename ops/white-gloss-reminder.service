@@ -1,0 +1,41 @@
+# Ruft den geschuetzten Automations-Endpunkt der Anwendung auf.
+#
+# WARUM EIN EIGENER DIENST STATT EINES CRONTAB-EINTRAGS
+# Der Zeitplan gehoert damit zum selben versionierten Betriebsstand wie
+# `white-gloss.service`, laeuft unter demselben Benutzer, liest dieselbe
+# Umgebungsdatei und schreibt in dasselbe Journal. Ein Crontab-Eintrag waere
+# nirgends im Repository sichtbar — genau der Zustand, der dazu gefuehrt hat,
+# dass niemand sagen konnte, ob die Erinnerungen ueberhaupt laufen.
+#
+# DAS GEHEIMNIS STEHT NICHT IN DER KOMMANDOZEILE.
+# `curl --config -` liest die Kopfzeile von der Standardeingabe. Stuende der
+# Wert stattdessen als `-H "Authorization: ..."` im Aufruf, koennte ihn jeder
+# Benutzer des Servers waehrend des Laufs in der Prozessliste mitlesen. So
+# steht er nur in der Prozessumgebung — dort, wo der Node-Dienst seine
+# Zugangsdaten ohnehin haelt.
+
+[Unit]
+Description=White Gloss appointment reminder run
+After=network-online.target white-gloss.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+# Dieselbe Datei wie der Hauptdienst. systemd liest sie als root, bevor es
+# auf `deploy` herunterschaltet — der Modus 0600 root:root bleibt richtig.
+EnvironmentFile=/etc/white-gloss/environment
+ExecStart=/bin/sh -c 'echo "header = \\"Authorization: Bearer $REMINDER_CRON_SECRET\\"" | curl --config - --silent --show-error --fail --max-time 120 -X POST http://127.0.0.1:3000/api/automation-cron'
+
+# Die Anwendung selbst braucht nichts davon; curl erst recht nicht.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
