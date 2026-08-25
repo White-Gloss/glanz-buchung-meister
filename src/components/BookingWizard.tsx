@@ -28,6 +28,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionPhotoUpload, type UploadedPhoto } from "@/components/ConditionPhotoUpload";
 import { diagnoseBackendError, type BackendErrorInfo } from "@/lib/backendErrors";
+import {
+  alterInTagen,
+  DRAFT_KEY,
+  istErwaehnenswert,
+  lesen as entwurfLesen,
+  serialisieren as entwurfSerialisieren,
+  type BookingDraft,
+  type BookingDraftInput,
+} from "@/lib/bookingDraft";
 import { createBooking, getDayLoad } from "@/lib/bookings.functions";
 import {
   calcLineItems,
@@ -195,6 +204,10 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
   const [submitError, setSubmitError] = useState<BackendErrorInfo | null>(null);
   const [dayLoad, setDayLoad] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  /** Gefundener Entwurf, solange die Besucherin noch nicht entschieden hat. */
+  const [gefundenerEntwurf, setGefundenerEntwurf] = useState<BookingDraft | null>(null);
+  /** Erst nach dem Prüfen des Speichers darf geschrieben werden. */
+  const [entwurfGeprueft, setEntwurfGeprueft] = useState(false);
 
   const fetchDayLoad = useServerFn(getDayLoad);
   const submitBooking = useServerFn(createBooking);
@@ -205,6 +218,94 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
       .then(setDayLoad)
       .catch(() => undefined);
   }, [fetchDayLoad]);
+
+  /** Der aktuelle Stand in der Form, in der er gesichert wird. */
+  const entwurfStand: BookingDraftInput = useMemo(
+    () => ({
+      step,
+      packageId,
+      vehicleId,
+      selectedAddOnIds,
+      pickupCity,
+      conditionNote,
+      date,
+      preferredContact,
+      customer,
+    }),
+    [
+      step,
+      packageId,
+      vehicleId,
+      selectedAddOnIds,
+      pickupCity,
+      conditionNote,
+      date,
+      preferredContact,
+      customer,
+    ],
+  );
+
+  /**
+   * Einmalig nach dem Aufbau im Browser nachsehen, ob ein Entwurf liegt.
+   *
+   * Bewusst nicht während des Renderns: Der Server kennt den Speicher des
+   * Browsers nicht, ein Zugriff dort ergäbe unterschiedliche Ausgaben und
+   * damit einen Hydration-Fehler.
+   */
+  useEffect(() => {
+    try {
+      const gefunden = entwurfLesen(window.localStorage.getItem(DRAFT_KEY), Date.now());
+      // Ein Entwurf mit vorgewähltem Paket aus der Adresse würde die
+      // Auswahl der Besucherin überschreiben — dann lieber ignorieren.
+      if (gefunden && istErwaehnenswert(gefunden)) setGefundenerEntwurf(gefunden);
+    } catch {
+      // Privater Modus oder gesperrter Speicher: dann eben ohne Entwurf.
+    }
+    setEntwurfGeprueft(true);
+  }, []);
+
+  /** Jede Änderung sichern — aber erst, wenn ein alter Entwurf abgehandelt ist. */
+  useEffect(() => {
+    if (!entwurfGeprueft || gefundenerEntwurf) return;
+    try {
+      if (istErwaehnenswert(entwurfStand)) {
+        window.localStorage.setItem(DRAFT_KEY, entwurfSerialisieren(entwurfStand, Date.now()));
+      } else {
+        window.localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch {
+      // Speicher nicht verfügbar — der Assistent funktioniert trotzdem.
+    }
+  }, [entwurfStand, entwurfGeprueft, gefundenerEntwurf]);
+
+  /** Nach dem Absenden hat der Entwurf seinen Zweck erfüllt. */
+  function entwurfVerwerfen() {
+    try {
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* nichts zu tun */
+    }
+  }
+
+  function entwurfFortsetzen() {
+    const e = gefundenerEntwurf;
+    if (!e) return;
+    setPackageId(e.packageId);
+    setVehicleId(e.vehicleId);
+    setSelectedAddOnIds(e.selectedAddOnIds);
+    setPickupCity(e.pickupCity);
+    setConditionNote(e.conditionNote);
+    setDate(e.date);
+    setPreferredContact(e.preferredContact as ContactChannel);
+    setCustomer(e.customer);
+    setStep(e.step);
+    setGefundenerEntwurf(null);
+  }
+
+  function entwurfNeuBeginnen() {
+    entwurfVerwerfen();
+    setGefundenerEntwurf(null);
+  }
 
   useEffect(() => {
     if (step === 0) return;
@@ -361,6 +462,8 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
       }
 
       toast.success("Anfrage gesendet – White Gloss prüft jetzt Ihren Wunschtermin.");
+      // Die Anfrage ist heraus; der Entwurf hat seinen Zweck erfüllt.
+      entwurfVerwerfen();
       setSubmitting(false);
       await navigateAfterBooking(
         {
@@ -382,6 +485,28 @@ export function BookingWizard({ initialPackageId }: { initialPackageId?: string 
 
   return (
     <>
+      {gefundenerEntwurf ? (
+        <div className="mx-auto mb-5 w-full max-w-4xl rounded-2xl border border-primary/30 bg-primary/10 px-5 py-4">
+          <p className="text-sm font-medium text-foreground">
+            Sie haben hier schon einmal angefangen
+            {alterInTagen(gefundenerEntwurf, Date.now()) > 0
+              ? ` (vor ${alterInTagen(gefundenerEntwurf, Date.now())} Tagen)`
+              : ""}
+            .
+          </p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Ihre Angaben liegen nur auf diesem Gerät und wurden nicht an uns übermittelt.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={entwurfFortsetzen}>
+              Fortsetzen
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={entwurfNeuBeginnen}>
+              Neu beginnen
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <div id="booking-active-step" className="mx-auto w-full max-w-4xl scroll-mt-28">
         <div className="mb-5 px-1 sm:mb-7">
           <div
