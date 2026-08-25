@@ -1,6 +1,6 @@
 # WHITE GLOSS OS · ERPNext Gate Progress
 
-Last verified: 2026-08-24
+Last verified: 2026-08-25
 
 This file records verified integration gates. It does not replace `erpnext-domain-model.md`.
 
@@ -56,9 +56,20 @@ Verified result:
 
 The permanent customer synchronization function remains default-deny. A new controlled run requires the customer-write switch, an exact one-booking allowlist, a server-signed five-minute preview confirmation bound to the booking revision and a fenced 15-minute database claim that blocks booking mutation during the ERPNext call. Customer and Contact POSTs additionally recheck current token ownership and lease expiry immediately before the external write. Before Customer creation, a durable uncertain-outcome marker blocks automatic retry across a hard worker exit; the marker is cleared only after the returned Customer ID is stored. Final success stores the booking-specific Customer mapping before publishing the shared mapping as synchronized. The controlled historical test did not enable broad automatic writes.
 
-### Next customer prerequisite
+### Subsequent controlled customer synchronization — PASS
 
-The live audit on 2026-08-24 found 14 bookings without a confirmed ERPNext customer mapping. A new vehicle/order production test must first take exactly one eligible booking through the controlled customer preview and customer-write gate. No booking is automatically allowlisted.
+On 2026-08-25, the explicitly approved booking with service date 2026-08-29 passed the signed customer preview and revision-bound write gate.
+
+Verified result:
+
+- the preview reported that exactly one Customer and one Contact were needed;
+- the Customer and Contact were created and mapped successfully;
+- both returned identifiers were persisted before success;
+- the shared customer mapping and booking-specific customer state are synchronized;
+- the customer lease and fencing tokens were released;
+- no customer synchronization error remains.
+
+No booking remains automatically allowlisted. The permanent customer endpoint was restored byte-for-byte to the current default-deny `main` source immediately after the run.
 
 ## Gate 4 — service catalog
 
@@ -75,7 +86,7 @@ Verified behavior:
 
 ## Gate 5 — vehicle and operational order
 
-**READINESS PASS · MAPPING PREVIEW PASS · NEXT PRODUCTION WRITE LOCKED**
+**PASS**
 
 Verified current state:
 
@@ -86,7 +97,25 @@ Verified current state:
 - a selected booking maps cleanly to the existing ERPNext customer, deterministic vehicle identity, operational order and exact service rows;
 - preview mode performs no writes.
 
-Live Supabase state inspected on 2026-08-24 already contains one vehicle/order mapping synchronized on 2026-08-21. The next controlled run is therefore not the first historical vehicle/order production write. This discrepancy must remain visible in the project record.
+Live Supabase state inspected on 2026-08-24 already contained one vehicle/order mapping synchronized on 2026-08-21. The controlled run below was therefore a subsequent production write, not the first historical vehicle/order write.
+
+### Controlled subsequent vehicle/order production run — PASS
+
+On 2026-08-25, the same explicitly approved booking with service date 2026-08-29 completed the signed preview, revision-locked claim, create and post-write verification sequence.
+
+Verified result:
+
+- `WHITE GLOSS Vehicle` `WGV-2026-00003` was created;
+- `WHITE GLOSS Order` `WGO-2026-00004` was created;
+- the exact service set is `WG-PKG-KERAMIK`, `WG-ADD-HOLBRING` and `WG-ADD-SCHEINWERFER`;
+- all 18 vehicle, customer, booking, service, date, total and payment checks passed;
+- exact-plate vehicle count is one and exact-booking order count is one;
+- no Sales Invoice is linked and the commit reported `financial_writes=false`;
+- Supabase contains one booking-state row with the expected vehicle and order identifiers;
+- all processing leases and fencing tokens were released;
+- customer and vehicle/order error totals remain zero.
+
+After verification, the customer, preview and commit Functions were restored byte-for-byte to current `main`. The short-lived runner was retired and contains no booking UUID, service-role logic or run token.
 
 The permanent commit endpoint is default-deny. A write requires all of the following at the same time:
 
