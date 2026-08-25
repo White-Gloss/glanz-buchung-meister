@@ -169,6 +169,35 @@ async function finishReminder(bookingId: string, error?: string) {
   );
 }
 
+/**
+ * Hinterlegt, dass ein Automationslauf stattgefunden hat.
+ *
+ * WARUM DAS SEIN MUSS: Ohne diese Zeile lässt sich von außen nicht
+ * unterscheiden, ob der Zeitgeber läuft und nichts zu tun war, oder ob ihn
+ * niemand anstößt. Beides sieht im Adminbereich gleich aus — nämlich nach
+ * nichts.
+ *
+ * STÖRT NIEMALS. Ein Lebenszeichen, das den Lauf abbricht, wäre schlimmer
+ * als kein Lebenszeichen: Die Erinnerungen sind die Hauptsache, die
+ * Buchführung darüber ist es nicht. Fehlt die Tabelle, weil die Migration
+ * noch nicht eingespielt ist, bleibt es beim Lauf.
+ *
+ * `detail` enthält ausschließlich Zähler — nichts Personenbezogenes.
+ */
+export async function recordAutomationHeartbeat(area: string, detail: string): Promise<void> {
+  try {
+    await query(
+      `INSERT INTO public.automation_heartbeat (area, last_run_at, detail)
+            VALUES ($1, now(), $2)
+       ON CONFLICT (area)
+       DO UPDATE SET last_run_at = now(), detail = excluded.detail`,
+      [area.slice(0, 60), detail.slice(0, 200)],
+    );
+  } catch {
+    // Absicht: siehe oben.
+  }
+}
+
 export type ReminderRunResult = {
   candidates: number;
   sent: number;

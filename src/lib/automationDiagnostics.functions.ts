@@ -16,6 +16,15 @@ async function assertAdmin(context: { supabase: SupabaseClient<Database>; userId
 export type AutomationSetupStatus = {
   lexwareApiKeySet: boolean;
   reminderCronSecretSet: boolean;
+  /**
+   * Wann der Automations-Endpunkt zuletzt gelaufen ist, oder `null`, wenn es
+   * dafür noch kein Lebenszeichen gibt. `null` bedeutet ausdrücklich NICHT
+   * „funktioniert nicht": Es kann auch heißen, dass die Migration noch nicht
+   * eingespielt ist oder seit deren Einspielen noch kein Lauf stattfand.
+   */
+  letzterLauf: string | null;
+  /** Zähler des letzten Laufs, unverändert wie hinterlegt. */
+  letzterLaufDetail: string | null;
 };
 
 /**
@@ -27,9 +36,30 @@ export const getAutomationSetupStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AutomationSetupStatus> => {
     await assertAdmin(context);
 
+    // Das Lebenszeichen ist eine Zusatzangabe. Fehlt die Tabelle, bleibt der
+    // übrige Status trotzdem stehen — eine fehlende Diagnose ist kein
+    // Betriebsfehler.
+    let letzterLauf: string | null = null;
+    let letzterLaufDetail: string | null = null;
+    try {
+      const { queryOne } = await import("./db.server");
+      const row = await queryOne<{ last_run_at: string; detail: string | null }>(
+        `SELECT last_run_at, detail FROM public.automation_heartbeat WHERE area = $1`,
+        ["automation-cron"],
+      );
+      if (row) {
+        letzterLauf = String(row.last_run_at);
+        letzterLaufDetail = row.detail;
+      }
+    } catch {
+      // Absicht: siehe oben.
+    }
+
     return {
       lexwareApiKeySet: Boolean(process.env.LEXWARE_API_KEY?.trim()),
       reminderCronSecretSet: Boolean(process.env.REMINDER_CRON_SECRET?.trim()),
+      letzterLauf,
+      letzterLaufDetail,
     };
   });
 
