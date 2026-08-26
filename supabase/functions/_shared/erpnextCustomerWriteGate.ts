@@ -1,12 +1,11 @@
-export const CUSTOMER_WRITE_CONFIRMATION_VERSION = "WGCU1";
+export const CUSTOMER_WRITE_CONFIRMATION_VERSION = "WGCU2";
 export const CUSTOMER_WRITE_CONFIRMATION_TTL_SECONDS = 5 * 60;
 
 const CONFIRMATION_CLOCK_SKEW_SECONDS = 30;
 
 type GateStatusInput = {
   enabledValue?: string | null;
-  approvedBookingId?: string | null;
-  bookingId: string;
+  approvalActive: boolean;
 };
 
 type GateEvaluationInput = GateStatusInput & {
@@ -17,6 +16,7 @@ type ConfirmationPayload = {
   version: typeof CUSTOMER_WRITE_CONFIRMATION_VERSION;
   bookingId: string;
   bookingRevision: string;
+  approvalId: string | null;
   issuedAt: number;
   expiresAt: number;
   nonce: string;
@@ -26,6 +26,7 @@ type IssueConfirmationInput = {
   secret: string;
   bookingId: string;
   bookingRevision: string;
+  approvalId?: string | null;
   nowMs?: number;
   nonce?: string;
 };
@@ -34,6 +35,7 @@ type VerifyConfirmationInput = {
   secret: string;
   bookingId: string;
   bookingRevision: string;
+  approvalId?: string | null;
   confirmation?: unknown;
   nowMs?: number;
 };
@@ -48,12 +50,13 @@ export type CustomerWriteGateEvaluation = CustomerWriteGateStatus & {
   confirmationValid: boolean;
   error:
     | "customer_write_gate_disabled"
-    | "customer_write_booking_not_approved"
+    | "customer_write_approval_required"
     | "explicit_customer_write_confirmation_required"
     | null;
 };
 
 const normalize = (value?: string | null) => value?.trim() ?? "";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const encoder = new TextEncoder();
 
 const bytesToBase64Url = (bytes: Uint8Array) => {
@@ -81,10 +84,18 @@ export async function issueCustomerWriteConfirmation({
   secret,
   bookingId,
   bookingRevision,
+  approvalId = null,
   nowMs = Date.now(),
   nonce = crypto.randomUUID(),
 }: IssueConfirmationInput) {
-  if (!secret.trim() || !bookingId.trim() || !bookingRevision.trim() || !nonce.trim()) {
+  const normalizedApprovalId = normalize(approvalId) || null;
+  if (
+    !secret.trim() ||
+    !bookingId.trim() ||
+    !bookingRevision.trim() ||
+    !nonce.trim() ||
+    (normalizedApprovalId !== null && !UUID_RE.test(normalizedApprovalId))
+  ) {
     throw new Error("invalid_confirmation_input");
   }
 
@@ -93,6 +104,7 @@ export async function issueCustomerWriteConfirmation({
     version: CUSTOMER_WRITE_CONFIRMATION_VERSION,
     bookingId,
     bookingRevision,
+    approvalId: normalizedApprovalId,
     issuedAt,
     expiresAt: issuedAt + CUSTOMER_WRITE_CONFIRMATION_TTL_SECONDS,
     nonce,
@@ -110,6 +122,7 @@ export async function verifyCustomerWriteConfirmation({
   secret,
   bookingId,
   bookingRevision,
+  approvalId = null,
   confirmation,
   nowMs = Date.now(),
 }: VerifyConfirmationInput) {
@@ -137,10 +150,12 @@ export async function verifyCustomerWriteConfirmation({
       new TextDecoder().decode(base64UrlToBytes(encodedPayload)),
     ) as Partial<ConfirmationPayload>;
     const nowSeconds = Math.floor(nowMs / 1_000);
+    const expectedApprovalId = normalize(approvalId) || null;
     const payloadValid =
       parsed.version === CUSTOMER_WRITE_CONFIRMATION_VERSION &&
       parsed.bookingId === bookingId &&
       parsed.bookingRevision === bookingRevision &&
+      parsed.approvalId === expectedApprovalId &&
       Number.isInteger(parsed.issuedAt) &&
       Number.isInteger(parsed.expiresAt) &&
       typeof parsed.nonce === "string" &&
@@ -165,12 +180,10 @@ export async function verifyCustomerWriteConfirmation({
 
 export function getCustomerWriteGateStatus({
   enabledValue,
-  approvedBookingId,
-  bookingId,
+  approvalActive,
 }: GateStatusInput): CustomerWriteGateStatus {
   const enabled = normalize(enabledValue).toLowerCase() === "true";
-  const bookingApproved =
-    normalize(approvedBookingId).length > 0 && normalize(approvedBookingId) === bookingId;
+  const bookingApproved = approvalActive;
 
   return {
     enabled,
@@ -194,7 +207,7 @@ export function evaluateCustomerWriteGate({
     return { ...evaluation, error: "customer_write_gate_disabled" };
   }
   if (!status.bookingApproved) {
-    return { ...evaluation, error: "customer_write_booking_not_approved" };
+    return { ...evaluation, error: "customer_write_approval_required" };
   }
   if (!confirmationValid) {
     return {

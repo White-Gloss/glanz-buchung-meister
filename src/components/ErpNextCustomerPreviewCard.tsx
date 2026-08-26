@@ -29,7 +29,20 @@ type PreviewResult = {
     enabled: boolean;
     booking_approved: boolean;
     ready: boolean;
+    approval_id?: string | null;
+    approval_expires_at?: string | null;
+    approval_confirmation?: string | null;
     confirmation?: string | null;
+  };
+  error?: string;
+};
+
+type ApprovalResult = {
+  ok: boolean;
+  approval?: {
+    id: string;
+    scope: "customer";
+    expires_at: string;
   };
   error?: string;
 };
@@ -69,8 +82,10 @@ function errorText(code: string | undefined) {
       return "Diese Kundenzuordnung ist wegen eines früheren unsicheren Fehlers für automatische Verarbeitung gesperrt.";
     case "customer_write_gate_disabled":
       return "Der kontrollierte Kundensync ist serverseitig gesperrt.";
-    case "customer_write_booking_not_approved":
-      return "Diese Buchung ist nicht als kontrollierter Kundensync freigegeben.";
+    case "customer_write_approval_required":
+      return "Für diese Buchungsrevision fehlt eine aktive Einmalfreigabe.";
+    case "approval_confirmation_invalid":
+      return "Die Freigabebestätigung ist abgelaufen. Bitte die Vorschau neu laden.";
     case "explicit_customer_write_confirmation_required":
       return "Die buchungsgebundene Kundensync-Bestätigung fehlt oder ist nicht mehr gültig.";
     case "customer_sync_busy_blocked_or_revision_changed":
@@ -92,6 +107,7 @@ export function ErpNextCustomerPreviewCard() {
   const [selectedId, setSelectedId] = useState("");
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [result, setResult] = useState<PreviewResult | null>(null);
 
@@ -158,13 +174,59 @@ export function ErpNextCustomerPreviewCard() {
     }
   }, [selectedId]);
 
+  const runApproval = useCallback(async () => {
+    const confirmation = result?.production_write?.approval_confirmation;
+    if (
+      !selectedId ||
+      !result?.ok ||
+      result.mode !== "preview" ||
+      !result.production_write?.enabled ||
+      result.production_write.ready ||
+      !confirmation ||
+      result.customer_state === "already_synced"
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Einmalige ERPNext-Kundenfreigabe erteilen? Sie gilt höchstens fünf Minuten, nur für diese Buchungsrevision und wird beim ersten sicheren Sync-Versuch verbraucht.",
+    );
+    if (!confirmed) return;
+
+    setApproving(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase.functions.invoke<ApprovalResult>(
+        "erpnext-write-approval",
+        {
+          body: {
+            bookingId: selectedId,
+            scope: "customer",
+            confirmation,
+          },
+        },
+      );
+      if (error) throw error;
+      if (!data?.ok || !data.approval) throw new Error(errorText(data?.error));
+
+      toast.success("Einmalfreigabe erteilt. Die Vorschau wird revisionsgenau erneuert.");
+      await runPreview();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Einmalfreigabe fehlgeschlagen.");
+    } finally {
+      setApproving(false);
+    }
+  }, [result, runPreview, selectedId]);
+
   const runCommit = useCallback(async () => {
     const confirmation = result?.production_write?.confirmation;
+    const approvalId = result?.production_write?.approval_id;
     if (
       !selectedId ||
       !result?.ok ||
       result.mode !== "preview" ||
       !result.production_write?.ready ||
+      !approvalId ||
       !confirmation ||
       result.customer_state === "already_synced"
     ) {
@@ -185,6 +247,7 @@ export function ErpNextCustomerPreviewCard() {
           body: {
             bookingId: selectedId,
             mode: "commit",
+            approvalId,
             confirmation,
           },
         },
@@ -241,7 +304,7 @@ export function ErpNextCustomerPreviewCard() {
                   setSelectedId(event.target.value);
                   setResult(null);
                 }}
-                disabled={loadingBookings || bookings.length === 0 || committing}
+                disabled={loadingBookings || bookings.length === 0 || approving || committing}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {bookings.length === 0 ? (
@@ -262,7 +325,7 @@ export function ErpNextCustomerPreviewCard() {
                 variant="outline"
                 size="sm"
                 loading={loadingBookings}
-                disabled={committing}
+                disabled={approving || committing}
                 onClick={() => void loadBookings()}
               >
                 {loadingBookings ? null : <RefreshCw aria-hidden className="size-4" />}
@@ -272,7 +335,7 @@ export function ErpNextCustomerPreviewCard() {
                 type="button"
                 size="sm"
                 loading={previewing}
-                disabled={!selectedId || committing}
+                disabled={!selectedId || approving || committing}
                 onClick={() => void runPreview()}
               >
                 {previewing ? null : <Eye aria-hidden className="size-4" />}
@@ -323,9 +386,24 @@ export function ErpNextCustomerPreviewCard() {
                 <div>
                   <p className="font-medium">Kundensync technisch gesperrt</p>
                   <p className="mt-1 text-xs opacity-90">
-                    Die Vorschau ist sicher. Ein echter Kundensync wird erst möglich, wenn der
-                    serverseitige Schalter und die exakte Buchungs-ID gemeinsam freigegeben sind.
+                    {result.production_write?.enabled
+                      ? "Die Vorschau ist sicher. Erteilen Sie eine kurzlebige Einmalfreigabe für genau diese Buchungsrevision."
+                      : "Die Vorschau ist sicher. Der globale serverseitige Schreibschalter ist weiterhin deaktiviert."}
                   </p>
+                  {result.production_write?.enabled &&
+                  result.production_write.approval_confirmation ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-3"
+                      loading={approving}
+                      disabled={previewing || committing}
+                      onClick={() => void runApproval()}
+                    >
+                      {approving ? null : <ShieldCheck aria-hidden className="size-4" />}
+                      Einmalig freigeben
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -350,7 +428,7 @@ export function ErpNextCustomerPreviewCard() {
                     size="sm"
                     className="mt-3"
                     loading={committing}
-                    disabled={previewing}
+                    disabled={previewing || approving}
                     onClick={() => void runCommit()}
                   >
                     {committing ? null : <ShieldCheck aria-hidden className="size-4" />}

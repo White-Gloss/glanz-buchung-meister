@@ -34,6 +34,12 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Supabase's service_role bypasses RLS. The approval contract exercises the
+-- same server-side metadata lookup that the Edge Functions use, so the shim
+-- must preserve that production property even when the cluster roles already
+-- existed from an earlier disposable database run.
+ALTER ROLE service_role BYPASSRLS;
+
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS storage;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

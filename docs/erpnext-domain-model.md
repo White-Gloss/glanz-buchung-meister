@@ -1,12 +1,20 @@
 # WHITE GLOSS OS · ERPNext Domain Model
 
-Status: approved design baseline for the next integration gate
+Status: approved operational domain baseline; finance boundary defined in [ADR-001](./adr-001-erpnext-operational-sync-and-finance-boundary.md)
 
 ## Goal
 
 ERPNext becomes the operational system of record while the website and Supabase remain the public intake and synchronization layer during migration.
 
-The next phase must not create invoices or payments. It is limited to customer, contact, address, service catalog and order-domain preparation.
+The operational synchronization must not create invoices, payments, ledger postings, stock movements or bank records. It is limited to the explicitly gated customer, contact, service catalog, vehicle and operational-order domains.
+
+## System authority
+
+- Supabase owns public intake, appointment scheduling, public booking status and the exact booking revision used for approval.
+- ERPNext owns the operational Customer, Contact, `WHITE GLOSS Vehicle` and `WHITE GLOSS Order` after a successful synchronization.
+- Supabase retains the booking source record, audit context and durable ERPNext mappings; the booking UUID remains the cross-system idempotency key.
+- Lexware remains the current accounting and invoice fallback.
+- A future ALYF/Frappe `Banking` connection may use EBICS with a compatible existing bank, but it is separately gated and has no authority in the current operational synchronization.
 
 ## Verified production identifiers
 
@@ -97,30 +105,30 @@ Current Supabase service catalog is mapped to stable planned ERPNext item codes.
 
 ### Packages
 
-| Source ID | Label | Planned ERPNext Item Code |
-|---|---|---|
-| `basis` | Basis Pflege | `WG-PKG-BASIS` |
-| `premium` | Premium Glanz | `WG-PKG-PREMIUM` |
-| `keramik` | High-End Keramik | `WG-PKG-KERAMIK` |
+| Source ID | Label            | Planned ERPNext Item Code |
+| --------- | ---------------- | ------------------------- |
+| `basis`   | Basis Pflege     | `WG-PKG-BASIS`            |
+| `premium` | Premium Glanz    | `WG-PKG-PREMIUM`          |
+| `keramik` | High-End Keramik | `WG-PKG-KERAMIK`          |
 
 ### Add-ons
 
-| Source ID | Label | Planned ERPNext Item Code |
-|---|---|---|
-| `felgen` | Felgen-Spezial | `WG-ADD-FELGEN` |
-| `leder` | Lederpflege Deluxe | `WG-ADD-LEDER` |
-| `motor` | Motorwäsche | `WG-ADD-MOTOR` |
-| `ozon` | Innenraum-Ozon | `WG-ADD-OZON` |
-| `scheinwerfer` | Scheinwerfer-Aufbereitung | `WG-ADD-SCHEINWERFER` |
-| `hol` | Hol- & Bringservice | `WG-ADD-HOLBRING` |
+| Source ID      | Label                     | Planned ERPNext Item Code |
+| -------------- | ------------------------- | ------------------------- |
+| `felgen`       | Felgen-Spezial            | `WG-ADD-FELGEN`           |
+| `leder`        | Lederpflege Deluxe        | `WG-ADD-LEDER`            |
+| `motor`        | Motorwäsche               | `WG-ADD-MOTOR`            |
+| `ozon`         | Innenraum-Ozon            | `WG-ADD-OZON`             |
+| `scheinwerfer` | Scheinwerfer-Aufbereitung | `WG-ADD-SCHEINWERFER`     |
+| `hol`          | Hol- & Bringservice       | `WG-ADD-HOLBRING`         |
 
 ### Pickup tiers
 
-| Source ID | Label | Planned ERPNext Item Code |
-|---|---|---|
-| `tier_10` | Abholung bis 10 km | `WG-PICKUP-10KM` |
-| `tier_20` | Abholung bis 20 km | `WG-PICKUP-20KM` |
-| `tier_50` | Abholung bis 50 km | `WG-PICKUP-50KM` |
+| Source ID | Label              | Planned ERPNext Item Code |
+| --------- | ------------------ | ------------------------- |
+| `tier_10` | Abholung bis 10 km | `WG-PICKUP-10KM`          |
+| `tier_20` | Abholung bis 20 km | `WG-PICKUP-20KM`          |
+| `tier_50` | Abholung bis 50 km | `WG-PICKUP-50KM`          |
 
 ### Vehicle classes
 
@@ -155,11 +163,15 @@ Still forbidden in this phase:
 
 - Sales Invoice write
 - Payment Entry write
-- bank access
+- General Ledger or other accounting posting
+- stock, warehouse or inventory movement
+- bank account, transaction, reconciliation or payment write
 - Chart of Accounts write
 - User / Role administration
 - System Settings write
 - delete permissions for synchronized customer records
+
+These restrictions apply to direct API calls and to indirect ERPNext behavior triggered by the permitted operational records. The synchronization must verify that no financial document or posting was created. Lexware remains the current accounting and invoicing fallback; ALYF/Frappe `Banking` over EBICS is reserved for a later, independently approved phase.
 
 ## Next gates
 

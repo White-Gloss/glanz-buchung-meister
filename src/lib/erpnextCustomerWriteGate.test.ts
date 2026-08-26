@@ -9,6 +9,8 @@ import {
 
 const BOOKING_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_BOOKING_ID = "22222222-2222-4222-8222-222222222222";
+const APPROVAL_ID = "33333333-3333-4333-8333-333333333333";
+const OTHER_APPROVAL_ID = "44444444-4444-4444-8444-444444444444";
 const BOOKING_REVISION = "2026-08-24T10:00:00.000Z";
 const OTHER_REVISION = "2026-08-24T10:01:00.000Z";
 const SECRET = "server-only-test-secret";
@@ -20,6 +22,7 @@ const issueConfirmation = () =>
     secret: SECRET,
     bookingId: BOOKING_ID,
     bookingRevision: BOOKING_REVISION,
+    approvalId: APPROVAL_ID,
     nowMs: NOW_MS,
     nonce: NONCE,
   });
@@ -28,34 +31,33 @@ describe("ERPNext customer production write gate", () => {
   it("is default-deny when the server switch is missing", () => {
     expect(
       getCustomerWriteGateStatus({
-        bookingId: BOOKING_ID,
-        approvedBookingId: BOOKING_ID,
+        approvalActive: true,
       }),
     ).toEqual({ enabled: false, bookingApproved: true, ready: false });
   });
 
-  it("does not approve a different booking", () => {
+  it("requires an active one-time approval", () => {
     const result = evaluateCustomerWriteGate({
       enabledValue: "true",
-      approvedBookingId: OTHER_BOOKING_ID,
-      bookingId: BOOKING_ID,
+      approvalActive: false,
       confirmationValid: true,
     });
 
     expect(result.ready).toBe(false);
-    expect(result.error).toBe("customer_write_booking_not_approved");
+    expect(result.error).toBe("customer_write_approval_required");
   });
 
   it("issues a server-signed confirmation for one booking revision", async () => {
     const confirmation = await issueConfirmation();
 
     expect(confirmation.split(".")).toHaveLength(3);
-    expect(confirmation).toMatch(/^WGCU1\./);
+    expect(confirmation).toMatch(/^WGCU2\./);
     await expect(
       verifyCustomerWriteConfirmation({
         secret: SECRET,
         bookingId: BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
         confirmation,
         nowMs: NOW_MS + 60_000,
       }),
@@ -70,6 +72,7 @@ describe("ERPNext customer production write gate", () => {
         secret: SECRET,
         bookingId: OTHER_BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
         confirmation,
         nowMs: NOW_MS + 60_000,
       }),
@@ -79,7 +82,50 @@ describe("ERPNext customer production write gate", () => {
         secret: SECRET,
         bookingId: BOOKING_ID,
         bookingRevision: OTHER_REVISION,
+        approvalId: APPROVAL_ID,
         confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it("rejects a missing, wrong or replaced approval id", async () => {
+    const confirmation = await issueConfirmation();
+    const unboundConfirmation = await issueCustomerWriteConfirmation({
+      secret: SECRET,
+      bookingId: BOOKING_ID,
+      bookingRevision: BOOKING_REVISION,
+      approvalId: null,
+      nowMs: NOW_MS,
+      nonce: "approval-nonce-1234567890",
+    });
+
+    await expect(
+      verifyCustomerWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      verifyCustomerWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        approvalId: OTHER_APPROVAL_ID,
+        confirmation,
+        nowMs: NOW_MS + 60_000,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      verifyCustomerWriteConfirmation({
+        secret: SECRET,
+        bookingId: BOOKING_ID,
+        bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
+        confirmation: unboundConfirmation,
         nowMs: NOW_MS + 60_000,
       }),
     ).resolves.toBe(false);
@@ -93,6 +139,7 @@ describe("ERPNext customer production write gate", () => {
         secret: "different-server-secret",
         bookingId: BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
         confirmation,
         nowMs: NOW_MS + 60_000,
       }),
@@ -102,6 +149,7 @@ describe("ERPNext customer production write gate", () => {
         secret: SECRET,
         bookingId: BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
         confirmation,
         nowMs: NOW_MS + 5 * 60_000,
       }),
@@ -111,7 +159,8 @@ describe("ERPNext customer production write gate", () => {
         secret: SECRET,
         bookingId: BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
-        confirmation: "WGVO3.invalid.invalid",
+        approvalId: APPROVAL_ID,
+        confirmation: "WGCU2.invalid.invalid",
         nowMs: NOW_MS,
       }),
     ).resolves.toBe(false);
@@ -120,16 +169,16 @@ describe("ERPNext customer production write gate", () => {
         secret: SECRET,
         bookingId: BOOKING_ID,
         bookingRevision: BOOKING_REVISION,
+        approvalId: APPROVAL_ID,
         nowMs: NOW_MS,
       }),
     ).resolves.toBe(false);
   });
 
-  it("passes only with switch, exact allowlist and a verified confirmation", () => {
+  it("passes only with the switch, an active approval and a verified confirmation", () => {
     const result = evaluateCustomerWriteGate({
       enabledValue: " TRUE ",
-      approvedBookingId: ` ${BOOKING_ID} `,
-      bookingId: BOOKING_ID,
+      approvalActive: true,
       confirmationValid: true,
     });
 
