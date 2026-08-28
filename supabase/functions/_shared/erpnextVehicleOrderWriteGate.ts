@@ -1,12 +1,11 @@
-export const VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION = "WGVO3";
+export const VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION = "WGVO4";
 export const VEHICLE_ORDER_WRITE_CONFIRMATION_TTL_SECONDS = 5 * 60;
 
 const CONFIRMATION_CLOCK_SKEW_SECONDS = 30;
 
 type GateStatusInput = {
   enabledValue?: string | null;
-  approvedBookingId?: string | null;
-  bookingId: string;
+  approvalActive: boolean;
 };
 
 type GateEvaluationInput = GateStatusInput & {
@@ -17,6 +16,7 @@ type ConfirmationPayload = {
   version: typeof VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION;
   bookingId: string;
   bookingRevision: string;
+  approvalId: string | null;
   issuedAt: number;
   expiresAt: number;
   nonce: string;
@@ -26,6 +26,7 @@ type IssueConfirmationInput = {
   secret: string;
   bookingId: string;
   bookingRevision: string;
+  approvalId?: string | null;
   nowMs?: number;
   nonce?: string;
 };
@@ -34,6 +35,7 @@ type VerifyConfirmationInput = {
   secret: string;
   bookingId: string;
   bookingRevision: string;
+  approvalId?: string | null;
   confirmation?: unknown;
   nowMs?: number;
 };
@@ -48,12 +50,13 @@ export type VehicleOrderWriteGateEvaluation = VehicleOrderWriteGateStatus & {
   confirmationValid: boolean;
   error:
     | "production_write_gate_disabled"
-    | "production_write_booking_not_approved"
+    | "production_write_approval_required"
     | "explicit_write_confirmation_required"
     | null;
 };
 
 const normalize = (value?: string | null) => value?.trim() ?? "";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const encoder = new TextEncoder();
 
 const bytesToBase64Url = (bytes: Uint8Array) => {
@@ -81,10 +84,18 @@ export async function issueVehicleOrderWriteConfirmation({
   secret,
   bookingId,
   bookingRevision,
+  approvalId = null,
   nowMs = Date.now(),
   nonce = crypto.randomUUID(),
 }: IssueConfirmationInput) {
-  if (!secret.trim() || !bookingId.trim() || !bookingRevision.trim() || !nonce.trim()) {
+  const normalizedApprovalId = normalize(approvalId) || null;
+  if (
+    !secret.trim() ||
+    !bookingId.trim() ||
+    !bookingRevision.trim() ||
+    !nonce.trim() ||
+    (normalizedApprovalId !== null && !UUID_RE.test(normalizedApprovalId))
+  ) {
     throw new Error("invalid_confirmation_input");
   }
 
@@ -93,6 +104,7 @@ export async function issueVehicleOrderWriteConfirmation({
     version: VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION,
     bookingId,
     bookingRevision,
+    approvalId: normalizedApprovalId,
     issuedAt,
     expiresAt: issuedAt + VEHICLE_ORDER_WRITE_CONFIRMATION_TTL_SECONDS,
     nonce,
@@ -110,6 +122,7 @@ export async function verifyVehicleOrderWriteConfirmation({
   secret,
   bookingId,
   bookingRevision,
+  approvalId = null,
   confirmation,
   nowMs = Date.now(),
 }: VerifyConfirmationInput) {
@@ -137,10 +150,12 @@ export async function verifyVehicleOrderWriteConfirmation({
       new TextDecoder().decode(base64UrlToBytes(encodedPayload)),
     ) as Partial<ConfirmationPayload>;
     const nowSeconds = Math.floor(nowMs / 1_000);
+    const expectedApprovalId = normalize(approvalId) || null;
     const payloadValid =
       parsed.version === VEHICLE_ORDER_WRITE_CONFIRMATION_VERSION &&
       parsed.bookingId === bookingId &&
       parsed.bookingRevision === bookingRevision &&
+      parsed.approvalId === expectedApprovalId &&
       Number.isInteger(parsed.issuedAt) &&
       Number.isInteger(parsed.expiresAt) &&
       typeof parsed.nonce === "string" &&
@@ -165,12 +180,10 @@ export async function verifyVehicleOrderWriteConfirmation({
 
 export function getVehicleOrderWriteGateStatus({
   enabledValue,
-  approvedBookingId,
-  bookingId,
+  approvalActive,
 }: GateStatusInput): VehicleOrderWriteGateStatus {
   const enabled = normalize(enabledValue).toLowerCase() === "true";
-  const bookingApproved =
-    normalize(approvedBookingId).length > 0 && normalize(approvedBookingId) === bookingId;
+  const bookingApproved = approvalActive;
 
   return {
     enabled,
@@ -196,7 +209,7 @@ export function evaluateVehicleOrderWriteGate({
   if (!status.bookingApproved) {
     return {
       ...evaluation,
-      error: "production_write_booking_not_approved",
+      error: "production_write_approval_required",
     };
   }
   if (!confirmationValid) {

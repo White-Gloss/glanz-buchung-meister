@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.erpnext-vehicle-order-verify]
 verify_jwt = true
+
+[functions.erpnext-write-approval]
+verify_jwt = true

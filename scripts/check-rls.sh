@@ -99,6 +99,7 @@ erwarte anon abgewiesen "Stoerungsprotokoll"   "select id from public.system_eve
 erwarte anon abgewiesen "Rollen"               "select user_id from public.user_roles"
 erwarte anon abgewiesen "Pruefprotokoll"       "select id from public.booking_audit_log"
 erwarte anon abgewiesen "Lebenszeichen"        "select area from public.automation_heartbeat"
+erwarte anon abgewiesen "ERPNext-Einmalfreigaben" "select id from public.erpnext_write_approvals"
 
 echo "Lesen: nur Veroeffentlichtes ist oeffentlich"
 erwarte anon 1 "genau ein Blogbeitrag (nicht Entwurf, nicht geplant)" \
@@ -113,6 +114,8 @@ erwarte authenticated 0 "sieht keinen fremden Token"   "select id from public.ca
 erwarte authenticated 0 "sieht kein Stoerungsprotokoll" "select id from public.system_events"
 erwarte authenticated 0 "sieht kein Pruefprotokoll"    "select id from public.booking_audit_log"
 erwarte authenticated 0 "sieht kein Lebenszeichen"     "select area from public.automation_heartbeat"
+erwarte authenticated abgewiesen "sieht keine ERPNext-Einmalfreigabe" \
+  "select id from public.erpnext_write_approvals"
 erwarte authenticated 1 "sieht die eigene Rolle, sonst keine" \
   "select user_id from public.user_roles"
 
@@ -135,6 +138,56 @@ for rolle in anon authenticated; do
     "update public.service_prices set amount=1 returning id"
   erwarte "$rolle" abgewiesen "Stoerungsprotokoll faelschen" \
     "delete from public.system_events returning id"
+  erwarte "$rolle" abgewiesen "ERPNext-Einmalfreigabe anlegen" \
+    "insert into public.erpnext_write_approvals
+       (booking_id, booking_revision, scope, approved_by, expires_at)
+     values
+       ('33333333-3333-4333-8333-333333333333', now(), 'customer',
+        '$NUTZER_OHNE_RECHTE', now() + interval '5 minutes')
+     returning id"
+  erwarte "$rolle" abgewiesen "ERPNext-Einmalfreigabe verbrauchen" \
+    "update public.erpnext_write_approvals set consumed_at=now() returning id"
+  erwarte "$rolle" abgewiesen "ERPNext-Einmalfreigabe loeschen" \
+    "delete from public.erpnext_write_approvals returning id"
+
+  erwarte "$rolle" abgewiesen "ERPNext-Einmalfreigabe-RPC ausfuehren" \
+    "select public.create_erpnext_write_approval(
+       '33333333-3333-4333-8333-333333333333'::uuid,
+       now()::timestamptz,
+       'customer'::text,
+       '$NUTZER_OHNE_RECHTE'::uuid,
+       300::integer
+     ) as value"
+  erwarte "$rolle" abgewiesen "ERPNext-Fahrzeugclaim mit Freigabe ausfuehren" \
+    "select public.claim_erpnext_booking_sync(
+       '33333333-3333-4333-8333-333333333333'::uuid,
+       now()::timestamptz,
+       '44444444-4444-4444-8444-444444444444'::uuid,
+       '$NUTZER_OHNE_RECHTE'::uuid,
+       10::integer
+     ) as value"
+  erwarte "$rolle" abgewiesen "alten ERPNext-Fahrzeugclaim ausfuehren" \
+    "select public.claim_erpnext_booking_sync(
+       '33333333-3333-4333-8333-333333333333'::uuid,
+       now()::timestamptz,
+       10::integer
+     ) as value"
+  erwarte "$rolle" abgewiesen "ERPNext-Kundenclaim mit Freigabe ausfuehren" \
+    "select public.claim_erpnext_customer_booking_sync(
+       '33333333-3333-4333-8333-333333333333'::uuid,
+       now()::timestamptz,
+       'angriff@example.invalid'::text,
+       '44444444-4444-4444-8444-444444444444'::uuid,
+       '$NUTZER_OHNE_RECHTE'::uuid,
+       300::integer
+     ) as value"
+  erwarte "$rolle" abgewiesen "alten ERPNext-Kundenclaim ausfuehren" \
+    "select public.claim_erpnext_customer_booking_sync(
+       '33333333-3333-4333-8333-333333333333'::uuid,
+       now()::timestamptz,
+       'angriff@example.invalid'::text,
+       300::integer
+     ) as value"
 done
 
 echo ""

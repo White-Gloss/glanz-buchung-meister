@@ -30,6 +30,7 @@ const ORDER_DOCTYPE = "WHITE GLOSS Order";
 
 type RequestBody = {
   bookingId?: unknown;
+  approvalId?: unknown;
   confirmation?: unknown;
 };
 
@@ -88,7 +89,6 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
   const writeGateEnabled = Deno.env.get("ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED");
-  const approvedBookingId = Deno.env.get("ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID");
 
   if (!supabaseUrl || !serviceRoleKey) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
@@ -126,25 +126,8 @@ Deno.serve(async (req: Request) => {
 
   const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
   if (!UUID_RE.test(bookingId)) return json({ ok: false, error: "invalid_booking_id" }, 400);
-
-  const writeGateStatus = getVehicleOrderWriteGateStatus({
-    enabledValue: writeGateEnabled,
-    approvedBookingId,
-    bookingId,
-  });
-  if (!writeGateStatus.enabled || !writeGateStatus.bookingApproved) {
-    return json(
-      {
-        ok: false,
-        error: !writeGateStatus.enabled
-          ? "production_write_gate_disabled"
-          : "production_write_booking_not_approved",
-        writes_performed: false,
-        financial_writes: false,
-      },
-      409,
-    );
-  }
+  const approvalId = typeof body.approvalId === "string" ? body.approvalId.trim() : "";
+  if (!UUID_RE.test(approvalId)) return json({ ok: false, error: "invalid_approval_id" }, 400);
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
@@ -159,16 +142,33 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "booking_not_write_eligible" }, 409);
   }
 
+  const bookingRevision = String(booking.updated_at ?? "");
+  if (!bookingRevision) return json({ ok: false, error: "booking_revision_missing" }, 409);
+
+  const { data: approval, error: approvalError } = await supabase
+    .from("erpnext_write_approvals")
+    .select("id")
+    .eq("id", approvalId)
+    .eq("booking_id", bookingId)
+    .eq("booking_revision", bookingRevision)
+    .eq("scope", "vehicle_order")
+    .is("consumed_at", null)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+  if (approvalError) return json({ ok: false, error: "write_approval_load_failed" }, 500);
+  const approvalActive = Boolean(approval?.id);
+
   const confirmationValid = await verifyVehicleOrderWriteConfirmation({
     secret: serviceRoleKey,
     bookingId,
-    bookingRevision: String(booking.updated_at ?? ""),
+    bookingRevision,
+    approvalId,
     confirmation: body.confirmation,
   });
   const writeGate = evaluateVehicleOrderWriteGate({
     enabledValue: writeGateEnabled,
-    approvedBookingId,
-    bookingId,
+    approvalActive,
     confirmationValid,
   });
   if (writeGate.error) {
@@ -358,17 +358,20 @@ Deno.serve(async (req: Request) => {
     );
 
   const persistFailure = async (code: string, status: number | null = null) => {
+    if (!syncToken) return false;
     try {
       const { data, error } = await supabase
         .from("booking_automation_state")
         .update({
           erpnext_processing_at: null,
           erpnext_processing_expires_at: null,
+          erpnext_processing_token: null,
           erpnext_last_error: code,
           erpnext_last_http_status: status,
           updated_at: new Date().toISOString(),
         })
         .eq("booking_id", bookingId)
+        .eq("erpnext_processing_token", syncToken)
         .select("booking_id")
         .maybeSingle();
       return !error && Boolean(data);
@@ -396,7 +399,19 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: code }, responseStatus);
   };
 
-  let syncClaimed = false;
+  let syncToken = "";
+
+  const assertVehicleOrderSyncLease = async () => {
+    if (!syncToken) throw new Error("vehicle_order_sync_lease_missing");
+    const { data, error } = await supabase
+      .from("booking_automation_state")
+      .select("booking_id")
+      .eq("booking_id", bookingId)
+      .eq("erpnext_processing_token", syncToken)
+      .gt("erpnext_processing_expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (error || !data) throw new Error("vehicle_order_sync_lease_lost_before_write");
+  };
 
   try {
     const auth = await erpRequest("GET", "/api/method/frappe.auth.get_logged_user");
@@ -501,14 +516,16 @@ Deno.serve(async (req: Request) => {
 
     const { data: claimed, error: claimError } = await supabase.rpc("claim_erpnext_booking_sync", {
       p_booking_id: bookingId,
-      p_booking_revision: booking.updated_at,
+      p_booking_revision: bookingRevision,
+      p_approval_id: approvalId,
+      p_consumed_by: user.id,
       p_ttl_minutes: 15,
     });
     if (claimError) return json({ ok: false, error: "booking_claim_failed" }, 500);
-    if (!claimed) {
+    if (typeof claimed !== "string" || !UUID_RE.test(claimed)) {
       return json({ ok: false, error: "booking_sync_busy_blocked_or_revision_changed" }, 409);
     }
-    syncClaimed = true;
+    syncToken = claimed;
 
     const customerRows = await listRows("Customer", ["name"], [["name", "=", customerId]], 2);
     if (customerRows.length !== 1) {
@@ -574,6 +591,12 @@ Deno.serve(async (req: Request) => {
         return await failWithReviewState("existing_erpnext_pair_verification_failed", 409);
       }
 
+      try {
+        await assertVehicleOrderSyncLease();
+      } catch {
+        return await failWithReviewState("vehicle_order_sync_lease_lost_before_write", 409);
+      }
+
       const now = new Date().toISOString();
       const { data: reconciledState, error: reconcileError } = await supabase
         .from("booking_automation_state")
@@ -582,12 +605,14 @@ Deno.serve(async (req: Request) => {
           erpnext_order_id: existingOrderId,
           erpnext_processing_at: null,
           erpnext_processing_expires_at: null,
+          erpnext_processing_token: null,
           erpnext_synced_at: now,
           erpnext_last_error: null,
           erpnext_last_http_status: 200,
           updated_at: now,
         })
         .eq("booking_id", bookingId)
+        .eq("erpnext_processing_token", syncToken)
         .select("booking_id")
         .maybeSingle();
       if (reconcileError || !reconciledState) {
@@ -636,6 +661,11 @@ Deno.serve(async (req: Request) => {
       const vehicleClassId = String(booking.vehicle_id ?? "");
       const vehicleClassLabel = vehicleClassLabels[vehicleClassId] ?? vehicleClassId;
       let created: ErpResult | null = null;
+      try {
+        await assertVehicleOrderSyncLease();
+      } catch {
+        return await failWithReviewState("vehicle_order_sync_lease_lost_before_write", 409);
+      }
       try {
         created = await erpRequest("POST", `/api/resource/${encodeURIComponent(VEHICLE_DOCTYPE)}`, {
           customer: customerId,
@@ -709,6 +739,11 @@ Deno.serve(async (req: Request) => {
 
       let created: ErpResult | null = null;
       try {
+        await assertVehicleOrderSyncLease();
+      } catch {
+        return await failWithReviewState("vehicle_order_sync_lease_lost_before_write", 409);
+      }
+      try {
         created = await erpRequest("POST", `/api/resource/${encodeURIComponent(ORDER_DOCTYPE)}`, {
           customer: customerId,
           vehicle: vehicleId,
@@ -771,6 +806,12 @@ Deno.serve(async (req: Request) => {
       return await failWithReviewState("order_post_write_verification_failed", 502);
     }
 
+    try {
+      await assertVehicleOrderSyncLease();
+    } catch {
+      return await failWithReviewState("vehicle_order_sync_lease_lost_before_write", 409);
+    }
+
     const now = new Date().toISOString();
     const { data: updatedState, error: stateUpdateError } = await supabase
       .from("booking_automation_state")
@@ -779,12 +820,14 @@ Deno.serve(async (req: Request) => {
         erpnext_order_id: orderId,
         erpnext_processing_at: null,
         erpnext_processing_expires_at: null,
+        erpnext_processing_token: null,
         erpnext_synced_at: now,
         erpnext_last_error: null,
         erpnext_last_http_status: 200,
         updated_at: now,
       })
       .eq("booking_id", bookingId)
+      .eq("erpnext_processing_token", syncToken)
       .select("booking_id")
       .maybeSingle();
     if (stateUpdateError || !updatedState) {
@@ -808,7 +851,7 @@ Deno.serve(async (req: Request) => {
       : error instanceof Error
         ? error.message
         : "erpnext_vehicle_order_write_failed";
-    if (syncClaimed && !(await persistFailure(code))) {
+    if (syncToken && !(await persistFailure(code))) {
       return json(
         {
           ok: false,

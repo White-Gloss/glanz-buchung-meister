@@ -35,6 +35,7 @@ const CUSTOMER_SYNC_LEASE_SECONDS = 15 * 60;
 type RequestBody = {
   bookingId?: unknown;
   mode?: unknown;
+  approvalId?: unknown;
   confirmation?: unknown;
 };
 
@@ -84,7 +85,6 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
   const writeEnabled = Deno.env.get("ERPNEXT_CUSTOMER_WRITE_ENABLED") === "true";
-  const approvedBookingId = Deno.env.get("ERPNEXT_CUSTOMER_APPROVED_BOOKING_ID")?.trim() ?? "";
 
   if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
@@ -124,6 +124,10 @@ Deno.serve(async (req: Request) => {
   if (!UUID_RE.test(bookingId)) return json({ ok: false, error: "invalid_booking_id" }, 400);
 
   const mode = body.mode === "commit" ? "commit" : "preview";
+  const approvalId = typeof body.approvalId === "string" ? body.approvalId.trim() : "";
+  if (mode === "commit" && !UUID_RE.test(approvalId)) {
+    return json({ ok: false, error: "invalid_approval_id" }, 400);
+  }
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
@@ -145,10 +149,24 @@ Deno.serve(async (req: Request) => {
   const bookingRevision = String(booking.updated_at ?? "");
   if (!bookingRevision) return json({ ok: false, error: "booking_revision_missing" }, 409);
 
+  let approvalQuery = supabase
+    .from("erpnext_write_approvals")
+    .select("id, expires_at")
+    .eq("booking_id", bookingId)
+    .eq("booking_revision", bookingRevision)
+    .eq("scope", "customer")
+    .is("consumed_at", null)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString());
+  if (mode === "commit") approvalQuery = approvalQuery.eq("id", approvalId);
+
+  const { data: approval, error: approvalError } = await approvalQuery.maybeSingle();
+  if (approvalError) return json({ ok: false, error: "write_approval_load_failed" }, 500);
+  const approvalActive = Boolean(approval?.id);
+
   const gateStatus = getCustomerWriteGateStatus({
     enabledValue: writeEnabled ? "true" : "false",
-    approvedBookingId,
-    bookingId,
+    approvalActive,
   });
 
   if (mode === "commit") {
@@ -156,12 +174,12 @@ Deno.serve(async (req: Request) => {
       secret: serviceRoleKey,
       bookingId,
       bookingRevision,
+      approvalId,
       confirmation: body.confirmation,
     });
     const gate = evaluateCustomerWriteGate({
       enabledValue: writeEnabled ? "true" : "false",
-      approvedBookingId,
-      bookingId,
+      approvalActive,
       confirmationValid,
     });
     if (!gate.ready) return json({ ok: false, error: gate.error }, 409);
@@ -173,8 +191,18 @@ Deno.serve(async (req: Request) => {
           secret: serviceRoleKey,
           bookingId,
           bookingRevision,
+          approvalId: String(approval?.id ?? ""),
         })
       : null;
+    const approvalConfirmation =
+      gateStatus.enabled && COMMIT_STATUSES.has(String(booking.status ?? "")) && !approvalActive
+        ? await issueCustomerWriteConfirmation({
+            secret: serviceRoleKey,
+            bookingId,
+            bookingRevision,
+            approvalId: null,
+          })
+        : null;
 
     return json({
       ok: true,
@@ -186,6 +214,9 @@ Deno.serve(async (req: Request) => {
         enabled: gateStatus.enabled,
         booking_approved: gateStatus.bookingApproved,
         ready: gateStatus.ready,
+        approval_id: approval?.id ?? null,
+        approval_expires_at: approval?.expires_at ?? null,
+        approval_confirmation: approvalConfirmation,
         confirmation,
       },
     });
@@ -293,14 +324,16 @@ Deno.serve(async (req: Request) => {
   };
 
   const upsertBookingCustomerId = async (customerId: string) => {
-    const { error } = await supabase.from("booking_automation_state").upsert(
-      {
-        booking_id: booking.id,
-        erpnext_customer_id: customerId,
-      },
-      { onConflict: "booking_id" },
-    );
-    if (error) throw new Error("booking_mapping_update_failed");
+    if (!syncToken) throw new Error("customer_sync_lease_missing");
+    const { data, error } = await supabase
+      .from("booking_automation_state")
+      .update({ erpnext_customer_id: customerId, updated_at: new Date().toISOString() })
+      .eq("booking_id", booking.id)
+      .eq("erpnext_customer_processing_token", syncToken)
+      .gt("erpnext_customer_processing_expires_at", new Date().toISOString())
+      .select("booking_id")
+      .maybeSingle();
+    if (error || !data) throw new Error("booking_mapping_update_failed_or_lease_lost");
   };
 
   const findContactByExactEmail = async (): Promise<ContactMatch | null> => {
@@ -469,6 +502,8 @@ Deno.serve(async (req: Request) => {
         p_booking_id: bookingId,
         p_booking_revision: bookingRevision,
         p_normalized_email: normalizedEmail,
+        p_approval_id: approvalId,
+        p_consumed_by: user.id,
         p_ttl_seconds: CUSTOMER_SYNC_LEASE_SECONDS,
       },
     );

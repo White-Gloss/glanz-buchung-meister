@@ -29,6 +29,9 @@ type PreviewResult = {
     enabled?: boolean;
     booking_approved?: boolean;
     ready?: boolean;
+    approval_id?: string | null;
+    approval_expires_at?: string | null;
+    approval_confirmation?: string | null;
     confirmation?: string | null;
   };
   customer?: {
@@ -63,6 +66,16 @@ type PreviewResult = {
   notes?: {
     pickup_tier_not_inferred?: boolean;
   };
+};
+
+type ApprovalResult = {
+  ok: boolean;
+  approval?: {
+    id: string;
+    scope: "vehicle_order";
+    expires_at: string;
+  };
+  error?: string;
 };
 
 type CommitResult = {
@@ -121,8 +134,11 @@ function errorText(code: string | undefined) {
   if (code === "production_write_gate_disabled") {
     return "Das Produktions-Schreib-Gate ist serverseitig gesperrt.";
   }
-  if (code === "production_write_booking_not_approved") {
-    return "Diese Buchung ist nicht als kontrollierter Produktions-Schreibtest freigegeben.";
+  if (code === "production_write_approval_required") {
+    return "Für diese Buchungsrevision fehlt eine aktive Einmalfreigabe.";
+  }
+  if (code === "approval_confirmation_invalid") {
+    return "Die Freigabebestätigung ist abgelaufen. Bitte die Vorschau neu laden.";
   }
   if (code === "explicit_write_confirmation_required") {
     return "Die buchungsgebundene Schreibbestätigung fehlt oder ist nicht mehr gültig.";
@@ -148,6 +164,7 @@ export function ErpNextVehicleOrderPreviewCard() {
   const [selectedId, setSelectedId] = useState("");
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
@@ -212,20 +229,65 @@ export function ErpNextVehicleOrderPreviewCard() {
     }
   }, [selectedId]);
 
-  const runCommit = useCallback(async () => {
-    const confirmation = result?.production_write?.confirmation;
+  const runApproval = useCallback(async () => {
+    const confirmation = result?.production_write?.approval_confirmation;
     if (
       !selectedId ||
       !result?.ok ||
       !result.write_ready ||
-      !result.production_write?.ready ||
+      !result.production_write?.enabled ||
+      result.production_write.ready ||
       !confirmation
     ) {
       return;
     }
 
     const confirmed = window.confirm(
-      "Kontrollierten ERPNext-Schreibtest starten? Es werden nur das Kundenfahrzeug und der operative WHITE GLOSS Auftrag angelegt oder eindeutig wiederverwendet. Keine Rechnung, Zahlung, GL- oder Lagerbuchung.",
+      "Einmalige ERPNext-Fahrzeug-/Auftragsfreigabe erteilen? Sie gilt höchstens fünf Minuten, nur für diese Buchungsrevision und wird beim ersten sicheren Sync-Versuch verbraucht.",
+    );
+    if (!confirmed) return;
+
+    setApproving(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase.functions.invoke<ApprovalResult>(
+        "erpnext-write-approval",
+        {
+          body: {
+            bookingId: selectedId,
+            scope: "vehicle_order",
+            confirmation,
+          },
+        },
+      );
+      if (error) throw error;
+      if (!data?.ok || !data.approval) throw new Error(errorText(data?.error));
+
+      toast.success("Einmalfreigabe erteilt. Die Vorschau wird revisionsgenau erneuert.");
+      await runPreview();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Einmalfreigabe fehlgeschlagen.");
+    } finally {
+      setApproving(false);
+    }
+  }, [result, runPreview, selectedId]);
+
+  const runCommit = useCallback(async () => {
+    const confirmation = result?.production_write?.confirmation;
+    const approvalId = result?.production_write?.approval_id;
+    if (
+      !selectedId ||
+      !result?.ok ||
+      !result.write_ready ||
+      !result.production_write?.ready ||
+      !approvalId ||
+      !confirmation
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Kontrollierten ERPNext-Sync starten? Es werden nur das Kundenfahrzeug und der operative WHITE GLOSS Auftrag angelegt oder eindeutig wiederverwendet. Keine Rechnung, Zahlung, GL- oder Lagerbuchung.",
     );
     if (!confirmed) return;
 
@@ -238,6 +300,7 @@ export function ErpNextVehicleOrderPreviewCard() {
         {
           body: {
             bookingId: selectedId,
+            approvalId,
             confirmation,
           },
         },
@@ -258,9 +321,7 @@ export function ErpNextVehicleOrderPreviewCard() {
       await runPreview();
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Kontrollierter ERPNext-Schreibtest fehlgeschlagen.";
+        error instanceof Error ? error.message : "Kontrollierter ERPNext-Sync fehlgeschlagen.";
       setCommitResult({ ok: false, error: message });
       toast.error(message);
     } finally {
@@ -301,7 +362,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                   setResult(null);
                   setCommitResult(null);
                 }}
-                disabled={loadingBookings || bookings.length === 0 || committing}
+                disabled={loadingBookings || bookings.length === 0 || approving || committing}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {bookings.length === 0 ? (
@@ -325,7 +386,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                 variant="outline"
                 size="sm"
                 loading={loadingBookings}
-                disabled={committing}
+                disabled={approving || committing}
                 onClick={() => void loadBookings()}
               >
                 {loadingBookings ? null : <RefreshCw aria-hidden className="size-4" />}
@@ -335,7 +396,9 @@ export function ErpNextVehicleOrderPreviewCard() {
                 type="button"
                 size="sm"
                 loading={previewing}
-                disabled={!selectedId || selected?.customer_ready === false || committing}
+                disabled={
+                  !selectedId || selected?.customer_ready === false || approving || committing
+                }
                 onClick={() => void runPreview()}
               >
                 {previewing ? null : <Eye aria-hidden className="size-4" />}
@@ -420,10 +483,24 @@ export function ErpNextVehicleOrderPreviewCard() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">Produktions-Write technisch gesperrt</p>
                   <p className="mt-1 text-xs opacity-90">
-                    Die Mapping-Vorschau ist vollständig. Ein echter Schreibvorgang wird erst
-                    möglich, wenn der serverseitige Schalter aktiviert und genau diese Buchungs-ID
-                    separat freigegeben wurde.
+                    {result.production_write?.enabled
+                      ? "Die Mapping-Vorschau ist vollständig. Erteilen Sie eine kurzlebige Einmalfreigabe für genau diese Buchungsrevision."
+                      : "Die Mapping-Vorschau ist vollständig. Der globale serverseitige Schreibschalter ist weiterhin deaktiviert."}
                   </p>
+                  {result.production_write?.enabled &&
+                  result.production_write.approval_confirmation ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-3"
+                      loading={approving}
+                      disabled={previewing || committing}
+                      onClick={() => void runApproval()}
+                    >
+                      {approving ? null : <ShieldCheck aria-hidden className="size-4" />}
+                      Einmalig freigeben
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -437,7 +514,7 @@ export function ErpNextVehicleOrderPreviewCard() {
               <div className="flex items-start gap-2">
                 <TriangleAlert aria-hidden className="mt-1 size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">Kontrollierter Schreibtest</p>
+                  <p className="font-medium">Kontrollierter ERPNext-Sync</p>
                   <p className="mt-1 text-xs opacity-90">
                     Legt ausschließlich das eindeutige Kundenfahrzeug und den operativen WHITE GLOSS
                     Auftrag an oder verwendet bereits vorhandene eindeutige Datensätze. Rechnungen,
@@ -448,7 +525,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                     size="sm"
                     className="mt-3"
                     loading={committing}
-                    disabled={previewing}
+                    disabled={previewing || approving}
                     onClick={() => void runCommit()}
                   >
                     {committing ? null : <ShieldCheck aria-hidden className="size-4" />}
@@ -479,7 +556,7 @@ export function ErpNextVehicleOrderPreviewCard() {
                       <p className="text-sm font-medium">
                         {commitResult.idempotent_reuse
                           ? "Eindeutige ERPNext-Zuordnung wiederverwendet."
-                          : "Kontrollierter ERPNext-Schreibtest erfolgreich."}
+                          : "Kontrollierter ERPNext-Sync erfolgreich."}
                       </p>
                       <p>Fahrzeug: {commitResult.vehicle_id ?? "nicht bestätigt"}</p>
                       <p>Auftrag: {commitResult.order_id ?? "nicht bestätigt"}</p>

@@ -71,6 +71,14 @@ jobs:
           PGPASSWORD: postgres
         run: npm run check:rls
 
+      - name: Einmalfreigabe und konkurrierenden ERPNext-Claim prüfen
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: npm run check:erpnext-approval
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -117,6 +125,7 @@ jobs:
           node --check lighthouserc.desktop.cjs
           bash -n scripts/check-migrations.sh
           bash -n scripts/check-rls.sh
+          bash -n scripts/check-erpnext-operational-approval.sh
 
       - name: Produktions-Build erstellen
         run: npm run build
