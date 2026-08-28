@@ -119,7 +119,7 @@ values
     '+49 170 0000005',
     'WG-I-5',
     179,
-    'Angefragt',
+    'Wartend auf Prüfung',
     '2026-08-26 08:00:05+00'
   ),
   (
