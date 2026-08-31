@@ -53,20 +53,27 @@ function Login() {
         </div>
         {authEnabled ? (
           <>
-            <div className="space-y-2">
-              {GROK_PROVIDERS.map((p) => (
-                <button
-                  key={p.providerId}
-                  type="button"
-                  onClick={() => signIn(p.providerId, { callbackURL: "/admin" })}
-                  className="w-full min-h-11 rounded-full border border-line px-4 text-sm hover:bg-elevated"
-                >
-                  Weiter mit {p.label}
-                </button>
-              ))}
-            </div>
+            {import.meta.env.PROD ? null : (
+              <div className="space-y-2">
+                {GROK_PROVIDERS.map((p) => (
+                  <button
+                    key={p.providerId}
+                    type="button"
+                    onClick={() => signIn(p.providerId, { callbackURL: "/admin" })}
+                    className="w-full min-h-11 rounded-full border border-line px-4 text-sm hover:bg-elevated"
+                  >
+                    Weiter mit {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
             {emailAndPasswordEnabled ? (
-              <form onSubmit={onEmail} className="space-y-3 border-t border-line pt-5">
+              <form
+                onSubmit={onEmail}
+                className={
+                  import.meta.env.PROD ? "space-y-3" : "space-y-3 border-t border-line pt-5"
+                }
+              >
                 <Field id="email" label="E-Mail">
                   <input
                     id="email"
