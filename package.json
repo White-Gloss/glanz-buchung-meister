@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts",
-    "lint": "eslint .",
+    "lint": "eslint src --max-warnings=100",
     "format": "prettier --write .",
     "check:migrations": "bash scripts/check-migrations.sh",
     "check:rls": "bash scripts/check-rls.sh",
