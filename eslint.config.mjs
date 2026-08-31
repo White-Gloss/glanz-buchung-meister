@@ -18,6 +18,8 @@ export default tseslint.config(
       "scripts/**",
       "server/**",
       "supabase/**",
+      "src/lib/app-data/**",
+      "src/lib/multiplayer/**",
     ],
   },
   js.configs.recommended,
