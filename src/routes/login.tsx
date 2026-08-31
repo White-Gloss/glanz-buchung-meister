@@ -19,7 +19,6 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"in" | "up">("in");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -28,22 +27,12 @@ function Login() {
     setError("");
     setPending(true);
     try {
-      if (mode === "up") {
-        const { error: err } = await authClient.signUp.email({
-          email,
-          password,
-          name: email.split("@")[0] ?? "Betrieb",
-          callbackURL: "/admin",
-        });
-        if (err) throw new Error(err.message);
-      } else {
-        const { error: err } = await authClient.signIn.email({
-          email,
-          password,
-          callbackURL: "/admin",
-        });
-        if (err) throw new Error(err.message);
-      }
+      const { error: err } = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/admin",
+      });
+      if (err) throw new Error(err.message);
       window.location.href = "/admin";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Anmeldung fehlgeschlagen.");
@@ -52,13 +41,14 @@ function Login() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center px-4 py-16">
+    <main id="main-content" className="grid min-h-dvh place-items-center px-4 py-16" tabIndex={-1}>
       <div className="w-full max-w-sm space-y-6">
         <div>
           <BrandMark variant="auth" />
           <h1 className="mt-4 font-display text-4xl">Betrieb</h1>
           <p className="mt-2 text-sm text-muted">
             Anmeldung für Buchungen, Posteingang, Kalender und Automatisierung.
+            Neue Konten werden nicht öffentlich angelegt.
           </p>
         </div>
         {authEnabled ? (
@@ -92,7 +82,7 @@ function Login() {
                   <input
                     id="password"
                     type="password"
-                    autoComplete={mode === "up" ? "new-password" : "current-password"}
+                    autoComplete="current-password"
                     className={inputClass}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -100,17 +90,14 @@ function Login() {
                     required
                   />
                 </Field>
-                {error ? <p className="text-sm text-danger">{error}</p> : null}
+                {error ? (
+                  <p className="text-sm text-danger" role="alert">
+                    {error}
+                  </p>
+                ) : null}
                 <Button type="submit" className="w-full" disabled={pending}>
-                  {mode === "in" ? "Mit E-Mail anmelden" : "Konto anlegen"}
+                  Mit E-Mail anmelden
                 </Button>
-                <button
-                  type="button"
-                  className="w-full text-sm text-muted hover:text-fg"
-                  onClick={() => setMode((m) => (m === "in" ? "up" : "in"))}
-                >
-                  {mode === "in" ? "Noch kein Konto? Registrieren" : "Schon registriert? Anmelden"}
-                </button>
               </form>
             ) : null}
           </>

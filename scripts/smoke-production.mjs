@@ -124,6 +124,14 @@ for (const check of pageChecks) {
         fail(label, "Buchungsformular/Anker fehlt");
       }
     }
+    if (check.path === "/preise" && !/bis 10 km kostenlos/i.test(body)) {
+      fail(label, "Abholstaffel fehlt");
+    }
+    if (check.path === "/login") {
+      if (/Noch kein Konto\? Registrieren/.test(body) || /Konto anlegen/.test(body)) {
+        fail(label, "öffentliche Registrierung ist noch sichtbar");
+      }
+    }
     if (check.path === "/impressum") {
       if (!/nicht verpflichtet und nicht bereit/.test(body)) {
         fail(label, "VSBG-Hinweis zur Verbraucherstreitbeilegung fehlt");

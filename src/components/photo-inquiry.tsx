@@ -45,6 +45,7 @@ export function PhotoInquiry({
           phone: phone.trim(),
           text,
           files: files.map((f) => f.name),
+          privacy: true as const,
           website,
         },
       });

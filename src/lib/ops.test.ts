@@ -95,7 +95,10 @@ describe("customer confirmation recipients", () => {
       withoutMail.some((t) => t.channel === "email"),
       false,
     );
-    assert.ok(withoutMail.some((t) => t.channel === "whatsapp" && t.to === customer.phone));
+    assert.equal(
+      withoutMail.some((t) => t.channel === "whatsapp"),
+      false,
+    );
     assert.equal(
       withoutMail.some((t) => t.channel === "telegram"),
       false,

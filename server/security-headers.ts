@@ -30,7 +30,7 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
       "Permissions-Policy",
       "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     ],
-    ["X-DNS-Prefetch-Control", "on"],
+    ["X-DNS-Prefetch-Control", "off"],
   ];
   if (!mode.allowFraming) {
     headers.push(["X-Frame-Options", "SAMEORIGIN"]);

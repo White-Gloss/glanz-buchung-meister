@@ -314,7 +314,7 @@ export const cities: City[] = [
     km: 0,
     minutes: 10,
     blurb:
-      "Horb am Neckar ist unser Standort. Die Werkstatt liegt in Arnistal 27. Abholung im Stadtgebiet bis 10 km ist kostenlos; viele Kunden bringen das Fahrzeug selbst vorbei.",
+      "Horb am Neckar ist unser Standort. Die Werkstatt liegt in Arnistal 27. Viele Kunden bringen das Fahrzeug selbst vorbei.",
   },
   {
     slug: "nagold",
@@ -322,7 +322,7 @@ export const cities: City[] = [
     km: 20,
     minutes: 25,
     blurb:
-      "Aus Nagold holen wir über die B28 ab – rund 25 Minuten bis zur Werkstatt. Die Abholung kostet 50 €, im Paket Keramik ist sie inklusive.",
+      "Aus Nagold holen wir über die B28 ab – rund 25 Minuten bis zur Werkstatt.",
   },
   {
     slug: "rottenburg-am-neckar",
@@ -330,7 +330,7 @@ export const cities: City[] = [
     km: 25,
     minutes: 30,
     blurb:
-      "Rottenburg liegt am Neckar Richtung Tübingen. Die Fahrt zur Werkstatt in Horb dauert etwa 30 Minuten. Abholung 70 € bis 50 km, bei Keramik inklusive.",
+      "Rottenburg liegt am Neckar Richtung Tübingen. Die Fahrt zur Werkstatt in Horb dauert etwa 30 Minuten.",
   },
   {
     slug: "freudenstadt",
@@ -370,7 +370,7 @@ export const cities: City[] = [
     km: 40,
     minutes: 45,
     blurb:
-      "Calw liegt rund 45 Minuten von der Werkstatt. Die Staffel bis 50 km gilt; im Paket Keramik ist der Hol- und Bringservice bis 60 km enthalten.",
+      "Calw liegt rund 45 Minuten von der Werkstatt.",
   },
   {
     slug: "balingen",
@@ -386,7 +386,7 @@ export const cities: City[] = [
     km: 45,
     minutes: 50,
     blurb:
-      "Rottweil erreichen wir in etwa 50 Minuten. Die Abholung liegt in der 50-km-Staffel. Ausführung ausschließlich in der Horber Werkstatt.",
+      "Rottweil erreichen wir in etwa 50 Minuten. Ausführung ausschließlich in der Horber Werkstatt.",
   },
   {
     slug: "boeblingen",
@@ -394,7 +394,7 @@ export const cities: City[] = [
     km: 50,
     minutes: 55,
     blurb:
-      "Böblingen liegt an der Grenze der 50-km-Staffel. Die Fahrt dauert rund 55 Minuten. Im Paket Keramik bleibt die Abholung bis 60 km inklusive.",
+      "Böblingen liegt an der Grenze des regelmäßigen Abholradius. Die Fahrt dauert rund 55 Minuten.",
   },
   {
     slug: "reutlingen",
@@ -410,7 +410,7 @@ export const cities: City[] = [
     km: 52,
     minutes: 60,
     blurb:
-      "Sindelfingen liegt knapp über 50 km. Die Abholung ist auf Anfrage oder im Paket Keramik bis 60 km inklusive. Die Ausführung bleibt in Horb.",
+      "Sindelfingen liegt knapp außerhalb des festen Abholradius. Die Ausführung bleibt in Horb.",
   },
 ];
 
@@ -467,8 +467,8 @@ export function quoteTotal(opts: {
   const extrasSum = extras
     .filter((e) => opts.extraIds.includes(e.id))
     .reduce((s, e) => s + e.price, 0);
-  const city = cities.find((c) => c.slug === opts.citySlug);
-  const pickup = city ? pickupFee(city.km, opts.packageId) : 0;
+  const city = opts.citySlug ? cities.find((c) => c.slug === opts.citySlug) : undefined;
+  const pickup = city ? pickupFee(city.km, opts.packageId) : opts.citySlug ? null : 0;
   const scaled = (pack.price + extrasSum) * klass.factor;
   const pickupValue = pickup === null ? 0 : pickup;
   return {

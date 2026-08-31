@@ -91,14 +91,15 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>5. WhatsApp</h2>
+          <h2>5. WhatsApp und Instagram</h2>
           <p>
-            Die Website enthält Links zu WhatsApp. Erst wenn Sie einen solchen Link aufrufen, stellen
-            Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die Datenschutzbestimmungen
-            von WhatsApp beziehungsweise Meta Platforms Ireland Limited. Für sensible Inhalte können
-            Sie alternativ Telefon oder E-Mail verwenden. Es wird kein WhatsApp-Skript im Hintergrund
-            geladen. Ein automatischer Versand von WhatsApp- oder Telegram-Nachrichten aus dieser
-            Website an Kundinnen und Kunden ist nicht aktiv.
+            Die Website enthält Links zu WhatsApp und Instagram. Erst wenn Sie einen solchen Link
+            aufrufen, stellen Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die
+            Datenschutzbestimmungen von WhatsApp beziehungsweise Meta Platforms Ireland Limited.
+            Für sensible Inhalte können Sie alternativ Telefon oder E-Mail verwenden. Es wird kein
+            WhatsApp- oder Instagram-Skript im Hintergrund geladen. Ein automatischer Versand von
+            WhatsApp- oder Telegram-Nachrichten aus dieser Website an Kundinnen und Kunden ist
+            nicht aktiv.
           </p>
         </section>
 

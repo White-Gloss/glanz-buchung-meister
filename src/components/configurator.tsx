@@ -78,6 +78,7 @@ export function Configurator({
           extraIds,
           citySlug,
           kind: "booking",
+          privacy: true as const,
           website,
         },
       });
