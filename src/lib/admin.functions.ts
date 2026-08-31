@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { agentHelpText, parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
 import { OUTBOUND_QUEUED, queueBookingAutomation } from "@/lib/ops";
+import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
+import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 
 const SHOP = "white-gloss";
 const DEFAULT_OPERATOR_PIN = "WG-BETRIEB";
@@ -69,8 +72,19 @@ export type AgentLogRow = {
   created_at: string;
 };
 
-export const listInbox = createServerFn({ method: "GET" })
+export const getOperatorAccess = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    try {
+      await requireOperator(context.userId);
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const };
+    }
+  });
+
+export const listInbox = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return sql<InboxRow>`
@@ -83,7 +97,7 @@ export const listInbox = createServerFn({ method: "GET" })
   });
 
 export const markInboxRead = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ id: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
@@ -95,7 +109,7 @@ export const markInboxRead = createServerFn({ method: "POST" })
   });
 
 export const replyInbox = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -160,7 +174,7 @@ export const replyInbox = createServerFn({ method: "POST" })
   });
 
 export const listCustomers = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return sql<CustomerRow>`
@@ -180,7 +194,7 @@ export const listCustomers = createServerFn({ method: "GET" })
   });
 
 export const updateCustomerNotes = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z.object({ id: z.number().int().positive(), notes: z.string().max(4000) }).parse(input),
   )
@@ -194,7 +208,7 @@ export const updateCustomerNotes = createServerFn({ method: "POST" })
   });
 
 export const listDocuments = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return sql<DocumentRow>`
@@ -207,7 +221,7 @@ export const listDocuments = createServerFn({ method: "GET" })
   });
 
 export const createDocumentFromBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -255,7 +269,7 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
   });
 
 export const updateDocumentStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -274,7 +288,7 @@ export const updateDocumentStatus = createServerFn({ method: "POST" })
   });
 
 export const accountingSummary = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     const [booked] = await sql<{ n: number; sum: number }>`
@@ -306,7 +320,7 @@ export const accountingSummary = createServerFn({ method: "GET" })
   });
 
 export const listAgentLog = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return sql<AgentLogRow>`
@@ -450,7 +464,7 @@ async function interpretWithGrok(text: string): Promise<string | null> {
 }
 
 export const runAgentCommand = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -530,7 +544,7 @@ async function runReminderPass(
 }
 
 export const dashboardStats = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     const [neu] = await sql<{ n: number }>`
@@ -573,7 +587,7 @@ export const dashboardStats = createServerFn({ method: "GET" })
   });
 
 export const calendarIcs = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     const rows = await sql<{
@@ -606,7 +620,7 @@ export const calendarIcs = createServerFn({ method: "GET" })
   });
 
 export const runReminders = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
     const result = await runReminderPass(sql, context.userId);
@@ -614,7 +628,7 @@ export const runReminders = createServerFn({ method: "POST" })
   });
 
 export const listAutomationEvents = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     try {
       const sql = await getSql();
@@ -638,7 +652,7 @@ export const listAutomationEvents = createServerFn({ method: "GET" })
   });
 
 export const listOutbound = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     try {
       const sql = await getSql();
@@ -662,7 +676,7 @@ export const listOutbound = createServerFn({ method: "GET" })
   });
 
 export const getOperatorSettings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     await ensureShopSettings(sql);
@@ -676,7 +690,7 @@ export const getOperatorSettings = createServerFn({ method: "GET" })
   });
 
 export const setOperatorPin = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z.object({ pin: z.string().trim().min(6).max(40) }).parse(input),
   )
@@ -706,6 +720,7 @@ export const inboundOperatorMessage = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    assertSameSiteRequest();
     assertPublicPostLimit("operator-inbound", 5, 15 * 60 * 1000);
     if (data.pin === DEFAULT_OPERATOR_PIN) {
       return { ok: false as const, result: "PIN ungültig." };

@@ -152,7 +152,7 @@ function TermsPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 30. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
       </article>
     </main>
   );

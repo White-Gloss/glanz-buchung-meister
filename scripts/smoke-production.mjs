@@ -24,6 +24,8 @@ const forbiddenSnippets = [
   { id: "odr-platform", needle: "ec.europa.eu/consumers/odr" },
   { id: "old-domain", needle: "https://whitegloss.de" },
   { id: "stale-upload-claim", needle: "Dateien bleiben im Betrieb" },
+  { id: "stale-10km-price", needle: "bis 10 km 20" },
+  { id: "public-signup", needle: "Noch kein Konto? Registrieren" },
 ];
 
 const failures = [];
@@ -124,8 +126,13 @@ for (const check of pageChecks) {
         fail(label, "Buchungsformular/Anker fehlt");
       }
     }
-    if (check.path === "/preise" && !/bis 10 km kostenlos/i.test(body)) {
-      fail(label, "Abholstaffel fehlt");
+    if (check.path === "/preise") {
+      if (!/bis 10 km kostenlos/i.test(body) || !/bis 20 km 50/.test(body) || !/bis 50 km 70/.test(body)) {
+        fail(label, "Abholstaffel (10 km kostenlos / 20 km 50 / 50 km 70) fehlt");
+      }
+      if (!/149/.test(body) || !/349/.test(body) || !/899/.test(body)) {
+        fail(label, "Paketpreise 149/349/899 fehlen");
+      }
     }
     if (check.path === "/login") {
       const loginText = body.replace(/<!--[\s\S]*?-->/g, "");

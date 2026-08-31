@@ -53,6 +53,9 @@ export function resolveCustomerConfirmRecipients(booking: BookingLite): QueueTar
   if (isEmailAddress(booking.email)) {
     targets.push({ channel: "email", to: booking.email.trim() });
   }
+  // WhatsApp/Telegram an Kunden werden nicht automatisch vorgemerkt.
+  // Es gibt keinen bestätigten Versandadapter; die Datenschutzerklärung
+  // sagt ausdrücklich, dass kein automatischer Versand aktiv ist.
   return targets;
 }
 

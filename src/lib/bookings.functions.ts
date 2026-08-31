@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import {
   cities,
@@ -14,6 +15,7 @@ import {
 import { queueBookingAutomation, queueOwnerNotify, safeExec, OUTBOUND_QUEUED } from "@/lib/ops";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
+import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 
 const SHOP = "white-gloss";
 const extraIdSet = new Set(extras.map((item) => item.id));
@@ -107,6 +109,7 @@ async function upsertCustomer(
 export const createPublicBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => publicBookingSchema.parse(input))
   .handler(async ({ data }) => {
+    assertSameSiteRequest();
     assertPublicPostLimit("booking");
     rejectHoneypot(data.website);
     assertKnownPricing(data);
@@ -123,6 +126,14 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     const pickupCents = Math.round((quote.pickup ?? 0) * 100);
     const extraList = extraNames(data.extraIds);
     const preferredDate = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null;
+    const storedNote = [
+      data.note?.trim() || "",
+      quote.pickupOnRequest
+        ? "Abholung auf Anfrage – Preis nicht im gespeicherten Gesamtbetrag."
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const rows = await sql<{ id: number }>`
       insert into bookings (
@@ -132,7 +143,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         ${SHOP}, ${data.name}, ${data.phone}, ${data.email || null},
         ${preferredDate}, ${data.slot || null},
         ${data.packageId}, ${data.classId}, ${JSON.stringify(data.extraIds)},
-        ${data.citySlug}, ${data.note || null}, ${totalCents}, ${pickupCents}
+        ${data.citySlug}, ${storedNote || null}, ${totalCents}, ${pickupCents}
       )
       returning id
     `;
@@ -153,6 +164,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       data.email ? data.email : "",
       pack ? pack.name : data.packageId,
       city ? `${city.name} (${city.km} km)` : data.citySlug,
+      quote.pickupOnRequest ? "Abholung auf Anfrage" : "",
       extraList.length ? `Extras: ${extraList.join(", ")}` : "",
       preferredDate ? `Wunschtermin: ${preferredDate} ${data.slot ?? ""}` : "",
       data.note ?? "",
@@ -238,11 +250,14 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    assertSameSiteRequest();
     assertPublicPostLimit("photo-inquiry", 6);
     rejectHoneypot(data.website);
     const sql = await getSql();
     await upsertCustomer(sql, data.name, data.phone);
     const body = [
+      `Name: ${data.name}`,
+      `Telefon: ${data.phone}`,
       data.text,
       data.files.length ? `Dateien (Namen): ${data.files.join(", ")}` : "Keine Dateinamen übermittelt.",
     ].join("\n");
@@ -255,7 +270,7 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
   });
 
 export const listBookings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return sql<BookingRow>`
@@ -270,7 +285,7 @@ export const listBookings = createServerFn({ method: "GET" })
   });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({

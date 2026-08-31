@@ -226,13 +226,7 @@ export function Configurator({
         </p>
         <p className="text-sm text-muted">
           {quote.klass.label} · {quote.pack.name}
-          {quote.pickup === 0
-            ? " · Abholung kostenlos"
-            : quote.pickupOnRequest
-              ? " · Abholung auf Anfrage"
-              : quote.pickup
-                ? ` · Abholung ${eur(quote.pickup)}`
-                : ""}
+          {quote.city ? ` · Abholung ${pickupPriceText(quote.city.km, packageId)}` : quote.pickupOnRequest ? " · Abholung auf Anfrage" : ""}
         </p>
         <p className="text-xs text-subtle">
           Das ist der Startpreis inkl. MwSt. Wenn der Zustand mehr Aufwand braucht,
