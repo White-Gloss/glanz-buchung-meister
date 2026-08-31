@@ -1,3 +1,12 @@
+import { extras, pickupKeramikNote, pickupTierSummary } from "./site";
+import { eur } from "@/lib/utils";
+
+function extraEuro(id: string) {
+  const extra = extras.find((item) => item.id === id);
+  if (!extra) throw new Error(`Zusatzleistung ${id} fehlt im Katalog.`);
+  return eur(extra.price);
+}
+
 export type Article = {
   slug: string;
   title: string;
@@ -111,7 +120,7 @@ export const articles: Article[] = [
         heading: "Geruch hat immer eine Quelle",
         paragraphs: [
           "Nikotin, Feuchtigkeit, verschüttete Getränke oder ein nasser Teppich setzen sich in Schaumstoff und Klimakanälen fest. Ein Duftbaum überdeckt das, entfernt aber nichts.",
-          "Wir reinigen zuerst Sitze, Teppiche, Fußräume und Verkleidungen materialgerecht. Bleibt ein Geruch, folgt eine Ozonbehandlung für 59 Euro zusätzlich.",
+          `Wir reinigen zuerst Sitze, Teppiche, Fußräume und Verkleidungen materialgerecht. Bleibt ein Geruch, folgt eine Ozonbehandlung für ${extraEuro("ozon")} zusätzlich.`,
         ],
       },
       {
@@ -127,7 +136,7 @@ export const articles: Article[] = [
     slug: "hol-und-bringservice",
     title: "Hol- und Bringservice: So funktioniert die Abholung um Horb",
     excerpt:
-      "Kostenlos bis 10 km, klare Staffel bis 50 km, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.",
+      `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
     date: "2026-06-22",
     image: "/media/hero.webp",
     minutes: 4,
@@ -142,8 +151,8 @@ export const articles: Article[] = [
       {
         heading: "Die Preistafel",
         paragraphs: [
-          "Bis 10 Kilometer ist die Abholung kostenlos. Bis 20 Kilometer kostet sie 50 Euro, bis 50 Kilometer 70 Euro. Darüber nur auf Anfrage.",
-          "Im Paket Keramik ist der Hol- und Bringservice bis 60 Kilometer enthalten. Städte wie Tübingen, Nagold, Freudenstadt, Böblingen und Sindelfingen liegen in der regelmäßigen Tour.",
+          `${pickupTierSummary()}. Darüber nur auf Anfrage.`,
+          `${pickupKeramikNote()}. Städte wie Tübingen, Nagold, Freudenstadt, Böblingen und Sindelfingen liegen in der regelmäßigen Tour.`,
         ],
       },
     ],
@@ -236,14 +245,14 @@ export const articles: Article[] = [
         heading: "Reihenfolge statt Chemie-Show",
         paragraphs: [
           "Zuerst grober Schmutz, dann Nassreinigung der textilen Flächen, dann Kunststoffe, dann Leder. Ohne diese Reihenfolge verschmieren Rückstände.",
-          "Pur enthält Aussaugen und Entstauben. Signature vertieft Textilien. Lederpflege Deluxe kostet zusätzlich 119 Euro, Innenraum-Ozon 59 Euro.",
+          `Pur enthält Aussaugen und Entstauben. Signature vertieft Textilien. Lederatelier kostet zusätzlich ${extraEuro("leder")}, Air Pure (Ozon) ${extraEuro("ozon")}.`,
         ],
       },
       {
         heading: "Gerüche aus Horb, Nagold, Tübingen",
         paragraphs: [
           "Nikotin und Feuchtigkeit sitzen im Schaumstoff. Ozon bricht Moleküle, ersetzt aber keine Nassreinigung. Nach der Behandlung muss das Fahrzeug gelüftet werden.",
-          "Abholung bis 10 km kostenlos, bis 20 km 50 Euro, bis 50 km 70 Euro. Ausführung bleibt in Arnistal 27.",
+          `${pickupTierSummary()}. Ausführung bleibt in Arnistal 27.`,
         ],
       },
     ],
@@ -311,7 +320,7 @@ export const articles: Article[] = [
         heading: "Ein Standort, 13 Abholorte",
         paragraphs: [
           "White Gloss Detailing arbeitet in Horb am Neckar. Aus Nagold, Rottenburg, Freudenstadt, Tübingen, Herrenberg, Calw, Balingen, Rottweil, Böblingen, Reutlingen, Oberndorf und Sindelfingen holen wir Fahrzeuge ab.",
-          "Bis 10 km ist die Abholung kostenlos, bis 20 km 50 Euro, bis 50 km 70 Euro. Im Paket Keramik bis 60 km inklusive. Vor Ort an der Straße polieren wir nicht – Licht, Wasser und Ablüftung sind in der Werkstatt.",
+          `${pickupTierSummary()}. ${pickupKeramikNote()}. Vor Ort an der Straße polieren wir nicht – Licht, Wasser und Ablüftung sind in der Werkstatt.`,
         ],
       },
       {
@@ -336,7 +345,7 @@ export const articles: Article[] = [
         heading: "Ohne Korrektur hält nichts, was versprochen wird",
         paragraphs: [
           "Keramik verbindet sich mit sauberem, gleichmäßigem Klarlack. Deshalb gehört mehrstufige Korrektur ins Paket Keramik ab 899 Euro, nicht nur das Auftragen der Schicht.",
-          "Rechnen Sie mit rund zwei Tagen. Glas- und Felgenversiegelung sowie Lederpflege sind enthalten, der Hol- und Bringservice bis 60 km ebenfalls.",
+          `Rechnen Sie mit rund zwei Tagen. Glas- und Felgenversiegelung sowie Lederpflege sind enthalten. ${pickupKeramikNote()}.`,
         ],
       },
       {

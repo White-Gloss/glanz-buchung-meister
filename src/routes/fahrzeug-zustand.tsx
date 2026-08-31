@@ -38,7 +38,7 @@ function ZustandPage() {
       <div className="mt-12">
         <PhotoInquiry
           title="Zustandsfotos senden"
-          hint="Mindestens eine Aufnahme oder eine kurze Beschreibung. Die Dateien sind nicht öffentlich sichtbar."
+          hint="Mindestens eine Aufnahme oder eine kurze Beschreibung. Dateien bleiben auf Ihrem Gerät. Es werden nur Dateinamen zur Zuordnung übertragen, nicht die Fotos selbst."
         />
       </div>
     </main>

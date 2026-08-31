@@ -5,6 +5,7 @@ import {
   extras,
   packageAnchor,
   packages,
+  pickupKeramikNote,
   pickupTierSummary,
   vehicleClasses,
   site,
@@ -131,8 +132,8 @@ function PreisePage() {
         </div>
       ))}
       <p className="mt-6 text-sm text-subtle">
-        Hol- und Bringservice: {pickupTierSummary()}. Im Paket Keramik
-        ist die Abholung bis 60 km enthalten. Wenn Verschmutzung oder Lackzustand
+        Hol- und Bringservice: {pickupTierSummary()}. {pickupKeramikNote()}.
+        Wenn Verschmutzung oder Lackzustand
         mehr Aufwand bedeuten, stimmen wir das mit Ihnen ab, bevor wir anfangen.
       </p>
       <div id="buchung" className="mt-16">

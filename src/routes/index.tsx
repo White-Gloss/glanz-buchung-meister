@@ -8,7 +8,9 @@ import {
   packageServiceSlug,
   packages,
   parsePackageSearch,
+  pickupKeramikNote,
   pickupPricing,
+  pickupTierSummary,
   processSteps,
   services,
   site,
@@ -391,8 +393,7 @@ function Home() {
               <p className="kicker">Hol- & Bringservice · 13 Städte</p>
               <h3 className="heading-3 mt-4">Abholung mit klarer Staffel</h3>
               <p className="mt-4 text-sm leading-relaxed text-muted">
-                Bis 10 km kostenlos, bis 20 km 50 €, bis 50 km 70 €, darüber auf
-                Anfrage. Im Paket Keramik ist die Abholung bis 60 km enthalten.
+                {pickupTierSummary()}. {pickupKeramikNote()}.
                 Geöffnet {openingHours.daysLabel}, {openingHours.opens}–
                 {openingHours.closes} Uhr.
               </p>

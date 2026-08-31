@@ -11,9 +11,13 @@ import {
   type PackageId,
   type VehicleClass,
 } from "@/data/site";
-import { queueBookingAutomation, queueOwnerNotify, safeExec } from "@/lib/ops";
+import { queueBookingAutomation, queueOwnerNotify, safeExec, OUTBOUND_QUEUED } from "@/lib/ops";
+import { assertPublicPostLimit } from "@/lib/rate-limit";
+import { isEmailAddress } from "@/lib/utils";
 
 const SHOP = "white-gloss";
+const extraIdSet = new Set(extras.map((item) => item.id));
+const citySlugSet = new Set(cities.map((item) => item.slug));
 
 const publicBookingSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -22,7 +26,7 @@ const publicBookingSchema = z.object({
     .string()
     .trim()
     .max(160)
-    .refine((v) => v.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Ungültige E-Mail"),
+    .refine((v) => v.length === 0 || isEmailAddress(v), "Ungültige E-Mail"),
   date: z.string().max(20).optional(),
   slot: z.string().max(10).optional(),
   note: z.string().max(2000).optional(),
@@ -31,6 +35,7 @@ const publicBookingSchema = z.object({
   extraIds: z.array(z.string().max(40)).max(20),
   citySlug: z.string().max(80),
   kind: z.enum(["booking", "dent", "condition"]).default("booking"),
+  website: z.string().max(120).optional(),
 });
 
 export type PublicBookingInput = z.infer<typeof publicBookingSchema>;
@@ -56,6 +61,21 @@ export type BookingRow = {
 
 function extraNames(ids: string[]) {
   return extras.filter((e) => ids.includes(e.id)).map((e) => e.name);
+}
+
+function rejectHoneypot(website?: string) {
+  if (website && website.trim().length > 0) {
+    throw new Error("Anfrage abgelehnt.");
+  }
+}
+
+function assertKnownPricing(data: { extraIds: string[]; citySlug: string }) {
+  if (data.extraIds.some((id) => !extraIdSet.has(id))) {
+    throw new Error("Unbekanntes Extra.");
+  }
+  if (data.citySlug && !citySlugSet.has(data.citySlug)) {
+    throw new Error("Unbekannter Abholort.");
+  }
 }
 
 async function upsertCustomer(
@@ -86,6 +106,9 @@ async function upsertCustomer(
 export const createPublicBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => publicBookingSchema.parse(input))
   .handler(async ({ data }) => {
+    assertPublicPostLimit("booking");
+    rejectHoneypot(data.website);
+    assertKnownPricing(data);
     const sql = await getSql();
     const quote = quoteTotal({
       packageId: data.packageId as PackageId,
@@ -150,15 +173,17 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       "White Gloss Detailing",
       "Arnistal 27, 72160 Horb am Neckar",
     ].join("\n");
-    await safeExec("ack-out", () =>
-      sql`
-        insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
-        values (
-          ${SHOP}, ${"email"}, ${data.email || data.phone},
-          ${`Anfrage eingegangen · White Gloss WG-${id}`}, ${ack}, ${id}, ${"sent"}
-        )
-      `,
-    );
+    if (isEmailAddress(data.email)) {
+      await safeExec("ack-out", () =>
+        sql`
+          insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+          values (
+            ${SHOP}, ${"email"}, ${data.email},
+            ${`Anfrage eingegangen · White Gloss WG-${id}`}, ${ack}, ${id}, ${OUTBOUND_QUEUED}
+          )
+        `,
+      );
+    }
     await safeExec("ack-inbox", () =>
       sql`
         insert into inbox_messages (shop_id, channel, direction, sender, subject, body, booking_id)
@@ -206,10 +231,13 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
         phone: z.string().trim().min(6).max(40),
         text: z.string().max(2000),
         files: z.array(z.string().max(180)).max(8),
+        website: z.string().max(120).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    assertPublicPostLimit("photo-inquiry", 6);
+    rejectHoneypot(data.website);
     const sql = await getSql();
     await upsertCustomer(sql, data.name, data.phone);
     const body = [

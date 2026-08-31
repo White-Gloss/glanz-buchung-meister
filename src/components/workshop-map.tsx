@@ -22,7 +22,7 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
             type="button"
             className="relative block w-full cursor-pointer text-left"
             onClick={() => setLive(true)}
-            aria-label="Interaktive Google-Karte laden"
+            aria-label="Google Maps laden – dabei werden Daten an Google übertragen"
           >
             <picture>
               <source
@@ -47,7 +47,7 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
               />
             </picture>
             <span className="absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-bg via-bg/70 to-transparent pb-6 pt-16">
-              <span className={ctaPrimary}>Interaktive Karte laden</span>
+              <span className={ctaPrimary}>Google Maps laden – dabei werden Daten an Google übertragen</span>
             </span>
           </button>
         )}

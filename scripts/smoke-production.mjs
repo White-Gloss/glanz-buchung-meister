@@ -5,7 +5,25 @@ const pageChecks = [
   { path: "/", markers: ["Fahrzeugaufbereitung", "White Gloss"] },
   { path: "/preise", markers: ["Pakete", "Preise"] },
   { path: "/leistungen", markers: ["Leistungsspektrum", "Leistungen"] },
+  { path: "/abholservice", markers: ["Hol", "Bringservice"] },
+  { path: "/faq", markers: ["Häufige Fragen"] },
+  { path: "/impressum", markers: ["Angaben gemäß", "White Gloss Detailing"] },
+  { path: "/datenschutz", markers: ["Verantwortlicher", "IONOS"] },
+  { path: "/agb", markers: ["Allgemeine Geschäftsbedingungen"] },
+  { path: "/widerruf", markers: ["Widerrufsbelehrung"] },
+  { path: "/login", markers: ["Betrieb"] },
   { path: "/admin", markers: [] },
+  { path: "/b2b", markers: ["Firmenkunden"] },
+  { path: "/luxusfahrzeuge", markers: ["Private Client"] },
+  { path: "/qualitaet", markers: ["Wie wir arbeiten"] },
+  { path: "/fahrzeug-zustand", markers: ["Zustand prüfen"] },
+  { path: "/dellen-hagelschaden", markers: ["Dellenentfernung"] },
+];
+
+const forbiddenSnippets = [
+  { id: "odr-platform", needle: "ec.europa.eu/consumers/odr" },
+  { id: "old-domain", needle: "https://whitegloss.de" },
+  { id: "stale-upload-claim", needle: "Dateien bleiben im Betrieb" },
 ];
 
 const failures = [];
@@ -92,11 +110,29 @@ for (const check of pageChecks) {
         fail(label, `erwarteter Inhalt fehlt: ${marker}`);
       }
     }
-    if (check.path !== "/admin") {
+    if (check.path !== "/admin" && check.path !== "/login") {
       assertCanonical(check.path, body);
+    }
+    for (const snippet of forbiddenSnippets) {
+      if (body.includes(snippet.needle)) {
+        fail(label, `verbotener Inhalt: ${snippet.id}`);
+      }
     }
     if (check.path === "/") {
       assertSecurityHeaders(response);
+      if (!/id=["']buchung["']/.test(body) && !/Terminanfrage/.test(body)) {
+        fail(label, "Buchungsformular/Anker fehlt");
+      }
+    }
+    if (check.path === "/impressum") {
+      if (!/nicht verpflichtet und nicht bereit/.test(body)) {
+        fail(label, "VSBG-Hinweis zur Verbraucherstreitbeilegung fehlt");
+      }
+    }
+    if (check.path === "/datenschutz") {
+      if (/wg-cookie/.test(body)) {
+        fail(label, "Datenschutz erwähnt weiterhin wg-cookie");
+      }
     }
     console.log(`PASS ${label} -> ${response.status} ${response.url}`);
   } catch (error) {

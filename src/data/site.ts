@@ -1,4 +1,4 @@
-import { eur } from "@/lib/utils";
+import { eur } from "../lib/utils.ts";
 
 export const site = {
   name: "White Gloss",
@@ -428,22 +428,32 @@ export const pickupPricing = {
 export function pickupFee(km: number, packageId?: PackageId) {
   if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm)
     return 0;
-  if (km <= 10) return 0;
-  if (km <= 20) return 50;
-  if (km <= 50) return 70;
+  const tiers = [...pickupPricing.tiers].sort((a, b) => a.maxKm - b.maxKm);
+  for (const tier of tiers) {
+    if (km <= tier.maxKm) return tier.amount;
+  }
   return null;
 }
 
 export function pickupPriceText(km: number, packageId?: PackageId) {
+  if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm) {
+    return `inklusive bis ${pickupPricing.freeUpToKm} km`;
+  }
   const fee = pickupFee(km, packageId ?? "basis");
-  if (packageId === "keramik" && km <= 60) return "inklusive bis 60 km";
   if (fee === null) return "auf Anfrage";
   if (fee === 0) return "kostenlos";
   return eur(fee);
 }
 
 export function pickupTierSummary(): string {
-  return `bis 10 km kostenlos, bis 20 km ${eur(50)}, bis 50 km ${eur(70)}, darüber auf Anfrage`;
+  const parts = [...pickupPricing.tiers]
+    .sort((a, b) => a.maxKm - b.maxKm)
+    .map((t) => `bis ${t.maxKm} km ${t.amount === 0 ? "kostenlos" : eur(t.amount)}`);
+  return `${parts.join(", ")}, darüber auf Anfrage`;
+}
+
+export function pickupKeramikNote(): string {
+  return `Im Paket Keramik ist die Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
 }
 
 export function quoteTotal(opts: {
@@ -804,7 +814,7 @@ export const faqs = [
   {
     group: "Abholservice",
     q: "Holen Sie mein Fahrzeug ab?",
-    a: "Ja. Ausgeführt wird immer in unserer Werkstatt in Horb am Neckar. Bis 10 km ist die Abholung kostenlos, bis 20 km 50 Euro, bis 50 km 70 Euro. Beim Paket Keramik ist der Hol- und Bringservice bis 60 km enthalten.",
+    a: `Ja. Ausgeführt wird immer in unserer Werkstatt in Horb am Neckar. ${pickupTierSummary()}. ${pickupKeramikNote()}.`,
   },
   {
     group: "Allgemein",
