@@ -35,6 +35,7 @@ const publicBookingSchema = z.object({
   extraIds: z.array(z.string().max(40)).max(20),
   citySlug: z.string().max(80),
   kind: z.enum(["booking", "dent", "condition"]).default("booking"),
+  privacy: z.literal(true),
   website: z.string().max(120).optional(),
 });
 
@@ -231,6 +232,7 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
         phone: z.string().trim().min(6).max(40),
         text: z.string().max(2000),
         files: z.array(z.string().max(180)).max(8),
+        privacy: z.literal(true),
         website: z.string().max(120).optional(),
       })
       .parse(input),

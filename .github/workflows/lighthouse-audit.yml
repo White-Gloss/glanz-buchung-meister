@@ -6,6 +6,7 @@ on:
     paths:
       - "src/**"
       - "public/**"
+      - "server/**"
       - "vite.config.ts"
       - "index.html"
       - "package.json"
@@ -19,6 +20,7 @@ on:
     paths:
       - "src/**"
       - "public/**"
+      - "server/**"
       - "vite.config.ts"
       - "index.html"
       - "package.json"

@@ -53,9 +53,6 @@ export function resolveCustomerConfirmRecipients(booking: BookingLite): QueueTar
   if (isEmailAddress(booking.email)) {
     targets.push({ channel: "email", to: booking.email.trim() });
   }
-  if (booking.phone.trim()) {
-    targets.push({ channel: "whatsapp", to: booking.phone.trim() });
-  }
   return targets;
 }
 

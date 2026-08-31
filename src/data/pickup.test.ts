@@ -10,6 +10,7 @@ import {
   pickupKeramikNote,
   pickupPricing,
   pickupTierSummary,
+  quoteTotal,
 } from "./site.ts";
 
 const srcRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -52,19 +53,25 @@ describe("pickup pricing source of truth", () => {
     assert.ok(pickupKeramikNote().includes(String(pickupPricing.freeUpToKm)));
   });
 
-  it("keeps city blurbs aligned with pickupFee", () => {
+  it("keeps city blurbs free of hardcoded euro amounts", () => {
     for (const city of cities) {
-      const fee = pickupFee(city.km);
-      const euros = [...city.blurb.matchAll(/(\d+)\s*€/g)].map((m) => Number(m[1]));
-      for (const amount of euros) {
-        if (amount === pickupPricing.freeUpToKm) continue;
-        assert.equal(
-          amount,
-          fee,
-          `${city.name}: Blurb-Preis ${amount} € weicht von pickupFee(${city.km})=${fee} ab`,
-        );
-      }
+      assert.equal(
+        /\d+\s*€|\d+\s*Euro/.test(city.blurb),
+        false,
+        `${city.name}: Preis gehört in pickupPricing, nicht in den Blurb`,
+      );
     }
+  });
+
+  it("treats unknown city slugs as on request, not free", () => {
+    const quote = quoteTotal({
+      packageId: "basis",
+      classId: "kompakt",
+      extraIds: [],
+      citySlug: "not-a-city",
+    });
+    assert.equal(quote.pickup, null);
+    assert.equal(quote.pickupOnRequest, true);
   });
 
   it("does not leave a second hardcoded pickup staffel in source", () => {
