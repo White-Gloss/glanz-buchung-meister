@@ -10,7 +10,6 @@ export const Route = createFileRoute("/agb")({
       description:
         "Allgemeine Geschäftsbedingungen von White Gloss Detailing für Fahrzeugaufbereitung.",
       path: "/agb",
-      robots: "noindex,follow",
     }),
 });
 

@@ -9,7 +9,6 @@ export const Route = createFileRoute("/widerruf")({
       title: `Widerrufsbelehrung | ${site.name}`,
       description: "Widerrufsbelehrung und Muster-Widerrufsformular von White Gloss Detailing.",
       path: "/widerruf",
-      robots: "noindex,follow",
     }),
 });
 

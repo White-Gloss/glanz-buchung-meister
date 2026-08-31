@@ -12,6 +12,10 @@ type MiddlewareEvent = {
 /**
  * Production (Nitro) security headers. Framing is locked — this path is the
  * IONOS/Vercel deploy, not the Grok preview iframe.
+ *
+ * HSTS is always on here. Caddy terminates TLS and proxies HTTP to Node, so
+ * `event.url.protocol` is `http:` even for public HTTPS. Smoke and browsers
+ * still need Strict-Transport-Security on the live response.
  */
 export default async function securityHeadersMiddleware(
   event: MiddlewareEvent,
@@ -21,10 +25,9 @@ export default async function securityHeadersMiddleware(
   if (!result || typeof result !== "object") return result;
   const res = result as { headers?: HeaderBag };
   if (typeof res.headers?.set !== "function") return result;
-  const https = event.url?.protocol === "https:";
   applySecurityHeaders((name, value) => res.headers!.set(name, value), {
     allowFraming: false,
-    hsts: https,
+    hsts: true,
   });
   const path = event.url?.pathname ?? "";
   const type = res.headers.get?.("content-type") ?? "";
