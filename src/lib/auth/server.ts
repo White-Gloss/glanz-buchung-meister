@@ -36,7 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
-import { emailAndPasswordEnabled } from "./email-password";
+import { emailAndPasswordEnabled, emailSignUpEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
@@ -211,13 +211,9 @@ export const auth = betterAuth({
   session: { cookieCache: { enabled: true, maxAge: 300 } },
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
+  // disableSignUp: the panel is for the operator, not public registration.
   ...(emailAndPasswordEnabled
-    ? {
-        emailAndPassword: {
-          enabled: true,
-          disableSignUp: process.env.NODE_ENV === "production",
-        },
-      }
+    ? { emailAndPassword: { enabled: true, disableSignUp: !emailSignUpEnabled } }
     : {}),
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that

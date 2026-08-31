@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   BookOpenText,
   CalendarDays,
@@ -12,6 +13,7 @@ import {
 import { BrandMark } from "@/components/media";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { getOperatorAccess } from "@/lib/admin.functions";
 import { adminNav } from "@/lib/admin-nav";
 import { site } from "@/data/site";
 
@@ -39,8 +41,27 @@ export const Route = createFileRoute("/admin")({
 function AdminShell() {
   const { user, isPending } = useCurrentUserState();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [access, setAccess] = useState<"pending" | "ok" | "denied">("pending");
 
-  if (isPending) {
+  useEffect(() => {
+    if (!user) {
+      setAccess("pending");
+      return;
+    }
+    let cancelled = false;
+    getOperatorAccess()
+      .then((result) => {
+        if (!cancelled) setAccess(result.ok ? "ok" : "denied");
+      })
+      .catch(() => {
+        if (!cancelled) setAccess("denied");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  if (isPending || (user && access === "pending")) {
     return (
       <div className="grid min-h-dvh place-items-center">
         <p className="text-sm text-muted">Sitzung wird geprüft …</p>
@@ -48,9 +69,25 @@ function AdminShell() {
     );
   }
   if (!user) return <RedirectToSignIn />;
+  if (access === "denied") {
+    return (
+      <main id="main-content" className="grid min-h-dvh place-items-center px-4" tabIndex={-1}>
+        <div className="max-w-md space-y-4 text-center">
+          <h1 className="font-display text-3xl">Kein Betriebszugang</h1>
+          <p className="text-sm text-muted">
+            Dieses Konto ist nicht für das Betriebspanel freigeschaltet. Öffentliche Registrierung
+            ist nicht vorgesehen.
+          </p>
+          <div className="flex justify-center">
+            <UserButton />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div className="min-h-dvh bg-bg">
+    <div id="main-content" className="min-h-dvh bg-bg" tabIndex={-1}>
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-h-11 items-center gap-3">

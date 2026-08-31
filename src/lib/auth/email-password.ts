@@ -6,5 +6,9 @@
  * `authClient.signIn.email` from `@/lib/auth/client` (see the auth skill).
  *
  * Do NOT edit `server.ts` for this — that file is frozen pre-wired config.
+ *
+ * Sign-up stays off: the Betriebspanel is not a public registration.
+ * Existing operator accounts can still sign in with e-mail/password.
  */
 export const emailAndPasswordEnabled = true;
+export const emailSignUpEnabled = false;

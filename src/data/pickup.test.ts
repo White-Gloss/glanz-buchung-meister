@@ -81,6 +81,9 @@ describe("pickup pricing source of truth", () => {
       /bis 50 km 70 Euro/i,
       /bis 20 km 50 €/,
       /bis 50 km 70 €/,
+      /bis 10 km 20/,
+      /10 km.{0,24}20,?0{0,2}\s*€/,
+      /20,00\s*€.{0,24}10 km/,
     ];
     const hits: string[] = [];
     for (const file of files) {
@@ -90,6 +93,27 @@ describe("pickup pricing source of truth", () => {
       }
     }
     assert.deepEqual(hits, []);
+  });
+
+  it("marks pickup beyond 50 km as on request, except Keramik up to 60 km", () => {
+    const sindelfingen = cities.find((city) => city.slug === "sindelfingen");
+    assert.ok(sindelfingen);
+    const basis = quoteTotal({
+      packageId: "basis",
+      classId: "kompakt",
+      extraIds: [],
+      citySlug: sindelfingen.slug,
+    });
+    assert.equal(basis.pickup, null);
+    assert.equal(basis.pickupOnRequest, true);
+    const keramik = quoteTotal({
+      packageId: "keramik",
+      classId: "kompakt",
+      extraIds: [],
+      citySlug: sindelfingen.slug,
+    });
+    assert.equal(keramik.pickup, 0);
+    assert.equal(keramik.pickupOnRequest, false);
   });
 
   it("does not advertise obsolete extra prices", () => {

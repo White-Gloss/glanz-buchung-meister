@@ -47,8 +47,8 @@ function Login() {
           <BrandMark variant="auth" />
           <h1 className="mt-4 font-display text-4xl">Betrieb</h1>
           <p className="mt-2 text-sm text-muted">
-            Anmeldung für Buchungen, Posteingang, Kalender und Automatisierung.
-            Neue Konten werden nicht öffentlich angelegt.
+            Anmeldung nur für den Inhaber und beauftragte Mitarbeiter. Es gibt keine öffentliche
+            Registrierung.
           </p>
         </div>
         {authEnabled ? (

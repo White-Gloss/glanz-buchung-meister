@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 
 const SHOP = "white-gloss";
@@ -23,7 +24,7 @@ export type CmsRow = {
 const kindSchema = z.enum(["faq", "blog", "gallery", "service"]);
 
 export const listCms = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ kind: kindSchema }).parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
@@ -48,7 +49,7 @@ export const listPublishedCms = createServerFn({ method: "GET" })
   });
 
 export const upsertCms = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -87,7 +88,7 @@ export const upsertCms = createServerFn({ method: "POST" })
   });
 
 export const deleteCms = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ id: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();

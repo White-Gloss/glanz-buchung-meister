@@ -7,11 +7,11 @@ export type SecurityHeaderMode = {
 export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string][] {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://grok.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' ws: wss: blob:",
+    "connect-src 'self' ws: wss: blob: https://grok.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org",
