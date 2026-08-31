@@ -131,6 +131,9 @@ for (const check of pageChecks) {
       if (/Noch kein Konto\? Registrieren/.test(body) || /Konto anlegen/.test(body)) {
         fail(label, "öffentliche Registrierung ist noch sichtbar");
       }
+      if (/Weiter mit Google/.test(body) || /Weiter mit X/.test(body)) {
+        fail(label, "Grok-Vorschau-OAuth ist auf der Live-Anmeldung noch sichtbar");
+      }
     }
     if (check.path === "/impressum") {
       if (!/nicht verpflichtet und nicht bereit/.test(body)) {
@@ -227,6 +230,37 @@ try {
   console.log(`PASS /robots.txt -> ${response.status}`);
 } catch (error) {
   fail("/robots.txt", error instanceof Error ? error.message : String(error));
+}
+
+try {
+  const response = await fetch(new URL("/api/auth/sign-in/email", BASE_URL), {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      "user-agent": "WhiteGloss-Production-Smoke/1.0",
+      accept: "application/json",
+      "content-type": "application/json",
+      origin: BASE_URL,
+    },
+    body: JSON.stringify({
+      email: "smoke-origin-check@invalid.example",
+      password: "not-a-real-password-xx",
+    }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const body = await response.text();
+  if (/invalid origin/i.test(body) || response.status === 403) {
+    fail(
+      "/api/auth/sign-in/email",
+      `Live-Origin wird nicht akzeptiert (${response.status}): ${body.slice(0, 180)}`,
+    );
+  } else if (response.ok) {
+    fail("/api/auth/sign-in/email", "Anmeldung mit Dummy-Daten darf nicht gelingen");
+  } else {
+    console.log(`PASS /api/auth/sign-in/email origin -> ${response.status}`);
+  }
+} catch (error) {
+  fail("/api/auth/sign-in/email", error instanceof Error ? error.message : String(error));
 }
 
 if (failures.length > 0) {

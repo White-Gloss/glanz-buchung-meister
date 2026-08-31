@@ -144,9 +144,9 @@ function PrivacyPage() {
           <h2>8. Betriebspanel (nur intern)</h2>
           <p>
             Die Anmeldung zum Betriebspanel ist ausschließlich für den Inhaber und beauftragte
-            Mitarbeiter bestimmt. Dafür können E-Mail/Passwort sowie die Anmeldeanbieter Google und
-            X (Twitter) verwendet werden. Es gelten zusätzlich die Datenschutzhinweise der jeweiligen
-            Anbieter. Öffentliche Besucher der Website werden dort nicht angemeldet.
+            Mitarbeiter bestimmt. Im Produktivbetrieb erfolgt sie per E-Mail und Passwort.
+            Die Anmeldeanbieter Google und X (Twitter) sind auf dieser öffentlichen Website nicht
+            aktiv. Öffentliche Besucher können dort kein Konto anlegen.
           </p>
         </section>
 
