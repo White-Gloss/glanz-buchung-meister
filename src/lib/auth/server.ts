@@ -41,6 +41,12 @@ import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
 import {
+  previewOAuthFallbackAllowed,
+  productionSiteOrigins,
+  resolveBetterAuthBaseURL,
+  uniqueOrigins,
+} from "./public-origin";
+import {
   GROK_ISSUER_DEFAULT,
   PREVIEW_ALLOWED_HOSTS,
   PREVIEW_CLIENT_ID,
@@ -74,12 +80,16 @@ const env = (key: string): string | undefined => {
 // provisions auth; set it to "false" to force auth off everywhere (dev user).
 const authDisabled = env("VITE_AUTH_ENABLED") === "false";
 
-// Broker federation creds: the deployer injects a per-app client when deployed;
-// otherwise fall back to the shared live-preview client, which the broker accepts
-// for any `*.grok-sandbox.com` callback (see `./preview`).
+// Broker federation creds: the deployer injects a per-app client when deployed.
+// Preview (development) falls back to the shared live-preview client, which the
+// broker accepts for any `*.grok-sandbox.com` callback (see `./preview`).
+// Production (IONOS) must NOT fall back to that client: it would mint
+// redirect_uri=http://localhost:8080 and client_id=grok_preview on white-gloss.de.
 const grokIssuer = env("GROK_AUTH_ISSUER") ?? GROK_ISSUER_DEFAULT;
-const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? PREVIEW_CLIENT_ID;
-const grokClientSecret = env("GROK_AUTH_CLIENT_SECRET") ?? PREVIEW_CLIENT_SECRET;
+const usePreviewOAuth = previewOAuthFallbackAllowed(process.env.NODE_ENV ?? "development");
+const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? (usePreviewOAuth ? PREVIEW_CLIENT_ID : undefined);
+const grokClientSecret =
+  env("GROK_AUTH_CLIENT_SECRET") ?? (usePreviewOAuth ? PREVIEW_CLIENT_SECRET : undefined);
 
 /** True when federated sign-in is active (real auth is enforced). */
 export const authConfigured =
@@ -91,7 +101,10 @@ export const authConfigured =
 // it derives the origin per-request from the (proxied) host, validated against the
 // preview allowlist, which makes the OAuth `redirect_uri` the concrete preview URL
 // the broker's preview client accepts.
-const explicitBaseURL = env("BETTER_AUTH_URL");
+const explicitBaseURL = resolveBetterAuthBaseURL(
+  env("BETTER_AUTH_URL"),
+  process.env.NODE_ENV ?? "development",
+);
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];
@@ -115,15 +128,20 @@ const baseURL = explicitBaseURL ?? {
 
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
-const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
-  : [
-      // Host wildcards (matched against Origin's host)
-      ...previewAllowedHosts,
-      // Full-origin wildcards (matched against Origin)
-      ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
-      ...LOCAL_DEV_ORIGINS,
-    ];
+const trustedOrigins: string[] = uniqueOrigins([
+  ...(explicitBaseURL
+    ? [explicitBaseURL]
+    : [
+        // Host wildcards (matched against Origin's host)
+        ...previewAllowedHosts,
+        // Full-origin wildcards (matched against Origin)
+        ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
+      ]),
+  ...LOCAL_DEV_ORIGINS,
+  // Live-Domain immer vertrauen – sonst 403 Invalid origin auf white-gloss.de,
+  // wenn BETTER_AUTH_URL auf dem VPS fehlt.
+  ...productionSiteOrigins(),
+]);
 
 const databaseUrl = env("DATABASE_URL");
 
@@ -162,6 +180,8 @@ const grokOAuthPlugin = authConfigured
         tokenUrl: grokTokenUrl,
         userInfoUrl: grokUserInfoUrl,
         scopes: ["openid", "profile", "email"],
+        disableImplicitSignUp: process.env.NODE_ENV === "production",
+        disableSignUp: process.env.NODE_ENV === "production",
         // `prompt: "login"` forces the broker to re-authenticate against the
         // upstream on every sign-in instead of silently reusing an existing
         // broker session. Combined with the broker sending Google
