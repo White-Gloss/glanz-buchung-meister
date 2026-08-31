@@ -1,599 +1,481 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarCheck, Camera, CheckCircle2, MapPin, Sparkles } from "lucide-react";
-
-import heroCar from "@/assets/hero-car.jpg";
-import heroCarWebp from "@/assets/hero-car.webp";
-import { B2BServices } from "@/components/B2BServices";
-import { ConversionBand } from "@/components/ConversionBand";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { SectionHeading } from "@/components/SectionHeading";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { WhatsAppFloat } from "@/components/WhatsAppFloat";
-import { BookingWizardSkeleton } from "@/components/skeletons";
-import { Button } from "@/components/ui/button";
-import { deferUntilNearViewport } from "@/lib/deferredLoad";
-import { parseHomeSearch } from "@/lib/homeSearch";
-import { heroImageSources } from "@/lib/heroImage";
-import { pickupCities, pickupCitiesByDistance } from "@/lib/pickupLocations";
-import { absUrl, OG_IMAGE, SITE_URL, standardPageMeta } from "@/lib/seo";
+import { ArrowRight } from "lucide-react";
+import { LazyConfigurator } from "@/components/lazy-configurator";
+import { WorkshopMap } from "@/components/workshop-map";
+import { HeroMedia, PhotoNote, Shot } from "@/components/media";
+import { ctaGhost, ctaPrimary } from "@/components/ui";
 import {
-  company,
-  currency,
-  features,
-  pickupTierSummary,
-  vatNoticeShort,
-  servicePackages,
-} from "@/lib/servicesConfig";
+  packageServiceSlug,
+  packages,
+  parsePackageSearch,
+  pickupPricing,
+  processSteps,
+  services,
+  site,
+  cities,
+  openingHours,
+  type PackageId,
+} from "@/data/site";
+import { localBusinessJsonLd, pageHead } from "@/lib/seo";
+import { money } from "@/lib/utils";
 
-const BookingWizard = lazy(() =>
-  import("@/components/BookingWizard").then((module) => ({ default: module.BookingWizard })),
-);
-const VehicleGallery = lazy(() =>
-  import("@/components/VehicleGallery").then((module) => ({ default: module.VehicleGallery })),
-);
-
-const HOME_TITLE = "Fahrzeugaufbereitung Horb am Neckar | White Gloss";
-const HOME_DESCRIPTION =
-  "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.";
 export const Route = createFileRoute("/")({
-  validateSearch: parseHomeSearch,
-  head: () => ({
-    meta: [
-      ...standardPageMeta({
-        title: HOME_TITLE,
-        description: HOME_DESCRIPTION,
-        path: "/",
-      }),
-    ],
-    links: [
-      { rel: "canonical", href: absUrl("/") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/") },
-      { rel: "alternate", hrefLang: "x-default", href: absUrl("/") },
-      {
-        rel: "preload",
-        as: "image",
-        href: heroImageSources.mobile.src,
-        type: "image/avif",
-        media: heroImageSources.mobile.media,
-        fetchPriority: "high",
-      },
-      {
-        rel: "preload",
-        as: "image",
-        href: heroImageSources.desktop.src,
-        type: "image/avif",
-        media: "(min-width: 768px)",
-        fetchPriority: "high",
-      },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "WebSite",
-              "@id": `${SITE_URL}/#website`,
-              url: SITE_URL,
-              name: company.name,
-              inLanguage: "de-DE",
-            },
-            {
-              "@type": "AutomotiveBusiness",
-              "@id": `${SITE_URL}/#business`,
-              name: company.name,
-              url: SITE_URL,
-              telephone: company.phoneHref.replace("tel:", ""),
-              email: company.email,
-              image: OG_IMAGE,
-              logo: absUrl("/wgd-logo-760.webp"),
-              priceRange: "€€–€€€",
-              // Verknüpft Website und Profil für Google.
-              ...(company.instagram ? { sameAs: [company.instagram] } : {}),
-              address: {
-                "@type": "PostalAddress",
-                streetAddress: company.street,
-                postalCode: "72160",
-                addressLocality: "Horb am Neckar",
-                addressRegion: "Baden-Württemberg",
-                addressCountry: "DE",
-              },
-              areaServed: pickupCities.map((city) => ({
-                "@type": "City",
-                name: city.name,
-              })),
-              openingHoursSpecification: {
-                "@type": "OpeningHoursSpecification",
-                dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                opens: "09:00",
-                closes: "17:00",
-              },
-              hasOfferCatalog: {
-                "@type": "OfferCatalog",
-                name: "Fahrzeugaufbereitung",
-                itemListElement: features.map((feature) => ({
-                  "@type": "Offer",
-                  itemOffered: {
-                    "@type": "Service",
-                    name: feature.name,
-                    url: absUrl(`/leistungen/${feature.slug}`),
-                  },
-                })),
-              },
-            },
-          ],
-        }),
-      },
-    ],
-  }),
-  component: Landing,
+  validateSearch: (raw: Record<string, unknown>): { paket?: PackageId } => {
+    const paket = parsePackageSearch(raw.paket);
+    return paket ? { paket } : {};
+  },
+  component: Home,
+  head: () =>
+    pageHead({
+      title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
+      description:
+        "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
+      path: "/",
+      preloadHero: true,
+    }),
 });
 
-function Landing() {
+function Home() {
+  const jsonLd = localBusinessJsonLd();
   const { paket } = Route.useSearch();
 
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main id="main-content">
-        <Hero />
-        <ProofStrip />
-        <Packages />
-        <DeferredVehicleGallery />
-        <QualityJourney />
-        <Booking initialPackageId={paket} />
-        <B2BServices />
-        <ConversionBand variant="band" />
-        <DiscoveryHub />
-      </main>
-      <SiteFooter />
-      <WhatsAppFloat />
-    </div>
-  );
-}
-
-function DeferredBookingWizard({ initialPackageId }: { initialPackageId?: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [shouldLoad, setShouldLoad] = useState(false);
-
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element || shouldLoad) return;
-    return deferUntilNearViewport(element, () => setShouldLoad(true));
-  }, [shouldLoad]);
-
-  return (
-    <div ref={containerRef}>
-      {shouldLoad ? (
-        <Suspense fallback={<BookingWizardSkeleton />}>
-          <BookingWizard initialPackageId={initialPackageId} />
-        </Suspense>
-      ) : (
-        <BookingWizardSkeleton />
-      )}
-    </div>
-  );
-}
-
-function DeferredVehicleGallery() {
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const [shouldLoad, setShouldLoad] = useState(false);
-
-  useEffect(() => {
-    const element = triggerRef.current;
-    if (!element || shouldLoad) return;
-    return deferUntilNearViewport(element, () => setShouldLoad(true));
-  }, [shouldLoad]);
-
-  return (
-    <div ref={triggerRef}>
-      {shouldLoad && (
-        <Suspense fallback={null}>
-          <VehicleGallery />
-        </Suspense>
-      )}
-    </div>
-  );
-}
-
-function Hero() {
-  return (
-    <section className="hero-stage relative isolate flex min-h-[42rem] overflow-hidden border-b border-border sm:min-h-[46rem] lg:min-h-[calc(100svh-7.25rem)]">
-      <picture className="absolute inset-0 -z-20">
-        <source
-          srcSet={heroImageSources.mobile.src}
-          media={heroImageSources.mobile.media}
-          type="image/avif"
-          width={heroImageSources.mobile.width}
-          height={heroImageSources.mobile.height}
-        />
-        <source srcSet={heroImageSources.desktop.src} type="image/avif" />
-        <source srcSet={heroCarWebp} type="image/webp" />
-        <img
-          src={heroCar}
-          alt=""
-          aria-hidden
-          width={1920}
-          height={1088}
-          decoding="async"
-          loading="eager"
-          fetchPriority="high"
-          className="size-full object-cover object-[62%_center] lg:object-[66%_center]"
-        />
-      </picture>
-      <div className="hero-scrim absolute inset-0 -z-10" aria-hidden />
-
-      <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
-        <div className="max-w-3xl">
-          <h1 className="display-hero max-w-3xl text-white">
-            Fahrzeugaufbereitung.{" "}
-            <span className="text-chrome block">Kein Kompromiss. Sichtbare Ergebnisse.</span>
-          </h1>
-          <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg sm:leading-8">
-            Premium-Fahrzeugaufbereitung für einen tiefenreinen Innenraum, klaren Lack und
-            langfristigen Schutz – präzise ausgeführt in Horb am Neckar.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Button asChild size="lg" className="glow-ring rounded-lg px-7">
-              <a href="#buchung">
-                Termin &amp; Preis anfragen
-                <ArrowRight aria-hidden className="size-4" />
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="rounded-lg border-white/25 bg-black/20 text-white backdrop-blur-md hover:bg-white hover:text-black"
-            >
-              <Link to="/preise">Pakete &amp; Preise</Link>
-            </Button>
-          </div>
-          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs uppercase tracking-[0.12em] text-white/70 sm:tracking-[0.14em]">
-            {["Klare Startpreise", "Unverbindliche Anfrage", "Hol- & Bringservice"].map(
-              (item, index) => (
-                <li key={item} className="inline-flex items-center gap-2">
-                  {/*
-                    Der Trennpunkt entfällt am Telefon: Dort bricht die Liste
-                    auf zwei Zeilen um, und ein Punkt am Zeilenanfang sieht
-                    aus wie ein versehentliches Aufzählungszeichen.
-                  */}
-                  {index > 0 && (
-                    <span aria-hidden className="hidden size-1 rounded-full bg-primary sm:block" />
-                  )}
-                  {item}
-                </li>
-              ),
-            )}
-          </ul>
+    <main id="main-content" tabIndex={-1}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <section className="relative overflow-hidden">
+        <div className="hero-image">
+          <HeroMedia
+            priority
+            alt="Weißes Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+            className="h-[72vh] min-h-[520px] w-full object-cover object-[70%_center] sm:h-[90vh] sm:object-[62%_center]"
+          />
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ProofStrip() {
-  const punkte = [
-    {
-      icon: Sparkles,
-      title: "Materialgerecht",
-      text: "Verfahren passend zu Oberfläche und Zustand",
-    },
-    {
-      icon: CalendarCheck,
-      title: "Planbar",
-      text: "Klare Pakete, Zeitrahmen und Terminanfrage",
-    },
-    {
-      icon: MapPin,
-      title: "Regional",
-      text: `Hol- & Bringservice in ${pickupCities.length} Städten`,
-    },
-  ];
-
-  return (
-    <section aria-label="White Gloss Vorteile" className="border-b border-border bg-surface/45">
-      <div className="mx-auto grid max-w-7xl divide-y divide-border px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
-        {punkte.map(({ icon: Icon, title, text }) => (
-          <div key={title} className="flex items-start gap-4 py-6 sm:px-7 first:sm:pl-0">
-            <span
-              aria-hidden
-              className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-primary/25 bg-primary/10 text-primary"
-            >
-              <Icon className="size-4" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/45 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-16">
+          <p className="kicker">
+            {site.city} · {site.region}
+          </p>
+          <h1 className="mt-5 max-w-4xl">
+            <span className="heading-brand block">White Gloss</span>
+            <span className="heading-brand block">Detailing</span>
+            <span className="heading-tagline mt-4 block sm:mt-5">
+              No Compromise, Only Results
             </span>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">{title}</h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{text}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Packages() {
-  return (
-    <section className="content-auto relative isolate mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
-      {/* Dezentes Streulicht, damit die Sektion sich vom flachen Schwarz abhebt */}
-      <div className="chrome-orb -right-40 -top-24 -z-10 opacity-70" aria-hidden />
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <SectionHeading
-          eyebrow="Pakete & Preise"
-          title="Drei klare Pakete. Ein sichtbarer Unterschied."
-          titleClassName="max-w-3xl uppercase"
-          text="Wählen Sie einen sinnvollen Ausgangspunkt. Fahrzeuggröße und Extras werden im Konfigurator transparent berechnet."
-        />
-        <Link
-          to="/preise"
-          className="inline-flex min-h-11 items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
-        >
-          Alle Preise &amp; Extras
-          <ArrowRight aria-hidden className="size-4" />
-        </Link>
-      </div>
-
-      <div className="mt-12 grid gap-5 lg:grid-cols-3 lg:items-stretch">
-        {servicePackages.map((servicePackage, index) => (
-          <article
-            key={servicePackage.id}
-            className={[
-              "package-card relative flex h-full flex-col rounded-3xl p-6 sm:p-8",
-              servicePackage.highlight ? "package-card-featured" : "",
-            ].join(" ")}
-          >
-            {servicePackage.highlight && (
-              <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-primary-foreground sm:left-8">
-                Beliebteste Wahl
-              </span>
-            )}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-primary">
-                  {servicePackage.tagline}
-                </p>
-                <h3 className="display-sub mt-4 uppercase">{servicePackage.name}</h3>
-              </div>
-              <span className="text-xs text-muted-foreground">0{index + 1}</span>
-            </div>
-            <p className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="display-price text-3xl text-foreground">
-                ab {currency(servicePackage.basePrice)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {vatNoticeShort()} · {servicePackage.duration}
-              </span>
-            </p>
-            <ul className="mt-6 flex-1 space-y-3 border-t border-border pt-6">
-              {servicePackage.features.map((feature) => (
-                <li key={feature} className="flex gap-3 text-sm text-foreground/78">
-                  <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <Button
-              asChild
-              variant={servicePackage.highlight ? "default" : "outline"}
-              className="mt-8 rounded-lg"
-            >
-              <a href={`/?paket=${encodeURIComponent(servicePackage.id)}#buchung`}>
-                Paket konfigurieren
-              </a>
-            </Button>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function QualityJourney() {
-  const steps = [
-    ["Check-in", "Zustand, Material und gewünschtes Ergebnis gemeinsam einordnen."],
-    ["Vorbereitung", "Sicher reinigen, dekontaminieren und empfindliche Bereiche schützen."],
-    ["Detailing", "Die vereinbarten Arbeiten konzentriert und materialgerecht ausführen."],
-    ["Finish", "Ergebnis unter kontrolliertem Licht prüfen und sauber übergeben."],
-  ];
-
-  return (
-    <section className="content-auto border-y border-border bg-[#050709]">
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-        <div className="lg:sticky lg:top-32">
-          <p className="eyebrow">Der White-Gloss-Prozess</p>
-          <h2 className="display-section mt-3 max-w-3xl uppercase">
-            Ein klarer Ablauf. <span className="text-chrome block">Keine Überraschungen.</span>
-          </h2>
-          <p className="mt-6 max-w-2xl leading-7 text-muted-foreground">
-            Gute Aufbereitung beginnt mit einer ehrlichen Beurteilung. Jeder Schritt folgt dem
-            tatsächlichen Zustand Ihres Fahrzeugs – vom ersten Blick bis zur Endkontrolle.
+          </h1>
+          <p className="mt-6 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
+            Wenn Lack oder Innenraum nicht mehr so wirken, wie sie sollen, holen
+            wir den Zustand zurück. Fahrzeugaufbereitung in {site.city}:
+            tiefenreiner Innenraum, klarer Lack und Keramikversiegelung – auf
+            Wunsch mit Hol- und Bringservice.
           </p>
-          <Button asChild variant="outline" size="lg" className="mt-8 rounded-lg">
-            <Link to="/qualitaet">
-              Unser Qualitätsanspruch
-              <ArrowRight aria-hidden className="size-4" />
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/" hash="buchung" className={ctaPrimary}>
+              Termin anfragen
+              <ArrowRight className="size-4" aria-hidden />
             </Link>
-          </Button>
+            <Link to="/luxusfahrzeuge" className={ctaGhost}>
+              Individuelles Angebot
+            </Link>
+            <Link to="/b2b" className={ctaGhost}>
+              B2B-Anfrage
+            </Link>
+          </div>
         </div>
-        <ol className="overflow-hidden rounded-3xl border border-border bg-background/35">
-          {steps.map(([title, text], index) => (
-            <li
-              key={title}
-              className="group grid gap-4 border-b border-border p-6 transition-colors last:border-b-0 hover:bg-surface/40 sm:grid-cols-[3rem_minmax(0,1fr)] sm:items-start sm:p-7"
-            >
-              <span className="text-xs tracking-[0.22em] text-primary">0{index + 1}</span>
-              <div>
-                <h3 className="display-sub uppercase transition-colors group-hover:text-primary">
-                  {title}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
-              </div>
+      </section>
+
+      <section aria-label="Auf einen Blick" className="border-b border-line">
+        <ul className="gd-stats mx-auto max-w-7xl">
+          {[
+            ["13 Städte", "Hol- & Bringservice"],
+            [site.hoursLabel.replace(" Uhr", ""), "Werkstatt geöffnet"],
+            ["ab 149 €", "Startpreise inkl. MwSt."],
+            ["je nach Produkt", "Keramikschutz"],
+          ].map(([n, l], i) => (
+            <li key={n} className={`ga-s${i + 1} border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8`}>
+              <p className="font-display text-xl tracking-tight sm:text-2xl">{n}</p>
+              <p className="mt-1 text-xs text-subtle">{l}</p>
             </li>
           ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
+        </ul>
+      </section>
 
-function Booking({ initialPackageId }: { initialPackageId?: string }) {
-  return (
-    /* data-hide-whatsapp: Solange der Assistent im Bild ist, blendet sich die
-       schwebende WhatsApp-Schaltfläche aus — sie liegt sonst über der
-       Fußleiste mit „Terminanfrage senden". */
-    <section
-      id="buchung"
-      data-hide-whatsapp
-      className="content-auto relative isolate scroll-mt-28 overflow-hidden bg-surface/25"
-    >
-      <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
-      <div className="chrome-orb -left-40 top-10 -z-10 opacity-60" aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
-        <SectionHeading
-          className="mb-12 max-w-3xl"
-          eyebrow="Online anfragen"
-          title="Ihr Termin. Klar konfiguriert."
-          titleClassName="uppercase"
-          text="Fahrzeugklasse, Paket und Extras auswählen, Preisübersicht sehen und anschließend die unverbindliche Terminanfrage senden."
+      <section className="relative overflow-hidden">
+        <Shot
+          name="hero"
+          alt="Weißes Atelierfahrzeug von White Gloss in Horb, Kennzeichen entfernt"
+          className="h-[68vh] min-h-[28rem] w-full sm:h-[82vh]"
+          sizes="100vw"
+          framed={false}
         />
-        <ErrorBoundary
-          title="Der Buchungsassistent konnte nicht geladen werden"
-          description="Bitte laden Sie die Seite neu. Alternativ nehmen wir Ihre Anfrage per Telefon, WhatsApp oder E-Mail entgegen."
-        >
-          <DeferredBookingWizard initialPackageId={initialPackageId} />
-        </ErrorBoundary>
-
-        <div className="glass mt-10 grid gap-5 rounded-2xl border-primary/30 p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-          <div>
-            <p className="eyebrow">Unabhängig von Aufbereitungspaketen</p>
-            <h3 className="display-card mt-2 uppercase">
-              Dellenentfernung &amp; Hagelschaden-Reparatur
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Parkdellen, kleinere Karosseriedellen und Hagelschäden begutachten lassen. Bei kleinen
-              Schäden ist die Einschätzung oft anhand mehrerer Fotos möglich. Preis nach
-              Begutachtung.
-            </p>
-          </div>
-          <Button asChild size="lg" className="shrink-0">
-            <Link to="/dellen-hagelschaden">Begutachtung anfragen</Link>
-          </Button>
-        </div>
-
-        {/*
-          Zweiter Weg für alle, die vor der Buchung erst eine Einschätzung
-          möchten: Fotos hochladen statt Paket auswählen.
-        */}
-        <div className="glass mt-10 flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="display-card uppercase">Unsicher, was Ihr Fahrzeug braucht?</h3>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Schicken Sie uns Fotos und eine kurze Beschreibung des Zustands. Wir sehen es uns an
-              und sagen Ihnen ehrlich, was sinnvoll ist — kostenlos und unverbindlich.
-            </p>
-          </div>
-          <Button asChild size="lg" variant="outline" className="shrink-0 gap-2">
-            <Link to="/fahrzeug-zustand">
-              <Camera aria-hidden className="size-4 text-primary" />
-              Zustand prüfen lassen
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DiscoveryHub() {
-  return (
-    <section
-      aria-labelledby="discovery-title"
-      className="content-auto border-t border-border bg-surface/25"
-    >
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="eyebrow">Gezielt weiterfinden</p>
-            <h2 id="discovery-title" className="display-section mt-3 uppercase">
-              Leistung oder Abholort wählen.
-            </h2>
-          </div>
-          <p className="max-w-lg text-sm leading-6 text-muted-foreground">
-            Detaillierte Informationen liegen bewusst auf eigenen Seiten, damit diese Startseite
-            ruhig und übersichtlich bleibt.
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/55 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-20">
+          <p className="kicker">Werkstatt Horb</p>
+          <p className="mt-5 max-w-3xl font-display text-4xl leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
+            Kein Waschstraßenprogramm.
+            <br />
+            Ein Auto nach dem anderen.
+          </p>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+            Wir nehmen uns jedes Auto einzeln vor: Lack, Leder und Felgen so
+            gründlich wie nötig, so schonend wie möglich. Die Arbeit läuft in der
+            Werkstatt in Horb, nicht draußen an der Straße.
           </p>
         </div>
+      </section>
 
-        <div className="mt-8 grid border-y border-border lg:grid-cols-[0.82fr_1.18fr] lg:divide-x lg:divide-border">
-          <div className="py-6 lg:pr-10">
-            <div className="flex items-center justify-between gap-4">
-              <h3 className="display-card uppercase">Leistungen</h3>
-              <Link
-                to="/leistungen"
-                className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-primary"
-              >
-                Alle ansehen
-                <ArrowRight aria-hidden className="size-3.5" />
-              </Link>
+      <section className="cv-auto border-t border-line">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="kicker">Pakete</p>
+              <h2 className="heading-2 mt-4 max-w-xl">
+                Drei Pakete für die Fahrzeugaufbereitung.
+              </h2>
             </div>
-            <ul className="mt-3 divide-y divide-border">
-              {features.map((feature) => (
-                <li key={feature.slug}>
-                  <Link
-                    to="/leistungen/$service"
-                    params={{ service: feature.slug }}
-                    className="group flex min-h-12 items-center justify-between gap-3 rounded-lg px-1 text-sm text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {feature.name}
-                    <ArrowRight
-                      aria-hidden
-                      className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="border-t border-border py-6 lg:border-t-0 lg:pl-10">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="display-card uppercase">Hol- &amp; Bringservice</h3>
-              <span className="text-xs text-muted-foreground">
-                {pickupCities.length} Städte · {pickupTierSummary()}
-              </span>
-            </div>
-            <ul className="mt-4 grid grid-cols-2 gap-x-5 sm:grid-cols-3 xl:grid-cols-4">
-              {pickupCitiesByDistance.map((city) => (
-                <li key={city.slug}>
-                  <Link
-                    to="/abholservice/$city"
-                    params={{ city: city.slug }}
-                    className="group flex min-h-10 items-center gap-1.5 border-b border-border text-xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <MapPin aria-hidden className="size-3 text-primary" />
-                    {city.short}
-                    <ArrowRight
-                      aria-hidden
-                      className="ml-auto size-3 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
             <Link
-              to="/abholservice"
-              className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm text-foreground transition-colors hover:text-primary"
+              to="/preise"
+              className="inline-flex min-h-11 items-center gap-2 text-sm text-fg"
             >
-              Abholservice &amp; Entfernungspreise
-              <ArrowRight aria-hidden className="size-4" />
+              Alle Preise & Extras
+              <ArrowRight className="link-arrow size-4" aria-hidden />
             </Link>
           </div>
+          <ol className="mt-14 divide-y divide-line border-y border-line">
+            {packages.map((p, i) => (
+              <li key={p.id}>
+                <Link
+                  to="/leistungen/$slug"
+                  params={{ slug: packageServiceSlug[p.id] }}
+                  aria-label={`${p.searchLabel} in ${site.city}, Paket ${p.name} ab ${p.price} Euro`}
+                  className="lift group gd-pack py-8"
+                >
+                  <span className="ga-num font-display text-sm text-subtle tabular-nums">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="ga-pack-copy">
+                    <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                      <span className="font-display text-3xl tracking-tight sm:text-4xl">
+                        {p.name}
+                      </span>
+                      {p.featured ? (
+                        <span className="kicker">Bestseller</span>
+                      ) : null}
+                    </span>
+                    <span className="mt-1 block text-xs uppercase tracking-[0.16em] text-subtle">
+                      {p.searchLabel}
+                    </span>
+                    <span className="mt-2 block max-w-lg text-sm leading-relaxed text-muted">
+                      {p.kicker}
+                    </span>
+                  </span>
+                  <span className="ga-price">
+                    <span className="flex items-baseline gap-2 sm:justify-end">
+                      <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab</span>
+                      <span className="font-display text-3xl leading-none tracking-wide tabular-nums">
+                        {money(p.price)}
+                      </span>
+                      <span className="text-sm text-muted">€</span>
+                    </span>
+                    <span className="mt-1 block text-xs text-subtle">
+                      {site.vatNote} · {p.duration}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section className="cv-auto border-t border-line">
+        <div className="section gd-split mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="ga-copy">
+            <p className="kicker">Prozess</p>
+            <h2 className="heading-2 mt-4">
+              So läuft’s bei uns.
+            </h2>
+            <p className="mt-5 max-w-xl text-muted">
+              Bevor etwas angefasst wird, schauen wir uns das Auto an. Der Ablauf
+              richtet sich nach dem Zustand – nicht nach einem festen Programm.
+            </p>
+            <ol className="gd-tiles mt-12">
+              {processSteps.map((s) => (
+                <li key={s.n} className="border-t border-line pt-5">
+                  <p className="font-display text-3xl tracking-tight text-subtle/80">
+                    {s.n}
+                  </p>
+                  <h3 className="heading-3 mt-3">{s.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+            <Link
+              to="/qualitaet"
+              className="mt-10 inline-flex min-h-11 items-center gap-2 text-sm hover:underline"
+            >
+              Unser Ablauf
+              <ArrowRight className="link-arrow size-4" aria-hidden />
+            </Link>
+          </div>
+          <Shot
+            name="finish"
+            alt="Lack unter Prüflicht nach der Politur"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="ga-media aspect-[4/5] w-full lg:aspect-[4/5]"
+          />
+        </div>
+      </section>
+
+      <section className="cv-auto border-t border-line bg-surface">
+        <div className="section gd-split gd-split--media mx-auto max-w-7xl px-4 sm:px-6">
+          <Shot
+            name="dellen"
+            alt="Parkdelle unter Streiflicht, bevor wir ausbeulen"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="ga-media aspect-[4/3] w-full"
+          />
+          <div className="ga-copy">
+            <p className="kicker">Geht auch extra</p>
+            <h2 className="heading-2 mt-4">
+              Dellenentfernung & Hagelschaden
+            </h2>
+            <p className="mt-5 max-w-md text-muted leading-relaxed">
+              Ob Parkdelle oder Hagel: schicken Sie uns ein paar Fotos, und wir
+              sagen Ihnen ehrlich, ob sich die Arbeit lohnt. Den Preis machen wir
+              erst, wenn wir uns den Schaden angeschaut haben.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/dellen-hagelschaden" className={ctaPrimary}>
+                Begutachtung anfragen
+              </Link>
+              <Link to="/fahrzeug-zustand" className={ctaGhost}>
+                Zustand prüfen lassen
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6">
+        <p className="kicker">Aus der Werkstatt</p>
+        <h2 className="heading-2 mt-4 max-w-2xl">
+          So sieht die Arbeit aus.
+        </h2>
+        <p className="mt-5 max-w-xl text-muted">
+          Politur, Keramik, Leder und Felgen – ein paar Einblicke aus der
+          Werkstatt, ohne Kundenfahrzeuge und ohne Kennzeichen.
+        </p>
+        <div className="gd-gallery mt-12">
+          <Shot
+            name="lack"
+            alt="Poliermaschine auf dem Lack"
+            className="ga-hero aspect-[16/9] w-full min-h-[16rem] lg:min-h-[28rem]"
+            sizes="(min-width: 1024px) 66vw, 100vw"
+          />
+          <Shot
+            name="keramik"
+            alt="Keramikversiegelung von Hand auf dem Lack"
+            className="ga-cera aspect-[4/3] w-full"
+          />
+          <Shot
+            name="felgen"
+            alt="Felge nach der Keramikbeschichtung"
+            className="ga-felg aspect-[4/3] w-full"
+          />
+          <Shot
+            name="leder"
+            alt="Leder nach der Innenraumreinigung"
+            className="ga-lede aspect-[4/3] w-full"
+          />
+          <Shot
+            name="finish"
+            alt="Lack unter Prüflicht"
+            className="ga-fini aspect-[4/3] w-full lg:min-h-[14rem]"
+            sizes="(min-width: 1024px) 66vw, 100vw"
+          />
+        </div>
+        <PhotoNote className="mt-4" />
+      </section>
+
+      <section className="cv-auto gd-split gd-split--duo border-y border-line">
+        <Link
+          to="/luxusfahrzeuge"
+          className="ga-lux group relative block min-h-[28rem] overflow-hidden sm:min-h-[36rem]"
+        >
+          <Shot
+            name="hero"
+            alt="Atelierfahrzeug von White Gloss – für Fahrzeuge ab 80.000 € extra Zeit"
+            className="absolute inset-0 h-full w-full"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            framed={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/50 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
+            <p className="kicker">Private Client</p>
+            <h2 className="heading-2 mt-4 max-w-md">
+              Fahrzeuge ab 80.000 €
+            </h2>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted sm:text-base">
+              Nicht über den Rechner. Wir sprechen zuerst, schauen uns das Auto
+              an und bauen den Umfang extra für dieses Fahrzeug.
+            </p>
+            <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
+              Individuelles Angebot
+              <ArrowRight className="link-arrow size-4" aria-hidden />
+            </span>
+          </div>
+        </Link>
+        <Link
+          to="/b2b"
+          className="ga-b2b group relative block min-h-[28rem] overflow-hidden border-t border-line sm:min-h-[36rem] lg:border-t-0 lg:border-l"
+        >
+          <Shot
+            name="atelier"
+            alt="Werkstatt von White Gloss in Horb – Aufbereitung für Firmen und Flotten"
+            className="b2b-image absolute inset-0 h-full w-full"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            framed={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/50 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
+            <p className="kicker">Geschäftskunden</p>
+            <h2 className="heading-2 mt-4 max-w-md">
+              Firmen, Flotten, Autohäuser
+            </h2>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted sm:text-base">
+              Leasingrückläufer, Fuhrpark, Verkaufsvorbereitung. Den Preis
+              rechnen wir am Umfang, nicht an einer Pauschale.
+            </p>
+            <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
+              B2B-Anfrage
+              <ArrowRight className="link-arrow size-4" aria-hidden />
+            </span>
+          </div>
+        </Link>
+      </section>
+
+      <section className="cv-auto border-t border-line bg-surface">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+          <h2 className="heading-2">Leistungen & Abholung</h2>
+          <div className="gd-split mt-12">
+            <div className="ga-copy">
+              <p className="kicker">Leistungen</p>
+              <ul className="mt-5 divide-y divide-line border-y border-line">
+                {services.map((s) => (
+                  <li key={s.slug}>
+                    <Link
+                      to="/leistungen/$slug"
+                      params={{ slug: s.slug }}
+                      className="flex min-h-11 items-center justify-between py-3 text-sm text-muted hover:text-fg"
+                    >
+                      {s.nav}
+                      <ArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <Link
+                    to="/ratgeber"
+                    className="flex min-h-11 items-center justify-between py-3 text-sm text-muted hover:text-fg"
+                  >
+                    Ratgeber
+                    <ArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div className="ga-media">
+              <p className="kicker">Hol- & Bringservice · 13 Städte</p>
+              <h3 className="heading-3 mt-4">Abholung mit klarer Staffel</h3>
+              <p className="mt-4 text-sm leading-relaxed text-muted">
+                Bis 10 km kostenlos, bis 20 km 50 €, bis 50 km 70 €, darüber auf
+                Anfrage. Im Paket Keramik ist die Abholung bis 60 km enthalten.
+                Geöffnet {openingHours.daysLabel}, {openingHours.opens}–
+                {openingHours.closes} Uhr.
+              </p>
+              <ul className="gd-tiles gd-tiles-3 mt-6">
+                {pickupPricing.tiers.map((t) => (
+                  <li key={t.id} className="border border-line px-4 py-4">
+                    <p className="font-display text-2xl tracking-wide">
+                      {t.amount === 0 ? "0 €" : `${t.amount} €`}
+                    </p>
+                    <p className="mt-1 text-xs text-subtle">{t.label}</p>
+                  </li>
+                ))}
+              </ul>
+              <ul className="mt-6 columns-2 gap-x-8 text-sm">
+                {cities.map((c) => (
+                  <li key={c.slug} className="break-inside-avoid">
+                    <Link
+                      to="/abholservice/$city"
+                      params={{ city: c.slug }}
+                      className="inline-flex min-h-11 items-center text-muted hover:text-fg"
+                    >
+                      {c.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="cv-auto border-t border-line" aria-labelledby="standort-heading">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+          <p className="kicker">Standort</p>
+          <h2 id="standort-heading" className="heading-2 mt-4">
+            Werkstatt in {site.city}
+          </h2>
+          <p className="mt-5 max-w-xl text-muted">
+            {site.street}, {site.postalCode} {site.city}. Die Arbeit läuft hier –
+            den Hol- und Bringservice gibt es in 13 Städten. Die Karte ist
+            interaktiv, auch auf dem Handy.
+          </p>
+          <WorkshopMap className="mt-10" />
+        </div>
+      </section>
+
+      <section className="cv-auto border-t border-line" aria-labelledby="fahrzeugaufbereitung-heading">
+        <Shot
+          name="finish"
+          alt={`Fahrzeugaufbereitung in ${site.city} – Lack nach der Politur in der Werkstatt, Kennzeichen entfernt`}
+          className="h-[42vh] min-h-64 w-full sm:h-[54vh]"
+          sizes="100vw"
+          framed={false}
+        />
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+          <p className="kicker">White Gloss Detailing</p>
+          <h2 id="fahrzeugaufbereitung-heading" className="heading-2 mt-4">
+            Fahrzeugaufbereitung in {site.city}
+          </h2>
+          <p className="mt-5 max-w-xl text-muted leading-relaxed">
+            Fahrzeugaufbereitung heißt bei uns: Innenraum, Lack und Keramik in
+            der Werkstatt – nicht an der Straße. White Gloss Detailing in{" "}
+            {site.city}, mit Hol- und Bringservice in der Region.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="buchung"
+        className="section mx-auto max-w-7xl px-4 sm:px-6"
+        aria-labelledby="buchung-heading"
+      >
+        <p className="kicker">Online anfragen</p>
+        <h2 id="buchung-heading" className="heading-2 mt-4">
+          Termin anfragen, Preis sofort sehen.
+        </h2>
+        <p className="mt-5 mb-12 max-w-xl text-muted">
+          Wählen Sie Fahrzeugklasse, Paket und Extras – den Preis sehen Sie
+          sofort. Die Anfrage ist unverbindlich, wir melden uns mit einem
+          Terminvorschlag.
+        </p>
+        <LazyConfigurator eager={Boolean(paket)} initialPackage={paket} />
+      </section>
+    </main>
   );
 }

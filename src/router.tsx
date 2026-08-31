@@ -1,12 +1,12 @@
 import { createRouter } from "@tanstack/react-router";
+import { AppErrorComponent } from "@/lib/error-component";
 import { routeTree } from "./routeTree.gen";
 
-export const getRouter = () => {
-  const router = createRouter({
+export function getRouter() {
+  return createRouter({
     routeTree,
-    scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    defaultErrorComponent: AppErrorComponent,
+    defaultPreload: "intent",
+    defaultPreloadStaleTime: 30_000,
   });
-
-  return router;
-};
+}

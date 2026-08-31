@@ -1,615 +1,920 @@
+@import "tailwindcss";
+
 @font-face {
   font-family: "Bebas Neue";
   font-style: normal;
-  font-display: swap;
   font-weight: 400;
-  src: url("@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/bebas-neue-400.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
   font-weight: 400;
-  src: url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-400.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
   font-weight: 500;
-  src: url("@fontsource/barlow/files/barlow-latin-500-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-500.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
   font-weight: 600;
-  src: url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-600.woff2") format("woff2");
 }
 
-@import "tailwindcss" source(none);
-@source "../src";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --font-display: "Bebas Neue", "Barlow", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+@font-face {
+  font-family: "Bebas Neue Fallback";
+  src: local("Arial Narrow"), local("Arial");
+  size-adjust: 84%;
+  ascent-override: 88%;
+  descent-override: 12%;
+  line-gap-override: 0%;
 }
 
-:root {
-  --radius: 0.875rem;
-  --background: oklch(0.115 0.008 245);
-  --foreground: oklch(0.975 0.004 240);
-  --surface: oklch(0.155 0.009 245);
-  --surface-2: oklch(0.195 0.01 245);
-  --card: oklch(0.155 0.009 245);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.15 0.009 245);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.83 0.045 235);
-  --primary-foreground: oklch(0.12 0.01 245);
-  --secondary: oklch(0.22 0.012 245);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.21 0.01 245);
-  --muted-foreground: oklch(0.69 0.012 240);
-  --accent: oklch(0.93 0.022 235);
-  --accent-foreground: oklch(0.12 0.01 245);
-  /* WCAG AAA: 7,59:1 als Textfarbe auf --background, und 7,58:1 für
-     --destructive-foreground auf --destructive (Button-Variante).
-     Vorher: 5,00:1 als Text (nur AA) und 4,08:1 im Button (unter AA). */
-  --destructive: oklch(0.72 0.18 25);
-  --destructive-foreground: oklch(0.12 0.02 25);
-  --border: oklch(0.92 0.015 240 / 11%);
-  --input: oklch(0.92 0.015 240 / 16%);
-  --ring: oklch(0.83 0.045 235);
-  --chart-1: oklch(0.83 0.045 235);
-  --chart-2: oklch(0.93 0.022 235);
-  --chart-3: oklch(0.65 0.055 235);
-  --chart-4: oklch(0.48 0.04 235);
-  --chart-5: oklch(0.5 0 0);
-  --sidebar: oklch(0.14 0.008 245);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.83 0.045 235);
-  --sidebar-primary-foreground: oklch(0.12 0.01 245);
-  --sidebar-accent: oklch(0.21 0.01 245);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.92 0.015 240 / 11%);
-  --sidebar-ring: oklch(0.83 0.045 235);
-
-  --gradient-hero: linear-gradient(180deg, transparent 0%, var(--background) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
-  --shadow-glow:
-    0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent),
-    0 18px 60px -22px color-mix(in oklab, var(--primary) 45%, transparent);
-  --shadow-elevated: 0 24px 70px -30px oklch(0 0 0 / 90%);
+@font-face {
+  font-family: "Barlow Fallback";
+  src: local("Arial"), local("Helvetica Neue"), local("Helvetica");
+  size-adjust: 101%;
+  ascent-override: 94%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
 
-.dark {
-  color-scheme: dark;
+@theme {
+  --color-bg: #0c0c0d;
+  --color-surface: #141416;
+  --color-elevated: #1c1c20;
+  --color-fg: #f5f5f4;
+  --color-muted: #a8a29e;
+  --color-subtle: #938e88;
+  --color-line: #2a2a2e;
+  --color-accent: #e7e5e4;
+  --color-accent-fg: #0c0c0d;
+  --color-danger: #c45c4a;
+  --color-wa: #25d366;
+  --font-sans: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bebas Neue", "Bebas Neue Fallback", sans-serif;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-glow: 0 0 0 1px rgb(231 229 228 / 0.35), 0 18px 60px -22px rgb(231 229 228 / 0.45);
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
   html {
-    scroll-behavior: smooth;
-    background-color: var(--color-background);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16.5px;
+    touch-action: manipulation;
   }
 
-  body {
-    min-width: 320px;
-    overflow-x: clip;
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+  #main-content:focus {
+    outline: none;
+  }
+
+  #buchung {
+    scroll-margin-top: 5.5rem;
+  }
+
+  [id^="paket-"] {
+    scroll-margin-top: 5.5rem;
+  }
+
+  body[data-nav="open"] [data-wa-float] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1023px) {
+    body[data-city-wa] [data-wa-float] {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .compare-slider-range {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 100%;
+    height: 2.75rem;
+    margin: 0;
+    cursor: ew-resize;
+    appearance: none;
+    background: linear-gradient(to top, rgb(12 12 13 / 0.55), transparent);
+  }
+
+  .compare-slider-range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: rgb(245 245 244 / 0.7);
+  }
+
+  .compare-slider-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+    border-radius: 999px;
+    background: rgb(245 245 244);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  }
+
+  .compare-slider-range::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .compare-slider-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(245 245 244);
+  }
+
+  #mobile-nav ul {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #mobile-nav li {
+    display: block;
+    width: 100%;
   }
 
   h1,
   h2,
-  h3,
-  h4 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: 0.01em;
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--primary) 32%, transparent);
-    color: var(--foreground);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .kicker {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .heading-display {
+    font-family: var(--font-display);
+    font-size: clamp(3.35rem, 1.6rem + 8vw, 6rem);
+    font-weight: 400;
+    letter-spacing: 0.025em;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+
+  .heading-brand {
+    font-family: var(--font-display);
+    font-size: clamp(2.7rem, 4.2vw + 1.7rem, 6.25rem);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    line-height: 0.88;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .heading-tagline {
+    font-family: var(--font-sans);
+    font-size: clamp(0.68rem, 0.2rem + 1.4vw, 0.92rem);
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    line-height: 1.3;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .heading-1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 1.3rem + 4vw, 4.5rem);
+    font-weight: 400;
+    letter-spacing: 0.025em;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  .heading-2 {
+    font-family: var(--font-display);
+    font-size: clamp(2.15rem, 1.15rem + 2.6vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: 0.025em;
+    line-height: 0.98;
+    text-transform: uppercase;
+  }
+
+  .heading-3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+    font-weight: 400;
+    letter-spacing: 0.025em;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  img.hero-image,
+  .hero-image img,
+  .service-image-1 img,
+  .service-image-2 img,
+  .service-image-3 img,
+  .service-image-4 img,
+  .before-after-1 img,
+  .workshop-image img,
+  .gallery-shot img,
+  .private-client-image img,
+  .b2b-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .workshop-map {
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    aspect-ratio: 16 / 10;
+    min-height: 18rem;
+  }
+
+  .workshop-map iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 18rem;
+    border: 0;
+  }
+
+  @media (min-width: 640px) {
+    .workshop-map,
+    .workshop-map iframe {
+      min-height: 26rem;
+    }
+  }
+
+  .prose-legal {
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  .prose-legal h2 {
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
+    margin-top: 2.25rem;
+  }
+
+  .prose-legal section + section {
+    margin-top: 0.25rem;
+  }
+
+  .prose-legal p {
+    margin-top: 0.75rem;
+  }
+
+  .prose-legal a {
+    color: var(--color-fg);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-legal a:hover {
+    color: var(--color-accent);
+  }
+
+  .prose-legal address {
+    margin-top: 0.75rem;
+  }
+}
+
+@layer components {
+  .section {
+    padding-block: clamp(4.75rem, 9vw, 8.5rem);
+  }
+
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36rem;
+  }
+
+  .fx-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .fx-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .gd-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "logo tools";
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .gd-header {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "logo nav tools";
+      column-gap: 2.75rem;
+      padding-block: 1.05rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .gd-header {
+      column-gap: 3.5rem;
+      padding-block: 1.2rem;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .gd-header {
+      column-gap: 4.5rem;
+      padding-block: 1.35rem;
+    }
+  }
+
+  .ga-logo {
+    grid-area: logo;
+  }
+
+  .ga-nav {
+    grid-area: nav;
+    justify-self: start;
+  }
+
+  @media (min-width: 1024px) {
+    .ga-nav {
+      gap: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .ga-nav {
+      gap: 2.6rem;
+    }
+
+    .ga-nav .nav-link {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .ga-nav {
+      gap: 3.15rem;
+    }
+  }
+
+  .ga-tools {
+    grid-area: tools;
+    justify-self: end;
+    gap: 0.65rem;
+  }
+
+  @media (min-width: 1280px) {
+    .ga-tools {
+      gap: 0.9rem;
+    }
+  }
+
+  .gd-split {
+    display: grid;
+    gap: 3.5rem 3rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "media";
+  }
+
+  .gd-split--media {
+    grid-template-areas:
+      "media"
+      "copy";
+  }
+
+  .gd-split--duo {
+    gap: 0;
+    grid-template-areas:
+      "lux"
+      "b2b";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: "copy media";
+      align-items: center;
+    }
+
+    .gd-split--media {
+      grid-template-areas: "media copy";
+    }
+
+    .gd-split--duo {
+      grid-template-areas: "lux b2b";
+      align-items: stretch;
+    }
+  }
+
+  .ga-copy {
+    grid-area: copy;
+  }
+
+  .ga-media {
+    grid-area: media;
+  }
+
+  .ga-lux {
+    grid-area: lux;
+  }
+
+  .ga-b2b {
+    grid-area: b2b;
+  }
+
+  .gd-form {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "fields"
+      "quote";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-form {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      grid-template-areas: "fields quote";
+      align-items: start;
+    }
+  }
+
+  .ga-fields {
+    grid-area: fields;
+  }
+
+  .ga-quote {
+    grid-area: quote;
+  }
+
+  .gd-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "s1 s2"
+      "s3 s4";
+  }
+
+  @media (min-width: 640px) {
+    .gd-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-areas: "s1 s2 s3 s4";
+    }
+  }
+
+  .ga-s1 {
+    grid-area: s1;
+  }
+  .ga-s2 {
+    grid-area: s2;
+  }
+  .ga-s3 {
+    grid-area: s3;
+  }
+  .ga-s4 {
+    grid-area: s4;
+  }
+
+  .gd-pack {
+    display: grid;
+    gap: 0.85rem 2.5rem;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "num"
+      "copy"
+      "price";
+  }
+
+  @media (min-width: 640px) {
+    .gd-pack {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "num copy price";
+      align-items: baseline;
+    }
+  }
+
+  .ga-num {
+    grid-area: num;
+  }
+
+  .ga-pack-copy {
+    grid-area: copy;
+  }
+
+  .ga-price {
+    grid-area: price;
+    text-align: right;
+  }
+
+  .gd-tiles {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .gd-tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .gd-tiles-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .gd-gallery {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "hero hero"
+      "cera felg"
+      "lede fini";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-gallery {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-rows: minmax(12rem, 1fr) minmax(12rem, 1fr) minmax(11rem, auto);
+      grid-template-areas:
+        "hero hero hero hero cera cera"
+        "hero hero hero hero felg felg"
+        "lede lede lede fini fini fini";
+    }
+  }
+
+  .ga-hero {
+    grid-area: hero;
+  }
+  .ga-cera {
+    grid-area: cera;
+  }
+  .ga-felg {
+    grid-area: felg;
+  }
+  .ga-lede {
+    grid-area: lede;
+  }
+  .ga-fini {
+    grid-area: fini;
+  }
+
+  .gd-footer {
+    display: grid;
+    gap: 2.5rem 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "leistungen"
+      "studio"
+      "recht";
+  }
+
+  @media (min-width: 768px) {
+    .gd-footer {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-areas: "brand leistungen studio recht";
+    }
+  }
+
+  .ga-brand {
+    grid-area: brand;
+  }
+  .ga-leistungen {
+    grid-area: leistungen;
+  }
+  .ga-studio {
+    grid-area: studio;
+  }
+  .ga-recht {
+    grid-area: recht;
+  }
+
+  .nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.4em;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 280ms var(--ease-out-quart);
+  }
+
+  .nav-link[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  .mobile-sheet {
+    position: fixed;
+    top: calc(4.15rem + env(safe-area-inset-top, 0px));
+    right: max(0.65rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    left: auto;
+    display: flex;
+    width: min(22rem, calc(100vw - 1.3rem));
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: #101012;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 0.55);
+    animation: sheet-in 280ms var(--ease-out-quart);
+  }
+
+  .sheet-head {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.35rem 1.2rem;
+  }
+
+  .sheet-head p {
+    margin: 0;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .sheet-close {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    color: var(--color-fg);
+    background: transparent;
+  }
+
+  .mobile-sheet .sheet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.65rem 0.7rem 0.5rem;
+  }
+
+  .sheet-sub {
+    display: flex;
+    flex-direction: column;
+    margin: 0.15rem 0.35rem 0.35rem 1rem;
+    padding: 0.15rem 0 0.15rem 0.85rem;
+    border-left: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  .sheet-sub a {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .nav-bubble {
+    display: flex;
+    width: 100%;
+    min-height: 2.85rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.09);
+    background: rgb(255 255 255 / 0.04);
+    color: var(--color-fg);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background-color 160ms var(--ease-out-quart),
+      border-color 160ms var(--ease-out-quart);
+  }
+
+  .nav-bubble:hover,
+  .nav-bubble:focus-visible {
+    background: rgb(255 255 255 / 0.08);
+    border-color: rgb(255 255 255 / 0.18);
+  }
+
+  .nav-bubble-sub {
+    min-height: 2.5rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .nav-bubble-featured {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
+    background: rgb(255 255 255 / 0.07);
+  }
+
+  .nav-bubble-label {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .nav-bubble-badge {
+    flex-shrink: 0;
+    font-size: 0.58rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+    white-space: nowrap;
+  }
+
+  .mobile-sheet .nav-actions {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.85rem 0.85rem max(0.85rem, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateX(1rem) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      scroll-behavior: auto !important;
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
+    .mobile-sheet {
+      animation: none;
     }
   }
-}
 
-/* -------------------------------------------------------------------------
- * TYPO-SYSTEM – zentrale Headline-Stufen
- * Alle Überschriften und Label nutzen ausschließlich diese Utilities,
- * damit Schriftstärke, Laufweite und Abstände überall identisch sind.
- * Änderungen hier wirken auf Startseite, Städte-Seiten und Booking-Wizard.
- * ---------------------------------------------------------------------- */
-
-/** H1 – Hero der Startseite
- *  Mobile bewusst zurückhaltend (28px), skaliert fließend bis 96px. */
-@utility display-hero {
-  font-family: var(--font-display);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  line-height: 1.02;
-  text-wrap: balance;
-  font-size: clamp(1.75rem, 1.15rem + 3vw, 3rem);
-
-  @media (width >= 40rem) {
-    line-height: 0.98;
-    font-size: clamp(3rem, 1.5rem + 4.2vw, 4.5rem);
+  .lift {
+    transition:
+      transform 280ms var(--ease-out-quart),
+      box-shadow 280ms var(--ease-out-quart),
+      border-color 280ms var(--ease-out-quart);
   }
-  @media (width >= 80rem) {
-    line-height: 0.95;
-    font-size: clamp(4.5rem, 2rem + 4vw, 6rem);
+
+  .cta-shine {
+    position: relative;
+    overflow: hidden;
   }
-}
 
-/** H1 auf Unterseiten (z. B. Städte-Landingpages) */
-@utility display-page {
-  font-family: var(--font-display);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1.05;
-  text-wrap: balance;
-  font-size: clamp(1.625rem, 1.1rem + 2.6vw, 2.5rem);
-
-  @media (width >= 40rem) {
-    line-height: 1;
-    font-size: clamp(2.5rem, 1.4rem + 3vw, 3.75rem);
-  }
-}
-
-/** H2 – Sektionsüberschrift */
-@utility display-section {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.12;
-  text-wrap: balance;
-  font-size: clamp(1.5rem, 1.05rem + 2.2vw, 2.25rem);
-
-  @media (width >= 40rem) {
-    line-height: 1.05;
-    font-size: clamp(2.25rem, 1.3rem + 2.6vw, 3rem);
-  }
-}
-
-/** H3 – Untersektion / Schritt-Titel im Wizard */
-@utility display-sub {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.18;
-  font-size: clamp(1.25rem, 1rem + 1.2vw, 1.5rem);
-
-  @media (width >= 40rem) {
-    line-height: 1.1;
-    font-size: clamp(1.5rem, 1.1rem + 1.2vw, 1.875rem);
-  }
-}
-
-/** H3/H4 – Kartenüberschrift (Feature-, Paket-, Fahrzeugkarten) */
-@utility display-card {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.25;
-  font-size: var(--text-base);
-
-  @media (width >= 40rem) {
-    font-size: var(--text-lg);
-  }
-}
-
-/** Kleiner Eyebrow-Text über einer Sektionsüberschrift
- *  Am Telefon 12px statt vorher 11px: Versalien mit weiter Laufweite lesen
- *  sich deutlich schlechter als gemischte Schreibweise, kleine Grade werden
- *  dadurch zusätzlich bestraft. Die Laufweite bleibt am Telefon enger,
- *  damit die Zeile trotz des größeren Grades nicht umbricht. */
-@utility eyebrow {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--color-primary);
-
-  @media (width >= 40rem) {
-    letter-spacing: 0.3em;
-  }
-}
-
-/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration“) */
-@utility label-caps {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-
-  @media (width >= 40rem) {
-    font-size: var(--text-sm);
-    letter-spacing: 0.2em;
-  }
-}
-
-/** Preis- und Kennzahlendarstellung */
-@utility display-price {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-2xl);
-
-  @media (width >= 40rem) {
-    font-size: var(--text-3xl);
-  }
-}
-
-/** Einheitlicher Abstand zwischen Eyebrow, Headline und Fließtext */
-@utility headline-stack {
-  & > * + * {
-    margin-top: calc(var(--spacing) * 3);
-  }
-}
-
-@utility glass {
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
-  backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid var(--color-border);
-}
-
-@utility glass-strong {
-  background: color-mix(in oklab, var(--surface-2) 75%, transparent);
-  backdrop-filter: blur(30px) saturate(150%);
-  border: 1px solid var(--color-border);
-}
-
-@utility text-gradient {
-  background: linear-gradient(
-    100deg,
-    oklch(1 0 0) 0%,
-    oklch(0.96 0.01 235) 45%,
-    var(--accent) 78%,
-    var(--primary) 100%
-  );
-  background-clip: text;
-  color: transparent;
-}
-
-@utility hairline-gold {
-  border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
-}
-
-@utility hairline-metal {
-  border: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
-}
-
-@utility glow-ring {
-  box-shadow: var(--shadow-glow);
-}
-
-@utility grid-lines {
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
-      transparent 1px
+  .cta-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgb(255 255 255 / 0.32) 50%,
+      transparent 62%
     );
-  background-size: 64px 64px;
-}
+    transform: translateX(-130%);
+  }
 
-@utility content-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 800px;
-}
+  .link-draw {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0 1px;
+    transition:
+      color 200ms var(--ease-out-quart),
+      background-size 280ms var(--ease-out-quart);
+  }
 
-/* -------------------------------------------------------------------------
- * EINBLENDEN BEIM SCROLLEN
- *
- * Bewusst ohne JavaScript, über eine scrollgesteuerte Animation. Browser,
- * die `animation-timeline` nicht kennen, ignorieren die gesamte Regel — die
- * Seite bleibt dort exakt wie vorher, nur ohne Bewegung. Damit kann kein
- * Inhalt unsichtbar hängenbleiben, wenn eine Datei nicht lädt oder eine
- * Erweiterung dazwischenfunkt; genau das ist bei der üblichen
- * JavaScript-Variante das Risiko.
- *
- * Der Bereich `cover 0% cover 18%` ist absichtlich so gewählt, dass er auch
- * bei Elementen greift, die höher sind als der Bildschirm: „cover" beginnt,
- * sobald das Element den Bildschirm berührt, und ist bei 18 % längst
- * erreicht. Ein Bereich über `entry` würde bei sehr hohen Elementen nie
- * fertig werden und sie halb durchsichtig stehen lassen.
- * ---------------------------------------------------------------------- */
-@utility reveal {
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
+  @media (hover: hover) {
+    .nav-link:hover::after,
+    .nav-link:focus-visible::after {
+      transform: scaleX(1);
+    }
+
+    .lift:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.06),
+        0 24px 70px -36px rgb(231 229 228 / 0.38);
+    }
+
+    .cta-shine:hover::after {
+      transform: translateX(130%);
+      transition: transform 650ms var(--ease-out-quart);
+    }
+
+    .link-draw:hover {
+      background-size: 100% 1px;
+    }
+
+    .group:hover .link-arrow,
+    .link-arrow:hover {
+      transform: translateX(4px);
+    }
+  }
+
+  .link-arrow {
+    transition: transform 280ms var(--ease-out-quart);
   }
 }
 
-/* Bewegt wird über `translate`, nicht über `transform`. Das ist Absicht:
-   Die Karten heben sich beim Überfahren per `transform: translateY(-3px)`
-   an. Eine Animation gewinnt in der Kaskade gegen eine normale Regel — mit
-   `transform` in den Keyframes wäre der Hover-Effekt nach dem Einblenden
-   also tot. `translate` ist eine eigenständige Eigenschaft und kommt sich
-   mit `transform` nicht in die Quere. */
-@keyframes reveal-in {
-  from {
-    opacity: 0;
-    translate: 0 1rem;
-  }
-  to {
-    opacity: 1;
-    translate: none;
-  }
-}
-
-@utility text-chrome {
-  background: linear-gradient(
-    105deg,
-    oklch(1 0 0) 0%,
-    oklch(0.72 0.018 235) 28%,
-    oklch(0.98 0.008 235) 54%,
-    oklch(0.68 0.025 235) 78%,
-    oklch(0.94 0.015 235) 100%
-  );
-  background-clip: text;
-  color: transparent;
-}
-
-@utility metal-panel {
-  border: 1px solid var(--color-border);
-  background:
-    linear-gradient(135deg, oklch(1 0 0 / 5%) 0%, transparent 38%),
-    color-mix(in oklab, var(--surface) 92%, transparent);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 5%),
-    var(--shadow-elevated);
-  backdrop-filter: blur(24px) saturate(130%);
-}
-
-@utility feature-card {
-  border: 1px solid var(--color-border);
-  background:
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in oklab, var(--primary) 10%, transparent),
-      transparent 38%
-    ),
-    linear-gradient(145deg, color-mix(in oklab, var(--surface-2) 72%, transparent), var(--surface));
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
-  transition:
-    border-color 300ms ease,
-    transform 300ms ease,
-    box-shadow 300ms ease;
-
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 42%, transparent);
-    transform: translateY(-3px);
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 6%),
-      0 24px 70px -36px color-mix(in oklab, var(--primary) 48%, transparent);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 
-  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
-     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
-     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
+  .lift:hover,
+  .cta-shine:hover::after,
+  .nav-link::after {
+    transform: none;
   }
-}
-
-@utility package-card {
-  border: 1px solid var(--color-border);
-  background: linear-gradient(155deg, var(--surface-2), var(--surface));
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
-  transition:
-    border-color 300ms ease,
-    transform 300ms ease,
-    box-shadow 300ms ease;
-
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 38%, transparent);
-    transform: translateY(-3px);
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 6%),
-      0 24px 70px -36px color-mix(in oklab, var(--primary) 45%, transparent);
-  }
-
-  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
-     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
-     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
-  }
-}
-
-@utility package-card-featured {
-  border-color: color-mix(in oklab, var(--primary) 48%, transparent);
-  background:
-    radial-gradient(
-      circle at 80% 0%,
-      color-mix(in oklab, var(--primary) 14%, transparent),
-      transparent 42%
-    ),
-    linear-gradient(155deg, var(--surface-2), var(--surface));
-  box-shadow: var(--shadow-glow);
-
-  /* Muss nach der Hover-Regel von .package-card greifen, damit die
-     hervorgehobene Karte ihren Leuchtrand auch beim Überfahren behält. */
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 62%, transparent);
-    box-shadow:
-      var(--shadow-glow),
-      0 28px 80px -34px color-mix(in oklab, var(--primary) 55%, transparent);
-  }
-}
-
-@utility hero-stage {
-  background: #030507;
-}
-
-@utility hero-scrim {
-  background:
-    linear-gradient(
-      90deg,
-      oklch(0.07 0.012 245 / 96%) 0%,
-      oklch(0.07 0.012 245 / 76%) 45%,
-      transparent 78%
-    ),
-    linear-gradient(0deg, oklch(0.07 0.012 245 / 92%) 0%, transparent 48%),
-    linear-gradient(180deg, oklch(0.07 0.012 245 / 42%) 0%, transparent 30%);
-
-  @media (width < 64rem) {
-    background:
-      linear-gradient(90deg, oklch(0.07 0.012 245 / 92%) 0%, oklch(0.07 0.012 245 / 42%) 100%),
-      linear-gradient(0deg, oklch(0.07 0.012 245 / 96%) 0%, transparent 65%);
-  }
-}
-
-@utility chrome-orb {
-  position: absolute;
-  width: 24rem;
-  height: 24rem;
-  border-radius: 9999px;
-  background: color-mix(in oklab, var(--primary) 18%, transparent);
-  filter: blur(100px);
-  pointer-events: none;
-}
-
-/* -------------------------------------------------------------------------
- * BROTKRUMEN – Trefferfläche am Telefon
- *
- * Die Links sind nur so hoch wie ihre Textzeile, am Telefon also rund 14px.
- * Das ist mit dem Daumen kaum sicher zu treffen. Die Trefferfläche wächst
- * hier auf 36px, ohne dass sich am Aussehen etwas ändert — Schriftgrad,
- * Farbe und Abstand bleiben, wie sie sind.
- *
- * Zentral gelöst, weil die Brotkrumen in 16 Seiten einzeln stehen. Eine
- * Regel an einer Stelle bleibt verlässlich gleich; 16 gleichlautende
- * Änderungen laufen früher oder später auseinander.
- * ---------------------------------------------------------------------- */
-@media (width < 40rem) {
-  nav[aria-label="Brotkrumen"] a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.25rem;
-    vertical-align: middle;
-  }
-}
-
-.prose-legal {
-  color: var(--muted-foreground);
-  font-size: 0.9375rem;
-  line-height: 1.75;
-}
-
-.prose-legal section + section {
-  margin-top: 2.5rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.prose-legal h2 {
-  margin-bottom: 0.875rem;
-  color: var(--foreground);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.15;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-}
-
-.prose-legal p + p {
-  margin-top: 0.875rem;
-}
-
-.prose-legal address {
-  display: grid;
-  font-style: normal;
-}
-
-.prose-legal a {
-  color: var(--foreground);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in oklab, var(--primary) 55%, transparent);
-  text-underline-offset: 0.2em;
-}
-
-.prose-legal a:hover {
-  color: var(--primary);
 }

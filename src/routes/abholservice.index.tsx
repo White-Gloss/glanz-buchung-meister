@@ -1,135 +1,49 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Car, MapPin, ShieldCheck, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ConversionBand } from "@/components/ConversionBand";
-import { PickupCityGrid } from "@/components/PickupCityGrid";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { buildOverviewJsonLd, homeBase, pickupCities } from "@/lib/pickupLocations";
-import {
-  company,
-  pickupPriceNote,
-  pickupPriceRangeText,
-  pickupTierSummary,
-} from "@/lib/servicesConfig";
-import { absUrl, standardPageMeta } from "@/lib/seo";
-
-const TITLE = "Abholservice Fahrzeugaufbereitung | Horb & Umgebung";
-const DESCRIPTION =
-  "Wir holen Ihr Fahrzeug in 13 Städten rund um Horb am Neckar ab, bereiten es professionell auf und bringen es zurück. Jetzt Abholtermin anfragen.";
+import { PickupNote } from "@/components/configurator";
+import { cities, pickupTierSummary, site } from "@/data/site";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/")({
-  head: () => ({
-    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/abholservice" })],
-    links: [
-      { rel: "canonical", href: absUrl("/abholservice") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/abholservice") },
-      { rel: "alternate", hrefLang: "x-default", href: absUrl("/abholservice") },
-    ],
-    scripts: [{ type: "application/ld+json", children: JSON.stringify(buildOverviewJsonLd()) }],
-  }),
-  component: PickupOverview,
+  component: AbholIndex,
+  head: () =>
+    pageHead({
+      title: `Hol- & Bringservice 13 Städte | ${site.name}`,
+      description:
+        "Abholung und Rückgabe in Horb, Tübingen, Nagold, Freudenstadt, Böblingen, Sindelfingen und weiteren Städten. Ausführung in Horb am Neckar.",
+      path: "/abholservice",
+    }),
 });
 
-function PickupOverview() {
+function AbholIndex() {
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main id="main-content">
-        <section className="relative overflow-hidden border-b border-border/60">
-          <div className="grid-lines absolute inset-0 opacity-30" aria-hidden />
-          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
-              <Link to="/" className="hover:text-foreground">
-                Startseite
-              </Link>
-              <span aria-hidden className="px-2">
-                /
+    <main id="main-content" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <h1 className="font-display text-5xl">Hol- & Bringservice</h1>
+      <p className="mt-4 max-w-2xl text-muted">
+        Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft
+        immer in der Werkstatt in {site.city} – {pickupTierSummary()}. Im Paket
+        Keramik ist die Abholung bis 60 km enthalten.
+      </p>
+      <ul className="mt-10 divide-y divide-line border-y border-line">
+        {cities.map((c) => (
+          <li key={c.slug}>
+            <Link
+              to="/abholservice/$city"
+              params={{ city: c.slug }}
+              className="flex min-h-14 items-center justify-between gap-4 py-3"
+            >
+              <span>
+                <span className="block font-medium">{c.name}</span>
+                <span className="text-sm text-muted">
+                  ca. {c.km} km · ca. {c.minutes} Min.
+                </span>
               </span>
-              <span className="text-foreground" aria-current="page">
-                Abholservice
+              <span className="text-sm text-muted">
+                <PickupNote km={c.km} />
               </span>
-            </nav>
-            <p className="eyebrow mt-6">Hol- & Bringservice</p>
-            <h1 className="text-gradient display-page mt-3 max-w-4xl">
-              Fahrzeugaufbereitung mit Abholservice rund um Horb am Neckar
-            </h1>
-            <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Unsere Werkstatt steht in {homeBase.city} ({homeBase.region}). Ihr Fahrzeug muss
-              trotzdem nicht zu uns fahren: Wir holen es bei Ihnen ab, veredeln es unter
-              kontrollierten Bedingungen und bringen es zum Wunschtermin zurück.
-            </p>
-            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary">
-              <span className="display-card uppercase">Abholung {pickupPriceRangeText()}</span>
-              <span className="text-foreground/80">nach Entfernung – {pickupTierSummary()}</span>
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="glow-ring">
-                <Link to="/" hash="buchung">
-                  Abholtermin anfragen
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href={`mailto:${company.email}?subject=Frage%20zum%20Abholservice`}>
-                  Frage per E-Mail
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              [
-                Car,
-                "Abholung & Rückgabe",
-                "Wir übernehmen Ihr Fahrzeug an Wohn- oder Firmenadresse.",
-              ],
-              [
-                MapPin,
-                "13 Städte im Umkreis",
-                "Von Horb über Tübingen bis Böblingen und Reutlingen.",
-              ],
-              [
-                ShieldCheck,
-                "Planbare Übergabe",
-                "Abholung und Rückgabe erfolgen in einem klar abgestimmten Terminfenster.",
-              ],
-              [Wallet, `Abholung ${pickupPriceRangeText()}`, pickupPriceNote()],
-            ].map(([Icon, title, text]) => {
-              const I = Icon as typeof Car;
-              return (
-                <article key={title as string} className="glass rounded-2xl p-6">
-                  <I className="size-7 text-primary" />
-                  <h3 className="mt-4 display-card uppercase">{title as string}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{text as string}</p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-          <h2 className="display-section uppercase">
-            Unser Abholgebiet – {pickupCities.length} Städte
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-            Wählen Sie Ihre Stadt aus, um Entfernung, Fahrzeit und die regionalen Besonderheiten
-            Ihres Abholtermins zu sehen.
-          </p>
-          <div className="mt-8">
-            <PickupCityGrid />
-          </div>
-        </section>
-        <ConversionBand
-          eyebrow="Hol- & Bringservice"
-          title="Aufbereitung ohne zusätzlichen Werkstattweg."
-          text="Wählen Sie den Hol- & Bringservice im Konfigurator aus und senden Sie Ihren Wunschtermin direkt mit."
-        />
-      </main>
-      <SiteFooter />
-    </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </main>
   );
 }

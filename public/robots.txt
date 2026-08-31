@@ -1,15 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /auth
-Disallow: /reset-password
-
-# Persoenliche Links mit Zugriffstoken (/angebot/, /kalender/) stehen hier
-# bewusst NICHT: Ein Disallow verbietet nur das Abrufen, nicht das
-# Indexieren. Google darf die Seite dann nicht mehr laden und sieht deshalb
-# auch das noindex nicht mehr - eine bekannt gewordene Adresse bliebe als
-# reiner Link im Index stehen. Stattdessen sagt /angebot/ per noindex-Meta-Tag
-# selbst ab, und der Kalender-Feed sendet die Kopfzeile X-Robots-Tag: noindex
-# - dort ist ein Meta-Tag nicht moeglich, weil die Antwort kein HTML ist.
+Disallow: /login
+Disallow: /danke
+Disallow: /api/
 
 Sitemap: https://white-gloss.de/sitemap.xml

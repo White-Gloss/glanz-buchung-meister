@@ -1,0 +1,44 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 4549,
+      "bodyTextHash": "4ea83a0e5f4cc6044d449c2e46861bd2a83ea6c1c7cd998f12e5903989326fab",
+      "bodyTextPrefix": "Zum Inhalt springen LEISTUNGEN PREISE QUALITÄT B2B 0152 33540284",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/ampel-home.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 4641,
+      "bodyTextHash": "62e0ac622aab22400eceae3aa50a83bc3d312b3bece9e4154b2e389420e3cb1a",
+      "bodyTextPrefix": "Zum Inhalt springen Termin anfragen FAHRZEUGAUFBEREITUNG · HORB ",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/ampel-home-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/ampel-home.json"
+}

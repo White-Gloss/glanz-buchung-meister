@@ -1,0 +1,44 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 4725,
+      "bodyTextHash": "622832b203a5b7fc4abec3a81ec64173c013c8d55400ce8b9e58eb2d466f7f50",
+      "bodyTextPrefix": "Zum Inhalt springen Leistungen Preise Qualität Abholservice Ratg",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 4648,
+      "bodyTextHash": "1000035db13b13e4f4ce53c5595740f6ca1ee97c6be00d5f565a15325693e984",
+      "bodyTextPrefix": "Zum Inhalt springen Termin anfragen FAHRZEUGAUFBEREITUNG · HORB ",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json"
+}

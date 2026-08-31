@@ -1,185 +1,98 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ClipboardCheck, Eye, ShieldCheck, Sparkles } from "lucide-react";
+import { PhotoNote, Shot } from "@/components/media";
+import { processSteps, site } from "@/data/site";
+import { pageHead } from "@/lib/seo";
 
-import { ConversionBand } from "@/components/ConversionBand";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { Button } from "@/components/ui/button";
-import { absUrl, standardPageMeta } from "@/lib/seo";
-
-const TITLE = "Qualitätsanspruch & Ablauf | White Gloss Detailing";
-const DESCRIPTION =
-  "So arbeitet White Gloss Detailing: individuelle Zustandsprüfung, sichere Vorbereitung, präzise Aufbereitung und kontrolliertes Finish.";
+const STEP_SHOT = ["atelier", "lack", "keramik", "finish"] as const;
 
 export const Route = createFileRoute("/qualitaet")({
-  head: () => ({
-    meta: [...standardPageMeta({ title: TITLE, description: DESCRIPTION, path: "/qualitaet" })],
-    links: [
-      { rel: "canonical", href: absUrl("/qualitaet") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/qualitaet") },
-      { rel: "alternate", hrefLang: "x-default", href: absUrl("/qualitaet") },
-    ],
-  }),
   component: QualityPage,
+  head: () =>
+    pageHead({
+      title: `Qualitätsanspruch & Ablauf | ${site.name}`,
+      description:
+        "Ablauf der Fahrzeugaufbereitung in Horb: anschauen, vorbereiten, arbeiten, abgeben. So viel wie nötig, so schonend wie möglich.",
+      path: "/qualitaet",
+    }),
 });
 
 function QualityPage() {
-  const process = [
-    {
-      title: "Check-in",
-      icon: ClipboardCheck,
-      text: "Fahrzeugzustand, Lackbild, Verschmutzung und Ziel werden vor Beginn gemeinsam eingeordnet.",
-    },
-    {
-      title: "Vorbereitung",
-      icon: ShieldCheck,
-      text: "Handwäsche, Dekontamination, Abkleben und Materialvorbereitung schaffen eine sichere Basis.",
-    },
-    {
-      title: "Detailing",
-      icon: Sparkles,
-      text: "Innenraum, Lack, Kunststoff, Leder und Zusatzleistungen werden nach Paket präzise bearbeitet.",
-    },
-    {
-      title: "Finish",
-      icon: Eye,
-      text: "Das Ergebnis wird unter kontrolliertem Licht geprüft, nachgearbeitet und sauber übergeben.",
-    },
-  ];
-
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main id="main-content">
-        <section className="relative isolate overflow-hidden border-b border-border">
-          <div className="grid-lines absolute inset-0 -z-10 opacity-20" aria-hidden />
-          <div className="chrome-orb -right-32 -top-32 -z-10" aria-hidden />
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
-            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
-              <Link to="/" className="transition-colors hover:text-foreground">
-                Startseite
-              </Link>
-              <span aria-hidden className="px-2">
-                /
-              </span>
-              <span className="text-foreground" aria-current="page">
-                Qualität
-              </span>
-            </nav>
-            <p className="eyebrow mt-10">Unser Qualitätsanspruch</p>
-            <h1 className="display-page mt-3 max-w-5xl uppercase">
-              Sorgfalt ist kein Extra.{" "}
-              <span className="text-chrome block">Sie ist der Standard.</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Ein hochwertiges Ergebnis entsteht nicht durch ein einzelnes Produkt, sondern durch
-              saubere Vorbereitung, passende Verfahren und konsequente Kontrolle.
-            </p>
-            <Button asChild size="lg" className="mt-8 rounded-full">
-              <Link to="/" hash="buchung">
-                Fahrzeug anfragen
-                <ArrowRight aria-hidden className="size-4" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-          <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr]">
-            <div>
-              <p className="eyebrow">Der Prozess</p>
-              <h2 className="display-section mt-3 uppercase">
-                Vier Schritte. Ein klares Ergebnis.
-              </h2>
-              <p className="mt-5 max-w-lg text-sm leading-6 text-muted-foreground">
-                Jeder Schritt hat eine Aufgabe: Risiken reduzieren, Qualität sichtbar machen und das
-                vereinbarte Ziel kontrolliert erreichen.
-              </p>
-            </div>
-            <ol className="grid gap-4 sm:grid-cols-2">
-              {process.map(({ title, icon: Icon, text }, index) => (
-                <li key={title} className="feature-card rounded-3xl p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <Icon aria-hidden className="size-7 text-primary" />
-                    <span className="text-xs tracking-[0.18em] text-muted-foreground">
-                      0{index + 1}
-                    </span>
-                  </div>
-                  <h3 className="display-sub mt-10 uppercase">{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section className="content-auto border-y border-border bg-surface/35">
-          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-            <p className="eyebrow">Was Sie erwarten dürfen</p>
-            <h2 className="display-section mt-3 max-w-3xl uppercase">
-              Nachvollziehbare Arbeit statt leerer Versprechen.
-            </h2>
-            <div className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-border bg-border md:grid-cols-2">
-              {[
-                [
-                  "Individuelle Beurteilung",
-                  "Materialien, Verschmutzung und Defektbild bestimmen den sinnvollen Arbeitsumfang.",
-                ],
-                [
-                  "Materialgerechte Verfahren",
-                  "Werkzeug und Reiniger werden passend zur Oberfläche und zum Ausgangszustand gewählt.",
-                ],
-                [
-                  "Realistische Ergebnisse",
-                  "Wir benennen Grenzen, bevor unnötiger Materialabtrag oder falsche Erwartungen entstehen.",
-                ],
-                [
-                  "Kontrolliertes Finish",
-                  "Kritische Bereiche werden nachgearbeitet und das Gesamtbild vor Übergabe abschließend geprüft.",
-                ],
-              ].map(([title, text]) => (
-                <article key={title} className="bg-background p-6 sm:p-8">
-                  <h3 className="flex items-center gap-3 text-sm font-medium text-foreground">
-                    <CheckCircle2 aria-hidden className="size-4 shrink-0 text-primary" />
-                    {title}
-                  </h3>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="content-auto mx-auto max-w-7xl px-4 py-24 sm:px-6">
-          <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-            <div>
-              <p className="eyebrow">Ehrliche Einordnung</p>
-              <h2 className="display-section mt-3 uppercase">
-                Nicht jeder Kratzer ist polierbar. Nicht jeder Schutz hält ohne Pflege.
-              </h2>
-              <p className="mt-5 max-w-2xl leading-7 text-muted-foreground">
-                Professionelle Aufbereitung bedeutet auch, Grenzen klar zu benennen. Tiefe
-                Lackschäden, strukturelle Lederdefekte oder dauerhaft verfärbte Materialien
-                benötigen gegebenenfalls eine Reparatur statt reiner Pflege. Wir unterscheiden das
-                vor Arbeitsbeginn.
-              </p>
-            </div>
-            <div className="metal-panel rounded-3xl p-6 sm:p-8">
-              <p className="eyebrow">Unser Grundsatz</p>
-              <blockquote className="display-sub mt-4 uppercase">
-                So intensiv wie nötig. So materialschonend wie möglich.
-              </blockquote>
-            </div>
-          </div>
-        </section>
-
-        <ConversionBand
-          eyebrow="Ihr Fahrzeug im Mittelpunkt"
-          title="Lassen Sie uns Zustand und Ziel einordnen."
-          text="Senden Sie Ihre Terminanfrage oder sprechen Sie direkt mit uns über den passenden Umfang."
-        />
-      </main>
-      <SiteFooter />
-    </div>
+    <main id="main-content" tabIndex={-1}>
+      <Shot
+        name="finish"
+        alt="Lack unter Prüflicht"
+        className="h-[46vh] min-h-72 w-full"
+        sizes="100vw"
+        priority
+        framed={false}
+      />
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <nav aria-label="Brotkrumen" className="text-xs text-subtle">
+          <Link to="/" className="hover:text-fg">
+            Startseite
+          </Link>
+          <span className="px-2">/</span>
+          <span>Qualität</span>
+        </nav>
+        <p className="kicker mt-8">Ablauf</p>
+        <h1 className="mt-5 font-display text-5xl tracking-tight sm:text-6xl">
+          Wie wir arbeiten
+        </h1>
+        <p className="mt-4 text-lg text-muted">
+          Sorgfalt ist bei uns kein Extra, das man dazubucht. Ein gutes Ergebnis
+          kommt von sauberer Vorbereitung, dem passenden Verfahren und einer
+          ehrlichen Kontrolle, bevor das Auto rausgeht.
+        </p>
+        <ol className="mt-16 space-y-16">
+          {processSteps.map((s, i) => (
+            <li key={s.n} className="border-t border-line pt-8">
+              <p className="font-display text-5xl tracking-tight text-subtle/80">{s.n}</p>
+              <h2 className="mt-4 font-display text-3xl tracking-tight">{s.title}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted">{s.text}</p>
+              <Shot
+                name={STEP_SHOT[i]}
+                alt={`Schritt ${s.title} bei der Fahrzeugaufbereitung`}
+                className="mt-8 aspect-[16/9] w-full"
+                sizes="(min-width: 768px) 48rem, 100vw"
+              />
+            </li>
+          ))}
+        </ol>
+        <PhotoNote className="mt-4" />
+        <h2 className="mt-20 font-display text-4xl tracking-tight">Was Sie erwarten dürfen</h2>
+        <ul className="mt-6 space-y-4 text-sm leading-relaxed text-muted">
+          <li>
+            <strong className="text-fg">Ehrlich anschauen.</strong> Material, Schmutz
+            und Schäden bestimmen, was sinnvoll ist – nicht ein Katalog, der für
+            jedes Auto gleich aussieht.
+          </li>
+          <li>
+            <strong className="text-fg">Passendes Verfahren.</strong> Werkzeug und
+            Chemie richten sich nach Lack und Leder, nicht danach, was am
+            schärfsten wäre.
+          </li>
+          <li>
+            <strong className="text-fg">Keine Showroom-Märchen.</strong> Grenzen
+            sagen wir vorher, bevor unnötig Lack abgetragen wird.
+          </li>
+          <li>
+            <strong className="text-fg">Kontrolle vor der Übergabe.</strong> Die
+            kritischen Stellen gehen wir noch einmal durch, damit nichts
+            durchrutscht.
+          </li>
+        </ul>
+        <blockquote className="mt-14 max-w-xl font-display text-3xl leading-snug tracking-tight">
+          So viel wie nötig. So schonend wie möglich.
+        </blockquote>
+        <Link
+          to="/"
+          hash="buchung"
+          className="mt-10 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
+        >
+          Fahrzeug anfragen
+        </Link>
+      </div>
+    </main>
   );
 }

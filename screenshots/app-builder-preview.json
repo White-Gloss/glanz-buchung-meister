@@ -1,0 +1,42 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 3902,
+      "bodyTextHash": "6eca30636b44c7388f3d6075a242b6faae505e059de32d2c76a85a35c768e195",
+      "bodyTextPrefix": "Zum Inhalt springen Atelier Leistungen Preise Ratgeber Private C",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+      "hasCanvas": false,
+      "bodyTextLen": 3830,
+      "bodyTextHash": "cad50b95c5ec655129e27d70371d0372e1a8f4c8df8dea8075c3be13d4c12bf8",
+      "bodyTextPrefix": "Zum Inhalt springen Termin anfragen Menü HORB AM NECKAR · BADEN-",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
+        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
