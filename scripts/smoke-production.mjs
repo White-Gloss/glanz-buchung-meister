@@ -128,10 +128,11 @@ for (const check of pageChecks) {
       fail(label, "Abholstaffel fehlt");
     }
     if (check.path === "/login") {
-      if (/Noch kein Konto\? Registrieren/.test(body) || /Konto anlegen/.test(body)) {
+      const loginText = body.replace(/<!--[\s\S]*?-->/g, "");
+      if (/Noch kein Konto\? Registrieren/.test(loginText) || /Konto anlegen/.test(loginText)) {
         fail(label, "öffentliche Registrierung ist noch sichtbar");
       }
-      if (/Weiter mit Google/.test(body) || /Weiter mit X/.test(body)) {
+      if (/Weiter mit Google/.test(loginText) || /Weiter mit X/.test(loginText)) {
         fail(label, "Grok-Vorschau-OAuth ist auf der Live-Anmeldung noch sichtbar");
       }
     }
