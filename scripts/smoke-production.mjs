@@ -139,8 +139,11 @@ for (const check of pageChecks) {
       if (/Noch kein Konto\? Registrieren/.test(loginText) || /Konto anlegen/.test(loginText)) {
         fail(label, "öffentliche Registrierung ist noch sichtbar");
       }
-      if (/Weiter mit Google/.test(loginText) || /Weiter mit X/.test(loginText)) {
-        fail(label, "Grok-Vorschau-OAuth ist auf der Live-Anmeldung noch sichtbar");
+      if (!/Weiter mit Google/.test(loginText)) {
+        fail(label, "Google-Anmeldung fehlt");
+      }
+      if (/Weiter mit X/.test(loginText)) {
+        fail(label, "X-Anmeldung darf auf der Live-Anmeldung nicht sichtbar sein");
       }
     }
     if (check.path === "/impressum") {

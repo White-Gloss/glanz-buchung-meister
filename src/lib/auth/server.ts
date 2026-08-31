@@ -36,10 +36,13 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
-import { emailAndPasswordEnabled, emailSignUpEnabled } from "./email-password";
+import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
+import { googleOAuthCredentials } from "./google-oauth";
+import { isOperatorEmail, operatorEnforcementEnabled } from "../operator";
+import { APIError } from "better-auth/api";
 import {
   previewOAuthFallbackAllowed,
   productionSiteOrigins,
@@ -174,23 +177,30 @@ const grokOAuthPlugin = authConfigured
         providerId,
         clientId: grokClientId as string,
         clientSecret: grokClientSecret as string,
-        // Prefer static endpoints over `discoveryUrl` so initiating (and
-        // completing) OAuth does not wait on a broker discovery fetch.
         authorizationUrl: grokAuthorizationUrl,
         tokenUrl: grokTokenUrl,
         userInfoUrl: grokUserInfoUrl,
         scopes: ["openid", "profile", "email"],
         disableImplicitSignUp: process.env.NODE_ENV === "production",
         disableSignUp: process.env.NODE_ENV === "production",
-        // `prompt: "login"` forces the broker to re-authenticate against the
-        // upstream on every sign-in instead of silently reusing an existing
-        // broker session. Combined with the broker sending Google
-        // `prompt=select_account`, the user always gets the account chooser
-        // and can pick (or switch) which account to sign in with.
         authorizationUrlParams: { idp, prompt: "login" },
       })),
     })
   : null;
+
+const googleOAuth = googleOAuthCredentials();
+const googleSocial = googleOAuth
+  ? {
+      google: {
+        clientId: googleOAuth.clientId,
+        clientSecret: googleOAuth.clientSecret,
+        prompt: "select_account" as const,
+        accessType: "online" as const,
+        disableSignUp: false,
+        disableImplicitSignUp: false,
+      },
+    }
+  : undefined;
 
 export const auth = betterAuth({
   baseURL,
@@ -217,6 +227,7 @@ export const auth = betterAuth({
       trustedProviders: [
         ...GROK_PROVIDERS.map((p) => p.providerId),
         GATE_PROVIDER_ID,
+        "google",
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
       // local user's email-verified state.
@@ -230,10 +241,26 @@ export const auth = betterAuth({
   // flicker-prevention guidance (gate on `isPending`; SSR the session).
   session: { cookieCache: { enabled: true, maxAge: 300 } },
 
-  // Local email/password — toggled only via `./email-password` (not a plugin).
-  // disableSignUp: the panel is for the operator, not public registration.
+  ...(googleSocial ? { socialProviders: googleSocial } : {}),
+
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          if (!operatorEnforcementEnabled()) return { data: user };
+          if (!isOperatorEmail(user.email)) {
+            throw new APIError("FORBIDDEN", { message: "Kein Betriebszugang." });
+          }
+          return { data: user };
+        },
+      },
+    },
+  },
+
+  // E-Mail-Passwort: Sign-up-API offen, aber nur Betriebs-E-Mails (databaseHooks).
+  // Die Login-Seite zeigt keine öffentliche Registrierung.
   ...(emailAndPasswordEnabled
-    ? { emailAndPassword: { enabled: true, disableSignUp: !emailSignUpEnabled } }
+    ? { emailAndPassword: { enabled: true, disableSignUp: false } }
     : {}),
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that
