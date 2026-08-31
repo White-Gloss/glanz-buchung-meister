@@ -7,8 +7,9 @@
  *
  * Do NOT edit `server.ts` for this — that file is frozen pre-wired config.
  *
- * Sign-up stays off: the Betriebspanel is not a public registration.
- * Existing operator accounts can still sign in with e-mail/password.
+ * Die öffentliche Login-Seite hat keine Registrierung. Die Sign-up-API bleibt
+ * für das erste Betriebskonto offen und wird serverseitig auf @white-gloss.de
+ * bzw. die Freischaltliste begrenzt.
  */
 export const emailAndPasswordEnabled = true;
 export const emailSignUpEnabled = false;

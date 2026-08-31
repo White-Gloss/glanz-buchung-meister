@@ -120,6 +120,7 @@ jobs:
         run: |
           bash -n scripts/deploy-ionos-release.sh
           node --check scripts/smoke-production.mjs
+          node --check scripts/write-google-oauth.mjs
           node --check scripts/audit-domain-migration.mjs
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs

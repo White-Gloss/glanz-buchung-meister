@@ -153,6 +153,33 @@ export async function signIn(
 }
 
 /**
+ * Production: native Google (IONOS). Preview: Grok-Broker Google.
+ */
+export async function signInWithGoogle(
+  opts: { callbackURL?: string; errorCallbackURL?: string } = {},
+): Promise<void> {
+  const callbackURL = opts.callbackURL ?? "/admin";
+  const errorCallbackURL = opts.errorCallbackURL ?? "/login";
+  if (!import.meta.env.PROD) {
+    await signIn("grok-google", { callbackURL, errorCallbackURL });
+    return;
+  }
+  await runPreSignInSignOut({
+    livePreview: false,
+    hasBearer: Boolean(getBearerToken()),
+    requestSignOut: () => authClient.signOut(),
+    clearToken: () => setBearerToken(null),
+  });
+  const { data, error } = await authClient.signIn.social({
+    provider: "google",
+    callbackURL,
+    errorCallbackURL,
+  });
+  if (error) throw new Error(error.message ?? "Google-Anmeldung fehlgeschlagen.");
+  if (data?.url) window.location.href = data.url;
+}
+
+/**
  * Open `/auth/popup` in a new window. Must run synchronously inside the click
  * handler (no await before this). The path is served by the template Vite
  * plugin (`authPopupPlugin` in vite.config.ts) — NOT by a React route.
