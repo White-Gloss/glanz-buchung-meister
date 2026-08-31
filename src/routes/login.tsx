@@ -2,24 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { authClient, authEnabled, signInWithGoogle } from "@/lib/auth/client";
 import { emailAndPasswordEnabled } from "@/lib/auth/email-password";
-import {
-  bootstrapOperator,
-  googleLoginAvailable,
-  operatorBootstrapNeeded,
-} from "@/lib/auth/operator-login.functions";
 import { BrandMark } from "@/components/media";
 import { Button, Field, inputClass } from "@/components/ui";
 import { site } from "@/data/site";
 
 export const Route = createFileRoute("/login")({
   component: Login,
-  loader: async () => {
-    const [bootstrap, google] = await Promise.all([
-      operatorBootstrapNeeded(),
-      googleLoginAvailable(),
-    ]);
-    return { bootstrap, google };
-  },
   head: () => ({
     meta: [
       { title: `Anmeldung Betrieb | ${site.name}` },
@@ -29,14 +17,11 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
-  const { bootstrap, google } = Route.useLoaderData();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [mode, setMode] = useState<"signin" | "bootstrap">(
-    bootstrap.needed ? "bootstrap" : "signin",
-  );
+  const [mode, setMode] = useState<"signin" | "bootstrap">("signin");
 
   async function onEmail(e: FormEvent) {
     e.preventDefault();
@@ -44,7 +29,12 @@ function Login() {
     setPending(true);
     try {
       if (mode === "bootstrap") {
-        await bootstrapOperator({ data: { email, password } });
+        const { error: signUpErr } = await authClient.signUp.email({
+          email,
+          password,
+          name: "Betrieb",
+        });
+        if (signUpErr) throw new Error(signUpErr.message);
       }
       const { error: err } = await authClient.signIn.email({
         email,
@@ -61,12 +51,6 @@ function Login() {
 
   async function onGoogle() {
     setError("");
-    if (import.meta.env.PROD && !google.native) {
-      setError(
-        "Google-Anmeldung ist auf dem Live-Server noch nicht vollständig eingerichtet. Nutzen Sie die Betriebs-E-Mail.",
-      );
-      return;
-    }
     setPending(true);
     try {
       await signInWithGoogle({ callbackURL: "/admin", errorCallbackURL: "/login" });
@@ -139,7 +123,7 @@ function Login() {
                 <Button type="submit" className="w-full" disabled={pending}>
                   {mode === "bootstrap" ? "Erstes Betriebskonto einrichten" : "Mit E-Mail anmelden"}
                 </Button>
-                {bootstrap.needed && mode === "signin" ? (
+                {mode === "signin" ? (
                   <button
                     type="button"
                     className="w-full min-h-11 text-center text-xs text-muted hover:text-fg"
