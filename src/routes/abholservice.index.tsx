@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PickupNote } from "@/components/configurator";
-import { cities, pickupTierSummary, site } from "@/data/site";
+import { cities, pickupKeramikNote, pickupTierSummary, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/")({
@@ -20,8 +20,8 @@ function AbholIndex() {
       <h1 className="font-display text-5xl">Hol- & Bringservice</h1>
       <p className="mt-4 max-w-2xl text-muted">
         Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft
-        immer in der Werkstatt in {site.city} – {pickupTierSummary()}. Im Paket
-        Keramik ist die Abholung bis 60 km enthalten.
+        immer in der Werkstatt in {site.city} – {pickupTierSummary()}.{" "}
+        {pickupKeramikNote()}.
       </p>
       <ul className="mt-10 divide-y divide-line border-y border-line">
         {cities.map((c) => (

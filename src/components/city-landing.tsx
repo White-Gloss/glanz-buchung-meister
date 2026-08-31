@@ -7,6 +7,7 @@ import { cityJsonLd, whatsappForCity } from "@/lib/city-seo";
 import {
   packages,
   packageServiceSlug,
+  pickupKeramikNote,
   pickupPriceText,
   pickupTierSummary,
   services,
@@ -140,8 +141,7 @@ export function CityLanding({ city }: { city: City }) {
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Pakete für {city.name}</h2>
           <p className="mt-4 max-w-xl text-muted">
-            Dieselben drei Pakete wie in Horb. Abholung {pickup}. Im Paket Keramik
-            bis 60 km inklusive.
+            Dieselben drei Pakete wie in Horb. Abholung {pickup}. {pickupKeramikNote()}.
           </p>
           <ol className="mt-12 divide-y divide-line border-y border-line">
             {packages.map((p, i) => (

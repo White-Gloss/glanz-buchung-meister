@@ -17,6 +17,12 @@ export function eur(value: number) {
   return `${money(value)} €`;
 }
 
+export function isEmailAddress(value: string | null | undefined): value is string {
+  if (!value) return false;
+  const v = value.trim();
+  return v.length > 3 && v.length <= 160 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
 export function stamp(value: unknown) {
   if (value == null) return "";
   const raw =

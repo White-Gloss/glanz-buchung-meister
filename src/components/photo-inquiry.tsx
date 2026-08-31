@@ -16,6 +16,7 @@ export function PhotoInquiry({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [privacy, setPrivacy] = useState(false);
+  const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
@@ -44,6 +45,7 @@ export function PhotoInquiry({
           phone: phone.trim(),
           text,
           files: files.map((f) => f.name),
+          website,
         },
       });
       setSent(true);
@@ -66,10 +68,15 @@ export function PhotoInquiry({
       onSubmit={onSubmit}
       data-hide-whatsapp
       aria-label={title}
-      className="space-y-5 rounded-lg border border-line bg-surface p-5"
+      className="relative space-y-5 rounded-lg border border-line bg-surface p-5"
     >
       <h2 className="font-display text-2xl">{title}</h2>
       <p className="text-sm text-muted">{hint}</p>
+      <p className="text-xs text-subtle">
+        Es findet kein Datei-Upload statt. Die Aufnahmen bleiben auf diesem Gerät. Übermittelt
+        werden Name, Telefon, Beschreibung und Dateinamen zur Zuordnung. Für die Begutachtung
+        fordern wir Fotos bei Bedarf über einen separaten sicheren Kanal an.
+      </p>
       <Field id="media" label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)">
         <input
           id="media"
@@ -116,6 +123,17 @@ export function PhotoInquiry({
           onChange={(e) => setPhone(e.target.value)}
         />
       </Field>
+      <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+        <label htmlFor="iwebsite">Website</label>
+        <input
+          id="iwebsite"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+        />
+      </div>
       <label htmlFor="iprivacy" className="flex items-start gap-2 text-sm text-muted">
         <input
           id="iprivacy"
@@ -129,7 +147,7 @@ export function PhotoInquiry({
         <Link to="/datenschutz" className="underline hover:text-fg">
           Datenschutzerklärung
         </Link>
-        . Die Dateien selbst bleiben auf diesem Gerät.
+        . Die Dateien selbst werden nicht hochgeladen und bleiben auf diesem Gerät.
       </label>
       {error ? (
         <p className="text-sm text-danger" role="alert">

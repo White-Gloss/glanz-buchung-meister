@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { FluidImg } from "@/components/media";
-import { cities, packages, pickupPriceText, services, site } from "@/data/site";
+import { cities, packages, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
 
@@ -108,7 +108,7 @@ function ServiceCityPage() {
           {site.city} auf. {city.blurb}
         </p>
         <p className="mt-4 rounded-md border border-line bg-surface p-4 text-sm">
-          Hol- & Bringservice aus {city.name}: {pickup}. Paket Keramik inklusive bis 60 km.
+          Hol- & Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
           Ausführung immer in {site.street}, {site.postalCode} {site.city}.
         </p>
         <ul className="mt-8 space-y-3">
@@ -130,7 +130,7 @@ function ServiceCityPage() {
         </div>
         {service.slug === "keramikversiegelung" ? (
           <p className="mt-8 text-sm">
-            Paket Keramik ab {eur(packages[2].price)} {site.vatNote}, inkl. Abholung bis 60 km.
+            Paket Keramik ab {eur(packages[2].price)} {site.vatNote}, {pickupKeramikNote()}.
           </p>
         ) : null}
         <Link

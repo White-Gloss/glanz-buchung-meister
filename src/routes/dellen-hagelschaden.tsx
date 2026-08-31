@@ -67,7 +67,7 @@ function DellenPage() {
       <div className="mt-12">
         <PhotoInquiry
           title="Begutachtung Dellen & Hagel"
-          hint="Mehrere Fotos: Gesamtansicht, schräges Licht, Nahaufnahme. Dateien bleiben im Betrieb, nicht öffentlich."
+          hint="Mehrere Fotos: Gesamtansicht, schräges Licht, Nahaufnahme. Dateien bleiben auf Ihrem Gerät. Übermittelt werden nur Dateinamen zur Zuordnung – die eigentliche Begutachtung holen wir bei Bedarf über einen sicheren Kanal nach."
         />
       </div>
     </main>

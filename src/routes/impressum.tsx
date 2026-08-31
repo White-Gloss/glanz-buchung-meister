@@ -61,18 +61,9 @@ function ImpressumPage() {
         <section>
           <h2 className="font-display text-2xl">Verbraucherstreitbeilegung</h2>
           <p className="mt-3 text-muted">
-            Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS)
-            bereit:{" "}
-            <a
-              href="https://ec.europa.eu/consumers/odr"
-              rel="noreferrer"
-              target="_blank"
-              className="underline hover:text-fg"
-            >
-              https://ec.europa.eu/consumers/odr
-            </a>
-            . Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
-            einer Verbraucherschlichtungsstelle teilzunehmen.
+            Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
+            einer Verbraucherschlichtungsstelle teilzunehmen. Die frühere OS-Plattform der
+            Europäischen Kommission zur Online-Streitbeilegung wird nicht mehr betrieben.
           </p>
         </section>
         <section>
@@ -83,7 +74,7 @@ function ImpressumPage() {
             bekannt werden, entfernen wir entsprechende Links nach Prüfung.
           </p>
         </section>
-        <p className="text-xs text-subtle">Stand: 30. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
       </div>
     </main>
   );

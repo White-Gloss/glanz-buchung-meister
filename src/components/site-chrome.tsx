@@ -1,10 +1,10 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { ArrowRight, ChevronDown, Gem, Menu, MessageCircle, Phone, X } from "lucide-react";
-import { useEffect, useId, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { nav, footerExplore, openingHours, services, sheetPrimary, sheetSecondary, site } from "@/data/site";
 import { BrandMark } from "./media";
-import { Button, ctaGhost, ctaPrimary } from "./ui";
+import { ctaGhost, ctaPrimary } from "./ui";
 import { cn } from "@/lib/utils";
 import { WhatsAppFloat } from "./whatsapp-float";
 
@@ -474,54 +474,6 @@ export function SiteFooter() {
   );
 }
 
-export function CookieNotice() {
-  const [visible, setVisible] = useState(false);
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    try {
-      setVisible(localStorage.getItem("wg-cookie") !== "ok");
-    } catch {
-      setVisible(true);
-    }
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div
-      role="region"
-      aria-labelledby={titleId}
-      aria-describedby={descId}
-      className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-xl rounded-lg border border-line bg-elevated p-4 shadow-lg sm:bottom-6"
-    >
-      <p id={titleId} className="text-sm font-medium text-fg">
-        Technisch notwendige Speicherung
-      </p>
-      <p id={descId} className="mt-2 text-sm leading-relaxed text-muted">
-        Diese Seite setzt nur technisch notwendige Speicherung ein. Es gibt kein
-        Marketing-Tracking.
-      </p>
-      <div className="mt-3 flex justify-end">
-        <Button
-          type="button"
-          onClick={() => {
-            try {
-              localStorage.setItem("wg-cookie", "ok");
-            } catch {
-              /* ignore */
-            }
-            setVisible(false);
-          }}
-        >
-          Verstanden
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isApp = pathname.startsWith("/admin") || pathname.startsWith("/login");
@@ -542,7 +494,6 @@ export function Shell() {
       <Outlet />
       <SiteFooter />
       <WhatsAppFloat />
-      <CookieNotice />
     </div>
   );
 }

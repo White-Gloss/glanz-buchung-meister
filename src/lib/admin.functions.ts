@@ -5,9 +5,12 @@ import { getSql } from "@/lib/db";
 import { agentHelpText, parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
-import { queueBookingAutomation } from "@/lib/ops";
+import { OUTBOUND_QUEUED, queueBookingAutomation } from "@/lib/ops";
+import { assertPublicPostLimit } from "@/lib/rate-limit";
+import { isEmailAddress } from "@/lib/utils";
 
 const SHOP = "white-gloss";
+const DEFAULT_OPERATOR_PIN = "WG-BETRIEB";
 
 async function ensureShopSettings(sql: Awaited<ReturnType<typeof getSql>>) {
   await sql`
@@ -121,13 +124,30 @@ export const replyInbox = createServerFn({ method: "POST" })
         ${data.body}, ${original.booking_id}, now()
       )
     `;
-    await sql`
-      insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
-      values (
-        ${SHOP}, ${original.channel === "form" ? "email" : original.channel},
-        ${original.sender}, ${subject}, ${data.body}, ${original.booking_id}, ${"sent"}
-      )
-    `;
+    let toAddr: string | null = null;
+    if (original.booking_id) {
+      const [booking] = await sql<{ email: string | null; phone: string }>`
+        select email, phone from bookings
+        where id = ${original.booking_id} and shop_id = ${SHOP}
+        limit 1
+      `;
+      if (original.channel === "whatsapp") toAddr = booking?.phone ?? null;
+      else if (isEmailAddress(booking?.email)) toAddr = booking!.email;
+    }
+    if (!toAddr && isEmailAddress(original.sender)) toAddr = original.sender;
+    if (toAddr && !(original.channel === "email" && !isEmailAddress(toAddr))) {
+      const channel = original.channel === "form" ? "email" : original.channel;
+      const outboundChannel = channel === "telegram" || channel === "whatsapp" ? channel : "email";
+      if (outboundChannel !== "email" || isEmailAddress(toAddr)) {
+        await sql`
+          insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+          values (
+            ${SHOP}, ${outboundChannel},
+            ${toAddr}, ${subject}, ${data.body}, ${original.booking_id}, ${OUTBOUND_QUEUED}
+          )
+        `;
+      }
+    }
     await sql`
       update inbox_messages set read_at = now()
       where id = ${original.id} and shop_id = ${SHOP}
@@ -485,18 +505,20 @@ async function runReminderPass(
   if (rows.length === 0) return "Keine Termine in den nächsten 24 Stunden.";
   for (const row of rows) {
     const body = `Erinnerung: ${row.customer_name}, ${row.package_id}, ${row.preferred_date} ${row.preferred_slot ?? ""}`.trim();
-    await sql`
-      insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
-      values (
-        ${SHOP}, ${"email"}, ${row.email || row.phone},
-        ${`Terminerinnerung WG-${row.id}`}, ${body}, ${row.id}, ${"sent"}
-      )
-    `;
+    if (isEmailAddress(row.email)) {
+      await sql`
+        insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+        values (
+          ${SHOP}, ${"email"}, ${row.email},
+          ${`Terminerinnerung WG-${row.id}`}, ${body}, ${row.id}, ${OUTBOUND_QUEUED}
+        )
+      `;
+    }
     await sql`
       insert into documents (shop_id, booking_id, kind, title, amount_cents, status, body, created_by)
       values (
         ${SHOP}, ${row.id}, ${"erinnerung"}, ${`Terminerinnerung WG-${row.id}`},
-        ${0}, ${"gesendet"}, ${body}, ${userId}
+        ${0}, ${"entwurf"}, ${body}, ${userId}
       )
     `;
   }
@@ -659,6 +681,9 @@ export const setOperatorPin = createServerFn({ method: "POST" })
     z.object({ pin: z.string().trim().min(6).max(40) }).parse(input),
   )
   .handler(async ({ data }) => {
+    if (data.pin === DEFAULT_OPERATOR_PIN) {
+      throw new Error("Bitte einen eigenen PIN setzen, nicht den Vorgabewert.");
+    }
     const sql = await getSql();
     await ensureShopSettings(sql);
     await sql`
@@ -681,6 +706,10 @@ export const inboundOperatorMessage = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    assertPublicPostLimit("operator-inbound", 5, 15 * 60 * 1000);
+    if (data.pin === DEFAULT_OPERATOR_PIN) {
+      return { ok: false as const, result: "PIN ungültig." };
+    }
     const sql = await getSql();
     await ensureShopSettings(sql);
     const [row] = await sql<{ operator_pin: string }>`

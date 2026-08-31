@@ -5,7 +5,7 @@ import {
   depositConfig,
   extras,
   packages,
-  pickupFee,
+  pickupPriceText,
   quoteTotal,
   site,
   timeSlots,
@@ -37,6 +37,7 @@ export function Configurator({
   const [slot, setSlot] = useState("");
   const [note, setNote] = useState("");
   const [privacy, setPrivacy] = useState(false);
+  const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -77,6 +78,7 @@ export function Configurator({
           extraIds,
           citySlug,
           kind: "booking",
+          website,
         },
       });
       await navigate({ to: "/danke" });
@@ -303,6 +305,17 @@ export function Configurator({
             onChange={(e) => setNote(e.target.value)}
           />
         </Field>
+        <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+          />
+        </div>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input
             id="privacy"
@@ -342,9 +355,5 @@ export function Configurator({
 }
 
 export function PickupNote({ km, packageId }: { km: number; packageId?: PackageId }) {
-  const fee = pickupFee(km, packageId ?? "basis");
-  if (packageId === "keramik" && km <= 60) return <span>inklusive bis 60 km</span>;
-  if (fee === null) return <span>auf Anfrage</span>;
-  if (fee === 0) return <span>kostenlos</span>;
-  return <span>{eur(fee)}</span>;
+  return <span>{pickupPriceText(km, packageId)}</span>;
 }

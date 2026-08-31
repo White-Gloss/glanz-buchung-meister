@@ -91,13 +91,14 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>5. WhatsApp- und Telegram-Links</h2>
+          <h2>5. WhatsApp</h2>
           <p>
             Die Website enthält Links zu WhatsApp. Erst wenn Sie einen solchen Link aufrufen, stellen
             Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die Datenschutzbestimmungen
             von WhatsApp beziehungsweise Meta Platforms Ireland Limited. Für sensible Inhalte können
             Sie alternativ Telefon oder E-Mail verwenden. Es wird kein WhatsApp-Skript im Hintergrund
-            geladen.
+            geladen. Ein automatischer Versand von WhatsApp- oder Telegram-Nachrichten aus dieser
+            Website an Kundinnen und Kunden ist nicht aktiv.
           </p>
         </section>
 
@@ -106,20 +107,20 @@ function PrivacyPage() {
           <p>
             Diese öffentliche Website setzt keine Marketing-Cookies, kein Google Analytics, kein
             Google Ads und kein Meta-Pixel. Es findet keine werbliche Reichweitenmessung statt.
+            Für den öffentlichen Bereich wird kein Einwilligungsbanner benötigt, weil keine
+            nicht-essentiellen Cookies oder Tracker gesetzt werden.
           </p>
           <p>
             Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
-            Sicherheit verwendet werden. Ein kurzer Hinweis auf dieser Website speichert lokal, dass
-            Sie den Hinweis gelesen haben (`wg-cookie`). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
-            DSGVO.
+            Sicherheit verwendet werden (Sitzung). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
           </p>
           <p>
             Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie
-            „Interaktive Karte laden“ antippen, wird Google Maps (Google Ireland
-            Limited) in einem Rahmen geladen. Der Button „Google Maps“ öffnet Google
+            „Google Maps laden – dabei werden Daten an Google übertragen“ antippen, wird Google Maps
+            (Google Ireland Limited) in einem Rahmen geladen. Der Button „Google Maps“ öffnet Google
             Maps in einem neuen Tab. Vor dem Klick stellt Ihr Browser keine Verbindung
-            zu Google her. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (Anzeige
-            unseres Standorts und Navigation).
+            zu Google her. Rechtsgrundlage nach dem Klick ist Art. 6 Abs. 1 lit. a DSGVO
+            (Einwilligung durch die bewusste Aktion).
           </p>
         </section>
 
@@ -128,13 +129,13 @@ function PrivacyPage() {
           <p>
             Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung & Hagelschaden“ können
             Sie uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
-            übermitteln. Wir verwenden diese Angaben zur Prüfung des Schadens, zur Terminabstimmung
-            und zur individuellen Preisermittlung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
+            übermitteln. Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben
+            auf Ihrem Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur
+            Zuordnung, Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
           </p>
           <p>
-            Die Bilddateien selbst werden über das Formular nicht dauerhaft auf unseren Servern
-            abgelegt. Für eine Begutachtung können wir die Dateien nach Rückmeldung auf einem
-            sicheren Weg nachfordern.
+            Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
+            separaten sicheren Kanal nachfordern.
           </p>
         </section>
 
@@ -182,7 +183,7 @@ function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 30. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
       </article>
     </main>
   );
