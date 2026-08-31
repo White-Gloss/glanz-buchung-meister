@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const loginSrc = readFileSync(fileURLToPath(new URL("./login.tsx", import.meta.url)), "utf8");
+const loginSrc = readFileSync(fileURLToPath(new URL("../../routes/login.tsx", import.meta.url)), "utf8");
 
 describe("login copy", () => {
   it("offers Google and never advertises public signup or X", () => {
