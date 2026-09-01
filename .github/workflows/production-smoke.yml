@@ -2,9 +2,11 @@ name: Production Smoke
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Deploy to IONOS VPS
+    types:
+      - completed
   schedule:
     - cron: "23 */6 * * *"
 
@@ -17,6 +19,7 @@ concurrency:
 
 jobs:
   smoke:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

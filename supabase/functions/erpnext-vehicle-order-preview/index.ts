@@ -85,7 +85,6 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ERPNEXT_API_KEY")?.trim();
   const apiSecret = Deno.env.get("ERPNEXT_API_SECRET")?.trim();
   const writeGateEnabled = Deno.env.get("ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED");
-  const approvedBookingId = Deno.env.get("ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID");
 
   if (!supabaseUrl || !serviceRoleKey || !baseUrl || !apiKey || !apiSecret) {
     return json({ ok: false, error: "missing_server_configuration" }, 500);
@@ -248,6 +247,22 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "booking_not_preview_eligible" }, 409);
     }
 
+    const bookingRevision = String(booking.updated_at ?? "");
+    if (!bookingRevision) return json({ ok: false, error: "booking_revision_missing" }, 409);
+
+    const { data: approval, error: approvalError } = await supabase
+      .from("erpnext_write_approvals")
+      .select("id, expires_at")
+      .eq("booking_id", booking.id)
+      .eq("booking_revision", bookingRevision)
+      .eq("scope", "vehicle_order")
+      .is("consumed_at", null)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (approvalError) return json({ ok: false, error: "write_approval_load_failed" }, 500);
+    const approvalActive = Boolean(approval?.id);
+
     const { data: state, error: stateError } = await supabase
       .from("booking_automation_state")
       .select("erpnext_customer_id")
@@ -299,7 +314,9 @@ Deno.serve(async (req: Request) => {
           [["item_code", "=", service.code]],
           2,
         );
-        if (rows.length !== 1) return { ...service, ready: false };
+        // Gleiche Form wie im Erfolgsfall: sonst fehlt `item_name` im Typ
+        // des Rückgabewerts und der spätere Zugriff ist nicht mehr geprüft.
+        if (rows.length !== 1) return { ...service, ready: false, item_name: service.label };
         const row = rows[0];
         const ready =
           row.item_code === service.code &&
@@ -377,16 +394,25 @@ Deno.serve(async (req: Request) => {
     const total = Number(booking.agreed_price ?? booking.total ?? 0);
     const productionWriteGate = getVehicleOrderWriteGateStatus({
       enabledValue: writeGateEnabled,
-      approvedBookingId,
-      bookingId: booking.id,
+      approvalActive,
     });
     const productionWriteConfirmation = productionWriteGate.ready
       ? await issueVehicleOrderWriteConfirmation({
           secret: serviceRoleKey,
           bookingId: booking.id,
-          bookingRevision: String(booking.updated_at ?? ""),
+          bookingRevision,
+          approvalId: String(approval?.id ?? ""),
         })
       : null;
+    const approvalConfirmation =
+      productionWriteGate.enabled && !approvalActive
+        ? await issueVehicleOrderWriteConfirmation({
+            secret: serviceRoleKey,
+            bookingId: booking.id,
+            bookingRevision,
+            approvalId: null,
+          })
+        : null;
 
     return json({
       ok: true,
@@ -397,6 +423,9 @@ Deno.serve(async (req: Request) => {
         enabled: productionWriteGate.enabled,
         booking_approved: productionWriteGate.bookingApproved,
         ready: productionWriteGate.ready,
+        approval_id: approval?.id ?? null,
+        approval_expires_at: approval?.expires_at ?? null,
+        approval_confirmation: approvalConfirmation,
         confirmation: productionWriteConfirmation,
       },
       booking_id: booking.id,

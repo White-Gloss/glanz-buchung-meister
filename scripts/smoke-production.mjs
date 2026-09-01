@@ -9,7 +9,27 @@ const pageChecks = [
   { path: "/", markers: ["Fahrzeugaufbereitung", "White Gloss"] },
   { path: "/preise", markers: ["Pakete", "Preise"] },
   { path: "/leistungen", markers: ["Leistungsspektrum", "Leistungen"] },
+  { path: "/abholservice", markers: ["Hol", "Bringservice"] },
+  { path: "/faq", markers: ["Häufige Fragen"] },
+  { path: "/impressum", markers: ["Angaben gemäß", "White Gloss Detailing"] },
+  { path: "/datenschutz", markers: ["Verantwortlicher", "IONOS"] },
+  { path: "/agb", markers: ["Allgemeine Geschäftsbedingungen"] },
+  { path: "/widerruf", markers: ["Widerrufsbelehrung"] },
+  { path: "/login", markers: ["Betrieb"] },
   { path: "/admin", markers: [] },
+  { path: "/b2b", markers: ["Firmenkunden"] },
+  { path: "/luxusfahrzeuge", markers: ["Private Client"] },
+  { path: "/qualitaet", markers: ["Wie wir arbeiten"] },
+  { path: "/fahrzeug-zustand", markers: ["Zustand prüfen"] },
+  { path: "/dellen-hagelschaden", markers: ["Dellenentfernung"] },
+];
+
+const forbiddenSnippets = [
+  { id: "odr-platform", needle: "ec.europa.eu/consumers/odr" },
+  { id: "old-domain", needle: "https://whitegloss.de" },
+  { id: "stale-upload-claim", needle: "Dateien bleiben im Betrieb" },
+  { id: "stale-10km-price", needle: "bis 10 km 20" },
+  { id: "public-signup", needle: "Noch kein Konto? Registrieren" },
 ];
 
 const failures = [];
@@ -63,8 +83,15 @@ function assertSecurityHeaders(response) {
   }
 
   const hsts = headers.get("strict-transport-security") || "";
-  if (!/max-age=\d+/i.test(hsts)) {
+  const hstsMatch = hsts.match(/max-age=(\d+)/i);
+  const hstsMaxAge = hstsMatch ? Number(hstsMatch[1]) : NaN;
+  if (!hstsMatch) {
     fail("security-headers", "Strict-Transport-Security mit max-age fehlt");
+  } else if (!Number.isFinite(hstsMaxAge) || hstsMaxAge < 31536000) {
+    fail(
+      "security-headers",
+      `Strict-Transport-Security max-age ist ${hstsMaxAge}; erwartet mindestens 31536000`,
+    );
   }
 
   const permissions = headers.get("permissions-policy") || "";
@@ -96,11 +123,53 @@ for (const check of pageChecks) {
         fail(label, `erwarteter Inhalt fehlt: ${marker}`);
       }
     }
-    if (check.path !== "/admin") {
+    if (check.path !== "/admin" && check.path !== "/login") {
       assertCanonical(check.path, body);
+    }
+    for (const snippet of forbiddenSnippets) {
+      if (body.includes(snippet.needle)) {
+        fail(label, `verbotener Inhalt: ${snippet.id}`);
+      }
     }
     if (check.path === "/") {
       assertSecurityHeaders(response);
+      if (!/id=["']buchung["']/.test(body) && !/Terminanfrage/.test(body)) {
+        fail(label, "Buchungsformular/Anker fehlt");
+      }
+    }
+    if (check.path === "/preise") {
+      if (
+        !/bis 10 km kostenlos/i.test(body) ||
+        !/bis 20 km 50/.test(body) ||
+        !/bis 50 km 70/.test(body)
+      ) {
+        fail(label, "Abholstaffel (10 km kostenlos / 20 km 50 / 50 km 70) fehlt");
+      }
+      if (!/149/.test(body) || !/349/.test(body) || !/899/.test(body)) {
+        fail(label, "Paketpreise 149/349/899 fehlen");
+      }
+    }
+    if (check.path === "/login") {
+      const loginText = body.replace(/<!--[\s\S]*?-->/g, "");
+      if (/Noch kein Konto\? Registrieren/.test(loginText) || /Konto anlegen/.test(loginText)) {
+        fail(label, "öffentliche Registrierung ist noch sichtbar");
+      }
+      if (!/Weiter mit Google/.test(loginText)) {
+        fail(label, "Google-Anmeldung fehlt");
+      }
+      if (/Weiter mit X/.test(loginText)) {
+        fail(label, "X-Anmeldung darf auf der Live-Anmeldung nicht sichtbar sein");
+      }
+    }
+    if (check.path === "/impressum") {
+      if (!/nicht verpflichtet und nicht bereit/.test(body)) {
+        fail(label, "VSBG-Hinweis zur Verbraucherstreitbeilegung fehlt");
+      }
+    }
+    if (check.path === "/datenschutz") {
+      if (/wg-cookie/.test(body)) {
+        fail(label, "Datenschutz erwähnt weiterhin wg-cookie");
+      }
     }
     console.log(`PASS ${label} -> ${response.status} ${response.url}`);
   } catch (error) {
@@ -274,6 +343,37 @@ try {
   }
 } catch (error) {
   fail("site-verification", error instanceof Error ? error.message : String(error));
+}
+
+try {
+  const response = await fetch(new URL("/api/auth/sign-in/email", BASE_URL), {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      "user-agent": "WhiteGloss-Production-Smoke/1.0",
+      accept: "application/json",
+      "content-type": "application/json",
+      origin: BASE_URL,
+    },
+    body: JSON.stringify({
+      email: "smoke-origin-check@invalid.example",
+      password: "not-a-real-password-xx",
+    }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const body = await response.text();
+  if (/invalid origin/i.test(body) || response.status === 403) {
+    fail(
+      "/api/auth/sign-in/email",
+      `Live-Origin wird nicht akzeptiert (${response.status}): ${body.slice(0, 180)}`,
+    );
+  } else if (response.ok) {
+    fail("/api/auth/sign-in/email", "Anmeldung mit Dummy-Daten darf nicht gelingen");
+  } else {
+    console.log(`PASS /api/auth/sign-in/email origin -> ${response.status}`);
+  }
+} catch (error) {
+  fail("/api/auth/sign-in/email", error instanceof Error ? error.message : String(error));
 }
 
 if (failures.length > 0) {

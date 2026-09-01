@@ -1,244 +1,193 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { absUrl } from "@/lib/seo";
-import { company } from "@/lib/servicesConfig";
-
-const TITLE = "Datenschutzerklärung | White Gloss Detailing";
+import { site } from "@/data/site";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/datenschutz")({
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      {
-        name: "description",
-        content:
-          "Informationen zur Verarbeitung personenbezogener Daten bei White Gloss Detailing.",
-      },
-      { name: "robots", content: "noindex,follow" },
-    ],
-    links: [
-      { rel: "canonical", href: absUrl("/datenschutz") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/datenschutz") },
-      { rel: "alternate", hrefLang: "x-default", href: absUrl("/datenschutz") },
-    ],
-  }),
   component: PrivacyPage,
+  head: () =>
+    pageHead({
+      title: `Datenschutzerklärung | ${site.name}`,
+      description: "Informationen zur Verarbeitung personenbezogener Daten bei White Gloss Detailing.",
+      path: "/datenschutz",
+    }),
 });
 
 function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main id="main-content">
-        <section className="border-b border-border">
-          <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
-            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
-              <Link to="/" className="transition-colors hover:text-foreground">
-                Startseite
-              </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Datenschutz</span>
-            </nav>
-            <p className="eyebrow mt-8">Rechtliches</p>
-            <h1 className="display-page mt-3 uppercase">Datenschutzerklärung</h1>
-          </div>
+    <main id="main-content">
+      <section className="border-b border-line">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+          <nav aria-label="Brotkrumen" className="text-xs text-subtle">
+            <Link to="/" className="hover:text-fg">
+              Startseite
+            </Link>
+            <span className="px-2">/</span>
+            <span>Datenschutz</span>
+          </nav>
+          <p className="mt-8 text-xs uppercase tracking-[0.16em] text-subtle">Rechtliches</p>
+          <h1 className="mt-3 font-display text-5xl">Datenschutzerklärung</h1>
+        </div>
+      </section>
+      <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <section>
+          <h2>1. Verantwortlicher</h2>
+          <address className="not-italic">
+            <strong className="text-fg">{site.legalName}</strong>
+            <br />
+            Inhaber: {site.owner}
+            <br />
+            {site.street}
+            <br />
+            {site.postalCode} {site.city}
+            <br />
+            {site.country}
+            <br />
+            E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+            <br />
+            Telefon: <a href={site.phoneHref}>{site.phoneDisplay}</a>
+          </address>
         </section>
 
-        <article className="prose-legal mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <section>
-            <h2>1. Verantwortlicher</h2>
-            <address>
-              <strong>{company.name}</strong>
-              {company.owner && <span>{company.owner}</span>}
-              {company.street && <span>{company.street}</span>}
-              <span>{company.city}</span>
-              <span>{company.country}</span>
-              <span>
-                E-Mail: <a href={`mailto:${company.email}`}>{company.email}</a>
-              </span>
-              <span>
-                Telefon: <a href={company.phoneHref}>{company.phone}</a>
-              </span>
-            </address>
-          </section>
+        <section>
+          <h2>2. Hosting und Server-Protokolle</h2>
+          <p>
+            Die Website wird im Produktivbetrieb auf Servern der IONOS SE (Elgendorfer Straße 57,
+            56410 Montabaur, Deutschland) bereitgestellt. Beim Aufruf können technisch erforderliche
+            Angaben wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, übertragene Datenmenge,
+            Referrer sowie Browser- und Betriebssystemangaben in Server-Protokollen verarbeitet
+            werden. Die Verarbeitung dient der sicheren, stabilen und fehlerfreien Bereitstellung
+            der Website.
+          </p>
+          <p>
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt im
+            sicheren Betrieb und in der technischen Stabilität dieses Internetangebots.
+          </p>
+        </section>
 
-          <section>
-            <h2>2. Hosting und Server-Protokolle</h2>
-            <p>
-              Diese Website wird auf einem Server der IONOS SE (Elgendorfer Straße 57, 56410
-              Montabaur) in Deutschland betrieben. Beim Aufruf können technisch erforderliche
-              Informationen wie IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, übertragene
-              Datenmenge, Referrer sowie Browser- und Betriebssystemangaben in Server-Protokollen
-              verarbeitet werden. Die Verarbeitung dient der sicheren, stabilen und fehlerfreien
-              Bereitstellung der Website.
-            </p>
-            <p>
-              Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt im
-              sicheren Betrieb und in der technischen Optimierung dieses Internetangebots.
-            </p>
-          </section>
+        <section>
+          <h2>3. Termin- und Buchungsanfragen</h2>
+          <p>
+            Wenn Sie den Online-Konfigurator nutzen, verarbeiten wir die von Ihnen eingegebenen
+            Angaben. Dazu können Name, Telefonnummer, E-Mail-Adresse, Wunschtermin, Zeitfenster,
+            Abholort, Fahrzeugklasse, Paket, Zusatzleistungen und Hinweise gehören. Die Daten werden
+            zur Bearbeitung Ihrer Anfrage, zur Terminabstimmung und zur Vorbereitung eines möglichen
+            Vertrags verwendet.
+          </p>
+          <p>
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche Maßnahmen auf Ihre
+            Anfrage). Die Anfrage ist unverbindlich. Ein Vertrag kommt erst mit unserer ausdrücklichen
+            Zusage oder mit Arbeitsbeginn nach abgestimmtem Umfang zustande.
+          </p>
+        </section>
 
-          <section>
-            <h2>3. Termin- und Buchungsanfragen</h2>
-            <p>
-              Wenn Sie den Online-Konfigurator nutzen, verarbeiten wir die von Ihnen eingegebenen
-              Angaben. Dazu können Name, E-Mail-Adresse, Telefonnummer, Kennzeichen, gewünschter
-              Termin, Fahrzeugklasse, Paket und Zusatzleistungen gehören. Die Daten werden zur
-              Bearbeitung Ihrer Anfrage, zur Terminabstimmung und zur Vorbereitung eines möglichen
-              Vertrags verwendet.
-            </p>
-            <p>
-              Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Für die technische Speicherung der
-              Buchungsdaten wird eine von Supabase bereitgestellte Datenbank-Infrastruktur als
-              Auftragsverarbeitungsdienst eingesetzt. Mit dem Anbieter besteht ein Vertrag zur
-              Auftragsverarbeitung nach Art. 28 DSGVO. Die Datenbank wird in der Region Frankfurt am
-              Main (eu-central-1) und damit innerhalb der Europäischen Union betrieben. Eine
-              Übermittlung der Buchungsdaten in ein Drittland findet im Regelbetrieb nicht statt.
-            </p>
-          </section>
+        <section>
+          <h2>4. Kontakt per E-Mail, Telefon oder WhatsApp</h2>
+          <p>
+            Bei einer Kontaktaufnahme verarbeiten wir Ihre Kontaktdaten und den Inhalt Ihrer
+            Nachricht, um das Anliegen zu beantworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
+            DSGVO bei vorvertraglichen oder vertraglichen Anliegen und im Übrigen Art. 6 Abs. 1
+            lit. f DSGVO.
+          </p>
+        </section>
 
-          <section>
-            <h2>4. Kontakt per E-Mail oder Telefon</h2>
-            <p>
-              Bei einer Kontaktaufnahme verarbeiten wir Ihre Kontaktdaten und den Inhalt Ihrer
-              Nachricht, um das Anliegen zu beantworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
-              DSGVO bei vorvertraglichen oder vertraglichen Anliegen und im Übrigen Art. 6 Abs. 1
-              lit. f DSGVO.
-            </p>
-          </section>
+        <section>
+          <h2>5. WhatsApp und Instagram</h2>
+          <p>
+            Die Website enthält Links zu WhatsApp und Instagram. Erst wenn Sie einen solchen Link
+            aufrufen, stellen Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die
+            Datenschutzbestimmungen von WhatsApp beziehungsweise Meta Platforms Ireland Limited.
+            Für sensible Inhalte können Sie alternativ Telefon oder E-Mail verwenden. Es wird kein
+            WhatsApp- oder Instagram-Skript im Hintergrund geladen. Ein automatischer Versand von
+            WhatsApp- oder Telegram-Nachrichten aus dieser Website an Kundinnen und Kunden ist
+            nicht aktiv.
+          </p>
+        </section>
 
-          <section>
-            <h2>5. WhatsApp-Link</h2>
-            <p>
-              Die Website enthält einen Link zu WhatsApp. Erst wenn Sie diesen Link aufrufen,
-              stellen Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die
-              Datenschutzbestimmungen von WhatsApp beziehungsweise Meta. Für sensible Inhalte können
-              Sie alternativ Telefon oder E-Mail verwenden.
-            </p>
-          </section>
+        <section>
+          <h2>6. Cookies, lokale Speicherung und Reichweitenmessung</h2>
+          <p>
+            Diese öffentliche Website setzt keine Marketing-Cookies, kein Google Analytics, kein
+            Google Ads und kein Meta-Pixel. Es findet keine werbliche Reichweitenmessung statt.
+            Für den öffentlichen Bereich wird kein Einwilligungsbanner benötigt, weil keine
+            nicht-essentiellen Cookies oder Tracker gesetzt werden.
+          </p>
+          <p>
+            Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
+            Sicherheit verwendet werden (Sitzung). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+          </p>
+          <p>
+            Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie
+            „Google Maps laden – dabei werden Daten an Google übertragen“ antippen, wird Google Maps
+            (Google Ireland Limited) in einem Rahmen geladen. Der Button „Google Maps“ öffnet Google
+            Maps in einem neuen Tab. Vor dem Klick stellt Ihr Browser keine Verbindung
+            zu Google her. Rechtsgrundlage nach dem Klick ist Art. 6 Abs. 1 lit. a DSGVO
+            (Einwilligung durch die bewusste Aktion).
+          </p>
+        </section>
 
-          <section>
-            <h2>6. Cookies, lokale Speicherung und Reichweitenmessung</h2>
-            <p>
-              Technisch notwendige Speichermechanismen können im geschützten Verwaltungsbereich zur
-              Anmeldung und Sicherheit verwendet werden.
-            </p>
-            <p>
-              Mit Ihrer Einwilligung nutzen wir außerdem Cookies und ähnliche Technologien von
-              Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irland). Das betrifft
-              zwei Dienste, die über dasselbe Skript (gtag.js) laufen: Google Ads misst, über welche
-              Anzeige eine Terminanfrage zustande kommt; Google Analytics 4 wertet aus, wie unsere
-              Website genutzt wird (aufgerufene Seiten, Verweildauer, ungefähre Herkunftsregion,
-              Angaben zu Browser und Endgerät). Ihre IP-Adresse wird dabei gekürzt. Beide Dienste
-              werden erst aktiviert, wenn Sie im eingeblendeten Hinweis „Akzeptieren“ wählen; bei
-              „Ablehnen“ oder ohne Auswahl bleiben sie deaktiviert und es wird kein Google-Skript
-              geladen. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, § 25
-              Abs. 1 TDDDG. Dabei können Daten in die USA übermittelt werden; Google hat sich den
-              EU-Standardvertragsklauseln unterworfen.
-            </p>
-            <p>
-              Ebenfalls nur mit Ihrer Einwilligung setzen wir den Meta-Pixel und die Conversions API
-              von Meta Platforms Ireland Limited (Merrion Road, Dublin 4, Irland) ein. Damit messen
-              wir, welche Anzeige auf Facebook oder Instagram zu einem Seitenaufruf oder einer
-              Anfrage geführt hat. Verarbeitet werden dabei Ihre IP-Adresse, Angaben zu Browser und
-              Endgerät, die aufgerufene Seite sowie die Meta-eigenen Cookies <code>_fbp</code> und{" "}
-              <code>_fbc</code>. Die Conversions API meldet dieselben Ereignisse zusätzlich von
-              unserem Server aus; sie ersetzt die Einwilligung nicht, sondern erfolgt ausschließlich
-              nach Ihrer Zustimmung und mit derselben Ereigniskennung, damit ein Ereignis nur einmal
-              gezählt wird. Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, §
-              25 Abs. 1 TDDDG. Für die dabei erfolgende gemeinsame Verarbeitung besteht mit Meta
-              eine Vereinbarung über gemeinsame Verantwortlichkeit nach Art. 26 DSGVO; Daten können
-              in die USA übermittelt werden.
-            </p>
-            <p>
-              Ihre Entscheidung können Sie jederzeit widerrufen:{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  void import("@/lib/adsConsent").then((m) => m.resetAdsConsent());
-                }}
-                className="text-primary underline underline-offset-2"
-              >
-                Cookie-Einwilligung zurücksetzen
-              </button>
-              .
-            </p>
-          </section>
+        <section>
+          <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
+          <p>
+            Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung & Hagelschaden“ können
+            Sie uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
+            übermitteln. Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben
+            auf Ihrem Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur
+            Zuordnung, Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
+          </p>
+          <p>
+            Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
+            separaten sicheren Kanal nachfordern.
+          </p>
+        </section>
 
-          <section>
-            <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
-            <p>
-              Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung &
-              Hagelschaden-Reparatur“ können Sie uns Fotos oder kurze Videos Ihres Fahrzeugs sowie
-              eine Beschreibung des Zustands oder Schadens übermitteln. Bei Dellen-Anfragen
-              verarbeiten wir zusätzlich Schadensart, betroffenen Fahrzeugbereich, ungefähre Anzahl
-              und Größe der Dellen, Fahrzeugmarke und Modell sowie den gewünschten
-              Begutachtungstermin. Wir verwenden diese Angaben ausschließlich zur Prüfung des
-              Schadens, zur Terminabstimmung und zur individuellen Preisermittlung. Rechtsgrundlage
-              ist Art. 6 Abs. 1 lit. b DSGVO.
-            </p>
-            <p>
-              Die Aufnahmen liegen in einem nicht öffentlich zugänglichen Speicherbereich bei
-              Supabase und sind ausschließlich für uns über zeitlich begrenzte Links abrufbar. Ein
-              öffentlicher Abruf ist nicht möglich.
-            </p>
-            <p>
-              Zur Vorsortierung setzen wir für die Einschätzung der Fotos einen KI-Dienst der
-              Anthropic PBC (San Francisco, USA) als Auftragsverarbeiter ein. Dabei werden
-              ausgewählte Fotos zusammen mit der Fahrzeugbezeichnung, dem Kennzeichen und Ihrer
-              Zustandsbeschreibung an den Dienst übertragen; Name, E-Mail-Adresse und Telefonnummer
-              werden nicht übermittelt. Die Übertragung erfolgt nur, wenn wir die Einschätzung im
-              Einzelfall ausdrücklich anfordern — nicht automatisch beim Eingang Ihrer Meldung. Es
-              besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO; die Übermittlung in
-              die USA wird auf die Standardvertragsklauseln der Europäischen Kommission nach Art. 46
-              Abs. 2 lit. c DSGVO gestützt. Die Einschätzung ersetzt keine Begutachtung und dient
-              allein unserer internen Vorbereitung.
-            </p>
-            <p>
-              Wenn Sie mit dieser Übermittlung nicht einverstanden sind, teilen Sie uns das bitte
-              mit — wir beurteilen die Aufnahmen dann ausschließlich selbst.
-            </p>
-          </section>
+        <section>
+          <h2>8. Betriebspanel (nur intern)</h2>
+          <p>
+            Die Anmeldung zum Betriebspanel ist ausschließlich für den Inhaber und beauftragte
+            Mitarbeiter bestimmt. Sie erfolgt per E-Mail und Passwort oder über Google
+            (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland).
+            Google-Anmeldung ist nur für Adressen @white-gloss.de und ausdrücklich
+            freigeschaltete Postfächer zulässig. Der Anmeldeanbieter X (Twitter) ist nicht
+            aktiv. Öffentliche Besucher können dort kein Konto einrichten.
+          </p>
+        </section>
 
-          <section>
-            <h2>8. Speicherdauer</h2>
-            <p>
-              Personenbezogene Daten werden nur so lange gespeichert, wie sie zur Bearbeitung der
-              Anfrage, zur Vertragsdurchführung oder zur Erfüllung gesetzlicher
-              Aufbewahrungspflichten erforderlich sind. Anschließend werden sie gelöscht oder
-              gesperrt, sofern keine vorrangigen gesetzlichen Gründe entgegenstehen.
-            </p>
-          </section>
+        <section>
+          <h2>9. Speicherdauer</h2>
+          <p>
+            Personenbezogene Daten werden nur so lange gespeichert, wie sie zur Bearbeitung der
+            Anfrage, zur Vertragsdurchführung oder zur Erfüllung gesetzlicher Aufbewahrungspflichten
+            erforderlich sind. Anschließend werden sie gelöscht oder gesperrt, sofern keine
+            vorrangigen gesetzlichen Gründe entgegenstehen.
+          </p>
+        </section>
 
-          <section>
-            <h2>9. Ihre Rechte</h2>
-            <p>
-              Sie haben im Rahmen der gesetzlichen Voraussetzungen das Recht auf Auskunft,
-              Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und
-              Widerspruch. Eine erteilte Einwilligung können Sie mit Wirkung für die Zukunft
-              widerrufen. Außerdem besteht ein Beschwerderecht bei einer
-              Datenschutz-Aufsichtsbehörde.
-            </p>
-            <p>
-              Für Datenschutzanfragen genügt eine Nachricht an{" "}
-              <a href={`mailto:${company.email}`}>{company.email}</a>.
-            </p>
-          </section>
+        <section>
+          <h2>10. Ihre Rechte</h2>
+          <p>
+            Sie haben im Rahmen der gesetzlichen Voraussetzungen das Recht auf Auskunft,
+            Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und
+            Widerspruch. Eine erteilte Einwilligung können Sie mit Wirkung für die Zukunft
+            widerrufen. Außerdem besteht ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde,
+            insbesondere beim Landesbeauftragten für den Datenschutz und die Informationsfreiheit
+            Baden-Württemberg (LfDI BW).
+          </p>
+          <p>
+            Für Datenschutzanfragen genügt eine Nachricht an{" "}
+            <a href={`mailto:${site.email}`}>{site.email}</a>.
+          </p>
+        </section>
 
-          <section>
-            <h2>10. Sicherheit und Aktualisierung</h2>
-            <p>
-              Die Website wird verschlüsselt über HTTPS übertragen. Wir passen diese Hinweise an,
-              wenn sich Funktionen, eingesetzte Dienste oder rechtliche Anforderungen ändern.
-            </p>
-          </section>
+        <section>
+          <h2>11. Sicherheit und Aktualisierung</h2>
+          <p>
+            Die Website wird verschlüsselt über HTTPS übertragen. Wir passen diese Hinweise an, wenn
+            sich Funktionen, eingesetzte Dienste oder rechtliche Anforderungen ändern.
+          </p>
+        </section>
 
-          <p className="text-xs text-muted-foreground">Stand: 11. August 2026</p>
-        </article>
-      </main>
-      <SiteFooter />
-    </div>
+        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+      </article>
+    </main>
   );
 }

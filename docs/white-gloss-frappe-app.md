@@ -23,21 +23,21 @@ Suggested naming series: `WGV-.YYYY.-.#####`
 
 Fields:
 
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| customer | Link / Customer | yes | Current customer/owner relation |
-| registration_plate | Data | no | Human-readable license plate |
-| registration_plate_normalized | Data | no | Integration-normalized plate, indexed/unique when present |
-| vin | Data | no | Vehicle identification number, unique when present |
-| make | Data | no | Manufacturer |
-| model | Data | no | Model |
-| model_year | Int | no | Year |
-| vehicle_class_id | Data | no | Existing website vehicle/category identifier |
-| vehicle_class_label | Data | no | Human-readable snapshot |
-| external_reference | Data | yes | Stable integration identity, unique |
-| last_service_date | Date | no | Operational helper only |
-| notes | Small Text | no | Internal notes |
-| disabled | Check | no | Default 0 |
+| Field                         | Type            | Required | Notes                                                     |
+| ----------------------------- | --------------- | -------- | --------------------------------------------------------- |
+| customer                      | Link / Customer | yes      | Current customer/owner relation                           |
+| registration_plate            | Data            | no       | Human-readable license plate                              |
+| registration_plate_normalized | Data            | no       | Integration-normalized plate, indexed/unique when present |
+| vin                           | Data            | no       | Vehicle identification number, unique when present        |
+| make                          | Data            | no       | Manufacturer                                              |
+| model                         | Data            | no       | Model                                                     |
+| model_year                    | Int             | no       | Year                                                      |
+| vehicle_class_id              | Data            | no       | Existing website vehicle/category identifier              |
+| vehicle_class_label           | Data            | no       | Human-readable snapshot                                   |
+| external_reference            | Data            | yes      | Stable integration identity, unique                       |
+| last_service_date             | Date            | no       | Operational helper only                                   |
+| notes                         | Small Text      | no       | Internal notes                                            |
+| disabled                      | Check           | no       | Default 0                                                 |
 
 Identity rules:
 
@@ -53,15 +53,15 @@ Purpose: immutable-ish service snapshot attached to an operational order.
 
 Fields:
 
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| item | Link / Item | yes | Must reference approved WHITE GLOSS service catalog |
-| item_code_snapshot | Data | yes | Exact code at booking time |
-| item_name_snapshot | Data | yes | Human-readable snapshot |
-| service_kind | Select | yes | `package`, `addon`, `pickup`, `manual` |
-| qty | Float | yes | Default 1 |
-| rate_gross | Currency | no | Commercial snapshot only; no ledger effect |
-| amount_gross | Currency | no | Commercial snapshot only |
+| Field              | Type        | Required | Notes                                               |
+| ------------------ | ----------- | -------- | --------------------------------------------------- |
+| item               | Link / Item | yes      | Must reference approved WHITE GLOSS service catalog |
+| item_code_snapshot | Data        | yes      | Exact code at booking time                          |
+| item_name_snapshot | Data        | yes      | Human-readable snapshot                             |
+| service_kind       | Select      | yes      | `package`, `addon`, `pickup`, `manual`              |
+| qty                | Float       | yes      | Default 1                                           |
+| rate_gross         | Currency    | no       | Commercial snapshot only; no ledger effect          |
+| amount_gross       | Currency    | no       | Commercial snapshot only                            |
 
 ## DocType: WHITE GLOSS Order
 
@@ -71,24 +71,24 @@ Suggested naming series: `WGO-.YYYY.-.#####`
 
 Fields:
 
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| customer | Link / Customer | yes | ERPNext customer |
-| vehicle | Link / WHITE GLOSS Vehicle | yes | Customer vehicle |
-| booking_id | Data | yes | Supabase booking UUID, unique/idempotency key |
-| source_reference | Data | no | Existing booking/invoice/reference number |
-| status | Select | yes | Operational state machine |
-| service_date | Date | yes | Website booking date |
-| date_only | Check | yes | Default 1; exact handover/pickup time is not invented |
-| handover_time | Time | no | Filled only after separately coordinated time exists |
-| pickup_city | Data | no | Booking snapshot |
-| preferred_contact | Data | no | Booking snapshot |
-| booking_source | Data | no | Website/admin/etc. |
-| services | Table / WHITE GLOSS Order Service | yes | Package/add-ons/pickup/manual services |
-| agreed_gross_total | Currency | no | Snapshot; no ledger effect |
-| sales_invoice | Link / Sales Invoice | no | Populated only after accounting gate is approved |
-| payment_status | Select | no | Informational mirror only until payment integration is approved |
-| internal_notes | Small Text | no | Internal operational notes |
+| Field              | Type                              | Required | Notes                                                           |
+| ------------------ | --------------------------------- | -------- | --------------------------------------------------------------- |
+| customer           | Link / Customer                   | yes      | ERPNext customer                                                |
+| vehicle            | Link / WHITE GLOSS Vehicle        | yes      | Customer vehicle                                                |
+| booking_id         | Data                              | yes      | Supabase booking UUID, unique/idempotency key                   |
+| source_reference   | Data                              | no       | Existing booking/invoice/reference number                       |
+| status             | Select                            | yes      | Operational state machine                                       |
+| service_date       | Date                              | yes      | Website booking date                                            |
+| date_only          | Check                             | yes      | Default 1; exact handover/pickup time is not invented           |
+| handover_time      | Time                              | no       | Filled only after separately coordinated time exists            |
+| pickup_city        | Data                              | no       | Booking snapshot                                                |
+| preferred_contact  | Data                              | no       | Booking snapshot                                                |
+| booking_source     | Data                              | no       | Website/admin/etc.                                              |
+| services           | Table / WHITE GLOSS Order Service | yes      | Package/add-ons/pickup/manual services                          |
+| agreed_gross_total | Currency                          | no       | Snapshot; no ledger effect                                      |
+| sales_invoice      | Link / Sales Invoice              | no       | Populated only after accounting gate is approved                |
+| payment_status     | Select                            | no       | Informational mirror only until payment integration is approved |
+| internal_notes     | Small Text                        | no       | Internal operational notes                                      |
 
 ## Order status state machine
 
@@ -171,7 +171,7 @@ The app installation, migration, permission readiness and mapping preview are co
 8. Re-run same booking and prove idempotency: exactly one vehicle identity and one order for the booking.
 9. No Sales Invoice, Payment Entry, stock ledger, GL Entry or accounting changes occur during Gate 5.
 
-Live Supabase state inspected on 2026-08-24 already contains one vehicle/order mapping from 2026-08-21. Any further write is a subsequent controlled production run and must use the exact-booking server allowlist; it must not be described as the first historical write.
+Live Supabase state inspected on 2026-08-24 already contains one vehicle/order mapping from 2026-08-21. Any further write is a subsequent controlled production run and requires the global kill switch plus a short-lived, database-backed, single-use approval bound to the exact booking revision and `vehicle_order` scope; it must not be described as the first historical write.
 
 ## Frappe Cloud constraint
 

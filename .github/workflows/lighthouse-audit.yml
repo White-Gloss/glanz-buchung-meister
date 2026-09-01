@@ -2,10 +2,29 @@ name: Lighthouse Audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/**"
+      - "public/**"
+      - "server/**"
+      - "vite.config.ts"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "lighthouserc.mobile.cjs"
+      - "lighthouserc.desktop.cjs"
+      - ".github/workflows/lighthouse-audit.yml"
   push:
     branches:
       - main
     paths:
+      - "src/**"
+      - "public/**"
+      - "server/**"
+      - "vite.config.ts"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
       - "lighthouserc.mobile.cjs"
       - "lighthouserc.desktop.cjs"
       - ".github/workflows/lighthouse-audit.yml"
@@ -16,7 +35,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: lighthouse-audit
+  group: lighthouse-audit-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -46,3 +65,11 @@ jobs:
         run: npm run lighthouse:desktop
         env:
           LHCI_BASE_URL: https://white-gloss.de
+
+      - name: Lighthouse-Berichte speichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          if-no-files-found: warn

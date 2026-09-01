@@ -1,615 +1,1139 @@
+@import "tailwindcss";
+
 @font-face {
-  font-family: "Bebas Neue";
+  font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
   font-weight: 400;
-  src: url("@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-400.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
-  font-weight: 400;
-  src: url("@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Barlow";
-  font-style: normal;
-  font-display: swap;
   font-weight: 500;
-  src: url("@fontsource/barlow/files/barlow-latin-500-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-500.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Barlow";
   font-style: normal;
-  font-display: swap;
   font-weight: 600;
-  src: url("@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2");
+  font-display: swap;
+  src: url("/fonts/barlow-600.woff2") format("woff2");
 }
 
-@import "tailwindcss" source(none);
-@source "../src";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --font-display: "Bebas Neue", "Barlow", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+@font-face {
+  font-family: "Barlow Fallback";
+  src: local("Arial"), local("Helvetica Neue"), local("Helvetica");
+  size-adjust: 101%;
+  ascent-override: 94%;
+  descent-override: 25%;
+  line-gap-override: 0%;
 }
 
+@theme {
+  /* Flächen — Schwarz statt Anthrazit, neutral-kühl statt warm */
+  --color-bg: #08080a;
+  --color-surface: #101013;
+  --color-elevated: #17171b;
+
+  /* Text — zwei Stufen. Beide liegen auf allen drei Flächen über WCAG AA.
+     Die frühere dritte, wärmere Stufe ist bewusst mit `muted` zusammengelegt:
+     Hierarchie kommt ab jetzt über Größe, Laufweite und Weißraum. */
+  --color-fg: #f4f4f6;
+  --color-muted: #9b9ba3;
+  --color-subtle: #9b9ba3;
+
+  /* Haarlinien statt Schatten. Transparent, damit sie auf jeder Fläche tragen. */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Primärfläche: gefülltes Weiß auf Schwarz, Schrift schwarz */
+  --color-accent: #f4f4f6;
+  --color-accent-fg: #08080a;
+
+  --color-danger: #d97868;
+  --color-wa: #25d366;
+
+  /* Eine Sans fuer alles. --font-display bleibt als Name bestehen, zeigt aber
+     auf dieselbe Familie: die 110 font-display-Stellen brauchen keine Aenderung,
+     und es faellt ein kompletter Schriftschnitt aus dem kritischen Pfad. */
+  --font-sans: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
+
+  /* Bestehende Skala bleibt unverändert, damit Schritt 1 nichts verschiebt. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Neue, kantigere Skala — wird in Schritt 3 auf die Komponenten gelegt. */
+  --radius-control: 2px;
+  --radius-card: 4px;
+
+  /* Fliesstext-Zeilenhoehe laut Vorgabe 1.65. Sie allein auf body zu setzen
+     reicht nicht: Tailwinds Groessen-Utilities bringen ihre eigene
+     line-height mit und gewinnen gegen den geerbten Wert. Deshalb an den
+     Groessen selbst gesetzt — das erreicht jeden Absatz, ohne dass die
+     Komponenten angefasst werden muessen. text-xs bleibt aussen vor: das
+     ist Kleinschrift und Label, kein Fliesstext. */
+  --text-sm--line-height: 1.65;
+  --text-base--line-height: 1.65;
+  --text-lg--line-height: 1.65;
+
+  --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-glow: 0 0 0 1px rgb(244 244 246 / 0.35), 0 18px 60px -22px rgb(244 244 246 / 0.45);
+}
+
+/* Chrom-Akzent. Kein Tailwind-Farbtoken, weil es ein Verlauf ist — deshalb als
+   eigene Variablen. Einsatz laut Vorgabe sparsam: aktiver Nav-Indikator,
+   Icon-Striche, Prozess-Ziffern, Rahmen der Primär-Buttons, einlaufende
+   Link-Unterstriche. Als Text-Verlauf höchstens eine Zahl oder ein Wort je
+   Sektion, nie ganze Headlines und nie Fließtext. */
 :root {
-  --radius: 0.875rem;
-  --background: oklch(0.115 0.008 245);
-  --foreground: oklch(0.975 0.004 240);
-  --surface: oklch(0.155 0.009 245);
-  --surface-2: oklch(0.195 0.01 245);
-  --card: oklch(0.155 0.009 245);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.15 0.009 245);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.83 0.045 235);
-  --primary-foreground: oklch(0.12 0.01 245);
-  --secondary: oklch(0.22 0.012 245);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.21 0.01 245);
-  --muted-foreground: oklch(0.69 0.012 240);
-  --accent: oklch(0.93 0.022 235);
-  --accent-foreground: oklch(0.12 0.01 245);
-  /* WCAG AAA: 7,59:1 als Textfarbe auf --background, und 7,58:1 für
-     --destructive-foreground auf --destructive (Button-Variante).
-     Vorher: 5,00:1 als Text (nur AA) und 4,08:1 im Button (unter AA). */
-  --destructive: oklch(0.72 0.18 25);
-  --destructive-foreground: oklch(0.12 0.02 25);
-  --border: oklch(0.92 0.015 240 / 11%);
-  --input: oklch(0.92 0.015 240 / 16%);
-  --ring: oklch(0.83 0.045 235);
-  --chart-1: oklch(0.83 0.045 235);
-  --chart-2: oklch(0.93 0.022 235);
-  --chart-3: oklch(0.65 0.055 235);
-  --chart-4: oklch(0.48 0.04 235);
-  --chart-5: oklch(0.5 0 0);
-  --sidebar: oklch(0.14 0.008 245);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.83 0.045 235);
-  --sidebar-primary-foreground: oklch(0.12 0.01 245);
-  --sidebar-accent: oklch(0.21 0.01 245);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.92 0.015 240 / 11%);
-  --sidebar-ring: oklch(0.83 0.045 235);
+  --chrome-gradient: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #d2d4d9 38%,
+    #8a8d94 62%,
+    #edeef0 100%
+  );
+  /* Volltonwert aus der Mitte des Verlaufs. Rahmen und Fokus-Ring koennen
+     keinen Verlauf tragen; dieser Ton liest sich auf Schwarz als Chrom und
+     steht mit 13,5:1 weit ueber der Anforderung fuer Fokus-Indikatoren. */
+  --chrome-solid: #d2d4d9;
 
-  --gradient-hero: linear-gradient(180deg, transparent 0%, var(--background) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
-  --shadow-glow:
-    0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent),
-    0 18px 60px -22px color-mix(in oklab, var(--primary) 45%, transparent);
-  --shadow-elevated: 0 24px 70px -30px oklch(0 0 0 / 90%);
+  --chrome-line: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    #d2d4d9 30%,
+    #ffffff 50%,
+    #8a8d94 72%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
-.dark {
-  color-scheme: dark;
+/* Hilfsklasse für den Text-Verlauf. Fällt ohne background-clip auf --color-fg
+   zurück, damit nie unlesbarer Text stehen bleibt. */
+@layer utilities {
+  .text-chrome {
+    color: var(--color-fg);
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .text-chrome {
+      background-image: var(--chrome-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  /* Im Kontrastmodus unterdrueckt der Browser den Verlauf, erfuellt die
+     @supports-Bedingung aber weiterhin — ohne diese Ruecknahme bliebe
+     transparenter, also unsichtbarer Text stehen. */
+  @media (forced-colors: active) {
+    .text-chrome {
+      background-image: none;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+  }
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
   html {
-    scroll-behavior: smooth;
-    background-color: var(--color-background);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16.5px;
+    touch-action: manipulation;
   }
 
+  /* Fliesstext ruhiger setzen: 1.65 statt Tailwind-Standard 1.5. */
   body {
-    min-width: 320px;
-    overflow-x: clip;
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    line-height: 1.65;
+  }
+
+  #main-content:focus {
+    outline: none;
+  }
+
+  #buchung {
+    scroll-margin-top: 5.5rem;
+  }
+
+  [id^="paket-"] {
+    scroll-margin-top: 5.5rem;
+  }
+
+  body[data-nav="open"] [data-wa-float] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1023px) {
+    body[data-city-wa] [data-wa-float] {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .compare-slider-range {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 100%;
+    height: 2.75rem;
+    margin: 0;
+    cursor: ew-resize;
+    appearance: none;
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--color-bg) 55%, transparent),
+      transparent
+    );
+  }
+
+  .compare-slider-range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: color-mix(in oklab, var(--color-fg) 70%, transparent);
+  }
+
+  .compare-slider-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+    border-radius: 999px;
+    background: var(--color-fg);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  }
+
+  .compare-slider-range::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .compare-slider-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-fg);
+  }
+
+  #mobile-nav ul {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #mobile-nav li {
+    display: block;
+    width: 100%;
   }
 
   h1,
   h2,
-  h3,
-  h4 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: 0.01em;
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--primary) 32%, transparent);
-    color: var(--foreground);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  /* Der Chrom-Fokusring gilt nur fuer die oeffentliche Seite. Admin und Login
+     behalten ihren bisherigen Ring — sie sind vom Redesign ausgenommen. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  [data-shell="public"] :focus-visible {
+    outline: 2px solid var(--chrome-solid);
+    outline-offset: 2px;
+  }
+
+  /* Eyebrow. Die einzige Textsorte ausser Buttons und Navigation, die
+     Grossbuchstaben traegt. Farbe laut Vorgabe --color-muted. */
+  .kicker {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Display und H1 teilen sich eine Stufe. Keine Grossbuchstaben mehr:
+     Wirkung kommt jetzt aus Groesse und negativer Laufweite. */
+  .heading-display,
+  .heading-1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 7vw, 6.5rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  /* Wortmarke im Hero, ohne Umbruch. Nachgemessen: ab 360px passt "White Gloss"
+     in beiden Schriftzustaenden bequem. Nur darunter wird die Fallback-Schrift
+     zwei Pixel zu breit, deshalb der min()-Deckel — er greift erst unterhalb
+     von rund 324px und laesst den Vorgabe-Bereich unberuehrt. */
+  .heading-brand {
+    font-family: var(--font-display);
+    font-size: min(clamp(2.75rem, 7vw, 6.5rem), 14vw);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    white-space: nowrap;
+  }
+
+  /* Benannte Ausnahme zur Regel "Grossbuchstaben nur fuer Eyebrows, Buttons
+     und Navigation": diese Zeile steht als <span> in der <h1> und ist damit
+     formal Teil einer Ueberschrift. Typografisch ist sie aber ein Eyebrow —
+     13px, 0.24em Sperrung, gedeckte Farbe — und gesperrte Laufweite ist eine
+     Versalkonvention: gemischt gesetzt zerfiele die Wortmarken-Einheit zu
+     beilaeufigem Kleintext. Sie bleibt deshalb in Versalien. */
+  .heading-tagline {
+    font-family: var(--font-sans);
+    font-size: clamp(0.7rem, 0.2rem + 1.4vw, 0.9rem);
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .heading-2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  .heading-3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  img.hero-image,
+  .hero-image img,
+  .service-image-1 img,
+  .service-image-2 img,
+  .service-image-3 img,
+  .service-image-4 img,
+  .before-after-1 img,
+  .workshop-image img,
+  .gallery-shot img,
+  .private-client-image img,
+  .b2b-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .workshop-map {
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    aspect-ratio: 16 / 10;
+    min-height: 18rem;
+  }
+
+  .workshop-map iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 18rem;
+    border: 0;
+  }
+
+  @media (min-width: 640px) {
+    .workshop-map,
+    .workshop-map iframe {
+      min-height: 26rem;
+    }
+  }
+
+  .prose-legal {
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  .prose-legal h2 {
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
+    margin-top: 2.25rem;
+  }
+
+  .prose-legal section + section {
+    margin-top: 0.25rem;
+  }
+
+  .prose-legal p {
+    margin-top: 0.75rem;
+  }
+
+  .prose-legal a {
+    color: var(--color-fg);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-legal a:hover {
+    color: var(--color-accent);
+  }
+
+  .prose-legal address {
+    margin-top: 0.75rem;
+  }
+}
+
+@layer components {
+  /* Frueher kam der Display-Charakter aus einer zweiten Schriftfamilie. Jetzt
+     kommt er aus Gewicht und negativer Laufweite — an einer Stelle gesetzt,
+     damit die 110 font-display-Stellen unveraendert bleiben koennen. Inline
+     gesetzte tracking-Utilities gewinnen weiterhin. */
+  .font-display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Zeilenlaenge laut Vorgabe hoechstens 68 Zeichen. */
+  .measure {
+    max-width: 68ch;
+  }
+
+  .section {
+    padding-block: clamp(4.75rem, 9vw, 8.5rem);
+  }
+
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36rem;
+  }
+
+  .fx-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .fx-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .gd-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "logo tools";
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .gd-header {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "logo nav tools";
+      column-gap: 2.75rem;
+      padding-block: 1.05rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .gd-header {
+      column-gap: 3.5rem;
+      padding-block: 1.2rem;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .gd-header {
+      column-gap: 4.5rem;
+      padding-block: 1.35rem;
+    }
+  }
+
+  .ga-logo {
+    grid-area: logo;
+  }
+
+  .ga-nav {
+    grid-area: nav;
+    justify-self: start;
+  }
+
+  @media (min-width: 1024px) {
+    .ga-nav {
+      gap: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .ga-nav {
+      gap: 2.6rem;
+    }
+
+    .ga-nav .nav-link {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .ga-nav {
+      gap: 3.15rem;
+    }
+  }
+
+  .ga-tools {
+    grid-area: tools;
+    justify-self: end;
+    gap: 0.65rem;
+  }
+
+  @media (min-width: 1280px) {
+    .ga-tools {
+      gap: 0.9rem;
+    }
+  }
+
+  .gd-split {
+    display: grid;
+    gap: 3.5rem 3rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "media";
+  }
+
+  .gd-split--media {
+    grid-template-areas:
+      "media"
+      "copy";
+  }
+
+  .gd-split--duo {
+    gap: 0;
+    grid-template-areas:
+      "lux"
+      "b2b";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: "copy media";
+      align-items: center;
+    }
+
+    .gd-split--media {
+      grid-template-areas: "media copy";
+    }
+
+    .gd-split--duo {
+      grid-template-areas: "lux b2b";
+      align-items: stretch;
+    }
+  }
+
+  .ga-copy {
+    grid-area: copy;
+  }
+
+  .ga-media {
+    grid-area: media;
+  }
+
+  .ga-lux {
+    grid-area: lux;
+  }
+
+  .ga-b2b {
+    grid-area: b2b;
+  }
+
+  .gd-form {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "fields"
+      "quote";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-form {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      grid-template-areas: "fields quote";
+      align-items: start;
+    }
+  }
+
+  .ga-fields {
+    grid-area: fields;
+  }
+
+  .ga-quote {
+    grid-area: quote;
+  }
+
+  .gd-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "s1 s2"
+      "s3 s4";
+  }
+
+  @media (min-width: 640px) {
+    .gd-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-areas: "s1 s2 s3 s4";
+    }
+  }
+
+  .ga-s1 {
+    grid-area: s1;
+  }
+  .ga-s2 {
+    grid-area: s2;
+  }
+  .ga-s3 {
+    grid-area: s3;
+  }
+  .ga-s4 {
+    grid-area: s4;
+  }
+
+  .gd-pack {
+    display: grid;
+    gap: 0.85rem 2.5rem;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "num"
+      "copy"
+      "price";
+  }
+
+  @media (min-width: 640px) {
+    .gd-pack {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "num copy price";
+      align-items: baseline;
+    }
+  }
+
+  .ga-num {
+    grid-area: num;
+  }
+
+  .ga-pack-copy {
+    grid-area: copy;
+  }
+
+  .ga-price {
+    grid-area: price;
+    text-align: right;
+  }
+
+  .gd-tiles {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .gd-tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .gd-tiles-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .gd-gallery {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "hero hero"
+      "cera felg"
+      "lede fini";
+  }
+
+  @media (min-width: 1024px) {
+    .gd-gallery {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-rows: minmax(12rem, 1fr) minmax(12rem, 1fr) minmax(11rem, auto);
+      grid-template-areas:
+        "hero hero hero hero cera cera"
+        "hero hero hero hero felg felg"
+        "lede lede lede fini fini fini";
+    }
+  }
+
+  .ga-hero {
+    grid-area: hero;
+  }
+  .ga-cera {
+    grid-area: cera;
+  }
+  .ga-felg {
+    grid-area: felg;
+  }
+  .ga-lede {
+    grid-area: lede;
+  }
+  .ga-fini {
+    grid-area: fini;
+  }
+
+  .gd-footer {
+    display: grid;
+    gap: 2.5rem 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "leistungen"
+      "studio"
+      "recht";
+  }
+
+  @media (min-width: 768px) {
+    .gd-footer {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-areas: "brand leistungen studio recht";
+    }
+  }
+
+  .ga-brand {
+    grid-area: brand;
+  }
+  .ga-leistungen {
+    grid-area: leistungen;
+  }
+  .ga-studio {
+    grid-area: studio;
+  }
+  .ga-recht {
+    grid-area: recht;
+  }
+
+  /* Grosse Chrom-Haarlinie ueber dem Footer. Der Verlauf laeuft an beiden
+     Enden ins Nichts aus, damit die Linie nicht abgeschnitten wirkt. */
+  .chrome-rule {
+    height: 1px;
+    width: 100%;
+    background: var(--chrome-line);
+  }
+
+  .site-header {
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart);
+  }
+
+  .site-header[data-scrolled="true"] {
+    background-color: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border-bottom-color: var(--color-line);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Ohne backdrop-filter waere die Leiste halbdurchsichtig ohne Blur und der
+     Text darunter schwer lesbar — dann lieber ganz deckend. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header[data-scrolled="true"] {
+      background-color: var(--color-bg);
+    }
+  }
+
+  /* Bei geoeffnetem Mobilmenue traegt die Leiste immer Flaeche. */
+  body[data-nav="open"] .site-header {
+    background-color: var(--color-bg);
+  }
+
+  .nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.4em;
+    height: 1px;
+    background: var(--chrome-gradient);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 280ms var(--ease-out-quart);
+  }
+
+  .nav-link[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  /* Vollbild-Overlay in Schwarz laut Vorgabe — vorher ein abgerundetes
+     Kartenblatt am rechten Rand. */
+  .mobile-sheet {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-bg);
+    padding-top: env(safe-area-inset-top, 0px);
+    animation: sheet-in 280ms var(--ease-out-quart);
+  }
+
+  .sheet-head {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem 0.5rem;
+  }
+
+  .sheet-head p {
+    margin: 0;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .sheet-close {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    color: var(--color-fg);
+    background: transparent;
+  }
+
+  .mobile-sheet .sheet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  .sheet-sub {
+    display: flex;
+    flex-direction: column;
+    margin: 0.15rem 0.35rem 0.35rem 1rem;
+    padding: 0.15rem 0 0.15rem 0.85rem;
+    border-left: 1px solid rgb(255 255 255 / 0.1);
+  }
+
+  .sheet-sub a {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  /* Grosse Typo-Links statt Pillen: im Vollbild traegt die Schrift, nicht
+     der Rahmen. Haarlinie als Trenner, sonst nichts. */
+  .nav-bubble {
+    display: flex;
+    width: 100%;
+    min-height: 3.5rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-fg);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 200ms var(--ease-out-quart);
+  }
+
+  .nav-bubble:hover,
+  .nav-bubble:focus-visible {
+    color: var(--chrome-solid);
+  }
+
+  .nav-bubble-sub {
+    min-height: 2.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--color-muted);
+  }
+
+  .nav-bubble-featured {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
+  }
+
+  .nav-bubble-label {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .nav-bubble-badge {
+    flex-shrink: 0;
+    font-size: 0.58rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+    white-space: nowrap;
+  }
+
+  .mobile-sheet .nav-actions {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1rem 1.25rem max(1rem, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--color-line);
+  }
+
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      scroll-behavior: auto !important;
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
+    .mobile-sheet {
+      animation: none;
     }
   }
-}
 
-/* -------------------------------------------------------------------------
- * TYPO-SYSTEM – zentrale Headline-Stufen
- * Alle Überschriften und Label nutzen ausschließlich diese Utilities,
- * damit Schriftstärke, Laufweite und Abstände überall identisch sind.
- * Änderungen hier wirken auf Startseite, Städte-Seiten und Booking-Wizard.
- * ---------------------------------------------------------------------- */
-
-/** H1 – Hero der Startseite
- *  Mobile bewusst zurückhaltend (28px), skaliert fließend bis 96px. */
-@utility display-hero {
-  font-family: var(--font-display);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  line-height: 1.02;
-  text-wrap: balance;
-  font-size: clamp(1.75rem, 1.15rem + 3vw, 3rem);
-
-  @media (width >= 40rem) {
-    line-height: 0.98;
-    font-size: clamp(3rem, 1.5rem + 4.2vw, 4.5rem);
-  }
-  @media (width >= 80rem) {
-    line-height: 0.95;
-    font-size: clamp(4.5rem, 2rem + 4vw, 6rem);
-  }
-}
-
-/** H1 auf Unterseiten (z. B. Städte-Landingpages) */
-@utility display-page {
-  font-family: var(--font-display);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1.05;
-  text-wrap: balance;
-  font-size: clamp(1.625rem, 1.1rem + 2.6vw, 2.5rem);
-
-  @media (width >= 40rem) {
-    line-height: 1;
-    font-size: clamp(2.5rem, 1.4rem + 3vw, 3.75rem);
-  }
-}
-
-/** H2 – Sektionsüberschrift */
-@utility display-section {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.12;
-  text-wrap: balance;
-  font-size: clamp(1.5rem, 1.05rem + 2.2vw, 2.25rem);
-
-  @media (width >= 40rem) {
-    line-height: 1.05;
-    font-size: clamp(2.25rem, 1.3rem + 2.6vw, 3rem);
-  }
-}
-
-/** H3 – Untersektion / Schritt-Titel im Wizard */
-@utility display-sub {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.18;
-  font-size: clamp(1.25rem, 1rem + 1.2vw, 1.5rem);
-
-  @media (width >= 40rem) {
-    line-height: 1.1;
-    font-size: clamp(1.5rem, 1.1rem + 1.2vw, 1.875rem);
-  }
-}
-
-/** H3/H4 – Kartenüberschrift (Feature-, Paket-, Fahrzeugkarten) */
-@utility display-card {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  line-height: 1.25;
-  font-size: var(--text-base);
-
-  @media (width >= 40rem) {
-    font-size: var(--text-lg);
-  }
-}
-
-/** Kleiner Eyebrow-Text über einer Sektionsüberschrift
- *  Am Telefon 12px statt vorher 11px: Versalien mit weiter Laufweite lesen
- *  sich deutlich schlechter als gemischte Schreibweise, kleine Grade werden
- *  dadurch zusätzlich bestraft. Die Laufweite bleibt am Telefon enger,
- *  damit die Zeile trotz des größeren Grades nicht umbricht. */
-@utility eyebrow {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--color-primary);
-
-  @media (width >= 40rem) {
-    letter-spacing: 0.3em;
-  }
-}
-
-/** Gruppen-/Panel-Label in Uppercase (z. B. „Ihre Konfiguration“) */
-@utility label-caps {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-
-  @media (width >= 40rem) {
-    font-size: var(--text-sm);
-    letter-spacing: 0.2em;
-  }
-}
-
-/** Preis- und Kennzahlendarstellung */
-@utility display-price {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.025em;
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-2xl);
-
-  @media (width >= 40rem) {
-    font-size: var(--text-3xl);
-  }
-}
-
-/** Einheitlicher Abstand zwischen Eyebrow, Headline und Fließtext */
-@utility headline-stack {
-  & > * + * {
-    margin-top: calc(var(--spacing) * 3);
-  }
-}
-
-@utility glass {
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
-  backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid var(--color-border);
-}
-
-@utility glass-strong {
-  background: color-mix(in oklab, var(--surface-2) 75%, transparent);
-  backdrop-filter: blur(30px) saturate(150%);
-  border: 1px solid var(--color-border);
-}
-
-@utility text-gradient {
-  background: linear-gradient(
-    100deg,
-    oklch(1 0 0) 0%,
-    oklch(0.96 0.01 235) 45%,
-    var(--accent) 78%,
-    var(--primary) 100%
-  );
-  background-clip: text;
-  color: transparent;
-}
-
-@utility hairline-gold {
-  border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
-}
-
-@utility hairline-metal {
-  border: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
-}
-
-@utility glow-ring {
-  box-shadow: var(--shadow-glow);
-}
-
-@utility grid-lines {
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 64px 64px;
-}
-
-@utility content-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 800px;
-}
-
-/* -------------------------------------------------------------------------
- * EINBLENDEN BEIM SCROLLEN
- *
- * Bewusst ohne JavaScript, über eine scrollgesteuerte Animation. Browser,
- * die `animation-timeline` nicht kennen, ignorieren die gesamte Regel — die
- * Seite bleibt dort exakt wie vorher, nur ohne Bewegung. Damit kann kein
- * Inhalt unsichtbar hängenbleiben, wenn eine Datei nicht lädt oder eine
- * Erweiterung dazwischenfunkt; genau das ist bei der üblichen
- * JavaScript-Variante das Risiko.
- *
- * Der Bereich `cover 0% cover 18%` ist absichtlich so gewählt, dass er auch
- * bei Elementen greift, die höher sind als der Bildschirm: „cover" beginnt,
- * sobald das Element den Bildschirm berührt, und ist bei 18 % längst
- * erreicht. Ein Bereich über `entry` würde bei sehr hohen Elementen nie
- * fertig werden und sie halb durchsichtig stehen lassen.
- * ---------------------------------------------------------------------- */
-@utility reveal {
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
-  }
-}
-
-/* Bewegt wird über `translate`, nicht über `transform`. Das ist Absicht:
-   Die Karten heben sich beim Überfahren per `transform: translateY(-3px)`
-   an. Eine Animation gewinnt in der Kaskade gegen eine normale Regel — mit
-   `transform` in den Keyframes wäre der Hover-Effekt nach dem Einblenden
-   also tot. `translate` ist eine eigenständige Eigenschaft und kommt sich
-   mit `transform` nicht in die Quere. */
-@keyframes reveal-in {
-  from {
-    opacity: 0;
-    translate: 0 1rem;
-  }
-  to {
-    opacity: 1;
-    translate: none;
-  }
-}
-
-@utility text-chrome {
-  background: linear-gradient(
-    105deg,
-    oklch(1 0 0) 0%,
-    oklch(0.72 0.018 235) 28%,
-    oklch(0.98 0.008 235) 54%,
-    oklch(0.68 0.025 235) 78%,
-    oklch(0.94 0.015 235) 100%
-  );
-  background-clip: text;
-  color: transparent;
-}
-
-@utility metal-panel {
-  border: 1px solid var(--color-border);
-  background:
-    linear-gradient(135deg, oklch(1 0 0 / 5%) 0%, transparent 38%),
-    color-mix(in oklab, var(--surface) 92%, transparent);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 5%),
-    var(--shadow-elevated);
-  backdrop-filter: blur(24px) saturate(130%);
-}
-
-@utility feature-card {
-  border: 1px solid var(--color-border);
-  background:
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in oklab, var(--primary) 10%, transparent),
-      transparent 38%
-    ),
-    linear-gradient(145deg, color-mix(in oklab, var(--surface-2) 72%, transparent), var(--surface));
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
-  transition:
-    border-color 300ms ease,
-    transform 300ms ease,
-    box-shadow 300ms ease;
-
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 42%, transparent);
-    transform: translateY(-3px);
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 6%),
-      0 24px 70px -36px color-mix(in oklab, var(--primary) 48%, transparent);
-  }
-
-  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
-     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
-     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
-  }
-}
-
-@utility package-card {
-  border: 1px solid var(--color-border);
-  background: linear-gradient(155deg, var(--surface-2), var(--surface));
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 4%);
-  transition:
-    border-color 300ms ease,
-    transform 300ms ease,
-    box-shadow 300ms ease;
-
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 38%, transparent);
-    transform: translateY(-3px);
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 6%),
-      0 24px 70px -36px color-mix(in oklab, var(--primary) 45%, transparent);
-  }
-
-  /* Sanftes Einblenden beim Scrollen — siehe @utility reveal weiter oben.
-     Rein über CSS: Browser ohne `animation-timeline` zeigen die Karte
-     unverändert an, es kann also nichts unsichtbar hängenbleiben. */
-  @media (prefers-reduced-motion: no-preference) {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: cover 0% cover 18%;
-  }
-}
-
-@utility package-card-featured {
-  border-color: color-mix(in oklab, var(--primary) 48%, transparent);
-  background:
-    radial-gradient(
-      circle at 80% 0%,
-      color-mix(in oklab, var(--primary) 14%, transparent),
-      transparent 42%
-    ),
-    linear-gradient(155deg, var(--surface-2), var(--surface));
-  box-shadow: var(--shadow-glow);
-
-  /* Muss nach der Hover-Regel von .package-card greifen, damit die
-     hervorgehobene Karte ihren Leuchtrand auch beim Überfahren behält. */
-  &:hover {
-    border-color: color-mix(in oklab, var(--primary) 62%, transparent);
-    box-shadow:
-      var(--shadow-glow),
-      0 28px 80px -34px color-mix(in oklab, var(--primary) 55%, transparent);
-  }
-}
-
-@utility hero-stage {
-  background: #030507;
-}
-
-@utility hero-scrim {
-  background:
-    linear-gradient(
-      90deg,
-      oklch(0.07 0.012 245 / 96%) 0%,
-      oklch(0.07 0.012 245 / 76%) 45%,
-      transparent 78%
-    ),
-    linear-gradient(0deg, oklch(0.07 0.012 245 / 92%) 0%, transparent 48%),
-    linear-gradient(180deg, oklch(0.07 0.012 245 / 42%) 0%, transparent 30%);
-
-  @media (width < 64rem) {
-    background:
-      linear-gradient(90deg, oklch(0.07 0.012 245 / 92%) 0%, oklch(0.07 0.012 245 / 42%) 100%),
-      linear-gradient(0deg, oklch(0.07 0.012 245 / 96%) 0%, transparent 65%);
-  }
-}
-
-@utility chrome-orb {
-  position: absolute;
-  width: 24rem;
-  height: 24rem;
-  border-radius: 9999px;
-  background: color-mix(in oklab, var(--primary) 18%, transparent);
-  filter: blur(100px);
-  pointer-events: none;
-}
-
-/* -------------------------------------------------------------------------
- * BROTKRUMEN – Trefferfläche am Telefon
- *
- * Die Links sind nur so hoch wie ihre Textzeile, am Telefon also rund 14px.
- * Das ist mit dem Daumen kaum sicher zu treffen. Die Trefferfläche wächst
- * hier auf 36px, ohne dass sich am Aussehen etwas ändert — Schriftgrad,
- * Farbe und Abstand bleiben, wie sie sind.
- *
- * Zentral gelöst, weil die Brotkrumen in 16 Seiten einzeln stehen. Eine
- * Regel an einer Stelle bleibt verlässlich gleich; 16 gleichlautende
- * Änderungen laufen früher oder später auseinander.
- * ---------------------------------------------------------------------- */
-@media (width < 40rem) {
-  nav[aria-label="Brotkrumen"] a {
+  /* Buttons. Versalien, gesperrt, kantig — laut Vorgabe. Padding und Groesse
+     stehen hier; Aufrufstellen duerfen sie mit Utilities ueberschreiben
+     (die Navbar tut das), weil Utilities gegen diese Ebene gewinnen. */
+  .btn {
     display: inline-flex;
     align-items: center;
-    min-height: 2.25rem;
-    vertical-align: middle;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-control);
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+    transition:
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart),
+      color 240ms var(--ease-out-quart);
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    border-color: var(--color-line-strong);
+    color: var(--color-fg);
+  }
+
+  @media (hover: hover) {
+    .btn-secondary:hover {
+      border-color: var(--chrome-solid);
+      background-color: var(--color-elevated);
+    }
+  }
+
+  /* Eingabefelder der oeffentlichen Formulare: transparent, nur eine untere
+     Haarlinie statt Kasten, bei Fokus wechselt die Linie auf Chrom. Der
+     Admin-Bereich behaelt bewusst seine eigene, kastenfoermige Variante. */
+  .input-line {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.125rem;
+    border: 0;
+    border-bottom: 1px solid var(--color-line-strong);
+    border-radius: 0;
+    background-color: transparent;
+    color: var(--color-fg);
+    font-size: 0.9375rem;
+    transition: border-color 240ms var(--ease-out-quart);
+  }
+
+  .input-line::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input-line:hover {
+    border-bottom-color: var(--color-fg);
+  }
+
+  .input-line:focus {
+    outline: none;
+    border-bottom-color: var(--chrome-solid);
+  }
+
+  /* Fokus bleibt fuer Tastatur sichtbar: die Linie allein ist als Indikator
+     zu leise, deshalb zusaetzlich der Ring. */
+  .input-line:focus-visible {
+    outline: 2px solid var(--chrome-solid);
+    outline-offset: 2px;
+  }
+
+  /* Karten und Listenzeilen. Die Vorgabe ersetzt Schatten durch Haarlinien:
+     bei Hover geht der Rahmen auf Chrom und die Flaeche eine Stufe hoeher —
+     kein Anheben, kein Schein. */
+  .lift {
+    border-radius: var(--radius-card);
+    transition:
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart);
+  }
+
+  .cta-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 36%,
+      rgb(138 141 148 / 0.42) 50%,
+      transparent 64%
+    );
+    transform: translateX(-130%);
+  }
+
+  .link-draw {
+    background-image: var(--chrome-gradient);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0 1px;
+    transition:
+      color 200ms var(--ease-out-quart),
+      background-size 280ms var(--ease-out-quart);
+  }
+
+  @media (hover: hover) {
+    .nav-link:hover::after,
+    .nav-link:focus-visible::after {
+      transform: scaleX(1);
+    }
+
+    .lift:hover {
+      background-color: var(--color-elevated);
+      border-color: var(--chrome-solid);
+    }
+
+    .cta-shine:hover::after {
+      transform: translateX(130%);
+      transition: transform 650ms var(--ease-out-quart);
+    }
+
+    .link-draw:hover {
+      background-size: 100% 1px;
+    }
+
+    .group:hover .link-arrow,
+    .link-arrow:hover {
+      transform: translateX(4px);
+    }
+  }
+
+  .link-arrow {
+    transition: transform 280ms var(--ease-out-quart);
   }
 }
 
-.prose-legal {
-  color: var(--muted-foreground);
-  font-size: 0.9375rem;
-  line-height: 1.75;
-}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 
-.prose-legal section + section {
-  margin-top: 2.5rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.prose-legal h2 {
-  margin-bottom: 0.875rem;
-  color: var(--foreground);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.15;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-}
-
-.prose-legal p + p {
-  margin-top: 0.875rem;
-}
-
-.prose-legal address {
-  display: grid;
-  font-style: normal;
-}
-
-.prose-legal a {
-  color: var(--foreground);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in oklab, var(--primary) 55%, transparent);
-  text-underline-offset: 0.2em;
-}
-
-.prose-legal a:hover {
-  color: var(--primary);
+  .lift:hover,
+  .cta-shine:hover::after,
+  .nav-link::after {
+    transform: none;
+  }
 }

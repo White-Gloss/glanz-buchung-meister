@@ -1,121 +1,81 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { absUrl } from "@/lib/seo";
-import { company } from "@/lib/servicesConfig";
-
-const TITLE = "Impressum | White Gloss Detailing";
+import { site } from "@/data/site";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/impressum")({
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      {
-        name: "description",
-        content: "Anbieterkennzeichnung und Kontaktdaten von White Gloss Detailing.",
-      },
-      /*
-        Als einzige der vier Rechtsseiten indexierbar. Das Impressum ist
-        keine Textbaustein-Seite, sondern die Stelle, an der Firmenname,
-        Anschrift und Telefonnummer verbindlich stehen. Genau diese Angaben
-        gleicht Google mit dem Unternehmensprofil und mit Branchenbüchern
-        ab — bei einem jungen Betrieb, den Google noch nicht kennt, ist das
-        ein Beleg und kein Ballast.
-
-        Datenschutz, AGB und Widerruf bleiben bewusst auf noindex: reine
-        Rechtstexte ohne eigenen Suchwert.
-      */
-      { name: "robots", content: "index,follow,max-image-preview:large" },
-    ],
-    links: [
-      { rel: "canonical", href: absUrl("/impressum") },
-      { rel: "alternate", hrefLang: "de-DE", href: absUrl("/impressum") },
-      { rel: "alternate", hrefLang: "x-default", href: absUrl("/impressum") },
-    ],
-  }),
-  component: ImprintPage,
+  component: ImpressumPage,
+  head: () =>
+    pageHead({
+      title: `Impressum | ${site.name}`,
+      description: "Anbieterkennzeichnung und Kontaktdaten von White Gloss Detailing.",
+      path: "/impressum",
+    }),
 });
 
-function ImprintPage() {
+function ImpressumPage() {
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main id="main-content">
-        <section className="border-b border-border">
-          <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
-            <nav aria-label="Brotkrumen" className="text-xs text-muted-foreground">
-              <Link to="/" className="transition-colors hover:text-foreground">
-                Startseite
-              </Link>
-              <span className="px-2">/</span>
-              <span className="text-foreground">Impressum</span>
-            </nav>
-            <p className="eyebrow mt-8">Rechtliches</p>
-            <h1 className="display-page mt-3 uppercase">Impressum</h1>
-          </div>
+    <main id="main-content" className="mx-auto max-w-3xl px-4 py-16 sm:px-6" tabIndex={-1}>
+      <nav aria-label="Brotkrumen" className="text-xs text-subtle">
+        <Link to="/" className="hover:text-fg">
+          Startseite
+        </Link>
+        <span className="px-2">/</span>
+        <span>Impressum</span>
+      </nav>
+      <h1 className="mt-6 font-display text-5xl">Impressum</h1>
+      <div className="mt-10 space-y-8 text-sm leading-relaxed">
+        <section>
+          <h2 className="font-display text-2xl">Angaben gemäß § 5 DDG</h2>
+          <address className="mt-3 not-italic text-muted">
+            <strong className="text-fg">{site.legalName}</strong>
+            <br />
+            Inhaber: {site.owner}
+            <br />
+            {site.street}
+            <br />
+            {site.postalCode} {site.city}
+            <br />
+            {site.country}
+          </address>
         </section>
-
-        <article className="prose-legal mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <section>
-            <h2>Angaben gemäß § 5 DDG</h2>
-            <address>
-              <strong>{company.name}</strong>
-              {company.owner && <span>Inhaber: {company.owner}</span>}
-              {company.street && <span>{company.street}</span>}
-              <span>{company.city}</span>
-              <span>{company.country}</span>
-            </address>
-          </section>
-
-          <section>
-            <h2>Kontakt</h2>
-            <p>
-              Telefon: <a href={company.phoneHref}>{company.phone}</a>
-              <br />
-              E-Mail: <a href={`mailto:${company.email}`}>{company.email}</a>
-            </p>
-          </section>
-
-          {company.taxId && (
-            <section>
-              <h2>Umsatzsteuer-ID</h2>
-              <p>
-                Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz: {company.taxId}
-              </p>
-            </section>
-          )}
-
-          <section>
-            <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
-            <address>
-              {company.owner && <span>{company.owner}</span>}
-              {company.street && <span>{company.street}</span>}
-              <span>{company.city}</span>
-            </address>
-          </section>
-
-          <section>
-            <h2>Verbraucherstreitbeilegung</h2>
-            <p>
-              Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
-              einer Verbraucherschlichtungsstelle teilzunehmen.
-            </p>
-          </section>
-
-          <section>
-            <h2>Haftung für Inhalte und Links</h2>
-            <p>
-              Wir erstellen die Inhalte dieser Website mit Sorgfalt. Für externe Links zu fremden
-              Inhalten ist der jeweilige Anbieter verantwortlich. Sollten uns rechtswidrige Inhalte
-              bekannt werden, entfernen wir entsprechende Links nach Prüfung.
-            </p>
-          </section>
-
-          <p className="text-xs text-muted-foreground">Stand: 31. Juli 2026</p>
-        </article>
-      </main>
-      <SiteFooter />
-    </div>
+        <section>
+          <h2 className="font-display text-2xl">Kontakt</h2>
+          <p className="mt-3 text-muted">
+            Telefon: <a href={site.phoneHref}>{site.phoneDisplay}</a>
+            <br />
+            E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>
+            <br />
+            Öffnungszeiten: {site.hoursLabel}
+          </p>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+          <address className="mt-3 not-italic text-muted">
+            {site.owner}
+            <br />
+            {site.street}
+            <br />
+            {site.postalCode} {site.city}
+          </address>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl">Verbraucherstreitbeilegung</h2>
+          <p className="mt-3 text-muted">
+            Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor
+            einer Verbraucherschlichtungsstelle teilzunehmen. Die frühere OS-Plattform der
+            Europäischen Kommission zur Online-Streitbeilegung wird nicht mehr betrieben.
+          </p>
+        </section>
+        <section>
+          <h2 className="font-display text-2xl">Haftung für Inhalte und Links</h2>
+          <p className="mt-3 text-muted">
+            Wir erstellen die Inhalte dieser Website mit Sorgfalt. Für externe Links zu fremden
+            Inhalten ist der jeweilige Anbieter verantwortlich. Sollten uns rechtswidrige Inhalte
+            bekannt werden, entfernen wir entsprechende Links nach Prüfung.
+          </p>
+        </section>
+        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+      </div>
+    </main>
   );
 }

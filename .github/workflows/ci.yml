@@ -14,6 +14,71 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Kann der versionierte Stand die Datenbank ueberhaupt herstellen?
+  #
+  # Migrationen werden von Hand eingespielt. Legt jemand eine Tabelle direkt
+  # in der Supabase-Oberflaeche an, laeuft die Anwendung weiter — nur der
+  # Wiederaufbau ginge schief, und zwar unbemerkt. Genau das war passiert:
+  # zwei Tabellen fehlten, eine spaetere Migration brach deshalb mittendrin
+  # ab, und alles nach der Abbruchstelle blieb stillschweigend aus.
+  #
+  # Laeuft neben `verify`, nicht darin: der Datenbankdienst soll nicht bei
+  # jedem Lint-Lauf mitstarten.
+  schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        # Bewusst der Versions-Tag und keine feste Prüfsumme: das Abbild
+        # dient nur dem Test, und eine veraltete Prüfsumme wuerde die CI
+        # blockieren, ohne dass jemand etwas davon haette.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: PostgreSQL-Client bereitstellen
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Datenbank aus den Migrationen aufbauen
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: npm run check:migrations
+
+      # Greift die Zugriffsregeln an, statt sie nur zu lesen: als nicht
+      # angemeldeter Besucher und als angemeldeter Benutzer OHNE
+      # Administratorrolle. Faengt eine gelockerte Regel und eine neue
+      # Tabelle ohne Regel.
+      - name: Zugriffsregeln angreifen
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: npm run check:rls
+
+      - name: Einmalfreigabe und konkurrierenden ERPNext-Claim prüfen
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: npm run check:erpnext-approval
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -37,6 +102,17 @@ jobs:
       - name: Codequalität prüfen
         run: npm run lint
 
+      # Vor dem Build, damit ein veralteter eingecheckter Route-Tree hier
+      # auffällt und nicht erst auf einem fremden Rechner. Der Build würde die
+      # Datei neu schreiben und den Fehler damit verdecken.
+      - name: Typen der Anwendung prüfen
+        run: npm run typecheck
+
+      # Die Edge Functions laufen unter Deno und liegen ausserhalb von
+      # tsconfig.json — ohne diesen Schritt pruefte sie niemand.
+      - name: Typen der Edge Functions prüfen
+        run: npm run typecheck:functions
+
       - name: Automatisierte Tests ausführen
         run: npm test
 
@@ -44,9 +120,13 @@ jobs:
         run: |
           bash -n scripts/deploy-ionos-release.sh
           node --check scripts/smoke-production.mjs
+          node --check scripts/write-google-oauth.mjs
           node --check scripts/audit-domain-migration.mjs
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs
+          bash -n scripts/check-migrations.sh
+          bash -n scripts/check-rls.sh
+          bash -n scripts/check-erpnext-operational-approval.sh
 
       - name: Produktions-Build erstellen
         run: npm run build

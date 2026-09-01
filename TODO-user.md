@@ -11,6 +11,7 @@ ein zerkratzter Kotflügel, der danach spiegelt. Die `GallerySection`-Komponente
 programmiert und im Code eingebunden – sie ist nur noch **leer**.
 
 **Was tun:**
+
 1. Bei jedem Kundenprojekt 2–3 gute Fotos machen (vorher/nachher, gleicher Winkel, gute
    Beleuchtung).
 2. Für den Start: 6–10 Bilder deiner bisher besten Arbeiten zusammentragen.
@@ -40,6 +41,7 @@ programmiert und im Code eingebunden – sie ist nur noch **leer**.
 Bewertungen wirken stärker als jede Eigenwerbung.
 
 **Was tun:**
+
 1. Kunden nach erfolgreicher Aufbereitung um eine Google-Bewertung bitten.
    - Direktlink bereithalten: [Google Bewertungslink finden](https://support.google.com/business/answer/7035772)
 2. Sobald du ≥ 5 Bewertungen hast: Widget einbinden.
@@ -58,6 +60,7 @@ Bewertungen wirken stärker als jede Eigenwerbung.
 wichtigste Rankingfaktor. Die Website und das GBP müssen konsistent sein.
 
 **Was tun:**
+
 1. Einloggen unter [business.google.com](https://business.google.com)
 2. Prüfen und ergänzen:
    - **Öffnungszeiten** aktuell?
@@ -74,14 +77,27 @@ wichtigste Rankingfaktor. Die Website und das GBP müssen konsistent sein.
 Buchungsbestätigung benötigt die Website diese Daten.
 
 **Was tun:**
+
 1. Nach Gewerbeamt-Besuch (kommende Woche) mir durchgeben:
    - Steuernummer (vom Finanzamt)
    - IBAN + BIC (Geschäftskonto)
    - USt-IdNr. (falls vorhanden, vom Bundeszentralamt für Steuern)
-2. Ich trage das dann ein in:
-   - `src/lib/servicesConfig.ts` → `company.legal.taxId`, `company.legal.iban`, `company.legal.bic`
-   - `src/routes/impressum.tsx` → Impressum
-   - `legalDetailsVerified` auf `true` setzen → schaltet korrekte Rechnungsdaten frei
+2. Ich trage das dann ein in `src/lib/servicesConfig.ts`:
+   - `company.taxId` → USt-IdNr. Sobald sie gesetzt ist, erscheint sie automatisch
+     im Impressum; dort ist nichts von Hand zu ändern.
+   - `company.bank.iban` und `company.bank.bic` → stehen danach in den
+     Zahlungsinformationen der Belege statt „wird nachgereicht".
+   - `company.taxNumber` → Steuernummer. Sie wird derzeit nirgends ausgegeben:
+     ins Impressum gehört sie nicht, und die verbindliche Rechnung stellt
+     Lexware aus, wo sie im Konto hinterlegt wird.
+
+**Was du dafür NICHT tun musst:** `legalDetailsVerified` auf `true` setzen. Das Feld
+wird von keiner Stelle im Code gelesen — ein früherer Hinweis hier behauptete eine
+Freischaltung, die es nie gab. Die Belege greifen ohne Schalter auf die Werte zu und
+schreiben „wird nachgereicht", solange ein Feld leer ist.
+
+Die Rechnungsnummer musst du ebenfalls nicht setzen: Sie entsteht in der Datenbank
+als `WGD-` + laufendes Jahr + fortlaufender Zähler.
 
 ---
 
@@ -93,11 +109,11 @@ Kalender-Backend-Check (nur „bevorzugte Uhrzeit“).
 
 **Was tun (3 Optionen, leicht → aufwändig):**
 
-| Option | Aufwand | Kosten | Link |
-|--------|---------|--------|------|
-| **Calendly** | 1h einrichten | $10/Monat | [calendly.com](https://calendly.com) |
-| **Cal.com** (self-hosted) | 2h Docker + Domain | 0€ (eigener Server) | [cal.com](https://cal.com) |
-| **Supabase-native** | 4–6h Entwicklung | 0€ (Free Tier) | Ich baue es dir |
+| Option                    | Aufwand            | Kosten              | Link                                 |
+| ------------------------- | ------------------ | ------------------- | ------------------------------------ |
+| **Calendly**              | 1h einrichten      | $10/Monat           | [calendly.com](https://calendly.com) |
+| **Cal.com** (self-hosted) | 2h Docker + Domain | 0€ (eigener Server) | [cal.com](https://cal.com)           |
+| **Supabase-native**       | 4–6h Entwicklung   | 0€ (Free Tier)      | Ich baue es dir                      |
 
 **Empfehlung:** Fange mit Calendly an (schnell, professionell). Einbetten per iframe oder Link
 im BookingWizard. Später kannst du auf eine native Lösung upgraden.
@@ -111,12 +127,14 @@ echte Google-Suchanfragen abdecken („muss ich mein auto vor der aufbereitung w
 kostet lackkorrektur bmw 3er“).
 
 **Was tun:**
+
 1. Sammle die 10 häufigsten Kundenfragen aus WhatsApp/Telefon/Formularanfragen.
 2. Für jede Frage einen kurzen Artikel (400–800 Wörter) schreiben.
 3. Artikel im Blog-Verzeichnis ablegen: `blog-articles/03-fragethema.md`
 4. Ich helfe dir mit Struktur, SEO-Titel und Formatierung.
 
 **Schema pro Artikel:**
+
 ```md
 ---
 title: "Titel als Suchanfrage"
@@ -128,15 +146,19 @@ published: true
 Einleitung (1 Satz, beantwortet die Frage sofort)
 
 ## Die kurze Antwort
+
 ...
 
 ## Die Details
+
 ...
 
 ## Was bedeutet das für Ihre Aufbereitung?
+
 ...
 
 ## Fazit
+
 ...
 ```
 
@@ -149,6 +171,7 @@ der Kunde den Konfigurator trotzdem nutzen – die Daten werden synchronisiert, 
 Netz da ist.
 
 **Was tun:**
+
 1. [Workbox](https://developer.chrome.com/docs/workbox) in Vite integrieren
    → Plugin: [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/)
 2. Ich kann das einbauen, sobald du sagst, wie aggressiv die Caching-Strategie sein soll:
@@ -166,24 +189,35 @@ Netz da ist.
 Du musst nur deine Pixel-ID und den CAPI-Token eintragen, damit das Tracking startet.
 
 **Was tun:**
+
 1. Im [Meta Events Manager](https://business.facebook.com/events_manager2/) eine Pixel-ID
    erstellen (falls noch keine existiert).
 2. CAPI-Token generieren (Einstellungen → Conversions API → Token generieren).
-3. Mir die Werte geben, ich trage sie in `src/lib/servicesConfig.ts` ein:
-   - `metaPixelId: "DEINE_PIXEL_ID"`
-   - `metaCapiToken: "DEIN_CAPI_TOKEN"`
+3. Die beiden Werte gehören an **zwei verschiedene Orte** — das ist keine Förmlichkeit:
+
+   - **Pixel-ID** → `VITE_META_PIXEL_ID` in der `.env`. Sie ist öffentlich und steht
+     ohnehin im Quelltext jeder Seite.
+   - **CAPI-Token** → `META_CAPI_ACCESS_TOKEN` in den geschützten Umgebungsvariablen
+     des Hostings, **niemals** in eine Datei im Repository. Das Token ist ein
+     Geheimnis: Wer es hat, kann in deinem Namen Ereignisse an Meta melden. Alles,
+     was im Repository liegt, ist für jeden lesbar, der Zugriff darauf bekommt —
+     und aus der Git-Historie bekommt man es auch nachträglich nicht mehr heraus.
+
+   Die Felder `company.meta.pixelId` und `company.meta.capiToken` in
+   `src/lib/servicesConfig.ts` sind nur ein Notnagel für die lokale Entwicklung und
+   bleiben im Repository leer.
 
 ---
 
 ## Zusammenfassung: Priorität
 
-| # | Aufgabe | Zeitaufwand | Impact |
-|---|---------|-------------|--------|
-| 1 | Galerie-Bilder sammeln & hochladen | 2h | 🔥🔥🔥 |
-| 2 | Google-Bewertungen einholen | laufend | 🔥🔥🔥 |
-| 3 | Google Business Profile pflegen | 30min | 🔥🔥 |
-| 4 | Steuernummer + IBAN durchgeben | 5min | 🔥🔥 (Pflicht) |
-| 6 | Kundenfragen sammeln | laufend | 🔥 |
-| 5 | Calendly einrichten | 1h | 🔥 |
-| 8 | Meta Pixel aktivieren | 15min | 🔥 |
-| 7 | PWA einbauen | 2h (ich) | ⚡ |
+| #   | Aufgabe                            | Zeitaufwand | Impact         |
+| --- | ---------------------------------- | ----------- | -------------- |
+| 1   | Galerie-Bilder sammeln & hochladen | 2h          | 🔥🔥🔥         |
+| 2   | Google-Bewertungen einholen        | laufend     | 🔥🔥🔥         |
+| 3   | Google Business Profile pflegen    | 30min       | 🔥🔥           |
+| 4   | Steuernummer + IBAN durchgeben     | 5min        | 🔥🔥 (Pflicht) |
+| 6   | Kundenfragen sammeln               | laufend     | 🔥             |
+| 5   | Calendly einrichten                | 1h          | 🔥             |
+| 8   | Meta Pixel aktivieren              | 15min       | 🔥             |
+| 7   | PWA einbauen                       | 2h (ich)    | ⚡             |

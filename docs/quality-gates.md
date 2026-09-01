@@ -94,15 +94,42 @@ Der normale CI-Workflow prüft bei Pull Requests und auf `main`:
 1. `npm ci --ignore-scripts`
 2. Produktionsabhängigkeiten per `npm audit`
 3. ESLint
-4. Syntax der Quality-Skripte und Lighthouse-Konfigurationen
-5. Produktions-Build
+4. Typen der Anwendung (`npm run typecheck`)
+5. Typen der Edge Functions (`npm run typecheck:functions`)
+6. Automatisierte Tests
+7. Syntax der Quality-Skripte und Lighthouse-Konfigurationen
+8. Produktions-Build
 
 Dadurch können fehlerhafte Quality-Gates nicht unbemerkt in `main` gelangen.
 
+### Warum zwei getrennte Typprüfungen
+
+`tsconfig.json` erfasst ausschließlich `src/**`. Die Edge Functions unter
+`supabase/functions/` laufen unter Deno, ziehen ihre Abhängigkeiten über
+`npm:`- und `jsr:`-Spezifizierer und liegen damit außerhalb jeder
+TypeScript-Prüfung des Projekts. Beim Aufsetzen dieser Prüfung fielen sofort
+drei echte Typfehler in den ERPNext-Schreibpfaden an — die Lücke war also
+nicht theoretisch.
+
+```bash
+npm run typecheck            # Anwendung (tsc)
+npm run typecheck:functions  # Edge Functions (Deno)
+```
+
+Die Deno-Prüfung holt sich eine feste Deno-Fassung über `npx`; eine lokale
+Installation ist nicht nötig. `--node-modules-dir=none` sorgt dafür, dass das
+`node_modules`-Verzeichnis der Anwendung dabei ignoriert wird — die Edge
+Functions lösen ihre Pakete eigenständig auf.
+
+**Reihenfolge beachten:** Die Anwendungs-Typprüfung läuft bewusst _vor_ dem
+Build. `src/routeTree.gen.ts` ist eingecheckt und wird vom Build neu
+geschrieben; liefe die Prüfung danach, bliebe eine veraltete eingecheckte
+Fassung unbemerkt und schlüge erst auf einem frischen Checkout zu.
+
 ### Erzwungene Abhängigkeiten (`overrides` in `package.json`)
 
-| Paket          | erzwungen auf | Grund                                                                                |
-| -------------- | ------------- | ------------------------------------------------------------------------------------ |
+| Paket          | erzwungen auf | Grund                                                                                 |
+| -------------- | ------------- | ------------------------------------------------------------------------------------- |
 | `deepmerge-ts` | `^8.0.1`      | [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx) in Version 7 |
 
 Der Weg dorthin führt über `mailparser → html-to-text → deepmerge-ts`, also

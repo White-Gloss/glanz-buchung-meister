@@ -1,71 +1,235 @@
-import heroCar from "@/assets/hero-car.jpg";
+import {
+  heroPreloadHref,
+  heroPreloadMobile,
+  heroPreloadWide,
+  logoJsonLdHref,
+} from "@/data/media-src";
+import {
+  cities,
+  openingHours,
+  packageAnchor,
+  packageServiceSlug,
+  packages,
+  services,
+  site,
+} from "@/data/site";
 
-/** Öffentliche Basis-URL des Projekts – für canonical, og:url und Sitemap. */
-export const SITE_URL = "https://white-gloss.de";
+export function absUrl(path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${site.origin}${p}`;
+}
 
-/** Macht aus einem Pfad eine absolute URL (Crawler brauchen absolute Angaben). */
-export const absUrl = (path: string) =>
-  path.startsWith("http") ? path : `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+const DEFAULT_ROBOTS = "index,follow,max-image-preview:large";
+const OG_IMAGE = "/media/hero.jpg";
 
-/** Standard-Vorschaubild für Social-Shares. */
-export const OG_IMAGE = absUrl(heroCar);
-export const OG_IMAGE_ALT = "Schwarzer Chevrolet Impala in der White Gloss Detailing Neon-Szene";
-export const OG_IMAGE_WIDTH = 1920;
-export const OG_IMAGE_HEIGHT = 1088;
-
-type StandardMetaInputBase = {
+export function pageHead(opts: {
   title: string;
   description: string;
-  image?: string;
-  imageAlt?: string;
-  imageWidth?: number;
-  imageHeight?: number;
-};
+  path: string;
+  robots?: string;
+  preloadImage?: string;
+  preloadType?: string;
+  preloadSrcSet?: string;
+  preloadSizes?: string;
+  preloadHero?: boolean;
+}) {
+  const canonical = absUrl(opts.path);
+  const ogImage = absUrl(OG_IMAGE);
+  const preload = opts.preloadHero
+    ? [
+        {
+          rel: "preload" as const,
+          as: "image",
+          href: heroPreloadMobile,
+          type: "image/avif",
+          media: "(max-width: 640px)",
+        },
+        {
+          rel: "preload" as const,
+          as: "image",
+          href: heroPreloadHref,
+          type: "image/avif",
+          media: "(min-width: 641px) and (max-width: 1400px)",
+        },
+        {
+          rel: "preload" as const,
+          as: "image",
+          href: heroPreloadWide,
+          type: "image/avif",
+          media: "(min-width: 1401px)",
+        },
+      ]
+    : opts.preloadImage
+      ? [
+          {
+            rel: "preload" as const,
+            as: "image",
+            href: opts.preloadImage,
+            ...(opts.preloadType ? { type: opts.preloadType } : {}),
+            ...(opts.preloadSrcSet ? { imageSrcSet: opts.preloadSrcSet } : {}),
+            ...(opts.preloadSizes ? { imageSizes: opts.preloadSizes } : {}),
+          },
+        ]
+      : [];
+  return {
+    meta: [
+      { title: opts.title },
+      { name: "description", content: opts.description },
+      { name: "robots", content: opts.robots ?? DEFAULT_ROBOTS },
+      { name: "geo.region", content: "DE-BW" },
+      { name: "geo.placename", content: site.city },
+      { name: "geo.position", content: `${site.lat};${site.lng}` },
+      { name: "ICBM", content: `${site.lat}, ${site.lng}` },
+      { name: "author", content: site.legalName },
+      { property: "og:type", content: "website" },
+      { property: "og:locale", content: "de_DE" },
+      { property: "og:site_name", content: site.legalName },
+      { property: "og:title", content: opts.title },
+      { property: "og:description", content: opts.description },
+      { property: "og:url", content: canonical },
+      { property: "og:image", content: ogImage },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1600" },
+      { property: "og:image:height", content: "907" },
+      { property: "og:image:alt", content: opts.title },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: opts.title },
+      { name: "twitter:description", content: opts.description },
+      { name: "twitter:image", content: ogImage },
+    ],
+    links: [
+      { rel: "canonical", href: canonical },
+      { rel: "alternate", hrefLang: "de-DE", href: canonical },
+      { rel: "alternate", hrefLang: "x-default", href: canonical },
+      ...preload,
+    ],
+  };
+}
 
-type StandardMetaInput =
-  | (StandardMetaInputBase & { path: string; url?: never })
-  | (StandardMetaInputBase & { url: string; path?: never });
-
-/**
- * Einheitliche SEO-/Social-Basis-Metas für öffentliche Seiten.
- * Hält OpenGraph und Twitter-Tags konsistent auf allen Landingpages.
- */
-export function standardPageMeta({
-  title,
-  description,
-  path,
-  url,
-  image,
-  imageAlt,
-  imageWidth,
-  imageHeight,
-}: StandardMetaInput) {
-  const resolvedImage = image ?? OG_IMAGE;
-  const resolvedImageAlt = imageAlt ?? OG_IMAGE_ALT;
-  const customImageProvided = image !== undefined;
-  const resolvedImageWidth = imageWidth ?? (!customImageProvided ? OG_IMAGE_WIDTH : undefined);
-  const resolvedImageHeight = imageHeight ?? (!customImageProvided ? OG_IMAGE_HEIGHT : undefined);
-  const resolvedUrl = url ?? absUrl(path);
-
-  return [
-    { title },
-    { name: "description", content: description },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:type", content: "website" },
-    { property: "og:url", content: resolvedUrl },
-    { property: "og:image", content: resolvedImage },
-    { property: "og:image:alt", content: resolvedImageAlt },
-    ...(resolvedImageWidth
-      ? [{ property: "og:image:width", content: String(resolvedImageWidth) }]
-      : []),
-    ...(resolvedImageHeight
-      ? [{ property: "og:image:height", content: String(resolvedImageHeight) }]
-      : []),
-    { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
-    { name: "twitter:image", content: resolvedImage },
-    { name: "twitter:image:alt", content: resolvedImageAlt },
+export function localBusinessJsonLd() {
+  const businessId = `${site.origin}/#betrieb`;
+  const websiteId = `${site.origin}/#website`;
+  const catalogServices = [
+    "innenraumreinigung",
+    "lackkorrektur",
+    "keramikversiegelung",
+    "lederpflege",
+    "lederreparatur",
+    "geruchsneutralisation",
+    "scheinwerferaufbereitung",
   ];
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": websiteId,
+        url: site.origin,
+        name: site.legalName,
+        inLanguage: "de-DE",
+        publisher: { "@id": businessId },
+      },
+      {
+        "@type": ["AutoRepair", "AutomotiveBusiness"],
+        "@id": businessId,
+        name: site.legalName,
+        image: absUrl("/media/hero-1080.webp"),
+        logo: {
+          "@type": "ImageObject",
+          url: absUrl(logoJsonLdHref),
+          width: 760,
+          height: 437,
+        },
+        url: site.origin,
+        telephone: "+4915233540284",
+        email: site.email,
+        priceRange: "€€€",
+        currenciesAccepted: "EUR",
+        paymentAccepted: "Cash, Bank Transfer",
+        description:
+          "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice.",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: site.street,
+          postalCode: site.postalCode,
+          addressLocality: site.city,
+          addressRegion: site.region,
+          addressCountry: "DE",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: site.lat,
+          longitude: site.lng,
+        },
+        hasMap: site.mapsGoogle,
+        // Der Betrieb wird vom Inhaber persönlich geführt; die Angabe deckt
+        // sich zeichengenau mit dem Impressum.
+        founder: { "@type": "Person", name: site.owner },
+        knowsLanguage: "de-DE",
+        // Ein ausgewiesener Kontaktweg macht aus Nummer und Adresse eine
+        // Angabe, die Google einer Zuständigkeit zuordnen kann.
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer service",
+          telephone: "+4915233540284",
+          email: site.email,
+          areaServed: "DE",
+          availableLanguage: "German",
+        },
+        areaServed: cities.map((c) => ({
+          "@type": "City",
+          name: c.name,
+        })),
+        sameAs: [site.instagram],
+        openingHoursSpecification: [
+          {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: [...openingHours.dayOfWeek],
+            opens: openingHours.opens,
+            closes: openingHours.closes,
+          },
+        ],
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Fahrzeugaufbereitung",
+          itemListElement: [
+            ...packages.map((p) => ({
+              "@type": "Offer",
+              name: `${p.searchLabel} ${p.name}`,
+              itemOffered: {
+                "@type": "Service",
+                name: p.seoName,
+                alternateName: [p.name, p.searchLabel],
+                description: p.body,
+                url: absUrl(`/leistungen/${packageServiceSlug[p.id]}`),
+                areaServed: site.city,
+                provider: { "@type": "AutomotiveBusiness", name: site.legalName },
+              },
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: String(p.price),
+                priceCurrency: "EUR",
+                valueAddedTaxIncluded: true,
+              },
+              url: absUrl(`/preise#${packageAnchor(p.id)}`),
+            })),
+            ...catalogServices
+              .filter((slug) => !Object.values(packageServiceSlug).includes(slug))
+              .map((slug) => {
+                const svc = services.find((s) => s.slug === slug);
+                return {
+                  "@type": "Offer",
+                  itemOffered: {
+                    "@type": "Service",
+                    name: svc?.nav ?? slug,
+                    url: absUrl(`/leistungen/${slug}`),
+                  },
+                  url: absUrl(`/leistungen/${slug}`),
+                };
+              }),
+          ],
+        },
+      },
+    ],
+  };
 }

@@ -10,55 +10,60 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AbholserviceRouteImport } from './routes/abholservice'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgbRouteImport } from './routes/agb'
-import { Route as AuthRouteImport } from './routes/auth'
+import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as DankeRouteImport } from './routes/danke'
-import { Route as DankeDellenRouteImport } from './routes/danke-dellen'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as LeistungenRouteImport } from './routes/leistungen'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LuxusfahrzeugeRouteImport } from './routes/luxusfahrzeuge'
 import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RatgeberRouteImport } from './routes/ratgeber'
 import { Route as WiderrufRouteImport } from './routes/widerruf'
-import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
-import { Route as AngebotTokenRouteImport } from './routes/angebot.$token'
-import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
-import { Route as KalenderTokenRouteImport } from './routes/kalender.$token'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAutomatisierungRouteImport } from './routes/admin.automatisierung'
+import { Route as AdminBlogRouteImport } from './routes/admin.blog'
+import { Route as AdminDellenRouteImport } from './routes/admin.dellen'
+import { Route as AdminEinstellungenRouteImport } from './routes/admin.einstellungen'
+import { Route as AdminErpnextRouteImport } from './routes/admin.erpnext'
+import { Route as AdminFaqsRouteImport } from './routes/admin.faqs'
+import { Route as AdminGalerieRouteImport } from './routes/admin.galerie'
+import { Route as AdminKalenderRouteImport } from './routes/admin.kalender'
+import { Route as AdminKundenRouteImport } from './routes/admin.kunden'
+import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
+import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
+import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
+import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
+import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
+import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
 import { Route as RatgeberSlugRouteImport } from './routes/ratgeber.$slug'
-import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
-import { Route as LeistungenServiceIndexRouteImport } from './routes/leistungen.$service.index'
-import { Route as LeistungenServiceCityRouteImport } from './routes/leistungen.$service.$city'
-import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
-import { Route as AuthenticatedAdminAdminAutomatisierungRouteImport } from './routes/_authenticated/_admin/admin.automatisierung'
-import { Route as AuthenticatedAdminAdminBlogRouteImport } from './routes/_authenticated/_admin/admin.blog'
-import { Route as AuthenticatedAdminAdminDellenRouteImport } from './routes/_authenticated/_admin/admin.dellen'
-import { Route as AuthenticatedAdminAdminEinstellungenRouteImport } from './routes/_authenticated/_admin/admin.einstellungen'
-import { Route as AuthenticatedAdminAdminErpnextRouteImport } from './routes/_authenticated/_admin/admin.erpnext'
-import { Route as AuthenticatedAdminAdminFaqsRouteImport } from './routes/_authenticated/_admin/admin.faqs'
-import { Route as AuthenticatedAdminAdminGalerieRouteImport } from './routes/_authenticated/_admin/admin.galerie'
-import { Route as AuthenticatedAdminAdminKundenRouteImport } from './routes/_authenticated/_admin/admin.kunden'
-import { Route as AuthenticatedAdminAdminLeistungenRouteImport } from './routes/_authenticated/_admin/admin.leistungen'
-import { Route as AuthenticatedAdminAdminPosteingangRouteImport } from './routes/_authenticated/_admin/admin.posteingang'
-import { Route as AuthenticatedAdminAdminUnterlagenRouteImport } from './routes/_authenticated/_admin/admin.unterlagen'
-import { Route as AuthenticatedAdminAdminZustandRouteImport } from './routes/_authenticated/_admin/admin.zustand'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as LeistungenSlugCityRouteImport } from './routes/leistungen.$slug.$city'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AbholserviceRoute = AbholserviceRouteImport.update({
+  id: '/abholservice',
+  path: '/abholservice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgbRoute = AgbRouteImport.update({
@@ -66,19 +71,14 @@ const AgbRoute = AgbRouteImport.update({
   path: '/agb',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const B2bRoute = B2bRouteImport.update({
+  id: '/b2b',
+  path: '/b2b',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DankeRoute = DankeRouteImport.update({
   id: '/danke',
   path: '/danke',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DankeDellenRoute = DankeDellenRouteImport.update({
-  id: '/danke-dellen',
-  path: '/danke-dellen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
@@ -106,6 +106,16 @@ const ImpressumRoute = ImpressumRouteImport.update({
   path: '/impressum',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeistungenRoute = LeistungenRouteImport.update({
+  id: '/leistungen',
+  path: '/leistungen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LuxusfahrzeugeRoute = LuxusfahrzeugeRouteImport.update({
   id: '/luxusfahrzeuge',
   path: '/luxusfahrzeuge',
@@ -121,14 +131,9 @@ const QualitaetRoute = QualitaetRouteImport.update({
   path: '/qualitaet',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const RatgeberRoute = RatgeberRouteImport.update({
+  id: '/ratgeber',
+  path: '/ratgeber',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WiderrufRoute = WiderrufRouteImport.update({
@@ -136,302 +141,270 @@ const WiderrufRoute = WiderrufRouteImport.update({
   path: '/widerruf',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
-  id: '/_admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AbholserviceIndexRoute = AbholserviceIndexRouteImport.update({
-  id: '/abholservice/',
-  path: '/abholservice/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AbholserviceRoute,
 } as any)
 const AbholserviceCityRoute = AbholserviceCityRouteImport.update({
-  id: '/abholservice/$city',
-  path: '/abholservice/$city',
-  getParentRoute: () => rootRouteImport,
+  id: '/$city',
+  path: '/$city',
+  getParentRoute: () => AbholserviceRoute,
 } as any)
-const AngebotTokenRoute = AngebotTokenRouteImport.update({
-  id: '/angebot/$token',
-  path: '/angebot/$token',
-  getParentRoute: () => rootRouteImport,
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
-const ApiAutomationCronRoute = ApiAutomationCronRouteImport.update({
-  id: '/api/automation-cron',
-  path: '/api/automation-cron',
-  getParentRoute: () => rootRouteImport,
+const AdminAutomatisierungRoute = AdminAutomatisierungRouteImport.update({
+  id: '/automatisierung',
+  path: '/automatisierung',
+  getParentRoute: () => AdminRoute,
 } as any)
-const KalenderTokenRoute = KalenderTokenRouteImport.update({
-  id: '/kalender/$token',
-  path: '/kalender/$token',
+const AdminBlogRoute = AdminBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDellenRoute = AdminDellenRouteImport.update({
+  id: '/dellen',
+  path: '/dellen',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEinstellungenRoute = AdminEinstellungenRouteImport.update({
+  id: '/einstellungen',
+  path: '/einstellungen',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminErpnextRoute = AdminErpnextRouteImport.update({
+  id: '/erpnext',
+  path: '/erpnext',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFaqsRoute = AdminFaqsRouteImport.update({
+  id: '/faqs',
+  path: '/faqs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGalerieRoute = AdminGalerieRouteImport.update({
+  id: '/galerie',
+  path: '/galerie',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKalenderRoute = AdminKalenderRouteImport.update({
+  id: '/kalender',
+  path: '/kalender',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKundenRoute = AdminKundenRouteImport.update({
+  id: '/kunden',
+  path: '/kunden',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLeistungenRoute = AdminLeistungenRouteImport.update({
+  id: '/leistungen',
+  path: '/leistungen',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPosteingangRoute = AdminPosteingangRouteImport.update({
+  id: '/posteingang',
+  path: '/posteingang',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUnterlagenRoute = AdminUnterlagenRouteImport.update({
+  id: '/unterlagen',
+  path: '/unterlagen',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminZustandRoute = AdminZustandRouteImport.update({
+  id: '/zustand',
+  path: '/zustand',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ApiOperatorRoute = ApiOperatorRouteImport.update({
+  id: '/api/operator',
+  path: '/api/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
-  id: '/leistungen/',
-  path: '/leistungen/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => LeistungenRoute,
+} as any)
+const LeistungenSlugRoute = LeistungenSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LeistungenRoute,
 } as any)
 const RatgeberIndexRoute = RatgeberIndexRouteImport.update({
-  id: '/ratgeber/',
-  path: '/ratgeber/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => RatgeberRoute,
 } as any)
 const RatgeberSlugRoute = RatgeberSlugRouteImport.update({
-  id: '/ratgeber/$slug',
-  path: '/ratgeber/$slug',
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => RatgeberRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const LeistungenSlugCityRoute = LeistungenSlugCityRouteImport.update({
+  id: '/$city',
+  path: '/$city',
+  getParentRoute: () => LeistungenSlugRoute,
 } as any)
-const LeistungenServiceIndexRoute = LeistungenServiceIndexRouteImport.update({
-  id: '/leistungen/$service/',
-  path: '/leistungen/$service/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeistungenServiceCityRoute = LeistungenServiceCityRouteImport.update({
-  id: '/leistungen/$service/$city',
-  path: '/leistungen/$service/$city',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAdminAdminIndexRoute =
-  AuthenticatedAdminAdminIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminAutomatisierungRoute =
-  AuthenticatedAdminAdminAutomatisierungRouteImport.update({
-    id: '/automatisierung',
-    path: '/automatisierung',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminBlogRoute =
-  AuthenticatedAdminAdminBlogRouteImport.update({
-    id: '/blog',
-    path: '/blog',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminDellenRoute =
-  AuthenticatedAdminAdminDellenRouteImport.update({
-    id: '/dellen',
-    path: '/dellen',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminEinstellungenRoute =
-  AuthenticatedAdminAdminEinstellungenRouteImport.update({
-    id: '/einstellungen',
-    path: '/einstellungen',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminErpnextRoute =
-  AuthenticatedAdminAdminErpnextRouteImport.update({
-    id: '/erpnext',
-    path: '/erpnext',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminFaqsRoute =
-  AuthenticatedAdminAdminFaqsRouteImport.update({
-    id: '/faqs',
-    path: '/faqs',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminGalerieRoute =
-  AuthenticatedAdminAdminGalerieRouteImport.update({
-    id: '/galerie',
-    path: '/galerie',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminKundenRoute =
-  AuthenticatedAdminAdminKundenRouteImport.update({
-    id: '/kunden',
-    path: '/kunden',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminLeistungenRoute =
-  AuthenticatedAdminAdminLeistungenRouteImport.update({
-    id: '/leistungen',
-    path: '/leistungen',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminPosteingangRoute =
-  AuthenticatedAdminAdminPosteingangRouteImport.update({
-    id: '/posteingang',
-    path: '/posteingang',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminUnterlagenRoute =
-  AuthenticatedAdminAdminUnterlagenRouteImport.update({
-    id: '/unterlagen',
-    path: '/unterlagen',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
-const AuthenticatedAdminAdminZustandRoute =
-  AuthenticatedAdminAdminZustandRouteImport.update({
-    id: '/zustand',
-    path: '/zustand',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/abholservice': typeof AbholserviceRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
-  '/auth': typeof AuthRoute
+  '/b2b': typeof B2bRoute
   '/danke': typeof DankeRoute
-  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/leistungen': typeof LeistungenRouteWithChildren
+  '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ratgeber': typeof RatgeberRouteWithChildren
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/angebot/$token': typeof AngebotTokenRoute
-  '/api/automation-cron': typeof ApiAutomationCronRoute
-  '/kalender/$token': typeof KalenderTokenRoute
+  '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/blog': typeof AdminBlogRoute
+  '/admin/dellen': typeof AdminDellenRoute
+  '/admin/einstellungen': typeof AdminEinstellungenRoute
+  '/admin/erpnext': typeof AdminErpnextRoute
+  '/admin/faqs': typeof AdminFaqsRoute
+  '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/kalender': typeof AdminKalenderRoute
+  '/admin/kunden': typeof AdminKundenRoute
+  '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zustand': typeof AdminZustandRoute
+  '/api/operator': typeof ApiOperatorRoute
+  '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/ratgeber/': typeof RatgeberIndexRoute
-  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
-  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
-  '/leistungen/$service/': typeof LeistungenServiceIndexRoute
-  '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
-  '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
-  '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
-  '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
-  '/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
-  '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
-  '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
-  '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
-  '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
-  '/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
-  '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
-  '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
-  '/admin/': typeof AuthenticatedAdminAdminIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agb': typeof AgbRoute
-  '/auth': typeof AuthRoute
+  '/b2b': typeof B2bRoute
   '/danke': typeof DankeRoute
-  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/angebot/$token': typeof AngebotTokenRoute
-  '/api/automation-cron': typeof ApiAutomationCronRoute
-  '/kalender/$token': typeof KalenderTokenRoute
+  '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/blog': typeof AdminBlogRoute
+  '/admin/dellen': typeof AdminDellenRoute
+  '/admin/einstellungen': typeof AdminEinstellungenRoute
+  '/admin/erpnext': typeof AdminErpnextRoute
+  '/admin/faqs': typeof AdminFaqsRoute
+  '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/kalender': typeof AdminKalenderRoute
+  '/admin/kunden': typeof AdminKundenRoute
+  '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zustand': typeof AdminZustandRoute
+  '/api/operator': typeof ApiOperatorRoute
+  '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/leistungen': typeof LeistungenIndexRoute
   '/ratgeber': typeof RatgeberIndexRoute
-  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
-  '/leistungen/$service': typeof LeistungenServiceIndexRoute
-  '/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
-  '/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
-  '/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
-  '/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
-  '/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
-  '/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
-  '/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
-  '/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
-  '/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
-  '/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
-  '/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
-  '/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
-  '/admin': typeof AuthenticatedAdminAdminIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/abholservice': typeof AbholserviceRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
-  '/auth': typeof AuthRoute
+  '/b2b': typeof B2bRoute
   '/danke': typeof DankeRoute
-  '/danke-dellen': typeof DankeDellenRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
   '/impressum': typeof ImpressumRoute
+  '/leistungen': typeof LeistungenRouteWithChildren
+  '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ratgeber': typeof RatgeberRouteWithChildren
   '/widerruf': typeof WiderrufRoute
-  '/_authenticated/_admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/abholservice/$city': typeof AbholserviceCityRoute
-  '/angebot/$token': typeof AngebotTokenRoute
-  '/api/automation-cron': typeof ApiAutomationCronRoute
-  '/kalender/$token': typeof KalenderTokenRoute
+  '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/blog': typeof AdminBlogRoute
+  '/admin/dellen': typeof AdminDellenRoute
+  '/admin/einstellungen': typeof AdminEinstellungenRoute
+  '/admin/erpnext': typeof AdminErpnextRoute
+  '/admin/faqs': typeof AdminFaqsRoute
+  '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/kalender': typeof AdminKalenderRoute
+  '/admin/kunden': typeof AdminKundenRoute
+  '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zustand': typeof AdminZustandRoute
+  '/api/operator': typeof ApiOperatorRoute
+  '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/leistungen/': typeof LeistungenIndexRoute
   '/ratgeber/': typeof RatgeberIndexRoute
-  '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
-  '/leistungen/$service/$city': typeof LeistungenServiceCityRoute
-  '/leistungen/$service/': typeof LeistungenServiceIndexRoute
-  '/_authenticated/_admin/admin/automatisierung': typeof AuthenticatedAdminAdminAutomatisierungRoute
-  '/_authenticated/_admin/admin/blog': typeof AuthenticatedAdminAdminBlogRoute
-  '/_authenticated/_admin/admin/dellen': typeof AuthenticatedAdminAdminDellenRoute
-  '/_authenticated/_admin/admin/einstellungen': typeof AuthenticatedAdminAdminEinstellungenRoute
-  '/_authenticated/_admin/admin/erpnext': typeof AuthenticatedAdminAdminErpnextRoute
-  '/_authenticated/_admin/admin/faqs': typeof AuthenticatedAdminAdminFaqsRoute
-  '/_authenticated/_admin/admin/galerie': typeof AuthenticatedAdminAdminGalerieRoute
-  '/_authenticated/_admin/admin/kunden': typeof AuthenticatedAdminAdminKundenRoute
-  '/_authenticated/_admin/admin/leistungen': typeof AuthenticatedAdminAdminLeistungenRoute
-  '/_authenticated/_admin/admin/posteingang': typeof AuthenticatedAdminAdminPosteingangRoute
-  '/_authenticated/_admin/admin/unterlagen': typeof AuthenticatedAdminAdminUnterlagenRoute
-  '/_authenticated/_admin/admin/zustand': typeof AuthenticatedAdminAdminZustandRoute
-  '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/abholservice'
+    | '/admin'
     | '/agb'
-    | '/auth'
+    | '/b2b'
     | '/danke'
-    | '/danke-dellen'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/leistungen'
+    | '/login'
     | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
-    | '/reset-password'
-    | '/sitemap.xml'
+    | '/ratgeber'
     | '/widerruf'
     | '/abholservice/$city'
-    | '/angebot/$token'
-    | '/api/automation-cron'
-    | '/kalender/$token'
-    | '/ratgeber/$slug'
-    | '/abholservice/'
-    | '/leistungen/'
-    | '/ratgeber/'
-    | '/admin'
-    | '/leistungen/$service/$city'
-    | '/leistungen/$service/'
     | '/admin/automatisierung'
     | '/admin/blog'
     | '/admin/dellen'
@@ -439,40 +412,38 @@ export interface FileRouteTypes {
     | '/admin/erpnext'
     | '/admin/faqs'
     | '/admin/galerie'
+    | '/admin/kalender'
     | '/admin/kunden'
     | '/admin/leistungen'
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/operator'
+    | '/leistungen/$slug'
+    | '/ratgeber/$slug'
+    | '/abholservice/'
     | '/admin/'
+    | '/leistungen/'
+    | '/ratgeber/'
+    | '/api/auth/$'
+    | '/leistungen/$slug/$city'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/agb'
-    | '/auth'
+    | '/b2b'
     | '/danke'
-    | '/danke-dellen'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/login'
     | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
-    | '/reset-password'
-    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
-    | '/angebot/$token'
-    | '/api/automation-cron'
-    | '/kalender/$token'
-    | '/ratgeber/$slug'
-    | '/abholservice'
-    | '/leistungen'
-    | '/ratgeber'
-    | '/leistungen/$service/$city'
-    | '/leistungen/$service'
     | '/admin/automatisierung'
     | '/admin/blog'
     | '/admin/dellen'
@@ -480,86 +451,87 @@ export interface FileRouteTypes {
     | '/admin/erpnext'
     | '/admin/faqs'
     | '/admin/galerie'
+    | '/admin/kalender'
     | '/admin/kunden'
     | '/admin/leistungen'
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/operator'
+    | '/leistungen/$slug'
+    | '/ratgeber/$slug'
+    | '/abholservice'
     | '/admin'
+    | '/leistungen'
+    | '/ratgeber'
+    | '/api/auth/$'
+    | '/leistungen/$slug/$city'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
+    | '/abholservice'
+    | '/admin'
     | '/agb'
-    | '/auth'
+    | '/b2b'
     | '/danke'
-    | '/danke-dellen'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
     | '/impressum'
+    | '/leistungen'
+    | '/login'
     | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
-    | '/reset-password'
-    | '/sitemap.xml'
+    | '/ratgeber'
     | '/widerruf'
-    | '/_authenticated/_admin'
     | '/abholservice/$city'
-    | '/angebot/$token'
-    | '/api/automation-cron'
-    | '/kalender/$token'
+    | '/admin/automatisierung'
+    | '/admin/blog'
+    | '/admin/dellen'
+    | '/admin/einstellungen'
+    | '/admin/erpnext'
+    | '/admin/faqs'
+    | '/admin/galerie'
+    | '/admin/kalender'
+    | '/admin/kunden'
+    | '/admin/leistungen'
+    | '/admin/posteingang'
+    | '/admin/unterlagen'
+    | '/admin/zustand'
+    | '/api/operator'
+    | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
+    | '/admin/'
     | '/leistungen/'
     | '/ratgeber/'
-    | '/_authenticated/_admin/admin'
-    | '/leistungen/$service/$city'
-    | '/leistungen/$service/'
-    | '/_authenticated/_admin/admin/automatisierung'
-    | '/_authenticated/_admin/admin/blog'
-    | '/_authenticated/_admin/admin/dellen'
-    | '/_authenticated/_admin/admin/einstellungen'
-    | '/_authenticated/_admin/admin/erpnext'
-    | '/_authenticated/_admin/admin/faqs'
-    | '/_authenticated/_admin/admin/galerie'
-    | '/_authenticated/_admin/admin/kunden'
-    | '/_authenticated/_admin/admin/leistungen'
-    | '/_authenticated/_admin/admin/posteingang'
-    | '/_authenticated/_admin/admin/unterlagen'
-    | '/_authenticated/_admin/admin/zustand'
-    | '/_authenticated/_admin/admin/'
+    | '/api/auth/$'
+    | '/leistungen/$slug/$city'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AbholserviceRoute: typeof AbholserviceRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   AgbRoute: typeof AgbRoute
-  AuthRoute: typeof AuthRoute
+  B2bRoute: typeof B2bRoute
   DankeRoute: typeof DankeRoute
-  DankeDellenRoute: typeof DankeDellenRoute
   DatenschutzRoute: typeof DatenschutzRoute
   DellenHagelschadenRoute: typeof DellenHagelschadenRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
   ImpressumRoute: typeof ImpressumRoute
+  LeistungenRoute: typeof LeistungenRouteWithChildren
+  LoginRoute: typeof LoginRoute
   LuxusfahrzeugeRoute: typeof LuxusfahrzeugeRoute
   PreiseRoute: typeof PreiseRoute
   QualitaetRoute: typeof QualitaetRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  RatgeberRoute: typeof RatgeberRouteWithChildren
   WiderrufRoute: typeof WiderrufRoute
-  AbholserviceCityRoute: typeof AbholserviceCityRoute
-  AngebotTokenRoute: typeof AngebotTokenRoute
-  ApiAutomationCronRoute: typeof ApiAutomationCronRoute
-  KalenderTokenRoute: typeof KalenderTokenRoute
-  RatgeberSlugRoute: typeof RatgeberSlugRoute
-  AbholserviceIndexRoute: typeof AbholserviceIndexRoute
-  LeistungenIndexRoute: typeof LeistungenIndexRoute
-  RatgeberIndexRoute: typeof RatgeberIndexRoute
-  LeistungenServiceCityRoute: typeof LeistungenServiceCityRoute
-  LeistungenServiceIndexRoute: typeof LeistungenServiceIndexRoute
+  ApiOperatorRoute: typeof ApiOperatorRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -571,11 +543,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/abholservice': {
+      id: '/abholservice'
+      path: '/abholservice'
+      fullPath: '/abholservice'
+      preLoaderRoute: typeof AbholserviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agb': {
@@ -585,11 +564,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgbRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/b2b': {
+      id: '/b2b'
+      path: '/b2b'
+      fullPath: '/b2b'
+      preLoaderRoute: typeof B2bRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/danke': {
@@ -597,13 +576,6 @@ declare module '@tanstack/react-router' {
       path: '/danke'
       fullPath: '/danke'
       preLoaderRoute: typeof DankeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/danke-dellen': {
-      id: '/danke-dellen'
-      path: '/danke-dellen'
-      fullPath: '/danke-dellen'
-      preLoaderRoute: typeof DankeDellenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/datenschutz': {
@@ -641,6 +613,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImpressumRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leistungen': {
+      id: '/leistungen'
+      path: '/leistungen'
+      fullPath: '/leistungen'
+      preLoaderRoute: typeof LeistungenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/luxusfahrzeuge': {
       id: '/luxusfahrzeuge'
       path: '/luxusfahrzeuge'
@@ -662,18 +648,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QualitaetRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/ratgeber': {
+      id: '/ratgeber'
+      path: '/ratgeber'
+      fullPath: '/ratgeber'
+      preLoaderRoute: typeof RatgeberRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widerruf': {
@@ -683,291 +662,291 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WiderrufRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/_admin': {
-      id: '/_authenticated/_admin'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/abholservice/': {
       id: '/abholservice/'
-      path: '/abholservice'
+      path: '/'
       fullPath: '/abholservice/'
       preLoaderRoute: typeof AbholserviceIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AbholserviceRoute
     }
     '/abholservice/$city': {
       id: '/abholservice/$city'
-      path: '/abholservice/$city'
+      path: '/$city'
       fullPath: '/abholservice/$city'
       preLoaderRoute: typeof AbholserviceCityRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AbholserviceRoute
     }
-    '/angebot/$token': {
-      id: '/angebot/$token'
-      path: '/angebot/$token'
-      fullPath: '/angebot/$token'
-      preLoaderRoute: typeof AngebotTokenRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/api/automation-cron': {
-      id: '/api/automation-cron'
-      path: '/api/automation-cron'
-      fullPath: '/api/automation-cron'
-      preLoaderRoute: typeof ApiAutomationCronRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/automatisierung': {
+      id: '/admin/automatisierung'
+      path: '/automatisierung'
+      fullPath: '/admin/automatisierung'
+      preLoaderRoute: typeof AdminAutomatisierungRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/kalender/$token': {
-      id: '/kalender/$token'
-      path: '/kalender/$token'
-      fullPath: '/kalender/$token'
-      preLoaderRoute: typeof KalenderTokenRouteImport
+    '/admin/blog': {
+      id: '/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AdminBlogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dellen': {
+      id: '/admin/dellen'
+      path: '/dellen'
+      fullPath: '/admin/dellen'
+      preLoaderRoute: typeof AdminDellenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/einstellungen': {
+      id: '/admin/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/admin/einstellungen'
+      preLoaderRoute: typeof AdminEinstellungenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/erpnext': {
+      id: '/admin/erpnext'
+      path: '/erpnext'
+      fullPath: '/admin/erpnext'
+      preLoaderRoute: typeof AdminErpnextRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/faqs': {
+      id: '/admin/faqs'
+      path: '/faqs'
+      fullPath: '/admin/faqs'
+      preLoaderRoute: typeof AdminFaqsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/galerie': {
+      id: '/admin/galerie'
+      path: '/galerie'
+      fullPath: '/admin/galerie'
+      preLoaderRoute: typeof AdminGalerieRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kalender': {
+      id: '/admin/kalender'
+      path: '/kalender'
+      fullPath: '/admin/kalender'
+      preLoaderRoute: typeof AdminKalenderRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kunden': {
+      id: '/admin/kunden'
+      path: '/kunden'
+      fullPath: '/admin/kunden'
+      preLoaderRoute: typeof AdminKundenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/leistungen': {
+      id: '/admin/leistungen'
+      path: '/leistungen'
+      fullPath: '/admin/leistungen'
+      preLoaderRoute: typeof AdminLeistungenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/posteingang': {
+      id: '/admin/posteingang'
+      path: '/posteingang'
+      fullPath: '/admin/posteingang'
+      preLoaderRoute: typeof AdminPosteingangRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/unterlagen': {
+      id: '/admin/unterlagen'
+      path: '/unterlagen'
+      fullPath: '/admin/unterlagen'
+      preLoaderRoute: typeof AdminUnterlagenRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/zustand': {
+      id: '/admin/zustand'
+      path: '/zustand'
+      fullPath: '/admin/zustand'
+      preLoaderRoute: typeof AdminZustandRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/api/operator': {
+      id: '/api/operator'
+      path: '/api/operator'
+      fullPath: '/api/operator'
+      preLoaderRoute: typeof ApiOperatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen/': {
       id: '/leistungen/'
-      path: '/leistungen'
+      path: '/'
       fullPath: '/leistungen/'
       preLoaderRoute: typeof LeistungenIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LeistungenRoute
+    }
+    '/leistungen/$slug': {
+      id: '/leistungen/$slug'
+      path: '/$slug'
+      fullPath: '/leistungen/$slug'
+      preLoaderRoute: typeof LeistungenSlugRouteImport
+      parentRoute: typeof LeistungenRoute
     }
     '/ratgeber/': {
       id: '/ratgeber/'
-      path: '/ratgeber'
+      path: '/'
       fullPath: '/ratgeber/'
       preLoaderRoute: typeof RatgeberIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RatgeberRoute
     }
     '/ratgeber/$slug': {
       id: '/ratgeber/$slug'
-      path: '/ratgeber/$slug'
+      path: '/$slug'
       fullPath: '/ratgeber/$slug'
       preLoaderRoute: typeof RatgeberSlugRouteImport
+      parentRoute: typeof RatgeberRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/_admin/admin': {
-      id: '/_authenticated/_admin/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/leistungen/$service/': {
-      id: '/leistungen/$service/'
-      path: '/leistungen/$service'
-      fullPath: '/leistungen/$service/'
-      preLoaderRoute: typeof LeistungenServiceIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/leistungen/$service/$city': {
-      id: '/leistungen/$service/$city'
-      path: '/leistungen/$service/$city'
-      fullPath: '/leistungen/$service/$city'
-      preLoaderRoute: typeof LeistungenServiceCityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/_admin/admin/': {
-      id: '/_authenticated/_admin/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/automatisierung': {
-      id: '/_authenticated/_admin/admin/automatisierung'
-      path: '/automatisierung'
-      fullPath: '/admin/automatisierung'
-      preLoaderRoute: typeof AuthenticatedAdminAdminAutomatisierungRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/blog': {
-      id: '/_authenticated/_admin/admin/blog'
-      path: '/blog'
-      fullPath: '/admin/blog'
-      preLoaderRoute: typeof AuthenticatedAdminAdminBlogRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/dellen': {
-      id: '/_authenticated/_admin/admin/dellen'
-      path: '/dellen'
-      fullPath: '/admin/dellen'
-      preLoaderRoute: typeof AuthenticatedAdminAdminDellenRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/einstellungen': {
-      id: '/_authenticated/_admin/admin/einstellungen'
-      path: '/einstellungen'
-      fullPath: '/admin/einstellungen'
-      preLoaderRoute: typeof AuthenticatedAdminAdminEinstellungenRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/erpnext': {
-      id: '/_authenticated/_admin/admin/erpnext'
-      path: '/erpnext'
-      fullPath: '/admin/erpnext'
-      preLoaderRoute: typeof AuthenticatedAdminAdminErpnextRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/faqs': {
-      id: '/_authenticated/_admin/admin/faqs'
-      path: '/faqs'
-      fullPath: '/admin/faqs'
-      preLoaderRoute: typeof AuthenticatedAdminAdminFaqsRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/galerie': {
-      id: '/_authenticated/_admin/admin/galerie'
-      path: '/galerie'
-      fullPath: '/admin/galerie'
-      preLoaderRoute: typeof AuthenticatedAdminAdminGalerieRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/kunden': {
-      id: '/_authenticated/_admin/admin/kunden'
-      path: '/kunden'
-      fullPath: '/admin/kunden'
-      preLoaderRoute: typeof AuthenticatedAdminAdminKundenRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/leistungen': {
-      id: '/_authenticated/_admin/admin/leistungen'
-      path: '/leistungen'
-      fullPath: '/admin/leistungen'
-      preLoaderRoute: typeof AuthenticatedAdminAdminLeistungenRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/posteingang': {
-      id: '/_authenticated/_admin/admin/posteingang'
-      path: '/posteingang'
-      fullPath: '/admin/posteingang'
-      preLoaderRoute: typeof AuthenticatedAdminAdminPosteingangRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/unterlagen': {
-      id: '/_authenticated/_admin/admin/unterlagen'
-      path: '/unterlagen'
-      fullPath: '/admin/unterlagen'
-      preLoaderRoute: typeof AuthenticatedAdminAdminUnterlagenRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
-    }
-    '/_authenticated/_admin/admin/zustand': {
-      id: '/_authenticated/_admin/admin/zustand'
-      path: '/zustand'
-      fullPath: '/admin/zustand'
-      preLoaderRoute: typeof AuthenticatedAdminAdminZustandRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
+    '/leistungen/$slug/$city': {
+      id: '/leistungen/$slug/$city'
+      path: '/$city'
+      fullPath: '/leistungen/$slug/$city'
+      preLoaderRoute: typeof LeistungenSlugCityRouteImport
+      parentRoute: typeof LeistungenSlugRoute
     }
   }
 }
 
-interface AuthenticatedAdminAdminRouteChildren {
-  AuthenticatedAdminAdminAutomatisierungRoute: typeof AuthenticatedAdminAdminAutomatisierungRoute
-  AuthenticatedAdminAdminBlogRoute: typeof AuthenticatedAdminAdminBlogRoute
-  AuthenticatedAdminAdminDellenRoute: typeof AuthenticatedAdminAdminDellenRoute
-  AuthenticatedAdminAdminEinstellungenRoute: typeof AuthenticatedAdminAdminEinstellungenRoute
-  AuthenticatedAdminAdminErpnextRoute: typeof AuthenticatedAdminAdminErpnextRoute
-  AuthenticatedAdminAdminFaqsRoute: typeof AuthenticatedAdminAdminFaqsRoute
-  AuthenticatedAdminAdminGalerieRoute: typeof AuthenticatedAdminAdminGalerieRoute
-  AuthenticatedAdminAdminKundenRoute: typeof AuthenticatedAdminAdminKundenRoute
-  AuthenticatedAdminAdminLeistungenRoute: typeof AuthenticatedAdminAdminLeistungenRoute
-  AuthenticatedAdminAdminPosteingangRoute: typeof AuthenticatedAdminAdminPosteingangRoute
-  AuthenticatedAdminAdminUnterlagenRoute: typeof AuthenticatedAdminAdminUnterlagenRoute
-  AuthenticatedAdminAdminZustandRoute: typeof AuthenticatedAdminAdminZustandRoute
-  AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
+interface AbholserviceRouteChildren {
+  AbholserviceCityRoute: typeof AbholserviceCityRoute
+  AbholserviceIndexRoute: typeof AbholserviceIndexRoute
 }
 
-const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
-  {
-    AuthenticatedAdminAdminAutomatisierungRoute:
-      AuthenticatedAdminAdminAutomatisierungRoute,
-    AuthenticatedAdminAdminBlogRoute: AuthenticatedAdminAdminBlogRoute,
-    AuthenticatedAdminAdminDellenRoute: AuthenticatedAdminAdminDellenRoute,
-    AuthenticatedAdminAdminEinstellungenRoute:
-      AuthenticatedAdminAdminEinstellungenRoute,
-    AuthenticatedAdminAdminErpnextRoute: AuthenticatedAdminAdminErpnextRoute,
-    AuthenticatedAdminAdminFaqsRoute: AuthenticatedAdminAdminFaqsRoute,
-    AuthenticatedAdminAdminGalerieRoute: AuthenticatedAdminAdminGalerieRoute,
-    AuthenticatedAdminAdminKundenRoute: AuthenticatedAdminAdminKundenRoute,
-    AuthenticatedAdminAdminLeistungenRoute:
-      AuthenticatedAdminAdminLeistungenRoute,
-    AuthenticatedAdminAdminPosteingangRoute:
-      AuthenticatedAdminAdminPosteingangRoute,
-    AuthenticatedAdminAdminUnterlagenRoute:
-      AuthenticatedAdminAdminUnterlagenRoute,
-    AuthenticatedAdminAdminZustandRoute: AuthenticatedAdminAdminZustandRoute,
-    AuthenticatedAdminAdminIndexRoute: AuthenticatedAdminAdminIndexRoute,
-  }
-
-const AuthenticatedAdminAdminRouteWithChildren =
-  AuthenticatedAdminAdminRoute._addFileChildren(
-    AuthenticatedAdminAdminRouteChildren,
-  )
-
-interface AuthenticatedAdminRouteRouteChildren {
-  AuthenticatedAdminAdminRoute: typeof AuthenticatedAdminAdminRouteWithChildren
+const AbholserviceRouteChildren: AbholserviceRouteChildren = {
+  AbholserviceCityRoute: AbholserviceCityRoute,
+  AbholserviceIndexRoute: AbholserviceIndexRoute,
 }
 
-const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
-  {
-    AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRouteWithChildren,
-  }
+const AbholserviceRouteWithChildren = AbholserviceRoute._addFileChildren(
+  AbholserviceRouteChildren,
+)
 
-const AuthenticatedAdminRouteRouteWithChildren =
-  AuthenticatedAdminRouteRoute._addFileChildren(
-    AuthenticatedAdminRouteRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
+interface AdminRouteChildren {
+  AdminAutomatisierungRoute: typeof AdminAutomatisierungRoute
+  AdminBlogRoute: typeof AdminBlogRoute
+  AdminDellenRoute: typeof AdminDellenRoute
+  AdminEinstellungenRoute: typeof AdminEinstellungenRoute
+  AdminErpnextRoute: typeof AdminErpnextRoute
+  AdminFaqsRoute: typeof AdminFaqsRoute
+  AdminGalerieRoute: typeof AdminGalerieRoute
+  AdminKalenderRoute: typeof AdminKalenderRoute
+  AdminKundenRoute: typeof AdminKundenRoute
+  AdminLeistungenRoute: typeof AdminLeistungenRoute
+  AdminPosteingangRoute: typeof AdminPosteingangRoute
+  AdminUnterlagenRoute: typeof AdminUnterlagenRoute
+  AdminZustandRoute: typeof AdminZustandRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAutomatisierungRoute: AdminAutomatisierungRoute,
+  AdminBlogRoute: AdminBlogRoute,
+  AdminDellenRoute: AdminDellenRoute,
+  AdminEinstellungenRoute: AdminEinstellungenRoute,
+  AdminErpnextRoute: AdminErpnextRoute,
+  AdminFaqsRoute: AdminFaqsRoute,
+  AdminGalerieRoute: AdminGalerieRoute,
+  AdminKalenderRoute: AdminKalenderRoute,
+  AdminKundenRoute: AdminKundenRoute,
+  AdminLeistungenRoute: AdminLeistungenRoute,
+  AdminPosteingangRoute: AdminPosteingangRoute,
+  AdminUnterlagenRoute: AdminUnterlagenRoute,
+  AdminZustandRoute: AdminZustandRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface LeistungenSlugRouteChildren {
+  LeistungenSlugCityRoute: typeof LeistungenSlugCityRoute
+}
+
+const LeistungenSlugRouteChildren: LeistungenSlugRouteChildren = {
+  LeistungenSlugCityRoute: LeistungenSlugCityRoute,
+}
+
+const LeistungenSlugRouteWithChildren = LeistungenSlugRoute._addFileChildren(
+  LeistungenSlugRouteChildren,
+)
+
+interface LeistungenRouteChildren {
+  LeistungenSlugRoute: typeof LeistungenSlugRouteWithChildren
+  LeistungenIndexRoute: typeof LeistungenIndexRoute
+}
+
+const LeistungenRouteChildren: LeistungenRouteChildren = {
+  LeistungenSlugRoute: LeistungenSlugRouteWithChildren,
+  LeistungenIndexRoute: LeistungenIndexRoute,
+}
+
+const LeistungenRouteWithChildren = LeistungenRoute._addFileChildren(
+  LeistungenRouteChildren,
+)
+
+interface RatgeberRouteChildren {
+  RatgeberSlugRoute: typeof RatgeberSlugRoute
+  RatgeberIndexRoute: typeof RatgeberIndexRoute
+}
+
+const RatgeberRouteChildren: RatgeberRouteChildren = {
+  RatgeberSlugRoute: RatgeberSlugRoute,
+  RatgeberIndexRoute: RatgeberIndexRoute,
+}
+
+const RatgeberRouteWithChildren = RatgeberRoute._addFileChildren(
+  RatgeberRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AbholserviceRoute: AbholserviceRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   AgbRoute: AgbRoute,
-  AuthRoute: AuthRoute,
+  B2bRoute: B2bRoute,
   DankeRoute: DankeRoute,
-  DankeDellenRoute: DankeDellenRoute,
   DatenschutzRoute: DatenschutzRoute,
   DellenHagelschadenRoute: DellenHagelschadenRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
   ImpressumRoute: ImpressumRoute,
+  LeistungenRoute: LeistungenRouteWithChildren,
+  LoginRoute: LoginRoute,
   LuxusfahrzeugeRoute: LuxusfahrzeugeRoute,
   PreiseRoute: PreiseRoute,
   QualitaetRoute: QualitaetRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  RatgeberRoute: RatgeberRouteWithChildren,
   WiderrufRoute: WiderrufRoute,
-  AbholserviceCityRoute: AbholserviceCityRoute,
-  AngebotTokenRoute: AngebotTokenRoute,
-  ApiAutomationCronRoute: ApiAutomationCronRoute,
-  KalenderTokenRoute: KalenderTokenRoute,
-  RatgeberSlugRoute: RatgeberSlugRoute,
-  AbholserviceIndexRoute: AbholserviceIndexRoute,
-  LeistungenIndexRoute: LeistungenIndexRoute,
-  RatgeberIndexRoute: RatgeberIndexRoute,
-  LeistungenServiceCityRoute: LeistungenServiceCityRoute,
-  LeistungenServiceIndexRoute: LeistungenServiceIndexRoute,
+  ApiOperatorRoute: ApiOperatorRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

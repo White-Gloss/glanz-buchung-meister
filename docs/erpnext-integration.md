@@ -1,6 +1,6 @@
 # WHITE GLOSS OS · ERPNext Integration
 
-Status: connectivity, service catalog and vehicle/order readiness passed; permanent production writes remain default-deny
+Status: controlled customer/contact and vehicle/order production verification passed; permanent operational writes use single-use approvals and remain default-deny
 
 ## Scope
 
@@ -12,7 +12,10 @@ The first integration phase is deliberately narrow:
 2. persist ERPNext sync state next to the existing booking automation state;
 3. introduce idempotent claiming and failure handling;
 4. only after a read/write permission probe succeeds, synchronize customer and order data;
-5. keep Lexware running as the invoice fallback until German accounting/e-invoice compatibility is validated independently.
+5. keep Lexware running as the accounting and invoice fallback until German accounting/e-invoice compatibility is validated independently;
+6. keep invoice, payment, ledger, stock and banking effects outside the operational synchronization.
+
+The accepted ownership and finance boundary is recorded in [ADR-001](./adr-001-erpnext-operational-sync-and-finance-boundary.md). Supabase remains authoritative for public intake, appointment scheduling and the booking revision. After a successful synchronization, ERPNext is authoritative for the operational Customer, Contact, `WHITE GLOSS Vehicle` and `WHITE GLOSS Order`. Lexware remains the current financial fallback.
 
 ## Verified ERPNext identifiers
 
@@ -31,10 +34,10 @@ The following values are Supabase Edge Function secrets and must never be commit
 - `ERPNEXT_API_KEY`
 - `ERPNEXT_API_SECRET`
 - optional `ERPNEXT_COMPANY` override; current safe default in the preview worker is `White-Gloss`
+- `ERPNEXT_CUSTOMER_WRITE_ENABLED`; must be exactly `true` for any permanent customer/contact write
 - `ERPNEXT_VEHICLE_ORDER_WRITES_ENABLED`; must be exactly `true` for any permanent vehicle/order write
-- `ERPNEXT_VEHICLE_ORDER_APPROVED_BOOKING_ID`; exact UUID of the one explicitly approved booking
 
-The two vehicle/order gate values must remain unset or disabled during normal preview work. Enabling the switch without the exact booking allowlist does not permit a write, and allowing a booking while the switch is disabled does not permit a write.
+The switches are independent emergency kill switches and default to disabled. Booking authorization is not stored in Edge Function secrets. It is represented by a short-lived, database-backed approval bound to one booking UUID, its exact `bookings.updated_at` revision and one scope (`customer` or `vehicle_order`). Enabling a switch without a valid, unconsumed approval does not permit a write, and an approval cannot override a disabled switch.
 
 The tracked `.env` file must never receive ERPNext credentials.
 
@@ -57,6 +60,9 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 - `erpnext_order_id`
 - `erpnext_processing_at`
 - `erpnext_processing_expires_at`
+- `erpnext_customer_processing_at`
+- `erpnext_customer_processing_expires_at`
+- `erpnext_customer_processing_token`
 - `erpnext_synced_at`
 - `erpnext_last_error`
 - `erpnext_last_http_status`
@@ -64,9 +70,11 @@ Supabase Edge Functions use platform JWT verification and independently verify t
 
 `erpnext_order_id` is unique when present.
 
-A live-state audit on 2026-08-24 found one existing vehicle/order mapping synchronized on 2026-08-21. The next controlled operation is therefore a subsequent production run, not the first historical vehicle/order write.
+`public.erpnext_write_approvals` records the permanent operational approval boundary. Direct browser roles cannot read or mutate this table. An authenticated application administrator may request an approval only through the server-side approval function after a fresh signed preview. An approval expires within five minutes, is revision- and scope-bound, and is consumed exactly once in the same transaction that acquires the processing claim. A later booking revision, replay, expiry, revocation or wrong scope fails closed.
 
-The function `public.claim_erpnext_booking_sync(uuid, timestamptz, integer)` atomically claims one exact booking revision for a sync worker. It is executable only by `service_role`. The claim locks the booking row while comparing `bookings.updated_at`; a database trigger blocks booking updates and deletion until the worker clears the processing lease after success or a reviewable failure. The vehicle/order worker uses a 15-minute lease, which also releases the mutation guard automatically after a hard worker exit.
+A live-state audit on 2026-08-25 found two fully synchronized customer mappings and two fully synchronized vehicle/order mappings, including the controlled production run for the booking with service date 2026-08-29. The earlier mapping synchronized on 2026-08-21 remains recorded, so the 2026-08-25 operation was a subsequent production run, not the first historical vehicle/order write.
+
+The approval-aware `public.claim_erpnext_booking_sync(...)` function atomically consumes one exact vehicle/order approval and claims the same booking revision for a sync worker. The corresponding customer claim consumes a `customer` approval while acquiring its fenced mapping and booking leases. Both functions are executable only by `service_role`. They lock the booking and approval rows while comparing `bookings.updated_at`; a database trigger blocks booking updates and deletion until the worker clears the processing lease after success or a reviewable failure. The vehicle/order worker uses a 15-minute lease, which also releases the mutation guard automatically after a hard worker exit. Legacy approval-free claim signatures fail closed.
 
 A failed ERPNext write is intentionally not retried automatically while `erpnext_last_error` is set. This protects against duplicate external documents when an upstream POST may have succeeded but its response was lost.
 
@@ -162,6 +170,16 @@ Properties:
 - `mode: commit` is hard-disabled with HTTP 409;
 - does not create or update any ERPNext document yet.
 
+### Customer commit — SINGLE-USE, DEFAULT-DENY
+
+Edge Function: `erpnext-sync-customer`
+
+A permanent customer/contact synchronization requires an authenticated admin request, `ERPNEXT_CUSTOMER_WRITE_ENABLED=true`, a fresh server-signed preview and an active database approval for the exact booking UUID, current `bookings.updated_at` revision and `customer` scope. The approval has a maximum five-minute lifetime and is consumed exactly once in the same transaction as the database claim. The claim rechecks the revision under a row lock, fences the mapping and 15-minute booking lease with one token and blocks booking updates or deletion during the external ERPNext write window. Immediately before every ERPNext Customer or Contact POST, the function rechecks that both fencing tokens still belong to the worker and that the booking lease has not expired.
+
+Before the non-idempotent Customer POST, the worker durably records `uncertain_customer_create_started` and then checks the lease again. If the worker exits after ERPNext accepts the request but before the returned Customer ID is stored, the marker blocks automatic retry and forces manual reconciliation instead of risking a duplicate Customer. Once the Customer ID is durable, the marker is cleared and safe Contact recovery may continue. Completion persists the booking-specific Customer ID before publishing the shared customer mapping as synchronized, so a failed booking-state update cannot leave a false `already_synced` state.
+
+The Admin UI exposes the commit action only from a successful fresh preview. Customer, contact and mapping writes remain independently gated from vehicle/order writes.
+
 ### Vehicle/order readiness and mapping preview — PASS, NO WRITES
 
 Edge Functions:
@@ -179,13 +197,30 @@ Verified behavior:
 - customer appointment remains date-only and no handover time is invented;
 - preview returns the complete Customer → Vehicle → Order → services payload without writes.
 
-### Vehicle/order commit — DEFAULT-DENY
+### Vehicle/order commit — SINGLE-USE, DEFAULT-DENY
 
 Edge Function: `erpnext-vehicle-order-commit`
 
-A permanent call is rejected unless the authenticated admin request also passes the server switch, the exact one-booking allowlist and a server-signed preview confirmation bound to both booking UUID and current `bookings.updated_at` revision. The signed confirmation contains a cryptographic nonce and expires after five minutes; browser-visible booking data is insufficient to forge it. Any booking change invalidates it. The function then performs duplicate-safe lookups, claims that exact revision under a database lock, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
+A permanent call is rejected unless the authenticated admin request also passes the global server switch, a server-signed preview confirmation and an active database approval bound to the exact booking UUID, current `bookings.updated_at` revision and `vehicle_order` scope. The signed confirmation contains a cryptographic nonce, is bound to the approval identifier and expires after five minutes; browser-visible booking data is insufficient to forge it. The approval is consumed atomically with the revision-locked claim and cannot be replayed. Any booking change invalidates it. The function then performs duplicate-safe lookups, blocks concurrent booking changes for the short external commit window, creates only missing operational records, re-reads the complete vehicle/order/service state immediately and reports success only after the Supabase mapping update is confirmed.
 
 The admin page has one write path only: a successful fresh preview. The previous separate direct commit card is no longer rendered.
+
+### Controlled end-to-end production verification — PASS
+
+On 2026-08-25, one explicitly approved booking with service date 2026-08-29 passed the complete customer/contact and vehicle/order sequence.
+
+Verified result:
+
+- the signed customer preview was bound to the current booking revision;
+- one Customer and one linked Contact were synchronized;
+- `WHITE GLOSS Vehicle` `WGV-2026-00003` and `WHITE GLOSS Order` `WGO-2026-00004` were created;
+- the order contains exactly `WG-PKG-KERAMIK`, `WG-ADD-HOLBRING` and `WG-ADD-SCHEINWERFER`;
+- all 18 post-write checks passed;
+- exact identity re-reads returned one vehicle and one order;
+- `financial_writes=false` and `sales_invoice=null`;
+- Supabase records HTTP 200, synchronized timestamps, no errors and no active leases.
+
+The temporary execution window was bound to the exact booking and had an automatic expiry. Immediately after verification, all three write-path Functions were restored byte-for-byte to current `main`; their normal server-secret gates remain default-deny. The short-lived runner and diagnostic endpoints now return `410` and contain no booking UUID, service-role logic or run token.
 
 ### Database security hardening
 
@@ -201,7 +236,7 @@ The atomic claim was tested inside a rolled-back transaction against an existing
 
 This confirms mutual exclusion without altering production booking state.
 
-The revision-aware claim additionally rejects a stale `updated_at` value before existing-pair reconciliation or any external create. While a claim lease is active, the booking-mutation trigger rejects concurrent edits and deletion; clearing the processing fields releases that protection immediately, and lease expiry provides bounded crash recovery.
+The revision-aware vehicle/order claim rejects a stale `updated_at` value before existing-pair reconciliation or any external create. The customer claim independently binds the exact booking revision to the normalized-email mapping and assigns the same unguessable fencing token to both leases. While either lease is active, the booking-mutation trigger rejects concurrent edits and deletion; token-matched cleanup releases that protection immediately, and lease expiry provides bounded crash recovery.
 
 The remaining Supabase security advisor items are intentionally tracked:
 
@@ -224,14 +259,15 @@ The foundational prerequisites below have passed. They remain regression constra
 - a controlled operational order can be created without generating a financial document;
 - every controlled run is followed by an idempotent re-read proving one vehicle identity and exactly one ERPNext order for the booking.
 
-Sales Invoice, Payment Entry, bank, chart of accounts, User, Role and System Settings remain outside this integration phase.
+Sales Invoice, Payment Entry, General Ledger, stock/warehouse movement, bank writes, chart of accounts, User, Role and System Settings remain outside this integration phase. Lexware remains the current accounting and invoice fallback. A future bank connection uses the ALYF/Frappe `Banking` app via EBICS to a compatible existing bank and must pass a separate security, reconciliation and production-write gate; it is not part of the current booking commit.
 
 ## Rollback
 
 The current Supabase changes are additive. Rollback consists of:
 
 - disabling/removing the Edge Functions from callers;
-- dropping the ERPNext sync columns/index and claim function if necessary;
+- revoking pending approvals or allowing them to expire;
+- dropping the ERPNext sync columns/index, approval table and claim functions if necessary;
 - leaving existing website bookings and Lexware state untouched.
 
 No current migration rewrites customer or booking data.
