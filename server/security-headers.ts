@@ -36,7 +36,7 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
     headers.push(["X-Frame-Options", "SAMEORIGIN"]);
   }
   if (mode.hsts) {
-    headers.push(["Strict-Transport-Security", "max-age=15552000; includeSubDomains"]);
+    headers.push(["Strict-Transport-Security", "max-age=31536000; includeSubDomains"]);
   }
   return headers;
 }
