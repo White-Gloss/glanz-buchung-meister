@@ -8,6 +8,8 @@ from openpyxl.formatting.rule import FormulaRule
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 from pathlib import Path
+import subprocess
+import sys
 
 DARK, CREAM = "0C0C0D", "F4EFE6"
 GREEN, GREEN_BG = "1F7A4D", "D9F2E4"
@@ -69,6 +71,24 @@ def paint(ws, r1, r2, c1, c2, fill):
     for r in range(r1, r2 + 1):
         for c in range(c1, c2 + 1):
             ws.cell(r, c).fill = fill
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+OUTPUT_PATH = REPO_ROOT / "docs" / "WHITE-GLOSS-Audit-2026-08-Abschlussbericht.xlsx"
+TARGET_COMMIT = sys.argv[1] if len(sys.argv) > 1 else "HEAD"
+
+
+def changed_files_for_commit(rev: str) -> set[str]:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "show", "--name-only", "--format=", rev],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
 wb = Workbook()
@@ -746,33 +766,40 @@ df["A1"].font = title_font
 df["A1"].alignment = Alignment(vertical="center", indent=1)
 paint(df, 1, 2, 1, 5, fill_dark)
 header_row(df, 5, ["Pfad", "Art", "Rolle im Audit", "Im Commit", "Bemerkung"])
-files = [
-    [".github/workflows/lighthouse-audit.yml", "CI", "server/** in path filter", "ja", ""],
-    ["package.json", "Build", "operator.test im test-Script", "ja", ""],
-    ["scripts/smoke-production.mjs", "QA", "10 km 20, Preise, Signup-Verbot", "ja", ""],
-    ["scripts/build-audit-xlsx.py", "QA", "dieser Bericht", "ja", ""],
-    ["server/security-headers.ts", "Security", "grok.com + dns-prefetch off", "ja", ""],
-    ["src/lib/operator.ts", "Authz", "Allowlist + Enforce", "ja", "neu"],
-    ["src/lib/operator-middleware.ts", "Authz", "nach authMiddleware", "ja", "neu"],
-    ["src/lib/operator.test.ts", "Test", "Allowlist", "ja", "neu"],
-    ["src/lib/auth/email-password.ts", "Auth", "emailSignUpEnabled=false", "ja", ""],
-    ["src/lib/auth/server.ts", "Auth", "disableSignUp", "ja", "eine Zeile, Sicherheitsfix"],
-    ["src/routes/login.tsx", "UI", "keine Registrierung, main-content", "ja", ""],
-    ["src/routes/admin.tsx", "UI", "Kein Betriebszugang", "ja", ""],
-    ["src/lib/admin.functions.ts", "Backend", "operatorMiddleware, Same-Site, getOperatorAccess", "ja", ""],
-    ["src/lib/bookings.functions.ts", "Backend", "Same-Site, on-request-Notiz, Foto Name/Tel", "ja", ""],
-    ["src/lib/cms.functions.ts", "Backend", "operatorMiddleware", "ja", ""],
-    ["src/lib/backup.functions.ts", "Backend", "operatorMiddleware", "ja", ""],
-    ["src/lib/ops.ts", "Backend", "keine Kunden-WA-Queue", "ja", ""],
-    ["src/lib/ops.test.ts", "Test", "Confirm ohne WA", "ja", ""],
-    ["src/components/configurator.tsx", "UI", "pickupPriceText", "ja", ""],
-    ["src/data/pickup.test.ts", "Test", "alte 20-€-Staffel + on-request", "ja", ""],
-    ["src/routes/datenschutz.tsx", "Recht", "Instagram-Satz", "ja", ""],
-    ["src/routes/agb.tsx", "Recht", "Stand 31.08.2026", "ja", ""],
-    ["src/routes/widerruf.tsx", "Recht", "Stand 31.08.2026", "ja", ""],
-    ["docs/WHITE-GLOSS-Audit-2026-08-Abschlussbericht.xlsx", "Bericht", "dieser Stand", "ja", ""],
-    [".env", "Secret", "NICHT im Commit", "nein", ""],
+commit_files = changed_files_for_commit(TARGET_COMMIT)
+file_catalog = [
+    [".github/workflows/lighthouse-audit.yml", "CI", "server/** in path filter", ""],
+    ["package.json", "Build", "operator.test im test-Script", ""],
+    ["scripts/smoke-production.mjs", "QA", "10 km 20, Preise, Signup-Verbot", ""],
+    ["scripts/build-audit-xlsx.py", "QA", "dieser Bericht", ""],
+    ["server/security-headers.ts", "Security", "grok.com + dns-prefetch off", ""],
+    ["src/lib/operator.ts", "Authz", "Allowlist + Enforce", "neu"],
+    ["src/lib/operator-middleware.ts", "Authz", "nach authMiddleware", "neu"],
+    ["src/lib/operator.test.ts", "Test", "Allowlist", "neu"],
+    ["src/lib/auth/email-password.ts", "Auth", "emailSignUpEnabled=false", ""],
+    ["src/lib/auth/server.ts", "Auth", "disableSignUp", "eine Zeile, Sicherheitsfix"],
+    ["src/routes/login.tsx", "UI", "keine Registrierung, main-content", ""],
+    ["src/routes/admin.tsx", "UI", "Kein Betriebszugang", ""],
+    ["src/lib/admin.functions.ts", "Backend", "operatorMiddleware, Same-Site, getOperatorAccess", ""],
+    ["src/lib/bookings.functions.ts", "Backend", "Same-Site, on-request-Notiz, Foto Name/Tel", ""],
+    ["src/lib/cms.functions.ts", "Backend", "operatorMiddleware", ""],
+    ["src/lib/backup.functions.ts", "Backend", "operatorMiddleware", ""],
+    ["src/lib/ops.ts", "Backend", "keine Kunden-WA-Queue", ""],
+    ["src/lib/ops.test.ts", "Test", "Confirm ohne WA", ""],
+    ["src/components/configurator.tsx", "UI", "pickupPriceText", ""],
+    ["src/data/pickup.test.ts", "Test", "alte 20-€-Staffel + on-request", ""],
+    ["src/routes/datenschutz.tsx", "Recht", "Instagram-Satz", ""],
+    ["src/routes/agb.tsx", "Recht", "Stand 31.08.2026", ""],
+    ["src/routes/widerruf.tsx", "Recht", "Stand 31.08.2026", ""],
+    ["docs/WHITE-GLOSS-Audit-2026-08-Abschlussbericht.xlsx", "Bericht", "dieser Stand", ""],
+    [".env", "Secret", "NICHT im Commit", ""],
 ]
+files = []
+for path, kind, role, note in file_catalog:
+    in_commit = "ja" if path in commit_files else "nein"
+    if path == ".env":
+        in_commit = "nein"
+    files.append([path, kind, role, in_commit, note])
 for i, row in enumerate(files):
     r = 6 + i
     for c, val in enumerate(row, 1):
@@ -795,6 +822,6 @@ df.cell(lastf + 1, 2, f'=COUNTIF(D6:D{lastf},"ja")')
 df.cell(lastf + 2, 1, "Ausgeschlossen")
 df.cell(lastf + 2, 2, f'=COUNTIF(D6:D{lastf},"nein")')
 
-out = Path("/workspace/docs/WHITE-GLOSS-Audit-2026-08-Abschlussbericht.xlsx")
-wb.save(out)
-print(out, out.stat().st_size)
+OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+wb.save(OUTPUT_PATH)
+print(OUTPUT_PATH, OUTPUT_PATH.stat().st_size)

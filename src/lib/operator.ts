@@ -1,11 +1,17 @@
 import { site } from "../data/site.ts";
 
+function csv(value: string | undefined): string[] {
+  return (value || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 /** E-Mails, die das Betriebspanel nutzen dürfen. */
 export function operatorEmails(): string[] {
-  const extra = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
+  const extra = csv(process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL).map((value) =>
+    value.toLowerCase(),
+  );
   const owner = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
   const allowed = new Set<string>([site.email.toLowerCase(), ...extra]);
   if (owner) allowed.add(owner);
@@ -17,6 +23,24 @@ export function isOperatorEmail(email: string | null | undefined): boolean {
   const normalized = email.trim().toLowerCase();
   if (operatorEmails().includes(normalized)) return true;
   return normalized.endsWith("@white-gloss.de");
+}
+
+export function operatorProviderAccounts(): string[] {
+  const mapped = csv(process.env.ADMIN_PROVIDER_ACCOUNTS).map((entry) => entry.toLowerCase());
+  const xAccounts = csv(process.env.ADMIN_X_ACCOUNT_IDS).map((id) => `grok-x:${id.toLowerCase()}`);
+  const ownerX = (process.env.OWNER_X_ACCOUNT_ID || "").trim().toLowerCase();
+  const allowed = new Set<string>([...mapped, ...xAccounts]);
+  if (ownerX) allowed.add(`grok-x:${ownerX}`);
+  return [...allowed];
+}
+
+export function isOperatorProviderAccount(
+  providerId: string | null | undefined,
+  accountId: string | null | undefined,
+): boolean {
+  if (!providerId || !accountId) return false;
+  const key = `${providerId.trim().toLowerCase()}:${accountId.trim().toLowerCase()}`;
+  return operatorProviderAccounts().includes(key);
 }
 
 /**
@@ -41,9 +65,14 @@ export async function requireOperator(userId: string) {
     select email from "user" where id = ${userId} limit 1
   `;
   if (isOperatorEmail(row?.email)) return;
-
-  const [countRow] = await sql<{ n: number }>`select count(*)::int as n from "user"`;
-  if ((countRow?.n ?? 0) <= 1) return;
+  const accounts = await sql<{ providerId: string | null; accountId: string | null }>`
+    select "providerId" as "providerId", "accountId" as "accountId"
+    from "account"
+    where "userId" = ${userId}
+  `;
+  if (accounts.some((account) => isOperatorProviderAccount(account.providerId, account.accountId))) {
+    return;
+  }
 
   throw new Error("Kein Betriebszugang.");
 }
