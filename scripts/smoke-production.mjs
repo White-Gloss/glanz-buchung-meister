@@ -1,3 +1,7 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
 const BASE_URL = new URL(process.env.SMOKE_BASE_URL || "https://white-gloss.de").origin;
 const REQUEST_TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 
@@ -134,7 +138,11 @@ for (const check of pageChecks) {
       }
     }
     if (check.path === "/preise") {
-      if (!/bis 10 km kostenlos/i.test(body) || !/bis 20 km 50/.test(body) || !/bis 50 km 70/.test(body)) {
+      if (
+        !/bis 10 km kostenlos/i.test(body) ||
+        !/bis 20 km 50/.test(body) ||
+        !/bis 50 km 70/.test(body)
+      ) {
         fail(label, "Abholstaffel (10 km kostenlos / 20 km 50 / 50 km 70) fehlt");
       }
       if (!/149/.test(body) || !/349/.test(body) || !/899/.test(body)) {
@@ -248,6 +256,93 @@ try {
   console.log(`PASS /robots.txt -> ${response.status}`);
 } catch (error) {
   fail("/robots.txt", error instanceof Error ? error.message : String(error));
+}
+
+/*
+  DIE BESTAETIGUNGSDATEIEN DER SEARCH CONSOLE MUESSEN ERREICHBAR BLEIBEN.
+
+  Google prueft den Besitz einer Property, indem es die hinterlegte Datei
+  abruft und den Inhalt vergleicht. Schlaegt das fehl, verliert die Property
+  ihre Bestaetigung — und mit ihr die Adressaenderung, die Sitemap-Meldungen
+  und die Indexierungsanfragen. Gemeldet wird das nur per E-Mail an das
+  Google-Konto; im Betrieb faellt es sonst wochenlang nicht auf.
+
+  Drei Dinge gehen dabei erfahrungsgemaess schief, alle drei stehen hier:
+
+  1. Die Datei wird beim Aufraeumen aus `public/` entfernt.
+  2. Eine Weiterleitung schiebt den Abruf auf eine andere Domain. Google
+     folgt dabei nicht — fuer die Pruefung zaehlt nur, was unter der
+     Property-Adresse selbst ausgeliefert wird.
+  3. Statt der Datei antwortet die Anwendung mit ihrer HTML-Huelle. Der
+     Statuscode ist dann 200, der Inhalt aber falsch.
+*/
+try {
+  const publicDir = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+  const verificationFiles = readdirSync(publicDir).filter((name) =>
+    /^google[a-z0-9]+\.html$/i.test(name),
+  );
+
+  if (verificationFiles.length === 0) {
+    console.log("HINWEIS keine Bestaetigungsdateien in public/ — nichts zu pruefen");
+  }
+
+  for (const name of verificationFiles) {
+    const label = `/${name}`;
+    const erwartet = readFileSync(join(publicDir, name), "utf8").trim();
+    try {
+      const { response, body } = await get(label);
+
+      if (!response.ok) {
+        fail(label, `HTTP ${response.status}; Google kann den Besitz nicht pruefen`);
+        continue;
+      }
+      if (new URL(response.url).origin !== BASE_URL) {
+        fail(
+          label,
+          `Weiterleitung endet auf ${new URL(response.url).origin}; Google folgt ihr nicht`,
+        );
+        continue;
+      }
+      if (body.trim() !== erwartet) {
+        fail(label, "ausgelieferter Inhalt weicht von der Datei in public/ ab");
+        continue;
+      }
+      console.log(`PASS ${label} -> ${response.status}, Bestaetigung erreichbar`);
+    } catch (error) {
+      fail(label, error instanceof Error ? error.message : String(error));
+    }
+  }
+} catch (error) {
+  fail("site-verification", error instanceof Error ? error.message : String(error));
+}
+
+/*
+  EIN BESTAETIGUNGS-META-TAG DARF NIE MIT LEEREM ODER UNGUELTIGEM WERT
+  AUSGELIEFERT WERDEN.
+
+  Steht `VITE_GOOGLE_SITE_VERIFICATION` beim Build nicht zur Verfuegung,
+  entfaellt das Tag ersatzlos — das ist gewollt. Erscheint es dagegen mit
+  leerem `content`, meldet Google die Bestaetigung als fehlgeschlagen, ohne
+  einen Grund zu nennen.
+*/
+try {
+  const { body } = await get("/");
+  const tags = [...body.matchAll(/<meta[^>]+name=["']google-site-verification["'][^>]*>/gi)].map(
+    (treffer) => treffer[0],
+  );
+  const leer = tags.filter((tag) => {
+    const wert = tag.match(/content\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+    return wert.trim().length === 0;
+  });
+  if (leer.length > 0) {
+    fail("site-verification", `${leer.length} google-site-verification-Tag(s) ohne Wert`);
+  } else if (tags.length > 0) {
+    console.log(`PASS site-verification -> ${tags.length} Meta-Tag(s) mit Wert`);
+  } else {
+    console.log("HINWEIS kein google-site-verification-Meta-Tag gesetzt (Datei-Methode genuegt)");
+  }
+} catch (error) {
+  fail("site-verification", error instanceof Error ? error.message : String(error));
 }
 
 try {

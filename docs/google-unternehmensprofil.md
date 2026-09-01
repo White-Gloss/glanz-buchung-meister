@@ -75,7 +75,14 @@ die im Profil angezeigt wird.
 
 ### Textvorschlag für den Antrag
 
-Angaben in eckigen Klammern vor dem Absenden ersetzen. Nichts hinzuerfinden —
+> **Der ausformulierte Antrag steht in
+> [`google-unternehmensprofil-antrag.md`](google-unternehmensprofil-antrag.md)** —
+> Kurzfassung fürs Formularfeld, Langfassung für Rückfragen, dazu die
+> Unterlagenliste und das Vorgehen bei einer Ablehnung. Dort ist alles
+> ausgefüllt bis auf das Datum der Gewerbeanmeldung.
+
+Die Kurzfassung des Gedankens, falls es schnell gehen muss. Angaben in
+eckigen Klammern vor dem Absenden ersetzen. Nichts hinzuerfinden —
 falsche Angaben sind der sicherste Weg zu einer dauerhaften Ablehnung.
 
 > Sehr geehrte Damen und Herren,
@@ -120,6 +127,10 @@ Ablehnung ist nicht ungewöhnlich; dann mit weiteren Belegen nachbessern statt
 aufzugeben. Während des Verfahrens nichts am Profil ändern.
 
 ## Schritt 3 – Nach der Freigabe
+
+> Das vollständige Ausfüllblatt — jedes Feld mit fertigem Text zum
+> Übernehmen — steht in
+> [`google-unternehmensprofil-ausfuellen.md`](google-unternehmensprofil-ausfuellen.md).
 
 Erst wenn das Profil wieder erreichbar ist, diese vier Angaben korrigieren:
 

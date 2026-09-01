@@ -1,4 +1,9 @@
-import { heroPreloadHref, heroPreloadMobile, heroPreloadWide, logoJsonLdHref } from "@/data/media-src";
+import {
+  heroPreloadHref,
+  heroPreloadMobile,
+  heroPreloadWide,
+  logoJsonLdHref,
+} from "@/data/media-src";
 import {
   cities,
   openingHours,
@@ -157,6 +162,20 @@ export function localBusinessJsonLd() {
           longitude: site.lng,
         },
         hasMap: site.mapsGoogle,
+        // Der Betrieb wird vom Inhaber persönlich geführt; die Angabe deckt
+        // sich zeichengenau mit dem Impressum.
+        founder: { "@type": "Person", name: site.owner },
+        knowsLanguage: "de-DE",
+        // Ein ausgewiesener Kontaktweg macht aus Nummer und Adresse eine
+        // Angabe, die Google einer Zuständigkeit zuordnen kann.
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer service",
+          telephone: "+4915233540284",
+          email: site.email,
+          areaServed: "DE",
+          availableLanguage: "German",
+        },
         areaServed: cities.map((c) => ({
           "@type": "City",
           name: c.name,

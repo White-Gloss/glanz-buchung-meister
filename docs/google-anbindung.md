@@ -48,6 +48,11 @@ anlegen, wenn Analytics bereits misst.
 
 ## Schritt 1 – Google Search Console
 
+> **Bestätigung schlägt fehl?** Für die laufende Property und den
+> Domainumzug gilt eine eigene Reihenfolge — die Datei-Methode kann dort
+> nicht funktionieren. Siehe
+> [`google-search-console-eintrag.md`](google-search-console-eintrag.md).
+
 Die Search Console zeigt, für welche Suchbegriffe die Seite gefunden wird und
 ob Google Fehler beim Indexieren meldet. Sie kostet nichts und setzt keine
 Cookies – sie braucht deshalb auch keine Einwilligung.
