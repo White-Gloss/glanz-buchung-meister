@@ -40,7 +40,7 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "manifest", href: "/site.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
   }),
