@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isOperatorEmail, operatorEmails, operatorEnforcementEnabled } from "./operator.ts";
+import {
+  isOperatorEmail,
+  isOperatorProviderAccount,
+  operatorEmails,
+  operatorEnforcementEnabled,
+} from "./operator.ts";
 
 describe("operator allowlist", () => {
   it("always includes the public business address", () => {
@@ -29,6 +34,29 @@ describe("operator allowlist", () => {
       else process.env.ADMIN_EMAILS = prevAdmin;
       if (prevOwner === undefined) delete process.env.OWNER_EMAIL;
       else process.env.OWNER_EMAIL = prevOwner;
+    }
+  });
+
+  it("honours explicit provider/account allowlist entries", () => {
+    const prevMapped = process.env.ADMIN_PROVIDER_ACCOUNTS;
+    const prevX = process.env.ADMIN_X_ACCOUNT_IDS;
+    const prevOwnerX = process.env.OWNER_X_ACCOUNT_ID;
+    process.env.ADMIN_PROVIDER_ACCOUNTS = "grok-google:google-sub-1, grok-x:x-sub-2";
+    process.env.ADMIN_X_ACCOUNT_IDS = "x-sub-3";
+    process.env.OWNER_X_ACCOUNT_ID = "x-owner";
+    try {
+      assert.equal(isOperatorProviderAccount("grok-google", "google-sub-1"), true);
+      assert.equal(isOperatorProviderAccount("grok-x", "x-sub-2"), true);
+      assert.equal(isOperatorProviderAccount("grok-x", "x-sub-3"), true);
+      assert.equal(isOperatorProviderAccount("grok-x", "x-owner"), true);
+      assert.equal(isOperatorProviderAccount("grok-x", "not-allowed"), false);
+    } finally {
+      if (prevMapped === undefined) delete process.env.ADMIN_PROVIDER_ACCOUNTS;
+      else process.env.ADMIN_PROVIDER_ACCOUNTS = prevMapped;
+      if (prevX === undefined) delete process.env.ADMIN_X_ACCOUNT_IDS;
+      else process.env.ADMIN_X_ACCOUNT_IDS = prevX;
+      if (prevOwnerX === undefined) delete process.env.OWNER_X_ACCOUNT_ID;
+      else process.env.OWNER_X_ACCOUNT_ID = prevOwnerX;
     }
   });
 
