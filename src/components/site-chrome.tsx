@@ -39,6 +39,26 @@ export function SiteHeader() {
     setSvcOpen(false);
   }, [pathname]);
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setScrolled(window.scrollY > 80);
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -81,7 +101,10 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className={`sticky top-0 border-b border-white/8 bg-bg ${open ? "z-[90]" : "z-40"}`}>
+    <header
+      className={`site-header sticky top-0 ${open ? "z-[90]" : "z-40"}`}
+      data-scrolled={scrolled ? "true" : "false"}
+    >
       <div className="gd-header mx-auto max-w-7xl px-4 py-3 sm:px-6 xl:max-w-[90rem] xl:px-10 2xl:max-w-[96rem]">
         <Link
           to="/"
@@ -105,7 +128,7 @@ export function SiteHeader() {
                   {item.label}
                 </Link>
                 <div className="invisible absolute left-0 top-full z-50 min-w-[18rem] pt-3 opacity-0 transition-[opacity,visibility] duration-200 group-hover/mega:visible group-hover/mega:opacity-100 group-focus-within/mega:visible group-focus-within/mega:opacity-100">
-                  <div className="rounded-2xl border border-white/10 bg-bg py-2 shadow-[var(--shadow-glow)]">
+                  <div className="rounded-card border border-line bg-bg py-2">
                     {services.map((s) => (
                       <Link
                         key={s.slug}
@@ -145,7 +168,7 @@ export function SiteHeader() {
           </a>
           <a
             href={site.whatsapp}
-            className="hidden size-11 items-center justify-center rounded-full text-muted transition-colors hover:text-fg lg:inline-flex"
+            className="hidden size-11 items-center justify-center rounded-control text-muted transition-colors hover:text-fg lg:inline-flex"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="WhatsApp mit White Gloss"
@@ -161,7 +184,7 @@ export function SiteHeader() {
           </Link>
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-full border border-white/15 text-fg lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-control border border-line-strong text-fg lg:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-haspopup="dialog"
@@ -317,7 +340,8 @@ function MobileSheet({
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-surface">
+    <footer className="bg-bg">
+      <div className="chrome-rule" aria-hidden />
       <div className="gd-footer mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="ga-brand">
           <Link
@@ -372,7 +396,7 @@ export function SiteFooter() {
           </div>
         </div>
         <nav aria-label="Leistungen" className="ga-leistungen">
-          <p className="text-xs uppercase tracking-[0.16em] text-subtle">Leistungen</p>
+          <p className="kicker">Leistungen</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             <li>
               <Link
@@ -419,7 +443,7 @@ export function SiteFooter() {
           </ul>
         </nav>
         <nav aria-label="Studio" className="ga-studio">
-          <p className="text-xs uppercase tracking-[0.16em] text-subtle">Studio</p>
+          <p className="kicker">Studio</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             {footerExplore.map((item) => (
               <li key={item.to}>
@@ -431,7 +455,7 @@ export function SiteFooter() {
           </ul>
         </nav>
         <nav aria-label="Rechtliches" className="ga-recht">
-          <p className="text-xs uppercase tracking-[0.16em] text-subtle">Rechtliches</p>
+          <p className="kicker">Rechtliches</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             <li>
               <Link to="/impressum" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
@@ -467,7 +491,7 @@ export function SiteFooter() {
           </ul>
         </nav>
       </div>
-      <p className="border-t border-line px-4 py-4 text-center text-xs text-subtle">
+      <p className="border-t border-line px-4 py-5 text-center text-xs text-muted">
         © {new Date().getFullYear()} {site.legalName}. Alle Rechte vorbehalten.
       </p>
     </footer>

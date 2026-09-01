@@ -742,6 +742,41 @@
     grid-area: recht;
   }
 
+  /* Grosse Chrom-Haarlinie ueber dem Footer. Der Verlauf laeuft an beiden
+     Enden ins Nichts aus, damit die Linie nicht abgeschnitten wirkt. */
+  .chrome-rule {
+    height: 1px;
+    width: 100%;
+    background: var(--chrome-line);
+  }
+
+  .site-header {
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart);
+  }
+
+  .site-header[data-scrolled="true"] {
+    background-color: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border-bottom-color: var(--color-line);
+    backdrop-filter: blur(14px);
+  }
+
+  /* Ohne backdrop-filter waere die Leiste halbdurchsichtig ohne Blur und der
+     Text darunter schwer lesbar — dann lieber ganz deckend. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header[data-scrolled="true"] {
+      background-color: var(--color-bg);
+    }
+  }
+
+  /* Bei geoeffnetem Mobilmenue traegt die Leiste immer Flaeche. */
+  body[data-nav="open"] .site-header {
+    background-color: var(--color-bg);
+  }
+
   .nav-link {
     position: relative;
     display: inline-flex;
@@ -759,7 +794,7 @@
     right: 0;
     bottom: -0.4em;
     height: 1px;
-    background: currentColor;
+    background: var(--chrome-gradient);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 280ms var(--ease-out-quart);
@@ -769,20 +804,19 @@
     transform: scaleX(1);
   }
 
+  /* Vollbild-Overlay in Schwarz laut Vorgabe — vorher ein abgerundetes
+     Kartenblatt am rechten Rand. */
   .mobile-sheet {
     position: fixed;
-    top: calc(4.15rem + env(safe-area-inset-top, 0px));
-    right: max(0.65rem, env(safe-area-inset-right, 0px));
-    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
-    left: auto;
+    inset: 0;
     display: flex;
-    width: min(22rem, calc(100vw - 1.3rem));
+    width: 100%;
     flex-direction: column;
     overflow: hidden;
-    border-radius: 1.5rem;
-    border: 1px solid var(--color-line-strong);
-    background: var(--color-surface);
-    box-shadow: 0 24px 80px rgb(0 0 0 / 0.55);
+    border: 0;
+    border-radius: 0;
+    background: var(--color-bg);
+    padding-top: env(safe-area-inset-top, 0px);
     animation: sheet-in 280ms var(--ease-out-quart);
   }
 
@@ -792,7 +826,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 1rem 1rem 0.35rem 1.2rem;
+    padding: 1rem 1.25rem 0.5rem;
   }
 
   .sheet-head p {
@@ -827,7 +861,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding: 0.65rem 0.7rem 0.5rem;
+    padding: 1.25rem 1.25rem 1rem;
   }
 
   .sheet-sub {
@@ -846,37 +880,40 @@
     color: var(--color-muted);
   }
 
+  /* Grosse Typo-Links statt Pillen: im Vollbild traegt die Schrift, nicht
+     der Rahmen. Haarlinie als Trenner, sonst nichts. */
   .nav-bubble {
     display: flex;
     width: 100%;
-    min-height: 2.85rem;
+    min-height: 3.5rem;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.65rem;
-    padding: 0.55rem 1rem;
-    border-radius: 999px;
-    border: 1px solid rgb(255 255 255 / 0.09);
-    background: rgb(255 255 255 / 0.04);
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+    border-radius: 0;
+    background: transparent;
     color: var(--color-fg);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
-    transition:
-      background-color 160ms var(--ease-out-quart),
-      border-color 160ms var(--ease-out-quart);
+    transition: color 200ms var(--ease-out-quart);
   }
 
   .nav-bubble:hover,
   .nav-bubble:focus-visible {
-    background: rgb(255 255 255 / 0.08);
-    border-color: rgb(255 255 255 / 0.18);
+    color: var(--chrome-solid);
   }
 
   .nav-bubble-sub {
-    min-height: 2.5rem;
-    font-size: 0.875rem;
+    min-height: 2.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
     color: var(--color-muted);
   }
 
@@ -884,7 +921,6 @@
     justify-content: space-between;
     flex-wrap: wrap;
     row-gap: 0.2rem;
-    background: rgb(255 255 255 / 0.07);
   }
 
   .nav-bubble-label {
@@ -909,14 +945,14 @@
     flex-shrink: 0;
     flex-direction: column;
     gap: 0.55rem;
-    padding: 0.85rem 0.85rem max(0.85rem, env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid rgb(255 255 255 / 0.1);
+    padding: 1rem 1.25rem max(1rem, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--color-line);
   }
 
   @keyframes sheet-in {
     from {
       opacity: 0;
-      transform: translateX(1rem) scale(0.98);
+      transform: translateY(-0.75rem);
     }
     to {
       opacity: 1;
