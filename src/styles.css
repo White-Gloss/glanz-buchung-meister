@@ -1,14 +1,6 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Bebas Neue";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/bebas-neue-400.woff2") format("woff2");
-}
-
-@font-face {
   font-family: "Barlow";
   font-style: normal;
   font-weight: 400;
@@ -30,15 +22,6 @@
   font-weight: 600;
   font-display: swap;
   src: url("/fonts/barlow-600.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Bebas Neue Fallback";
-  src: local("Arial Narrow"), local("Arial");
-  size-adjust: 84%;
-  ascent-override: 88%;
-  descent-override: 12%;
-  line-gap-override: 0%;
 }
 
 @font-face {
@@ -74,8 +57,11 @@
   --color-danger: #d97868;
   --color-wa: #25d366;
 
+  /* Eine Sans fuer alles. --font-display bleibt als Name bestehen, zeigt aber
+     auf dieselbe Familie: die 110 font-display-Stellen brauchen keine Aenderung,
+     und es faellt ein kompletter Schriftschnitt aus dem kritischen Pfad. */
   --font-sans: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Bebas Neue", "Bebas Neue Fallback", sans-serif;
+  --font-display: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
 
   /* Bestehende Skala bleibt unverändert, damit Schritt 1 nichts verschiebt. */
   --radius-xs: 4px;
@@ -87,6 +73,16 @@
   /* Neue, kantigere Skala — wird in Schritt 3 auf die Komponenten gelegt. */
   --radius-control: 2px;
   --radius-card: 4px;
+
+  /* Fliesstext-Zeilenhoehe laut Vorgabe 1.65. Sie allein auf body zu setzen
+     reicht nicht: Tailwinds Groessen-Utilities bringen ihre eigene
+     line-height mit und gewinnen gegen den geerbten Wert. Deshalb an den
+     Groessen selbst gesetzt — das erreicht jeden Absatz, ohne dass die
+     Komponenten angefasst werden muessen. text-xs bleibt aussen vor: das
+     ist Kleinschrift und Label, kein Fliesstext. */
+  --text-sm--line-height: 1.65;
+  --text-base--line-height: 1.65;
+  --text-lg--line-height: 1.65;
 
   --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
   --shadow-glow: 0 0 0 1px rgb(244 244 246 / 0.35), 0 18px 60px -22px rgb(244 244 246 / 0.45);
@@ -150,6 +146,11 @@
     -moz-osx-font-smoothing: grayscale;
     font-size: 16.5px;
     touch-action: manipulation;
+  }
+
+  /* Fliesstext ruhiger setzen: 1.65 statt Tailwind-Standard 1.5. */
+  body {
+    line-height: 1.65;
   }
 
   #main-content:focus {
@@ -252,69 +253,71 @@
     outline-offset: 3px;
   }
 
+  /* Eyebrow. Die einzige Textsorte ausser Buttons und Navigation, die
+     Grossbuchstaben traegt. Farbe laut Vorgabe --color-muted. */
   .kicker {
     font-family: var(--font-sans);
     font-size: 0.6875rem;
     font-weight: 500;
-    letter-spacing: 0.26em;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--color-subtle);
+    color: var(--color-muted);
   }
 
-  .heading-display {
+  /* Display und H1 teilen sich eine Stufe. Keine Grossbuchstaben mehr:
+     Wirkung kommt jetzt aus Groesse und negativer Laufweite. */
+  .heading-display,
+  .heading-1 {
     font-family: var(--font-display);
-    font-size: clamp(3.35rem, 1.6rem + 8vw, 6rem);
-    font-weight: 400;
-    letter-spacing: 0.025em;
-    line-height: 0.9;
-    text-transform: uppercase;
+    font-size: clamp(2.75rem, 7vw, 6.5rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
   }
 
+  /* Wortmarke im Hero, ohne Umbruch. Nachgemessen: ab 360px passt "White Gloss"
+     in beiden Schriftzustaenden bequem. Nur darunter wird die Fallback-Schrift
+     zwei Pixel zu breit, deshalb der min()-Deckel — er greift erst unterhalb
+     von rund 324px und laesst den Vorgabe-Bereich unberuehrt. */
   .heading-brand {
     font-family: var(--font-display);
-    font-size: clamp(2.7rem, 4.2vw + 1.7rem, 6.25rem);
-    font-weight: 400;
-    letter-spacing: 0.03em;
-    line-height: 0.88;
-    text-transform: uppercase;
+    font-size: min(clamp(2.75rem, 7vw, 6.5rem), 14vw);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
     white-space: nowrap;
   }
 
+  /* Benannte Ausnahme zur Regel "Grossbuchstaben nur fuer Eyebrows, Buttons
+     und Navigation": diese Zeile steht als <span> in der <h1> und ist damit
+     formal Teil einer Ueberschrift. Typografisch ist sie aber ein Eyebrow —
+     13px, 0.24em Sperrung, gedeckte Farbe — und gesperrte Laufweite ist eine
+     Versalkonvention: gemischt gesetzt zerfiele die Wortmarken-Einheit zu
+     beilaeufigem Kleintext. Sie bleibt deshalb in Versalien. */
   .heading-tagline {
     font-family: var(--font-sans);
-    font-size: clamp(0.68rem, 0.2rem + 1.4vw, 0.92rem);
-    font-weight: 400;
-    letter-spacing: 0.22em;
-    line-height: 1.3;
+    font-size: clamp(0.7rem, 0.2rem + 1.4vw, 0.9rem);
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    line-height: 1.4;
     text-transform: uppercase;
-    color: var(--color-subtle);
-  }
-
-  .heading-1 {
-    font-family: var(--font-display);
-    font-size: clamp(2.5rem, 1.3rem + 4vw, 4.5rem);
-    font-weight: 400;
-    letter-spacing: 0.025em;
-    line-height: 0.95;
-    text-transform: uppercase;
+    color: var(--color-muted);
   }
 
   .heading-2 {
     font-family: var(--font-display);
-    font-size: clamp(2.15rem, 1.15rem + 2.6vw, 3.5rem);
-    font-weight: 400;
-    letter-spacing: 0.025em;
-    line-height: 0.98;
-    text-transform: uppercase;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
   }
 
   .heading-3 {
     font-family: var(--font-display);
-    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
-    font-weight: 400;
-    letter-spacing: 0.025em;
-    line-height: 1.1;
-    text-transform: uppercase;
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
   }
 
   img.hero-image,
@@ -396,6 +399,20 @@
 }
 
 @layer components {
+  /* Frueher kam der Display-Charakter aus einer zweiten Schriftfamilie. Jetzt
+     kommt er aus Gewicht und negativer Laufweite — an einer Stelle gesetzt,
+     damit die 110 font-display-Stellen unveraendert bleiben koennen. Inline
+     gesetzte tracking-Utilities gewinnen weiterhin. */
+  .font-display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Zeilenlaenge laut Vorgabe hoechstens 68 Zeichen. */
+  .measure {
+    max-width: 68ch;
+  }
+
   .section {
     padding-block: clamp(4.75rem, 9vw, 8.5rem);
   }
