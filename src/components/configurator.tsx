@@ -65,7 +65,7 @@ export function Configurator({
     }
     setPending(true);
     try {
-      await createPublicBooking({
+      const created = await createPublicBooking({
         data: {
           name: name.trim(),
           phone: phone.trim(),
@@ -82,7 +82,13 @@ export function Configurator({
           website,
         },
       });
-      await navigate({ to: "/danke" });
+      await navigate({
+        to: "/danke",
+        search: {
+          vorgang: created.reference,
+          zusage: created.confirmed ? "1" : undefined,
+        },
+      });
     } catch {
       setError("Senden fehlgeschlagen. Bitte telefonisch oder per WhatsApp erreichen.");
       setPending(false);
@@ -226,7 +232,13 @@ export function Configurator({
         </p>
         <p className="text-sm text-muted">
           {quote.klass.label} · {quote.pack.name}
-          {quote.city ? ` · Abholung ${pickupPriceText(quote.city.km, packageId)}` : quote.pickupOnRequest ? " · Abholung auf Anfrage" : ""}
+          {quote.pickup === 0
+            ? " · Abholung kostenlos"
+            : quote.pickupOnRequest
+              ? " · Abholung auf Anfrage"
+              : quote.pickup
+                ? ` · Abholung ${eur(quote.pickup)}`
+                : ""}
         </p>
         <p className="text-xs text-subtle">
           Das ist der Startpreis inkl. MwSt. Wenn der Zustand mehr Aufwand braucht,

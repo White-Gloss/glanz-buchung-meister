@@ -45,8 +45,10 @@ function TermsPage() {
           <p>
             Nach Sichtung der Angaben, Fotos und – soweit erforderlich – nach Besichtigung des
             Fahrzeugs stimmen wir Leistungsumfang, verbindlichen Preis und Termin persönlich mit
-            Ihnen ab. Ein Vertrag kommt erst zustande, wenn wir den Auftrag ausdrücklich bestätigen
-            oder mit der vereinbarten Leistung beginnen.
+            Ihnen ab. Ein Vertrag über die Aufbereitung kommt erst zustande, wenn wir den Auftrag
+            ausdrücklich bestätigen oder mit der vereinbarten Leistung beginnen. Ein freier
+            Wunschtermin an einem Werktag kann automatisch als Termin zugesagt werden; das ist
+            unsere Terminbestätigung, nicht automatisch der verbindliche Endpreis.
           </p>
         </section>
 
@@ -68,10 +70,12 @@ function TermsPage() {
         <section>
           <h2>3. Termine, Übergabe und Mitwirkung</h2>
           <p>
-            Der übermittelte Termin ist ein Terminwunsch. Den genauen Termin, die Uhrzeit sowie bei
-            Hol- und Bringservice die Übergabe stimmen wir in der Regel drei bis vier Tage vor dem
-            Termin telefonisch oder per E-Mail ab. Können wir den Wunschtermin nicht anbieten,
-            schlagen wir einen Ausweichtermin vor.
+            Der übermittelte Termin ist ein Terminwunsch. Ist der gewünschte Werktag mit einem
+            freien Zeitfenster verfügbar, sagen wir den Termin automatisch zu. Ohne Datum, an
+            Wochenenden, bei belegtem Slot oder vollem Tag bleibt die Anfrage offen. Den genauen
+            Hol- und Bringservice sowie die Übergabe stimmen wir in der Regel drei bis vier Tage
+            vor dem Termin telefonisch oder per E-Mail ab. Können wir den Wunschtermin nicht
+            anbieten, schlagen wir einen Ausweichtermin vor.
           </p>
           <p>
             Bitte übergeben Sie das Fahrzeug mit allen für die vereinbarte Leistung notwendigen
@@ -152,7 +156,7 @@ function TermsPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 30. August 2026</p>
       </article>
     </main>
   );

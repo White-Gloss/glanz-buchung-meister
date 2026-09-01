@@ -78,9 +78,9 @@ function AdminAutomation() {
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">White Gloss Workflow</p>
       <h1 className="mt-2 font-display text-4xl">Automatisierung</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
-        Buchung rein. Bestätigen. Der Rest läuft: Eingangsmail, Terminbestätigung, Kalender,
-        Erinnerung, Rechnungsentwurf. Derselbe Agent steuert später WhatsApp und Telegram –
-        Tokens bleiben serverseitig. In dieser Vorschau simulieren Sie den Kanal.
+        Buchung mit freiem Wunschtermin: automatisch zugesagt. Ohne Datum, am Wochenende oder
+        bei vollem Tag prüfst du unter Buchungen. Danach: Eingangsmail, Terminmail, Kalender,
+        Erinnerung. Rechnung bleibt Lexware. WhatsApp an Kunden bleibt aus.
       </p>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -118,8 +118,8 @@ function AdminAutomation() {
         <div className="mt-5 grid gap-3 md:grid-cols-5">
           {[
             ["1", "Buchung", "Kunde sendet den Konfigurator"],
-            ["2", "Eingang", "Bestätigung und interne Meldung"],
-            ["3", "Freigabe", "Status im Admin auf Bestätigt"],
+            ["2", "Eingang", "Akte, Posteingang, interne Meldung"],
+            ["3", "Zusage", "Automatisch bei freiem Werktag, sonst unter Buchungen"],
             ["4", "Rechnung", "Entwurf hier, Beleg in Lexware"],
             ["5", "Termin", "Kalender und Erinnerung"],
           ].map(([n, t, d]) => (
