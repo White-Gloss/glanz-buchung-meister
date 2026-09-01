@@ -79,8 +79,15 @@ function assertSecurityHeaders(response) {
   }
 
   const hsts = headers.get("strict-transport-security") || "";
-  if (!/max-age=\d+/i.test(hsts)) {
+  const hstsMatch = hsts.match(/max-age=(\d+)/i);
+  const hstsMaxAge = hstsMatch ? Number(hstsMatch[1]) : NaN;
+  if (!hstsMatch) {
     fail("security-headers", "Strict-Transport-Security mit max-age fehlt");
+  } else if (!Number.isFinite(hstsMaxAge) || hstsMaxAge < 31536000) {
+    fail(
+      "security-headers",
+      `Strict-Transport-Security max-age ist ${hstsMaxAge}; erwartet mindestens 31536000`,
+    );
   }
 
   const permissions = headers.get("permissions-policy") || "";
