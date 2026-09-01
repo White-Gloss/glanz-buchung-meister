@@ -107,7 +107,7 @@ function ServiceCityPage() {
           White Gloss holt Fahrzeuge in {city.name} ab und bereitet sie in der Werkstatt in{" "}
           {site.city} auf. {city.blurb}
         </p>
-        <p className="mt-4 rounded-md border border-line bg-surface p-4 text-sm">
+        <p className="mt-4 rounded-card border border-line bg-surface p-4 text-sm">
           Hol- & Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
           Ausführung immer in {site.street}, {site.postalCode} {site.city}.
         </p>

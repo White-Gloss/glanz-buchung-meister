@@ -56,7 +56,7 @@ function LeistungenIndex() {
           </Link>
         ))}
         {extra.map((row) => (
-          <article key={row.id} className="rounded-lg border border-line bg-surface p-6">
+          <article key={row.id} className="rounded-card border border-line bg-surface p-6">
             <h2 className="font-display text-2xl">{row.title}</h2>
             <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{row.body}</p>
           </article>

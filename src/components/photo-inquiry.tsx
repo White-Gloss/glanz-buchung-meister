@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { site } from "@/data/site";
 import { createPublicPhotoInquiry } from "@/lib/bookings.functions";
-import { Button, Field, inputClass } from "./ui";
+import { Button, Field, inputLine } from "./ui";
 
 export function PhotoInquiry({
   title,
@@ -58,7 +58,7 @@ export function PhotoInquiry({
 
   if (sent) {
     return (
-      <p className="rounded-md border border-line bg-elevated p-5 text-sm text-muted">
+      <p className="rounded-card border border-line bg-elevated p-5 text-sm text-muted">
         Anfrage im Posteingang. Wir melden uns unter der angegebenen Nummer. {site.phoneDisplay}
       </p>
     );
@@ -69,7 +69,7 @@ export function PhotoInquiry({
       onSubmit={onSubmit}
       data-hide-whatsapp
       aria-label={title}
-      className="relative space-y-5 rounded-lg border border-line bg-surface p-5"
+      className="relative space-y-5 rounded-card border border-line bg-surface p-5"
     >
       <h2 className="font-display text-2xl">{title}</h2>
       <p className="text-sm text-muted">{hint}</p>
@@ -78,7 +78,7 @@ export function PhotoInquiry({
         werden Name, Telefon, Beschreibung und Dateinamen zur Zuordnung. Für die Begutachtung
         fordern wir Fotos bei Bedarf über einen separaten sicheren Kanal an.
       </p>
-      <Field id="media" label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)">
+      <Field tone="public" id="media" label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)">
         <input
           id="media"
           type="file"
@@ -91,19 +91,19 @@ export function PhotoInquiry({
           <p className="text-xs text-subtle">{files.length} Datei(en) gewählt</p>
         ) : null}
       </Field>
-      <Field id="desc" label="Beschreibung">
+      <Field tone="public" id="desc" label="Beschreibung">
         <textarea
           id="desc"
           maxLength={2000}
-          className={`${inputClass} min-h-28 py-2`}
+          className={`${inputLine} min-h-28 py-2`}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
       </Field>
-      <Field id="iname" label="Name">
+      <Field tone="public" id="iname" label="Name">
         <input
           id="iname"
-          className={inputClass}
+          className={inputLine}
           autoComplete="name"
           name="name"
           required
@@ -111,10 +111,10 @@ export function PhotoInquiry({
           onChange={(e) => setName(e.target.value)}
         />
       </Field>
-      <Field id="iphone" label="Telefon">
+      <Field tone="public" id="iphone" label="Telefon">
         <input
           id="iphone"
-          className={inputClass}
+          className={inputLine}
           autoComplete="tel"
           inputMode="tel"
           type="tel"
@@ -155,7 +155,7 @@ export function PhotoInquiry({
           {error}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending} aria-busy={pending}>
+      <Button tone="public" type="submit" disabled={pending} aria-busy={pending}>
         {pending ? "Wird gesendet …" : "Anfrage senden"}
       </Button>
     </form>
