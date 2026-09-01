@@ -28,7 +28,7 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       {
         rel: "preload",
-        href: "/fonts/bebas-neue-400.woff2",
+        href: "/fonts/barlow-600.woff2",
         as: "font",
         type: "font/woff2",
         crossOrigin: "anonymous",
