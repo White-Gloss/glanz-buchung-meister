@@ -504,7 +504,7 @@ export function Shell() {
 
   if (isApp) {
     return (
-      <div className="relative min-h-dvh bg-bg font-sans text-fg">
+      <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="app">
         <SkipLink />
         <Outlet />
       </div>
@@ -512,7 +512,7 @@ export function Shell() {
   }
 
   return (
-    <div className="relative min-h-dvh bg-bg font-sans text-fg">
+    <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public">
       <SkipLink />
       <SiteHeader />
       <Outlet />

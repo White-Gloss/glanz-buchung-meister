@@ -78,7 +78,7 @@ export function PhotoInquiry({
         werden Name, Telefon, Beschreibung und Dateinamen zur Zuordnung. Für die Begutachtung
         fordern wir Fotos bei Bedarf über einen separaten sicheren Kanal an.
       </p>
-      <Field id="media" label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)">
+      <Field tone="public" id="media" label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)">
         <input
           id="media"
           type="file"
@@ -91,7 +91,7 @@ export function PhotoInquiry({
           <p className="text-xs text-subtle">{files.length} Datei(en) gewählt</p>
         ) : null}
       </Field>
-      <Field id="desc" label="Beschreibung">
+      <Field tone="public" id="desc" label="Beschreibung">
         <textarea
           id="desc"
           maxLength={2000}
@@ -100,7 +100,7 @@ export function PhotoInquiry({
           onChange={(e) => setText(e.target.value)}
         />
       </Field>
-      <Field id="iname" label="Name">
+      <Field tone="public" id="iname" label="Name">
         <input
           id="iname"
           className={inputLine}
@@ -111,7 +111,7 @@ export function PhotoInquiry({
           onChange={(e) => setName(e.target.value)}
         />
       </Field>
-      <Field id="iphone" label="Telefon">
+      <Field tone="public" id="iphone" label="Telefon">
         <input
           id="iphone"
           className={inputLine}
@@ -155,7 +155,7 @@ export function PhotoInquiry({
           {error}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending} aria-busy={pending}>
+      <Button tone="public" type="submit" disabled={pending} aria-busy={pending}>
         {pending ? "Wird gesendet …" : "Anfrage senden"}
       </Button>
     </form>

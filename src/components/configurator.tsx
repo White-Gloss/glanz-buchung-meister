@@ -209,7 +209,7 @@ export function Configurator({
           ))}
         </fieldset>
 
-        <Field id="city" label="Abholort">
+        <Field tone="public" id="city" label="Abholort">
           <select
             id="city"
             className={inputLine}
@@ -245,7 +245,7 @@ export function Configurator({
           stimmen wir den Endpreis nach dem Anschauen mit Ihnen ab.{" "}
           {depositConfig.label}: {depositConfig.note}
         </p>
-        <Field id="name" label="Name">
+        <Field tone="public" id="name" label="Name">
           <input
             id="name"
             className={inputLine}
@@ -256,7 +256,7 @@ export function Configurator({
             required
           />
         </Field>
-        <Field id="phone" label="Telefon">
+        <Field tone="public" id="phone" label="Telefon">
           <input
             id="phone"
             className={inputLine}
@@ -269,7 +269,7 @@ export function Configurator({
             onChange={(e) => setPhone(e.target.value)}
           />
         </Field>
-        <Field id="email" label="E-Mail (optional)">
+        <Field tone="public" id="email" label="E-Mail (optional)">
           <input
             id="email"
             type="email"
@@ -280,7 +280,7 @@ export function Configurator({
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field id="date" label="Wunschtermin (optional)">
+        <Field tone="public" id="date" label="Wunschtermin (optional)">
           <input
             id="date"
             type="date"
@@ -289,7 +289,7 @@ export function Configurator({
             onChange={(e) => setDate(e.target.value)}
           />
         </Field>
-        <Field id="slot" label="Zeitfenster (optional)">
+        <Field tone="public" id="slot" label="Zeitfenster (optional)">
           <select
             id="slot"
             className={inputLine}
@@ -304,7 +304,7 @@ export function Configurator({
             ))}
           </select>
         </Field>
-        <Field id="note" label="Hinweis">
+        <Field tone="public" id="note" label="Hinweis">
           <textarea
             id="note"
             className={`${inputLine} min-h-24 py-2`}
@@ -345,7 +345,7 @@ export function Configurator({
             {error}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={pending} aria-busy={pending}>
+        <Button tone="public" type="submit" className="w-full" disabled={pending} aria-busy={pending}>
           {pending ? "Wird gesendet …" : "Terminanfrage senden"}
         </Button>
         <a

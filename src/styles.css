@@ -253,7 +253,14 @@
     color: var(--color-accent-fg);
   }
 
+  /* Der Chrom-Fokusring gilt nur fuer die oeffentliche Seite. Admin und Login
+     behalten ihren bisherigen Ring — sie sind vom Redesign ausgenommen. */
   :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  [data-shell="public"] :focus-visible {
     outline: 2px solid var(--chrome-solid);
     outline-offset: 2px;
   }
