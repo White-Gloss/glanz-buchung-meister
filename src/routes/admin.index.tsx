@@ -58,6 +58,10 @@ function AdminBookings() {
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-subtle">Tagesgeschäft</p>
           <h1 className="mt-2 font-display text-4xl">Buchungen</h1>
+          <p className="mt-2 max-w-xl text-sm text-muted">
+            Freie Wunschtermine an Werktagen werden automatisch zugesagt. Offene Anfragen ohne Datum
+            oder mit Kollision bleiben hier zum Zusagen oder Ablehnen.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {(["alle", ...bookingStatuses.map((s) => s.id)] as const).map((id) => (
@@ -131,6 +135,7 @@ function AdminBookings() {
       ) : visible.length === 0 ? (
         <p className="mt-8 rounded-md border border-line bg-surface p-6 text-sm text-muted">
           Noch keine Anfragen. Sobald jemand den Preisrechner absendet, erscheint die Buchung hier.
+          Freie Wunschtermine werden automatisch zugesagt.
         </p>
       ) : (
         <ul className="mt-8 space-y-3">

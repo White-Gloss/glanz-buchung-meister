@@ -1,9 +1,11 @@
-import { site } from "../data/site.ts";
+import { site, timeSlots } from "../data/site.ts";
 import { isEmailAddress } from "./utils.ts";
 
 type Sql = Awaited<ReturnType<typeof import("./db").getSql>>;
 
 export const OUTBOUND_QUEUED = "queued";
+export const AUTO_CONFIRM_MAX_PER_DAY = 2;
+export const AUTO_CONFIRM_ACTOR = "auto";
 
 export type BookingLite = {
   id: number;
@@ -19,6 +21,16 @@ export type QueueTarget = {
   channel: "email" | "whatsapp" | "telegram";
   to: string;
 };
+
+export type OccupiedAppointment = {
+  date: string;
+  slot: string | null;
+  packageId: string;
+};
+
+export type AutoConfirmDecision =
+  | { ok: true }
+  | { ok: false; reason: "not_booking" | "no_date" | "past" | "weekend" | "slot_taken" | "day_full" | "keramik_day" };
 
 export async function safeExec(label: string, fn: () => Promise<unknown>) {
   try {
@@ -53,10 +65,80 @@ export function resolveCustomerConfirmRecipients(booking: BookingLite): QueueTar
   if (isEmailAddress(booking.email)) {
     targets.push({ channel: "email", to: booking.email.trim() });
   }
-  // WhatsApp/Telegram an Kunden werden nicht automatisch vorgemerkt.
-  // Es gibt keinen bestätigten Versandadapter; die Datenschutzerklärung
-  // sagt ausdrücklich, dass kein automatischer Versand aktiv ist.
   return targets;
+}
+
+export function berlinCalendarDate(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+export function berlinMinutesSinceMidnight(now = new Date()): number {
+  const parts = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return hour * 60 + minute;
+}
+
+function slotMinutes(slot: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(slot)) return null;
+  const [hours, minutes] = slot.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function weekdayUtcNoon(iso: string): number {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay();
+}
+
+export function canAutoConfirmAppointment(input: {
+  kind?: string;
+  packageId: string;
+  preferredDate: string | null;
+  preferredSlot: string | null;
+  occupied: OccupiedAppointment[];
+  today?: string;
+  nowMinutes?: number;
+}): AutoConfirmDecision {
+  if ((input.kind || "booking") !== "booking") return { ok: false, reason: "not_booking" };
+  const date = (input.preferredDate || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, reason: "no_date" };
+
+  const today = input.today ?? berlinCalendarDate();
+  if (date < today) return { ok: false, reason: "past" };
+
+  const weekday = weekdayUtcNoon(date);
+  if (weekday === 0 || weekday === 6) return { ok: false, reason: "weekend" };
+
+  const slot = (input.preferredSlot || "").trim() || null;
+  if (slot && !timeSlots.includes(slot)) return { ok: false, reason: "no_date" };
+  if (date === today) {
+    const nowMinutes = input.nowMinutes ?? berlinMinutesSinceMidnight();
+    if (!slot) return { ok: false, reason: "past" };
+    const start = slotMinutes(slot);
+    if (start === null || start <= nowMinutes) return { ok: false, reason: "past" };
+  }
+
+  const sameDay = input.occupied.filter((row) => row.date === date);
+  if (slot && sameDay.some((row) => row.slot === slot)) return { ok: false, reason: "slot_taken" };
+
+  const incomingKeramik = input.packageId === "keramik";
+  const dayHasKeramik = sameDay.some((row) => row.packageId === "keramik");
+  if (incomingKeramik || dayHasKeramik) {
+    if (sameDay.length > 0) return { ok: false, reason: "keramik_day" };
+  }
+  if (sameDay.length >= AUTO_CONFIRM_MAX_PER_DAY) return { ok: false, reason: "day_full" };
+
+  return { ok: true };
 }
 
 async function queueChannel(
@@ -119,6 +201,7 @@ export async function queueBookingAutomation(
     `Ihr Termin für ${booking.package_id} ist bestätigt (WG-${booking.id}).`,
     `Zeitfenster: ${when}`,
     "Ausführung: Arnistal 27, 72160 Horb am Neckar.",
+    "Der verbindliche Preis bleibt nach Begutachtung. Es erfolgt kein automatischer Einzug.",
     "",
     "White Gloss Detailing",
   ].join("\n");
@@ -140,10 +223,15 @@ export async function queueBookingAutomation(
       `,
     );
   }
+  const auto = userId === AUTO_CONFIRM_ACTOR;
   await safeExec("confirm-event", () =>
     sql`
       insert into automation_events (shop_id, area, event, severity, context)
-      values (${"white-gloss"}, ${"buchung"}, ${"bestaetigt"}, ${"info"}, ${`WG-${booking.id}`})
+      values (
+        ${"white-gloss"}, ${"buchung"},
+        ${auto ? "auto-bestaetigt" : "bestaetigt"}, ${"info"},
+        ${`WG-${booking.id}`}
+      )
     `,
   );
 }
