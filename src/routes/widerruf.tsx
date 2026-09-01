@@ -90,7 +90,7 @@ function WithdrawalPage() {
             Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und
             senden Sie es zurück.
           </p>
-          <div className="rounded-lg border border-line bg-surface p-5 text-sm leading-7 text-muted">
+          <div className="rounded-card border border-line bg-surface p-5 text-sm leading-7 text-muted">
             <p>An {providerAddress}</p>
             <p>
               E-Mail: <a href={`mailto:${site.email}`}>{site.email}</a>

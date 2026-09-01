@@ -47,7 +47,7 @@ function ServicePage() {
           ))}
         </div>
         {s.honestNote ? (
-          <p className="mt-8 rounded-md border border-line bg-surface p-4 text-sm leading-relaxed text-fg">
+          <p className="mt-8 rounded-card border border-line bg-surface p-4 text-sm leading-relaxed text-fg">
             {s.honestNote}
           </p>
         ) : null}
@@ -75,7 +75,7 @@ function ServicePage() {
           </ol>
         ) : null}
         {s.slug === "keramikversiegelung" ? (
-          <p className="mt-8 rounded-md border border-line bg-surface p-4 text-sm">
+          <p className="mt-8 rounded-card border border-line bg-surface p-4 text-sm">
             Paket Keramik ab {eur(packages[2].price)} {site.vatNote} · ca. 2 Tage.
           </p>
         ) : null}

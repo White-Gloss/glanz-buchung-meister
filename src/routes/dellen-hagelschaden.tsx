@@ -58,7 +58,7 @@ function DellenPage() {
           ["Hagelschäden", "Einzelne oder zahlreiche Hageldellen"],
           ["Foto-Begutachtung", "Bei kleinen Schäden häufig ohne ersten Vor-Ort-Termin"],
         ].map(([t, d]) => (
-          <li key={t} className="rounded-md border border-line bg-surface p-4">
+          <li key={t} className="rounded-card border border-line bg-surface p-4">
             <p className="font-medium">{t}</p>
             <p className="mt-1 text-sm text-muted">{d}</p>
           </li>

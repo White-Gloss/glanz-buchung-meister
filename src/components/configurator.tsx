@@ -15,7 +15,7 @@ import {
 } from "@/data/site";
 import { createPublicBooking } from "@/lib/bookings.functions";
 import { eur } from "@/lib/utils";
-import { Button, Field, inputClass } from "./ui";
+import { Button, Field, inputLine } from "./ui";
 
 export function Configurator({
   initialPackage = "premium",
@@ -110,7 +110,7 @@ export function Configurator({
             {packages.map((p) => (
               <label
                 key={p.id}
-                className={`lift flex cursor-pointer items-start gap-3 rounded-md border p-4 ${
+                className={`lift flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
                   packageId === p.id ? "border-accent bg-elevated" : "border-line bg-surface"
                 }`}
               >
@@ -147,7 +147,7 @@ export function Configurator({
             {vehicleClasses.map((c) => (
               <label
                 key={c.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 ${
+                className={`flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
                   classId === c.id ? "border-accent bg-elevated" : "border-line bg-surface"
                 }`}
               >
@@ -181,7 +181,7 @@ export function Configurator({
                   .map((ex) => (
                     <label
                       key={ex.id}
-                      className="flex items-start justify-between gap-3 rounded-md border border-line bg-surface px-4 py-3"
+                      className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3"
                     >
                       <span className="flex min-w-0 items-start">
                         <input
@@ -212,7 +212,7 @@ export function Configurator({
         <Field id="city" label="Abholort">
           <select
             id="city"
-            className={inputClass}
+            className={inputLine}
             value={citySlug}
             onChange={(e) => setCitySlug(e.target.value)}
           >
@@ -225,7 +225,7 @@ export function Configurator({
         </Field>
       </div>
 
-      <div className="ga-quote h-fit space-y-5 rounded-lg border border-line bg-elevated p-5">
+      <div className="ga-quote h-fit space-y-5 rounded-card border border-line bg-elevated p-5">
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">Unverbindliche Anfrage</p>
         <p className="font-display text-3xl text-fg" aria-live="polite">
           {eur(quote.total)}
@@ -248,7 +248,7 @@ export function Configurator({
         <Field id="name" label="Name">
           <input
             id="name"
-            className={inputClass}
+            className={inputLine}
             autoComplete="name"
             name="name"
             value={name}
@@ -259,7 +259,7 @@ export function Configurator({
         <Field id="phone" label="Telefon">
           <input
             id="phone"
-            className={inputClass}
+            className={inputLine}
             autoComplete="tel"
             inputMode="tel"
             type="tel"
@@ -273,7 +273,7 @@ export function Configurator({
           <input
             id="email"
             type="email"
-            className={inputClass}
+            className={inputLine}
             autoComplete="email"
             name="email"
             value={email}
@@ -284,7 +284,7 @@ export function Configurator({
           <input
             id="date"
             type="date"
-            className={inputClass}
+            className={inputLine}
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
@@ -292,7 +292,7 @@ export function Configurator({
         <Field id="slot" label="Zeitfenster (optional)">
           <select
             id="slot"
-            className={inputClass}
+            className={inputLine}
             value={slot}
             onChange={(e) => setSlot(e.target.value)}
           >
@@ -307,7 +307,7 @@ export function Configurator({
         <Field id="note" label="Hinweis">
           <textarea
             id="note"
-            className={`${inputClass} min-h-24 py-2`}
+            className={`${inputLine} min-h-24 py-2`}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />

@@ -101,6 +101,11 @@
     #8a8d94 62%,
     #edeef0 100%
   );
+  /* Volltonwert aus der Mitte des Verlaufs. Rahmen und Fokus-Ring koennen
+     keinen Verlauf tragen; dieser Ton liest sich auf Schwarz als Chrom und
+     steht mit 13,5:1 weit ueber der Anforderung fuer Fokus-Indikatoren. */
+  --chrome-solid: #d2d4d9;
+
   --chrome-line: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0%,
@@ -249,8 +254,8 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
+    outline: 2px solid var(--chrome-solid);
+    outline-offset: 2px;
   }
 
   /* Eyebrow. Die einzige Textsorte ausser Buttons und Navigation, die
@@ -925,11 +930,93 @@
     }
   }
 
-  .lift {
+  /* Buttons. Versalien, gesperrt, kantig — laut Vorgabe. Padding und Groesse
+     stehen hier; Aufrufstellen duerfen sie mit Utilities ueberschreiben
+     (die Navbar tut das), weil Utilities gegen diese Ebene gewinnen. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-control);
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
     transition:
-      transform 280ms var(--ease-out-quart),
-      box-shadow 280ms var(--ease-out-quart),
-      border-color 280ms var(--ease-out-quart);
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart),
+      color 240ms var(--ease-out-quart);
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    border-color: var(--color-line-strong);
+    color: var(--color-fg);
+  }
+
+  @media (hover: hover) {
+    .btn-secondary:hover {
+      border-color: var(--chrome-solid);
+      background-color: var(--color-elevated);
+    }
+  }
+
+  /* Eingabefelder der oeffentlichen Formulare: transparent, nur eine untere
+     Haarlinie statt Kasten, bei Fokus wechselt die Linie auf Chrom. Der
+     Admin-Bereich behaelt bewusst seine eigene, kastenfoermige Variante. */
+  .input-line {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.125rem;
+    border: 0;
+    border-bottom: 1px solid var(--color-line-strong);
+    border-radius: 0;
+    background-color: transparent;
+    color: var(--color-fg);
+    font-size: 0.9375rem;
+    transition: border-color 240ms var(--ease-out-quart);
+  }
+
+  .input-line::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input-line:hover {
+    border-bottom-color: var(--color-fg);
+  }
+
+  .input-line:focus {
+    outline: none;
+    border-bottom-color: var(--chrome-solid);
+  }
+
+  /* Fokus bleibt fuer Tastatur sichtbar: die Linie allein ist als Indikator
+     zu leise, deshalb zusaetzlich der Ring. */
+  .input-line:focus-visible {
+    outline: 2px solid var(--chrome-solid);
+    outline-offset: 2px;
+  }
+
+  /* Karten und Listenzeilen. Die Vorgabe ersetzt Schatten durch Haarlinien:
+     bei Hover geht der Rahmen auf Chrom und die Flaeche eine Stufe hoeher —
+     kein Anheben, kein Schein. */
+  .lift {
+    border-radius: var(--radius-card);
+    transition:
+      background-color 240ms var(--ease-out-quart),
+      border-color 240ms var(--ease-out-quart);
   }
 
   .cta-shine {
@@ -944,15 +1031,15 @@
     pointer-events: none;
     background: linear-gradient(
       105deg,
-      transparent 38%,
-      rgb(255 255 255 / 0.32) 50%,
-      transparent 62%
+      transparent 36%,
+      rgb(138 141 148 / 0.42) 50%,
+      transparent 64%
     );
     transform: translateX(-130%);
   }
 
   .link-draw {
-    background-image: linear-gradient(currentColor, currentColor);
+    background-image: var(--chrome-gradient);
     background-position: 0 100%;
     background-repeat: no-repeat;
     background-size: 0 1px;
@@ -968,10 +1055,8 @@
     }
 
     .lift:hover {
-      transform: translateY(-3px);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 0.06),
-        0 24px 70px -36px color-mix(in oklab, var(--color-accent) 38%, transparent);
+      background-color: var(--color-elevated);
+      border-color: var(--chrome-solid);
     }
 
     .cta-shine:hover::after {
