@@ -91,7 +91,7 @@ function AdminAutomation() {
             {
               Icon: ReceiptText,
               title: "Buchhaltung",
-              text: "Lexware/ERPNext sobald Schlüssel serverseitig liegen",
+              text: "WHITE GLOSS OS über Buchhaltung verbinden; Lexware bleibt für Rechnungen",
             },
             {
               Icon: BellRing,

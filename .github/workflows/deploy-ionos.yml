@@ -80,6 +80,9 @@ jobs:
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ERPNEXT_BASE_URL: ${{ secrets.ERPNEXT_BASE_URL }}
+          ERPNEXT_API_KEY: ${{ secrets.ERPNEXT_API_KEY }}
+          ERPNEXT_API_SECRET: ${{ secrets.ERPNEXT_API_SECRET }}
         run: |
           npm ci --ignore-scripts
           npm run build
