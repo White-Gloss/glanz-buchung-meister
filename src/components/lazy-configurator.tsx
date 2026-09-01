@@ -13,8 +13,8 @@ function Skeleton() {
       role="status"
       aria-label="Buchungsformular wird geladen"
     >
-      <div className="ga-fields rounded-lg border border-line bg-surface" />
-      <div className="ga-quote h-fit min-h-80 rounded-lg border border-line bg-elevated" />
+      <div className="ga-fields rounded-card border border-line bg-surface" />
+      <div className="ga-quote h-fit min-h-80 rounded-card border border-line bg-elevated" />
     </div>
   );
 }

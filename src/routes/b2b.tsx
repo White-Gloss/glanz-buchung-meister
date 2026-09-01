@@ -51,7 +51,7 @@ function B2bPage() {
           ["Autohäuser & Fahrzeughandel", "Aufbereitung für Verkauf, Standfläche und Auslieferung."],
           ["Firmen- & Poolfahrzeuge", "Innen und außen so, dass die Autos im Alltag wieder anständig aussehen."],
         ].map(([t, d]) => (
-          <section key={t} className="rounded-md border border-line bg-surface p-5">
+          <section key={t} className="rounded-card border border-line bg-surface p-5">
             <h2 className="font-display text-2xl">{t}</h2>
             <p className="mt-2 text-sm text-muted">{d}</p>
           </section>

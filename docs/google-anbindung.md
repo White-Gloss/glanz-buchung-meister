@@ -135,6 +135,27 @@ Unternehmensprofil und diese Angaben sollten übereinstimmen.
 
 ---
 
+## Betriebspanel: Google-Anmeldung
+
+Die öffentliche Website lädt kein Google-Login. Nur `/login` (noindex) bietet
+„Weiter mit Google“ für den Inhaber und beauftragte Mitarbeiter.
+
+- Native Google-OAuth (nicht der Grok-Vorschau-Broker) über Better Auth.
+- Client-ID/Secret: GitHub-Secrets `GOOGLE_CLIENT_ID` und `GOOGLE_CLIENT_SECRET`.
+  Der IONOS-Build bettet sie ein. Ohne Secrets bleibt die Taste sichtbar,
+  die Anmeldung fällt auf E-Mail/Passwort zurück.
+- Redirect-URI in der Google-Cloud-Konsole: `https://white-gloss.de/api/auth/callback/google`
+- JavaScript-Ursprung: `https://white-gloss.de`
+- Zulässig: Adressen `@white-gloss.de` sowie `ADMIN_EMAILS` / `OWNER_EMAIL`.
+  Private Gmail-Konten sind nicht automatisch offen.
+- X/Twitter bleibt aus.
+
+Das erste Betriebskonto kann ohne Google eingerichtet werden: auf `/login`
+mit `info@white-gloss.de` und einem Passwort (mindestens 10 Zeichen), solange
+noch kein Benutzer existiert.
+
+---
+
 ## Was die Website automatisch erledigt
 
 - `sitemap.xml` wird bei jedem Aufruf neu erzeugt, inklusive Ratgeber-Beiträgen
@@ -143,8 +164,10 @@ Unternehmensprofil und diese Angaben sollten übereinstimmen.
   persönliche Kundenlinks (`/angebot/`, `/kalender/`).
 - Jede Seite hat Titel, Beschreibung, Canonical-Adresse und strukturierte
   Daten.
-- Das Google-Skript wird **erst nach aktiver Einwilligung** geladen. Ohne
-  Einwilligung stellt die Seite keine einzige Verbindung zu Google her.
+- Das Google-Skript für Analytics/Ads wird **erst nach aktiver Einwilligung** geladen.
+  Ohne Einwilligung stellt die öffentliche Website keine Verbindung zu Google
+  Analytics oder Ads her. Google Maps und die Betriebs-Anmeldung über Google
+  sind eigene, bewusste Aktionen, kein Tracking.
 - Eine erfolgreich abgeschickte Terminanfrage meldet automatisch die
   Conversion an Google Ads und das Ereignis `generate_lead` an Analytics –
   ebenfalls nur mit Einwilligung.

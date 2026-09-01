@@ -144,9 +144,11 @@ function PrivacyPage() {
           <h2>8. Betriebspanel (nur intern)</h2>
           <p>
             Die Anmeldung zum Betriebspanel ist ausschließlich für den Inhaber und beauftragte
-            Mitarbeiter bestimmt. Im Produktivbetrieb erfolgt sie per E-Mail und Passwort.
-            Die Anmeldeanbieter Google und X (Twitter) sind auf dieser öffentlichen Website nicht
-            aktiv. Öffentliche Besucher können dort kein Konto anlegen.
+            Mitarbeiter bestimmt. Sie erfolgt per E-Mail und Passwort oder über Google
+            (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland).
+            Google-Anmeldung ist nur für Adressen @white-gloss.de und ausdrücklich
+            freigeschaltete Postfächer zulässig. Der Anmeldeanbieter X (Twitter) ist nicht
+            aktiv. Öffentliche Besucher können dort kein Konto einrichten.
           </p>
         </section>
 

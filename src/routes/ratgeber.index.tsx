@@ -63,7 +63,7 @@ function RatgeberIndex() {
         </p>
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((a) => (
-            <li key={a.slug} className="overflow-hidden rounded-lg border border-line bg-surface">
+            <li key={a.slug} className="overflow-hidden rounded-card border border-line bg-surface">
               <FluidImg
                 src={a.image}
                 alt=""
@@ -102,7 +102,7 @@ function RatgeberIndex() {
                 /* ignore */
               }
               return (
-                <li key={r.id} className="overflow-hidden rounded-lg border border-line bg-surface">
+                <li key={r.id} className="overflow-hidden rounded-card border border-line bg-surface">
                   <div className="p-5">
                     <p className="text-xs text-subtle">Aktuell</p>
                     <h2 className="mt-2 font-display text-2xl">

@@ -12,7 +12,7 @@ import {
   type PackageId,
   type VehicleClass,
 } from "@/data/site";
-import { queueBookingAutomation, queueOwnerNotify, safeExec, OUTBOUND_QUEUED } from "@/lib/ops";
+import { queueBookingAutomation, queueOwnerNotify, safeExec, OUTBOUND_QUEUED, canAutoConfirmAppointment, AUTO_CONFIRM_ACTOR, type OccupiedAppointment } from "@/lib/ops";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
@@ -152,12 +152,58 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     await upsertCustomer(sql, data.name, data.phone, data.email || undefined);
 
+    const occupiedRows = preferredDate
+      ? await sql<{ preferred_date: string; preferred_slot: string | null; package_id: string }>`
+          select preferred_date::text as preferred_date, preferred_slot, package_id
+          from bookings
+          where shop_id = ${SHOP}
+            and id <> ${id}
+            and status in ('neu', 'bestaetigt')
+            and preferred_date = ${preferredDate}
+        `
+      : [];
+    const occupied: OccupiedAppointment[] = occupiedRows.map((row) => ({
+      date: row.preferred_date.slice(0, 10),
+      slot: row.preferred_slot,
+      packageId: row.package_id,
+    }));
+    const auto = canAutoConfirmAppointment({
+      kind: data.kind,
+      packageId: data.packageId,
+      preferredDate,
+      preferredSlot: data.slot || null,
+      occupied,
+    });
+    if (auto.ok) {
+      await sql`
+        update bookings
+        set status = ${"bestaetigt"}, handled_by = ${AUTO_CONFIRM_ACTOR}, updated_at = now()
+        where id = ${id} and shop_id = ${SHOP}
+      `;
+      await queueBookingAutomation(
+        sql,
+        {
+          id,
+          customer_name: data.name,
+          email: data.email || null,
+          phone: data.phone,
+          package_id: data.packageId,
+          preferred_date: preferredDate,
+          preferred_slot: data.slot || null,
+        },
+        "bestaetigt",
+        AUTO_CONFIRM_ACTOR,
+      );
+    }
+
     const subject =
       data.kind === "dent"
         ? "Fotoanfrage Dellen"
         : data.kind === "condition"
           ? "Fotoanfrage Zustand"
-          : `Anfrage ${pack?.name ?? data.packageId}`;
+          : auto.ok
+            ? `Termin zugesagt ${pack?.name ?? data.packageId}`
+            : `Anfrage ${pack?.name ?? data.packageId}`;
 
     const body = [
       `${data.name} · ${data.phone}`,
@@ -186,32 +232,34 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       "White Gloss Detailing",
       "Arnistal 27, 72160 Horb am Neckar",
     ].join("\n");
-    if (isEmailAddress(data.email)) {
-      await safeExec("ack-out", () =>
+    if (!auto.ok) {
+      if (isEmailAddress(data.email)) {
+        await safeExec("ack-out", () =>
+          sql`
+            insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+            values (
+              ${SHOP}, ${"email"}, ${data.email},
+              ${`Anfrage eingegangen · White Gloss WG-${id}`}, ${ack}, ${id}, ${OUTBOUND_QUEUED}
+            )
+          `,
+        );
+      }
+      await safeExec("ack-inbox", () =>
         sql`
-          insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+          insert into inbox_messages (shop_id, channel, direction, sender, subject, body, booking_id)
           values (
-            ${SHOP}, ${"email"}, ${data.email},
-            ${`Anfrage eingegangen · White Gloss WG-${id}`}, ${ack}, ${id}, ${OUTBOUND_QUEUED}
+            ${SHOP}, ${"email"}, ${"out"}, ${"White Gloss"},
+            ${`Anfrage eingegangen · WG-${id}`}, ${ack}, ${id}
           )
         `,
       );
+      await safeExec("ack-event", () =>
+        sql`
+          insert into automation_events (shop_id, area, event, severity, context)
+          values (${SHOP}, ${"mail"}, ${"eingangsbestaetigung"}, ${"info"}, ${`WG-${id}`})
+        `,
+      );
     }
-    await safeExec("ack-inbox", () =>
-      sql`
-        insert into inbox_messages (shop_id, channel, direction, sender, subject, body, booking_id)
-        values (
-          ${SHOP}, ${"email"}, ${"out"}, ${"White Gloss"},
-          ${`Anfrage eingegangen · WG-${id}`}, ${ack}, ${id}
-        )
-      `,
-    );
-    await safeExec("ack-event", () =>
-      sql`
-        insert into automation_events (shop_id, area, event, severity, context)
-        values (${SHOP}, ${"mail"}, ${"eingangsbestaetigung"}, ${"info"}, ${`WG-${id}`})
-      `,
-    );
 
     await queueOwnerNotify(
       sql,
@@ -224,7 +272,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         preferred_date: preferredDate,
         preferred_slot: data.slot || null,
       },
-      subject,
+      auto.ok ? "Terminzusage" : subject,
     );
 
     return {
@@ -232,6 +280,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       reference: `WG-${id}`,
       total: quote.total,
       pickupOnRequest: quote.pickupOnRequest,
+      confirmed: auto.ok,
     };
   });
 
