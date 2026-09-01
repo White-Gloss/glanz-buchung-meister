@@ -130,6 +130,17 @@
       color: transparent;
     }
   }
+
+  /* Im Kontrastmodus unterdrueckt der Browser den Verlauf, erfuellt die
+     @supports-Bedingung aber weiterhin — ohne diese Ruecknahme bliebe
+     transparenter, also unsichtbarer Text stehen. */
+  @media (forced-colors: active) {
+    .text-chrome {
+      background-image: none;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+  }
 }
 
 @layer base {
