@@ -74,6 +74,16 @@
   --radius-control: 2px;
   --radius-card: 4px;
 
+  /* Fliesstext-Zeilenhoehe laut Vorgabe 1.65. Sie allein auf body zu setzen
+     reicht nicht: Tailwinds Groessen-Utilities bringen ihre eigene
+     line-height mit und gewinnen gegen den geerbten Wert. Deshalb an den
+     Groessen selbst gesetzt — das erreicht jeden Absatz, ohne dass die
+     Komponenten angefasst werden muessen. text-xs bleibt aussen vor: das
+     ist Kleinschrift und Label, kein Fliesstext. */
+  --text-sm--line-height: 1.65;
+  --text-base--line-height: 1.65;
+  --text-lg--line-height: 1.65;
+
   --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
   --shadow-glow: 0 0 0 1px rgb(244 244 246 / 0.35), 0 18px 60px -22px rgb(244 244 246 / 0.45);
 }
@@ -278,6 +288,12 @@
     white-space: nowrap;
   }
 
+  /* Benannte Ausnahme zur Regel "Grossbuchstaben nur fuer Eyebrows, Buttons
+     und Navigation": diese Zeile steht als <span> in der <h1> und ist damit
+     formal Teil einer Ueberschrift. Typografisch ist sie aber ein Eyebrow —
+     13px, 0.24em Sperrung, gedeckte Farbe — und gesperrte Laufweite ist eine
+     Versalkonvention: gemischt gesetzt zerfiele die Wortmarken-Einheit zu
+     beilaeufigem Kleintext. Sie bleibt deshalb in Versalien. */
   .heading-tagline {
     font-family: var(--font-sans);
     font-size: clamp(0.7rem, 0.2rem + 1.4vw, 0.9rem);
