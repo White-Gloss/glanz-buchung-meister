@@ -768,6 +768,7 @@
   .site-header[data-scrolled="true"] {
     background-color: color-mix(in oklab, var(--color-bg) 82%, transparent);
     border-bottom-color: var(--color-line);
+    -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
   }
 

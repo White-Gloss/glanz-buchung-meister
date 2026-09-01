@@ -229,7 +229,7 @@ function MobileSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-nav-title"
-        className="mobile-sheet z-[80]"
+        className="mobile-sheet z-[100]"
       >
         <div className="sheet-head">
           <p id="mobile-nav-title">Navigation</p>
