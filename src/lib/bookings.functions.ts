@@ -12,36 +12,26 @@ import {
   type PackageId,
   type VehicleClass,
 } from "@/data/site";
-import { queueBookingAutomation, queueOwnerNotify, safeExec, OUTBOUND_QUEUED, canAutoConfirmAppointment, AUTO_CONFIRM_ACTOR, type OccupiedAppointment } from "@/lib/ops";
+import {
+  queueBookingAutomation,
+  queueOwnerNotify,
+  safeExec,
+  OUTBOUND_QUEUED,
+  canAutoConfirmAppointment,
+  AUTO_CONFIRM_ACTOR,
+  type OccupiedAppointment,
+} from "@/lib/ops";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
+import { publicBookingSchema } from "@/lib/booking-schema";
+
+export { publicBookingSchema };
+export type { PublicBookingInput } from "@/lib/booking-schema";
 
 const SHOP = "white-gloss";
 const extraIdSet = new Set(extras.map((item) => item.id));
 const citySlugSet = new Set(cities.map((item) => item.slug));
-
-const publicBookingSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(6).max(40),
-  email: z
-    .string()
-    .trim()
-    .max(160)
-    .refine((v) => v.length === 0 || isEmailAddress(v), "Ungültige E-Mail"),
-  date: z.string().max(20).optional(),
-  slot: z.string().max(10).optional(),
-  note: z.string().max(2000).optional(),
-  packageId: z.enum(["basis", "premium", "keramik"]),
-  classId: z.enum(["kompakt", "suv", "transporter"]),
-  extraIds: z.array(z.string().max(40)).max(20),
-  citySlug: z.string().max(80),
-  kind: z.enum(["booking", "dent", "condition"]).default("booking"),
-  privacy: z.literal(true),
-  website: z.string().max(120).optional(),
-});
-
-export type PublicBookingInput = z.infer<typeof publicBookingSchema>;
 
 export type BookingRow = {
   id: number;
