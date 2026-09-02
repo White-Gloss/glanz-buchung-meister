@@ -24,22 +24,39 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
+  // Cinematic video loop as primary hero, with <picture> fallback for
+  // reduced-motion users, older browsers, and while the video buffers.
   return (
-    <picture>
-      <source type="image/avif" srcSet={heroAvifSrcSet} sizes="100vw" />
-      <source type="image/webp" srcSet={heroWebpSrcSet} sizes="100vw" />
-      <img
-        src="/media/hero-720.webp"
-        alt={alt}
-        width={1600}
-        height={907}
-        className={cn("hero-image", className)}
-        fetchPriority={priority ? "high" : "low"}
-        decoding="async"
-        loading={priority ? "eager" : "lazy"}
-        sizes="100vw"
-      />
-    </picture>
+    <div className={cn("hero-image relative isolate size-full overflow-hidden", className)}>
+      <picture>
+        <source type="image/avif" srcSet={heroAvifSrcSet} sizes="100vw" />
+        <source type="image/webp" srcSet={heroWebpSrcSet} sizes="100vw" />
+        <img
+          src="/media/hero-720.webp"
+          alt={alt}
+          width={1600}
+          height={907}
+          className="absolute inset-0 size-full object-cover"
+          fetchPriority={priority ? "high" : "low"}
+          decoding="async"
+          loading={priority ? "eager" : "lazy"}
+          sizes="100vw"
+        />
+      </picture>
+      <video
+        aria-hidden="true"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        poster="/media/hero-loop-poster.jpg"
+        className="absolute inset-0 size-full object-cover motion-reduce:hidden"
+      >
+        <source src="/media/hero-loop.webm" type="video/webm" />
+        <source src="/media/hero-loop.mp4" type="video/mp4" />
+      </video>
+    </div>
   );
 }
 
