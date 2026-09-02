@@ -50,7 +50,7 @@ function PreisePage() {
         {packages.map((p, i) => (
           <li key={p.id} id={packageAnchor(p.id)} className="lift gd-pack py-10">
             <p className="ga-num font-display text-sm text-subtle tabular-nums">
-              {String(i + 1).padStart(2, "0")}
+              {String(i + 1).padStart(2, "0")}.
             </p>
             <div className="ga-pack-copy">
               <p className="kicker">{p.name}</p>
@@ -76,11 +76,11 @@ function PreisePage() {
             </div>
             <p className="ga-price min-w-[8.5rem]">
               <span className="flex items-baseline gap-2 lg:justify-end">
-                <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab</span>
+                <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab </span>
                 <span className="font-display text-4xl leading-none tracking-wide tabular-nums">
                   {money(p.price)}
                 </span>
-                <span className="text-sm text-muted">€</span>
+                <span className="text-sm text-muted"> €</span>
               </span>
               <span className="mt-2 block text-xs text-subtle">
                 {site.vatNote} · {p.duration}

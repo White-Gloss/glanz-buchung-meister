@@ -47,9 +47,9 @@ export const openingHours = {
 };
 
 export const depositConfig = {
-  rate: 0.2,
-  label: "Anzahlung Neukunde (20 %)",
-  note: "Nach Zusage wird bei Erstbuchungen eine Anzahlung von 20 % des Gesamtbetrags fällig. Der Rest nach Leistungserbringung. Kein automatischer Einzug.",
+  rate: 0.1,
+  label: "Anzahlung Neukunde (10 %)",
+  note: "Nach Zusage wird bei Erstbuchungen eine Anzahlung von 10 % des Gesamtbetrags fällig. Der Rest nach Leistungserbringung. Kein automatischer Einzug.",
 };
 
 export const timeSlots = ["09:00", "11:00", "13:00", "15:00"];
@@ -449,7 +449,8 @@ export function pickupTierSummary(): string {
   const parts = [...pickupPricing.tiers]
     .sort((a, b) => a.maxKm - b.maxKm)
     .map((t) => `bis ${t.maxKm} km ${t.amount === 0 ? "kostenlos" : eur(t.amount)}`);
-  return `${parts.join(", ")}, darüber auf Anfrage`;
+  const text = `${parts.join(", ")}, darüber auf Anfrage`;
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function pickupKeramikNote(): string {
@@ -825,22 +826,22 @@ export const faqs = [
 
 export const processSteps = [
   {
-    n: "01",
+    n: "01.",
     title: "Anschauen",
     text: "Zuerst sitzen wir kurz zusammen und schauen uns Lack, Innenraum und was Sie sich wünschen in Ruhe an. Erst danach sagen wir, was wirklich Sinn macht.",
   },
   {
-    n: "02",
+    n: "02.",
     title: "Vorbereiten",
     text: "Dann wird gründlich gereinigt, und alles, was empfindlich ist, wird geschützt – damit hinterher nichts leidet, was nicht soll.",
   },
   {
-    n: "03",
+    n: "03.",
     title: "Arbeiten",
     text: "Wir machen genau den Umfang, den wir besprochen haben. Nichts aufblasen, nichts weglassen.",
   },
   {
-    n: "04",
+    n: "04.",
     title: "Abgeben",
     text: "Zum Schluss prüfen wir unter Licht, Sie sehen das Ergebnis, und das Auto geht sauber raus.",
   },
@@ -850,6 +851,7 @@ export const nav = [
   { to: "/leistungen", label: "Leistungen" },
   { to: "/preise", label: "Preise" },
   { to: "/qualitaet", label: "Qualität" },
+  { to: "/kontakt", label: "Kontakt" },
   { to: "/b2b", label: "B2B" },
 ] as const;
 
@@ -862,13 +864,16 @@ export const sheetPrimary = [
 export const sheetSecondary = [
   { to: "/ratgeber", label: "Ratgeber" },
   { to: "/faq", label: "Häufige Fragen" },
+  { to: "/galerie", label: "Werkstatt" },
+  { to: "/kontakt", label: "Kontakt" },
   { to: "/b2b", label: "B2B & Flottenkunden" },
 ] as const;
 
 export const footerExplore = [
   { to: "/abholservice", label: "Abholservice" },
   { to: "/ratgeber", label: "Ratgeber" },
-  { to: "/luxusfahrzeuge", label: "Luxus" },
+  { to: "/galerie", label: "Werkstatt" },
+  { to: "/kontakt", label: "Kontakt" },
   { to: "/faq", label: "FAQ" },
 ] as const;
 

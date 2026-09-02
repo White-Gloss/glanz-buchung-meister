@@ -106,8 +106,8 @@ function Home() {
 
       <section className="relative overflow-hidden">
         <Shot
-          name="hero"
-          alt="Weißes Atelierfahrzeug von White Gloss in Horb, Kennzeichen entfernt"
+          name="atelier"
+          alt="Werkstatt von White Gloss in Horb am Neckar – ein Auto nach dem anderen"
           className="h-[68vh] min-h-[28rem] w-full sm:h-[82vh]"
           sizes="100vw"
           framed={false}
@@ -155,7 +155,7 @@ function Home() {
                   className="lift group gd-pack py-8"
                 >
                   <span className="ga-num font-display text-sm text-subtle tabular-nums">
-                    {String(i + 1).padStart(2, "0")}
+                    {String(i + 1).padStart(2, "0")}.
                   </span>
                   <span className="ga-pack-copy">
                     <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -175,11 +175,11 @@ function Home() {
                   </span>
                   <span className="ga-price">
                     <span className="flex items-baseline gap-2 sm:justify-end">
-                      <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab</span>
+                      <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab </span>
                       <span className="font-display text-3xl leading-none tracking-wide tabular-nums">
                         {money(p.price)}
                       </span>
-                      <span className="text-sm text-muted">€</span>
+                      <span className="text-sm text-muted"> €</span>
                     </span>
                     <span className="mt-1 block text-xs text-subtle">
                       {site.vatNote} · {p.duration}
@@ -300,6 +300,13 @@ function Home() {
           />
         </div>
         <PhotoNote className="mt-4" />
+        <Link
+          to="/galerie"
+          className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-fg"
+        >
+          Mehr aus der Werkstatt
+          <ArrowRight className="link-arrow size-4" aria-hidden />
+        </Link>
       </section>
 
       <section className="cv-auto gd-split gd-split--duo border-y border-line">
@@ -308,7 +315,7 @@ function Home() {
           className="ga-lux group relative block min-h-[28rem] overflow-hidden sm:min-h-[36rem]"
         >
           <Shot
-            name="hero"
+            name="private"
             alt="Atelierfahrzeug von White Gloss – für Fahrzeuge ab 80.000 € extra Zeit"
             className="absolute inset-0 h-full w-full"
             sizes="(min-width: 1024px) 50vw, 100vw"

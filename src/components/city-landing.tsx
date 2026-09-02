@@ -19,17 +19,17 @@ import { MessageCircle } from "lucide-react";
 
 const steps = [
   {
-    n: "01",
+    n: "01.",
     title: "Zustand zeigen",
     text: "Formular oder WhatsApp mit ein, zwei Fotos. Wir sagen, was sinnvoll ist – und was sich nicht lohnt.",
   },
   {
-    n: "02",
+    n: "02.",
     title: "Abholen oder bringen",
     text: "Hol- und Bringservice nach Staffel, oder Sie fahren selbst nach Horb. Die Arbeit bleibt in der Werkstatt.",
   },
   {
-    n: "03",
+    n: "03.",
     title: "Zurück mit Ergebnis",
     text: "Kontrolle unter Licht, Übergabe zum abgesprochenen Umfang. Kein Waschstraßenprogramm.",
   },
@@ -147,7 +147,7 @@ export function CityLanding({ city }: { city: City }) {
             {packages.map((p, i) => (
               <li key={p.id} className="gd-pack py-8">
                 <p className="ga-num font-display text-sm text-subtle tabular-nums">
-                  {String(i + 1).padStart(2, "0")}
+                  {String(i + 1).padStart(2, "0")}.
                 </p>
                 <div className="ga-pack-copy">
                   <p className="kicker">{p.name}</p>

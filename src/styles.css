@@ -158,6 +158,11 @@
     line-height: 1.65;
   }
 
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
   #main-content:focus {
     outline: none;
   }

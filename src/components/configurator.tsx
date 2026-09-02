@@ -14,7 +14,7 @@ import {
   type VehicleClass,
 } from "@/data/site";
 import { createPublicBooking } from "@/lib/bookings.functions";
-import { eur } from "@/lib/utils";
+import { eur, isEmailAddress } from "@/lib/utils";
 import { Button, Field, inputLine } from "./ui";
 
 export function Configurator({
@@ -61,6 +61,15 @@ export function Configurator({
     }
     if (!privacy) {
       setError("Bitte die Datenschutzerklärung bestätigen.");
+      return;
+    }
+    if (email.trim() && !isEmailAddress(email)) {
+      setError("Bitte eine gültige E-Mail angeben oder das Feld leer lassen.");
+      return;
+    }
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    if (date && date < today) {
+      setError("Bitte einen Wunschtermin ab heute wählen.");
       return;
     }
     setPending(true);
@@ -285,6 +294,7 @@ export function Configurator({
             id="date"
             type="date"
             className={inputLine}
+            min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />

@@ -11,6 +11,8 @@ const pageChecks = [
   { path: "/leistungen", markers: ["Leistungsspektrum", "Leistungen"] },
   { path: "/abholservice", markers: ["Hol", "Bringservice"] },
   { path: "/faq", markers: ["Häufige Fragen"] },
+  { path: "/kontakt", markers: ["Kontakt", "Arnistal"] },
+  { path: "/galerie", markers: ["Werkstatt"] },
   { path: "/impressum", markers: ["Angaben gemäß", "White Gloss Detailing"] },
   { path: "/datenschutz", markers: ["Verantwortlicher", "IONOS"] },
   { path: "/agb", markers: ["Allgemeine Geschäftsbedingungen"] },
@@ -29,6 +31,9 @@ const forbiddenSnippets = [
   { id: "old-domain", needle: "https://whitegloss.de" },
   { id: "stale-upload-claim", needle: "Dateien bleiben im Betrieb" },
   { id: "stale-10km-price", needle: "bis 10 km 20" },
+  { id: "stale-deposit-20", needle: "Anzahlung von 20" },
+  { id: "stale-deposit-20-label", needle: "Anzahlung Neukunde (20" },
+  { id: "stale-pickup-lowercase", needle: "Neckar. bis 10" },
   { id: "public-signup", needle: "Noch kein Konto? Registrieren" },
 ];
 
@@ -178,6 +183,19 @@ for (const check of pageChecks) {
 }
 
 try {
+  const { response, body } = await get("/diese-seite-gibt-es-nicht");
+  if (response.status !== 404) {
+    fail("/404", `HTTP ${response.status}, erwartet 404`);
+  } else if (!/Diese Seite gibt es nicht/i.test(body)) {
+    fail("/404", "deutsche 404-Meldung fehlt");
+  } else {
+    console.log(`PASS /404 -> ${response.status}`);
+  }
+} catch (error) {
+  fail("/404", error instanceof Error ? error.message : String(error));
+}
+
+try {
   // Merkt sich den Stand vor den Prüfungen, damit unten nicht „PASS"
   // gemeldet wird, obwohl gerade etwas fehlgeschlagen ist.
   const fehlerVorher = failures.length;
@@ -197,6 +215,11 @@ try {
   }
   if (body.includes("https://whitegloss.de")) {
     fail("/sitemap.xml", "alte Domain whitegloss.de ist noch enthalten");
+  }
+  for (const required of ["/kontakt", "/galerie"]) {
+    if (!locations.includes(`${BASE_URL}${required}`)) {
+      fail("/sitemap.xml", `${required} fehlt in der Sitemap`);
+    }
   }
   if (failures.length === fehlerVorher) {
     console.log(`PASS /sitemap.xml -> ${response.status}, ${locations.length} URLs`);

@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:8080/",
+  "url": "http://127.0.0.1:8081/",
   "viewports": {
     "desktop": {
       "width": 1280,
@@ -7,15 +7,11 @@
       "status": 200,
       "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
       "hasCanvas": false,
-      "bodyTextLen": 4725,
-      "bodyTextHash": "622832b203a5b7fc4abec3a81ec64173c013c8d55400ce8b9e58eb2d466f7f50",
-      "bodyTextPrefix": "Zum Inhalt springen Leistungen Preise Qualität Abholservice Ratg",
+      "bodyTextLen": 2036,
+      "bodyTextHash": "ce2887972044f680049ab3c0814107fde0454eaecd40ab43a2a7cfdd0e6ef6e6",
+      "bodyTextPrefix": "Zum Inhalt springen LEISTUNGEN PREISE QUALITÄT KONTAKT B2B 0152 ",
       "horizontalOverflow": false,
-      "consoleErrors": [
-        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
-      ],
+      "consoleErrors": [],
       "pageErrors": [],
       "screenshot": "/workspace/screenshots/app-builder-built.png"
     },
@@ -25,20 +21,18 @@
       "status": 200,
       "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
       "hasCanvas": false,
-      "bodyTextLen": 4648,
-      "bodyTextHash": "1000035db13b13e4f4ce53c5595740f6ca1ee97c6be00d5f565a15325693e984",
-      "bodyTextPrefix": "Zum Inhalt springen Termin anfragen FAHRZEUGAUFBEREITUNG · HORB ",
+      "bodyTextLen": 1967,
+      "bodyTextHash": "7891ebb18c8ecffca4fd85250a70ef772157cdaa3f91d2d5c6e00dcc2f858235",
+      "bodyTextPrefix": "Zum Inhalt springen HORB AM NECKAR · BADEN-WÜRTTEMBERG White Glo",
       "horizontalOverflow": false,
-      "consoleErrors": [
-        "Loading the script 'https://grok.com/grok-app-builder/extensions.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
-      ],
+      "consoleErrors": [],
       "pageErrors": [],
       "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
     }
   },
   "brandWarnings": [],
   "authWarnings": [],
-  "verdictFile": "/workspace/screenshots/app-builder-built.json"
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
 }

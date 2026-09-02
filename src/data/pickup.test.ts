@@ -45,11 +45,12 @@ describe("pickup pricing source of truth", () => {
   it("builds the public staffel text from the same table", () => {
     const summary = pickupTierSummary();
     for (const tier of pickupPricing.tiers) {
-      assert.match(summary, new RegExp(`bis ${tier.maxKm} km`));
+      assert.match(summary, new RegExp(`bis ${tier.maxKm} km`, "i"));
       if (tier.amount === 0) assert.match(summary, /kostenlos/);
       else assert.ok(summary.includes(String(tier.amount)));
     }
     assert.match(summary, /darüber auf Anfrage/);
+    assert.match(summary, /^Bis /);
     assert.ok(pickupKeramikNote().includes(String(pickupPricing.freeUpToKm)));
   });
 
