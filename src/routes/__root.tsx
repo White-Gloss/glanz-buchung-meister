@@ -1,5 +1,6 @@
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
+import { NotFoundComponent } from "@/components/not-found";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
@@ -7,6 +8,7 @@ import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
+  notFoundComponent: NotFoundComponent,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -33,6 +35,13 @@ export const Route = createRootRoute({
       {
         rel: "preload",
         href: "/fonts/barlow-400.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: "/fonts/barlow-500.woff2",
         as: "font",
         type: "font/woff2",
         crossOrigin: "anonymous",

@@ -7,14 +7,11 @@
       "status": 200,
       "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
       "hasCanvas": false,
-      "bodyTextLen": 3902,
-      "bodyTextHash": "6eca30636b44c7388f3d6075a242b6faae505e059de32d2c76a85a35c768e195",
-      "bodyTextPrefix": "Zum Inhalt springen Atelier Leistungen Preise Ratgeber Private C",
+      "bodyTextLen": 2036,
+      "bodyTextHash": "ce2887972044f680049ab3c0814107fde0454eaecd40ab43a2a7cfdd0e6ef6e6",
+      "bodyTextPrefix": "Zum Inhalt springen LEISTUNGEN PREISE QUALITÄT KONTAKT B2B 0152 ",
       "horizontalOverflow": false,
-      "consoleErrors": [
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
-      ],
+      "consoleErrors": [],
       "pageErrors": [],
       "screenshot": "/workspace/screenshots/app-builder-preview.png"
     },
@@ -24,14 +21,11 @@
       "status": 200,
       "title": "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
       "hasCanvas": false,
-      "bodyTextLen": 3830,
-      "bodyTextHash": "cad50b95c5ec655129e27d70371d0372e1a8f4c8df8dea8075c3be13d4c12bf8",
-      "bodyTextPrefix": "Zum Inhalt springen Termin anfragen Menü HORB AM NECKAR · BADEN-",
+      "bodyTextLen": 1967,
+      "bodyTextHash": "7891ebb18c8ecffca4fd85250a70ef772157cdaa3f91d2d5c6e00dcc2f858235",
+      "bodyTextPrefix": "Zum Inhalt springen HORB AM NECKAR · BADEN-WÜRTTEMBERG White Glo",
       "horizontalOverflow": false,
-      "consoleErrors": [
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesrcset imageSrcSet",
-        "Invalid DOM property `%s`. Did you mean `%s`? imagesizes imageSizes"
-      ],
+      "consoleErrors": [],
       "pageErrors": [],
       "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
     }

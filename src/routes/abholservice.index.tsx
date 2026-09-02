@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PickupNote } from "@/components/configurator";
-import { cities, pickupKeramikNote, pickupTierSummary, site } from "@/data/site";
+import { cities, pickupKeramikNote, pickupPriceText, pickupTierSummary, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/")({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/abholservice/")({
 
 function AbholIndex() {
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <main id="main-content" className="mx-auto max-w-6xl px-4 py-16 pb-28 sm:px-6 lg:pb-16">
       <h1 className="font-display text-5xl">Hol- & Bringservice</h1>
       <p className="mt-4 max-w-2xl text-muted">
         Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft
@@ -29,6 +29,7 @@ function AbholIndex() {
             <Link
               to="/abholservice/$city"
               params={{ city: c.slug }}
+              aria-label={`${c.name}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
               className="flex min-h-14 items-center justify-between gap-4 py-3"
             >
               <span>

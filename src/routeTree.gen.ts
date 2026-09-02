@@ -19,7 +19,9 @@ import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as GalerieRouteImport } from './routes/galerie'
 import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as LeistungenRouteImport } from './routes/leistungen'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LuxusfahrzeugeRouteImport } from './routes/luxusfahrzeuge'
@@ -101,9 +103,19 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GalerieRoute = GalerieRouteImport.update({
+  id: '/galerie',
+  path: '/galerie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImpressumRoute = ImpressumRouteImport.update({
   id: '/impressum',
   path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontaktRoute = KontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenRoute = LeistungenRouteImport.update({
@@ -268,7 +280,9 @@ export interface FileRoutesByFullPath {
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
+  '/galerie': typeof GalerieRoute
   '/impressum': typeof ImpressumRoute
+  '/kontakt': typeof KontaktRoute
   '/leistungen': typeof LeistungenRouteWithChildren
   '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
@@ -309,7 +323,9 @@ export interface FileRoutesByTo {
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
+  '/galerie': typeof GalerieRoute
   '/impressum': typeof ImpressumRoute
+  '/kontakt': typeof KontaktRoute
   '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
@@ -351,7 +367,9 @@ export interface FileRoutesById {
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
   '/faq': typeof FaqRoute
+  '/galerie': typeof GalerieRoute
   '/impressum': typeof ImpressumRoute
+  '/kontakt': typeof KontaktRoute
   '/leistungen': typeof LeistungenRouteWithChildren
   '/login': typeof LoginRoute
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
@@ -396,7 +414,9 @@ export interface FileRouteTypes {
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
+    | '/galerie'
     | '/impressum'
+    | '/kontakt'
     | '/leistungen'
     | '/login'
     | '/luxusfahrzeuge'
@@ -437,7 +457,9 @@ export interface FileRouteTypes {
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
+    | '/galerie'
     | '/impressum'
+    | '/kontakt'
     | '/login'
     | '/luxusfahrzeuge'
     | '/preise'
@@ -478,7 +500,9 @@ export interface FileRouteTypes {
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
     | '/faq'
+    | '/galerie'
     | '/impressum'
+    | '/kontakt'
     | '/leistungen'
     | '/login'
     | '/luxusfahrzeuge'
@@ -522,7 +546,9 @@ export interface RootRouteChildren {
   DellenHagelschadenRoute: typeof DellenHagelschadenRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
   FaqRoute: typeof FaqRoute
+  GalerieRoute: typeof GalerieRoute
   ImpressumRoute: typeof ImpressumRoute
+  KontaktRoute: typeof KontaktRoute
   LeistungenRoute: typeof LeistungenRouteWithChildren
   LoginRoute: typeof LoginRoute
   LuxusfahrzeugeRoute: typeof LuxusfahrzeugeRoute
@@ -606,11 +632,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/galerie': {
+      id: '/galerie'
+      path: '/galerie'
+      fullPath: '/galerie'
+      preLoaderRoute: typeof GalerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/impressum': {
       id: '/impressum'
       path: '/impressum'
       fullPath: '/impressum'
       preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt': {
+      id: '/kontakt'
+      path: '/kontakt'
+      fullPath: '/kontakt'
+      preLoaderRoute: typeof KontaktRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen': {
@@ -927,7 +967,9 @@ const rootRouteChildren: RootRouteChildren = {
   DellenHagelschadenRoute: DellenHagelschadenRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
   FaqRoute: FaqRoute,
+  GalerieRoute: GalerieRoute,
   ImpressumRoute: ImpressumRoute,
+  KontaktRoute: KontaktRoute,
   LeistungenRoute: LeistungenRouteWithChildren,
   LoginRoute: LoginRoute,
   LuxusfahrzeugeRoute: LuxusfahrzeugeRoute,
