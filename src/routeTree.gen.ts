@@ -14,6 +14,7 @@ import { Route as AbholserviceRouteImport } from './routes/abholservice'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgbRouteImport } from './routes/agb'
 import { Route as B2bRouteImport } from './routes/b2b'
+import { Route as BarrierefreiheitRouteImport } from './routes/barrierefreiheit'
 import { Route as DankeRouteImport } from './routes/danke'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
@@ -76,6 +77,11 @@ const AgbRoute = AgbRouteImport.update({
 const B2bRoute = B2bRouteImport.update({
   id: '/b2b',
   path: '/b2b',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BarrierefreiheitRoute = BarrierefreiheitRouteImport.update({
+  id: '/barrierefreiheit',
+  path: '/barrierefreiheit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DankeRoute = DankeRouteImport.update({
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
   '/b2b': typeof B2bRoute
+  '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agb': typeof AgbRoute
   '/b2b': typeof B2bRoute
+  '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
   '/b2b': typeof B2bRoute
+  '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agb'
     | '/b2b'
+    | '/barrierefreiheit'
     | '/danke'
     | '/datenschutz'
     | '/dellen-hagelschaden'
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agb'
     | '/b2b'
+    | '/barrierefreiheit'
     | '/danke'
     | '/datenschutz'
     | '/dellen-hagelschaden'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/agb'
     | '/b2b'
+    | '/barrierefreiheit'
     | '/danke'
     | '/datenschutz'
     | '/dellen-hagelschaden'
@@ -541,6 +553,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AgbRoute: typeof AgbRoute
   B2bRoute: typeof B2bRoute
+  BarrierefreiheitRoute: typeof BarrierefreiheitRoute
   DankeRoute: typeof DankeRoute
   DatenschutzRoute: typeof DatenschutzRoute
   DellenHagelschadenRoute: typeof DellenHagelschadenRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/b2b'
       fullPath: '/b2b'
       preLoaderRoute: typeof B2bRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/barrierefreiheit': {
+      id: '/barrierefreiheit'
+      path: '/barrierefreiheit'
+      fullPath: '/barrierefreiheit'
+      preLoaderRoute: typeof BarrierefreiheitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/danke': {
@@ -962,6 +982,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AgbRoute: AgbRoute,
   B2bRoute: B2bRoute,
+  BarrierefreiheitRoute: BarrierefreiheitRoute,
   DankeRoute: DankeRoute,
   DatenschutzRoute: DatenschutzRoute,
   DellenHagelschadenRoute: DellenHagelschadenRoute,

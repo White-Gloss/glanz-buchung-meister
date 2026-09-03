@@ -140,8 +140,12 @@ function TermsPage() {
           <h2>8. Widerrufsrecht für Verbraucher</h2>
           <p>
             Verbraucher erhalten bei Fernabsatz- oder außerhalb von Geschäftsräumen geschlossenen
-            Verträgen die gesetzlich erforderliche Widerrufsbelehrung. Sie finden diese auch unter{" "}
-            <Link to="/widerruf">Widerruf</Link>.
+            Verträgen die gesetzlich erforderliche Widerrufsbelehrung. Sie finden diese unter{" "}
+            <Link to="/widerruf">Widerruf</Link>. Die Frist beginnt mit dem Vertragsschluss – also
+            erst mit unserer ausdrücklichen Zusage oder mit Beginn der vereinbarten Leistung, nicht
+            schon mit der unverbindlichen Online-Anfrage. Eine automatische Terminbestätigung
+            für einen freien Werktag ändert das Widerrufsrecht nicht; sie ist die Zusage des
+            Termins. Die vollständige Widerrufsbelehrung erscheint auch auf der Bestätigungsseite.
           </p>
         </section>
 
@@ -155,7 +159,7 @@ function TermsPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 30. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
       </article>
     </main>
   );

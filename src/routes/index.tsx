@@ -90,7 +90,7 @@ function Home() {
           {[
             ["13 Städte", "Hol- & Bringservice"],
             [site.hoursLabel.replace(" Uhr", ""), "Werkstatt geöffnet"],
-            ["ab 149 €", "Startpreise inkl. MwSt."],
+            ["ab 149 €", "Kompaktklasse inkl. MwSt."],
             ["je nach Produkt", "Keramikschutz"],
           ].map(([n, l], i) => (
             <li key={n} className={`ga-s${i + 1} border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8`}>

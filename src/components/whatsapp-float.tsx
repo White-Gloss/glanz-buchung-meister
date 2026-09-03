@@ -31,6 +31,7 @@ export function WhatsAppFloat() {
       rel="noopener noreferrer"
       data-wa-float
       aria-hidden={hidden}
+      aria-label="WhatsApp, öffnet in neuem Tab. Dabei werden Daten an Meta übertragen."
       tabIndex={hidden ? -1 : undefined}
       className={[
         "fixed right-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-wa text-accent-fg shadow-lg sm:right-6 sm:bottom-6 sm:h-14 sm:w-14",
@@ -39,7 +40,6 @@ export function WhatsAppFloat() {
       ].join(" ")}
     >
       <IconMessage className="size-6" />
-      <span className="sr-only">WhatsApp</span>
     </a>
   );
 }
