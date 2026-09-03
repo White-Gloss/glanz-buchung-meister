@@ -57,24 +57,19 @@ function Home() {
         </div>
         <div className="hero-stage-veil" />
         <div className="hero-stage-copy flex min-h-svh flex-col items-center justify-center px-6 pb-24 pt-20 text-center">
-          <p className="kicker hero-in" style={{ ["--d" as string]: 0 }}>
-            {site.city}
-          </p>
-          <h1 className="hero-in mt-7 max-w-5xl" style={{ ["--d" as string]: 1 }}>
-            <span className="heading-brand block">White Gloss.</span>
+          <h1 className="hero-in max-w-5xl" style={{ ["--d" as string]: 0 }}>
+            <span className="heading-brand block">White Gloss</span>
+            <span className="heading-product mt-5 block">detailing</span>
           </h1>
-          <span className="hero-rule hero-in" aria-hidden style={{ ["--d" as string]: 2 }} />
-          <p className="heading-tagline hero-in mt-7" style={{ ["--d" as string]: 3 }}>
-            No compromise.
-          </p>
-          <p className="heading-tagline hero-in mt-1" style={{ ["--d" as string]: 4 }}>
-            Only results.
+          <span className="hero-rule hero-in" aria-hidden style={{ ["--d" as string]: 1 }} />
+          <p className="heading-tagline hero-in mt-7" style={{ ["--d" as string]: 2 }}>
+            No compromise. Only results.
           </p>
           <Link
             to="/"
             hash="buchung"
             className={`${ctaPrimary} hero-in mt-10`}
-            style={{ ["--d" as string]: 5 }}
+            style={{ ["--d" as string]: 3 }}
           >
             Termin anfragen
             <IconArrowRight className="size-4" aria-hidden />
