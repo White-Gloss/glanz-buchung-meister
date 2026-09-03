@@ -306,7 +306,9 @@ function FilmScroll() {
     });
 
     const skipParallax =
-      reduce || window.matchMedia("(max-width: 767px), (hover: none)").matches;
+      reduce ||
+      window.matchMedia("(max-width: 767px), (hover: none)").matches ||
+      (typeof CSS !== "undefined" && CSS.supports("animation-timeline: scroll()"));
 
     if (skipParallax) {
       root.style.removeProperty("--scroll-p");
@@ -317,12 +319,19 @@ function FilmScroll() {
     }
 
     let frame = 0;
+    let current = 0;
     const tick = () => {
-      frame = 0;
       const vh = window.innerHeight || 1;
-      const raw = Math.min(1, Math.max(0, window.scrollY / vh));
-      const p = raw * raw * (3 - 2 * raw);
+      const target = Math.min(1, Math.max(0, window.scrollY / vh));
+      current += (target - current) * 0.12;
+      if (Math.abs(target - current) < 0.0007) current = target;
+      const p = current * current * (3 - 2 * current);
       root.style.setProperty("--scroll-p", p.toFixed(4));
+      if (current !== target) {
+        frame = window.requestAnimationFrame(tick);
+      } else {
+        frame = 0;
+      }
     };
     const onScroll = () => {
       if (frame) return;

@@ -153,6 +153,7 @@
     font-size: 16px;
     touch-action: manipulation;
     scroll-behavior: smooth;
+    scroll-padding-top: 5.75rem;
   }
 
   /* Fliesstext: 1.55, kompakter als vorher, naeher an der Kampagne. */
@@ -1070,10 +1071,9 @@
     position: relative;
     z-index: 2;
     will-change: opacity, transform;
-    opacity: calc(1 - var(--scroll-p, 0) * 1.55);
-    transform: translate3d(0, calc(var(--scroll-p, 0) * -52px), 0)
-      scale(calc(1 - var(--scroll-p, 0) * 0.045));
-    filter: blur(calc(var(--scroll-p, 0) * 5px));
+    opacity: calc(1 - var(--scroll-p, 0) * 1.45);
+    transform: translate3d(0, calc(var(--scroll-p, 0) * -2.75rem), 0)
+      scale(calc(1 - var(--scroll-p, 0) * 0.035));
   }
 
   .hero-stage .scroll-hint {
@@ -1246,7 +1246,90 @@
         transform: translate3d(0, calc((1 - var(--scroll-p, 0)) * 2.1rem), 0);
         will-change: opacity, transform;
       }
+
+      @supports (animation-timeline: scroll()) {
+        .hero-stage-media {
+          transform: none;
+          animation: hero-media-pan linear both;
+          animation-timeline: scroll();
+          animation-range: 0vh 100vh;
+        }
+
+        .hero-stage-copy {
+          opacity: 1;
+          transform: none;
+          animation: hero-copy-out linear both;
+          animation-timeline: scroll();
+          animation-range: 0vh 72vh;
+        }
+
+        .hero-stage-veil::after {
+          opacity: 0;
+          animation: hero-veil-out linear both;
+          animation-timeline: scroll();
+          animation-range: 0vh 90vh;
+        }
+
+        .hero-stage .scroll-hint {
+          opacity: 1;
+          animation: hero-hint-out linear both;
+          animation-timeline: scroll();
+          animation-range: 0vh 28vh;
+        }
+
+        .hero-follow {
+          animation: hero-follow-in linear both;
+          animation-timeline: scroll();
+          animation-range: 8vh 58vh;
+        }
+      }
     }
+  }
+
+  @keyframes hero-media-pan {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(0, 16%, 0) scale(1.14);
+    }
+  }
+
+  @keyframes hero-copy-out {
+    to {
+      opacity: 0;
+      transform: translate3d(0, -2.75rem, 0) scale(0.97);
+    }
+  }
+
+  @keyframes hero-veil-out {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes hero-hint-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes hero-follow-in {
+    from {
+      opacity: 0.4;
+      transform: translate3d(0, 2.1rem, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  #buchung {
+    scroll-margin-top: 5.75rem;
   }
 
   [data-reveal] {
