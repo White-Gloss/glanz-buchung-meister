@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { FluidImg } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { cities, packages, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
@@ -77,37 +78,26 @@ function ServiceCityPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <FluidImg
+      <PageHero
         src={service.image}
         alt={service.imageAlt}
-        priority
-        className="h-[38vh] min-h-56 w-full object-cover"
+        kicker={`${city.name} · ${city.km} km`}
+        title={`${service.nav} in ${city.name}`}
+        lead={service.teaser}
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Leistungen", to: "/leistungen" },
+          { label: service.nav, to: `/leistungen/${service.slug}` },
+          { label: city.name },
+        ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Abholung anfragen
+          </Link>
+        }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-          <Link to="/" className="hover:text-fg">
-            Startseite
-          </Link>
-          <span className="px-2">/</span>
-          <Link to="/leistungen" className="hover:text-fg">
-            Leistungen
-          </Link>
-          <span className="px-2">/</span>
-          <Link to="/leistungen/$slug" params={{ slug: service.slug }} className="hover:text-fg">
-            {service.nav}
-          </Link>
-        </nav>
-        <p className="mt-6 text-xs uppercase tracking-[0.16em] text-subtle">
-          {city.name} · ca. {city.km} km · ca. {city.minutes} Min.
-        </p>
-        <h1 className="mt-3 font-display text-5xl">
-          {service.nav} in {city.name}
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          White Gloss holt Fahrzeuge in {city.name} ab und bereitet sie in der Werkstatt in{" "}
-          {site.city} auf. {city.blurb}
-        </p>
-        <p className="mt-4 rounded-card border border-line bg-surface p-4 text-sm">
+        <p className="rounded-card border border-line bg-surface p-4 text-sm">
           Hol- & Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
           Ausführung immer in {site.street}, {site.postalCode} {site.city}.
         </p>

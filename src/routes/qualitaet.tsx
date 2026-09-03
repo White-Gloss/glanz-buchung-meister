@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PhotoNote, Shot } from "@/components/media";
 import { PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { processSteps, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -26,11 +27,16 @@ function QualityPage() {
         alt="Lack unter Prüflicht"
         kicker="Ablauf"
         title="Wie wir arbeiten."
-        lead="Sorgfalt ist bei uns kein Extra, das man dazubucht. Ein gutes Ergebnis kommt von sauberer Vorbereitung, dem passenden Verfahren und einer ehrlichen Kontrolle, bevor das Auto rausgeht."
+        lead="Ein Auto nach dem anderen. Erst anschauen, dann arbeiten, dann kontrollieren."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Qualitätsanspruch" },
         ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <ol className="mt-16 space-y-16">

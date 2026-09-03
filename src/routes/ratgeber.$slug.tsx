@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { FluidImg } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { articles, getArticle, type Article } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { site } from "@/data/site";
@@ -59,24 +60,24 @@ function ArticlePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <FluidImg
+      <PageHero
         src={a.image}
         alt={a.title}
-        priority
-        className="h-[36vh] min-h-56 w-full object-cover"
+        kicker="Ratgeber"
+        title={a.title}
+        lead={a.excerpt}
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Ratgeber", to: "/ratgeber" },
+          { label: a.title },
+        ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
       />
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-          <Link to="/" className="hover:text-fg">
-            Startseite
-          </Link>
-          <span className="px-2">/</span>
-          <Link to="/ratgeber" className="hover:text-fg">
-            Ratgeber
-          </Link>
-        </nav>
-        <h1 className="mt-6 font-display text-5xl">{a.title}</h1>
-        <p className="mt-4 text-muted">{a.excerpt}</p>
         {a.sections.map((s) => (
           <section key={s.heading} className="mt-10">
             <h2 className="font-display text-2xl">{s.heading}</h2>

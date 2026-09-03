@@ -24,7 +24,7 @@ function B2bPage() {
         alt="Werkstatt mit LED-Licht"
         kicker="Geschäftskunden"
         title="Firmenkunden, Flotten, Autohäuser."
-        lead="Gepflegte Autos gehören zum Auftritt eines Betriebs. Für Unternehmen, Autohäuser und Fuhrparks rechnen wir deshalb am tatsächlichen Umfang, nicht an einer Pauschale."
+        lead="Flotte und Leasingrückläufer. Preis nach Umfang, keine Pauschale."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "B2B" },

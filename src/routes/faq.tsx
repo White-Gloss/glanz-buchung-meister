@@ -58,7 +58,7 @@ function FaqPage() {
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Antworten vorab"
         title="Häufige Fragen."
-        lead="Was eine Keramikversiegelung in Horb kostet, wie lange eine Aufbereitung dauert und was bei der Innenraumreinigung wirklich passiert."
+        lead="Kosten, Dauer, Keramik, Innenraum – kurz beantwortet."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Häufige Fragen" },

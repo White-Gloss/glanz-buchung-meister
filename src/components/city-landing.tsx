@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CompareSlider } from "@/components/compare-slider";
 import { HeroMedia, Shot } from "@/components/media";
+import { PageCrumbs } from "@/components/page-hero";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { cityJsonLd, whatsappForCity } from "@/lib/city-seo";
 import {
@@ -64,13 +65,19 @@ export function CityLanding({ city }: { city: City }) {
         </div>
         <div className="film-chapter-veil" />
         <div className="film-chapter-copy" data-reveal>
-          <p className="kicker">Fahrzeugaufbereitung · {city.name}</p>
-          <h1 className="heading-display mt-4 max-w-4xl">
+          <PageCrumbs
+            items={[
+              { label: "Startseite", to: "/" },
+              { label: "Hol- & Bringservice", to: "/abholservice" },
+              { label: city.name },
+            ]}
+          />
+          <p className="kicker mt-5">Fahrzeugaufbereitung</p>
+          <h1 className="heading-page mt-4 max-w-4xl">
             Fahrzeugaufbereitung in {city.name}
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            {city.blurb} Die Ausführung bleibt in der Werkstatt in {site.city}, nicht an der
-            Straße. Abholung: {pickup}.
+            Kein Waschstraßenprogramm. Abholung {pickup}, Arbeit in {site.city}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/" hash="buchung" search={{ paket: "premium" }} className={ctaPrimary}>

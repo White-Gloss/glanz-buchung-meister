@@ -34,7 +34,7 @@ function PreisePage() {
         alt="Keramikversiegelung von Hand auf dem Lack"
         kicker="Pakete & Preise"
         title="Preise für die Aufbereitung."
-        lead={`Drei Pakete in Horb am Neckar: Innenraumreinigung, Lackpolitur oder Keramikversiegelung. Alle Preise sind Endpreise ${site.vatNote}. Fahrzeuggröße und Extras rechnet der Konfigurator sofort mit.`}
+        lead="Drei Pakete. Endpreise. Größe und Extras rechnet der Konfigurator dazu."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Preise & Pakete" },

@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { PhotoNote, Shot } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { absUrl, pageHead } from "@/lib/seo";
@@ -42,39 +43,24 @@ function LuxuryPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="film-chapter">
-        <div className="film-chapter-media" data-parallax>
-          <Shot
-            name="hero"
-            alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
-            className="size-full"
-            sizes="100vw"
-            priority
-            framed={false}
-          />
-        </div>
-        <div className="film-chapter-veil" />
-        <div className="film-chapter-copy" data-reveal>
-          <p className="kicker">Private Client</p>
-          <h1 className="heading-display mt-4 max-w-3xl">
-            Fahrzeuge ab etwa 80.000 €
-          </h1>
-        </div>
-      </section>
+      <PageHero
+        shot="hero"
+        alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+        kicker="Private Client"
+        title="Fahrzeuge ab etwa 80.000 €"
+        lead="Erst anrufen, dann anschauen. Kein Konfigurator, kein Paket von der Stange."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Private Client" },
+        ]}
+        actions={
+          <a href={site.phoneHref} className={ctaPrimary}>
+            Persönlich anrufen
+          </a>
+        }
+      />
       <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-        <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-          <Link to="/" className="hover:text-fg">
-            Startseite
-          </Link>
-          <span className="px-2">/</span>
-          <span>Private Client</span>
-        </nav>
-        <p className="mt-8 text-lg leading-relaxed text-muted">
-          Hier gibt es keinen Schnellklick und kein Paket von der Stange. Wir
-          reden zuerst, schauen uns das Auto in Horb in Ruhe an und bauen den
-          Umfang genau um dieses Fahrzeug herum.
-        </p>
-        <ol className="mt-16 space-y-12">
+        <ol className="space-y-12">
           {[
             [
               "Anrufen",

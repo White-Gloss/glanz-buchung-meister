@@ -25,7 +25,7 @@ function KontaktPage() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker={`Werkstatt ${site.city}`}
         title="Kontakt."
-        lead="Anrufen, schreiben oder vorbeikommen. Die Arbeit läuft in der Werkstatt – den Hol- und Bringservice gibt es in 13 Städten."
+        lead="Anrufen, schreiben oder vorbeikommen. Die Werkstatt steht in Horb."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Kontakt" },
