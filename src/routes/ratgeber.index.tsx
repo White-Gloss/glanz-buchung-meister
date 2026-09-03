@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { IconArrowRight } from "@/components/icons";
 import { MediaTile, PageHero } from "@/components/page-hero";
 import { articles } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/ratgeber/")({
       description:
         "Fachbeiträge zu Keramikversiegelung, Lackkorrektur, Innenraumreinigung und Hol- und Bringservice – aus der Werkstatt in Horb am Neckar.",
       path: "/ratgeber",
+      preloadShot: "keramik",
     }),
 });
 
@@ -88,7 +89,7 @@ function RatgeberIndex() {
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">{a.excerpt}</p>
                 <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
                   Lesen
-                  <ArrowRight className="link-arrow size-4" aria-hidden />
+                  <IconArrowRight className="link-arrow size-4" />
                 </span>
               </MediaTile>
             </Link>

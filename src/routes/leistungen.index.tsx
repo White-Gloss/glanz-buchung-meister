@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { IconArrowRight } from "@/components/icons";
 import { MediaTile, PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, services, site } from "@/data/site";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/leistungen/")({
       description:
         "Leistungen in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
       path: "/leistungen",
+      preloadShot: "lack",
     }),
 });
 
@@ -41,7 +42,7 @@ function LeistungenIndex() {
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
             Termin anfragen
-            <ArrowRight className="size-4" aria-hidden />
+            <IconArrowRight className="size-4" />
           </Link>
         }
       />
@@ -61,7 +62,7 @@ function LeistungenIndex() {
                 </p>
                 <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
                   Zur Leistung
-                  <ArrowRight className="link-arrow size-4" aria-hidden />
+                  <IconArrowRight className="link-arrow size-4" />
                 </span>
               </MediaTile>
             </Link>

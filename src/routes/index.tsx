@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { IconArrowRight } from "@/components/icons";
 import { LazyConfigurator } from "@/components/lazy-configurator";
 import { WorkshopMap } from "@/components/workshop-map";
 import { HeroMedia, PhotoNote, Shot } from "@/components/media";
@@ -77,7 +77,7 @@ function Home() {
             style={{ ["--d" as string]: 5 }}
           >
             Termin anfragen
-            <ArrowRight className="size-4" aria-hidden />
+            <IconArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
         <div className="scroll-hint" aria-hidden>
@@ -141,7 +141,7 @@ function Home() {
               className="inline-flex min-h-11 items-center gap-2 text-sm text-fg"
             >
               Alle Preise & Extras
-              <ArrowRight className="link-arrow size-4" aria-hidden />
+              <IconArrowRight className="link-arrow size-4" aria-hidden />
             </Link>
           </div>
           <ol className="mt-14 divide-y divide-line border-y border-line">
@@ -218,7 +218,7 @@ function Home() {
               className="mt-10 inline-flex min-h-11 items-center gap-2 text-sm hover:underline"
             >
               Unser Ablauf
-              <ArrowRight className="link-arrow size-4" aria-hidden />
+              <IconArrowRight className="link-arrow size-4" aria-hidden />
             </Link>
           </div>
           <Shot
@@ -304,7 +304,7 @@ function Home() {
           className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-fg"
         >
           Mehr aus der Werkstatt
-          <ArrowRight className="link-arrow size-4" aria-hidden />
+          <IconArrowRight className="link-arrow size-4" aria-hidden />
         </Link>
       </section>
 
@@ -332,7 +332,7 @@ function Home() {
             </p>
             <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
               Individuelles Angebot
-              <ArrowRight className="link-arrow size-4" aria-hidden />
+              <IconArrowRight className="link-arrow size-4" aria-hidden />
             </span>
           </div>
         </Link>
@@ -359,7 +359,7 @@ function Home() {
             </p>
             <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
               B2B-Anfrage
-              <ArrowRight className="link-arrow size-4" aria-hidden />
+              <IconArrowRight className="link-arrow size-4" aria-hidden />
             </span>
           </div>
         </Link>
@@ -380,7 +380,7 @@ function Home() {
                       className="flex min-h-11 items-center justify-between py-3 text-sm text-muted hover:text-fg"
                     >
                       {s.nav}
-                      <ArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
+                      <IconArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
                     </Link>
                   </li>
                 ))}
@@ -390,7 +390,7 @@ function Home() {
                     className="flex min-h-11 items-center justify-between py-3 text-sm text-muted hover:text-fg"
                   >
                     Ratgeber
-                    <ArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
+                    <IconArrowRight className="link-arrow size-3.5 shrink-0 opacity-50" aria-hidden />
                   </Link>
                 </li>
               </ul>

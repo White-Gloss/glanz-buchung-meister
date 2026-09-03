@@ -20,7 +20,7 @@
   font-family: "Barlow";
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/barlow-500.woff2") format("woff2");
 }
 
@@ -28,7 +28,7 @@
   font-family: "Barlow";
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/barlow-600.woff2") format("woff2");
 }
 
@@ -1554,6 +1554,51 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  /* Phones: skip cinematic cost (grain, ken-burns, delayed copy, filters)
+     so LCP is the still hero/shot instead of a late-fading headline. */
+  @media (max-width: 767px) {
+    .hero-stage::after,
+    .film-chapter::after,
+    .film-grain {
+      display: none;
+    }
+
+    .hero-in {
+      animation: none;
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+
+    .hero-stage-media > .hero-image {
+      animation: none;
+    }
+
+    .hero-stage-media,
+    .film-chapter-media {
+      top: 0;
+      height: 100%;
+      will-change: auto;
+      filter: none;
+      transform: none;
+    }
+
+    .hero-stage-copy {
+      will-change: auto;
+      filter: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    [data-reveal],
+    .film-chapter-copy[data-reveal] > * {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      transition: none;
     }
   }
 

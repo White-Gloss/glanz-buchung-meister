@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PickupNote } from "@/components/configurator";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, pickupKeramikNote, pickupPriceText, pickupTierSummary, site } from "@/data/site";
@@ -13,6 +12,7 @@ export const Route = createFileRoute("/abholservice/")({
       description:
         "Abholung und Rückgabe in Horb, Tübingen, Nagold, Freudenstadt, Böblingen, Sindelfingen und weiteren Städten. Ausführung in Horb am Neckar.",
       path: "/abholservice",
+      preloadShot: "atelier",
     }),
 });
 
@@ -51,9 +51,7 @@ function AbholIndex() {
                     ca. {c.km} km · ca. {c.minutes} Min.
                   </span>
                 </span>
-                <span className="text-sm text-muted">
-                  <PickupNote km={c.km} />
-                </span>
+                <span className="text-sm text-muted">{pickupPriceText(c.km)}</span>
               </Link>
             </li>
           ))}

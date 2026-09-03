@@ -23,6 +23,7 @@ export const Route = createFileRoute("/galerie")({
       description:
         "Einblicke in die Werkstatt von White Gloss in Horb am Neckar: Politur, Keramik, Leder und Felgen – ohne Kundenfahrzeuge, ohne Kennzeichen.",
       path: "/galerie",
+      preloadShot: "lack",
     }),
 });
 

@@ -12,6 +12,7 @@ export const Route = createFileRoute("/b2b")({
       description:
         "Leasingrückläufer, Fuhrpark, Autohäuser: individuelle Kalkulation statt Pauschalpreis. White Gloss in Horb am Neckar.",
       path: "/b2b",
+      preloadShot: "atelier",
     }),
 });
 

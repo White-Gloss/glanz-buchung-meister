@@ -12,6 +12,7 @@ export const Route = createFileRoute("/dellen-hagelschaden")({
       description:
         "Parkdellen, Karosseriedellen und Hagelschäden lackschadenfrei ausbeulen, sofern technisch möglich. Foto-Begutachtung, Preis nach Prüfung.",
       path: "/dellen-hagelschaden",
+      preloadShot: "dellen",
     }),
 });
 

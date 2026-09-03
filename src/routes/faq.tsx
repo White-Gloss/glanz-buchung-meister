@@ -20,6 +20,7 @@ export const Route = createFileRoute("/faq")({
       description:
         "Antworten zu Keramikversiegelung, Innenraumreinigung, Lackkorrektur, Kosten und Dauer der Fahrzeugaufbereitung in Horb am Neckar.",
       path: "/faq",
+      preloadShot: "atelier",
     }),
 });
 

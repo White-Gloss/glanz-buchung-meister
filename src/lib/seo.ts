@@ -1,7 +1,6 @@
 import {
-  heroPreloadHref,
+  heroAvifSrcSet,
   heroPreloadMobile,
-  heroPreloadWide,
   logoJsonLdHref,
 } from "@/data/media-src";
 import {
@@ -32,9 +31,29 @@ export function pageHead(opts: {
   preloadSrcSet?: string;
   preloadSizes?: string;
   preloadHero?: boolean;
+  preloadShot?:
+    | "keramik"
+    | "lack"
+    | "atelier"
+    | "dellen"
+    | "finish"
+    | "felgen"
+    | "leder"
+    | "private";
 }) {
   const canonical = absUrl(opts.path);
   const ogImage = absUrl(OG_IMAGE);
+  const shotPreload = opts.preloadShot
+    ? {
+        rel: "preload" as const,
+        as: "image",
+        href: `/media/${opts.preloadShot}-800.avif`,
+        type: "image/avif",
+        imageSrcSet: `/media/${opts.preloadShot}-480.avif 480w, /media/${opts.preloadShot}-800.avif 800w, /media/${opts.preloadShot}.avif 1200w`,
+        imageSizes: "100vw",
+        fetchPriority: "high" as const,
+      }
+    : null;
   const preload = opts.preloadHero
     ? [
         {
@@ -42,35 +61,26 @@ export function pageHead(opts: {
           as: "image",
           href: heroPreloadMobile,
           type: "image/avif",
-          media: "(max-width: 640px)",
-        },
-        {
-          rel: "preload" as const,
-          as: "image",
-          href: heroPreloadHref,
-          type: "image/avif",
-          media: "(min-width: 641px) and (max-width: 1400px)",
-        },
-        {
-          rel: "preload" as const,
-          as: "image",
-          href: heroPreloadWide,
-          type: "image/avif",
-          media: "(min-width: 1401px)",
+          imageSrcSet: heroAvifSrcSet,
+          imageSizes: "100vw",
+          fetchPriority: "high" as const,
         },
       ]
-    : opts.preloadImage
-      ? [
-          {
-            rel: "preload" as const,
-            as: "image",
-            href: opts.preloadImage,
-            ...(opts.preloadType ? { type: opts.preloadType } : {}),
-            ...(opts.preloadSrcSet ? { imageSrcSet: opts.preloadSrcSet } : {}),
-            ...(opts.preloadSizes ? { imageSizes: opts.preloadSizes } : {}),
-          },
-        ]
-      : [];
+    : shotPreload
+      ? [shotPreload]
+      : opts.preloadImage
+        ? [
+            {
+              rel: "preload" as const,
+              as: "image",
+              href: opts.preloadImage,
+              fetchPriority: "high" as const,
+              ...(opts.preloadType ? { type: opts.preloadType } : {}),
+              ...(opts.preloadSrcSet ? { imageSrcSet: opts.preloadSrcSet } : {}),
+              ...(opts.preloadSizes ? { imageSizes: opts.preloadSizes } : {}),
+            },
+          ]
+        : [];
   return {
     meta: [
       { title: opts.title },

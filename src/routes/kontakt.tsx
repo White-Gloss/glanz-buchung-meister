@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, Phone } from "lucide-react";
+import { IconMessage, IconPhone } from "@/components/icons";
 import { PageHero } from "@/components/page-hero";
 import { WorkshopMap } from "@/components/workshop-map";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/kontakt")({
       title: `Kontakt | ${site.name}`,
       description: `White Gloss Detailing in ${site.city}: Telefon, WhatsApp, E-Mail und Anschrift. Werkstatt ${site.street}.`,
       path: "/kontakt",
+      preloadShot: "atelier",
     }),
 });
 
@@ -35,11 +36,11 @@ function KontaktPage() {
               Termin anfragen
             </Link>
             <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="size-4" aria-hidden />
+              <IconMessage className="size-4" />
               WhatsApp
             </a>
             <a href={site.phoneHref} className={ctaGhost}>
-              <Phone className="size-4" aria-hidden />
+              <IconPhone className="size-4" />
               Anrufen
             </a>
           </>

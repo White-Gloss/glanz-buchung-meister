@@ -1,8 +1,8 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ArrowRight, MessageCircle } from "lucide-react";
 import { useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { nav, footerExplore, openingHours, site } from "@/data/site";
+import { IconArrowRight, IconMessage } from "./icons";
 import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
 import { WhatsAppFloat } from "./whatsapp-float";
@@ -265,7 +265,7 @@ function FilmMenu({
         <div className="film-menu-cta">
           <Link to="/" hash="buchung" className={ctaPrimary} onClick={onClose}>
             Termin anfragen
-            <ArrowRight className="size-4" aria-hidden />
+            <IconArrowRight className="size-4" />
           </Link>
           <a
             href={site.whatsapp}
@@ -273,7 +273,7 @@ function FilmMenu({
             target="_blank"
             rel="noopener noreferrer"
           >
-            <MessageCircle className="size-4" aria-hidden />
+            <IconMessage className="size-4" />
             WhatsApp
           </a>
         </div>
@@ -305,7 +305,10 @@ function FilmScroll() {
       if (reduce) reveals.forEach((el) => el.classList.add("is-in"));
     });
 
-    if (reduce) {
+    const skipParallax =
+      reduce || window.matchMedia("(max-width: 767px), (hover: none)").matches;
+
+    if (skipParallax) {
       root.style.removeProperty("--scroll-p");
       return () => {
         window.cancelAnimationFrame(start);
