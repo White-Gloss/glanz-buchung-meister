@@ -334,15 +334,15 @@
     color: var(--color-fg);
   }
 
-  /* Produktzeile unter der Wortmarke: klein, weit, lowercase. */
+  /* Produktzeile unter der Wortmarke: sichtbar, nicht klein wie die Kampagnenzeile. */
   .heading-product {
-    font-family: var(--font-sans);
-    font-size: clamp(0.72rem, 0.55rem + 0.7vw, 0.95rem);
+    font-family: var(--font-display);
+    font-size: clamp(1.55rem, 1rem + 2.6vw, 2.75rem);
     font-weight: 400;
-    letter-spacing: 0.42em;
+    letter-spacing: 0.22em;
     line-height: 1;
     text-transform: lowercase;
-    color: var(--color-muted);
+    color: var(--color-fg);
   }
 
   /* Kampagnenzeile unter der Wortmarke: Satz, nicht Versalien. */
@@ -1178,25 +1178,28 @@
     background: linear-gradient(
       to top,
       var(--color-bg) 0%,
-      color-mix(in oklab, var(--color-bg) 55%, transparent) 42%,
-      rgb(0 0 0 / 0.4) 100%
+      color-mix(in oklab, var(--color-bg) 42%, transparent) 34%,
+      rgb(0 0 0 / 0.5) 100%
     );
     pointer-events: none;
   }
 
   .film-chapter-copy {
     position: absolute;
-    inset-inline: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     margin-inline: auto;
     max-width: 80rem;
-    padding: 0 1rem 3.5rem;
+    width: 100%;
+    padding: 7rem 1rem 4.5rem;
   }
 
   @media (min-width: 640px) {
     .film-chapter-copy {
-      padding: 0 1.5rem 5rem;
+      padding: 7.5rem 1.5rem 5rem;
     }
   }
 
@@ -1236,6 +1239,14 @@
     opacity: 1;
     transform: none;
     filter: none;
+  }
+
+  /* First screen of every page: title sits in the image on load, not after scroll. */
+  main > .film-chapter:first-of-type .film-chapter-copy > * {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
   }
 
   .film-chapter-copy[data-reveal] > *:nth-child(1) {
