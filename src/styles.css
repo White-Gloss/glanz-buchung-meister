@@ -322,12 +322,13 @@
     line-height: 0.96;
   }
 
-  /* Wortmarke im Hero, ohne Umbruch. Light-Schnitt, etwas offener. */
+  /* Wortmarke im Hero, ohne Umbruch. Regular statt Light — auf dem Foto
+     bleibt 300 zu dünn, 500 wäre schon Plakat. */
   .heading-brand {
     font-family: var(--font-display);
     font-size: min(clamp(3rem, 8.4vw, 6.5rem), 14vw);
-    font-weight: 300;
-    letter-spacing: 0.02em;
+    font-weight: 400;
+    letter-spacing: 0.01em;
     line-height: 0.9;
     white-space: nowrap;
     color: var(--color-fg);
@@ -337,8 +338,8 @@
   .heading-tagline {
     font-family: var(--font-sans);
     font-size: clamp(1.15rem, 0.8rem + 1.6vw, 1.65rem);
-    font-weight: 300;
-    letter-spacing: 0.08em;
+    font-weight: 400;
+    letter-spacing: 0.06em;
     line-height: 1.28;
     color: var(--color-muted);
   }
