@@ -297,7 +297,7 @@ function FilmScroll() {
           if (entry.isIntersecting) entry.target.classList.add("is-in");
         }
       },
-      { threshold: 0.16, rootMargin: "0px 0px -10% 0px" },
+      { threshold: 0.06, rootMargin: "22% 0px -6% 0px" },
     );
 
     const start = window.requestAnimationFrame(() => {

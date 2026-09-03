@@ -80,7 +80,7 @@ function Home() {
         </div>
       </section>
 
-      <section aria-label="Auf einen Blick" className="border-b border-line" data-reveal>
+      <section aria-label="Auf einen Blick" className="hero-follow border-b border-line">
         <ul className="gd-stats mx-auto max-w-7xl">
           {[
             ["13 Städte", "Hol- & Bringservice"],
