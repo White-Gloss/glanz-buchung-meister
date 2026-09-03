@@ -36,6 +36,24 @@ function requestHost(event: GrokPwaEvent): string {
   );
 }
 
+function gzipHtml(response: Response, acceptEncoding: string): Response {
+  if (!response.body) return response;
+  if (response.headers.get("content-encoding")) return response;
+  if (!/\bgzip\b/i.test(acceptEncoding)) return response;
+  if (typeof CompressionStream === "undefined") return response;
+  const headers = new Headers(response.headers);
+  headers.set("content-encoding", "gzip");
+  const vary = headers.get("vary");
+  if (!vary) headers.set("vary", "Accept-Encoding");
+  else if (!/accept-encoding/i.test(vary)) headers.append("vary", "Accept-Encoding");
+  headers.delete("content-length");
+  return new Response(response.body.pipeThrough(new CompressionStream("gzip")), {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function injectHeadStreaming(response: Response, host: string): Response {
   const injector = createHeadInjector({
     host,
@@ -69,12 +87,13 @@ export default async function grokPwaMiddleware(
 
   const path = event.url.pathname;
   const urlWithQuery = path + event.url.search;
+  const acceptEncoding = event.req.headers.get("accept-encoding") ?? "";
 
   if (path === "/__grok/manifest.webmanifest" || path === "/__grok/manifest.json") {
     return new Response(renderWebManifest(requestHost(event)), {
       headers: {
         "content-type": "application/manifest+json; charset=utf-8",
-        "cache-control": "no-cache",
+        "cache-control": "public, max-age=31536000, immutable",
       },
     });
   }
@@ -88,12 +107,15 @@ export default async function grokPwaMiddleware(
       host: requestHost(event),
       url: urlWithQuery,
     });
-    return new Response(html, {
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-cache",
-      },
-    });
+    return gzipHtml(
+      new Response(html, {
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-cache",
+        },
+      }),
+      acceptEncoding,
+    );
   }
 
   if (!isDocumentPath(path)) return next();
@@ -105,7 +127,7 @@ export default async function grokPwaMiddleware(
     String(result.headers.get("content-type") ?? "").includes("text/html") &&
     !result.headers.get("content-encoding")
   ) {
-    return injectHeadStreaming(result, requestHost(event));
+    return gzipHtml(injectHeadStreaming(result, requestHost(event)), acceptEncoding);
   }
   return result;
 }

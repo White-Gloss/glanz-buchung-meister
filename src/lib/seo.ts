@@ -1,4 +1,5 @@
 import {
+  heroAvifSrcSet,
   heroPreloadMobile,
   heroPreloadWide,
   logoJsonLdHref,
@@ -62,6 +63,8 @@ export function pageHead(opts: {
           href: heroPreloadMobile,
           type: "image/avif",
           media: "(max-width: 767px)",
+          imageSrcSet: heroAvifSrcSet,
+          imageSizes: "100vw",
           fetchPriority: "high" as const,
         },
         {
@@ -70,21 +73,9 @@ export function pageHead(opts: {
           href: heroPreloadWide,
           type: "image/avif",
           media: "(min-width: 768px)",
+          imageSrcSet: heroAvifSrcSet,
+          imageSizes: "100vw",
           fetchPriority: "high" as const,
-        },
-        {
-          rel: "preload" as const,
-          as: "font",
-          href: "/fonts/barlow-300.woff2",
-          type: "font/woff2",
-          crossOrigin: "anonymous" as const,
-        },
-        {
-          rel: "preload" as const,
-          as: "font",
-          href: "/fonts/barlow-400.woff2",
-          type: "font/woff2",
-          crossOrigin: "anonymous" as const,
         },
       ]
     : shotPreload

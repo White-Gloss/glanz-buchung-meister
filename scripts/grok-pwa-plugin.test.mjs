@@ -388,6 +388,30 @@ test("does not duplicate the extensions script", () => {
   assert.equal(twice.split("extensions.js").length - 1, 1);
 });
 
+test("skips grok extensions on customer production host", () => {
+  const out = injectGrokPwaHead("<html><head></head></html>", {
+    appName: "White Gloss",
+    host: "white-gloss.de",
+  });
+  assert.doesNotMatch(out, /grok-app-builder\/extensions\.js/);
+  assert.match(out, /rel="manifest"/);
+});
+
+test("strips prerendered grok extensions on customer production host", () => {
+  const baked = injectGrokPwaHead("<html><head></head></html>", { appName: "Demo" });
+  assert.match(baked, /grok-app-builder\/extensions\.js/);
+  const live = injectGrokPwaHead(baked, { appName: "White Gloss", host: "white-gloss.de" });
+  assert.doesNotMatch(live, /grok-app-builder\/extensions\.js/);
+});
+
+test("keeps grok extensions on grok.me preview hosts", () => {
+  const out = injectGrokPwaHead("<html><head></head></html>", {
+    appName: "Demo",
+    host: "demo.grok.me",
+  });
+  assert.match(out, /grok-app-builder\/extensions\.js/);
+});
+
 test("is idempotent", () => {
   const once = injectGrokPwaHead("<html><head></head></html>");
   const twice = injectGrokPwaHead(once);

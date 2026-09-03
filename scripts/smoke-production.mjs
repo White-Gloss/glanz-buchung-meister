@@ -37,6 +37,7 @@ const forbiddenSnippets = [
   { id: "public-signup", needle: "Noch kein Konto? Registrieren" },
   { id: "stale-ceramic-5y-product", needle: "Keramik 5 Jahre" },
   { id: "stale-ceramic-5y-item", needle: "5-Jahres-Beschichtung extra" },
+  { id: "grok-extensions-on-prod", needle: "grok.com/grok-app-builder/extensions.js" },
 ];
 
 const failures = [];
