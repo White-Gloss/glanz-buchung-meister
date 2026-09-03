@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   heroAvifSrcSet,
   heroPreloadHref,
@@ -24,8 +25,26 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
-  // Cinematic video loop as primary hero, with <picture> fallback for
-  // reduced-motion users, older browsers, and while the video buffers.
+  // Still image is the LCP on every viewport. The loop is a desktop
+  // enhancement and must not contend for bandwidth on phones.
+  const [playVideo, setPlayVideo] = useState(false);
+
+  useEffect(() => {
+    const allow = window.matchMedia(
+      "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
+    );
+    if (!allow.matches) return;
+    let cancelled = false;
+    const start = () => {
+      if (!cancelled) setPlayVideo(true);
+    };
+    const timeoutId = window.setTimeout(start, 1200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
   return (
     <div className={cn("hero-image relative isolate size-full overflow-hidden", className)}>
       <picture>
@@ -43,19 +62,20 @@ export function HeroMedia({
           sizes="100vw"
         />
       </picture>
-      <video
-        aria-hidden="true"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        poster="/media/hero-loop-poster.jpg"
-        className="absolute inset-0 size-full object-cover motion-reduce:hidden"
-      >
-        <source src="/media/hero-loop.webm" type="video/webm" />
-        <source src="/media/hero-loop.mp4" type="video/mp4" />
-      </video>
+      {playVideo ? (
+        <video
+          aria-hidden="true"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="none"
+          className="absolute inset-0 size-full object-cover"
+        >
+          <source src="/media/hero-loop.webm" type="video/webm" />
+          <source src="/media/hero-loop.mp4" type="video/mp4" />
+        </video>
+      ) : null}
     </div>
   );
 }

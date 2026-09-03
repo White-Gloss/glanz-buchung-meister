@@ -15,7 +15,7 @@ import {
   type City,
 } from "@/data/site";
 import { money } from "@/lib/utils";
-import { MessageCircle } from "lucide-react";
+import { IconMessage } from "@/components/icons";
 
 const steps = [
   {
@@ -77,7 +77,7 @@ export function CityLanding({ city }: { city: City }) {
               Termin in {city.name} anfragen
             </Link>
             <a href={wa} className={ctaGhost} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="size-4" aria-hidden />
+              <IconMessage className="size-4" aria-hidden />
               Fotos per WhatsApp
             </a>
           </div>
@@ -263,7 +263,7 @@ export function CityLanding({ city }: { city: City }) {
             Foto schicken – Aufwand für {city.name}
           </span>
         </span>
-        <MessageCircle className="size-5 shrink-0" aria-hidden />
+        <IconMessage className="size-5 shrink-0" aria-hidden />
       </a>
     </main>
   );

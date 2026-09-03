@@ -14,6 +14,7 @@ export const Route = createFileRoute("/qualitaet")({
       description:
         "Ablauf der Fahrzeugaufbereitung in Horb: anschauen, vorbereiten, arbeiten, abgeben. So viel wie nötig, so schonend wie möglich.",
       path: "/qualitaet",
+      preloadShot: "finish",
     }),
 });
 

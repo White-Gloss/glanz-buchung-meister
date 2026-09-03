@@ -22,6 +22,7 @@ export const Route = createFileRoute("/preise")({
       description:
         "Preise Fahrzeugaufbereitung Horb: Basis Pflege ab 149 €, Premium Glanz ab 349 €, High-End Keramik ab 899 € inkl. MwSt.",
       path: "/preise",
+      preloadShot: "keramik",
     }),
 });
 

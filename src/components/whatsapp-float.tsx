@@ -1,5 +1,5 @@
-import { MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { IconMessage } from "./icons";
 import { site } from "@/data/site";
 
 export function WhatsAppFloat() {
@@ -33,13 +33,13 @@ export function WhatsAppFloat() {
       aria-hidden={hidden}
       tabIndex={hidden ? -1 : undefined}
       className={[
-        "fixed right-4 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-wa px-4 text-sm font-semibold text-accent-fg shadow-lg transition-transform duration-200 ease-out hover:scale-105 sm:right-6 sm:bottom-6 sm:grid sm:size-14 sm:place-items-center sm:px-0",
+        "fixed right-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-wa text-accent-fg shadow-lg sm:right-6 sm:bottom-6 sm:h-14 sm:w-14",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
-        hidden ? "pointer-events-none translate-y-4 opacity-0" : "opacity-100",
+        hidden ? "pointer-events-none opacity-0" : "opacity-100",
       ].join(" ")}
     >
-      <MessageCircle className="size-6" aria-hidden />
-      <span className="sm:sr-only">WhatsApp</span>
+      <IconMessage className="size-6" />
+      <span className="sr-only">WhatsApp</span>
     </a>
   );
 }

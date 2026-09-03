@@ -14,6 +14,7 @@ export const Route = createFileRoute("/luxusfahrzeuge")({
       title: `Luxusfahrzeug-Aufbereitung ab 80.000 € | ${site.name}`,
       description: DESCRIPTION,
       path: "/luxusfahrzeuge",
+      preloadHero: true,
     }),
 });
 
