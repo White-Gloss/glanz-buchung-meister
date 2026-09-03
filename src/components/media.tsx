@@ -25,20 +25,23 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
-  // Still image is the LCP on every viewport. The loop is a desktop
-  // enhancement and must not contend for bandwidth on phones.
+  // Still image is LCP. The loop starts after first paint on every
+  // viewport except reduced-motion and Save-Data.
   const [playVideo, setPlayVideo] = useState(false);
+  const [mobileLoop, setMobileLoop] = useState(false);
 
   useEffect(() => {
-    const allow = window.matchMedia(
-      "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
-    );
-    if (!allow.matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) return;
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
     let cancelled = false;
     const start = () => {
-      if (!cancelled) setPlayVideo(true);
+      if (cancelled) return;
+      setMobileLoop(mobile);
+      setPlayVideo(true);
     };
-    const timeoutId = window.setTimeout(start, 1200);
+    const timeoutId = window.setTimeout(start, 900);
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
@@ -70,10 +73,17 @@ export function HeroMedia({
           loop
           playsInline
           preload="none"
-          className="absolute inset-0 size-full object-cover"
+          className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
+          onPlaying={(e) => e.currentTarget.setAttribute("data-ready", "")}
         >
-          <source src="/media/hero-loop.webm" type="video/webm" />
-          <source src="/media/hero-loop.mp4" type="video/mp4" />
+          <source
+            src={mobileLoop ? "/media/hero-loop-720.webm" : "/media/hero-loop.webm"}
+            type="video/webm"
+          />
+          <source
+            src={mobileLoop ? "/media/hero-loop-720.mp4" : "/media/hero-loop.mp4"}
+            type="video/mp4"
+          />
         </video>
       ) : null}
     </div>
