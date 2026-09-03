@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import { MediaTile, PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { articles } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { site } from "@/data/site";
@@ -61,11 +62,16 @@ function RatgeberIndex() {
         alt="Keramikversiegelung von Hand auf dem Lack"
         kicker="Wissen aus der Werkstatt"
         title="Ratgeber Fahrzeugpflege."
-        lead="Was bei Lack, Innenraum und Werterhalt wirklich zählt – aus der Werkstatt in Horb am Neckar, ohne große Versprechen."
+        lead="Aus der Werkstatt. Ohne große Versprechen."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Ratgeber" },
         ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
       />
       <section className="border-t border-line">
         <div className="gd-split gd-split--duo">

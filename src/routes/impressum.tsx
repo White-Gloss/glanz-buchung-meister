@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PageHero } from "@/components/page-hero";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -14,16 +15,20 @@ export const Route = createFileRoute("/impressum")({
 
 function ImpressumPage() {
   return (
-    <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-16 sm:px-6" tabIndex={-1}>
-      <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-        <Link to="/" className="hover:text-fg">
-          Startseite
-        </Link>
-        <span className="px-2">/</span>
-        <span>Impressum</span>
-      </nav>
-      <h1 className="mt-6 font-display text-5xl">Impressum</h1>
-      <div className="mt-10 space-y-8 text-sm leading-relaxed">
+    <main id="main-content" tabIndex={-1}>
+      <PageHero
+        shot="atelier"
+        alt={`Werkstatt von White Gloss in ${site.city}`}
+        kicker="Rechtliches"
+        title="Impressum."
+        lead="Wer hinter White Gloss steht – Anschrift, Kontakt, Angaben gemäß § 5 DDG."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Impressum" },
+        ]}
+      />
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+      <div className="space-y-8 text-sm leading-relaxed">
         <section>
           <h2 className="font-display text-2xl">Angaben gemäß § 5 DDG</h2>
           <address className="mt-3 not-italic text-muted">
@@ -75,6 +80,7 @@ function ImpressumPage() {
           </p>
         </section>
         <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+      </div>
       </div>
     </main>
   );

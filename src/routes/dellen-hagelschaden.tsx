@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PhotoInquiry } from "@/components/photo-inquiry";
 import { PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -24,12 +25,17 @@ function DellenPage() {
         alt="Parkdelle unter Streiflicht, bevor wir ausbeulen"
         kicker="Smart Repair"
         title="Dellenentfernung und Hagelschaden."
-        lead="Parkdellen, kleinere Dellen und Hagelschäden holen wir lackschadenfrei raus, wenn es technisch geht. Das können Sie unabhängig von den Aufbereitungspaketen anfragen."
+        lead="Lackschadenfrei, wenn es geht. Sonst sagen wir nein."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen", to: "/leistungen" },
           { label: "Dellen" },
         ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <p className="text-sm text-muted leading-relaxed">

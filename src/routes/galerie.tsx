@@ -35,7 +35,7 @@ function GaleriePage() {
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
         kicker="Aus der Werkstatt"
         title="So sieht die Arbeit aus."
-        lead="Politur, Keramik, Leder und Felgen – Werkstattfotos ohne Kundenautos und ohne Kennzeichen. Vorher/Nachher echter Aufträge zeigen wir nur mit Freigabe."
+        lead="Politur, Keramik, Leder, Felgen. Keine Kundenautos, keine Kennzeichen."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Werkstatt" },

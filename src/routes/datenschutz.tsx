@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PageHero } from "@/components/page-hero";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -14,20 +15,18 @@ export const Route = createFileRoute("/datenschutz")({
 
 function PrivacyPage() {
   return (
-    <main id="main-content" className="page-doc">
-      <section className="border-b border-line">
-        <div className="mx-auto max-w-3xl px-4 pb-16 pt-8 sm:px-6">
-          <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-            <Link to="/" className="hover:text-fg">
-              Startseite
-            </Link>
-            <span className="px-2">/</span>
-            <span>Datenschutz</span>
-          </nav>
-          <p className="mt-8 text-xs uppercase tracking-[0.16em] text-subtle">Rechtliches</p>
-          <h1 className="mt-3 font-display text-5xl">Datenschutzerklärung</h1>
-        </div>
-      </section>
+    <main id="main-content" tabIndex={-1}>
+      <PageHero
+        shot="atelier"
+        alt={`Werkstatt von White Gloss in ${site.city}`}
+        kicker="Rechtliches"
+        title="Datenschutzerklärung."
+        lead="Welche Daten wir brauchen, wofür, und wie lange sie bleiben."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Datenschutz" },
+        ]}
+      />
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <section>
           <h2>1. Verantwortlicher</h2>

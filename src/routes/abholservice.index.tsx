@@ -24,7 +24,7 @@ function AbholIndex() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker="13 Städte"
         title="Hol- und Bringservice."
-        lead={`Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft immer in der Werkstatt in ${site.city} – ${pickupTierSummary()}. ${pickupKeramikNote()}.`}
+        lead="Wir holen das Auto ab und bringen es wieder. Die Arbeit bleibt in Horb."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Hol- & Bringservice" },

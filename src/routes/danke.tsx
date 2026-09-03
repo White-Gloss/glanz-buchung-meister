@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PageHero } from "@/components/page-hero";
+import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -30,35 +32,37 @@ function ThanksPage() {
   const confirmed = zusage === "1";
 
   return (
-    <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-20 sm:px-6">
-      <p className="text-xs uppercase tracking-[0.16em] text-subtle">
-        {confirmed ? "Termin zugesagt" : "Bestätigung"}
-      </p>
-      <h1 className="mt-3 font-display text-5xl">
-        {confirmed ? "Termin ist zugesagt." : "Anfrage erhalten."}
-      </h1>
-      <p className="mt-5 text-lg leading-relaxed text-muted">
-        {confirmed
-          ? `Der Wunschtermin ist frei und damit zugesagt${vorgang ? ` (${vorgang})` : ""}. Der verbindliche Preis bleibt nach Begutachtung. Anzahlung nur nach Absprache, kein automatischer Einzug.`
-          : "Unverbindlich vorgemerkt. Der Wunschtermin war nicht frei oder fehlte – wir melden uns zur Abstimmung, in der Regel noch am selben Werktag."}
-      </p>
-      <p className="mt-4 text-sm text-muted">
-        Rückfragen: <a href={site.phoneHref}>{site.phoneDisplay}</a> oder{" "}
-        <a href={`mailto:${site.email}`}>{site.email}</a>.
-      </p>
-      <div className="mt-10 flex flex-wrap gap-3">
-        <Link
-          to="/"
-          className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
-        >
-          Zur Startseite
-        </Link>
-        <a
-          href={site.whatsapp}
-          className="inline-flex min-h-11 items-center rounded-sm border border-line px-5 text-sm"
-        >
-          WhatsApp
-        </a>
+    <main id="main-content" tabIndex={-1}>
+      <PageHero
+        shot="atelier"
+        alt="Werkstatt von White Gloss in Horb am Neckar"
+        kicker={confirmed ? "Termin zugesagt" : "Bestätigung"}
+        title={confirmed ? "Termin ist zugesagt." : "Anfrage erhalten."}
+        lead={
+          confirmed
+            ? `Der Wunschtermin ist frei${vorgang ? ` (${vorgang})` : ""}. Der Preis bleibt nach Begutachtung.`
+            : "Unverbindlich vorgemerkt. Wir melden uns zur Abstimmung, in der Regel noch am selben Werktag."
+        }
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Danke" },
+        ]}
+        actions={
+          <>
+            <Link to="/" className={ctaPrimary}>
+              Zur Startseite
+            </Link>
+            <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+              WhatsApp
+            </a>
+          </>
+        }
+      />
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <p className="text-sm text-muted">
+          Rückfragen: <a href={site.phoneHref}>{site.phoneDisplay}</a> oder{" "}
+          <a href={`mailto:${site.email}`}>{site.email}</a>.
+        </p>
       </div>
     </main>
   );
