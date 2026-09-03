@@ -47,48 +47,45 @@ function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="relative overflow-hidden">
-        <div className="hero-image">
+      <section className="hero-stage">
+        <div className="hero-stage-media" data-parallax>
           <HeroMedia
             priority
             alt="Weißes Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
-            className="h-[72vh] min-h-[520px] w-full object-cover object-[70%_center] sm:h-[90vh] sm:object-[62%_center]"
+            className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/45 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-16">
-          <p className="kicker">
-            {site.city} · {site.region}
+        <div className="hero-stage-veil" />
+        <div className="hero-stage-copy flex min-h-svh flex-col items-center justify-center px-6 pb-24 pt-20 text-center">
+          <p className="kicker hero-in" style={{ ["--d" as string]: 0 }}>
+            {site.city}
           </p>
-          <h1 className="mt-5 max-w-4xl">
-            <span className="heading-brand block">White Gloss</span>
-            <span className="heading-brand block">Detailing</span>
-            <span className="heading-tagline mt-4 block sm:mt-5">
-              No Compromise, Only Results
-            </span>
+          <h1 className="hero-in mt-7 max-w-5xl" style={{ ["--d" as string]: 1 }}>
+            <span className="heading-brand block">White Gloss.</span>
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
-            Wenn Lack oder Innenraum nicht mehr so wirken, wie sie sollen, holen
-            wir den Zustand zurück. Fahrzeugaufbereitung in {site.city}:
-            tiefenreiner Innenraum, klarer Lack und Keramikversiegelung – auf
-            Wunsch mit Hol- und Bringservice.
+          <span className="hero-rule hero-in" aria-hidden style={{ ["--d" as string]: 2 }} />
+          <p className="heading-tagline hero-in mt-7" style={{ ["--d" as string]: 3 }}>
+            No compromise.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" className={ctaPrimary}>
-              Termin anfragen
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-            <Link to="/luxusfahrzeuge" className={ctaGhost}>
-              Individuelles Angebot
-            </Link>
-            <Link to="/b2b" className={ctaGhost}>
-              B2B-Anfrage
-            </Link>
-          </div>
+          <p className="heading-tagline hero-in mt-1" style={{ ["--d" as string]: 4 }}>
+            Only results.
+          </p>
+          <Link
+            to="/"
+            hash="buchung"
+            className={`${ctaPrimary} hero-in mt-10`}
+            style={{ ["--d" as string]: 5 }}
+          >
+            Termin anfragen
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+        <div className="scroll-hint" aria-hidden>
+          <span />
         </div>
       </section>
 
-      <section aria-label="Auf einen Blick" className="border-b border-line">
+      <section aria-label="Auf einen Blick" className="border-b border-line" data-reveal>
         <ul className="gd-stats mx-auto max-w-7xl">
           {[
             ["13 Städte", "Hol- & Bringservice"],
@@ -104,16 +101,18 @@ function Home() {
         </ul>
       </section>
 
-      <section className="relative overflow-hidden">
-        <Shot
-          name="atelier"
-          alt="Werkstatt von White Gloss in Horb am Neckar – ein Auto nach dem anderen"
-          className="h-[68vh] min-h-[28rem] w-full sm:h-[82vh]"
-          sizes="100vw"
-          framed={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/55 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-20">
+      <section className="film-chapter">
+        <div className="film-chapter-media" data-parallax>
+          <Shot
+            name="atelier"
+            alt="Werkstatt von White Gloss in Horb am Neckar – ein Auto nach dem anderen"
+            className="size-full"
+            sizes="100vw"
+            framed={false}
+          />
+        </div>
+        <div className="film-chapter-veil" />
+        <div className="film-chapter-copy" data-reveal>
           <p className="kicker">Werkstatt Horb</p>
           <p className="mt-5 max-w-3xl font-display text-4xl leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
             Kein Waschstraßenprogramm.
@@ -129,7 +128,7 @@ function Home() {
       </section>
 
       <section className="cv-auto border-t border-line">
-        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="kicker">Pakete</p>
@@ -194,7 +193,7 @@ function Home() {
 
       <section className="cv-auto border-t border-line">
         <div className="section gd-split mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="ga-copy">
+          <div className="ga-copy" data-reveal>
             <p className="kicker">Prozess</p>
             <h2 className="heading-2 mt-4">
               So läuft’s bei uns.
@@ -239,13 +238,13 @@ function Home() {
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="ga-media aspect-[4/3] w-full"
           />
-          <div className="ga-copy">
+          <div className="ga-copy" data-reveal>
             <p className="kicker">Geht auch extra</p>
             <h2 className="heading-2 mt-4">
               Dellenentfernung & Hagelschaden
             </h2>
             <p className="mt-5 max-w-md text-muted leading-relaxed">
-              Ob Parkdelle oder Hagel: schicken Sie uns ein paar Fotos, und wir
+              Ob Parkdelle oder Hagel: Schicken Sie uns ein paar Fotos, und wir
               sagen Ihnen ehrlich, ob sich die Arbeit lohnt. Den Preis machen wir
               erst, wenn wir uns den Schaden angeschaut haben.
             </p>
@@ -261,7 +260,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6">
+      <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
         <p className="kicker">Aus der Werkstatt</p>
         <h2 className="heading-2 mt-4 max-w-2xl">
           So sieht die Arbeit aus.
@@ -447,15 +446,18 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto border-t border-line" aria-labelledby="fahrzeugaufbereitung-heading">
-        <Shot
-          name="finish"
-          alt={`Fahrzeugaufbereitung in ${site.city} – Lack nach der Politur in der Werkstatt, Kennzeichen entfernt`}
-          className="h-[42vh] min-h-64 w-full sm:h-[54vh]"
-          sizes="100vw"
-          framed={false}
-        />
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+      <section className="film-chapter" aria-labelledby="fahrzeugaufbereitung-heading">
+        <div className="film-chapter-media" data-parallax>
+          <Shot
+            name="finish"
+            alt={`Fahrzeugaufbereitung in ${site.city} – Lack nach der Politur in der Werkstatt, Kennzeichen entfernt`}
+            className="size-full"
+            sizes="100vw"
+            framed={false}
+          />
+        </div>
+        <div className="film-chapter-veil" />
+        <div className="film-chapter-copy" data-reveal>
           <p className="kicker">White Gloss Detailing</p>
           <h2 id="fahrzeugaufbereitung-heading" className="heading-2 mt-4">
             Fahrzeugaufbereitung in {site.city}

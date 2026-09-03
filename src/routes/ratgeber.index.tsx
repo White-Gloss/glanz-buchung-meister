@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FluidImg } from "@/components/media";
+import { ArrowRight } from "lucide-react";
+import { MediaTile, PageHero } from "@/components/page-hero";
 import { articles } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { site } from "@/data/site";
@@ -49,29 +50,33 @@ function RatgeberIndex() {
   };
 
   return (
-    <main id="main-content">
+    <main id="main-content" tabIndex={-1}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <p className="text-xs uppercase tracking-[0.16em] text-subtle">Wissen aus der Werkstatt</p>
-        <h1 className="mt-3 font-display text-5xl">Ratgeber Fahrzeugpflege</h1>
-        <p className="mt-4 max-w-2xl text-muted">
-          Was bei Lack, Innenraum und Werterhalt wirklich zählt – aus der
-          Werkstatt in Horb am Neckar, ohne große Versprechen.
-        </p>
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <PageHero
+        shot="keramik"
+        alt="Keramikversiegelung von Hand auf dem Lack"
+        kicker="Wissen aus der Werkstatt"
+        title="Ratgeber Fahrzeugpflege."
+        lead="Was bei Lack, Innenraum und Werterhalt wirklich zählt – aus der Werkstatt in Horb am Neckar, ohne große Versprechen."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Ratgeber" },
+        ]}
+      />
+      <section className="border-t border-line">
+        <div className="gd-split gd-split--duo">
           {articles.map((a) => (
-            <li key={a.slug} className="overflow-hidden rounded-card border border-line bg-surface">
-              <FluidImg
-                src={a.image}
-                alt=""
-                className="aspect-video w-full object-cover"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
-              <div className="p-5">
-                <p className="text-xs text-subtle">
+            <Link
+              key={a.slug}
+              to="/ratgeber/$slug"
+              params={{ slug: a.slug }}
+              className="block border-b border-line lg:odd:border-r"
+            >
+              <MediaTile src={a.image} alt="">
+                <p className="kicker">
                   {new Date(a.date).toLocaleDateString("de-DE", {
                     day: "2-digit",
                     month: "long",
@@ -79,18 +84,14 @@ function RatgeberIndex() {
                   })}{" "}
                   · {a.minutes} Min.
                 </p>
-                <h2 className="mt-2 font-display text-2xl">
-                  <Link
-                    to="/ratgeber/$slug"
-                    params={{ slug: a.slug }}
-                    className="hover:text-muted"
-                  >
-                    {a.title}
-                  </Link>
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{a.excerpt}</p>
-              </div>
-            </li>
+                <h2 className="heading-2 mt-3 max-w-md">{a.title}</h2>
+                <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">{a.excerpt}</p>
+                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
+                  Lesen
+                  <ArrowRight className="link-arrow size-4" aria-hidden />
+                </span>
+              </MediaTile>
+            </Link>
           ))}
           {extra
             .filter((r) => r.slug)
@@ -102,24 +103,19 @@ function RatgeberIndex() {
                 /* ignore */
               }
               return (
-                <li key={r.id} className="overflow-hidden rounded-card border border-line bg-surface">
-                  <div className="p-5">
-                    <p className="text-xs text-subtle">Aktuell</p>
-                    <h2 className="mt-2 font-display text-2xl">
-                      <Link
-                        to="/ratgeber/$slug"
-                        params={{ slug: r.slug as string }}
-                        className="hover:text-muted"
-                      >
-                        {r.title}
-                      </Link>
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-muted">{excerpt}</p>
-                  </div>
-                </li>
+                <Link
+                  key={r.id}
+                  to="/ratgeber/$slug"
+                  params={{ slug: r.slug as string }}
+                  className="block border-b border-line p-8 lg:odd:border-r"
+                >
+                  <p className="kicker">Aktuell</p>
+                  <h2 className="heading-2 mt-3">{r.title}</h2>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">{excerpt}</p>
+                </Link>
               );
             })}
-        </ul>
+        </div>
       </section>
     </main>
   );

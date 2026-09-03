@@ -1,11 +1,10 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ArrowRight, ChevronDown, Gem, Menu, MessageCircle, Phone, X } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { nav, footerExplore, openingHours, services, sheetPrimary, sheetSecondary, site } from "@/data/site";
-import { BrandMark } from "./media";
+import { nav, footerExplore, openingHours, site } from "@/data/site";
+import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
-import { cn } from "@/lib/utils";
 import { WhatsAppFloat } from "./whatsapp-float";
 
 export function SkipLink() {
@@ -29,15 +28,50 @@ export function SkipLink() {
   );
 }
 
+const NAV_SHOT: Record<string, ShotName> = {
+  Startseite: "atelier",
+  Leistungen: "lack",
+  Luxusfahrzeuge: "private",
+  "Preise & Pakete": "finish",
+  Qualitätsanspruch: "atelier",
+  "Hol- & Bringservice": "felgen",
+  "Individuelles Angebot": "keramik",
+  Ratgeber: "dellen",
+  "Häufige Fragen": "atelier",
+  Werkstatt: "atelier",
+  Kontakt: "finish",
+  B2B: "private",
+};
+
+const MENU_SHOTS: ShotName[] = [
+  "lack",
+  "private",
+  "finish",
+  "atelier",
+  "felgen",
+  "keramik",
+  "dellen",
+];
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [svcOpen, setSvcOpen] = useState(false);
+  const [layer, setLayer] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hash = useRouterState({ select: (s) => s.location.hash });
 
   useEffect(() => {
     setOpen(false);
-    setSvcOpen(false);
-  }, [pathname]);
+  }, [pathname, hash]);
+
+  useEffect(() => {
+    if (open) {
+      setLayer(true);
+      return;
+    }
+    if (!layer) return;
+    const t = window.setTimeout(() => setLayer(false), 420);
+    return () => window.clearTimeout(t);
+  }, [open, layer]);
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -67,13 +101,17 @@ export function SiteHeader() {
         return;
       }
       if (e.key !== "Tab") return;
-      const root = document.getElementById("mobile-nav");
+      const root = document.getElementById("site-nav");
+      const toggle = document.querySelector<HTMLElement>(".menu-toggle");
       if (!root) return;
       const focusable = [
+        toggle,
         ...root.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
-      ].filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1);
+      ].filter((el): el is HTMLElement =>
+        Boolean(el && !el.hasAttribute("disabled") && el.tabIndex !== -1),
+      );
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -85,27 +123,34 @@ export function SiteHeader() {
         first.focus();
       }
     };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.body.dataset.nav = "open";
     window.addEventListener("keydown", onKey);
     const t = window.requestAnimationFrame(() => {
-      document.getElementById("mobile-nav-close")?.focus();
+      document.querySelector<HTMLElement>("#site-nav .film-menu-link")?.focus();
     });
     return () => {
-      document.body.style.overflow = prev;
-      delete document.body.dataset.nav;
       window.removeEventListener("keydown", onKey);
       window.cancelAnimationFrame(t);
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!layer) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.dataset.nav = "open";
+    return () => {
+      document.body.style.overflow = prev;
+      delete document.body.dataset.nav;
+    };
+  }, [layer]);
+
   return (
     <header
-      className={`site-header sticky top-0 ${open ? "z-[90]" : "z-40"}`}
+      className={`site-header ${layer ? "z-[110]" : "z-40"}`}
       data-scrolled={scrolled ? "true" : "false"}
+      data-nav-open={layer ? "true" : "false"}
     >
-      <div className="gd-header mx-auto max-w-7xl px-4 py-3 sm:px-6 xl:max-w-[90rem] xl:px-10 2xl:max-w-[96rem]">
+      <div className="gd-header mx-auto max-w-7xl px-4 sm:px-6 xl:max-w-[90rem] xl:px-10">
         <Link
           to="/"
           className="ga-logo group inline-flex min-h-11 items-center"
@@ -113,229 +158,187 @@ export function SiteHeader() {
         >
           <BrandMark variant="header" decorative />
         </Link>
-        <nav className="ga-nav hidden items-center lg:flex" aria-label="Hauptnavigation">
-          {nav.map((item) =>
-            item.to === "/leistungen" ? (
-              <div key={item.to} className="group/mega relative">
-                <Link
-                  to={item.to}
-                  className="nav-link text-muted transition-colors duration-200 hover:text-fg"
-                  activeProps={{
-                    className: "nav-link text-fg",
-                    "aria-current": "page",
-                  }}
-                >
-                  {item.label}
-                </Link>
-                <div className="invisible absolute left-0 top-full z-50 min-w-[18rem] pt-3 opacity-0 transition-[opacity,visibility] duration-200 group-hover/mega:visible group-hover/mega:opacity-100 group-focus-within/mega:visible group-focus-within/mega:opacity-100">
-                  <div className="rounded-card border border-line bg-bg py-2">
-                    {services.map((s) => (
-                      <Link
-                        key={s.slug}
-                        to="/leistungen/$slug"
-                        params={{ slug: s.slug }}
-                        className="block px-5 py-2.5 text-sm text-muted transition-colors hover:bg-white/[0.04] hover:text-fg"
-                      >
-                        {s.nav}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="nav-link text-muted transition-colors duration-200 hover:text-fg"
-                activeProps={{
-                  className: "nav-link text-fg",
-                  "aria-current": "page",
-                }}
-              >
-                {item.label}
-              </Link>
-            ),
-          )}
-        </nav>
-        <div className="ga-tools flex items-center gap-2">
-          <a
-            href={site.phoneHref}
-            className="hidden min-h-11 items-center gap-2 px-1 text-[0.8rem] tracking-[0.04em] text-muted transition-colors duration-200 hover:text-fg lg:inline-flex"
-            aria-label={`Anrufen ${site.phoneDisplay}`}
-          >
-            <Phone className="size-3.5" aria-hidden />
-            {site.phoneDisplay}
-          </a>
-          <a
-            href={site.whatsapp}
-            className="hidden size-11 items-center justify-center rounded-control text-muted transition-colors hover:text-fg lg:inline-flex"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp mit White Gloss"
-          >
-            <MessageCircle className="size-4" aria-hidden />
-          </a>
-          <Link
-            to="/"
-            hash="buchung"
-            className={cn(ctaPrimary, "max-lg:!hidden px-5")}
-          >
-            Termin anfragen
-          </Link>
+        <div className="ga-tools flex items-center">
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-control border border-line-strong text-fg lg:hidden"
+            className="menu-toggle"
             aria-expanded={open}
-            aria-controls="mobile-nav"
+            aria-controls="site-nav"
             aria-haspopup="dialog"
             aria-label={open ? "Menü schließen" : "Menü öffnen"}
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
+            <span className="burger" aria-hidden>
+              <span className="burger-line" />
+              <span className="burger-line" />
+              <span className="burger-line" />
+            </span>
           </button>
         </div>
       </div>
-      {open ? (
-        <MobileSheet
-          svcOpen={svcOpen}
-          setSvcOpen={setSvcOpen}
-          onClose={() => setOpen(false)}
+      {layer ? (
+        <FilmMenu
+          closing={!open}
+          onClose={() => {
+            window.setTimeout(() => setOpen(false), 0);
+          }}
         />
       ) : null}
     </header>
   );
 }
 
-function MobileSheet({
-  svcOpen,
-  setSvcOpen,
+function FilmMenu({
   onClose,
+  closing,
 }: {
-  svcOpen: boolean;
-  setSvcOpen: (v: boolean | ((p: boolean) => boolean)) => void;
   onClose: () => void;
+  closing: boolean;
 }) {
+  const [visual, setVisual] = useState<ShotName>("private");
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   if (typeof document === "undefined") return null;
 
+  const items = [{ to: "/", label: "Startseite" as const }, ...nav];
+
   return createPortal(
-    <div className="lg:hidden">
-      <div
-        className="fixed inset-x-0 bottom-0 z-[70] bg-black/60"
-        style={{ top: "3.75rem" }}
-        onClick={onClose}
-      />
-      <nav
-        id="mobile-nav"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mobile-nav-title"
-        className="mobile-sheet z-[80]"
-      >
-        <div className="sheet-head">
-          <p id="mobile-nav-title">Navigation</p>
-          <button
-            type="button"
-            id="mobile-nav-close"
-            className="sheet-close"
-            aria-label="Menü schließen"
-            onClick={onClose}
-          >
-            <X className="size-4" aria-hidden />
-          </button>
-        </div>
-        <ul className="sheet-list">
-          <li>
-            <Link to="/" className="nav-bubble" onClick={onClose}>
-              Startseite
-            </Link>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="nav-bubble"
-              aria-expanded={svcOpen}
-              onClick={() => setSvcOpen((v) => !v)}
-            >
-              Leistungen
-              <ChevronDown
-                className={`ml-auto size-4 shrink-0 text-subtle transition-transform duration-200 ${svcOpen ? "rotate-180" : ""}`}
-                aria-hidden
-              />
-            </button>
-            {svcOpen ? (
-              <ul className="sheet-sub">
-                {services.map((s) => (
-                  <li key={s.slug}>
-                    <Link
-                      to="/leistungen/$slug"
-                      params={{ slug: s.slug }}
-                      onClick={onClose}
-                    >
-                      {s.nav}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </li>
-          <li>
-            <Link
-              to="/luxusfahrzeuge"
-              aria-label="Luxusfahrzeuge, nur auf Anruf"
-              className="nav-bubble nav-bubble-featured"
-              onClick={onClose}
-            >
-              <span className="nav-bubble-label">
-                <Gem className="size-4 shrink-0 text-subtle" aria-hidden />
-                Luxusfahrzeuge
-              </span>
-              <span className="nav-bubble-badge">Nur auf Anruf</span>
-            </Link>
-          </li>
-          {sheetPrimary.map((item) => (
-            <li key={item.to}>
-              <Link to={item.to} className="nav-bubble" onClick={onClose}>
-                {item.label}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <Link to="/" hash="buchung" className="nav-bubble" onClick={onClose}>
-              Individuelles Angebot
-            </Link>
-          </li>
-          {sheetSecondary.map((item) => (
-            <li key={item.to}>
-              <Link to={item.to} className="nav-bubble" onClick={onClose}>
-                {item.label}
-              </Link>
-            </li>
-          ))}
+    <nav
+      id="site-nav"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Hauptnavigation"
+      className={closing ? "film-menu is-closing" : "film-menu"}
+      aria-hidden={closing || undefined}
+    >
+      <div className="film-menu-visual" aria-hidden>
+        {MENU_SHOTS.map((name) => (
+          <Shot
+            key={name}
+            name={name}
+            alt=""
+            framed={false}
+            className={`film-menu-shot${name === visual ? " is-on" : ""}`}
+            sizes="50vw"
+          />
+        ))}
+      </div>
+      <div className="film-menu-panel">
+        <ul className="film-menu-list">
+          {items.map((item, i) => {
+            const shot = NAV_SHOT[item.label] ?? "hero";
+            const current =
+              "hash" in item && item.hash
+                ? false
+                : item.to === "/"
+                  ? pathname === "/"
+                  : pathname === item.to || pathname.startsWith(`${item.to}/`);
+            return (
+              <li key={item.label} style={{ ["--i" as string]: i }}>
+                {"hash" in item && item.hash ? (
+                  <Link
+                    to={item.to}
+                    hash={item.hash}
+                    className="film-menu-link"
+                    onClick={onClose}
+                    onMouseEnter={() => setVisual(shot)}
+                    onFocus={() => setVisual(shot)}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <Link
+                    to={item.to}
+                    className="film-menu-link"
+                    aria-current={current ? "page" : undefined}
+                    onClick={onClose}
+                    onMouseEnter={() => setVisual(shot)}
+                    onFocus={() => setVisual(shot)}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
-        <div className="nav-actions">
-          <Link
-            to="/"
-            hash="buchung"
-            className={`${ctaPrimary} h-12 w-full`}
-            onClick={onClose}
-          >
+        <div className="film-menu-cta">
+          <Link to="/" hash="buchung" className={ctaPrimary} onClick={onClose}>
             Termin anfragen
             <ArrowRight className="size-4" aria-hidden />
           </Link>
           <a
             href={site.whatsapp}
-            className={`${ctaGhost} h-12 w-full`}
+            className={ctaGhost}
             target="_blank"
             rel="noopener noreferrer"
           >
             <MessageCircle className="size-4" aria-hidden />
-            Per WhatsApp schreiben
+            WhatsApp
           </a>
         </div>
-      </nav>
-    </div>,
+      </div>
+    </nav>,
     document.body,
   );
+}
+
+function FilmScroll() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const reveals = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) entry.target.classList.add("is-in");
+        }
+      },
+      { threshold: 0.16, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    const start = window.requestAnimationFrame(() => {
+      reveals.forEach((el) => io.observe(el));
+      if (reduce) reveals.forEach((el) => el.classList.add("is-in"));
+    });
+
+    if (reduce) {
+      root.style.removeProperty("--scroll-p");
+      return () => {
+        window.cancelAnimationFrame(start);
+        io.disconnect();
+      };
+    }
+
+    let frame = 0;
+    const tick = () => {
+      frame = 0;
+      const vh = window.innerHeight || 1;
+      const raw = Math.min(1, Math.max(0, window.scrollY / vh));
+      const p = raw * raw * (3 - 2 * raw);
+      root.style.setProperty("--scroll-p", p.toFixed(4));
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(tick);
+    };
+    tick();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(start);
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+      root.style.removeProperty("--scroll-p");
+    };
+  }, [pathname]);
+
+  return null;
 }
 
 export function SiteFooter() {
@@ -515,6 +518,7 @@ export function Shell() {
     <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public">
       <SkipLink />
       <SiteHeader />
+      <FilmScroll />
       <Outlet />
       <SiteFooter />
       <WhatsAppFloat />

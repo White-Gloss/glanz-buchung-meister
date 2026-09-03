@@ -4,7 +4,7 @@ import { site } from "@/data/site";
 
 export function NotFoundComponent() {
   return (
-    <main id="main-content" className="mx-auto max-w-3xl px-4 py-24 sm:px-6" tabIndex={-1}>
+    <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-24 sm:px-6" tabIndex={-1}>
       <p className="kicker">404</p>
       <h1 className="heading-2 mt-4">Diese Seite gibt es nicht.</h1>
       <p className="mt-5 max-w-xl text-muted leading-relaxed">

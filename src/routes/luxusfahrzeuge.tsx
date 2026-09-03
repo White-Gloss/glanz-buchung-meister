@@ -41,19 +41,21 @@ function LuxuryPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="relative overflow-hidden">
-        <Shot
-          name="hero"
-          alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
-          className="h-[62vh] min-h-[22rem] w-full sm:h-[78vh]"
-          sizes="100vw"
-          priority
-          framed={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16">
+      <section className="film-chapter">
+        <div className="film-chapter-media" data-parallax>
+          <Shot
+            name="hero"
+            alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+            className="size-full"
+            sizes="100vw"
+            priority
+            framed={false}
+          />
+        </div>
+        <div className="film-chapter-veil" />
+        <div className="film-chapter-copy" data-reveal>
           <p className="kicker">Private Client</p>
-          <h1 className="mt-4 max-w-3xl font-display text-5xl tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="heading-display mt-4 max-w-3xl">
             Fahrzeuge ab etwa 80.000 €
           </h1>
         </div>
@@ -75,7 +77,7 @@ function LuxuryPage() {
           {[
             [
               "Anrufen",
-              "Am Telefon klären wir in Ruhe, um welches Auto es geht, wie es genutzt wird und was Sie sich wünschen. Über die Website buchen geht in diesem Bereich nicht – das wäre zu grob.",
+              "Am Telefon klären wir in Ruhe, um welches Auto es geht, wie es genutzt wird und was Sie sich wünschen. Über die Website lässt sich in diesem Bereich nicht buchen – das wäre zu grob.",
             ],
             [
               "Auto zeigen",
@@ -101,7 +103,7 @@ function LuxuryPage() {
         </ol>
         <ul className="mt-14 space-y-3 text-sm text-muted">
           <li>Erstgespräch nur am Telefon</li>
-          <li>Auto muss bei uns in Horb vorgefahren werden</li>
+          <li>Das Auto muss bei uns in Horb vorgefahren werden</li>
           <li>Umfang und Preis erst nach dem Anschauen</li>
           <li>Keine Online-Buchung, kein Standardpaket</li>
         </ul>

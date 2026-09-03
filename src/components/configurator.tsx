@@ -99,7 +99,7 @@ export function Configurator({
         },
       });
     } catch {
-      setError("Senden fehlgeschlagen. Bitte telefonisch oder per WhatsApp erreichen.");
+      setError("Senden fehlgeschlagen. Bitte erreichen Sie uns telefonisch oder per WhatsApp.");
       setPending(false);
     }
   }

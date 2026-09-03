@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PhotoNote, Shot } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
 import { processSteps, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -19,31 +20,18 @@ export const Route = createFileRoute("/qualitaet")({
 function QualityPage() {
   return (
     <main id="main-content" tabIndex={-1}>
-      <Shot
-        name="finish"
+      <PageHero
+        shot="finish"
         alt="Lack unter Prüflicht"
-        className="h-[46vh] min-h-72 w-full"
-        sizes="100vw"
-        priority
-        framed={false}
+        kicker="Ablauf"
+        title="Wie wir arbeiten."
+        lead="Sorgfalt ist bei uns kein Extra, das man dazubucht. Ein gutes Ergebnis kommt von sauberer Vorbereitung, dem passenden Verfahren und einer ehrlichen Kontrolle, bevor das Auto rausgeht."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Qualitätsanspruch" },
+        ]}
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <nav aria-label="Brotkrumen" className="text-xs text-subtle">
-          <Link to="/" className="hover:text-fg">
-            Startseite
-          </Link>
-          <span className="px-2">/</span>
-          <span>Qualität</span>
-        </nav>
-        <p className="kicker mt-8">Ablauf</p>
-        <h1 className="mt-5 font-display text-5xl tracking-tight sm:text-6xl">
-          Wie wir arbeiten
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Sorgfalt ist bei uns kein Extra, das man dazubucht. Ein gutes Ergebnis
-          kommt von sauberer Vorbereitung, dem passenden Verfahren und einer
-          ehrlichen Kontrolle, bevor das Auto rausgeht.
-        </p>
         <ol className="mt-16 space-y-16">
           {processSteps.map((s, i) => (
             <li key={s.n} className="border-t border-line pt-8">

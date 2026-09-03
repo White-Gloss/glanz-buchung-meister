@@ -38,7 +38,7 @@ export const articles: Article[] = [
         heading: "Was die Schicht leistet",
         paragraphs: [
           "Eine gut vorbereitete Keramik lässt Wasser abperlen, hält den Glanz länger und erleichtert die Wäsche. Sie ist kein Kratzschutz. Steinschläge, Waschstraßenbürsten und grobe Verschmutzung gehen trotzdem ins Material.",
-          "Deshalb gehört mehrstufige Lackkorrektur ins Paket: ohne gleichmäßigen Klarlack hält keine Beschichtung, was sie verspricht. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
+          "Deshalb gehört mehrstufige Lackkorrektur ins Paket: Ohne gleichmäßigen Klarlack hält keine Beschichtung das, was sie verspricht. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
         ],
       },
       {
@@ -102,7 +102,7 @@ export const articles: Article[] = [
         heading: "Einstufig oder mehrstufig",
         paragraphs: [
           "Eine einstufige Politur gehört zum Paket Signature und reicht oft, wenn der Lack gepflegt und nur leicht verkratzt ist.",
-          "Mehrstufige Korrektur ist Teil des Pakets Keramik. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht, was sie verspricht.",
+          "Mehrstufige Korrektur ist Teil des Pakets Keramik. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht das, was sie verspricht.",
         ],
       },
     ],
@@ -226,7 +226,7 @@ export const articles: Article[] = [
       {
         heading: "Vor der Arbeit",
         paragraphs: [
-          "Wir prüfen das Lackbild unter Werkstattlicht. Wenn die Schicht für eine Korrektur nicht mehr trägt, sagen wir das, bevor unnötiger Abtrag entsteht.",
+          "Wir prüfen das Lackbild unter Werkstattlicht. Wenn die Schicht eine Korrektur nicht mehr trägt, sagen wir das, bevor unnötiger Abtrag entsteht.",
           "Parkdellen und Steinschläge gehören nicht in die Politur. Dafür gibt es Smart Repair nach Begutachtung – ohne Pauschalpreis, weil jeder Schaden anders liegt.",
         ],
       },
@@ -327,7 +327,7 @@ export const articles: Article[] = [
         heading: "Drei Pakete, ein Inhaber",
         paragraphs: [
           "Pur ab 149 Euro, Signature ab 349 Euro, Keramik ab 899 Euro. Inhaber Lars Hägele, Arnistal 27, 72160 Horb am Neckar.",
-          "Anfragen über den Konfigurator, telefonisch unter 0152 33540284 oder per WhatsApp. Unverbindlich, Endpreis nach Begutachtung wenn der Zustand mehr verlangt.",
+          "Anfragen über den Konfigurator, telefonisch unter 0152 33540284 oder per WhatsApp. Unverbindlich, Endpreis nach Begutachtung, wenn der Zustand mehr verlangt.",
         ],
       },
     ],

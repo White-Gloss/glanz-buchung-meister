@@ -14,9 +14,9 @@ export const Route = createFileRoute("/datenschutz")({
 
 function PrivacyPage() {
   return (
-    <main id="main-content">
+    <main id="main-content" className="page-doc">
       <section className="border-b border-line">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 pb-16 pt-8 sm:px-6">
           <nav aria-label="Brotkrumen" className="text-xs text-subtle">
             <Link to="/" className="hover:text-fg">
               Startseite

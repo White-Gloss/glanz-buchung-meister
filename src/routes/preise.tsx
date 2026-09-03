@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LazyConfigurator } from "@/components/lazy-configurator";
-import { Shot } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
 import {
   extras,
   packageAnchor,
@@ -28,24 +28,23 @@ export const Route = createFileRoute("/preise")({
 function PreisePage() {
   return (
     <main id="main-content" tabIndex={-1}>
-      <Shot
-        name="keramik"
+      <PageHero
+        shot="keramik"
         alt="Keramikversiegelung von Hand auf dem Lack"
-        className="h-[42vh] min-h-64 w-full"
-        sizes="100vw"
-        priority
-        framed={false}
+        kicker="Pakete & Preise"
+        title="Preise für die Aufbereitung."
+        lead={`Drei Pakete in Horb am Neckar: Innenraumreinigung, Lackpolitur oder Keramikversiegelung. Alle Preise sind Endpreise ${site.vatNote}. Fahrzeuggröße und Extras rechnet der Konfigurator sofort mit.`}
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Preise & Pakete" },
+        ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
       />
       <div className="section mx-auto max-w-7xl px-4 sm:px-6">
-      <p className="kicker">Pakete & Preise</p>
-      <h1 className="heading-1 mt-5">
-        Preise für Fahrzeugaufbereitung in Horb
-      </h1>
-      <p className="mt-5 max-w-2xl text-muted">
-        Drei Pakete für die Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung,
-        Lackpolitur oder Keramikversiegelung. Alle Preise sind Endpreise {site.vatNote}.
-        Fahrzeuggröße und Extras rechnet der Konfigurator sofort mit.
-      </p>
       <ol className="mt-14 divide-y divide-line border-y border-line">
         {packages.map((p, i) => (
           <li key={p.id} id={packageAnchor(p.id)} className="lift gd-pack py-10">
