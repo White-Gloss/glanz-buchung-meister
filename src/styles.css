@@ -1048,7 +1048,13 @@
     position: absolute;
     inset: 0;
     z-index: 1;
-    background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.16) 42%, rgb(0 0 0 / 0.82));
+    background: linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.5),
+      rgb(0 0 0 / 0.14) 38%,
+      rgb(0 0 0 / 0.42) 68%,
+      var(--color-bg) 100%
+    );
     pointer-events: none;
   }
 
@@ -1178,8 +1184,9 @@
     background: linear-gradient(
       to top,
       var(--color-bg) 0%,
-      color-mix(in oklab, var(--color-bg) 42%, transparent) 34%,
-      rgb(0 0 0 / 0.5) 100%
+      color-mix(in oklab, var(--color-bg) 82%, transparent) 18%,
+      color-mix(in oklab, var(--color-bg) 38%, transparent) 46%,
+      rgb(0 0 0 / 0.48) 100%
     );
     pointer-events: none;
   }
@@ -1203,20 +1210,56 @@
     }
   }
 
+  .hero-stage::before,
+  .film-chapter::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: min(34vh, 20rem);
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0) 0%,
+      rgb(0 0 0 / 0.28) 46%,
+      var(--color-bg) 100%
+    );
+  }
+
+  main > .hero-stage + *,
+  main > .film-chapter + * {
+    position: relative;
+    z-index: 4;
+    margin-top: -7vh;
+  }
+
+  .hero-follow {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (min-width: 768px) {
+    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+      .hero-follow {
+        opacity: calc(0.42 + var(--scroll-p, 0) * 0.58);
+        transform: translate3d(0, calc((1 - var(--scroll-p, 0)) * 2.1rem), 0);
+        will-change: opacity, transform;
+      }
+    }
+  }
+
   [data-reveal] {
     opacity: 0;
-    transform: translate3d(0, 2.25rem, 0);
-    filter: blur(8px);
+    transform: translate3d(0, 1.2rem, 0);
     transition:
-      opacity 900ms var(--ease-out-quart),
-      transform 900ms var(--ease-out-quart),
-      filter 900ms var(--ease-out-quart);
+      opacity 1.15s var(--ease-out-quart),
+      transform 1.15s var(--ease-out-quart);
   }
 
   [data-reveal].is-in {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 
   .film-chapter-copy[data-reveal] {
@@ -1227,18 +1270,15 @@
 
   .film-chapter-copy[data-reveal] > * {
     opacity: 0;
-    transform: translate3d(0, 1.15rem, 0);
-    filter: blur(7px);
+    transform: translate3d(0, 0.9rem, 0);
     transition:
-      opacity 820ms var(--ease-out-quart),
-      transform 820ms var(--ease-out-quart),
-      filter 820ms var(--ease-out-quart);
+      opacity 1.05s var(--ease-out-quart),
+      transform 1.05s var(--ease-out-quart);
   }
 
   .film-chapter-copy[data-reveal].is-in > * {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 
   /* First screen of every page: title sits in the image on load, not after scroll. */
