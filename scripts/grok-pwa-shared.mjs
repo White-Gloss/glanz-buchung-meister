@@ -202,6 +202,20 @@ export function grokPwaHeadTags(appName = DEFAULT_APP_NAME) {
 
 export const GROK_EXTENSIONS_SCRIPT_SRC = "https://grok.com/grok-app-builder/extensions.js";
 
+/** Preview/Grok hosts keep the platform script. Customer production must not. */
+export function shouldInjectGrokExtensions(hostHeader) {
+  const host = String(hostHeader ?? "")
+    .split(",")[0]
+    .trim()
+    .split(":")[0]
+    .toLowerCase();
+  if (!host) return true;
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  if (host === "grok.me" || host.endsWith(".grok.me")) return true;
+  if (host === "grok.com" || host.endsWith(".grok.com")) return true;
+  return false;
+}
+
 export function readGrokProjectId() {
   const fromProcess = typeof process !== "undefined" ? process.env?.VITE_PROJECT_ID : "";
   return String(fromProcess ?? "").trim();
@@ -447,17 +461,24 @@ export function injectGrokPwaHead(html, ctx = {}) {
     grokOgHeadTags({ host, appName, site, documentTitle, cwd }).join(""),
   );
 
-  if (!next.includes("/grok-app-builder/extensions.js")) {
-    missing.push(...grokExtensionsHeadTags(projectId));
-  } else if (projectId && !next.includes('name="grok-project-id"')) {
-    missing.push(`<meta name="grok-project-id" content="${escapeHtml(projectId)}">`);
-  }
-  if (
-    projectId &&
-    !next.includes('property="grok:app_id"') &&
-    !next.includes("property='grok:app_id'")
-  ) {
-    missing.push(`<meta property="grok:app_id" content="${escapeHtml(projectId)}">`);
+  if (shouldInjectGrokExtensions(host)) {
+    if (!next.includes("/grok-app-builder/extensions.js")) {
+      missing.push(...grokExtensionsHeadTags(projectId));
+    } else if (projectId && !next.includes('name="grok-project-id"')) {
+      missing.push(`<meta name="grok-project-id" content="${escapeHtml(projectId)}">`);
+    }
+    if (
+      projectId &&
+      !next.includes('property="grok:app_id"') &&
+      !next.includes("property='grok:app_id'")
+    ) {
+      missing.push(`<meta property="grok:app_id" content="${escapeHtml(projectId)}">`);
+    }
+  } else {
+    next = next
+      .replace(/<script\b[^>]*grok-app-builder\/extensions\.js[^>]*>\s*<\/script>/gi, "")
+      .replace(/<meta\b[^>]*name=["']grok-project-id["'][^>]*>/gi, "")
+      .replace(/<meta\b[^>]*property=["']grok:app_id["'][^>]*>/gi, "");
   }
   const creatorTags = grokXCreatorHeadTags(creator, creatorId);
   if (creatorTags.length > 0) {

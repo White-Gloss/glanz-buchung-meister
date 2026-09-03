@@ -214,11 +214,41 @@ export default defineConfig(({ command, isPreview }) => ({
               "/fonts/**": {
                 headers: { "cache-control": "public, max-age=31536000, immutable" },
               },
+              "/assets/**": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/__grok/**": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/favicon.ico": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
               "/favicon.svg": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/favicon-48.png": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/favicon-192.png": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/favicon-512.png": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/apple-touch-icon.png": {
                 headers: { "cache-control": "public, max-age=31536000, immutable" },
               },
               "/og.jpg": {
                 headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/site.webmanifest": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/robots.txt": {
+                headers: { "cache-control": "public, max-age=86400" },
+              },
+              "/sitemap.xml": {
+                headers: { "cache-control": "public, max-age=86400" },
               },
             },
           }),
