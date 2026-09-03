@@ -22,7 +22,7 @@ function B2bPage() {
         shot="atelier"
         alt="Werkstatt mit LED-Licht"
         kicker="Geschäftskunden"
-        title="Firmen, Flotten, Autohäuser."
+        title="Firmenkunden, Flotten, Autohäuser."
         lead="Gepflegte Autos gehören zum Auftritt eines Betriebs. Für Unternehmen, Autohäuser und Fuhrparks rechnen wir deshalb am tatsächlichen Umfang, nicht an einer Pauschale."
         crumbs={[
           { label: "Startseite", to: "/" },
