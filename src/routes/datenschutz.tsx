@@ -90,20 +90,23 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>5. WhatsApp und Instagram</h2>
+          <h2>5. WhatsApp, Instagram und Drittländer</h2>
           <p>
-            Die Website enthält Links zu WhatsApp und Instagram. Erst wenn Sie einen solchen Link
-            aufrufen, stellen Sie eine Verbindung zum jeweiligen Anbieter her. Dabei gelten die
-            Datenschutzbestimmungen von WhatsApp beziehungsweise Meta Platforms Ireland Limited.
-            Für sensible Inhalte können Sie alternativ Telefon oder E-Mail verwenden. Es wird kein
-            WhatsApp- oder Instagram-Skript im Hintergrund geladen. Ein automatischer Versand von
-            WhatsApp- oder Telegram-Nachrichten aus dieser Website an Kundinnen und Kunden ist
-            nicht aktiv.
+            Die Website enthält nur Links, kein WhatsApp- oder Instagram-Skript. Erst wenn Sie
+            einen solchen Link antippen, stellen Sie selbst eine Verbindung zu Meta Platforms
+            Ireland Limited her. Dabei können Daten (etwa Gerät, IP-Adresse, die vorausgefüllte
+            Nachricht) in die USA und andere Drittländer übermittelt werden. Es gelten die
+            Datenschutzhinweise von WhatsApp bzw. Instagram. Meta stützt die Übermittlung auf
+            Standardvertragsklauseln. Für sensible Inhalte nutzen Sie Telefon oder E-Mail.
+          </p>
+          <p>
+            Der schwebende WhatsApp-Button ist ebenfalls nur ein Link. Er lädt kein Widget und
+            setzt kein Cookie.
           </p>
         </section>
 
         <section>
-          <h2>6. Cookies, lokale Speicherung und Reichweitenmessung</h2>
+          <h2>6. Cookies, lokale Speicherung und Karten</h2>
           <p>
             Diese öffentliche Website setzt keine Marketing-Cookies, kein Google Analytics, kein
             Google Ads und kein Meta-Pixel. Es findet keine werbliche Reichweitenmessung statt.
@@ -117,10 +120,11 @@ function PrivacyPage() {
           <p>
             Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie
             „Google Maps laden – dabei werden Daten an Google übertragen“ antippen, wird Google Maps
-            (Google Ireland Limited) in einem Rahmen geladen. Der Button „Google Maps“ öffnet Google
-            Maps in einem neuen Tab. Vor dem Klick stellt Ihr Browser keine Verbindung
-            zu Google her. Rechtsgrundlage nach dem Klick ist Art. 6 Abs. 1 lit. a DSGVO
-            (Einwilligung durch die bewusste Aktion).
+            (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland) in einem Rahmen
+            geladen. Danach können Daten in die USA übermittelt werden (Standardvertragsklauseln
+            von Google). Der Button „Google Maps“ öffnet Google in einem neuen Tab. Vor dem Klick
+            stellt Ihr Browser keine Verbindung zu Google her. Rechtsgrundlage nach dem Klick ist
+            Art. 6 Abs. 1 lit. a DSGVO.
           </p>
         </section>
 
@@ -152,7 +156,17 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>9. Speicherdauer</h2>
+          <h2>9. Empfänger</h2>
+          <p>
+            Hosting: IONOS SE, Deutschland. Anfragen und Termine: intern bei White Gloss.
+            Nach bewusstem Klick: Google Ireland Limited (Karten, interne Anmeldung) und
+            Meta Platforms Ireland Limited (WhatsApp, Instagram). Eine automatische Weitergabe
+            an Werbenetzwerke findet nicht statt.
+          </p>
+        </section>
+
+        <section>
+          <h2>10. Speicherdauer</h2>
           <p>
             Personenbezogene Daten werden nur so lange gespeichert, wie sie zur Bearbeitung der
             Anfrage, zur Vertragsdurchführung oder zur Erfüllung gesetzlicher Aufbewahrungspflichten
@@ -162,14 +176,16 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>10. Ihre Rechte</h2>
+          <h2>11. Ihre Rechte</h2>
           <p>
             Sie haben im Rahmen der gesetzlichen Voraussetzungen das Recht auf Auskunft,
             Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und
             Widerspruch. Eine erteilte Einwilligung können Sie mit Wirkung für die Zukunft
             widerrufen. Außerdem besteht ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde,
             insbesondere beim Landesbeauftragten für den Datenschutz und die Informationsfreiheit
-            Baden-Württemberg (LfDI BW).
+            Baden-Württemberg (LfDI BW). Einer Verarbeitung auf Grundlage von Art. 6 Abs. 1 lit. f
+            DSGVO können Sie aus Gründen widersprechen, die sich aus Ihrer besonderen Situation
+            ergeben (Art. 21 DSGVO).
           </p>
           <p>
             Für Datenschutzanfragen genügt eine Nachricht an{" "}
@@ -178,14 +194,14 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>11. Sicherheit und Aktualisierung</h2>
+          <h2>12. Sicherheit und Aktualisierung</h2>
           <p>
             Die Website wird verschlüsselt über HTTPS übertragen. Wir passen diese Hinweise an, wenn
             sich Funktionen, eingesetzte Dienste oder rechtliche Anforderungen ändern.
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
       </article>
     </main>
   );

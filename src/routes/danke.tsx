@@ -63,6 +63,34 @@ function ThanksPage() {
           Rückfragen: <a href={site.phoneHref}>{site.phoneDisplay}</a> oder{" "}
           <a href={`mailto:${site.email}`}>{site.email}</a>.
         </p>
+        {confirmed ? (
+          <div className="mt-10 space-y-3 border-t border-line pt-8 text-sm leading-relaxed text-muted">
+            <p>
+              Mit der Terminzusage kommt – soweit nichts anderes vereinbart ist – der Vertrag über
+              den abgestimmten Termin zustande. Der verbindliche Endpreis bleibt nach Begutachtung.
+            </p>
+            <p>
+              Verbraucher können den Vertrag binnen vierzehn Tagen ohne Angabe von Gründen
+              widerrufen. Die Belehrung und das Musterformular stehen unter{" "}
+              <Link to="/widerruf" className="underline hover:text-fg">
+                Widerruf
+              </Link>
+              . Es gelten die{" "}
+              <Link to="/agb" className="underline hover:text-fg">
+                AGB
+              </Link>
+              .
+            </p>
+          </div>
+        ) : (
+          <p className="mt-8 text-sm text-muted">
+            Noch kein Vertrag. Sobald wir zusagen, gilt die{" "}
+            <Link to="/widerruf" className="underline hover:text-fg">
+              Widerrufsbelehrung
+            </Link>
+            .
+          </p>
+        )}
       </div>
     </main>
   );

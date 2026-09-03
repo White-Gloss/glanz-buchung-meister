@@ -347,7 +347,15 @@ export function Configurator({
             <Link to="/datenschutz" className="underline hover:text-fg">
               Datenschutzerklärung
             </Link>{" "}
-            zur Kenntnis genommen. Die Anfrage ist unverbindlich.
+            zur Kenntnis genommen. Die Anfrage ist unverbindlich.{" "}
+            <Link to="/agb" className="underline hover:text-fg">
+              AGB
+            </Link>{" "}
+            und{" "}
+            <Link to="/widerruf" className="underline hover:text-fg">
+              Widerruf
+            </Link>
+            .
           </span>
         </label>
         {error ? (

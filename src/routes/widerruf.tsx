@@ -107,7 +107,7 @@ function WithdrawalPage() {
           </div>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
       </article>
     </main>
   );

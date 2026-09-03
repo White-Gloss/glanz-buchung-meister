@@ -54,6 +54,14 @@ function ImpressumPage() {
           </p>
         </section>
         <section>
+          <h2 className="font-display text-2xl">Umsatzsteuer</h2>
+          <p className="mt-3 text-muted">
+            {site.vatId
+              ? `Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: ${site.vatId}`
+              : "Preise werden mit gesetzlicher Umsatzsteuer ausgewiesen. Eine Umsatzsteuer-Identifikationsnummer wird im Impressum ergänzt, sobald sie erteilt ist."}
+          </p>
+        </section>
+        <section>
           <h2 className="font-display text-2xl">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
           <address className="mt-3 not-italic text-muted">
             {site.owner}
@@ -79,7 +87,7 @@ function ImpressumPage() {
             bekannt werden, entfernen wir entsprechende Links nach Prüfung.
           </p>
         </section>
-        <p className="text-xs text-subtle">Stand: 31. August 2026</p>
+        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
       </div>
       </div>
     </main>

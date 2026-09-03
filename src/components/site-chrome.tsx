@@ -493,6 +493,14 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link
+                to="/barrierefreiheit"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
+                Barrierefreiheit
+              </Link>
+            </li>
+            <li>
               <a
                 href={site.instagram}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
