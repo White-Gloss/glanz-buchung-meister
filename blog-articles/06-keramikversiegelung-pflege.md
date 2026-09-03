@@ -100,9 +100,9 @@ Eine Keramikversiegelung lohnt sich besonders für:
 
 | Programm | Vorbereitung | Haltbarkeit | Preis (Kompakt) |
 |----------|-------------|-------------|-----------------|
-| **Basis-Versiegelung** | 1-Stufen-Politur | 12–24 Monate | ab 449 € |
-| **Premium-Keramik** | 2-Stufen-Lackkorrektur | 3–5 Jahre | ab 899 € |
-| **High-End-Keramik** (Mehrschicht) | 3-Stufen-Lackkorrektur | 5–7 Jahre | ab 1.499 € |
+| **Pur** | Handwäsche, Innenraum | Sprühversiegelung, Monate | ab 149 € |
+| **Signature** | Einstufige Politur | Wachs, etwa sechs Monate | ab 349 € |
+| **Keramik** | Mehrstufige Lackkorrektur | Laut Produkt und Pflege | ab 899 € |
 
 Alle Programme inklusive Grundreinigung, Entfettung und professionellem Auftrag durch zertifizierte Anwender.
 

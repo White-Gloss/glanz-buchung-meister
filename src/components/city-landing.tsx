@@ -125,8 +125,8 @@ export function CityLanding({ city }: { city: City }) {
               klar wirkt – ohne unnötige Keramik, wenn das Auto danach weg ist.
             </li>
             <li className="border-l border-line pl-4">
-              Werterhalt: High-End Keramik nur, wenn das Fahrzeug bleibt. Standzeit
-              je nach Produkt, fünf Jahre extra nach Prüfung.
+              Werterhalt: Keramik nur, wenn das Fahrzeug bleibt. Die Standzeit
+              steht auf dem Produkt, nicht in der Werbung.
             </li>
           </ul>
           <Link

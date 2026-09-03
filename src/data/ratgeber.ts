@@ -22,16 +22,16 @@ export const articles: Article[] = [
     slug: "keramikversiegelung-langzeitschutz",
     title: "Keramikversiegelung: wie lange der Schutz wirklich hält",
     excerpt:
-      "Standzeit je nach Produkt, nicht pauschal fünf Jahre. Was im Paket Keramik steckt, wann 5 Jahre extra Sinn haben – und was die Schicht nicht kann.",
+      "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket Keramik steckt, und was die Schicht nicht kann.",
     date: "2026-08-20",
     image: "/media/keramik.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Keine pauschalen fünf Jahre",
+        heading: "Keine pauschalen Werbejahre",
         paragraphs: [
-          "Wie lange eine Keramikversiegelung hält, steht auf dem Produkt – nicht auf einem Werbeversprechen. Im Paket Keramik ab 899 Euro ist die Standard-Beschichtung enthalten. Die Standzeit hängt von Lackzustand, Pflege und dem gewählten System ab.",
-          "Fünf Jahre sind möglich, aber die teure Variante. Die rechnen wir extra, nach Prüfung des Lacks. Ultra nur auf Anfrage. So bleibt der Preis ehrlich und Sie wissen vorher, was Sie kaufen.",
+          "Wie lange eine Keramikversiegelung hält, steht auf dem Produkt und an der Pflege – nicht auf einem Plakat. Im Paket Keramik ab 899 Euro ist die Beschichtung enthalten, nachdem der Lack vorbereitet wurde.",
+          "Fünf Jahre als Standardversprechen verkaufen wir nicht. Dichterer Schichtaufbau nur nach Prüfung, auf Anfrage. So bleibt der Preis ehrlich.",
         ],
       },
       {

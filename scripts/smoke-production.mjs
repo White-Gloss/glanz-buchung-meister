@@ -35,6 +35,8 @@ const forbiddenSnippets = [
   { id: "stale-deposit-20-label", needle: "Anzahlung Neukunde (20" },
   { id: "stale-pickup-lowercase", needle: "Neckar. bis 10" },
   { id: "public-signup", needle: "Noch kein Konto? Registrieren" },
+  { id: "stale-ceramic-5y-product", needle: "Keramik 5 Jahre" },
+  { id: "stale-ceramic-5y-item", needle: "5-Jahres-Beschichtung extra" },
 ];
 
 const failures = [];

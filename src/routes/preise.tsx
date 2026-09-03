@@ -90,9 +90,13 @@ function PreisePage() {
         ))}
       </ol>
       <p className="mt-8 max-w-2xl text-sm leading-relaxed text-muted">
-        Im Paket Keramik ab 899 € ist die Standard-Beschichtung enthalten.
-        Die Standzeit hängt vom Produkt ab. 5 Jahre rechnen wir extra nach
-        Lackprüfung, Ultra nur auf Anfrage.
+        In der Region gibt es Innenreinigung schon unter 80 € und Politur-Pakete
+        um 180 € – oft ohne echte Korrektur. Keramik wird zwischen ein paar
+        Hundert und über 1.500 € angeboten. Unsere Startpreise liegen bewusst
+        in der Werkstatt-Mitte: Pur 149 €, Signature 349 € mit Innenraum und
+        Politur, Keramik 899 € inklusive Vorbereitung. Was darunter liegt,
+        spart meist die Arbeit, die den Unterschied macht. Pauschale fünf
+        Jahre rechnen wir nicht.
       </p>
       <h2 className="heading-2 mt-20">Fahrzeuggröße</h2>
       <div className="gd-tiles gd-tiles-3 mt-8">
