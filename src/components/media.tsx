@@ -16,6 +16,27 @@ export const heroPreload = {
   imageSizes: "100vw",
 };
 
+function pickHeroLoop(mobile: boolean) {
+  const probe = document.createElement("video");
+  const webm = probe.canPlayType('video/webm; codecs="vp9"') !== "";
+  if (mobile) return webm ? "/media/hero-loop-720.webm" : "/media/hero-loop-720.mp4";
+  return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
+}
+
+function prefetchHeroLoop(mobile: boolean) {
+  const url = pickHeroLoop(mobile);
+  const run = () => {
+    void fetch(url, { credentials: "same-origin", priority: "low" } as RequestInit).catch(
+      () => undefined,
+    );
+  };
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(run, { timeout: 1800 });
+  } else {
+    window.setTimeout(run, 400);
+  }
+}
+
 export function HeroMedia({
   alt,
   className,
@@ -28,7 +49,7 @@ export function HeroMedia({
   // Still image is LCP. The loop starts on the first real gesture so lab
   // tools never see a late <video> steal the paint.
   const [playVideo, setPlayVideo] = useState(false);
-  const [mobileLoop, setMobileLoop] = useState(false);
+  const [loopSrc, setLoopSrc] = useState<string | null>(null);
   const [imageReady, setImageReady] = useState(!priority);
 
   useEffect(() => {
@@ -37,6 +58,7 @@ export function HeroMedia({
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     if (conn?.saveData) return;
     const mobile = window.matchMedia("(max-width: 767px)").matches;
+    prefetchHeroLoop(mobile);
     let started = false;
     const start = () => {
       if (started) return;
@@ -47,7 +69,7 @@ export function HeroMedia({
       window.removeEventListener("touchstart", start);
       window.removeEventListener("keydown", start);
       window.clearTimeout(fallbackId);
-      setMobileLoop(mobile);
+      setLoopSrc(pickHeroLoop(mobile));
       setPlayVideo(true);
     };
     window.addEventListener("pointerdown", start, { passive: true });
@@ -90,28 +112,20 @@ export function HeroMedia({
           onLoad={() => setImageReady(true)}
         />
       </picture>
-      {playVideo ? (
+      {playVideo && loopSrc ? (
         <video
           aria-hidden="true"
           autoPlay
           muted
           loop
           playsInline
-          preload="none"
+          preload="auto"
+          src={loopSrc}
           className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
           onPlaying={(e) => {
             e.currentTarget.setAttribute("data-ready", "");
           }}
-        >
-          <source
-            src={mobileLoop ? "/media/hero-loop-720.webm" : "/media/hero-loop.webm"}
-            type="video/webm"
-          />
-          <source
-            src={mobileLoop ? "/media/hero-loop-720.mp4" : "/media/hero-loop.mp4"}
-            type="video/mp4"
-          />
-        </video>
+        />
       ) : null}
     </div>
   );
