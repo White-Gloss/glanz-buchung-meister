@@ -480,6 +480,9 @@ export type ServicePage = {
   nav: string;
   metaTitle: string;
   description: string;
+  teaser: string;
+  group: "atelier" | "finish";
+  fromPrice?: number;
   image: string;
   imageAlt: string;
   bullets: string[];
@@ -497,6 +500,9 @@ export const services: ServicePage[] = [
     metaTitle: "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
     description:
       "Fahrzeugaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Wir richten uns nach dem Zustand, nicht nach einem Waschstraßenprogramm.",
+    teaser: "Handwäsche, Innenraum, Lack – nach Zustand, nicht nach Programm.",
+    group: "atelier",
+    fromPrice: 149,
     image: "/media/hero.webp",
     imageAlt: "Weißes Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt",
     bullets: [
@@ -509,6 +515,24 @@ export const services: ServicePage[] = [
       "Aufbereitung ist keine schnelle Wäsche. Wir schauen Lack und Innenraum an, hören, was Sie wollen, und arbeiten nur so weit, wie es nötig ist.",
       "Die Arbeit bleibt in Horb. Aus 13 Städten holen wir das Auto ab und bringen es wieder.",
     ],
+    steps: [
+      {
+        title: "Anschauen",
+        text: "Lack, Innenraum, Felgen. Was stört, was bleibt, was Politur noch trägt.",
+      },
+      {
+        title: "Umfang",
+        text: "Pur, Signature oder Keramik – nach dem Auto, nicht nach einer Liste.",
+      },
+      {
+        title: "Werkstatt",
+        text: "Ein Auto nach dem anderen, unter Licht. Keine Straße, keine Waschanlage.",
+      },
+      {
+        title: "Abgabe",
+        text: "Kontrolle, dann raus. Wenn etwas nicht sitzt, bleibt es hier.",
+      },
+    ],
   },
   {
     slug: "innenraumreinigung",
@@ -517,6 +541,9 @@ export const services: ServicePage[] = [
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
     description:
       "Innenraumreinigung in Horb: Sitze, Teppiche, Kunststoffe. Gegen Gerüche optional Ozon. Wir arbeiten am Material, nicht mit Duft.",
+    teaser: "Schmutz lösen, nicht überdecken. Duft ist kein Ergebnis.",
+    group: "atelier",
+    fromPrice: 149,
     image: "/media/leder.webp",
     imageAlt: "Ledersitze nach der Innenraumreinigung",
     bullets: [
@@ -529,6 +556,24 @@ export const services: ServicePage[] = [
       "Der Innenraum ist das Erste, das man merkt. Deshalb lösen wir den Schmutz, statt ihn zu überdecken.",
       "Bei Gerüchen zuerst die Ursache. Bleibt etwas, kommt Ozon dazu – das zerlegt Moleküle und parfümiert nichts.",
     ],
+    steps: [
+      {
+        title: "Material",
+        text: "Leder, Stoff, Alcantara, Kunststoff – jedes bekommt das, was es verträgt.",
+      },
+      {
+        title: "Lösen",
+        text: "Fußräume, Sitze, Fugen. Nicht nass wischen und für sauber erklären.",
+      },
+      {
+        title: "Pflegen",
+        text: "Kunststoff und Leder danach behandeln, damit es nicht sofort wieder stumpf wird.",
+      },
+      {
+        title: "Geruch",
+        text: "Nur wenn nötig. Erst trocken und sauber, dann Ozon – kein Spray.",
+      },
+    ],
   },
   {
     slug: "lackkorrektur",
@@ -537,6 +582,9 @@ export const services: ServicePage[] = [
     metaTitle: "Lackkorrektur & Politur Horb | White Gloss",
     description:
       "Lackkorrektur in Horb: Swirls und Waschkratzer rausarbeiten, Farbe und Glanz zurückholen – ohne unnötig Lack abzutragen.",
+    teaser: "So viel Politur wie nötig. Den Rest lassen wir.",
+    group: "atelier",
+    fromPrice: 349,
     image: "/media/lack.webp",
     imageAlt: "Poliermaschine auf dem Lack",
     bullets: [
@@ -549,6 +597,24 @@ export const services: ServicePage[] = [
       "Nicht jeder Kratzer geht weg. Deshalb sagen wir vorher, was geht – bevor unnötig Lack abgetragen wird.",
       "Eine Stufe Politur steckt in Signature. Mehrstufig gehört zur Keramik, wenn der Lack das trägt.",
     ],
+    steps: [
+      {
+        title: "Licht und Stärke",
+        text: "Unter Werkstattlicht und mit Messung. Was der Klarlack noch hergibt, sagen wir vorher.",
+      },
+      {
+        title: "Dekontamination",
+        text: "Beläge runter, bevor die Maschine den Lack berührt.",
+      },
+      {
+        title: "Politur",
+        text: "Eine Stufe oder mehrere. Nur so weit, bis das Bild stimmt.",
+      },
+      {
+        title: "Schutz",
+        text: "Wachs in Signature. Keramik nur, wenn das Auto danach bleibt.",
+      },
+    ],
   },
   {
     slug: "keramikversiegelung",
@@ -557,6 +623,9 @@ export const services: ServicePage[] = [
     metaTitle: "Keramikversiegelung Auto Horb | White Gloss",
     description:
       "Keramikversiegelung in Horb am Neckar ab 899 €: erst Lackkorrektur, dann die Schicht. Standzeit laut Produkt, keine pauschalen Werbejahre.",
+    teaser: "Erst Korrektur, dann die Schicht. Standzeit laut Produkt.",
+    group: "atelier",
+    fromPrice: 899,
     image: "/media/keramik.webp",
     imageAlt: "Keramikversiegelung wird von Hand auf den Lack aufgetragen",
     bullets: [
@@ -596,6 +665,9 @@ export const services: ServicePage[] = [
     metaTitle: "Auto-Lederpflege Horb am Neckar | White Gloss",
     description:
       "Lederreinigung und Lederpflege fürs Auto in Horb: Verschmutzungen lösen, Glanzstellen reduzieren, Flächen schützen.",
+    teaser: "Reinigen, dann pflegen. Keine aggressive Chemie.",
+    group: "atelier",
+    fromPrice: 149,
     image: "/media/leder.webp",
     imageAlt: "Leder nach der Pflege",
     bullets: [
@@ -616,6 +688,8 @@ export const services: ServicePage[] = [
     metaTitle: "Dellenentfernung & Hagelschaden Horb | White Gloss",
     description:
       "Parkdellen, Karosseriedellen und Hagelschäden lackschadenfrei ausbeulen – sofern technisch möglich. Preis nach Begutachtung.",
+    teaser: "Dellen raus, wenn es hält. Sonst sagen wir nein.",
+    group: "finish",
     image: "/media/dellen.webp",
     imageAlt: "Parkdelle unter Streiflicht, bevor wir ausbeulen",
     bullets: [
@@ -636,6 +710,9 @@ export const services: ServicePage[] = [
     metaTitle: "Leasingrückgabe-Aufbereitung Horb | White Gloss",
     description:
       "Aufbereitung vor der Leasingrückgabe in Horb: Innenreinigung, Lackpflege, punktuelle Nacharbeit – ehrlich priorisiert.",
+    teaser: "Was der Gutachter sieht – nicht das Instagram-Ideal.",
+    group: "finish",
+    fromPrice: 349,
     image: "/media/hero.webp",
     imageAlt: "Atelierfahrzeug von White Gloss in Horb, vor der Übergabe",
     bullets: [
@@ -656,6 +733,9 @@ export const services: ServicePage[] = [
     metaTitle: "Lederreparatur Auto Horb – Brandloch, Riss, Loch | White Gloss",
     description:
       "Lederreparatur in Horb am Neckar: Brandlöcher, Risse, kleine Löcher. Nur wenn es wirklich haltbar ist – sonst sagen wir ehrlich nein.",
+    teaser: "Brandloch und Riss, nur wenn die Stelle trägt.",
+    group: "finish",
+    fromPrice: 119,
     image: "/media/leder.webp",
     imageAlt: "Ledersitz nach der Pflege in der Werkstatt Horb",
     bullets: [
@@ -701,6 +781,9 @@ export const services: ServicePage[] = [
     metaTitle: "Geruchsneutralisation Auto Ozon Horb | White Gloss",
     description:
       "Ozonbehandlung gegen Nikotin, Tier- und Feuchtigkeitsgeruch in Horb am Neckar ab 99 €. Erst Ursache, dann Ozon – kein Duftspray.",
+    teaser: "Erst Ursache, dann Ozon. Kein Spray.",
+    group: "finish",
+    fromPrice: 99,
     image: "/media/atelier.webp",
     imageAlt: "Werkstattinnenraum von White Gloss in Horb",
     bullets: [
@@ -721,6 +804,9 @@ export const services: ServicePage[] = [
     metaTitle: "Scheinwerfer aufbereiten Horb am Neckar | White Gloss",
     description:
       "Vergilbte Scheinwerfer aufbereiten in Horb: Politur und UV-Schutz, ab 99 € das Paar. Sicht und Optik, ohne gleich neue Streuscheiben.",
+    teaser: "Klar und UV-geschützt. Oder wir lassen die Politur.",
+    group: "finish",
+    fromPrice: 99,
     image: "/media/finish.webp",
     imageAlt: "Lack und Licht unter Prüflicht nach der Aufbereitung",
     bullets: [

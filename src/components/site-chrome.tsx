@@ -425,6 +425,15 @@ export function SiteFooter() {
             <li>
               <Link
                 to="/leistungen/$slug"
+                params={{ slug: "innenraumreinigung" }}
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
+                Interior Gloss
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/leistungen/$slug"
                 params={{ slug: "lederreparatur" }}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
