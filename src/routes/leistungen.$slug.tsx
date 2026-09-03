@@ -1,9 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary, PriceLine } from "@/components/ui";
-import { cities, packages, services, site } from "@/data/site";
+import {
+  cities,
+  packageServiceSlug,
+  packages,
+  services,
+  site,
+} from "@/data/site";
 import { pageHead } from "@/lib/seo";
-import { eur } from "@/lib/utils";
+import { eur, money } from "@/lib/utils";
 
 export const Route = createFileRoute("/leistungen/$slug")({
   component: ServicePage,
@@ -22,6 +28,8 @@ export const Route = createFileRoute("/leistungen/$slug")({
 
 function ServicePage() {
   const s = Route.useLoaderData();
+  const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
+
   return (
     <main id="main-content" tabIndex={-1}>
       <PageHero
@@ -29,7 +37,7 @@ function ServicePage() {
         alt={s.imageAlt}
         kicker="Leistung"
         title={s.title}
-        lead={s.description}
+        lead={s.teaser}
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen", to: "/leistungen" },
@@ -37,12 +45,20 @@ function ServicePage() {
         ]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
-            Zum Preisrechner
+            Termin anfragen
           </Link>
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <ul className="space-y-3">
+        {s.fromPrice ? (
+          <p className="font-display text-4xl tracking-tight tabular-nums">
+            ab {money(s.fromPrice)} €
+            <span className="ml-3 text-sm font-sans text-subtle">{site.vatNote}</span>
+          </p>
+        ) : (
+          <p className="text-sm uppercase tracking-[0.16em] text-subtle">Preis nach Prüfung</p>
+        )}
+        <ul className="mt-10 space-y-3">
           {s.bullets.map((b) => (
             <li key={b} className="border-l border-line pl-4 text-sm text-fg">
               {b}
@@ -84,9 +100,9 @@ function ServicePage() {
             ))}
           </ol>
         ) : null}
-        {s.slug === "keramikversiegelung" ? (
-          <p className="mt-8 border border-line bg-surface p-5 text-sm">
-            Paket Keramik ab {eur(packages[2].price)} {site.vatNote} · ca. 2 Tage.
+        {pack ? (
+          <p className="mt-10 border border-line bg-surface p-5 text-sm leading-relaxed">
+            Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration}.
           </p>
         ) : null}
         <h2 className="mt-16 font-display text-3xl tracking-tight">Hol- und Bringservice nach Stadt</h2>
