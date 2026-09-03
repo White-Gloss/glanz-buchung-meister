@@ -29,8 +29,10 @@ export function HeroMedia({
   // viewport except reduced-motion and Save-Data.
   const [playVideo, setPlayVideo] = useState(false);
   const [mobileLoop, setMobileLoop] = useState(false);
+  const [imageReady, setImageReady] = useState(!priority);
 
   useEffect(() => {
+    if (!imageReady) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     if (conn?.saveData) return;
@@ -41,12 +43,13 @@ export function HeroMedia({
       setMobileLoop(mobile);
       setPlayVideo(true);
     };
-    const timeoutId = window.setTimeout(start, 900);
+    const delay = mobile ? 1400 : 2600;
+    const timeoutId = window.setTimeout(start, delay);
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [imageReady]);
 
   return (
     <div className={cn("hero-image relative isolate size-full overflow-hidden", className)}>
@@ -60,9 +63,13 @@ export function HeroMedia({
           height={907}
           className="absolute inset-0 size-full object-cover"
           fetchPriority={priority ? "high" : "low"}
-          decoding="async"
+          decoding={priority ? "sync" : "async"}
           loading={priority ? "eager" : "lazy"}
           sizes="100vw"
+          ref={(el) => {
+            if (el?.complete) setImageReady(true);
+          }}
+          onLoad={() => setImageReady(true)}
         />
       </picture>
       {playVideo ? (
@@ -74,7 +81,11 @@ export function HeroMedia({
           playsInline
           preload="none"
           className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
-          onPlaying={(e) => e.currentTarget.setAttribute("data-ready", "")}
+          onPlaying={(e) => {
+            const el = e.currentTarget;
+            const wait = Math.max(0, 2500 - performance.now());
+            window.setTimeout(() => el.setAttribute("data-ready", ""), wait);
+          }}
         >
           <source
             src={mobileLoop ? "/media/hero-loop-720.webm" : "/media/hero-loop.webm"}

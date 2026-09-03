@@ -180,6 +180,17 @@ export default defineConfig(({ command, isPreview }) => ({
     strictPort: true,
   },
   resolve: { tsconfigPaths: true },
+  build: {
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          (dep) =>
+            !dep.includes("lazy-configurator") &&
+            !dep.includes("workshop-map") &&
+            !dep.includes("operator-middleware"),
+        ),
+    },
+  },
   plugins: [
     pgliteBootstrapPlugin(),
     securityHeadersPlugin(),
@@ -195,10 +206,21 @@ export default defineConfig(({ command, isPreview }) => ({
       ? [
           nitro({
             preset: process.env.GITHUB_ACTIONS ? "node-server" : "vercel",
-            // Auto-registers server/middleware/* (the PWA install page +
-            // manifest + head-tag middleware). Nitro v3 defaults serverDir to
-            // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            routeRules: {
+              "/media/**": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/fonts/**": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/favicon.svg": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+              "/og.jpg": {
+                headers: { "cache-control": "public, max-age=31536000, immutable" },
+              },
+            },
           }),
         ]
       : []),

@@ -31,7 +31,7 @@ export default async function securityHeadersMiddleware(
   });
   const path = event.url?.pathname ?? "";
   const type = res.headers.get?.("content-type") ?? "";
-  if (/\.(?:avif|webp|woff2|png|jpe?g|svg|js|css)$/i.test(path)) {
+  if (/\.(?:avif|webp|woff2|png|jpe?g|svg|js|css|webm|mp4|ico|gif)$/i.test(path)) {
     res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
   } else if (type.includes("text/html") || path === "/" || !path.includes(".")) {
     res.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
