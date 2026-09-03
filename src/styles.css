@@ -334,6 +334,17 @@
     color: var(--color-fg);
   }
 
+  /* Produktzeile unter der Wortmarke: klein, weit, lowercase. */
+  .heading-product {
+    font-family: var(--font-sans);
+    font-size: clamp(0.72rem, 0.55rem + 0.7vw, 0.95rem);
+    font-weight: 400;
+    letter-spacing: 0.42em;
+    line-height: 1;
+    text-transform: lowercase;
+    color: var(--color-muted);
+  }
+
   /* Kampagnenzeile unter der Wortmarke: Satz, nicht Versalien. */
   .heading-tagline {
     font-family: var(--font-sans);
