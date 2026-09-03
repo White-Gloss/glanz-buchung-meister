@@ -21,7 +21,7 @@ const steps = [
   {
     n: "01.",
     title: "Zustand zeigen",
-    text: "Formular oder WhatsApp mit ein, zwei Fotos. Wir sagen, was sinnvoll ist – und was sich nicht lohnt.",
+    text: "Schicken Sie uns das Formular oder eine Nachricht per WhatsApp mit ein, zwei Fotos. Wir sagen, was sinnvoll ist – und was sich nicht lohnt.",
   },
   {
     n: "02.",
@@ -54,20 +54,22 @@ export function CityLanding({ city }: { city: City }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <section className="relative overflow-hidden">
-        <HeroMedia
-          priority
-          alt={`Werkstattfahrzeug von White Gloss – Fahrzeugaufbereitung für Kunden aus ${city.name}`}
-          className="h-[68vh] min-h-[28rem] w-full object-cover sm:h-[82vh]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/50 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16">
+      <section className="film-chapter">
+        <div className="film-chapter-media" data-parallax>
+          <HeroMedia
+            priority
+            alt={`Werkstattfahrzeug von White Gloss – Fahrzeugaufbereitung für Kunden aus ${city.name}`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+        <div className="film-chapter-veil" />
+        <div className="film-chapter-copy" data-reveal>
           <p className="kicker">Fahrzeugaufbereitung · {city.name}</p>
           <h1 className="heading-display mt-4 max-w-4xl">
             Fahrzeugaufbereitung in {city.name}
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            {city.blurb} Ausführung in der Werkstatt in {site.city}, nicht an der
+            {city.blurb} Die Ausführung bleibt in der Werkstatt in {site.city}, nicht an der
             Straße. Abholung: {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -94,7 +96,7 @@ export function CityLanding({ city }: { city: City }) {
         </h2>
         <p className="mt-4 max-w-xl text-muted">
           Zwei Werkstattfotos zum Vergleichen. Das ist kein Kundenauto aus{" "}
-          {city.name} – sondern die Art Arbeit, die bei uns in Horb passiert.
+          {city.name} – sondern die Art der Arbeit, die bei uns in Horb passiert.
         </p>
         <div className="mt-10 max-w-4xl">
           <CompareSlider

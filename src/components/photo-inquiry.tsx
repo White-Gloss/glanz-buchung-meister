@@ -32,7 +32,7 @@ export function PhotoInquiry({
       return;
     }
     if (!text.trim() && files.length === 0) {
-      setError("Mindestens eine Aufnahme oder eine kurze Beschreibung.");
+      setError("Bitte mindestens eine Aufnahme oder eine kurze Beschreibung angeben.");
       return;
     }
     setPending(true);
@@ -51,7 +51,7 @@ export function PhotoInquiry({
       });
       setSent(true);
     } catch {
-      setError("Senden fehlgeschlagen. Bitte telefonisch oder per WhatsApp.");
+      setError("Senden fehlgeschlagen. Bitte erreichen Sie uns telefonisch oder per WhatsApp.");
       setPending(false);
     }
   }

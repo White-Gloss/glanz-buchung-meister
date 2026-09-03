@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PickupNote } from "@/components/configurator";
+import { PageHero } from "@/components/page-hero";
+import { ctaPrimary } from "@/components/ui";
 import { cities, pickupKeramikNote, pickupPriceText, pickupTierSummary, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -16,35 +18,47 @@ export const Route = createFileRoute("/abholservice/")({
 
 function AbholIndex() {
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-4 py-16 pb-28 sm:px-6 lg:pb-16">
-      <h1 className="font-display text-5xl">Hol- & Bringservice</h1>
-      <p className="mt-4 max-w-2xl text-muted">
-        Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft
-        immer in der Werkstatt in {site.city} – {pickupTierSummary()}.{" "}
-        {pickupKeramikNote()}.
-      </p>
-      <ul className="mt-10 divide-y divide-line border-y border-line">
-        {cities.map((c) => (
-          <li key={c.slug}>
-            <Link
-              to="/abholservice/$city"
-              params={{ city: c.slug }}
-              aria-label={`${c.name}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
-              className="flex min-h-14 items-center justify-between gap-4 py-3"
-            >
-              <span>
-                <span className="block font-medium">{c.name}</span>
-                <span className="text-sm text-muted">
-                  ca. {c.km} km · ca. {c.minutes} Min.
+    <main id="main-content" tabIndex={-1}>
+      <PageHero
+        shot="atelier"
+        alt={`Werkstatt von White Gloss in ${site.city}`}
+        kicker="13 Städte"
+        title="Hol- und Bringservice."
+        lead={`Wir holen Ihr Auto ab und bringen es wieder. Die Arbeit selbst läuft immer in der Werkstatt in ${site.city} – ${pickupTierSummary()}. ${pickupKeramikNote()}.`}
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Hol- & Bringservice" },
+        ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Termin anfragen
+          </Link>
+        }
+      />
+      <section className="section mx-auto max-w-7xl px-4 sm:px-6">
+        <ul className="divide-y divide-line border-y border-line">
+          {cities.map((c) => (
+            <li key={c.slug}>
+              <Link
+                to="/abholservice/$city"
+                params={{ city: c.slug }}
+                aria-label={`${c.name}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
+                className="flex min-h-16 items-center justify-between gap-4 py-4"
+              >
+                <span>
+                  <span className="block font-display text-2xl tracking-tight">{c.name}</span>
+                  <span className="mt-1 block text-sm text-muted">
+                    ca. {c.km} km · ca. {c.minutes} Min.
+                  </span>
                 </span>
-              </span>
-              <span className="text-sm text-muted">
-                <PickupNote km={c.km} />
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <span className="text-sm text-muted">
+                  <PickupNote km={c.km} />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }

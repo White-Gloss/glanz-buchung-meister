@@ -30,7 +30,7 @@ function ThanksPage() {
   const confirmed = zusage === "1";
 
   return (
-    <main id="main-content" className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+    <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-20 sm:px-6">
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">
         {confirmed ? "Termin zugesagt" : "Bestätigung"}
       </p>

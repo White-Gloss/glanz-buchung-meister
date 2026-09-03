@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { FluidImg } from "@/components/media";
+import { PageHero } from "@/components/page-hero";
 import { ctaPrimary, PriceLine } from "@/components/ui";
 import { cities, packages, services, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
@@ -23,18 +23,26 @@ export const Route = createFileRoute("/leistungen/$slug")({
 function ServicePage() {
   const s = Route.useLoaderData();
   return (
-    <main id="main-content">
-      <FluidImg
+    <main id="main-content" tabIndex={-1}>
+      <PageHero
         src={s.image}
         alt={s.imageAlt}
-        priority
-        className="h-[42vh] min-h-64 w-full object-cover"
+        kicker="Leistung"
+        title={s.title}
+        lead={s.description}
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Leistungen", to: "/leistungen" },
+          { label: s.nav },
+        ]}
+        actions={
+          <Link to="/" hash="buchung" className={ctaPrimary}>
+            Zum Preisrechner
+          </Link>
+        }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <p className="text-xs uppercase tracking-[0.16em] text-subtle">Leistung</p>
-        <h1 className="mt-3 font-display text-5xl">{s.title}</h1>
-        <p className="mt-4 text-lg text-muted">{s.description}</p>
-        <ul className="mt-8 space-y-3">
+        <ul className="space-y-3">
           {s.bullets.map((b) => (
             <li key={b} className="border-l border-line pl-4 text-sm text-fg">
               {b}
@@ -47,7 +55,7 @@ function ServicePage() {
           ))}
         </div>
         {s.honestNote ? (
-          <p className="mt-8 rounded-card border border-line bg-surface p-4 text-sm leading-relaxed text-fg">
+          <p className="mt-8 border border-line bg-surface p-5 text-sm leading-relaxed text-fg">
             {s.honestNote}
           </p>
         ) : null}
@@ -64,36 +72,31 @@ function ServicePage() {
           </ul>
         ) : null}
         {s.steps ? (
-          <ol className="mt-10 space-y-5">
+          <ol className="mt-12 space-y-8">
             {s.steps.map((st, i) => (
-              <li key={st.title}>
-                <p className="text-xs text-subtle">0{i + 1}</p>
-                <h2 className="font-display text-2xl">{st.title}</h2>
-                <p className="mt-1 text-sm text-muted">{st.text}</p>
+              <li key={st.title} className="border-t border-line pt-6">
+                <p className="font-display text-3xl tracking-tight text-subtle/80">
+                  0{i + 1}
+                </p>
+                <h2 className="mt-2 font-display text-2xl tracking-tight">{st.title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{st.text}</p>
               </li>
             ))}
           </ol>
         ) : null}
         {s.slug === "keramikversiegelung" ? (
-          <p className="mt-8 rounded-card border border-line bg-surface p-4 text-sm">
+          <p className="mt-8 border border-line bg-surface p-5 text-sm">
             Paket Keramik ab {eur(packages[2].price)} {site.vatNote} · ca. 2 Tage.
           </p>
         ) : null}
-        <Link
-          to="/"
-          hash="buchung"
-          className={`mt-10 ${ctaPrimary}`}
-        >
-          Zum Preisrechner
-        </Link>
-        <h2 className="mt-16 font-display text-2xl">Hol- & Bringservice nach Stadt</h2>
-        <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-muted">
+        <h2 className="mt-16 font-display text-3xl tracking-tight">Hol- und Bringservice nach Stadt</h2>
+        <ul className="mt-6 grid grid-cols-2 gap-x-8 text-sm text-muted">
           {cities.map((c) => (
             <li key={c.slug}>
               <Link
                 to="/leistungen/$slug/$city"
                 params={{ slug: s.slug, city: c.slug }}
-                className="hover:text-fg"
+                className="inline-flex min-h-11 items-center hover:text-fg"
               >
                 {s.nav} {c.name}
               </Link>

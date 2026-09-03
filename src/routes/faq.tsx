@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { PageHero } from "@/components/page-hero";
+import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { faqs, site } from "@/data/site";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { pageHead } from "@/lib/seo";
@@ -45,42 +47,66 @@ function FaqPage() {
   };
 
   return (
-    <main id="main-content" className="mx-auto max-w-3xl px-4 py-16 sm:px-6" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <p className="text-xs uppercase tracking-[0.16em] text-subtle">Antworten vorab</p>
-      <h1 className="mt-3 font-display text-5xl">Häufige Fragen</h1>
-      <p className="mt-4 text-muted">
-        Was eine Keramikversiegelung in Horb kostet, wie lange eine Aufbereitung
-        dauert und was bei der Innenraumreinigung wirklich passiert – die
-        Antworten, die uns am häufigsten gestellt werden.
-      </p>
-      {groups.map((g) => (
-        <section key={g} className="mt-12">
-          <h2 className="font-display text-2xl">{g}</h2>
-          <div className="mt-4 divide-y divide-line border-y border-line">
-            {all
-              .filter((f) => f.group === g)
-              .map((f) => (
-                <details key={f.q} className="py-4">
-                  <summary className="flex min-h-11 cursor-pointer items-center text-left font-medium">
-                    {f.q}
-                  </summary>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">{f.a}</p>
-                </details>
-              ))}
-          </div>
-        </section>
-      ))}
-      <p className="mt-10 text-sm text-muted">
-        Ihre Frage war nicht dabei? Persönlich:{" "}
-        <a href={site.phoneHref} className="underline hover:text-fg">
-          {site.phoneDisplay}
-        </a>
-        .
-      </p>
+      <PageHero
+        shot="atelier"
+        alt="Werkstatt von White Gloss in Horb am Neckar"
+        kicker="Antworten vorab"
+        title="Häufige Fragen."
+        lead="Was eine Keramikversiegelung in Horb kostet, wie lange eine Aufbereitung dauert und was bei der Innenraumreinigung wirklich passiert."
+        crumbs={[
+          { label: "Startseite", to: "/" },
+          { label: "Häufige Fragen" },
+        ]}
+        actions={
+          <>
+            <Link to="/" hash="buchung" className={ctaPrimary}>
+              Termin anfragen
+            </Link>
+            <a href={site.phoneHref} className={ctaGhost}>
+              {site.phoneDisplay}
+            </a>
+          </>
+        }
+      />
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        {groups.map((g) => (
+          <section key={g} className="mt-4 first:mt-0">
+            <h2 className="kicker">{g}</h2>
+            <div className="mt-5 divide-y divide-line border-y border-line">
+              {all
+                .filter((f) => f.group === g)
+                .map((f) => (
+                  <details key={f.q} className="group py-5">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-6 text-left font-display text-xl tracking-tight">
+                      {f.q}
+                      <span
+                        className="shrink-0 text-subtle transition-transform duration-200 group-open:rotate-45"
+                        aria-hidden
+                      >
+                        +
+                      </span>
+                    </summary>
+                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+                      {f.a}
+                    </p>
+                  </details>
+                ))}
+            </div>
+          </section>
+        ))}
+        <p className="mt-12 text-sm text-muted">
+          Ihre Frage war nicht dabei? Persönlich:{" "}
+          <a href={site.phoneHref} className="underline hover:text-fg">
+            {site.phoneDisplay}
+          </a>
+          .
+        </p>
+      </div>
     </main>
   );
 }

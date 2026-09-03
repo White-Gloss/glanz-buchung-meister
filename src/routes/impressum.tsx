@@ -14,7 +14,7 @@ export const Route = createFileRoute("/impressum")({
 
 function ImpressumPage() {
   return (
-    <main id="main-content" className="mx-auto max-w-3xl px-4 py-16 sm:px-6" tabIndex={-1}>
+    <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-16 sm:px-6" tabIndex={-1}>
       <nav aria-label="Brotkrumen" className="text-xs text-subtle">
         <Link to="/" className="hover:text-fg">
           Startseite

@@ -36,7 +36,7 @@ export const atelierPhotos = {
   caption:
     "Unser Atelierfahrzeug in Horb am Neckar – kein Kundenauto, Kennzeichen entfernt.",
   invite:
-    "Weitere Referenzen zeigen wir nur, wenn Sie es freigeben, und immer ohne Kennzeichen.",
+    "Weitere Referenzen zeigen wir nur, wenn Sie sie freigeben, und immer ohne Kennzeichen.",
 };
 
 export const openingHours = {
@@ -140,7 +140,7 @@ export const packages: Package[] = [
     name: "Keramik",
     searchLabel: "High-End Keramik",
     seoName: "Keramikversiegelung Auto Horb – Paket Keramik inkl. Lackkorrektur",
-    body: "Paket Keramik ist die Keramikversiegelung in Horb am Neckar: mehrstufige Lackkorrektur, dann die Beschichtung. Wie lange sie hält, hängt vom Produkt ab – nicht pauschal von fünf Jahren. Fünf Jahre sind die teure Variante, die extra kalkuliert wird. Glas- und Felgenschutz sowie Hol- und Bringservice bis 60 km sind enthalten. Ab 899 € inkl. MwSt., rund zwei Tage in der Werkstatt.",
+    body: "Paket Keramik ist die Keramikversiegelung in Horb am Neckar: mehrstufige Lackkorrektur, dann die Beschichtung. Wie lange sie hält, hängt vom Produkt ab – nicht pauschal fünf Jahre. Fünf Jahre sind die teure Variante, die extra kalkuliert wird. Glas- und Felgenschutz sowie Hol- und Bringservice bis 60 km sind enthalten. Ab 899 € inkl. MwSt., rund zwei Tage in der Werkstatt.",
     price: 899,
     duration: "ca. 2 Tage",
     includesPickup: true,
@@ -246,7 +246,7 @@ export const extras: Extra[] = [
   {
     id: "glas",
     name: "Glass Coat",
-    hint: "Front und Seite, Wasser perlt, Wischer quietschen weniger",
+    hint: "Front und Seiten, Wasser perlt, die Wischer quietschen weniger",
     price: 99,
     group: "pflege",
   },
@@ -269,7 +269,7 @@ export const extras: Extra[] = [
   {
     id: "cabrio",
     name: "Soft Top Care",
-    hint: "Reinigen und imprägnieren, Stoff oder Vinyl",
+    hint: "Reinigen und Imprägnieren, Stoff oder Vinyl",
     price: 179,
     group: "pflege",
     inspect: true,
@@ -362,7 +362,7 @@ export const cities: City[] = [
     km: 35,
     minutes: 40,
     blurb:
-      "Aus Tübingen holen wir in etwa 40 Minuten ab. Ausführung bleibt in Horb – dort haben wir gleichmäßiges Licht, Wasseraufbereitung und keine Straßenverschmutzung.",
+      "Aus Tübingen holen wir in etwa 40 Minuten ab. Die Ausführung bleibt in Horb – dort haben wir gleichmäßiges Licht, Wasseraufbereitung und keine Straßenverschmutzung.",
   },
   {
     slug: "calw",
@@ -370,7 +370,7 @@ export const cities: City[] = [
     km: 40,
     minutes: 45,
     blurb:
-      "Calw liegt rund 45 Minuten von der Werkstatt.",
+      "Calw liegt rund 45 Minuten von der Werkstatt entfernt.",
   },
   {
     slug: "balingen",
@@ -402,7 +402,7 @@ export const cities: City[] = [
     km: 50,
     minutes: 55,
     blurb:
-      "Aus Reutlingen holen wir über rund 55 Minuten ab. Sinnvoll, wenn Lackkorrektur und Innenraum nicht in einer Schnellwäsche enden sollen.",
+      "Aus Reutlingen holen wir in rund 55 Minuten ab. Sinnvoll, wenn Lackkorrektur und Innenraum nicht in einer Schnellwäsche enden sollen.",
   },
   {
     slug: "sindelfingen",
@@ -577,7 +577,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Ob eine Keramikversiegelung hält, entscheidet die Vorbereitung und das Produkt. Erst wenn der Lack sauber und gleichmäßig ist, kommt die Schicht drauf.",
-      "Die Standzeit steht auf dem jeweiligen Produkt, nicht pauschal auf fünf Jahren. Fünf Jahre sind möglich, aber teuer. Wir sagen vorher, welches Produkt wir nehmen und was es wirklich leistet.",
+      "Die Standzeit steht auf dem jeweiligen Produkt, nicht pauschal fünf Jahre. Fünf Jahre sind möglich, aber teuer. Wir sagen vorher, welches Produkt wir nehmen und was es wirklich leistet.",
       "Planen Sie rund zwei Tage ein. Keramik ist nicht kratzfest. Sieben Tage sollten Sie nicht waschen; Regen in dieser Zeit ist kein Problem.",
     ],
     steps: [
@@ -616,7 +616,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Leder braucht die richtige Pflege, keine aggressive Chemie. Wir reinigen zuerst gründlich und lassen die Pflege danach einziehen.",
-      "Lederpflege Deluxe (ab 149 €) geht tiefer in Imprägnierung und Schutz – entweder als Extra oder im Paket Keramik.",
+      "Lederatelier (ab 149 €) geht tiefer in Imprägnierung und Schutz – entweder als Extra oder im Paket Keramik.",
     ],
   },
   {
@@ -630,7 +630,7 @@ export const services: ServicePage[] = [
     imageAlt: "Parkdelle unter Streiflicht, bevor wir ausbeulen",
     bullets: [
       "Einzelne Stellen, nicht gleich die ganze Fläche lackieren",
-      "Erst anschauen, dann ehrlich sagen was geht",
+      "Erst anschauen, dann ehrlich sagen, was geht",
       "Passt gut zu Lackkorrektur und Aufbereitung",
       "Oft sinnvoll vor Verkauf oder Leasingrückgabe",
     ],
@@ -643,7 +643,7 @@ export const services: ServicePage[] = [
     slug: "leasingrueckgabe",
     title: "Leasingrückläufer-Aufbereitung",
     nav: "Leasing Gloss",
-    metaTitle: "Leasingrückgabe Aufbereitung Horb | White Gloss",
+    metaTitle: "Leasingrückgabe-Aufbereitung Horb | White Gloss",
     description:
       "Aufbereitung vor der Leasingrückgabe in Horb: Innenreinigung, Lackpflege, punktuelle Nacharbeit – ehrlich priorisiert.",
     image: "/media/hero.webp",
@@ -655,7 +655,7 @@ export const services: ServicePage[] = [
       "Termin, der vor dem Rückgabedatum sitzt",
     ],
     body: [
-      "Wir arbeiten das, was Gutachter bei der Rückgabe wirklich sehen – nicht an einem Showroom-Ideal vorbei. Das spart Geld und unnötige Positionen.",
+      "Wir arbeiten das ab, was Gutachter bei der Rückgabe wirklich sehen – nicht an einem Showroom-Ideal vorbei. Das spart Geld und unnötige Positionen.",
       "Autohäuser und Flotten rechnen wir im B2B, ohne Pauschalpreis, passend zu Anzahl und Zustand.",
     ],
   },
@@ -717,7 +717,7 @@ export const services: ServicePage[] = [
       "Zuerst die Ursache: Schmutz, Nässe, Filter, Polster",
       "Ozon zerlegt Geruchsmoleküle, parfümiert nichts",
       "Nikotin, Tier, Feuchtigkeit – oft in Kombination mit Innenraumreinigung",
-      "ab 99 €, bei starker Belastung nach Absprache",
+      "Ab 99 €, bei starker Belastung nach Absprache",
     ],
     body: [
       "Duftspray überdeckt. Ozon arbeitet anders: es spaltet die Moleküle, die den Geruch machen. Vorher muss der Innenraum aber sauber und trocken sein, sonst kommt der Geruch zurück.",
@@ -770,7 +770,7 @@ export const faqs = [
   {
     group: "Keramikversiegelung",
     q: "Was ist der Unterschied zwischen Wachs, Versiegelung und Keramik?",
-    a: "Wachs hält je nach Nutzung einige Monate. Eine Sprühversiegelung ist dünner und kurzlebiger. Keramik verbindet sich mit dem Klarlack. Wie lange, hängt vom Produkt ab – nicht pauschal von fünf Jahren.",
+    a: "Wachs hält je nach Nutzung einige Monate. Eine Sprühversiegelung ist dünner und kurzlebiger. Keramik verbindet sich mit dem Klarlack. Wie lange, hängt vom Produkt ab – nicht pauschal fünf Jahre.",
   },
   {
     group: "Keramikversiegelung",
@@ -820,7 +820,7 @@ export const faqs = [
   {
     group: "Allgemein",
     q: "Wie oft sollte ich mein Auto aufbereiten lassen?",
-    a: "Eine vollständige Aufbereitung ist meist einmal jährlich sinnvoll, ohne Garage eher häufiger. Mit Keramikversiegelung geht es über Jahre um regelmäßige Wäsche und gelegentliche Auffrischung.",
+    a: "Eine vollständige Aufbereitung ist meist einmal jährlich sinnvoll, ohne Garage eher häufiger. Mit Keramikversiegelung bleiben über Jahre regelmäßige Wäsche und gelegentliche Auffrischung entscheidend.",
   },
 ];
 
@@ -828,12 +828,12 @@ export const processSteps = [
   {
     n: "01.",
     title: "Anschauen",
-    text: "Zuerst sitzen wir kurz zusammen und schauen uns Lack, Innenraum und was Sie sich wünschen in Ruhe an. Erst danach sagen wir, was wirklich Sinn macht.",
+    text: "Zuerst sitzen wir kurz zusammen, schauen uns Lack und Innenraum in Ruhe an und hören, was Sie sich wünschen. Erst danach sagen wir, was wirklich Sinn macht.",
   },
   {
     n: "02.",
     title: "Vorbereiten",
-    text: "Dann wird gründlich gereinigt, und alles, was empfindlich ist, wird geschützt – damit hinterher nichts leidet, was nicht soll.",
+    text: "Dann wird gründlich gereinigt, und alles, was empfindlich ist, wird geschützt – damit hinterher nichts leidet, was nicht leiden soll.",
   },
   {
     n: "03.",
@@ -843,14 +843,20 @@ export const processSteps = [
   {
     n: "04.",
     title: "Abgeben",
-    text: "Zum Schluss prüfen wir unter Licht, Sie sehen das Ergebnis, und das Auto geht sauber raus.",
+    text: "Zum Schluss prüfen wir unter Licht. Sie sehen das Ergebnis, und das Auto geht sauber raus.",
   },
 ];
 
 export const nav = [
   { to: "/leistungen", label: "Leistungen" },
-  { to: "/preise", label: "Preise" },
-  { to: "/qualitaet", label: "Qualität" },
+  { to: "/luxusfahrzeuge", label: "Luxusfahrzeuge" },
+  { to: "/preise", label: "Preise & Pakete" },
+  { to: "/qualitaet", label: "Qualitätsanspruch" },
+  { to: "/abholservice", label: "Hol- & Bringservice" },
+  { to: "/", label: "Individuelles Angebot", hash: "buchung" },
+  { to: "/ratgeber", label: "Ratgeber" },
+  { to: "/faq", label: "Häufige Fragen" },
+  { to: "/galerie", label: "Werkstatt" },
   { to: "/kontakt", label: "Kontakt" },
   { to: "/b2b", label: "B2B" },
 ] as const;
