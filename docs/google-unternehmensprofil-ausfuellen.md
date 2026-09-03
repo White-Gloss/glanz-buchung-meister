@@ -175,9 +175,9 @@ und Textilien sowie ein hochwertiges Wachs für rund 6 Monate.
 **High-End Keramik — ab 899 €** · ca. 2 Tage
 
 ```
-Alles aus Premium Glanz, zusätzlich mehrstufige Lackkorrektur,
-Keramikversiegelung mit bis zu 5 Jahren Standzeit, Glas- und
-Felgenversiegelung, Leder-Konditionierung und Schutz. Hol- und
+Alles aus Signature, zusätzlich mehrstufige Lackkorrektur,
+Keramikbeschichtung (Standzeit laut Produkt), Glas- und
+Felgenversiegelung, Leder-Konditionierung. Hol- und
 Bringservice inklusive.
 ```
 

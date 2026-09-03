@@ -123,7 +123,13 @@ describe("pickup pricing source of truth", () => {
     assert.equal(ozon?.price, 99);
     assert.equal(leder?.price, 149);
     const files = walk(srcRoot).filter((file) => !file.endsWith(".test.ts"));
-    const stale = [/59 Euro/i, /Ozonbehandlung für 59/, /Lederpflege Deluxe kostet zusätzlich 119/];
+    const stale = [
+      /59 Euro/i,
+      /Ozonbehandlung für 59/,
+      /Lederpflege Deluxe kostet zusätzlich 119/,
+      /Keramik 5 Jahre/,
+      /5-Jahres-Beschichtung extra/,
+    ];
     const hits: string[] = [];
     for (const file of files) {
       const text = readFileSync(file, "utf8");
