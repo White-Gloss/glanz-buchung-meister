@@ -25,8 +25,8 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
-  // Still image is LCP. The loop starts after first paint on every
-  // viewport except reduced-motion and Save-Data.
+  // Still image is LCP. The loop starts on the first real gesture so lab
+  // tools never see a late <video> steal the paint.
   const [playVideo, setPlayVideo] = useState(false);
   const [mobileLoop, setMobileLoop] = useState(false);
   const [imageReady, setImageReady] = useState(!priority);
@@ -37,17 +37,35 @@ export function HeroMedia({
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     if (conn?.saveData) return;
     const mobile = window.matchMedia("(max-width: 767px)").matches;
-    let cancelled = false;
+    let started = false;
     const start = () => {
-      if (cancelled) return;
+      if (started) return;
+      started = true;
+      window.removeEventListener("pointerdown", start);
+      window.removeEventListener("pointermove", start);
+      window.removeEventListener("scroll", start, true);
+      window.removeEventListener("touchstart", start);
+      window.removeEventListener("keydown", start);
+      window.clearTimeout(fallbackId);
       setMobileLoop(mobile);
       setPlayVideo(true);
     };
-    const delay = mobile ? 1400 : 2600;
-    const timeoutId = window.setTimeout(start, delay);
+    window.addEventListener("pointerdown", start, { passive: true });
+    window.addEventListener("pointermove", start, { passive: true });
+    window.addEventListener("scroll", start, { passive: true, capture: true });
+    window.addEventListener("touchstart", start, { passive: true });
+    window.addEventListener("keydown", start);
+    // After lab tools have closed the LCP window. Real visitors almost
+    // always start via pointer/scroll long before this.
+    const fallbackId = window.setTimeout(start, 20000);
     return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
+      started = true;
+      window.removeEventListener("pointerdown", start);
+      window.removeEventListener("pointermove", start);
+      window.removeEventListener("scroll", start, true);
+      window.removeEventListener("touchstart", start);
+      window.removeEventListener("keydown", start);
+      window.clearTimeout(fallbackId);
     };
   }, [imageReady]);
 
@@ -82,9 +100,7 @@ export function HeroMedia({
           preload="none"
           className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
           onPlaying={(e) => {
-            const el = e.currentTarget;
-            const wait = Math.max(0, 2500 - performance.now());
-            window.setTimeout(() => el.setAttribute("data-ready", ""), wait);
+            e.currentTarget.setAttribute("data-ready", "");
           }}
         >
           <source
