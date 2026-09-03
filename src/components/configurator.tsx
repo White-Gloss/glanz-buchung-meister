@@ -95,7 +95,7 @@ export function Configurator({
         to: "/danke",
         search: {
           vorgang: created.reference,
-          zusage: created.confirmed ? "1" : undefined,
+          ...(created.confirmed ? { zusage: "1" as const } : {}),
         },
       });
     } catch {
