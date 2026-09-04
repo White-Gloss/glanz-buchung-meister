@@ -7,14 +7,14 @@ export type SecurityHeaderMode = {
 export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string][] {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://grok.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://grok.com https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://www.google.com https://www.google.de https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com https://*.google-analytics.com",
     "font-src 'self' data:",
-    "connect-src 'self' ws: wss: blob: https://grok.com",
+    "connect-src 'self' ws: wss: blob: https://grok.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org",
+    "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org https://td.doubleclick.net",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

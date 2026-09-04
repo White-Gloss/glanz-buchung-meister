@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
+import { trackGoogleAdsConversion } from "@/lib/googleTag";
 import { pageHead } from "@/lib/seo";
 
 type ThanksSearch = {
@@ -40,6 +42,14 @@ export const Route = createFileRoute("/danke")({
 function ThanksPage() {
   const { vorgang, zusage } = Route.useSearch();
   const confirmed = zusage === "1";
+
+  const conversionFired = useRef(false);
+  useEffect(() => {
+    if (!conversionFired.current) {
+      conversionFired.current = true;
+      trackGoogleAdsConversion();
+    }
+  }, []);
   const steps = confirmed
     ? [
         ["01", "Termin gehalten", "Der Wunschtermin ist für Sie blockiert. Änderungen nur nach Rücksprache."],

@@ -106,12 +106,23 @@ function PrivacyPage() {
         </section>
 
         <section>
-          <h2>6. Cookies, lokale Speicherung und Karten</h2>
+          <h2>6. Google Tag, Conversion-Tracking und Cookies</h2>
           <p>
-            Diese öffentliche Website setzt keine Marketing-Cookies, kein Google Analytics, kein
-            Google Ads und kein Meta-Pixel. Es findet keine werbliche Reichweitenmessung statt.
-            Für den öffentlichen Bereich wird kein Einwilligungsbanner benötigt, weil keine
-            nicht-essentiellen Cookies oder Tracker gesetzt werden.
+            Auf dieser Website setzen wir den Google Tag (Google Ireland Limited, Gordon House,
+            Barrow Street, Dublin 4, Irland; Tag-ID: AW-18384520682) zur Erfolgsmessung unserer
+            Google-Ads-Werbeanzeigen ein. Wenn Sie über eine Google-Anzeige auf unsere Website
+            gelangen oder eine Terminanfrage bzw. Buchung abschließen, wird dies als Conversion
+            erfasst, um die Effektivität unserer Anzeigen zu analysieren.
+          </p>
+          <p>
+            Dabei können Daten wie Ihre IP-Adresse und Gerätekennungen an Google übertragen und
+            gegebenenfalls in die USA übermittelt werden. Google stützt solche Übermittlungen auf
+            Standardvertragsklauseln der EU-Kommission. Rechtsgrundlage für den Einsatz ist
+            Art. 6 Abs. 1 lit. a DSGVO bzw. Art. 6 Abs. 1 lit. f DSGVO.
+          </p>
+          <p>
+            Darüber hinaus findet im öffentlich zugänglichen Bereich keine werbliche Reichweitenmessung
+            statt (kein Meta-Pixel).
           </p>
           <p>
             Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
