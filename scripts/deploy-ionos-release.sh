@@ -11,6 +11,9 @@ readonly CI_USER="white-gloss-ci"
 readonly INCOMING_DIR="/home/white-gloss-ci/incoming"
 readonly STAGING_DIR="/var/lib/white-gloss-deploy"
 readonly HEALTHCHECK_URL="http://127.0.0.1:3000/"
+# This helper is installed before migration 0007. Its minimum contract applies
+# even during the first cutover, when the currently linked release is older.
+readonly BOOKING_CONTRACT="white-gloss-booking-workflow=1"
 
 die() {
   printf 'White Gloss deployment error: %s\n' "$*" >&2
@@ -37,12 +40,23 @@ release_path() {
   printf '%s/%s\n' "$RELEASES_DIR" "$1"
 }
 
+release_is_compatible() {
+  local target_release contract_file
+  target_release="$(release_path "$1")"
+  contract_file="$target_release/.output/booking-workflow.contract"
+  [[ -d "$target_release" && -f "$target_release/.output/server/index.mjs" &&
+     -f "$contract_file" && ! -L "$contract_file" ]] || return 1
+  cmp --silent "$contract_file" <(printf '%s\n' "$BOOKING_CONTRACT")
+}
+
 validate_release() {
   local target_release
   target_release="$(release_path "$1")"
   [[ -d "$target_release" ]] || die "release directory is missing"
   [[ -f "$target_release/.output/server/index.mjs" ]] ||
     die "server entrypoint is missing"
+  release_is_compatible "$1" ||
+    die "release lacks the required booking workflow contract; activation and rollback are refused"
 }
 
 current_release_id() {
@@ -55,7 +69,7 @@ current_release_id() {
 }
 
 restart_and_wait() {
-  systemctl restart "$SERVICE_NAME"
+  systemctl restart "$SERVICE_NAME" || return 1
   for _ in {1..30}; do
     if curl --silent --show-error --fail --max-time 3 \
       "$HEALTHCHECK_URL" >/dev/null; then
@@ -86,13 +100,17 @@ switch_release() {
     return 0
   fi
 
-  if [[ -n "$previous_path" && -f "$previous_path/.output/server/index.mjs" ]]; then
+  if [[ -n "$previous_path" ]] && release_is_compatible "$previous_id"; then
     next_link="${CURRENT_LINK}.rollback.$$"
     ln -s "$previous_path" "$next_link"
     mv -Tf "$next_link" "$CURRENT_LINK"
-    restart_and_wait || true
+    if restart_and_wait; then
+      die "new release failed its local healthcheck; compatible previous release restored"
+    fi
   fi
-  die "new release failed its local healthcheck"
+  systemctl stop "$SERVICE_NAME" ||
+    die "release recovery failed and the service could not be stopped; operator intervention required"
+  die "release healthcheck failed; no healthy compatible rollback available; service stopped, database unchanged"
 }
 
 validate_archive_members() {
@@ -178,21 +196,31 @@ rollback_release() {
   local release_id
   release_id="$1"
   validate_release_id "$release_id"
+  # Invalid recovery targets must never mutate an otherwise healthy service.
+  if ! release_is_compatible "$release_id"; then
+    die "incompatible rollback refused; current release and service unchanged; deploy a compatible release"
+  fi
   switch_release "$release_id" >/dev/null
 }
 
-require_root
-validate_server_contract
-case "${1:-}" in
-  activate)
-    [[ "$#" -eq 3 ]] || die "activate expects release id and archive path"
-    activate_release "$2" "$3"
-    ;;
-  rollback)
-    [[ "$#" -eq 2 ]] || die "rollback expects a release id"
-    rollback_release "$2"
-    ;;
-  *)
-    die "expected activate or rollback"
-    ;;
-esac
+main() {
+  require_root
+  validate_server_contract
+  case "${1:-}" in
+    activate)
+      [[ "$#" -eq 3 ]] || die "activate expects release id and archive path"
+      activate_release "$2" "$3"
+      ;;
+    rollback)
+      [[ "$#" -eq 2 ]] || die "rollback expects a release id"
+      rollback_release "$2"
+      ;;
+    *)
+      die "expected activate or rollback"
+      ;;
+  esac
+}
+
+# Sourcing exposes functions to isolated contract tests; executable use always
+# runs the existing root, archive ownership and server-contract checks.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then main "$@"; fi

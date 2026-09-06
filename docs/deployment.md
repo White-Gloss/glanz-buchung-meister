@@ -42,12 +42,12 @@ Servervorbereitung stehen in
 
 1. Änderung über Pull Request prüfen.
 2. CI muss erfolgreich sein (`npm audit`, ESLint, Quality-Skripte, Produktions-Build).
-3. Das bestätigte Produktions-Datenbankziel sichern, ausstehende Root-Migrationen im geschützten Serverkontext ausführen und `npm run check:release` bestehen lassen. Das UUID-Altschema aus `supabase/migrations` ist kein kompatibles Ziel.
+3. Bei der erstmaligen Migration `0007` das unten beschriebene Wartungsfenster verwenden: automatische Deployments pausieren, alte Schreibzugriffe anhalten, richtige Datenbank sichern, den neuen Helfer installieren, Root-Migrationen ausführen und `npm run check:release` bestehen lassen. Das UUID-Altschema aus `supabase/migrations` ist kein kompatibles Ziel.
 4. Änderung nach ausdrücklicher Veröffentlichungsfreigabe nach `main` mergen.
 5. GitHub Actions reproduziert genau diesen Build und überträgt `.output/` auf IONOS. Der Build selbst führt keine Migrationen mehr aus.
 6. Erst nach erfolgreichem Build wird der neue Node-Stand aktiviert.
 7. Direkt danach läuft `npm run smoke:production` gegen die Live-Domain.
-8. Bei fehlgeschlagenem Build oder Smoke-Test bleibt bzw. wird der letzte funktionierende Stand wieder aktiv.
+8. Bei einem fehlgeschlagenen Build erfolgt keine Aktivierung. Ein Rückfall nach Start-/Smoke-Fehler ist ausschließlich auf einen Stand mit dem benötigten Buchungsworkflow-Vertrag zulässig; das Verhalten ohne kompatibles Rückfallziel steht unten.
 
 Damit ist das gewünschte Ziel klar: **Merge nach `main` → automatisch zu IONOS → Build → Neustart → Smoke-Test**.
 
@@ -74,20 +74,20 @@ Die eingecheckte `.env` enthält nur Werte, die im Browser ohnehin öffentlich s
 Folgende Werte gehören ausschließlich in die root-eigene Datei
 `/etc/white-gloss/environment` auf dem IONOS-VPS und **niemals** ins Repository:
 
-| Variable                                            | Zweck                                   |
-| --------------------------------------------------- | --------------------------------------- |
-| `META_PIXEL_ID`                                     | serverseitige Meta-Conversions          |
-| `META_CAPI_ACCESS_TOKEN`                            | Zugriffstoken der Meta Conversions API  |
-| `RESEND_API_KEY`                                    | E-Mail-Versand                          |
-| `MAIL_FROM`                                         | Absender der Kundenmails                |
-| `MAIL_TO_OWNER`                                     | Zieladresse interner Benachrichtigungen |
-| `SUPABASE_SERVICE_ROLE_KEY`                         | **Pflicht** — Foto-Upload der Kundschaft |
-| `ANTHROPIC_API_KEY`                                 | KI-Assistent im Adminbereich            |
-| `IMAP_HOST`                                         | Posteingang im Adminbereich             |
-| `IMAP_USER`                                         | Postfachname für den Posteingang        |
-| `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
-| `DATABASE_URL` | direkte Datenbankverbindung; nur dieser Variablenname wird gelesen |
-| `BETTER_AUTH_SECRET` | dauerhafter Signaturschlüssel, mindestens 32 Zeichen |
+| Variable                    | Zweck                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| `META_PIXEL_ID`             | serverseitige Meta-Conversions                                     |
+| `META_CAPI_ACCESS_TOKEN`    | Zugriffstoken der Meta Conversions API                             |
+| `RESEND_API_KEY`            | E-Mail-Versand                                                     |
+| `MAIL_FROM`                 | Absender der Kundenmails                                           |
+| `MAIL_TO_OWNER`             | Zieladresse interner Benachrichtigungen                            |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Pflicht** — Foto-Upload der Kundschaft                           |
+| `ANTHROPIC_API_KEY`         | KI-Assistent im Adminbereich                                       |
+| `IMAP_HOST`                 | Posteingang im Adminbereich                                        |
+| `IMAP_USER`                 | Postfachname für den Posteingang                                   |
+| `IMAP_PASSWORD`             | Postfachpasswort für den Posteingang                               |
+| `DATABASE_URL`              | direkte Datenbankverbindung; nur dieser Variablenname wird gelesen |
+| `BETTER_AUTH_SECRET`        | dauerhafter Signaturschlüssel, mindestens 32 Zeichen               |
 
 ### Warum `SUPABASE_SERVICE_ROLE_KEY` nicht optional ist
 
@@ -245,3 +245,53 @@ Deployment-Job vollständig übersprungen.
 ## Rollback-Grundsatz
 
 Ein Rollback muss immer auf einen bekannten Git-Stand erfolgen. Keine Produktionsdateien werden manuell „repariert“, ohne dass dieselbe Änderung auch im Repository existiert. So bleiben GitHub, IONOS und die tatsächlich laufende Version nachvollziehbar synchron.
+
+Der erfolgreiche Produktions-Build schreibt als letzten Schritt
+`.output/booking-workflow.contract` mit `white-gloss-booking-workflow=1`.
+Der Marker wird zusammen mit `.output/` ausgeliefert. Der neue root-eigene
+Aktivierungshelfer verlangt ihn für jede Aktivierung und jedes Rollback;
+fehlende, abweichende oder neuere unbekannte Verträge werden abgewiesen.
+Ein Marker darf niemals von Hand in ein altes Release kopiert werden.
+
+Migration `0007_booking_workflow.sql` ist mit alten Bestätigungsaufrufen nicht
+schreibkompatibel. Ein reiner Symlink-Rollback auf Altcode stellt den
+Buchungsbetrieb daher nicht wieder her. Der Helfer migriert keine Datenbank
+zurück und löscht keine Buchungen.
+
+Scheitert der lokale Start, wird nur ein kompatibler vorheriger Stand
+wieder gestartet. Ist kein solcher Stand gesund, stoppt der Helfer den Dienst
+und meldet den erforderlichen Wiederanlauf mit einem kompatiblen Release.
+Ein ausdrücklich angefordertes Rollback auf ein inkompatibles oder fehlendes
+Ziel wird hingegen vor Änderungen am aktuellen Symlink oder Dienst abgewiesen.
+Dies gilt auch für den Rollback-Versuch des Workflows nach einem fehlgeschlagenen
+Live-Smoke: Ohne kompatibles Ziel ist die Wiederherstellung nicht erledigt.
+Schreibzugriffe kontrolliert anhalten, den Fehler beheben und einen geprüften
+kompatiblen Stand aktivieren. Ein Datenbankrestore ist kein automatischer
+Rollback-Schritt und darf neue Buchungen nicht unbemerkt verwerfen.
+
+### Erstmaliges Wartungsfenster für Migration 0007
+
+1. Den geprüften neuen Quellstand und Build bereitstellen. `IONOS_DEPLOY_ENABLED`
+   vor dem Fenster auf `false` setzen und sicherstellen, dass keine bereits
+   gestartete Deployment-Aktivierung mehr läuft. Die Variable beendet keinen
+   laufenden Job. Während des Fensters darf kein älterer CI-Lauf den Altcode
+   wieder starten.
+2. Bestehende Buchungs-/Erinnerungsjobs und den Hauptdienst kontrolliert anhalten;
+   auch alte Cron-Einträge berücksichtigen. Erst nach Ende aktiver Schreibzugriffe
+   die konsistente Sicherung des bestätigten Integer-Datenbankziels erstellen.
+3. Den neuen `scripts/deploy-ionos-release.sh` als root-eigenen Helfer unter
+   `/usr/local/sbin/white-gloss-deploy` installieren. Keine bestehenden Secrets,
+   Hauptdienst-Unit oder Fremdkonfiguration ersetzen. Der Workflow vergleicht
+   die Helfer-Prüfsumme vor einer Aktivierung mit dem freigegebenen Quellstand.
+4. Im geschützten Serverkontext `npm run db:migrate` und danach
+   `npm run check:release` ausführen. Bei einem Fehler bleibt die Wartung aktiv;
+   den Altcode nach einer erfolgreichen `0007` nicht erneut als Schreibdienst
+   starten. Jede Migrationsdatei wird einzeln atomar angewendet: Ein späterer
+   Fehler nimmt vorher erfolgreich angewandte Dateien nicht zurück.
+5. Ausschließlich den geprüften neuen Stand mit passendem Vertrag aktivieren
+   und Start, Live-Smoke sowie Buchungsberechtigungen prüfen. Den neuen
+   Benachrichtigungs-Runner separat installieren und erst dann dessen Timer
+   aktivieren; siehe [Betriebsanleitung](booking-workflow-operations.md).
+6. Nach erfolgreicher Kontrolle regulären Zugriff und automatische Deployments
+   wieder freigeben. Bei Nutzung des CI-Aktivierungspfads nur den gezielt
+   ausgewählten aktuellen `main`-Stand freigeben, nachdem alte Läufe beendet sind.

@@ -122,11 +122,29 @@ geladen. Zusätzlich zur bestehenden Datenbank/Auth/Resend/Storage-Konfiguration
 sind Meta-Konfiguration und `REMINDER_CRON_SECRET` mit mindestens 32 Zeichen
 erforderlich. Die Anwendung muss lokal unter Port 3000 erreichbar sein.
 
-Zuerst die Root-Migrationen mit `npm run db:migrate` im geschützten Kontext der
+Vor der erstmaligen `0007` ist ein Schreibwartungsfenster erforderlich. Alte
+Bestätigungsaufrufe sind nach dieser Migration nicht mehr kompatibel.
+Automatische Deployments zunächst über `IONOS_DEPLOY_ENABLED=false` pausieren,
+bereits laufende Aktivierungen beenden lassen und alte Buchungs-/Erinnerungsjobs
+sowie den Hauptdienst kontrolliert anhalten. Nach Ende der Schreibzugriffe die
+richtige Datenbank konsistent sichern. Den neuen root-eigenen Deployment-Helfer
+vor der Migration installieren; bestehende Secrets und Hauptdienst-Units bleiben
+erhalten. Die genaue Reihenfolge steht im
+[Deployment-Wartungsfenster](deployment.md#erstmaliges-wartungsfenster-für-migration-0007).
+
+Dann die Root-Migrationen mit `npm run db:migrate` im geschützten Kontext der
 bestätigten Anwendungsdatenbank ausführen, `npm run check:release` bestehen lassen
 und den neuen Anwendungsrelease gemäß [deployment.md](deployment.md) aktivieren.
 Der Neustart des Hauptdiensts übernimmt die neue Serverkonfiguration. Den Timer
 erst für diesen neuen Stand aktivieren.
+
+Der neue Helfer akzeptiert ausschließlich Releases mit dem vom erfolgreichen
+Build erzeugten `.output/booking-workflow.contract`. Ohne gesunden kompatiblen
+Rückfall stoppt ein fehlgeschlagener lokaler Start den Dienst. Ein explizites
+Rollback auf Altcode wird ohne Änderung des aktuellen Diensts abgewiesen.
+Die Wartung bleibt bei einer fehlgeschlagenen Wiederherstellung bestehen,
+bis ein geprüfter kompatibler Stand läuft. Keine automatische Rückmigration
+oder Datenlöschung erfolgt; einen Marker niemals in Altcode nachtragen.
 
 Der automatische Anwendungsdeploy überträgt ausschließlich `.output/`.
 Deshalb den Runner und die Units separat aus dem freigegebenen Quellstand
