@@ -15,6 +15,7 @@ import {
 import {
   queueBookingAutomation,
   queueOwnerNotify,
+  flushOutboundEmailQueue,
   safeExec,
   OUTBOUND_QUEUED,
   canAutoConfirmAppointment,
@@ -271,6 +272,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       auto.ok ? "Terminzusage" : subject,
     );
 
+    await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
+
     return {
       id,
       reference: `WG-${id}`,
@@ -451,6 +454,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     `;
 
     await queueBookingAutomation(sql, booking, data.status, context.userId);
+    await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
 
     return { ok: true as const };
   });

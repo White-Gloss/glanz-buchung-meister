@@ -6,7 +6,7 @@ import { getSql } from "@/lib/db";
 import { agentHelpText, parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
-import { OUTBOUND_QUEUED, queueBookingAutomation } from "@/lib/ops";
+import { OUTBOUND_QUEUED, flushOutboundEmailQueue, queueBookingAutomation } from "@/lib/ops";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
@@ -625,6 +625,13 @@ export const runReminders = createServerFn({ method: "POST" })
     const sql = await getSql();
     const result = await runReminderPass(sql, context.userId);
     return { result };
+  });
+
+export const flushOutboundMail = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async () => {
+    const sql = await getSql();
+    return flushOutboundEmailQueue(sql);
   });
 
 export const listAutomationEvents = createServerFn({ method: "GET" })

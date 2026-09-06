@@ -9,6 +9,7 @@ import {
   Workflow,
 } from "lucide-react";
 import {
+  flushOutboundMail,
   getOperatorSettings,
   inboundOperatorMessage,
   listAgentLog,
@@ -183,6 +184,27 @@ function AdminAutomation() {
             }}
           >
             Erinnerungen jetzt
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={async () => {
+              setPending(true);
+              try {
+                const res = await flushOutboundMail();
+                setResult(
+                  `E-Mail-Warteschlange: ${res.sent} gesendet, ${res.failed} fehlgeschlagen, ${res.skipped} übersprungen.`,
+                );
+                await reload();
+              } catch (err) {
+                setResult(err instanceof Error ? err.message : "Versand fehlgeschlagen.");
+              } finally {
+                setPending(false);
+              }
+            }}
+            disabled={pending}
+          >
+            E-Mail-Warteschlange senden
           </Button>
         </div>
       </form>
