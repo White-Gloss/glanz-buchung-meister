@@ -27,11 +27,17 @@ import { isEmailAddress } from "@/lib/utils";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema } from "@/lib/booking-schema";
 import {
-  assertAllowedUpload,
+  MAX_BASE64_UPLOAD_CHARS,
+  decodeUploadBase64,
+  deleteConditionPhotos,
   extensionForMime,
   uploadToConditionPhotos,
+  validateUploadBatch,
 } from "@/lib/booking-photos";
 import { randomBytes } from "node:crypto";
+import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
+import { createUploadCapability, verifyUploadCapability } from "@/lib/booking-upload-capability";
+import { getBookingUploadCookie, setBookingUploadCookie } from "@/lib/booking-upload-cookie.server";
 
 export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
@@ -84,20 +90,11 @@ async function upsertCustomer(
   phone: string,
   email?: string,
 ) {
-  const existing = await sql<{ id: number }>`
-    select id from customers where shop_id = ${SHOP} and phone = ${phone} limit 1
-  `;
-  if (existing[0]) {
-    await sql`
-      update customers
-      set name = ${name}, email = coalesce(${email || null}, email)
-      where id = ${existing[0].id}
-    `;
-    return existing[0].id;
-  }
   const inserted = await sql<{ id: number }>`
     insert into customers (shop_id, name, phone, email)
     values (${SHOP}, ${name}, ${phone}, ${email || null})
+    on conflict (shop_id, phone) do update
+    set name = excluded.name, email = coalesce(excluded.email, customers.email)
     returning id
   `;
   return inserted[0]?.id ?? null;
@@ -132,15 +129,18 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
+    const uploadCapability = createUploadCapability();
     const rows = await sql<{ id: number }>`
       insert into bookings (
         shop_id, customer_name, phone, email, preferred_date, preferred_slot,
-        package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents
+        package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
+        upload_token_hash, upload_token_expires_at
       ) values (
         ${SHOP}, ${data.name}, ${data.phone}, ${data.email || null},
         ${preferredDate}, ${data.slot || null},
         ${data.packageId}, ${data.classId}, ${JSON.stringify(data.extraIds)},
-        ${data.citySlug}, ${storedNote || null}, ${totalCents}, ${pickupCents}
+        ${data.citySlug}, ${storedNote || null}, ${totalCents}, ${pickupCents},
+        ${uploadCapability.hash}, ${uploadCapability.expiresAt}
       )
       returning id
     `;
@@ -274,6 +274,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
 
+    setBookingUploadCookie(id, uploadCapability);
     return {
       id,
       reference: `WG-${id}`,
@@ -318,15 +319,6 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
   });
 
 
-function decodeBase64Payload(raw: string): Uint8Array {
-  const trimmed = raw.trim();
-  const comma = trimmed.indexOf(",");
-  const payload =
-    trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
-  if (!payload) throw new Error("Die Datei ist leer.");
-  return Uint8Array.from(Buffer.from(payload, "base64"));
-}
-
 const attachBookingPhotosSchema = z.object({
   vorgang: z
     .string()
@@ -337,11 +329,14 @@ const attachBookingPhotosSchema = z.object({
       z.object({
         name: z.string().trim().min(1).max(180),
         mime: z.string().trim().min(3).max(80),
-        base64: z.string().min(1),
+        base64: z
+          .string()
+          .min(1)
+          .max(MAX_BASE64_UPLOAD_CHARS, "Die Datei ist zu groß (höchstens 12 MB)."),
       }),
     )
     .min(1)
-    .max(8),
+    .max(MAX_UPLOAD_FILES),
 });
 
 export const attachBookingPhotos = createServerFn({ method: "POST" })
@@ -357,31 +352,68 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     }
 
     const sql = await getSql();
-    const bookings = await sql<{ id: number; customer_name: string }>`
-      select id, customer_name
+    const bookings = await sql<{
+      id: number;
+      customer_name: string;
+      upload_token_hash: string | null;
+      upload_token_expires_at: string | Date | null;
+    }>`
+      select id, customer_name, upload_token_hash, upload_token_expires_at
       from bookings
       where id = ${bookingId} and shop_id = ${SHOP}
       limit 1
     `;
     const booking = bookings[0];
-    if (!booking) throw new Error("Buchung nicht gefunden.");
+    if (!booking || !verifyUploadCapability(
+      getBookingUploadCookie(bookingId),
+      booking.upload_token_hash,
+      booking.upload_token_expires_at,
+    )) {
+      throw new Error(
+        "Fotos können nur im Browser der ursprünglichen Anfrage innerhalb von sieben Tagen nachgereicht werden. Bitte kontaktieren Sie uns bei Bedarf.",
+      );
+    }
 
+    const validated = validateUploadBatch(data.files);
     const storedNames: string[] = [];
-    for (const file of data.files) {
-      const bytes = decodeBase64Payload(file.base64);
-      const { mime, ext } = assertAllowedUpload(bytes, file.mime);
-      const random = randomBytes(16).toString("hex");
-      const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
-      await uploadToConditionPhotos(storagePath, bytes, mime);
-      const safeName = file.name.slice(0, 180);
-      await sql`
-        insert into booking_photos (
-          shop_id, booking_id, storage_path, mime, size_bytes, original_name
-        ) values (
-          ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${bytes.byteLength}, ${safeName}
-        )
-      `;
-      storedNames.push(safeName);
+    const batchPaths: string[] = [];
+    try {
+      for (const [index, file] of data.files.entries()) {
+        const bytes = decodeUploadBase64(file.base64);
+        const { mime, ext, sizeBytes } = validated[index];
+        const random = randomBytes(16).toString("hex");
+        const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
+        // Track before sending: a lost response can still mean the object was stored.
+        batchPaths.push(storagePath);
+        await uploadToConditionPhotos(storagePath, bytes, mime);
+        const safeName = file.name.slice(0, 180);
+        await sql`
+          insert into booking_photos (
+            shop_id, booking_id, storage_path, mime, size_bytes, original_name
+          ) values (
+            ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${sizeBytes}, ${safeName}
+          )
+        `;
+        storedNames.push(safeName);
+      }
+    } catch (error) {
+      if (batchPaths.length) {
+        try {
+          await sql`
+            delete from booking_photos
+            where shop_id = ${SHOP} and booking_id = ${bookingId}
+              and storage_path = any(${batchPaths}::text[])
+          `;
+        } catch {
+          console.error("[booking-photos] failed batch metadata cleanup could not complete");
+        }
+        try {
+          await deleteConditionPhotos(batchPaths);
+        } catch {
+          console.error("[booking-photos] failed batch storage cleanup could not complete");
+        }
+      }
+      throw error;
     }
 
     const subject = `Fotos zu WG-${bookingId}`;
@@ -392,12 +424,12 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    await sql`
-      insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
-      values (
-        ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
-      )
-    `;
+    await safeExec("booking-photos-inbox", () => sql`
+        insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
+        values (
+          ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
+        )
+      `);
 
     return { ok: true as const, count: storedNames.length };
   });

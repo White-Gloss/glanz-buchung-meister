@@ -16,7 +16,7 @@
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --experimental-strip-types --test src/lib/auth/gate-identity.test.ts src/lib/auth/public-origin.test.ts src/data/pickup.test.ts src/lib/ops.test.ts src/lib/resend-mail.test.ts src/lib/contrast.test.ts src/lib/rate-limit.test.ts src/lib/operator.test.ts src/lib/auth/google-oauth.test.ts src/lib/auth/login.copy.test.ts src/lib/erpnext.test.ts src/lib/googleSiteVerification.test.ts src/lib/booking-schema.test.ts src/lib/booking-photos.test.ts src/lib/googleTag.test.ts src/lib/consent.test.ts src/lib/public-form-validation.test.ts server/cache-policy.test.ts scripts/grok-pwa-plugin.test.mjs",
+    "test": "node --experimental-strip-types --test src/lib/auth/gate-identity.test.ts src/lib/auth/public-origin.test.ts src/data/pickup.test.ts src/lib/ops.test.ts src/lib/resend-mail.test.ts src/lib/contrast.test.ts src/lib/rate-limit.test.ts src/lib/operator.test.ts src/lib/auth/google-oauth.test.ts src/lib/auth/login.copy.test.ts src/lib/erpnext.test.ts src/lib/googleSiteVerification.test.ts src/lib/booking-schema.test.ts src/lib/booking-photos.test.ts src/lib/googleTag.test.ts src/lib/consent.test.ts src/lib/public-form-validation.test.ts server/cache-policy.test.ts scripts/grok-pwa-plugin.test.mjs src/lib/upload-policy.test.ts src/lib/booking-upload-capability.test.ts scripts/preview-host-bridge.test.mjs scripts/ssr-namespace-repair.test.mjs src/lib/sitemap.test.ts",
     "lint": "eslint src --max-warnings=100",
     "format": "prettier --write .",
     "check:migrations": "bash scripts/check-migrations.sh",
@@ -27,7 +27,9 @@
     "audit:domain-migration": "node scripts/audit-domain-migration.mjs",
     "lighthouse:mobile": "npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.mobile.cjs",
     "lighthouse:desktop": "npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.desktop.cjs",
-    "test:frontend": "node --test scripts/frontend-ssr.test.mjs"
+    "test:frontend": "node --test scripts/frontend-ssr.test.mjs",
+    "qa:serve": "node scripts/qa/isolated-server.mjs",
+    "test:flows": "node scripts/qa/check-flows.mjs && node scripts/qa/check-sitemap.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

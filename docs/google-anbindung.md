@@ -80,11 +80,12 @@ Cookies – sie braucht deshalb auch keine Einwilligung.
 4. In der Search Console auf „Bestätigen" klicken. DNS-Änderungen bei IONOS
    brauchen erfahrungsgemäß wenige Minuten bis zu einer Stunde.
 5. Danach unter _Sitemaps_ die Adresse `sitemap.xml` eintragen und absenden.
-   Die Sitemap liegt als `public/sitemap.xml` im Repository und enthält die
-   dort gepflegten öffentlichen Seiten inklusive statischer Ratgeber-Beiträge;
-   `robots.txt` verweist bereits darauf. Neue CMS-Beiträge werden bisher nicht
-   automatisch ergänzt. Ihre URLs müssen bei der Veröffentlichung auch in der
-   Sitemap gepflegt werden; eine dynamische CMS-Sitemap ist noch nicht umgesetzt.
+   `/sitemap.xml` enthält die 183 bestehenden Einträge aus
+   `src/data/sitemap-static.xml` und ergänzt veröffentlichte Ratgeber-Beiträge
+   aus dem CMS automatisch. `robots.txt` verweist bereits darauf. Entwürfe,
+   gelöschte Beiträge und ungültige URL-Teile werden nicht ergänzt. Eigene
+   Leistungen aus der Verwaltung stehen auf der Leistungsübersicht und haben
+   keine zusätzliche Detailadresse für die Sitemap.
 
 ## Schritt 2 – Google Analytics 4
 
@@ -165,8 +166,23 @@ noch kein Benutzer existiert.
 
 ## Was die Website automatisch erledigt
 
-- `sitemap.xml` wird aus der statischen Datei `public/sitemap.xml` ausgeliefert.
-  CMS-Veröffentlichungen aktualisieren diese Datei nicht automatisch.
+- `/sitemap.xml` ergänzt die statischen Einträge bei jedem Abruf um
+  veröffentlichte CMS-Ratgeber. Eine URL erscheint nur einmal; bei identischen
+  Slugs haben statische Beiträge Vorrang, wie auf den Artikelseiten.
+- Die Sitemap verlangt mit `Cache-Control: public, no-cache` eine erneute
+  Prüfung beim Server. Es gibt keinen zeitbasierten Cache für CMS-Ergebnisse;
+  gleichzeitige Abrufe teilen lediglich eine laufende Datenbankabfrage.
+  Unpublish und Löschen werden dadurch ohne Ablauf einer Cachefrist wirksam.
+- Ist das CMS nicht erreichbar oder antwortet es nicht innerhalb von zwei
+  Sekunden, bleiben alle 183 statischen Einträge als XML verfügbar. Dieser
+  Fallback wird mit `no-store` ausgeliefert und im Serverlog ohne interne
+  Datenbankdetails gemeldet. Eine noch laufende Abfrage wird weiter geteilt,
+  damit wiederholte Abrufe keine Warteschlange neuer Abfragen erzeugen.
+- Slugs werden nicht automatisch umbenannt. Leere Werte, Pfadtrenner,
+  Query-/Fragmentzeichen, Prozent-Escapes, Kontrollzeichen und Punktsegmente
+  können keine gültige Detail-Canonical bilden und werden nicht angemeldet.
+  Gültige Sonderzeichen werden für URL und XML kodiert. Neue statische Seiten
+  müssen weiterhin in `src/data/sitemap-static.xml` gepflegt werden.
 - `robots.txt` verweist auf die Sitemap und sperrt `/admin`, `/login`, `/danke`
   und `/api/` für Crawler.
 - Öffentliche Inhaltsseiten haben Titel, Beschreibung und Canonical-Adresse;

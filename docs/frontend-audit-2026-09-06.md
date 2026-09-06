@@ -1,3 +1,5 @@
+> Historischer Bericht der ersten Runde (Commit 31c6761). Die spätere Umsetzung und die endgültigen Messwerte stehen im Fortsetzungsbericht.
+
 # White Gloss – umgesetzte Frontend-Optimierung
 
 Stand: 6. September 2026. Repository: White-Gloss/glanz-buchung-meister. Ausgangscommit: c92e2d855b21112006d284a078886c98d635f9a4. Lokaler Branch: codex/performance-accessibility-seo.

@@ -253,9 +253,6 @@ export default defineConfig(({ command, isPreview }) => ({
               "/robots.txt": {
                 headers: { "cache-control": DISCOVERY_CACHE_CONTROL },
               },
-              "/sitemap.xml": {
-                headers: { "cache-control": DISCOVERY_CACHE_CONTROL },
-              },
             },
           }),
         ]

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { berlinCalendarDate } from "./ops.ts";
 import { isEmailAddress } from "./utils.ts";
+import { isCalendarDate } from "./calendar-date.ts";
 
 /**
  * Shared validation for the public booking form. Enforced on the server in
@@ -20,8 +21,9 @@ export const publicBookingSchema = z.object({
     .string()
     .max(20)
     .optional()
+    .refine((v) => !v || isCalendarDate(v), "Ungültiger Wunschtermin")
     .refine(
-      (v) => !v || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v >= berlinCalendarDate(),
+      (v) => !v || v >= berlinCalendarDate(),
       "Wunschtermin darf nicht in der Vergangenheit liegen",
     ),
   slot: z.string().max(10).optional(),

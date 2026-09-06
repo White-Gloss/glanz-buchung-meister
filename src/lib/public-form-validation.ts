@@ -1,4 +1,5 @@
 import { isEmailAddress } from "./utils.ts";
+import { isCalendarDate } from "./calendar-date.ts";
 
 export type PublicFormField =
   "name" | "phone" | "email" | "date" | "note" | "privacy" | "media" | "text";
@@ -24,10 +25,10 @@ export function bookingFormErrors(
   today: string,
 ): PublicFormErrors {
   const errors = contactErrors(values);
-  if (values.email.trim() && !isEmailAddress(values.email)) {
+  if (values.email.trim().length > 160 || (values.email.trim() && !isEmailAddress(values.email))) {
     errors.email = "Bitte eine gültige E-Mail angeben oder das Feld leer lassen.";
   }
-  if (values.date && values.date < today) {
+  if (values.date && (!isCalendarDate(values.date) || values.date < today)) {
     errors.date = "Bitte einen Wunschtermin ab heute wählen.";
   }
   if (values.note.length > 2000)

@@ -22,6 +22,12 @@ function bookingInput(date?: string) {
 }
 
 describe("createPublicBooking past-date validation", () => {
+  it("rejects malformed and impossible calendar days before database writes", () => {
+    for (const date of ["tomorrow", "2999-02-31", "2999-13-01", "2999-00-01", "2999-02-29"]) {
+      assert.equal(publicBookingSchema.safeParse(bookingInput(date)).success, false, date);
+    }
+    assert.equal(publicBookingSchema.safeParse(bookingInput("2996-02-29")).success, true);
+  });
   it("rejects a preferred date before today (Europe/Berlin)", () => {
     const result = publicBookingSchema.safeParse(bookingInput("2000-01-01"));
     assert.equal(result.success, false);

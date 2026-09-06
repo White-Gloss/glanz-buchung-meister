@@ -7,6 +7,7 @@ import { IconArrowRight, IconMessage } from "./icons";
 import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
 import { WhatsAppFloat } from "./whatsapp-float";
+import { RouteFocus } from "./route-focus";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -573,6 +574,7 @@ export function Shell() {
   if (isApp) {
     return (
       <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="app">
+        <RouteFocus />
         <SkipLink />
         <Outlet />
       </div>
@@ -581,6 +583,7 @@ export function Shell() {
 
   return (
     <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public">
+      <RouteFocus />
       <SkipLink />
       <SiteHeader />
       <FilmScroll />

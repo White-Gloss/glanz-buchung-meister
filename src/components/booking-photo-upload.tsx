@@ -1,11 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { attachBookingPhotos } from "@/lib/bookings.functions";
 import { Button, Field, inputLine } from "./ui";
 import { SubmissionResult } from "./submission-result";
+import { UPLOAD_MIME_TYPES, uploadSelectionError } from "@/lib/upload-policy";
 
-const MAX_FILES = 8;
-const ACCEPT =
-  "image/jpeg,image/png,image/webp,image/*,video/mp4,video/webm,video/quicktime,video/*";
+const ACCEPT = UPLOAD_MIME_TYPES.join(",");
 
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,19 +25,22 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
   const [sent, setSent] = useState(false);
   const [count, setCount] = useState(0);
   const [pending, setPending] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (pending) return;
-    if (files.length === 0) {
-      setError("Bitte mindestens eine Aufnahme wählen.");
+    const selectionError = uploadSelectionError(files);
+    if (selectionError) {
+      setError(selectionError);
+      inputRef.current?.focus();
       return;
     }
     setPending(true);
     setError("");
     try {
       const payload = await Promise.all(
-        files.slice(0, MAX_FILES).map(async (file) => ({
+        files.map(async (file) => ({
           name: file.name.slice(0, 180),
           mime: file.type || "application/octet-stream",
           base64: await readFileAsBase64(file),
@@ -80,28 +82,36 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
       <p className="text-sm text-muted">
         Optional bis zu acht Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos
         (MP4, WebM, MOV) sind möglich. Die Dateien landen nur im Betriebsarchiv und sind nicht
-        öffentlich.
+        öffentlich. Höchstens 12 MB pro Aufnahme. Bitte innerhalb von sieben Tagen im Browser
+        Ihrer Anfrage nachreichen.
       </p>
       <Field tone="public" id="booking-photos" label="Fotos oder kurzes Video (max. 8)">
         <input
+          ref={inputRef}
           id="booking-photos"
           type="file"
           accept={ACCEPT}
           multiple
+          disabled={pending}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "booking-photos-error" : undefined}
           className={`${inputLine} text-sm`}
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, MAX_FILES))}
+          onChange={(e) => {
+            setFiles(Array.from(e.target.files ?? []));
+            setError("");
+          }}
         />
         {files.length ? (
           <ul className="space-y-1 text-xs text-subtle">
             <li>{files.length} Datei(en) gewählt</li>
             {files.map((file) => (
-              <li key={`${file.name}-${file.size}-${file.lastModified}`}>{file.name}</li>
+              <li className="break-all" key={`${file.name}-${file.size}-${file.lastModified}`}>{file.name}</li>
             ))}
           </ul>
         ) : null}
       </Field>
       {error ? (
-        <p className="text-sm text-danger" role="alert">
+        <p id="booking-photos-error" className="break-words text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}

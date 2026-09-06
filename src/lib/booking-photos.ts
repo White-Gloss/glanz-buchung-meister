@@ -3,11 +3,15 @@
  * `condition-photos` Supabase bucket. Never import the service role key
  * into client bundles — call these only from createServerFn handlers.
  */
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_FILES } from "./upload-policy.ts";
+
+export { MAX_UPLOAD_BYTES } from "./upload-policy.ts";
 
 export const CONDITION_PHOTOS_BUCKET = "condition-photos";
 
-/** Matches the hardened bucket limit (12 MB after client-side optimisation). */
-export const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
+const MAX_BASE64_FILE_CHARS = Math.ceil(MAX_UPLOAD_BYTES / 3) * 4;
+/** Allow the existing optional data-URL prefix without accepting unbounded text. */
+export const MAX_BASE64_UPLOAD_CHARS = MAX_BASE64_FILE_CHARS + 128;
 
 const ALLOWED = new Set([
   "image/jpeg",
@@ -122,6 +126,40 @@ export function assertAllowedUpload(
   return { mime, ext: extensionForMime(mime) };
 }
 
+/** Bound encoded input before allocating its decoded byte buffer. */
+export function decodeUploadBase64(raw: string): Uint8Array {
+  if (raw.length > MAX_BASE64_UPLOAD_CHARS) {
+    throw new Error("Die Datei ist zu groß (höchstens 12 MB).");
+  }
+  const trimmed = raw.trim();
+  const comma = trimmed.indexOf(",");
+  const payload =
+    trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
+  if (!payload) throw new Error("Die Datei ist leer.");
+  if (payload.length > MAX_BASE64_FILE_CHARS) {
+    throw new Error("Die Datei ist zu groß (höchstens 12 MB).");
+  }
+  return Buffer.from(payload, "base64");
+}
+
+/**
+ * Validate every file before the first Storage or metadata write. Return only
+ * metadata so the batch does not retain up to eight decoded 12-MB buffers.
+ * The upload loop decodes one validated file at a time afterward.
+ */
+export function validateUploadBatch(
+  files: readonly { mime: string; base64: string }[],
+): { mime: string; ext: string; sizeBytes: number }[] {
+  if (files.length === 0 || files.length > MAX_UPLOAD_FILES) {
+    throw new Error("Bitte eine bis acht Aufnahmen wählen.");
+  }
+  return files.map((file) => {
+    const bytes = decodeUploadBase64(file.base64);
+    const format = assertAllowedUpload(bytes, file.mime);
+    return { ...format, sizeBytes: bytes.byteLength };
+  });
+}
+
 function serviceRoleConfig(): { url: string; key: string } {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   const url = (
@@ -166,5 +204,27 @@ export async function uploadToConditionPhotos(
       detail.slice(0, 300),
     );
     throw new Error("Die Aufnahme konnte nicht hochgeladen werden.");
+  }
+}
+
+/** Remove only exact random object paths created by a failed booking upload batch. */
+export async function deleteConditionPhotos(paths: readonly string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const ownObjectPath = /^bookings\/[1-9]\d*\/[a-f0-9]{32}\.(?:jpg|png|webp|mp4|webm|mov)$/;
+  if (paths.length > MAX_UPLOAD_FILES || paths.some((path) => !ownObjectPath.test(path))) {
+    throw new Error("Ungültige Bereinigungspfade.");
+  }
+  const { url, key } = serviceRoleConfig();
+  const response = await fetch(`${url}/storage/v1/object/${CONDITION_PHOTOS_BUCKET}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      apikey: key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prefixes: [...new Set(paths)] }),
+  });
+  if (!response.ok) {
+    throw new Error("Die fehlgeschlagenen Uploads konnten nicht vollständig bereinigt werden.");
   }
 }

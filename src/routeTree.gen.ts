@@ -29,6 +29,7 @@ import { Route as LuxusfahrzeugeRouteImport } from './routes/luxusfahrzeuge'
 import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as RatgeberRouteImport } from './routes/ratgeber'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
@@ -153,6 +154,11 @@ const QualitaetRoute = QualitaetRouteImport.update({
 const RatgeberRoute = RatgeberRouteImport.update({
   id: '/ratgeber',
   path: '/ratgeber',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WiderrufRoute = WiderrufRouteImport.update({
@@ -302,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -441,6 +450,7 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/ratgeber'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -530,6 +541,7 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/ratgeber'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -578,6 +590,7 @@ export interface RootRouteChildren {
   PreiseRoute: typeof PreiseRoute
   QualitaetRoute: typeof QualitaetRoute
   RatgeberRoute: typeof RatgeberRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WiderrufRoute: typeof WiderrufRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -723,6 +736,13 @@ declare module '@tanstack/react-router' {
       path: '/ratgeber'
       fullPath: '/ratgeber'
       preLoaderRoute: typeof RatgeberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widerruf': {
@@ -1016,6 +1036,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreiseRoute: PreiseRoute,
   QualitaetRoute: QualitaetRoute,
   RatgeberRoute: RatgeberRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WiderrufRoute: WiderrufRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
