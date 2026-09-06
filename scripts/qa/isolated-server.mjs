@@ -7,6 +7,7 @@ const outputRoot = resolve(".qa-output");
 import { createServer } from "node:http";
 import { writeFile, mkdir } from "node:fs/promises";
 process.env.DATABASE_URL = "";
+process.env.ALLOW_LOCAL_PGLITE = "1";
 process.env.PORT = "8082";
 process.env.HOST = "127.0.0.1";
 process.env.SUPABASE_URL = "http://127.0.0.1:8099";
@@ -51,6 +52,7 @@ createServer(async (req, res) => {
     const url = new URL(req.url, "http://127.0.0.1:8099");
     if (url.pathname === "/identity") {
       res.setHeader("content-type", "application/json");
+      res.setHeader("x-qa-run-id", process.env.QA_RUN_ID || "");
       res.end(
         JSON.stringify({ isolated: true, database: "in-memory-pglite", externalFetch: "blocked" }),
       );

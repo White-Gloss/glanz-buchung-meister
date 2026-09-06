@@ -98,3 +98,7 @@ Rejected. ALYF/Frappe `Banking` over EBICS is only a possible future connector t
 ## Rollback
 
 Disable both global write switches to stop new operational commits immediately. Pending approvals may then be revoked or allowed to expire. The approval table and audit history can remain in place; removing the approval workflow is not required to restore a safe default-deny state. Existing Supabase bookings, ERPNext operational records and Lexware data remain untouched.
+
+## Update 2026-09-06 — Invoicing authority
+
+Lexware is **no longer** used for White Gloss customer invoices. Outgoing client invoices are created and finalized in **Qonto** (see `docs/superpowers/specs/2026-09-06-qonto-rechnungen-design.md`). ERPNext remains operational-only and must still not create Sales Invoice, Payment Entry, or GL postings. The earlier Lexware row in the authority table above is superseded for invoicing only.

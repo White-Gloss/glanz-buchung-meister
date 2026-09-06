@@ -4,6 +4,8 @@ import {
   createDocumentFromBooking,
   listDocuments,
   updateDocumentStatus,
+  sendQontoInvoice,
+  retryQontoInvoice,
   type DocumentRow,
 } from "@/lib/admin.functions";
 import { listBookings, type BookingRow } from "@/lib/bookings.functions";
@@ -19,6 +21,8 @@ function AdminDocs() {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [bookingId, setBookingId] = useState<number | "">("");
   const [kind, setKind] = useState<"angebot" | "rechnung" | "erinnerung">("angebot");
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   async function reload() {
     const [d, b] = await Promise.all([listDocuments(), listBookings()]);
@@ -30,14 +34,20 @@ function AdminDocs() {
     void reload().catch(() => setDocs([]));
   }, []);
 
+  const erledigtWithQonto = bookings.filter(
+    (b) => b.status === "erledigt" || b.qonto_invoice_id || b.qonto_invoice_status,
+  );
+
   return (
     <main id="main-content" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">Verwaltung</p>
       <h1 className="mt-2 font-display text-4xl">Dokumente</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Angebote, Rechnungsentwürfe und Erinnerungen aus einer Buchung. Verbindliche
-        Steuerbelege bleiben bei Lexware – hier entsteht die betriebliche Vorstufe.
+        Angebote und Erinnerungen aus einer Buchung. Verbindliche Kundenrechnungen
+        entstehen in Qonto, sobald eine Buchung auf erledigt gesetzt wird. Der
+        E-Mail-Versand an den Kunden erfolgt erst nach manuellem Klick.
       </p>
+      {actionMsg ? <p className="mt-4 text-sm text-muted">{actionMsg}</p> : null}
       <form
         className="mt-8 flex flex-wrap items-end gap-3 rounded-md border border-line bg-surface p-4"
         onSubmit={async (e) => {
@@ -76,6 +86,98 @@ function AdminDocs() {
         </label>
         <Button type="submit">Anlegen</Button>
       </form>
+
+      <section className="mt-10">
+        <h2 className="font-display text-2xl">Qonto-Rechnungen</h2>
+        <p className="mt-1 text-sm text-muted">
+          Status und Versand für erledigte Buchungen.
+        </p>
+        {erledigtWithQonto.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">Noch keine Qonto-Rechnungen.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {erledigtWithQonto.map((b) => {
+              const status = b.qonto_invoice_status || "—";
+              const canSend =
+                Boolean(b.qonto_invoice_id) &&
+                (status === "unpaid" || status === "failed" || status === "sent");
+              const canRetry = status === "failed" || (!b.qonto_invoice_id && b.status === "erledigt");
+              return (
+                <li key={b.id} className="rounded-md border border-line bg-surface p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.14em] text-subtle">
+                        WG-{b.id} · {b.status} · Qonto {status}
+                      </p>
+                      <h3 className="font-display text-xl">{b.customer_name}</h3>
+                      <p className="mt-1 text-sm text-muted">
+                        {b.qonto_invoice_number
+                          ? `Nr. ${b.qonto_invoice_number}`
+                          : "Noch keine Rechnungsnummer"}
+                        {b.qonto_sent_at ? ` · gesendet ${b.qonto_sent_at}` : ""}
+                      </p>
+                      {b.qonto_invoice_error ? (
+                        <p className="mt-2 text-sm text-muted">Fehler: {b.qonto_invoice_error}</p>
+                      ) : null}
+                    </div>
+                    <p className="text-sm">{eur(b.total_cents / 100)}</p>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {canSend ? (
+                      <Button
+                        type="button"
+                        disabled={busyId === b.id}
+                        onClick={async () => {
+                          setBusyId(b.id);
+                          setActionMsg(null);
+                          try {
+                            const res = await sendQontoInvoice({ data: { bookingId: b.id } });
+                            setActionMsg(
+                              res.ok
+                                ? `Rechnung WG-${b.id} per E-Mail gesendet.`
+                                : res.error || "Versand fehlgeschlagen.",
+                            );
+                            await reload();
+                          } finally {
+                            setBusyId(null);
+                          }
+                        }}
+                      >
+                        Per E-Mail senden
+                      </Button>
+                    ) : null}
+                    {canRetry ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={busyId === b.id}
+                        onClick={async () => {
+                          setBusyId(b.id);
+                          setActionMsg(null);
+                          try {
+                            const res = await retryQontoInvoice({ data: { bookingId: b.id } });
+                            setActionMsg(
+                              res.ok
+                                ? `Qonto-Rechnung für WG-${b.id} erneut versucht.`
+                                : res.error || "Erneuter Versuch fehlgeschlagen.",
+                            );
+                            await reload();
+                          } finally {
+                            setBusyId(null);
+                          }
+                        }}
+                      >
+                        Erneut versuchen
+                      </Button>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {docs === null ? (
         <p className="mt-8 text-sm text-muted">Laden …</p>
       ) : docs.length === 0 ? (

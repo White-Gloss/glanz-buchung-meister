@@ -118,11 +118,13 @@ function PrivacyPage() {
           <p>
             Das Skript wird technisch erst geladen, nachdem Sie im Cookie-Banner „Akzeptieren“
             gewählt haben (§ 25 Abs. 1 TDDDG). Rechtsgrundlage für den Einsatz ist Ihre
-            Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird kein Google Tag
-            geladen und es findet keine Übertragung an Google statt. Eine erteilte Einwilligung
-            können Sie jederzeit widerrufen, indem Sie in Ihrem Browser den lokalen Speicher
-            (localStorage-Eintrag „wg-consent“) dieser Seite löschen; das Banner erscheint dann
-            erneut.
+            Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird der Google Tag
+            nicht geladen. Um eine erteilte Einwilligung zurückzunehmen, löschen Sie in Ihrem
+            Browser den localStorage-Eintrag „wg-consent“ dieser Website und laden Sie die Seite
+            anschließend vollständig neu. Wählen Sie im erneut angezeigten Banner „Ablehnen“.
+            Nach dem Neuladen bleibt der Google Tag ohne erneute Zustimmung ausgeschaltet.
+            Das Löschen des Speichereintrags allein beendet ein bereits geladenes Skript im
+            noch geöffneten Dokument nicht.
           </p>
           <p>
             Nach Ihrer Einwilligung können Daten wie Ihre IP-Adresse und Gerätekennungen an Google
@@ -136,6 +138,7 @@ function PrivacyPage() {
           <p>
             Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
             Sicherheit verwendet werden (Sitzung). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+            Das Cookie für das Nachreichen von Fahrzeugfotos ist in Abschnitt 7 beschrieben.
           </p>
           <p>
             Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie
@@ -161,6 +164,22 @@ function PrivacyPage() {
             Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
             separaten sicheren Kanal nachfordern.
           </p>
+          <p>
+            Nach einer Terminanfrage können Sie auf der Bestätigungsseite optional Fahrzeugfotos
+            oder kurze Videos zum Vorgang nachreichen. Bei dieser Uploadfunktion werden die
+            tatsächlichen Dateien über unseren Server in einem privaten Speicherbereich bei
+            Supabase gespeichert. Dateiname, Dateityp, Dateigröße und die Zuordnung zum Vorgang
+            werden ebenfalls gespeichert. Die Aufnahmen sind nicht öffentlich zugänglich und
+            dienen der Prüfung Ihrer Anfrage.
+          </p>
+          <p>
+            Für das Nachreichen speichert Ihr Browser nach der Anfrage eine zufällige,
+            vorgangsgebundene Upload-Berechtigung in einem HttpOnly-Cookie. Diese Berechtigung
+            läuft nach sieben Tagen ab. Der Upload setzt voraus, dass das Cookie im Browser der
+            ursprünglichen Anfrage noch vorhanden ist. Die siebentägige Frist betrifft die
+            Upload-Berechtigung; bereits gespeicherte Aufnahmen werden dadurch nicht automatisch
+            gelöscht. Für ihre Speicherdauer gilt Abschnitt 10.
+          </p>
         </section>
 
         <section>
@@ -178,10 +197,17 @@ function PrivacyPage() {
         <section>
           <h2>9. Empfänger</h2>
           <p>
-            Hosting: IONOS SE, Deutschland. Anfragen und Termine: intern bei White Gloss.
-            Nach bewusstem Klick: Google Ireland Limited (Karten, interne Anmeldung) und
-            Meta Platforms Ireland Limited (WhatsApp, Instagram). Eine automatische Weitergabe
-            an Werbenetzwerke findet nicht statt.
+            Hosting: IONOS SE, Deutschland. Anfragen und Termine werden von White Gloss
+            bearbeitet. Die optional nachgereichten Fahrzeugaufnahmen werden bei Supabase in
+            einem privaten Speicherbereich abgelegt. Wenn der E-Mail-Versand eingerichtet ist,
+            werden Benachrichtigungen über Resend versendet; dabei werden Empfängeradresse,
+            Betreff und Nachrichteninhalt an den Versanddienst übermittelt.
+          </p>
+          <p>
+            Google Ads und gegebenenfalls Analytics werden erst nach Ihrer Einwilligung geladen.
+            Nach bewusstem Klick werden außerdem Google Ireland Limited (Karten, interne
+            Anmeldung) beziehungsweise Meta Platforms Ireland Limited (WhatsApp, Instagram)
+            aufgerufen. Die jeweiligen Abläufe sind in den Abschnitten 5, 6 und 8 beschrieben.
           </p>
         </section>
 
@@ -221,7 +247,7 @@ function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 6. September 2026</p>
       </article>
     </main>
   );

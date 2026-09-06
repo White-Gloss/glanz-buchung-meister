@@ -1,6 +1,6 @@
 # Deployment auf IONOS – technische Vorgaben
 
-Die Website wird auf `white-gloss.de` betrieben und soll vollständig zu IONOS umziehen. Dieses Projekt ist **keine rein statische Website**, sondern eine Node-/SSR-Anwendung (TanStack Start + Nitro). Deshalb wird die endgültige Deployment-Methode erst festgelegt, wenn der konkrete IONOS-Tarif und dessen Node-/Server-Funktionen bestätigt sind.
+Die Website wird auf `white-gloss.de` betrieben. Dieses Projekt ist **keine rein statische Website**, sondern eine Node-/SSR-Anwendung (TanStack Start + Nitro). Der versionierte IONOS-Workflow und die Grok-Anbindungen bestehen parallel. Vor Freigabe muss feststehen, welcher Betrieb und welche Datenbank tatsächlich verwendet werden; siehe [Releasevorbereitung vom 6. September 2026](release-readiness-2026-09-06.md).
 
 Die hier dokumentierten technischen Anforderungen gelten unabhängig davon, ob IONOS später eine native Git-Anbindung, einen VPS/Cloud-Server oder eine andere Node-fähige Laufzeit bereitstellt.
 
@@ -42,9 +42,9 @@ Servervorbereitung stehen in
 
 1. Änderung über Pull Request prüfen.
 2. CI muss erfolgreich sein (`npm audit`, ESLint, Quality-Skripte, Produktions-Build).
-3. Änderung nach `main` mergen.
-4. IONOS übernimmt genau diesen `main`-Stand.
-5. Auf dem Zielsystem laufen `npm ci` und `npm run build`.
+3. Das bestätigte Produktions-Datenbankziel sichern, ausstehende Root-Migrationen im geschützten Serverkontext ausführen und `npm run check:release` bestehen lassen. Das UUID-Altschema aus `supabase/migrations` ist kein kompatibles Ziel.
+4. Änderung nach ausdrücklicher Veröffentlichungsfreigabe nach `main` mergen.
+5. GitHub Actions reproduziert genau diesen Build und überträgt `.output/` auf IONOS. Der Build selbst führt keine Migrationen mehr aus.
 6. Erst nach erfolgreichem Build wird der neue Node-Stand aktiviert.
 7. Direkt danach läuft `npm run smoke:production` gegen die Live-Domain.
 8. Bei fehlgeschlagenem Build oder Smoke-Test bleibt bzw. wird der letzte funktionierende Stand wieder aktiv.
@@ -86,7 +86,8 @@ Folgende Werte gehören ausschließlich in die root-eigene Datei
 | `IMAP_HOST`                                         | Posteingang im Adminbereich             |
 | `IMAP_USER`                                         | Postfachname für den Posteingang        |
 | `IMAP_PASSWORD`                                     | Postfachpasswort für den Posteingang    |
-| `DATABASE_URL` / `POSTGRES_URL` / `SUPABASE_DB_URL` | direkte Datenbankverbindung             |
+| `DATABASE_URL` | direkte Datenbankverbindung; nur dieser Variablenname wird gelesen |
+| `BETTER_AUTH_SECRET` | dauerhafter Signaturschlüssel, mindestens 32 Zeichen |
 
 ### Warum `SUPABASE_SERVICE_ROLE_KEY` nicht optional ist
 
@@ -215,6 +216,21 @@ GitHub Actions ist aktiv. Der Workflow `.github/workflows/ci.yml` prüft Pull Re
 3. `npm run lint`
 4. Syntaxprüfung der Quality-Skripte
 5. `npm run build`
+6. isolierte SSR-, Buchungs-, Upload- und Sitemap-Prüfung am erzeugten Node-Build
+
+`npm run build` ist datenbankfrei. `npm run db:migrate` ist ein eigener,
+expliziter Schritt und lehnt fehlende URLs, das UUID-Altschema und unbestätigte
+leere Ziele ab. `--initialize` ist ausschließlich für eine zuvor bestätigte,
+leere Neuanlage vorgesehen, niemals als Reparatur einer bestehenden Datenbank.
+Die beiden Dateien mit Präfix `0006_` sind unabhängige Migrationen; die Historie
+verwendet ihre vollständigen Dateinamen. Keine bereits angewandte Datei umbenennen.
+
+Die erste Produktionsanfrage prüft Konfiguration, Schema und Migrationsstand
+lesend, bevor ein Handler läuft. Bei einem Problem antwortet sie mit 503 und
+`no-store`; damit kann der vorhandene Aktivierungshelfer den fehlerhaften Stand
+nicht als gesund bestätigen. Eine negative Prüfung wird frühestens nach fünf
+Sekunden wiederholt. Es wird weder eine Datenbank angelegt noch ein Schema
+automatisch umgeschrieben.
 
 Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
 einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,

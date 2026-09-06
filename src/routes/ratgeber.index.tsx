@@ -4,6 +4,7 @@ import { MediaTile, PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { articles } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
+import { cmsPublishedDate } from "@/lib/cms-date";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -45,7 +46,7 @@ function RatgeberIndex() {
         .map((r) => ({
           "@type": "BlogPosting",
           headline: r.title,
-          datePublished: String(r.created_at).slice(0, 10),
+          datePublished: cmsPublishedDate(r.created_at),
           url: `${site.origin}/ratgeber/${r.slug}`,
         })),
     ],

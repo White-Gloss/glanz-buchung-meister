@@ -25,6 +25,8 @@ async function rpc(name, data, cookie = "") {
       "x-tsr-serverFn": "true",
       "sec-fetch-site": "same-origin",
       "x-forwarded-for": `127.0.0.${requestId++}`,
+      // Same TLS-termination contract as Caddy -> Node in production.
+      "x-forwarded-proto": "https",
       ...(cookie ? { cookie } : {}),
     },
     body: JSON.stringify(await toJSONAsync({ data })),
@@ -63,10 +65,14 @@ assert.ok(booking.body.result?.reference, JSON.stringify(booking.body));
 assert.equal(booking.body.result.confirmed, false);
 assert.match(booking.cookieAttributes.join(""), /HttpOnly/i);
 assert.match(booking.cookieAttributes.join(""), /SameSite=Strict/i);
+assert.match(booking.cookieAttributes.join(""), /; Secure(?:;|$)/i);
+assert.match(booking.cookie, /^__Host-wg-upload-/);
 let state = await evidence();
 assert.equal(state.tables.bookings.at(-1).total_cents, 34900);
 assert.equal(state.mails.length, 2);
-results.push("Booking → persistence → inbox → captured email → reference; HttpOnly/Strict cookie");
+results.push(
+  "Booking → persistence → inbox → captured email → reference; proxied HTTPS __Host-/Secure/HttpOnly/Strict cookie",
+);
 const file = {
   name: "fahrzeug.webp",
   mime: "image/webp",

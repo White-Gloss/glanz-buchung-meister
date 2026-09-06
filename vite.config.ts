@@ -210,7 +210,7 @@ export default defineConfig(({ command, isPreview }) => ({
     ...(command === "build" || isPreview
       ? [
           nitro({
-            preset: process.env.GITHUB_ACTIONS ? "node-server" : "vercel",
+            preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : "node-server"),
             serverDir: "./server",
             compressPublicAssets: true,
             routeRules: {

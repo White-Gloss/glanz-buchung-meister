@@ -1,0 +1,9 @@
+[
+  "0001_auth.sql",
+  "0002_shop.sql",
+  "0003_ops.sql",
+  "0004_settings.sql",
+  "0005_booking_photos.sql",
+  "0006_booking_upload_capability.sql",
+  "0006_qonto_invoice.sql"
+]

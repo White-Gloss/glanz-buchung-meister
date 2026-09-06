@@ -38,6 +38,10 @@ import { randomBytes } from "node:crypto";
 import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
 import { createUploadCapability, verifyUploadCapability } from "@/lib/booking-upload-capability";
 import { getBookingUploadCookie, setBookingUploadCookie } from "@/lib/booking-upload-cookie.server";
+import {
+  ensureQontoInvoiceForBooking,
+  type QontoBookingFields,
+} from "@/lib/qonto-invoice";
 
 export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
@@ -63,6 +67,12 @@ export type BookingRow = {
   pickup_cents: number;
   created_at: string;
   updated_at: string;
+  qonto_client_id: string | null;
+  qonto_invoice_id: string | null;
+  qonto_invoice_number: string | null;
+  qonto_invoice_status: string | null;
+  qonto_invoice_error: string | null;
+  qonto_sent_at: string | null;
 };
 
 function extraNames(ids: string[]) {
@@ -441,7 +451,9 @@ export const listBookings = createServerFn({ method: "GET" })
     return sql<BookingRow>`
       select id, status, customer_name, phone, email, preferred_date, preferred_slot,
              package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
-             created_at, updated_at
+             created_at, updated_at,
+             qonto_client_id, qonto_invoice_id, qonto_invoice_number,
+             qonto_invoice_status, qonto_invoice_error, qonto_sent_at
       from bookings
       where shop_id = ${SHOP}
       order by created_at desc
@@ -487,6 +499,20 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
 
     await queueBookingAutomation(sql, booking, data.status, context.userId);
     await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
+
+    if (data.status === "erledigt") {
+      await safeExec("qonto-invoice", async () => {
+        const refreshed = await sql<QontoBookingFields>`
+          select id, customer_name, email, package_id, extra_ids, total_cents, pickup_cents,
+                 qonto_client_id, qonto_invoice_id, qonto_invoice_number, qonto_invoice_status
+          from bookings
+          where id = ${data.id} and shop_id = ${SHOP}
+          limit 1
+        `;
+        const row = refreshed[0];
+        if (row) await ensureQontoInvoiceForBooking(sql, row);
+      });
+    }
 
     return { ok: true as const };
   });

@@ -3,10 +3,11 @@ import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { articles, getArticle, type Article } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
+import { cmsPublishedDate } from "@/lib/cms-date";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
-async function loadArticle(slug: string): Promise<Article> {
+async function loadArticle(slug: string): Promise<Omit<Article, "date"> & { date?: string }> {
   const staticArticle = getArticle(slug);
   if (staticArticle) return staticArticle;
   const rows = await listPublishedCms({ data: { kind: "blog" } });
@@ -22,7 +23,7 @@ async function loadArticle(slug: string): Promise<Article> {
     slug: row.slug ?? slug,
     title: row.title,
     excerpt,
-    date: String(row.created_at).slice(0, 10),
+    date: cmsPublishedDate(row.created_at),
     image: "/media/hero.webp",
     minutes: 4,
     sections: [{ heading: row.title, paragraphs: [row.body] }],

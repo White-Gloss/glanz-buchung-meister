@@ -6,7 +6,7 @@ Node-/SSR-Anwendung; der vollständige Hostingbetrieb wird auf IONOS umgestellt.
 
 ## Lokal installieren
 
-Benötigt werden Git, npm und Node.js `20.19` oder neuer.
+Benötigt werden Git, npm und Node.js `24` (wie in CI).
 
 ```sh
 git clone https://github.com/White-Gloss/glanz-buchung-meister.git
@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Die lokale Website ist anschließend unter `http://localhost:5000` erreichbar.
+Die lokale Website ist anschließend unter `http://localhost:8080` erreichbar.
 
 ## Umgebungsvariablen
 
@@ -26,9 +26,15 @@ Umgebungsvariablen:
 - `SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `DATABASE_URL`, `POSTGRES_URL` oder `SUPABASE_DB_URL`
-- optional serverseitig: `SUPABASE_SERVICE_ROLE_KEY`
-- optional für E-Mails: `RESEND_API_KEY`
+- `DATABASE_URL` (die Anwendung liest keine alternativen Datenbankvariablen)
+- `BETTER_AUTH_SECRET` (dauerhafter serverseitiger Wert, mindestens 32 Zeichen)
+- `SUPABASE_SERVICE_ROLE_KEY` für den privaten Datei-Upload
+- `RESEND_API_KEY` und `MAIL_FROM` für Buchungsmails
+
+Der Release-Check prüft diese Betriebsfunktionen vor der Freigabe. Ohne
+vollständige Konfiguration oder mit unpassendem Datenbankschema antwortet ein
+Produktionsbuild mit 503. Eine ausdrücklich lokale, an Loopback gebundene
+QA-Vorschau wird über `npm run test:release` isoliert eingerichtet.
 
 Für die Anzeigenmessung (jeweils optional — ohne die Variablen bleibt die
 betreffende Anbindung vollständig inaktiv):
@@ -52,9 +58,16 @@ Browser-Bundle.
 
 ```sh
 npm run lint
-npx tsc --noEmit
+npm run typecheck
+npm test
 npm run build
+npm run test:release
 ```
+
+Der Build greift auf keine Datenbank zu. Vor einem freigegebenen Produktionsstart
+muss das tatsächliche Datenbankziel bestätigt, mit `npm run db:migrate` aktualisiert
+und mit `npm run check:release` lesend geprüft sein. Beide Befehle laufen im
+geschützten Serverkontext; Secretwerte niemals in Befehlszeilen oder Chat kopieren.
 
 Der Produktionsstart erfolgt aus dem erzeugten Build:
 
@@ -74,9 +87,10 @@ npm run lighthouse:desktop
 ## Deployment
 
 Die Zielarchitektur für IONOS sowie Build-, Start-, Secret- und Rollback-Regeln
-stehen in [`docs/deployment.md`](docs/deployment.md). Der genaue automatische
-GitHub→IONOS-Mechanismus wird erst festgelegt, wenn der konkrete IONOS-Tarif und
-dessen Node-/Server-Funktionen bestätigt sind.
+stehen in [`docs/deployment.md`](docs/deployment.md). Ein GitHub→IONOS-Workflow ist
+bereits vorhanden. Die Freigabebedingungen für diesen Stand, einschließlich des
+noch zu bestätigenden Produktions-Datenbankziels, stehen in
+[`docs/release-readiness-2026-09-06.md`](docs/release-readiness-2026-09-06.md).
 
 Die technischen Quality Gates sind in
 [`docs/quality-gates.md`](docs/quality-gates.md) dokumentiert.
