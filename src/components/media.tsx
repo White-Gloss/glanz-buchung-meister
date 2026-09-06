@@ -46,8 +46,8 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
-  // Still image is LCP. The loop starts on the first real gesture so lab
-  // tools never see a late <video> steal the paint.
+  // Still image is LCP. The loop starts on a real gesture (click/tap/scroll/key),
+  // not pointermove — otherwise a resting cursor starts the video immediately.
   const [playVideo, setPlayVideo] = useState(false);
   const [loopSrc, setLoopSrc] = useState<string | null>(null);
   const [imageReady, setImageReady] = useState(!priority);
@@ -64,7 +64,6 @@ export function HeroMedia({
       if (started) return;
       started = true;
       window.removeEventListener("pointerdown", start);
-      window.removeEventListener("pointermove", start);
       window.removeEventListener("scroll", start, true);
       window.removeEventListener("touchstart", start);
       window.removeEventListener("keydown", start);
@@ -73,7 +72,6 @@ export function HeroMedia({
       setPlayVideo(true);
     };
     window.addEventListener("pointerdown", start, { passive: true });
-    window.addEventListener("pointermove", start, { passive: true });
     window.addEventListener("scroll", start, { passive: true, capture: true });
     window.addEventListener("touchstart", start, { passive: true });
     window.addEventListener("keydown", start);
@@ -83,7 +81,6 @@ export function HeroMedia({
     return () => {
       started = true;
       window.removeEventListener("pointerdown", start);
-      window.removeEventListener("pointermove", start);
       window.removeEventListener("scroll", start, true);
       window.removeEventListener("touchstart", start);
       window.removeEventListener("keydown", start);
@@ -119,7 +116,7 @@ export function HeroMedia({
           muted
           loop
           playsInline
-          preload="auto"
+          preload="none"
           src={loopSrc}
           className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
           onPlaying={(e) => {
