@@ -1,9 +1,12 @@
 import { site, timeSlots } from "../data/site.ts";
+import { mailConfigured, sendResendEmail } from "./resend-mail.ts";
 import { isEmailAddress } from "./utils.ts";
 
 type Sql = Awaited<ReturnType<typeof import("./db").getSql>>;
 
 export const OUTBOUND_QUEUED = "queued";
+export const OUTBOUND_SENT = "sent";
+export const OUTBOUND_FAILED = "failed";
 export const AUTO_CONFIRM_MAX_PER_DAY = 2;
 export const AUTO_CONFIRM_ACTOR = "auto";
 
@@ -151,18 +154,100 @@ async function queueChannel(
 ) {
   if (!to.trim()) return;
   if (channel === "email" && !isEmailAddress(to)) return;
-  await sql`
+  const inserted = await sql<{ id: number }>`
     insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
     values (
       ${"white-gloss"}, ${channel}, ${to}, ${subject}, ${body}, ${booking.id}, ${OUTBOUND_QUEUED}
     )
+    returning id
   `;
+  const queueId = inserted[0]?.id;
   await sql`
     insert into inbox_messages (shop_id, channel, direction, sender, subject, body, booking_id)
     values (
       ${"white-gloss"}, ${channel}, ${"out"}, ${"White Gloss"}, ${subject}, ${body}, ${booking.id}
     )
   `;
+  if (channel !== "email" || queueId == null) return;
+  try {
+    await sendResendEmail({ to, subject, text: body });
+    await sql`
+      update outbound_queue
+      set status = ${OUTBOUND_SENT}
+      where id = ${queueId} and shop_id = ${"white-gloss"}
+    `;
+  } catch (err) {
+    console.error(`[ops:email-send] queue=${queueId}`, err);
+    await sql`
+      update outbound_queue
+      set status = ${OUTBOUND_FAILED}
+      where id = ${queueId} and shop_id = ${"white-gloss"}
+    `;
+  }
+}
+
+export async function flushOutboundEmailQueue(
+  sql: Sql,
+  limit = 20,
+): Promise<{ sent: number; failed: number; skipped: number }> {
+  const rows = await sql<{
+    id: number;
+    to_addr: string | null;
+    subject: string | null;
+    body: string;
+  }>`
+    select id, to_addr, subject, body
+    from outbound_queue
+    where shop_id = ${"white-gloss"}
+      and channel = ${"email"}
+      and status = ${OUTBOUND_QUEUED}
+    order by created_at asc
+    limit ${limit}
+  `;
+
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  if (!mailConfigured()) {
+    return { sent: 0, failed: 0, skipped: rows.length };
+  }
+
+  for (const row of rows) {
+    const to = (row.to_addr || "").trim();
+    if (!isEmailAddress(to)) {
+      await sql`
+        update outbound_queue
+        set status = ${OUTBOUND_FAILED}
+        where id = ${row.id} and shop_id = ${"white-gloss"}
+      `;
+      failed += 1;
+      continue;
+    }
+    try {
+      await sendResendEmail({
+        to,
+        subject: row.subject || "White Gloss",
+        text: row.body,
+      });
+      await sql`
+        update outbound_queue
+        set status = ${OUTBOUND_SENT}
+        where id = ${row.id} and shop_id = ${"white-gloss"}
+      `;
+      sent += 1;
+    } catch (err) {
+      console.error(`[ops:flush-email] queue=${row.id}`, err);
+      await sql`
+        update outbound_queue
+        set status = ${OUTBOUND_FAILED}
+        where id = ${row.id} and shop_id = ${"white-gloss"}
+      `;
+      failed += 1;
+    }
+  }
+
+  return { sent, failed, skipped };
 }
 
 export async function queueOwnerNotify(sql: Sql, booking: BookingLite, kind: string) {
