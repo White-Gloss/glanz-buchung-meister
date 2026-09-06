@@ -2,6 +2,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { nav, footerExplore, openingHours, site } from "@/data/site";
+import { ConsentBanner } from "./consent-banner";
 import { IconArrowRight, IconMessage } from "./icons";
 import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
@@ -551,6 +552,7 @@ export function Shell() {
       <Outlet />
       <SiteFooter />
       <WhatsAppFloat />
+      <ConsentBanner />
     </div>
   );
 }
