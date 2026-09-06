@@ -87,8 +87,13 @@ switch_release() {
   target_release="$(release_path "$release_id")"
   previous_id="$(current_release_id)"
   previous_path=""
-  if [[ -n "$previous_id" ]]; then
+  # workflow_run accepts only an actual SHA that this helper can restore.
+  # Preserve manually named legacy releases, but do not advertise them as a
+  # usable rollback target after the booking schema migration.
+  if [[ "$previous_id" =~ ^[0-9a-f]{40}$ ]] && release_is_compatible "$previous_id"; then
     previous_path="$(release_path "$previous_id")"
+  else
+    previous_id=""
   fi
 
   next_link="${CURRENT_LINK}.next.$$"

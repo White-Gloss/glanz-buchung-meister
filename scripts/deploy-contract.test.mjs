@@ -58,7 +58,7 @@ const shellOptions = {
       : false,
 };
 
-async function shell(directory, body) {
+async function shell(directory, body, previousId = OLD_ID) {
   assert.ok(bash, "GNU Bash is required for deployment contract tests in CI");
   const helper = join(directory, "helper.sh");
   // Linux checkout uses LF. Normalize only the isolated copy on Windows.
@@ -90,7 +90,7 @@ ${body}
       TEST_HELPER: helper.split(sep).join("/"),
       TEST_ROOT: directory.split(sep).join("/"),
       NEW_ID,
-      OLD_ID,
+      OLD_ID: previousId,
     },
   });
 }
@@ -216,12 +216,12 @@ test(
 );
 
 test(
-  "successful activation reports the old release ID and does not stop the service",
+  "successful activation reports a compatible previous SHA and does not stop the service",
   shellOptions,
   async () =>
     fixture(async (directory) => {
       await release(directory, NEW_ID);
-      await release(directory, OLD_ID, false);
+      await release(directory, OLD_ID);
       const result = await shell(
         directory,
         'restart_and_wait() { return 0; }; switch_release "$NEW_ID"',
@@ -229,5 +229,32 @@ test(
       assert.equal(result.status, 0);
       assert.ok(result.stdout.trim().endsWith(OLD_ID));
       assert.doesNotMatch(result.stdout, /SERVICE stop/);
+    }),
+);
+
+test(
+  "successful cutover from a manually named or incompatible release returns no rollback ID and preserves its files",
+  shellOptions,
+  async () =>
+    fixture(async (directory) => {
+      await release(directory, NEW_ID);
+      for (const { id, compatible } of [
+        { id: OLD_ID, compatible: false },
+        { id: "qonto-409f755", compatible: false },
+        { id: "qonto-409f755", compatible: true },
+      ]) {
+        const oldOutput = await release(directory, id, compatible);
+        const previousEntry = await readFile(join(oldOutput, "server", "index.mjs"), "utf8");
+        const result = await shell(
+          directory,
+          'restart_and_wait() { return 0; }; switch_release "$NEW_ID"',
+          id,
+        );
+        assert.equal(result.status, 0, result.stderr);
+        // LINK lines come only from the test's intercepted ln command.
+        assert.equal(result.stdout.replace(/^LINK .*\r?\n/gm, "").trim(), "");
+        assert.doesNotMatch(result.stdout, /SERVICE stop/);
+        assert.equal(await readFile(join(oldOutput, "server", "index.mjs"), "utf8"), previousEntry);
+      }
     }),
 );
