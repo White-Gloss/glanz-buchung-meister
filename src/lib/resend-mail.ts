@@ -4,37 +4,66 @@ export function mailConfigured(): boolean {
   return key.length > 0 && from.length > 0;
 }
 
+export class EmailDeliveryError extends Error {
+  readonly code: string;
+  readonly retryable: boolean;
+  readonly ambiguous: boolean;
+  constructor(code: string, retryable: boolean, ambiguous = false) {
+    super(code);
+    this.name = "EmailDeliveryError";
+    this.code = code;
+    this.retryable = retryable;
+    this.ambiguous = ambiguous;
+  }
+}
+
 export async function sendResendEmail(input: {
   to: string;
   subject: string;
   text: string;
-}): Promise<{ id?: string }> {
+  idempotencyKey?: string;
+  from?: string;
+}): Promise<{ id: string }> {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
-  const from = (process.env.MAIL_FROM || "").trim();
+  const from = (input.from || process.env.MAIL_FROM || "").trim();
   if (!apiKey || !from) {
-    throw new Error("E-Mail-Versand ist nicht konfiguriert (RESEND_API_KEY / MAIL_FROM).");
+    throw new EmailDeliveryError("email_not_configured", false);
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [input.to],
-      subject: input.subject,
-      text: input.text,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: AbortSignal.timeout(10_000),
+      redirect: "error",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey } : {}),
+      },
+      body: JSON.stringify({
+        from,
+        to: [input.to],
+        subject: input.subject,
+        text: input.text,
+      }),
+    });
+  } catch {
+    throw new EmailDeliveryError("email_transport_unknown", true, true);
+  }
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("[resend-mail] Versand fehlgeschlagen", response.status, detail.slice(0, 300));
-    throw new Error("E-Mail konnte nicht über Resend versendet werden.");
+    const detail = (await response.json().catch(() => null)) as { name?: string } | null;
+    const concurrent = response.status === 409 && detail?.name === "concurrent_idempotent_requests";
+    throw new EmailDeliveryError(
+      `email_http_${response.status}`,
+      concurrent || response.status === 408 || response.status === 429 || response.status >= 500,
+    );
   }
 
   const body = (await response.json().catch(() => null)) as { id?: string } | null;
-  return { id: body?.id };
+  if (!body?.id || typeof body.id !== "string") {
+    throw new EmailDeliveryError("email_response_unknown", true, true);
+  }
+  return { id: body.id };
 }

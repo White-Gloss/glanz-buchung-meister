@@ -94,3 +94,10 @@ noch zu bestätigenden Produktions-Datenbankziels, stehen in
 
 Die technischen Quality Gates sind in
 [`docs/quality-gates.md`](docs/quality-gates.md) dokumentiert.
+
+Der neue Ablauf mit persönlicher Inhaberbestätigung, Abgabeplätzen, Audit,
+dauerhaftem Nachrichtenversand und IONOS-Timer steht in
+[`docs/booking-workflow-operations.md`](docs/booking-workflow-operations.md).
+Die vorhandene Meta Cloud API wird anhand von
+[`docs/whatsapp-setup.md`](docs/whatsapp-setup.md) verbunden; `.env.example`
+enthält ausschließlich leere Konfigurationsfelder.

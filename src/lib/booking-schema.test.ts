@@ -5,6 +5,7 @@ import { berlinCalendarDate } from "./ops.ts";
 
 function bookingInput(date?: string) {
   return {
+    idempotencyKey: "00000000-0000-4000-8000-000000000001",
     name: "Testkunde",
     phone: "+491701112233",
     email: "",

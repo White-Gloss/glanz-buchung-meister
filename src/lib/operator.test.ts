@@ -5,9 +5,21 @@ import {
   isOperatorProviderAccount,
   operatorEmails,
   operatorEnforcementEnabled,
+  requireOperator,
 } from "./operator.ts";
 
 describe("operator allowlist", () => {
+  it("grants the configured owner ID operator access without a domain requirement", async () => {
+    const old = process.env.OWNER_USER_ID;
+    try {
+      process.env.OWNER_USER_ID = "external-owner";
+      await requireOperator("external-owner");
+      await assert.rejects(() => requireOperator(""), /Betriebszugang/);
+    } finally {
+      if (old === undefined) delete process.env.OWNER_USER_ID;
+      else process.env.OWNER_USER_ID = old;
+    }
+  });
   it("always includes the public business address", () => {
     assert.ok(operatorEmails().includes("info@white-gloss.de"));
   });

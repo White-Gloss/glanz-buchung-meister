@@ -20,16 +20,17 @@ function compactDate(iso: string): string {
 }
 
 export function icsTimestamp(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d+Z$/, "Z");
 }
 
-function slotToHours(slot: string | null | undefined): { start: string; end: string } | null {
+function slotToHours(slot: string | null | undefined): { start: string } | null {
   if (!slot || !/^\d{2}:\d{2}$/.test(slot)) return null;
   const [h, m] = slot.split(":").map(Number);
   const start = `${String(h).padStart(2, "0")}${String(m).padStart(2, "0")}00`;
-  const endH = Math.min(h + 2, 23);
-  const end = `${String(endH).padStart(2, "0")}${String(m).padStart(2, "0")}00`;
-  return { start, end };
+  return { start };
 }
 
 export type CalendarEvent = {
@@ -48,16 +49,15 @@ export function buildCalendarIcs(events: CalendarEvent[]): string {
     const start = timed
       ? `DTSTART;TZID=Europe/Berlin:${day}T${timed.start}`
       : `DTSTART;VALUE=DATE:${day}`;
-    const end = timed
-      ? `DTEND;TZID=Europe/Berlin:${day}T${timed.end}`
-      : `DTEND;VALUE=DATE:${shiftDay(event.date, 1)}`;
     const lines = [
       "BEGIN:VEVENT",
       `UID:booking-${event.id}@white-gloss.de`,
       `DTSTAMP:${stamp}`,
       start,
-      end,
-      `SUMMARY:${escapeIcsText(event.title)}`,
+      ...(timed ? [] : [`DTEND;VALUE=DATE:${shiftDay(event.date, 1)}`]),
+      "STATUS:CONFIRMED",
+      "TRANSP:TRANSPARENT",
+      `SUMMARY:${escapeIcsText(`Abgabe: ${event.title}`)}`,
     ];
     if (event.description) {
       lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`);

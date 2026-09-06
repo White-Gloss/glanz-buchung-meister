@@ -1,16 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import {
-  BellRing,
-  CalendarDays,
-  Mail,
-  ReceiptText,
-  ShieldCheck,
-  Workflow,
-} from "lucide-react";
+import { BellRing, CalendarDays, Mail, ReceiptText, ShieldCheck, Workflow } from "lucide-react";
 import {
   flushOutboundMail,
   getOperatorSettings,
+  getNotificationStatus,
   inboundOperatorMessage,
   listAgentLog,
   listAutomationEvents,
@@ -19,13 +13,22 @@ import {
   runReminders,
   type AgentLogRow,
 } from "@/lib/admin.functions";
-import { agentHelpText } from "@/lib/agent";
 import { Button, inputClass } from "@/components/ui";
 import { stamp } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/automatisierung")({
   component: AdminAutomation,
 });
+
+const deliveryStatusLabels: Record<string, string> = {
+  queued: "Geplant",
+  processing: "Wird übermittelt",
+  sent: "Übermittelt",
+  failed: "Fehlgeschlagen",
+  review: "Prüfung erforderlich",
+  blocked: "Einrichtung fehlt",
+  cancelled: "Nicht mehr aktuell",
+};
 
 function AdminAutomation() {
   const [text, setText] = useState("");
@@ -36,27 +39,32 @@ function AdminAutomation() {
   const [events, setEvents] = useState<Awaited<ReturnType<typeof listAutomationEvents>>>([]);
   const [outbound, setOutbound] = useState<Awaited<ReturnType<typeof listOutbound>>>([]);
   const [pending, setPending] = useState(false);
-  const [pin, setPin] = useState("");
+  const [delivery, setDelivery] = useState<Awaited<
+    ReturnType<typeof getNotificationStatus>
+  > | null>(null);
   const [inboundPin, setInboundPin] = useState("WG-BETRIEB");
   const [inboundText, setInboundText] = useState("termine");
   const [inboundChannel, setInboundChannel] = useState<"whatsapp" | "telegram">("whatsapp");
 
   async function reload() {
-    const [l, e, o, s] = await Promise.all([
+    const [l, e, o, s, state] = await Promise.all([
       listAgentLog(),
       listAutomationEvents(),
       listOutbound(),
       getOperatorSettings().catch(() => ({ pin: "WG-BETRIEB", updatedAt: null })),
+      getNotificationStatus(),
     ]);
     setLog(l);
     setEvents(e);
     setOutbound(o);
-    setPin(s.pin);
     setInboundPin(s.pin);
+    setDelivery(state);
   }
 
   useEffect(() => {
-    void reload().catch(() => undefined);
+    void reload().catch(() =>
+      setResult("Automationsstatus konnte nicht geladen werden. Bitte erneut versuchen."),
+    );
   }, []);
 
   async function onSubmit(e: FormEvent) {
@@ -79,10 +87,24 @@ function AdminAutomation() {
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">White Gloss Workflow</p>
       <h1 className="mt-2 font-display text-4xl">Automatisierung</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
-        Buchung mit freiem Wunschtermin: automatisch zugesagt. Ohne Datum, am Wochenende oder
-        bei vollem Tag prüfst du unter Buchungen. Danach: Eingangsmail, Terminmail, Kalender,
-        Erinnerung. Rechnung bleibt Lexware. WhatsApp an Kunden bleibt aus.
+        Jede Anfrage wartet auf deine persönliche Bestätigung unter Buchungen. WhatsApp informiert
+        dich über neue Anfragen und relevante Änderungen. Kunden erhalten E-Mails; Erinnerungen
+        werden nur für bestätigte Termine versendet. Versandprobleme bleiben hier sichtbar.
       </p>
+      {delivery ? (
+        <div className="mt-5 rounded-md border border-line bg-surface p-4 text-sm" role="status">
+          <p>
+            WhatsApp: {delivery.whatsappConfigured ? "eingerichtet" : "Einrichtung fehlt"} · E-Mail:{" "}
+            {delivery.emailConfigured ? "eingerichtet" : "Einrichtung fehlt"}
+          </p>
+          <p className="mt-2 text-muted">
+            Automatischer Aufruf:{" "}
+            {delivery.cronConfigured ? "Zugang eingerichtet" : "Einrichtung fehlt"}. Letzte
+            Verarbeitung:{" "}
+            {delivery.lastRun ? stamp(delivery.lastRun) : "noch kein erfolgreicher Lauf"}.
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
@@ -92,12 +114,12 @@ function AdminAutomation() {
             {
               Icon: ReceiptText,
               title: "Buchhaltung",
-              text: "WHITE GLOSS OS über Buchhaltung verbinden; Lexware bleibt für Rechnungen",
+              text: "Qonto erstellt die Rechnung, sobald du die Buchung manuell als erledigt markierst",
             },
             {
               Icon: BellRing,
               title: "Erinnerungen",
-              text: "Bestätigte Termine der nächsten 24 Stunden",
+              text: "24 Stunden vor der bestätigten Fahrzeugabgabe",
             },
           ] as const
         ).map(({ Icon, title, text }) => (
@@ -118,11 +140,11 @@ function AdminAutomation() {
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-5">
           {[
-            ["1", "Buchung", "Kunde sendet den Konfigurator"],
+            ["1", "Anfrage", "Kunde sendet den Konfigurator"],
             ["2", "Eingang", "Akte, Posteingang, interne Meldung"],
-            ["3", "Zusage", "Automatisch bei freiem Werktag, sonst unter Buchungen"],
-            ["4", "Rechnung", "Entwurf hier, Beleg in Lexware"],
-            ["5", "Termin", "Kalender und Erinnerung"],
+            ["3", "Zusage", "Ausschließlich persönlich unter Buchungen"],
+            ["4", "Abgabe", "Bestätigte Abgabezeit im Kalender, Erinnerung vorab"],
+            ["5", "Abschluss", "Manuell als erledigt markieren; Rechnung über Qonto"],
           ].map(([n, t, d]) => (
             <div key={n} className="rounded-sm border border-line bg-bg p-4">
               <p className="text-xs text-subtle">Schritt {n}</p>
@@ -138,11 +160,14 @@ function AdminAutomation() {
         </p>
       </section>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-md border border-line bg-surface p-5">
+      <form
+        onSubmit={onSubmit}
+        className="mt-8 space-y-4 rounded-md border border-line bg-surface p-5"
+      >
         <h2 className="font-display text-2xl">KI-Agent</h2>
         <p className="text-sm text-muted">
-          Gleiche Befehle wie später in WhatsApp und Telegram. Freitext nur auf Knopf – nie
-          automatisch, nie bei jedem Tastendruck.
+          Unterstützt bei Übersichten und internen Entwürfen. Die KI darf keine Termine bestätigen
+          oder Buchungsstatus ändern.
         </p>
         <label className="flex flex-col gap-2 text-sm">
           Kanal
@@ -162,7 +187,7 @@ function AdminAutomation() {
             className={`${inputClass} min-h-24 py-2`}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="status 1 bestaetigt"
+            placeholder="termine"
             required
           />
         </label>
@@ -178,10 +203,18 @@ function AdminAutomation() {
             type="button"
             variant="ghost"
             onClick={async () => {
-              const res = await runReminders();
-              setResult(res.result);
-              await reload();
+              setPending(true);
+              try {
+                const res = await runReminders();
+                setResult(res.result);
+                await reload();
+              } catch {
+                setResult("Erinnerungen konnten nicht verarbeitet werden. Bitte erneut versuchen.");
+              } finally {
+                setPending(false);
+              }
             }}
+            disabled={pending}
           >
             Erinnerungen jetzt
           </Button>
@@ -193,7 +226,7 @@ function AdminAutomation() {
               try {
                 const res = await flushOutboundMail();
                 setResult(
-                  `E-Mail-Warteschlange: ${res.sent} gesendet, ${res.failed} fehlgeschlagen, ${res.skipped} übersprungen.`,
+                  `Versandliste: ${res.sent} übermittelt, ${res.retried} erneut geplant, ${res.failed + res.review} benötigen Prüfung.`,
                 );
                 await reload();
               } catch (err) {
@@ -204,7 +237,7 @@ function AdminAutomation() {
             }}
             disabled={pending}
           >
-            E-Mail-Warteschlange senden
+            Versandliste jetzt prüfen
           </Button>
         </div>
       </form>
@@ -224,9 +257,7 @@ function AdminAutomation() {
               },
             });
             setResult(
-              res.ok
-                ? `Eingang ${inboundChannel}: ${res.result}`
-                : `Abgelehnt: ${res.result}`,
+              res.ok ? `Eingang ${inboundChannel}: ${res.result}` : `Abgelehnt: ${res.result}`,
             );
             await reload();
           } catch (err) {
@@ -236,10 +267,10 @@ function AdminAutomation() {
           }
         }}
       >
-        <h2 className="font-display text-2xl">WhatsApp / Telegram Eingang</h2>
+        <h2 className="font-display text-2xl">Befehle im Betriebspanel prüfen</h2>
         <p className="text-sm text-muted">
-          Derselbe Agent, den später der Messenger trifft. PIN aktuell: {pin || "WG-BETRIEB"}.
-          Ändern unter{" "}
+          Dieser Test benötigt deine angemeldete Betriebssitzung. Messenger-Nachrichten können keine
+          Termine freigeben. Test-PIN ändern unter{" "}
           <Link to="/admin/einstellungen" className="underline hover:text-fg">
             Einstellungen
           </Link>
@@ -271,12 +302,12 @@ function AdminAutomation() {
             className={`${inputClass} min-h-24 py-2`}
             value={inboundText}
             onChange={(e) => setInboundText(e.target.value)}
-            placeholder="bestätige 1"
+            placeholder="termine"
             required
           />
         </label>
         <Button type="submit" disabled={pending}>
-          Nachricht wie aus dem Messenger
+          Befehl prüfen
         </Button>
       </form>
 
@@ -285,7 +316,10 @@ function AdminAutomation() {
           {result}
         </pre>
       ) : (
-        <pre className="mt-6 whitespace-pre-wrap text-sm text-muted">{agentHelpText()}</pre>
+        <p className="mt-6 text-sm text-muted">
+          Befehle: termine, post, kunde &lt;Name&gt;, rechnung &lt;ID&gt;, erinnerung. Termine
+          persönlich unter Buchungen bestätigen.
+        </p>
       )}
 
       <h2 className="mt-10 font-display text-2xl">Versandliste</h2>
@@ -296,11 +330,24 @@ function AdminAutomation() {
           outbound.map((row) => (
             <li key={row.id} className="border-t border-line pt-2 text-sm">
               <span className="text-xs text-subtle">
-                {row.channel} · {row.status} · {stamp(row.created_at)}
+                {row.channel} · {deliveryStatusLabels[row.status] || row.status} ·{" "}
+                {stamp(row.created_at)}
               </span>
               <p>
                 {row.subject} → {row.to_addr}
               </p>
+              {row.last_error_code && ["failed", "blocked", "review"].includes(row.status) ? (
+                <p className="mt-1 text-danger">
+                  {row.status === "blocked"
+                    ? "Die Verbindung muss eingerichtet oder geprüft werden."
+                    : row.last_error_code === "legacy_delivery_unverified"
+                      ? "Historischer Ausgang: vor einer erneuten Nachricht bitte die bisherige Zustellung prüfen."
+                      : row.status === "review"
+                        ? "Die Zustellung ist unklar. Bitte beim Anbieter prüfen, bevor du erneut schreibst."
+                        : "Die Nachricht konnte nicht zugestellt werden. Bitte den Empfänger oder die Verbindung prüfen."}{" "}
+                  Versuche: {row.attempt_count}.
+                </p>
+              ) : null}
             </li>
           ))
         )}

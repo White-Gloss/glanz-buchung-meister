@@ -55,7 +55,8 @@ export const releaseColumnsQuery = `
     and table_name in (
       'bookings', 'customers', 'booking_photos', 'cms_items', 'inbox_messages',
       'outbound_queue', 'documents', 'agent_commands', 'automation_events',
-      'shop_settings', 'user', 'session', 'account', 'verification'
+      'shop_settings', 'user', 'session', 'account', 'verification',
+      'booking_events', 'booking_workflow_locks', 'booking_capacity_claims', 'whatsapp_webhook_receipts'
     )`;
 
 // ON CONFLICT(shop_id, phone) needs a usable, immediate, non-partial unique
@@ -128,6 +129,17 @@ export async function checkReleaseSchema(query, migrationNames) {
     ["bookings", "upload_token_hash", "text"],
     ["bookings", "upload_token_expires_at", "timestamptz"],
     ["bookings", "qonto_invoice_id", "text"],
+    ["bookings", "version", "int4"],
+    ["bookings", "confirmed_by", "text"],
+    ["bookings", "confirmed_at", "timestamptz"],
+    ["bookings", "request_key_hash", "text"],
+    ["booking_events", "after_data", "jsonb"],
+    ["booking_capacity_claims", "resource", "int4"],
+    ["booking_workflow_locks", "shop_id", "text"],
+    ["outbound_queue", "event_key", "text"],
+    ["outbound_queue", "lease_token", "text"],
+    ["outbound_queue", "next_attempt_at", "timestamptz"],
+    ["whatsapp_webhook_receipts", "event_hash", "text"],
     ["booking_photos", "booking_id", "int4"],
     ["customers", "phone", "text"],
     ["user", "email", "text"],
@@ -164,5 +176,11 @@ export async function checkReleaseSchema(query, migrationNames) {
       "Erforderlicher gültiger, unmittelbarer UNIQUE-Index für customers(shop_id, phone) fehlt.",
     );
   }
+  const guard = await query(`select exists (
+    select 1 from pg_trigger where tgrelid = to_regclass('bookings')
+    and tgname='booking_workflow_guard' and tgenabled in ('O','A')
+  ) as enabled`);
+  if (guard.rows[0]?.enabled !== true)
+    problems.push("Datenbankschutz für manuelle Bestätigung und Terminkapazität fehlt.");
   return problems;
 }

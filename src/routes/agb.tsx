@@ -45,9 +45,9 @@ function TermsPage() {
             Nach Sichtung der Angaben, Fotos und – soweit erforderlich – nach Besichtigung des
             Fahrzeugs stimmen wir Leistungsumfang, verbindlichen Preis und Termin persönlich mit
             Ihnen ab. Ein Vertrag über die Aufbereitung kommt erst zustande, wenn wir den Auftrag
-            ausdrücklich bestätigen oder mit der vereinbarten Leistung beginnen. Ein freier
-            Wunschtermin an einem Werktag kann automatisch als Termin zugesagt werden; das ist
-            unsere Terminbestätigung, nicht automatisch der verbindliche Endpreis.
+            ausdrücklich bestätigen oder mit der vereinbarten Leistung beginnen. Ein Wunschtermin
+            wird erst nach persönlicher Prüfung ausdrücklich bestätigt. Die Uhrzeit bezeichnet
+            die Fahrzeugabgabe. Der verbindliche Endpreis wird gesondert abgestimmt.
           </p>
         </section>
 
@@ -143,9 +143,8 @@ function TermsPage() {
             Verträgen die gesetzlich erforderliche Widerrufsbelehrung. Sie finden diese unter{" "}
             <Link to="/widerruf">Widerruf</Link>. Die Frist beginnt mit dem Vertragsschluss – also
             erst mit unserer ausdrücklichen Zusage oder mit Beginn der vereinbarten Leistung, nicht
-            schon mit der unverbindlichen Online-Anfrage. Eine automatische Terminbestätigung
-            für einen freien Werktag ändert das Widerrufsrecht nicht; sie ist die Zusage des
-            Termins. Die vollständige Widerrufsbelehrung erscheint auch auf der Bestätigungsseite.
+            schon mit der unverbindlichen Online-Anfrage. Die vollständige Widerrufsbelehrung
+            erscheint auch auf der Bestätigungsseite.
           </p>
         </section>
 

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   cities,
   depositConfig,
@@ -16,6 +16,7 @@ import {
 import { createPublicBooking } from "@/lib/bookings.functions";
 import { eur } from "@/lib/utils";
 import { bookingFormErrors } from "@/lib/public-form-validation";
+import { bookingRequestId } from "@/lib/booking-request-id";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { Button, Field, inputLine } from "./ui";
 
@@ -38,6 +39,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
 
   const quote = useMemo(
@@ -51,7 +53,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (pending) return;
+    if (submitting.current) return;
     setError("");
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const errors = bookingFormErrors({ name, phone, email, date, note, privacy }, today);
@@ -63,10 +65,12 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
       setError("Bitte prüfen Sie die markierten Felder.");
       return;
     }
+    submitting.current = true;
     setPending(true);
     try {
       const created = await createPublicBooking({
         data: {
+          idempotencyKey: bookingRequestId.get(),
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
@@ -86,11 +90,14 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         to: "/danke",
         search: {
           vorgang: created.reference,
-          ...(created.confirmed ? { zusage: "1" as const } : {}),
         },
       });
+      bookingRequestId.clear();
     } catch {
-      setError("Senden fehlgeschlagen. Bitte erreichen Sie uns telefonisch oder per WhatsApp.");
+      setError(
+        "Die Antwort ist nicht angekommen. Sie können dieselbe Anfrage erneut senden. Bei Unklarheiten erreichen Sie uns telefonisch oder per WhatsApp.",
+      );
+      submitting.current = false;
       setPending(false);
     }
   }
@@ -301,7 +308,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           />
           {fieldError("date")}
         </Field>
-        <Field tone="public" id="slot" label="Zeitfenster (optional)">
+        <Field tone="public" id="slot" label="Abgabezeit (optional)">
           <select
             id="slot"
             className={inputLine}
@@ -366,9 +373,23 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </label>
         {fieldError("privacy")}
         {error ? (
-          <p className="text-sm text-danger" role="alert">
-            {error}
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-danger" role="alert">
+              {error}
+            </p>
+            <Button
+              tone="public"
+              variant="line"
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                bookingRequestId.clear();
+                setError("");
+              }}
+            >
+              Stattdessen eine neue Anfrage beginnen
+            </Button>
+          </div>
         ) : null}
         <Button
           tone="public"

@@ -961,10 +961,12 @@ export const footerExplore = [
 ] as const;
 
 export const bookingStatuses = [
-  { id: "neu", label: "Neu" },
+  { id: "neu", label: "Wartet auf Bestätigung" },
   { id: "bestaetigt", label: "Bestätigt" },
   { id: "abgelehnt", label: "Abgelehnt" },
+  { id: "storniert", label: "Storniert" },
   { id: "erledigt", label: "Erledigt" },
+  { id: "nicht_erschienen", label: "Nicht erschienen" },
 ] as const;
 
 export type BookingStatus = (typeof bookingStatuses)[number]["id"];

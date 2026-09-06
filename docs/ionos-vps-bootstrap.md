@@ -118,83 +118,38 @@ Produktionsgeheimnisse von Supabase, Resend und weiteren Diensten verbleiben
 ausschließlich in `/etc/white-gloss/environment`; sie werden weder in GitHub
 noch in Release-Archive kopiert.
 
-## Terminerinnerungen: der Zeitgeber
+## Benachrichtigungen und Terminerinnerungen: der Zeitgeber
 
-**Prüfen Sie zuerst, ob schon etwas läuft.** Diese Anleitung beschrieb bis
-jetzt keinen Zeitplan, und im Repository stand keiner. Ob auf dem Server
-einmal von Hand ein Crontab-Eintrag angelegt wurde, lässt sich nur dort
-sehen:
+Die vollständige aktuelle Einrichtung und Kontrolle steht unter
+[Buchungen, Benachrichtigungen und Betrieb](booking-workflow-operations.md).
+Die neue Einrichtung wurde in diesem Auftrag nicht auf dem Produktivserver
+aktiviert. Bestehende Timer oder Cron-Einträge müssen vor der Umstellung am
+tatsächlichen Server geprüft werden.
 
-```bash
-sudo systemctl list-timers --all | grep -i white-gloss
-sudo crontab -l; sudo crontab -l -u deploy
-sudo ls -la /etc/cron.d /etc/cron.hourly
-```
+Der versionierte `white-gloss-reminder.timer` startet den Dienst **minütlich**.
+Dieser verwendet den eigenständigen Node-24-Runner `ops/run-notifications.mjs`,
+installiert unter `/usr/local/lib/white-gloss/run-notifications.mjs`.
+Das automatische `.output/`-Deployment enthält weder Runner noch Units;
+die separate Installation ist erforderlich.
 
-Findet sich nichts, wird der Endpunkt nicht aufgerufen — und dann geht keine
-Terminerinnerung hinaus, egal ob `REMINDER_CRON_SECRET` gesetzt ist. Die
-Anzeige im Adminbereich sagt nur, dass das Geheimnis hinterlegt ist; ob
-jemand den Endpunkt tatsächlich anstößt, kann sie nicht wissen.
+Vor Aktivierung müssen das richtige Integer-Datenbankschema gesichert,
+die Root-Migrationen `0007` bis `0009` angewendet und der zugehörige neue
+Anwendungsrelease geprüft und gestartet sein. `/etc/white-gloss/environment`
+enthält die Providerkonfiguration und `REMINDER_CRON_SECRET` mit mindestens
+32 Zeichen. Änderungen daran benötigen auch einen Neustart des Hauptdiensts.
+Den Meta-Vertrag beschreibt [whatsapp-setup.md](whatsapp-setup.md).
 
-### Einrichten
+Der Runner ruft ausschließlich den lokalen Endpunkt
+`http://127.0.0.1:3000/api/automation-cron` auf. Das Token bleibt in der
+Umgebung; der Aufruf benötigt keine Shell und schreibt keine geheimen Werte
+oder Antwortinhalte ins Journal. Der HTTP-Aufruf hat ein Zeitlimit von
+55 Sekunden, die Unit von 70 Sekunden. Das Journal zeigt feste Meldungen
+und begrenzte Zähler; Fehler liefern einen erfolglosen Prozessstatus.
 
-Zwei versionierte Dateien liegen unter `ops/`:
-
-| Datei                          | Aufgabe                       |
-| ------------------------------ | ----------------------------- |
-| `white-gloss-reminder.service` | ruft den Endpunkt einmal auf  |
-| `white-gloss-reminder.timer`   | stößt den Dienst stündlich an |
-
-```bash
-sudo install -o root -g root -m 0644 \
-  ops/white-gloss-reminder.service ops/white-gloss-reminder.timer \
-  /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now white-gloss-reminder.timer
-```
-
-Kontrolle:
-
-```bash
-systemctl list-timers white-gloss-reminder.timer   # wann als Nächstes?
-sudo systemctl start white-gloss-reminder.service  # einmal von Hand
-journalctl -u white-gloss-reminder.service -n 20   # was kam zurück?
-```
-
-Ein erfolgreicher Lauf antwortet mit `{"ok":true,...}` und den Zählern des
-Durchgangs. `401` bedeutet, dass `REMINDER_CRON_SECRET` in
-`/etc/white-gloss/environment` nicht zu dem passt, was die Anwendung geladen
-hat — nach einer Änderung dieser Datei muss `white-gloss.service` neu
-gestartet werden. `503` bedeutet, dass die Variable in der Anwendung ganz
-fehlt.
-
-### Warum ein Timer und kein Crontab-Eintrag
-
-Der Zeitplan gehört so zum selben versionierten Betriebsstand wie
-`white-gloss.service`, läuft unter demselben Benutzer, liest dieselbe
-Umgebungsdatei und schreibt in dasselbe Journal. Ein Crontab-Eintrag wäre
-nirgends im Repository sichtbar — genau der Zustand, der dazu geführt hat,
-dass sich nicht mehr sagen ließ, ob die Erinnerungen laufen.
-
-### Das Geheimnis steht nicht in der Prozessliste
-
-Der Aufruf reicht die Kopfzeile über `curl --config -` von der
-Standardeingabe herein. Stünde der Wert stattdessen als
-`-H "Authorization: ..."` im Aufruf, könnte ihn jeder Benutzer des Servers
-während des Laufs in der Prozessliste mitlesen. So steht er nur in der
-Prozessumgebung — dort, wo der Node-Dienst seine Zugangsdaten ohnehin hält.
-
-### Stündlich genügt
-
-`runDueAppointmentReminders` sucht Termine in den nächsten 25 Stunden und
-hält in der Datenbank fest, welche Buchung ihre Erinnerung schon bekommen
-hat. Ein Lauf zu viel schadet deshalb nicht, ein verspäteter Lauf holt nach —
-die 25 Stunden sind genau dieser Puffer. `Persistent=true` sorgt dafür, dass
-ein während eines Neustarts ausgefallener Lauf nachgeholt wird.
-
-Rechnungen entstehen **nicht** in diesem Lauf. Der Endpunkt versendet
-ausschließlich Terminerinnerungen; die Endrechnung braucht weiterhin eine
-ausdrückliche Freigabe im Adminbereich.
+Der Job verarbeitet gespeicherte Versandaufträge und fällige Erinnerungen.
+Er bestätigt keine Termine, plant keine Bearbeitungsdauer und erzeugt keine
+Qonto-Rechnungen. Die persönliche Terminfreigabe und der bestehende
+Qonto-Ablauf bleiben getrennte Aktionen im Betriebspanel.
 
 ## Automatischer Ablauf
 

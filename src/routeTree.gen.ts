@@ -47,7 +47,9 @@ import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
 import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
 import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
+import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
+import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
@@ -246,9 +248,19 @@ const AdminZustandRoute = AdminZustandRouteImport.update({
   path: '/zustand',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiAutomationCronRoute = ApiAutomationCronRouteImport.update({
+  id: '/api/automation-cron',
+  path: '/api/automation-cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
+  id: '/api/whatsapp-webhook',
+  path: '/api/whatsapp-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
@@ -324,7 +336,9 @@ export interface FileRoutesByFullPath {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -368,7 +382,9 @@ export interface FileRoutesByTo {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -416,7 +432,9 @@ export interface FileRoutesById {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -466,7 +484,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
+    | '/api/whatsapp-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -510,7 +530,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
+    | '/api/whatsapp-webhook'
     | '/ratgeber/$slug'
     | '/abholservice'
     | '/admin'
@@ -557,7 +579,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
+    | '/api/whatsapp-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -592,7 +616,9 @@ export interface RootRouteChildren {
   RatgeberRoute: typeof RatgeberRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WiderrufRoute: typeof WiderrufRoute
+  ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
+  ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -864,11 +890,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminZustandRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/automation-cron': {
+      id: '/api/automation-cron'
+      path: '/api/automation-cron'
+      fullPath: '/api/automation-cron'
+      preLoaderRoute: typeof ApiAutomationCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
       fullPath: '/api/operator'
       preLoaderRoute: typeof ApiOperatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp-webhook': {
+      id: '/api/whatsapp-webhook'
+      path: '/api/whatsapp-webhook'
+      fullPath: '/api/whatsapp-webhook'
+      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen/': {
@@ -1038,7 +1078,9 @@ const rootRouteChildren: RootRouteChildren = {
   RatgeberRoute: RatgeberRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WiderrufRoute: WiderrufRoute,
+  ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiOperatorRoute: ApiOperatorRoute,
+  ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

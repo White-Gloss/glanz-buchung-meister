@@ -2,6 +2,7 @@ import { z } from "zod";
 import { berlinCalendarDate } from "./ops.ts";
 import { isEmailAddress } from "./utils.ts";
 import { isCalendarDate } from "./calendar-date.ts";
+import { timeSlots } from "../data/site.ts";
 
 /**
  * Shared validation for the public booking form. Enforced on the server in
@@ -10,8 +11,14 @@ import { isCalendarDate } from "./calendar-date.ts";
  * uses Europe/Berlin calendar days, matching the client check.
  */
 export const publicBookingSchema = z.object({
+  idempotencyKey: z.string().uuid("Ungültige Anfragekennung."),
   name: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(6).max(40),
+  phone: z
+    .string()
+    .trim()
+    .min(6)
+    .max(40)
+    .regex(/^\+?[\d ()/.-]+$/, "Ungültige Telefonnummer"),
   email: z
     .string()
     .trim()
@@ -26,7 +33,11 @@ export const publicBookingSchema = z.object({
       (v) => !v || v >= berlinCalendarDate(),
       "Wunschtermin darf nicht in der Vergangenheit liegen",
     ),
-  slot: z.string().max(10).optional(),
+  slot: z
+    .string()
+    .max(10)
+    .optional()
+    .refine((v) => !v || timeSlots.includes(v), "Ungültige Uhrzeit"),
   note: z.string().max(2000).optional(),
   packageId: z.enum(["basis", "premium", "keramik"]),
   classId: z.enum(["kompakt", "suv", "transporter"]),
