@@ -207,7 +207,7 @@ export async function flushOutboundEmailQueue(
 
   let sent = 0;
   let failed = 0;
-  let skipped = 0;
+  const skipped = 0;
 
   if (!mailConfigured()) {
     return { sent: 0, failed: 0, skipped: rows.length };
