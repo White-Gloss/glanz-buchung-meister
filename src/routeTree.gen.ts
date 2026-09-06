@@ -52,6 +52,7 @@ import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
 import { Route as RatgeberSlugRouteImport } from './routes/ratgeber.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as LeistungenSlugIndexRouteImport } from './routes/leistungen.$slug.index'
 import { Route as LeistungenSlugCityRouteImport } from './routes/leistungen.$slug.$city'
 
 const IndexRoute = IndexRouteImport.update({
@@ -269,6 +270,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeistungenSlugIndexRoute = LeistungenSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LeistungenSlugRoute,
+} as any)
 const LeistungenSlugCityRoute = LeistungenSlugCityRouteImport.update({
   id: '/$city',
   path: '/$city',
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -354,7 +361,6 @@ export interface FileRoutesByTo {
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
   '/api/operator': typeof ApiOperatorRoute
-  '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -362,6 +368,7 @@ export interface FileRoutesByTo {
   '/ratgeber': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug': typeof LeistungenSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -409,6 +416,7 @@ export interface FileRoutesById {
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -457,6 +465,7 @@ export interface FileRouteTypes {
     | '/ratgeber/'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -491,7 +500,6 @@ export interface FileRouteTypes {
     | '/admin/unterlagen'
     | '/admin/zustand'
     | '/api/operator'
-    | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice'
     | '/admin'
@@ -499,6 +507,7 @@ export interface FileRouteTypes {
     | '/ratgeber'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug'
   id:
     | '__root__'
     | '/'
@@ -545,6 +554,7 @@ export interface FileRouteTypes {
     | '/ratgeber/'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -876,6 +886,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leistungen/$slug/': {
+      id: '/leistungen/$slug/'
+      path: '/'
+      fullPath: '/leistungen/$slug/'
+      preLoaderRoute: typeof LeistungenSlugIndexRouteImport
+      parentRoute: typeof LeistungenSlugRoute
+    }
     '/leistungen/$slug/$city': {
       id: '/leistungen/$slug/$city'
       path: '/$city'
@@ -938,10 +955,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface LeistungenSlugRouteChildren {
   LeistungenSlugCityRoute: typeof LeistungenSlugCityRoute
+  LeistungenSlugIndexRoute: typeof LeistungenSlugIndexRoute
 }
 
 const LeistungenSlugRouteChildren: LeistungenSlugRouteChildren = {
   LeistungenSlugCityRoute: LeistungenSlugCityRoute,
+  LeistungenSlugIndexRoute: LeistungenSlugIndexRoute,
 }
 
 const LeistungenSlugRouteWithChildren = LeistungenSlugRoute._addFileChildren(

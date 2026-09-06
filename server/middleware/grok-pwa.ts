@@ -15,6 +15,7 @@
  *   runtime hook's return value, and `render:html` does not exist in Nitro v3.
  */
 import installPageTemplate from "../../scripts/install-page.html?raw";
+import { REVALIDATE_CACHE_CONTROL } from "../cache-policy";
 import { grokOgIdentity } from "virtual:grok-og-identity";
 import {
   acceptsHtml,
@@ -93,7 +94,7 @@ export default async function grokPwaMiddleware(
     return new Response(renderWebManifest(requestHost(event)), {
       headers: {
         "content-type": "application/manifest+json; charset=utf-8",
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": REVALIDATE_CACHE_CONTROL,
       },
     });
   }

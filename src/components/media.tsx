@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   heroAvifSrcSet,
   heroPreloadHref,
@@ -23,20 +24,6 @@ function pickHeroLoop(mobile: boolean) {
   return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
 }
 
-function prefetchHeroLoop(mobile: boolean) {
-  const url = pickHeroLoop(mobile);
-  const run = () => {
-    void fetch(url, { credentials: "same-origin", priority: "low" } as RequestInit).catch(
-      () => undefined,
-    );
-  };
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(run, { timeout: 1800 });
-  } else {
-    window.setTimeout(run, 400);
-  }
-}
-
 export function HeroMedia({
   alt,
   className,
@@ -46,50 +33,134 @@ export function HeroMedia({
   className?: string;
   priority?: boolean;
 }) {
-  // Still image is LCP. The loop starts on a real gesture (click/tap/scroll/key),
-  // not pointermove — otherwise a resting cursor starts the video immediately.
-  const [playVideo, setPlayVideo] = useState(false);
-  const [loopSrc, setLoopSrc] = useState<string | null>(null);
-  const [imageReady, setImageReady] = useState(!priority);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const syncPlayback = useRef<() => void>(() => {});
+  const pausedRef = useRef(false);
+  const videoId = useId();
+  const [imageReady, setImageReady] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [motionAllowed, setMotionAllowed] = useState(false);
+  const [controlHost, setControlHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setControlHost(
+      containerRef.current?.closest<HTMLElement>(".hero-stage, .film-chapter") ?? null,
+    );
+  }, []);
+
+  useEffect(() => {
+    controlHost?.toggleAttribute("data-motion-paused", paused);
+    return () => controlHost?.removeAttribute("data-motion-paused");
+  }, [controlHost, paused]);
 
   useEffect(() => {
     if (!imageReady) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (conn?.saveData) return;
+    const container = containerRef.current;
+    const video = videoRef.current;
+    if (!container || !video) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (
+      navigator as Navigator & {
+        connection?: EventTarget & { saveData?: boolean };
+      }
+    ).connection;
     const mobile = window.matchMedia("(max-width: 767px)").matches;
-    prefetchHeroLoop(mobile);
-    let started = false;
-    const start = () => {
-      if (started) return;
-      started = true;
-      window.removeEventListener("pointerdown", start);
-      window.removeEventListener("scroll", start, true);
-      window.removeEventListener("touchstart", start);
-      window.removeEventListener("keydown", start);
-      window.clearTimeout(fallbackId);
-      setLoopSrc(pickHeroLoop(mobile));
-      setPlayVideo(true);
+    let visible = false;
+    let disposed = false;
+    let idleId: number | undefined;
+    let timeoutId: number | undefined;
+    const cancelStart = () => {
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      idleId = undefined;
+      timeoutId = undefined;
     };
-    window.addEventListener("pointerdown", start, { passive: true });
-    window.addEventListener("scroll", start, { passive: true, capture: true });
-    window.addEventListener("touchstart", start, { passive: true });
-    window.addEventListener("keydown", start);
-    // After lab tools have closed the LCP window. Real visitors almost
-    // always start via pointer/scroll long before this.
-    const fallbackId = window.setTimeout(start, 20000);
+    const canPlay = () =>
+      !disposed &&
+      visible &&
+      !document.hidden &&
+      !pausedRef.current &&
+      !reducedMotion.matches &&
+      !connection?.saveData;
+    const start = () => {
+      idleId = undefined;
+      timeoutId = undefined;
+      if (!canPlay()) return;
+      // The media element owns the only request; no competing prefetch.
+      if (!video.getAttribute("src")) video.src = pickHeroLoop(mobile);
+      void video.play().catch(() => {
+        // Autoplay restrictions leave the still image and an explicit play button.
+        if (!disposed && canPlay()) {
+          pausedRef.current = true;
+          setPaused(true);
+        }
+      });
+    };
+    const update = () => {
+      cancelStart();
+      const allowed = !reducedMotion.matches && !connection?.saveData;
+      setMotionAllowed(allowed);
+      if (!canPlay()) {
+        video.pause();
+        if (!allowed) video.removeAttribute("data-ready");
+        return;
+      }
+      // Keep the still image first, then start visible media when the main thread is idle.
+      if (video.getAttribute("src")) start();
+      else if (typeof window.requestIdleCallback === "function") {
+        idleId = window.requestIdleCallback(start, { timeout: 1000 });
+      } else {
+        timeoutId = window.setTimeout(start, 0);
+      }
+    };
+    syncPlayback.current = update;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = Boolean(entry?.isIntersecting);
+      update();
+    });
+    observer.observe(container);
+    document.addEventListener("visibilitychange", update);
+    reducedMotion.addEventListener("change", update);
+    connection?.addEventListener("change", update);
+    update();
     return () => {
-      started = true;
-      window.removeEventListener("pointerdown", start);
-      window.removeEventListener("scroll", start, true);
-      window.removeEventListener("touchstart", start);
-      window.removeEventListener("keydown", start);
-      window.clearTimeout(fallbackId);
+      disposed = true;
+      cancelStart();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", update);
+      reducedMotion.removeEventListener("change", update);
+      connection?.removeEventListener("change", update);
+      syncPlayback.current = () => {};
+      video.pause();
+      if (video.getAttribute("src")) {
+        video.removeAttribute("src");
+        video.load();
+      }
     };
   }, [imageReady]);
 
+  const control = motionAllowed ? (
+    <button
+      type="button"
+      aria-controls={videoId}
+      className="absolute left-4 bottom-[calc(var(--consent-banner-height,0px)+1rem)] z-10 min-h-11 rounded-sm border border-white/60 bg-black px-3 text-xs text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+      onClick={() => {
+        pausedRef.current = !pausedRef.current;
+        setPaused(pausedRef.current);
+        syncPlayback.current();
+      }}
+    >
+      {paused ? "Animation abspielen" : "Animation pausieren"}
+    </button>
+  ) : null;
+
   return (
-    <div className={cn("hero-image relative isolate size-full overflow-hidden", className)}>
+    <div
+      ref={containerRef}
+      className={cn("hero-image relative isolate size-full overflow-hidden", className)}
+      data-motion-paused={paused || undefined}
+    >
       <picture>
         <source type="image/avif" srcSet={heroAvifSrcSet} sizes="100vw" />
         <source type="image/webp" srcSet={heroWebpSrcSet} sizes="100vw" />
@@ -109,35 +180,24 @@ export function HeroMedia({
           onLoad={() => setImageReady(true)}
         />
       </picture>
-      {playVideo && loopSrc ? (
-        <video
-          aria-hidden="true"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="none"
-          src={loopSrc}
-          className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
-          onPlaying={(e) => {
-            e.currentTarget.setAttribute("data-ready", "");
-          }}
-        />
-      ) : null}
+      <video
+        ref={videoRef}
+        id={videoId}
+        aria-hidden="true"
+        muted
+        loop
+        playsInline
+        preload="none"
+        className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
+        onPlaying={(e) => e.currentTarget.setAttribute("data-ready", "")}
+      />
+      {controlHost ? createPortal(control, controlHost) : control}
     </div>
   );
 }
 
 export type ShotName =
-  | "keramik"
-  | "lack"
-  | "leder"
-  | "felgen"
-  | "hero"
-  | "dellen"
-  | "atelier"
-  | "private"
-  | "finish";
+  "keramik" | "lack" | "leder" | "felgen" | "hero" | "dellen" | "atelier" | "private" | "finish";
 
 const SLOT_CLASS: Record<ShotName, string> = {
   hero: "hero-image",
@@ -194,8 +254,8 @@ export function Shot({
     );
   }
   const { w, h } = SHOT_SIZE[name];
-  const avif = `/media/${name}-480.avif 480w, /media/${name}-800.avif 800w, /media/${name}.avif 1200w`;
-  const webp = `/media/${name}-480.webp 480w, /media/${name}-800.webp 800w, /media/${name}.webp 1200w`;
+  const avif = `/media/${name}-480.avif 480w, /media/${name}-800.avif 800w, /media/${name}-1200.avif 1200w`;
+  const webp = `/media/${name}-480.webp 480w, /media/${name}-800.webp 800w, /media/${name}-1200.webp 1200w`;
   return (
     <div className={cn(frame, slotClass, className)}>
       <picture>
@@ -230,7 +290,9 @@ export function FluidImg({
   priority?: boolean;
   sizes?: string;
 }) {
-  const match = src.match(/\/media\/(hero|keramik|lack|leder|felgen|dellen|atelier|private|finish)/);
+  const match = src.match(
+    /\/media\/(hero|keramik|lack|leder|felgen|dellen|atelier|private|finish)/,
+  );
   if (match) {
     return (
       <Shot

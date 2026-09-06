@@ -47,7 +47,9 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
               />
             </picture>
             <span className="absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-bg via-bg/70 to-transparent pb-6 pt-16">
-              <span className={ctaPrimary}>Google Maps laden – dabei werden Daten an Google übertragen</span>
+              <span className={`${ctaPrimary} mx-3 min-w-0 whitespace-normal text-center`}>
+                Google Maps laden – dabei werden Daten an Google übertragen
+              </span>
             </span>
           </button>
         )}
@@ -56,8 +58,8 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
         <p className="text-sm text-muted">
           {site.street}, {site.postalCode} {site.city} · {site.region}
           <span className="mt-1 block text-xs text-subtle">
-            Die Karte lädt Google Maps erst nach einem Klick. Danach können Sie
-            zoomen und eine Route legen – auch auf dem Handy.
+            Die Karte lädt Google Maps erst nach einem Klick. Danach können Sie zoomen und eine
+            Route legen – auch auf dem Handy.
           </span>
         </p>
         <div className="flex flex-wrap gap-2">

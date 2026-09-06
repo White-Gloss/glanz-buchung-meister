@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { attachBookingPhotos } from "@/lib/bookings.functions";
 import { Button, Field, inputLine } from "./ui";
+import { SubmissionResult } from "./submission-result";
 
 const MAX_FILES = 8;
 const ACCEPT =
@@ -28,6 +29,7 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (pending) return;
     if (files.length === 0) {
       setError("Bitte mindestens eine Aufnahme wählen.");
       return;
@@ -59,11 +61,11 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
 
   if (sent) {
     return (
-      <p className="mt-12 rounded-card border border-line bg-elevated p-5 text-sm text-muted">
+      <SubmissionResult className="mt-12 rounded-card border border-line bg-elevated p-5 text-sm text-muted">
         {count === 1
           ? "Eine Aufnahme ist eingegangen. Wir schauen sie uns zum Vorgang an."
           : `${count} Aufnahmen sind eingegangen. Wir schauen sie uns zum Vorgang an.`}
-      </p>
+      </SubmissionResult>
     );
   }
 
@@ -76,32 +78,24 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
     >
       <h2 className="font-display text-2xl">Fahrzeugfotos nachreichen</h2>
       <p className="text-sm text-muted">
-        Optional bis zu acht Aufnahmen zu {vorgang}. JPEG, PNG oder WebP
-        bevorzugt — kurze Videos (MP4, WebM, MOV) sind möglich. Die Dateien
-        landen nur im Betriebsarchiv und sind nicht öffentlich.
+        Optional bis zu acht Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos
+        (MP4, WebM, MOV) sind möglich. Die Dateien landen nur im Betriebsarchiv und sind nicht
+        öffentlich.
       </p>
-      <Field
-        tone="public"
-        id="booking-photos"
-        label="Fotos oder kurzes Video (max. 8)"
-      >
+      <Field tone="public" id="booking-photos" label="Fotos oder kurzes Video (max. 8)">
         <input
           id="booking-photos"
           type="file"
           accept={ACCEPT}
           multiple
           className={`${inputLine} text-sm`}
-          onChange={(e) =>
-            setFiles(Array.from(e.target.files ?? []).slice(0, MAX_FILES))
-          }
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, MAX_FILES))}
         />
         {files.length ? (
           <ul className="space-y-1 text-xs text-subtle">
             <li>{files.length} Datei(en) gewählt</li>
             {files.map((file) => (
-              <li key={`${file.name}-${file.size}-${file.lastModified}`}>
-                {file.name}
-              </li>
+              <li key={`${file.name}-${file.size}-${file.lastModified}`}>{file.name}</li>
             ))}
           </ul>
         ) : null}
@@ -111,7 +105,12 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
           {error}
         </p>
       ) : null}
-      <Button tone="public" type="submit" disabled={pending || files.length === 0} aria-busy={pending}>
+      <Button
+        tone="public"
+        type="submit"
+        disabled={pending || files.length === 0}
+        aria-busy={pending}
+      >
         {pending ? "Wird hochgeladen …" : "Fotos senden"}
       </Button>
     </form>

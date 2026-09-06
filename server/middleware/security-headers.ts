@@ -1,4 +1,5 @@
 import { applySecurityHeaders } from "../security-headers";
+import { responseCacheControl } from "../cache-policy";
 
 type HeaderBag = {
   set: (name: string, value: string) => void;
@@ -7,6 +8,7 @@ type HeaderBag = {
 
 type MiddlewareEvent = {
   url?: { protocol?: string; pathname?: string };
+  req?: { method?: string };
 };
 
 /**
@@ -23,20 +25,20 @@ export default async function securityHeadersMiddleware(
 ): Promise<unknown> {
   const result = await next();
   if (!result || typeof result !== "object") return result;
-  const res = result as { headers?: HeaderBag };
+  const res = result as { headers?: HeaderBag; status?: number };
   if (typeof res.headers?.set !== "function") return result;
   applySecurityHeaders((name, value) => res.headers!.set(name, value), {
     allowFraming: false,
     hsts: true,
   });
-  const path = event.url?.pathname ?? "";
-  const type = res.headers.get?.("content-type") ?? "";
-  if (/\.(?:avif|webp|woff2|png|jpe?g|svg|js|css|webm|mp4|ico|gif|webmanifest)$/i.test(path)) {
-    res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
-  } else if (/\.(?:xml|txt)$/i.test(path)) {
-    res.headers.set("Cache-Control", "public, max-age=86400");
-  } else if (type.includes("text/html") || path === "/" || !path.includes(".")) {
-    res.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
-  }
+  const cacheControl = responseCacheControl({
+    pathname: event.url?.pathname ?? "",
+    contentType: res.headers.get?.("content-type") ?? "",
+    existing: res.headers.get?.("cache-control") ?? "",
+    method: event.req?.method,
+    status: res.status,
+    hasSetCookie: Boolean(res.headers.get?.("set-cookie")),
+  });
+  if (cacheControl) res.headers.set("Cache-Control", cacheControl);
   return result;
 }

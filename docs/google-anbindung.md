@@ -80,9 +80,11 @@ Cookies – sie braucht deshalb auch keine Einwilligung.
 4. In der Search Console auf „Bestätigen" klicken. DNS-Änderungen bei IONOS
    brauchen erfahrungsgemäß wenige Minuten bis zu einer Stunde.
 5. Danach unter _Sitemaps_ die Adresse `sitemap.xml` eintragen und absenden.
-   Die Sitemap wird von der Website automatisch erzeugt und enthält alle
-   öffentlichen Seiten inklusive Ratgeber-Beiträgen; `robots.txt` verweist
-   bereits darauf.
+   Die Sitemap liegt als `public/sitemap.xml` im Repository und enthält die
+   dort gepflegten öffentlichen Seiten inklusive statischer Ratgeber-Beiträge;
+   `robots.txt` verweist bereits darauf. Neue CMS-Beiträge werden bisher nicht
+   automatisch ergänzt. Ihre URLs müssen bei der Veröffentlichung auch in der
+   Sitemap gepflegt werden; eine dynamische CMS-Sitemap ist noch nicht umgesetzt.
 
 ## Schritt 2 – Google Analytics 4
 
@@ -163,12 +165,13 @@ noch kein Benutzer existiert.
 
 ## Was die Website automatisch erledigt
 
-- `sitemap.xml` wird bei jedem Aufruf neu erzeugt, inklusive Ratgeber-Beiträgen
-  und eigenen Leistungen aus der Verwaltung.
-- `robots.txt` verweist auf die Sitemap und sperrt Verwaltungsbereiche sowie
-  persönliche Kundenlinks (`/angebot/`, `/kalender/`).
-- Jede Seite hat Titel, Beschreibung, Canonical-Adresse und strukturierte
-  Daten.
+- `sitemap.xml` wird aus der statischen Datei `public/sitemap.xml` ausgeliefert.
+  CMS-Veröffentlichungen aktualisieren diese Datei nicht automatisch.
+- `robots.txt` verweist auf die Sitemap und sperrt `/admin`, `/login`, `/danke`
+  und `/api/` für Crawler.
+- Öffentliche Inhaltsseiten haben Titel, Beschreibung und Canonical-Adresse;
+  ausgewählte Templates ergänzen strukturierte Daten. Verwaltung, Anmeldung
+  und die Bestätigung einer Anfrage sind absichtlich nicht indexierbar.
 - Das Google-Skript für Analytics/Ads wird **erst nach aktiver Einwilligung** geladen.
   Ohne Einwilligung stellt die öffentliche Website keine Verbindung zu Google
   Analytics oder Ads her. Google Maps und die Betriebs-Anmeldung über Google

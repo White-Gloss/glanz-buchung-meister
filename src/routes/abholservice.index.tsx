@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { cities, pickupKeramikNote, pickupPriceText, pickupTierSummary, site } from "@/data/site";
+import { cities, pickupPriceText, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/")({

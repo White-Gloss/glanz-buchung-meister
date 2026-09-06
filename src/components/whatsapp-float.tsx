@@ -36,8 +36,7 @@ export function WhatsAppFloat() {
       className={[
         "fixed right-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-wa text-accent-fg shadow-lg sm:right-6 sm:h-14 sm:w-14",
         "bottom-[max(1rem,env(safe-area-inset-bottom))]",
-        "[[data-consent-banner=open]_&]:bottom-[max(7.5rem,calc(env(safe-area-inset-bottom)+6.5rem))]",
-        "sm:[[data-consent-banner=open]_&]:bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]",
+        "[[data-consent-banner=open]_&]:bottom-[calc(var(--consent-banner-height,0px)+1rem)]",
         hidden ? "pointer-events-none opacity-0" : "opacity-100",
       ].join(" ")}
     >

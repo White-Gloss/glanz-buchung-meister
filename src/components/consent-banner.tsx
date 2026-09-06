@@ -12,7 +12,9 @@ import { ctaGhost, ctaPrimary } from "./ui";
  */
 export function ConsentBanner() {
   const [visible, setVisible] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
   const rejectRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const existing = getStoredConsent();
@@ -26,36 +28,66 @@ export function ConsentBanner() {
   useEffect(() => {
     if (!visible) return;
     document.body.dataset.consentBanner = "open";
-    rejectRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") reject();
+    const banner = bannerRef.current;
+    const updateHeight = () => {
+      document.documentElement.style.setProperty(
+        "--consent-banner-height",
+        `${banner?.getBoundingClientRect().height ?? 0}px`,
+      );
     };
-    window.addEventListener("keydown", onKey);
+    updateHeight();
+    const resizeObserver = new ResizeObserver(updateHeight);
+    if (banner) resizeObserver.observe(banner);
+    const active = document.activeElement;
+    previousFocusRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+    rejectRef.current?.focus();
     return () => {
+      resizeObserver.disconnect();
+      document.documentElement.style.removeProperty("--consent-banner-height");
       delete document.body.dataset.consentBanner;
-      window.removeEventListener("keydown", onKey);
     };
   }, [visible]);
 
   if (!visible) return null;
 
+  function dismiss() {
+    if (bannerRef.current?.contains(document.activeElement)) {
+      const previous = previousFocusRef.current;
+      const target =
+        previous?.isConnected && !previous.closest("[inert]")
+          ? previous
+          : document.getElementById("main-content");
+      target?.focus({ preventScroll: true });
+    }
+    setVisible(false);
+  }
+
   function accept() {
     setStoredConsent("accepted");
     loadGoogleTag();
-    setVisible(false);
+    dismiss();
   }
 
   function reject() {
     setStoredConsent("rejected");
-    setVisible(false);
+    dismiss();
   }
 
   return (
     <div
+      ref={bannerRef}
       role="dialog"
       aria-modal="false"
       aria-labelledby="consent-title"
       aria-describedby="consent-text"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          reject();
+        }
+      }}
       className="fixed inset-x-0 bottom-0 z-50 border-t border-fg/10 bg-bg p-4 text-fg shadow-[0_-4px_20px_rgba(0,0,0,0.15)] sm:p-6"
     >
       <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
