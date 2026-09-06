@@ -25,6 +25,12 @@ import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema } from "@/lib/booking-schema";
+import {
+  assertAllowedUpload,
+  extensionForMime,
+  uploadToConditionPhotos,
+} from "@/lib/booking-photos";
+import { randomBytes } from "node:crypto";
 
 export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
@@ -306,6 +312,91 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       values (${SHOP}, ${channel}, ${data.name}, ${data.title}, ${body})
     `;
     return { ok: true as const };
+  });
+
+
+function decodeBase64Payload(raw: string): Uint8Array {
+  const trimmed = raw.trim();
+  const comma = trimmed.indexOf(",");
+  const payload =
+    trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
+  if (!payload) throw new Error("Die Datei ist leer.");
+  return Uint8Array.from(Buffer.from(payload, "base64"));
+}
+
+const attachBookingPhotosSchema = z.object({
+  vorgang: z
+    .string()
+    .trim()
+    .regex(/^WG-(\d+)$/i, "Ungültige Vorgangsnummer."),
+  files: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(180),
+        mime: z.string().trim().min(3).max(80),
+        base64: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .max(8),
+});
+
+export const attachBookingPhotos = createServerFn({ method: "POST" })
+  .validator((input: unknown) => attachBookingPhotosSchema.parse(input))
+  .handler(async ({ data }) => {
+    assertSameSiteRequest();
+    assertPublicPostLimit("booking-photos", 6);
+
+    const match = /^WG-(\d+)$/i.exec(data.vorgang.trim());
+    const bookingId = Number(match?.[1] ?? 0);
+    if (!Number.isInteger(bookingId) || bookingId < 1) {
+      throw new Error("Ungültige Vorgangsnummer.");
+    }
+
+    const sql = await getSql();
+    const bookings = await sql<{ id: number; customer_name: string }>`
+      select id, customer_name
+      from bookings
+      where id = ${bookingId} and shop_id = ${SHOP}
+      limit 1
+    `;
+    const booking = bookings[0];
+    if (!booking) throw new Error("Buchung nicht gefunden.");
+
+    const storedNames: string[] = [];
+    for (const file of data.files) {
+      const bytes = decodeBase64Payload(file.base64);
+      const { mime, ext } = assertAllowedUpload(bytes, file.mime);
+      const random = randomBytes(16).toString("hex");
+      const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
+      await uploadToConditionPhotos(storagePath, bytes, mime);
+      const safeName = file.name.slice(0, 180);
+      await sql`
+        insert into booking_photos (
+          shop_id, booking_id, storage_path, mime, size_bytes, original_name
+        ) values (
+          ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${bytes.byteLength}, ${safeName}
+        )
+      `;
+      storedNames.push(safeName);
+    }
+
+    const subject = `Fotos zu WG-${bookingId}`;
+    const body = [
+      `${storedNames.length} Aufnahme(n) zu Vorgang WG-${bookingId}.`,
+      storedNames.length ? `Dateien: ${storedNames.join(", ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    await sql`
+      insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
+      values (
+        ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
+      )
+    `;
+
+    return { ok: true as const, count: storedNames.length };
   });
 
 export const listBookings = createServerFn({ method: "GET" })
