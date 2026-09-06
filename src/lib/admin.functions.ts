@@ -7,6 +7,11 @@ import { agentHelpText, parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
 import { OUTBOUND_QUEUED, flushOutboundEmailQueue, queueBookingAutomation } from "@/lib/ops";
+import {
+  ensureQontoInvoiceForBooking,
+  sendQontoInvoiceEmailForBooking,
+  type QontoBookingFields,
+} from "@/lib/qonto-invoice";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
@@ -254,7 +259,7 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
       `Leistung: ${pack?.name ?? booking.package_id}`,
       `Betrag brutto: ${(booking.total_cents / 100).toFixed(2)} EUR inkl. 19 % MwSt.`,
       data.kind === "rechnung"
-        ? "Kein Steuerbeleg dieser Vorschau – verbindliche Rechnung stellt die Buchhaltung (Lexware) aus."
+        ? "Betrieblicher Entwurf – verbindliche Kundenrechnung entsteht in Qonto, wenn die Buchung erledigt ist."
         : "Unverbindlich. Vertrag erst nach Bestätigung.",
     ].join("\n");
     const rows = await sql<{ id: number }>`
@@ -632,6 +637,45 @@ export const flushOutboundMail = createServerFn({ method: "POST" })
   .handler(async () => {
     const sql = await getSql();
     return flushOutboundEmailQueue(sql);
+  });
+
+export const sendQontoInvoice = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) =>
+    z.object({ bookingId: z.number().int().positive() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    return sendQontoInvoiceEmailForBooking(sql, data.bookingId);
+  });
+
+export const retryQontoInvoice = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) =>
+    z.object({ bookingId: z.number().int().positive() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    const rows = await sql<QontoBookingFields>`
+      select id, customer_name, email, package_id, extra_ids, total_cents, pickup_cents,
+             qonto_client_id, qonto_invoice_id, qonto_invoice_number, qonto_invoice_status
+      from bookings
+      where id = ${data.bookingId} and shop_id = ${SHOP}
+      limit 1
+    `;
+    const booking = rows[0];
+    if (!booking) throw new Error("Buchung nicht gefunden.");
+    if (!booking.qonto_invoice_id) {
+      await sql`
+        update bookings
+        set qonto_invoice_status = null,
+            qonto_invoice_error = null,
+            updated_at = now()
+        where id = ${booking.id} and shop_id = ${SHOP}
+      `;
+      booking.qonto_invoice_status = null;
+    }
+    return ensureQontoInvoiceForBooking(sql, booking);
   });
 
 export const listAutomationEvents = createServerFn({ method: "GET" })
