@@ -5,6 +5,7 @@ import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { trackGoogleAdsConversion } from "@/lib/googleTag";
 import { pageHead } from "@/lib/seo";
+import { BookingPhotoUpload } from "@/components/booking-photo-upload";
 
 type ThanksSearch = {
   vorgang?: string;
@@ -92,10 +93,13 @@ function ThanksPage() {
 
       <section className="section mx-auto max-w-3xl px-4 sm:px-6">
         {vorgang ? (
-          <p className="border border-line bg-surface px-5 py-4">
-            <span className="block text-xs uppercase tracking-[0.18em] text-subtle">Vorgang</span>
-            <span className="mt-2 block font-display text-3xl tracking-tight">{vorgang}</span>
-          </p>
+          <>
+            <p className="border border-line bg-surface px-5 py-4">
+              <span className="block text-xs uppercase tracking-[0.18em] text-subtle">Vorgang</span>
+              <span className="mt-2 block font-display text-3xl tracking-tight">{vorgang}</span>
+            </p>
+            <BookingPhotoUpload vorgang={vorgang} />
+          </>
         ) : null}
 
         <ol className="mt-12 divide-y divide-line border-y border-line">
