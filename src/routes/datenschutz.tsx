@@ -109,16 +109,25 @@ function PrivacyPage() {
           <h2>6. Google Tag, Conversion-Tracking und Cookies</h2>
           <p>
             Auf dieser Website setzen wir den Google Tag (Google Ireland Limited, Gordon House,
-            Barrow Street, Dublin 4, Irland; Tag-ID: AW-18384520682) zur Erfolgsmessung unserer
-            Google-Ads-Werbeanzeigen ein. Wenn Sie über eine Google-Anzeige auf unsere Website
-            gelangen oder eine Terminanfrage bzw. Buchung abschließen, wird dies als Conversion
-            erfasst, um die Effektivität unserer Anzeigen zu analysieren.
+            Barrow Street, Dublin 4, Irland; Tag-ID: AW-18384520682, ggf. zusätzlich eine
+            Google-Analytics-4-Mess-ID) zur Erfolgsmessung unserer Google-Ads-Werbeanzeigen bzw.
+            Besucherstatistik ein. Wenn Sie über eine Google-Anzeige auf unsere Website gelangen
+            oder eine Terminanfrage bzw. Buchung abschließen, wird dies als Conversion erfasst, um
+            die Effektivität unserer Anzeigen zu analysieren.
           </p>
           <p>
-            Dabei können Daten wie Ihre IP-Adresse und Gerätekennungen an Google übertragen und
-            gegebenenfalls in die USA übermittelt werden. Google stützt solche Übermittlungen auf
-            Standardvertragsklauseln der EU-Kommission. Rechtsgrundlage für den Einsatz ist
-            Art. 6 Abs. 1 lit. a DSGVO bzw. Art. 6 Abs. 1 lit. f DSGVO.
+            Das Skript wird technisch erst geladen, nachdem Sie im Cookie-Banner „Akzeptieren“
+            gewählt haben (§ 25 Abs. 1 TDDDG). Rechtsgrundlage für den Einsatz ist Ihre
+            Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird kein Google Tag
+            geladen und es findet keine Übertragung an Google statt. Eine erteilte Einwilligung
+            können Sie jederzeit widerrufen, indem Sie in Ihrem Browser den lokalen Speicher
+            (localStorage-Eintrag „wg-consent“) dieser Seite löschen; das Banner erscheint dann
+            erneut.
+          </p>
+          <p>
+            Nach Ihrer Einwilligung können Daten wie Ihre IP-Adresse und Gerätekennungen an Google
+            übertragen und gegebenenfalls in die USA übermittelt werden. Google stützt solche
+            Übermittlungen auf Standardvertragsklauseln der EU-Kommission.
           </p>
           <p>
             Darüber hinaus findet im öffentlich zugänglichen Bereich keine werbliche Reichweitenmessung

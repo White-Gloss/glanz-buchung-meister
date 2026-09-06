@@ -5,7 +5,6 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
-import { resolveGoogleAdsId } from "@/lib/googleTag";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -31,22 +30,17 @@ export const Route = createRootRoute({
     ],
   }),
   component: () => {
-    const googleAdsId = resolveGoogleAdsId(import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID);
-
     return (
       <html lang="de" className="antialiased" suppressHydrationWarning>
         <head>
-          {/* Google tag (gtag.js) — Google Ads */}
-          {googleAdsId ? (
-            <>
-              <script async src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`} />
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${googleAdsId}');`,
-                }}
-              />
-            </>
-          ) : null}
+          {/*
+            Google Tag (gtag.js) für Ads/GA4 wird bewusst NICHT hier
+            eingebunden. Er lädt erst nach erteilter Cookie-Einwilligung über
+            `loadGoogleTag()` aus `lib/googleTag.ts`, ausgelöst vom
+            Cookie-Banner (`components/consent-banner.tsx`). Ein
+            bedingungsloses `<script>` hier würde Tracking vor jeder
+            Einwilligung starten (§ 25 TDDDG, Art. 6 Abs. 1 lit. a DSGVO).
+          */}
           {/*
             Bestätigungscodes der Google Search Console — hier und nicht in
             head(), weil die dortige Meta-Liste nach `name` dedupliziert wird
