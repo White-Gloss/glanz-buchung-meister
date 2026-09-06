@@ -44,16 +44,6 @@ const NAV_SHOT: Record<string, ShotName> = {
   B2B: "private",
 };
 
-const MENU_SHOTS: ShotName[] = [
-  "lack",
-  "private",
-  "finish",
-  "atelier",
-  "felgen",
-  "keramik",
-  "dellen",
-];
-
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [layer, setLayer] = useState(false);
@@ -131,6 +121,7 @@ export function SiteHeader() {
     return () => {
       window.removeEventListener("keydown", onKey);
       window.cancelAnimationFrame(t);
+      document.querySelector<HTMLElement>(".menu-toggle")?.focus();
     };
   }, [open]);
 
@@ -213,16 +204,14 @@ function FilmMenu({
       aria-hidden={closing || undefined}
     >
       <div className="film-menu-visual" aria-hidden>
-        {MENU_SHOTS.map((name) => (
-          <Shot
-            key={name}
-            name={name}
-            alt=""
-            framed={false}
-            className={`film-menu-shot${name === visual ? " is-on" : ""}`}
-            sizes="50vw"
-          />
-        ))}
+        <Shot
+          key={visual}
+          name={visual}
+          alt=""
+          framed={false}
+          className="film-menu-shot is-on"
+          sizes="(min-width: 1024px) 50vw, 0px"
+        />
       </div>
       <div className="film-menu-panel">
         <ul className="film-menu-list">
@@ -266,7 +255,7 @@ function FilmMenu({
         <div className="film-menu-cta">
           <Link to="/" hash="buchung" className={ctaPrimary} onClick={onClose}>
             Termin anfragen
-            <IconArrowRight className="size-4" />
+            <IconArrowRight className="size-4" aria-hidden />
           </Link>
           <a
             href={site.whatsapp}

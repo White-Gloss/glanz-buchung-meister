@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { getStoredConsent, setStoredConsent } from "@/lib/consent";
 import { loadGoogleTag } from "@/lib/googleTag";
 import { ctaGhost, ctaPrimary } from "./ui";
@@ -12,7 +12,6 @@ import { ctaGhost, ctaPrimary } from "./ui";
  */
 export function ConsentBanner() {
   const [visible, setVisible] = useState(false);
-  const rejectRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const existing = getStoredConsent();
@@ -26,7 +25,6 @@ export function ConsentBanner() {
   useEffect(() => {
     if (!visible) return;
     document.body.dataset.consentBanner = "open";
-    rejectRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") reject();
     };
@@ -72,7 +70,7 @@ export function ConsentBanner() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button ref={rejectRef} type="button" onClick={reject} className={ctaGhost}>
+          <button type="button" onClick={reject} className={ctaGhost}>
             Ablehnen
           </button>
           <button type="button" onClick={accept} className={ctaPrimary}>
