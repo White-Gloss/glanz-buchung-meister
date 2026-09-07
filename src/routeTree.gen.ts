@@ -16,6 +16,7 @@ import { Route as AgbRouteImport } from './routes/agb'
 import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as BarrierefreiheitRouteImport } from './routes/barrierefreiheit'
 import { Route as DankeRouteImport } from './routes/danke'
+import { Route as DatenloeschungRouteImport } from './routes/datenloeschung'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
@@ -91,6 +92,11 @@ const BarrierefreiheitRoute = BarrierefreiheitRouteImport.update({
 const DankeRoute = DankeRouteImport.update({
   id: '/danke',
   path: '/danke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenloeschungRoute = DatenloeschungRouteImport.update({
+  id: '/datenloeschung',
+  path: '/datenloeschung',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -355,6 +362,7 @@ export interface FileRoutesByTo {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -403,6 +411,7 @@ export interface FileRoutesById {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -550,6 +561,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -601,6 +613,7 @@ export interface RootRouteChildren {
   B2bRoute: typeof B2bRoute
   BarrierefreiheitRoute: typeof BarrierefreiheitRoute
   DankeRoute: typeof DankeRoute
+  DatenloeschungRoute: typeof DatenloeschungRoute
   DatenschutzRoute: typeof DatenschutzRoute
   DellenHagelschadenRoute: typeof DellenHagelschadenRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
@@ -671,6 +684,13 @@ declare module '@tanstack/react-router' {
       path: '/danke'
       fullPath: '/danke'
       preLoaderRoute: typeof DankeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenloeschung': {
+      id: '/datenloeschung'
+      path: '/datenloeschung'
+      fullPath: '/datenloeschung'
+      preLoaderRoute: typeof DatenloeschungRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/datenschutz': {
@@ -1063,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   B2bRoute: B2bRoute,
   BarrierefreiheitRoute: BarrierefreiheitRoute,
   DankeRoute: DankeRoute,
+  DatenloeschungRoute: DatenloeschungRoute,
   DatenschutzRoute: DatenschutzRoute,
   DellenHagelschadenRoute: DellenHagelschadenRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
@@ -1088,10 +1109,13 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { createStart } from '@tanstack/react-start'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }
