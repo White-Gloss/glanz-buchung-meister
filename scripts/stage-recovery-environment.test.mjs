@@ -60,10 +60,32 @@ test("EnvironmentFile parser preserves literal shell-like content and systemd es
   for (const value of ['test-"quote\\slash$`%literal', "an apostrophe's value", "üUnicode🙂"]) {
     assert.equal(parseEnvironment(Buffer.from(`VALUE=${serializeEnvironmentValue(value)}\n`)).get("VALUE"), value);
   }
-  for (const source of ["KEY=a\nKEY=b", "export KEY=value", "BARE_LINE", "KEY=one\\\ntwo", 'KEY="unclosed', "KEY='closed'junk", "KEY=\u0000", "KEY=a\rb"]) {
+  for (const source of ["export KEY=value", "BARE_LINE", "KEY=one\\\ntwo", 'KEY="unclosed', "KEY='closed'junk", "KEY=\u0000", "KEY=a\rb"]) {
     assert.throws(() => parseEnvironment(Buffer.from(source)));
   }
   assert.throws(() => serializeEnvironmentValue("line\nbreak"));
+});
+
+test("duplicate live assignments follow systemd order while retaining every original byte", () => {
+  const original = Buffer.from('MAIL_FROM=old@example.invalid\r\nMAIL_FROM="White Gloss <current@example.invalid>"\r\nOPTIONAL=old\r\nOPTIONAL=\r\n');
+  const parsed = parseEnvironment(original);
+  assert.equal(parsed.get("MAIL_FROM"), "White Gloss <current@example.invalid>");
+  assert.equal(parsed.get("OPTIONAL"), "");
+  const result = composeCandidate(original, target, signing, google, random);
+  assert.ok(result.candidate.subarray(0, original.length).equals(original));
+  assert.equal(parseEnvironment(result.candidate).get("MAIL_FROM"), parsed.get("MAIL_FROM"));
+  assert.equal(result.appendedKeys.includes("MAIL_FROM"), false);
+});
+
+test("the effective last recovery assignment must match and target.env remains duplicate-free", () => {
+  for (const [key, expected, conflicting] of [
+    ["DATABASE_URL", database, "postgresql://different"],
+    ["BETTER_AUTH_SECRET", signing.toString(), "different"],
+    ["BETTER_AUTH_URL", "https://white-gloss.de", "http://white-gloss.de"],
+  ]) {
+    assert.throws(() => composeCandidate(Buffer.from(`${key}=${expected}\n${key}=${conflicting}\n`), target, signing, google, random), /existing_recovery_value_conflict/);
+  }
+  assert.throws(() => parseTargetEnvironment(Buffer.concat([target, target])), /environment_duplicate_key/);
 });
 
 test("candidate keeps original bytes and unknown keys, appending only verified missing fields", () => {

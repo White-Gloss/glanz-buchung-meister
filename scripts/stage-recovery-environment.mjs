@@ -3,7 +3,7 @@
  * Linux root: --directory /var/backups/white-gloss/YYYYMMDDTHHMMSSZ
  * --target-env <protected target.env> --signing-secret <protected auth-signing-secret.txt>
  * Existing assignments are preserved byte-for-byte. Unsupported multiline syntax,
- * duplicate keys, empty required assignments and conflicting recovery values fail closed.
+ * duplicate target keys, empty required assignments and conflicting recovery values fail closed.
  */
 import * as fs from "node:fs/promises";
 import { constants } from "node:fs";
@@ -41,7 +41,7 @@ function scalar(value, max = 8192) {
 
 // Deliberately supports only complete, single-line systemd EnvironmentFile values.
 // There is no shell expansion: $, %, backticks and interior quotes remain literal.
-export function parseEnvironment(bytes) {
+export function parseEnvironment(bytes, { rejectDuplicates = false } = {}) {
   const text = decode(bytes, 262144);
   const values = new Map();
   for (const raw of text.split("\n")) {
@@ -51,7 +51,7 @@ export function parseEnvironment(bytes) {
     const assignment = /^[ \t]*([A-Za-z_][A-Za-z0-9_]*)[ \t]*=(.*)$/.exec(line);
     if (!assignment) fail("environment_assignment_invalid");
     const [, key, rest] = assignment;
-    if (values.has(key)) fail("environment_duplicate_key");
+    if (rejectDuplicates && values.has(key)) fail("environment_duplicate_key");
     const source = trimEnvironmentWhitespace(rest);
     let value = "";
     if (source.startsWith("'") || source.startsWith('"')) {
@@ -79,6 +79,7 @@ export function parseEnvironment(bytes) {
         value += source[i];
       }
     }
+    // systemd EnvironmentFile uses the last assignment; keep source bytes untouched.
     values.set(key, value);
   }
   return values;
@@ -106,7 +107,7 @@ export function parseGeneratedGoogle(bytes) {
 
 export function parseTargetEnvironment(bytes) {
   if (bytes.length > 4096) fail("target_environment_invalid");
-  const values = parseEnvironment(bytes);
+  const values = parseEnvironment(bytes, { rejectDuplicates: true });
   if (values.size !== 1 || !values.has("RESCUE_TARGET_DATABASE_URL")) fail("target_environment_invalid");
   const value = values.get("RESCUE_TARGET_DATABASE_URL");
   let url;
