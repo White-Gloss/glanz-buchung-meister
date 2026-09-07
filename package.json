@@ -32,7 +32,7 @@
     "test:flows": "node scripts/qa/check-flows.mjs && node scripts/qa/check-sitemap.mjs",
     "check:release": "node scripts/check-release.mjs",
     "test:release": "node scripts/qa/run-checks.mjs",
-    "test:recovery": "node --test ops/install-postgresql18.test.mjs scripts/export-pglite-rescue.test.mjs"
+    "test:recovery": "node --test ops/install-postgresql18.test.mjs scripts/export-pglite-rescue.test.mjs scripts/provision-recovery-postgres.test.mjs scripts/stage-recovery-environment.test.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
