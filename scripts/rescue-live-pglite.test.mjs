@@ -25,21 +25,33 @@ const input = {
 function runtimeContext(pg, overrides = {}) {
   let bytes;
   const files = new Map();
+  const descriptors = new Map();
+  const synced = new Set();
   const memoryFs = {
     realpathSync: (path) => path,
     lstatSync: () => ({ isSymbolicLink: () => false }),
     statSync: () => ({ isDirectory: () => true, uid: 1000, mode: 0o40700 }),
     openSync(path, flags, mode) {
       if (path === directory) return 2;
-      assert.equal(path, `${directory}/database.tar`);
+      assert.ok([`${directory}/database.tar`, `${directory}/auth-signing-secret.txt`].includes(path));
       assert.equal(flags, "wx"); assert.equal(mode, 0o600);
       if (files.has(path)) throw Object.assign(new Error("exists"), { code: "EEXIST" });
-      files.set(path, true); return 1;
+      const fd = path.endsWith("database.tar") ? 1 : 3;
+      const file = { fd, mode, bytes: new Uint8Array() };
+      files.set(path, file); descriptors.set(fd, file); return fd;
     },
     writeSync(fd, buffer, offset, length) {
-      assert.equal(fd, 1); bytes = Uint8Array.from(buffer.subarray(offset, offset + length)); return length;
+      const file = descriptors.get(fd);
+      assert.ok(file);
+      const chunk = Uint8Array.from(buffer.subarray(offset, offset + length));
+      const combined = new Uint8Array(file.bytes.length + chunk.length);
+      combined.set(file.bytes); combined.set(chunk, file.bytes.length);
+      file.bytes = combined;
+      if (fd === 1) bytes = file.bytes;
+      return length;
     },
-    fsyncSync() {}, closeSync() {},
+    fchmodSync(fd, mode) { descriptors.get(fd).mode = mode; },
+    fsyncSync(fd) { synced.add(fd); }, closeSync() {},
   };
   const context = vm.createContext({
     process: { pid, version: "v22.23.2", cwd: () => current, getuid: () => 1000,
@@ -49,7 +61,7 @@ function runtimeContext(pg, overrides = {}) {
     __pgliteInstance__: pg ? Promise.resolve(pg) : undefined,
     ...overrides,
   });
-  return { context, getBytes: () => bytes, files, memoryFs };
+  return { context, getBytes: () => bytes, files, memoryFs, synced };
 }
 
 test("CLI requires an explicit mode and bounded positive PID; no paths or eval", () => {
@@ -133,6 +145,41 @@ test("backup refuses an open transaction and a concurrent rescue without touchin
   await assert.rejects(vm.runInContext(expressionFor("backup", pid, directory), runtime.context), /backup_already_in_progress/);
 });
 
+test("backup saves only the existing valid signing secret to a separate protected file", async () => {
+  const secret = "a1B2".repeat(16);
+  const snapshot = new Uint8Array(2048).fill(7);
+  const pg = { dumpDataDir: () => new Blob([snapshot]), runExclusive: (fn) => fn(), isInTransaction: () => false };
+  const runtime = runtimeContext(pg, { __grokAuthPreviewSecret__: secret });
+  const result = await vm.runInContext(expressionFor("backup", pid, directory), runtime.context);
+  assert.equal(result.signingSecret.present, true);
+  assert.equal(result.signingSecret.filename, "auth-signing-secret.txt");
+  const file = runtime.files.get(`${directory}/auth-signing-secret.txt`);
+  assert.equal(file.mode, 0o600);
+  assert.equal(Buffer.from(file.bytes).toString("ascii"), secret);
+  assert.ok(runtime.synced.has(file.fd));
+  assert.ok(runtime.synced.has(2));
+  assert.deepEqual(runtime.getBytes(), snapshot);
+  assert.equal(runtime.files.size, 2);
+  assert.equal(runtime.context.__grokAuthPreviewSecret__, secret);
+  assert.equal(runtime.context.process.env.BETTER_AUTH_SECRET, "private-secret");
+  assert.doesNotMatch(JSON.stringify(result), new RegExp(`${secret}|private-secret`));
+  assert.deepEqual(Object.keys(result.signingSecret).sort(), ["filename", "present"]);
+});
+
+test("absent or invalid signing secrets create no additional file or output values", async () => {
+  const pg = { dumpDataDir: () => new Blob([new Uint8Array(2048)]), runExclusive: (fn) => fn(), isInTransaction: () => false };
+  for (const secret of [undefined, null, "", "short-private-value", "g".repeat(64), "a".repeat(63), "a".repeat(65), 123]) {
+    const runtime = runtimeContext(pg, { __grokAuthPreviewSecret__: secret });
+    const result = await vm.runInContext(expressionFor("backup", pid, directory), runtime.context);
+    assert.equal(result.complete, true);
+    assert.equal(result.signingSecret.present, false);
+    assert.equal(result.signingSecret.filename, null);
+    assert.equal(runtime.files.size, 1);
+    assert.equal(runtime.files.has(`${directory}/auth-signing-secret.txt`), false);
+    assert.doesNotMatch(JSON.stringify(result), /short-private-value|private-secret/);
+  }
+});
+
 function orchestration(overrides = {}) {
   const calls = [];
   const client = { socket: { close: () => calls.push("socket.close") },
@@ -141,7 +188,8 @@ function orchestration(overrides = {}) {
       if (expression === "process.pid") return pid;
       if (expression.startsWith("setTimeout")) return true;
       if (expression.includes("async function inspectRuntime")) return { pgliteExists: true, recoveryInProgress: false };
-      return { complete: true, path: `${directory}/database.tar`, bytes: 2048, sha256: "a".repeat(64) };
+      return { complete: true, path: `${directory}/database.tar`, bytes: 2048, sha256: "a".repeat(64),
+        signingSecret: { present: false, filename: null } };
     },
   };
   return { calls, client, deps: {
@@ -206,6 +254,7 @@ test("actual Node inspector evaluates the exact expressions against real PGlite 
     const pg = await PGlite.create();
     await pg.exec('CREATE TABLE bookings(id int); INSERT INTO bookings VALUES(1),(2)');
     globalThis.__pgliteInstance__ = Promise.resolve(pg);
+    globalThis.__grokAuthPreviewSecret__ = 'b'.repeat(64);
     const actualBuiltin = process.getBuiltinModule.bind(process);
     const actualRoot = ${JSON.stringify(sandbox)};
     const logicalRoot = ${JSON.stringify(current)};
@@ -249,6 +298,11 @@ test("actual Node inspector evaluates the exact expressions against real PGlite 
     const saved = fs.readFileSync(path.join(localDirectory, "database.tar"));
     assert.equal(backup.bytes, saved.length);
     assert.equal(backup.sha256, crypto.createHash("sha256").update(saved).digest("hex"));
+    assert.deepEqual(backup.signingSecret, { present: true, filename: "auth-signing-secret.txt" });
+    const secretPath = path.join(localDirectory, "auth-signing-secret.txt");
+    assert.equal(fs.readFileSync(secretPath, "ascii"), "b".repeat(64));
+    if (process.platform !== "win32") assert.equal(fs.statSync(secretPath).mode & 0o777, 0o600);
+    assert.equal(JSON.stringify(backup).includes("b".repeat(64)), false);
     const restored = await PGlite.create({ loadDataDir: new Blob([saved]) });
     try { assert.equal(Number((await restored.query("SELECT count(*) AS n FROM bookings")).rows[0].n), 2); }
     finally { await restored.close(); }

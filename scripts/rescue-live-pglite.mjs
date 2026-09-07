@@ -105,7 +105,7 @@ export async function inspectRuntime(expectedPid) {
   return result;
 }
 
-// Only writes the snapshot file in a root-prepared directory under the active release.
+// Only writes the snapshot and optional signing-secret file in the prepared directory.
 export async function backupRuntime(expectedPid, directory) {
   if (process.pid !== expectedPid) throw new Error("target_pid_mismatch");
   if (globalThis.__whiteGlossRecoveryInProgress__) throw new Error("backup_already_in_progress");
@@ -147,10 +147,29 @@ export async function backupRuntime(expectedPid, directory) {
       }
       fs.fsyncSync(fd);
     } finally { fs.closeSync(fd); }
+    const secret = globalThis.__grokAuthPreviewSecret__;
+    const signingSecret = { present: false, filename: null };
+    if (typeof secret === "string" && /^[0-9a-f]{64}$/i.test(secret)) {
+      const filename = "auth-signing-secret.txt";
+      const secretFd = fs.openSync(`${directory}/${filename}`, "wx", 0o600);
+      try {
+        fs.fchmodSync(secretFd, 0o600);
+        const secretBytes = Uint8Array.from(secret, (character) => character.charCodeAt(0));
+        let offset = 0;
+        while (offset < secretBytes.length) {
+          const written = fs.writeSync(secretFd, secretBytes, offset, secretBytes.length - offset);
+          if (written <= 0) throw new Error("signing_secret_write_failed");
+          offset += written;
+        }
+        fs.fsyncSync(secretFd);
+      } finally { fs.closeSync(secretFd); }
+      signingSecret.present = true;
+      signingSecret.filename = filename;
+    }
     const directoryFd = fs.openSync(directory, "r");
     try { fs.fsyncSync(directoryFd); } finally { fs.closeSync(directoryFd); }
     return { complete: true, path, bytes: bytes.length,
-      sha256: crypto.createHash("sha256").update(bytes).digest("hex") };
+      sha256: crypto.createHash("sha256").update(bytes).digest("hex"), signingSecret };
   } finally { delete globalThis.__whiteGlossRecoveryInProgress__; }
 }
 
@@ -236,7 +255,8 @@ export async function connectInspector(url) {
             const description = message.result?.exceptionDetails?.exception?.description;
             const safeCodes = ["target_pid_mismatch", "no_existing_pglite", "existing_database_unavailable",
               "unsupported_existing_pglite", "backup_already_in_progress", "active_transaction_retry_after_drain",
-              "unsafe_backup_directory", "unsafe_backup_permissions", "invalid_snapshot", "snapshot_write_failed"];
+              "unsafe_backup_directory", "unsafe_backup_permissions", "invalid_snapshot", "snapshot_write_failed",
+              "signing_secret_write_failed"];
             const code = safeCodes.find((candidate) => typeof description === "string" &&
               (description === `Error: ${candidate}` || description.startsWith(`Error: ${candidate}\n`)));
             finish(new RescueError(code ?? "target_evaluation_failed"));
@@ -299,6 +319,10 @@ export async function runRescue(options, deps = {}) {
       if (!backup?.complete || backup.path !== `${directory}/database.tar` ||
           !Number.isSafeInteger(backup.bytes) || backup.bytes < 1024 || !/^[0-9a-f]{64}$/.test(backup.sha256 ?? "")) {
         throw new RescueError("invalid_snapshot_result");
+      }
+      if (typeof backup.signingSecret?.present !== "boolean" ||
+          backup.signingSecret.filename !== (backup.signingSecret.present ? "auth-signing-secret.txt" : null)) {
+        throw new RescueError("invalid_signing_secret_result");
       }
     }
     return { inspection, ...(backup ? { backup } : {}) };
