@@ -16,6 +16,7 @@ import { Route as AgbRouteImport } from './routes/agb'
 import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as BarrierefreiheitRouteImport } from './routes/barrierefreiheit'
 import { Route as DankeRouteImport } from './routes/danke'
+import { Route as DatenloeschungRouteImport } from './routes/datenloeschung'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as DellenHagelschadenRouteImport } from './routes/dellen-hagelschaden'
 import { Route as FahrzeugZustandRouteImport } from './routes/fahrzeug-zustand'
@@ -29,6 +30,7 @@ import { Route as LuxusfahrzeugeRouteImport } from './routes/luxusfahrzeuge'
 import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as RatgeberRouteImport } from './routes/ratgeber'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
@@ -46,12 +48,15 @@ import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
 import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
 import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
+import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
+import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
 import { Route as RatgeberSlugRouteImport } from './routes/ratgeber.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as LeistungenSlugIndexRouteImport } from './routes/leistungen.$slug.index'
 import { Route as LeistungenSlugCityRouteImport } from './routes/leistungen.$slug.$city'
 
 const IndexRoute = IndexRouteImport.update({
@@ -87,6 +92,11 @@ const BarrierefreiheitRoute = BarrierefreiheitRouteImport.update({
 const DankeRoute = DankeRouteImport.update({
   id: '/danke',
   path: '/danke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DatenloeschungRoute = DatenloeschungRouteImport.update({
+  id: '/datenloeschung',
+  path: '/datenloeschung',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
@@ -152,6 +162,11 @@ const QualitaetRoute = QualitaetRouteImport.update({
 const RatgeberRoute = RatgeberRouteImport.update({
   id: '/ratgeber',
   path: '/ratgeber',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WiderrufRoute = WiderrufRouteImport.update({
@@ -239,9 +254,19 @@ const AdminZustandRoute = AdminZustandRouteImport.update({
   path: '/zustand',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiAutomationCronRoute = ApiAutomationCronRouteImport.update({
+  id: '/api/automation-cron',
+  path: '/api/automation-cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
+  id: '/api/whatsapp-webhook',
+  path: '/api/whatsapp-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
@@ -269,6 +294,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeistungenSlugIndexRoute = LeistungenSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LeistungenSlugRoute,
+} as any)
 const LeistungenSlugCityRoute = LeistungenSlugCityRouteImport.update({
   id: '/$city',
   path: '/$city',
@@ -283,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -296,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -311,7 +343,9 @@ export interface FileRoutesByFullPath {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -320,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -327,6 +362,7 @@ export interface FileRoutesByTo {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -338,6 +374,7 @@ export interface FileRoutesByTo {
   '/luxusfahrzeuge': typeof LuxusfahrzeugeRoute
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -353,8 +390,9 @@ export interface FileRoutesByTo {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
-  '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -362,6 +400,7 @@ export interface FileRoutesByTo {
   '/ratgeber': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug': typeof LeistungenSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -372,6 +411,7 @@ export interface FileRoutesById {
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
+  '/datenloeschung': typeof DatenloeschungRoute
   '/datenschutz': typeof DatenschutzRoute
   '/dellen-hagelschaden': typeof DellenHagelschadenRoute
   '/fahrzeug-zustand': typeof FahrzeugZustandRoute
@@ -385,6 +425,7 @@ export interface FileRoutesById {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -400,7 +441,9 @@ export interface FileRoutesById {
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
+  '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -409,6 +452,7 @@ export interface FileRoutesById {
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
+  '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -420,6 +464,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -433,6 +478,7 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/ratgeber'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -448,7 +494,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
+    | '/api/whatsapp-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -457,6 +505,7 @@ export interface FileRouteTypes {
     | '/ratgeber/'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -464,6 +513,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -475,6 +525,7 @@ export interface FileRouteTypes {
     | '/luxusfahrzeuge'
     | '/preise'
     | '/qualitaet'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -490,8 +541,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
-    | '/leistungen/$slug'
+    | '/api/whatsapp-webhook'
     | '/ratgeber/$slug'
     | '/abholservice'
     | '/admin'
@@ -499,6 +551,7 @@ export interface FileRouteTypes {
     | '/ratgeber'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug'
   id:
     | '__root__'
     | '/'
@@ -508,6 +561,7 @@ export interface FileRouteTypes {
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
+    | '/datenloeschung'
     | '/datenschutz'
     | '/dellen-hagelschaden'
     | '/fahrzeug-zustand'
@@ -521,6 +575,7 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/ratgeber'
+    | '/sitemap.xml'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -536,7 +591,9 @@ export interface FileRouteTypes {
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
+    | '/api/automation-cron'
     | '/api/operator'
+    | '/api/whatsapp-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -545,6 +602,7 @@ export interface FileRouteTypes {
     | '/ratgeber/'
     | '/api/auth/$'
     | '/leistungen/$slug/$city'
+    | '/leistungen/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -555,6 +613,7 @@ export interface RootRouteChildren {
   B2bRoute: typeof B2bRoute
   BarrierefreiheitRoute: typeof BarrierefreiheitRoute
   DankeRoute: typeof DankeRoute
+  DatenloeschungRoute: typeof DatenloeschungRoute
   DatenschutzRoute: typeof DatenschutzRoute
   DellenHagelschadenRoute: typeof DellenHagelschadenRoute
   FahrzeugZustandRoute: typeof FahrzeugZustandRoute
@@ -568,8 +627,11 @@ export interface RootRouteChildren {
   PreiseRoute: typeof PreiseRoute
   QualitaetRoute: typeof QualitaetRoute
   RatgeberRoute: typeof RatgeberRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WiderrufRoute: typeof WiderrufRoute
+  ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
+  ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -622,6 +684,13 @@ declare module '@tanstack/react-router' {
       path: '/danke'
       fullPath: '/danke'
       preLoaderRoute: typeof DankeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datenloeschung': {
+      id: '/datenloeschung'
+      path: '/datenloeschung'
+      fullPath: '/datenloeschung'
+      preLoaderRoute: typeof DatenloeschungRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/datenschutz': {
@@ -713,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/ratgeber'
       fullPath: '/ratgeber'
       preLoaderRoute: typeof RatgeberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widerruf': {
@@ -834,11 +910,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminZustandRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/automation-cron': {
+      id: '/api/automation-cron'
+      path: '/api/automation-cron'
+      fullPath: '/api/automation-cron'
+      preLoaderRoute: typeof ApiAutomationCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
       fullPath: '/api/operator'
       preLoaderRoute: typeof ApiOperatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp-webhook': {
+      id: '/api/whatsapp-webhook'
+      path: '/api/whatsapp-webhook'
+      fullPath: '/api/whatsapp-webhook'
+      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen/': {
@@ -875,6 +965,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/leistungen/$slug/': {
+      id: '/leistungen/$slug/'
+      path: '/'
+      fullPath: '/leistungen/$slug/'
+      preLoaderRoute: typeof LeistungenSlugIndexRouteImport
+      parentRoute: typeof LeistungenSlugRoute
     }
     '/leistungen/$slug/$city': {
       id: '/leistungen/$slug/$city'
@@ -938,10 +1035,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface LeistungenSlugRouteChildren {
   LeistungenSlugCityRoute: typeof LeistungenSlugCityRoute
+  LeistungenSlugIndexRoute: typeof LeistungenSlugIndexRoute
 }
 
 const LeistungenSlugRouteChildren: LeistungenSlugRouteChildren = {
   LeistungenSlugCityRoute: LeistungenSlugCityRoute,
+  LeistungenSlugIndexRoute: LeistungenSlugIndexRoute,
 }
 
 const LeistungenSlugRouteWithChildren = LeistungenSlugRoute._addFileChildren(
@@ -984,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   B2bRoute: B2bRoute,
   BarrierefreiheitRoute: BarrierefreiheitRoute,
   DankeRoute: DankeRoute,
+  DatenloeschungRoute: DatenloeschungRoute,
   DatenschutzRoute: DatenschutzRoute,
   DellenHagelschadenRoute: DellenHagelschadenRoute,
   FahrzeugZustandRoute: FahrzeugZustandRoute,
@@ -997,8 +1097,11 @@ const rootRouteChildren: RootRouteChildren = {
   PreiseRoute: PreiseRoute,
   QualitaetRoute: QualitaetRoute,
   RatgeberRoute: RatgeberRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WiderrufRoute: WiderrufRoute,
+  ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiOperatorRoute: ApiOperatorRoute,
+  ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
@@ -1006,10 +1109,13 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { createStart } from '@tanstack/react-start'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }

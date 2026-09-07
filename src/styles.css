@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* The animation control pauses the decorative CSS motion along with the video. */
+[data-motion-paused]::after,
+[data-motion-paused] .hero-image,
+[data-motion-paused] .scroll-hint span {
+  animation-play-state: paused !important;
+}
+
 @font-face {
   font-family: "Barlow";
   font-style: normal;
@@ -397,6 +404,8 @@
   }
 
   .workshop-map {
+    width: 100%;
+    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--color-line);
     background: var(--color-surface);
@@ -1126,7 +1135,8 @@
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 180px 180px;
-    animation: grain-shift 0.85s steps(2) infinite;
+    /* Brief decorative motion, then a still texture on pages without a video control. */
+    animation: grain-shift 0.85s steps(2) 5;
   }
 
   .film-grain {
@@ -1192,8 +1202,8 @@
   }
 
   .film-chapter-copy {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    min-height: 100svh;
     z-index: 2;
     display: flex;
     flex-direction: column;

@@ -3,6 +3,21 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const BASE_URL = new URL(process.env.SMOKE_BASE_URL || "https://white-gloss.de").origin;
+const PUBLIC_ORIGIN = new URL(process.env.SMOKE_PUBLIC_ORIGIN || BASE_URL).origin;
+const simulatePublicHost = PUBLIC_ORIGIN !== BASE_URL;
+if (
+  simulatePublicHost &&
+  !["localhost", "127.0.0.1", "[::1]"].includes(new URL(BASE_URL).hostname)
+) {
+  throw new Error("SMOKE_PUBLIC_ORIGIN darf nur bei einem Loopback-Testziel von SMOKE_BASE_URL abweichen.");
+}
+const publicHostHeaders = simulatePublicHost
+  ? {
+      host: new URL(PUBLIC_ORIGIN).host,
+      "x-forwarded-host": new URL(PUBLIC_ORIGIN).host,
+      "x-forwarded-proto": new URL(PUBLIC_ORIGIN).protocol.slice(0, -1),
+    }
+  : {};
 const REQUEST_TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 
 const pageChecks = [
@@ -53,6 +68,7 @@ async function get(path, { redirect = "follow" } = {}) {
     headers: {
       "user-agent": "WhiteGloss-Production-Smoke/1.0",
       accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      ...publicHostHeaders,
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
@@ -61,7 +77,7 @@ async function get(path, { redirect = "follow" } = {}) {
 }
 
 function assertCanonical(path, body) {
-  const expected = new URL(path, `${BASE_URL}/`).href.replace(/\/$/, path === "/" ? "/" : "");
+  const expected = new URL(path, `${PUBLIC_ORIGIN}/`).href.replace(/\/$/, path === "/" ? "/" : "");
   const canonicalPattern =
     /<link\s+[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>|<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i;
   const match = body.match(canonicalPattern);
@@ -113,6 +129,17 @@ function assertSecurityHeaders(response) {
       fail("security-headers", `CSP-Direktive fehlt: ${directive}`);
     }
   }
+}
+
+function decodeXmlText(value) {
+  const entities = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+  return value.replace(/&(amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/gi, (_, entity) => {
+    if (entity.startsWith("#")) {
+      const hex = entity[1].toLowerCase() === "x";
+      return String.fromCodePoint(parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10));
+    }
+    return entities[entity.toLowerCase()];
+  });
 }
 
 for (const check of pageChecks) {
@@ -208,19 +235,21 @@ try {
   if (!/xml/i.test(contentType)) {
     fail("/sitemap.xml", `unerwarteter Content-Type: ${contentType || "leer"}`);
   }
-  const locations = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1].trim());
+  const locations = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) =>
+    decodeXmlText(match[1].trim()),
+  );
   if (locations.length < 20) {
     fail("/sitemap.xml", `nur ${locations.length} URL-Einträge gefunden`);
   }
-  const wrongOrigin = locations.filter((location) => !location.startsWith(`${BASE_URL}/`));
+  const wrongOrigin = locations.filter((location) => !location.startsWith(`${PUBLIC_ORIGIN}/`));
   if (wrongOrigin.length > 0) {
-    fail("/sitemap.xml", `${wrongOrigin.length} URL(s) liegen nicht auf ${BASE_URL}`);
+    fail("/sitemap.xml", `${wrongOrigin.length} URL(s) liegen nicht auf ${PUBLIC_ORIGIN}`);
   }
   if (body.includes("https://whitegloss.de")) {
     fail("/sitemap.xml", "alte Domain whitegloss.de ist noch enthalten");
   }
   for (const required of ["/kontakt", "/galerie"]) {
-    if (!locations.includes(`${BASE_URL}${required}`)) {
+    if (!locations.includes(`${PUBLIC_ORIGIN}${required}`)) {
       fail("/sitemap.xml", `${required} fehlt in der Sitemap`);
     }
   }
@@ -272,7 +301,7 @@ try {
 try {
   const { response, body } = await get("/robots.txt");
   if (!response.ok) fail("/robots.txt", `HTTP ${response.status}`);
-  const expectedSitemap = `Sitemap: ${BASE_URL}/sitemap.xml`;
+  const expectedSitemap = `Sitemap: ${PUBLIC_ORIGIN}/sitemap.xml`;
   if (!body.includes(expectedSitemap)) {
     fail("/robots.txt", `Sitemap-Hinweis fehlt: ${expectedSitemap}`);
   }
@@ -379,7 +408,8 @@ try {
       "user-agent": "WhiteGloss-Production-Smoke/1.0",
       accept: "application/json",
       "content-type": "application/json",
-      origin: BASE_URL,
+      origin: PUBLIC_ORIGIN,
+      ...publicHostHeaders,
     },
     body: JSON.stringify({
       email: "smoke-origin-check@invalid.example",

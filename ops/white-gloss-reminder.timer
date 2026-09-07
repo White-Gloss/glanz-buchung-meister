@@ -1,22 +1,19 @@
-# Stuendlicher Anstoss fuer die Terminerinnerungen.
+# Minuetlicher Anstoss fuer Ausgang und faellige Terminerinnerungen.
 #
-# WARUM STUENDLICH REICHT
-# `runDueAppointmentReminders` sucht Termine in den naechsten 25 Stunden und
-# haelt per Datenbank-Claim fest, welche Buchung bereits eine Erinnerung
-# bekommen hat. Ein Lauf zu viel schadet deshalb nicht, ein verspaeteter Lauf
-# holt nach — die 25 Stunden sind genau der Puffer dafuer.
+# Erinnerungen werden pro bestaetigter Terminversion dedupliziert. Der Worker
+# beansprucht Nachrichten atomar und versendet mit begrenzten Wiederholungen.
 
 [Unit]
-Description=Hourly White Gloss appointment reminder run
+Description=White Gloss notification and reminder worker
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=*-*-* *:*:00
 # Holt einen Lauf nach, der waehrend eines Neustarts ausgefallen ist.
 Persistent=true
-# Nicht auf die volle Stunde: verteilt die Last und vermeidet, dass mehrere
+# Wenige Sekunden Versatz verteilen die Last und vermeiden, dass mehrere
 # Zeitgeber gleichzeitig anlaufen.
-RandomizedDelaySec=300
-AccuracySec=1min
+RandomizedDelaySec=5
+AccuracySec=1s
 Unit=white-gloss-reminder.service
 
 [Install]

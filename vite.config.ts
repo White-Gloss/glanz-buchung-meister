@@ -7,6 +7,11 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { applySecurityHeaders } from "./server/security-headers.ts";
+import {
+  DISCOVERY_CACHE_CONTROL,
+  IMMUTABLE_ASSET_CACHE_CONTROL,
+  REVALIDATE_CACHE_CONTROL,
+} from "./server/cache-policy.ts";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
@@ -205,50 +210,48 @@ export default defineConfig(({ command, isPreview }) => ({
     ...(command === "build" || isPreview
       ? [
           nitro({
-            preset: process.env.GITHUB_ACTIONS ? "node-server" : "vercel",
+            preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : "node-server"),
             serverDir: "./server",
+            compressPublicAssets: true,
             routeRules: {
               "/media/**": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/fonts/**": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/assets/**": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": IMMUTABLE_ASSET_CACHE_CONTROL },
               },
               "/__grok/**": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/favicon.ico": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/favicon.svg": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/favicon-48.png": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/favicon-192.png": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/favicon-512.png": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/apple-touch-icon.png": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/og.jpg": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/site.webmanifest": {
-                headers: { "cache-control": "public, max-age=31536000, immutable" },
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
               },
               "/robots.txt": {
-                headers: { "cache-control": "public, max-age=86400" },
-              },
-              "/sitemap.xml": {
-                headers: { "cache-control": "public, max-age=86400" },
+                headers: { "cache-control": DISCOVERY_CACHE_CONTROL },
               },
             },
           }),

@@ -3,49 +3,47 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
+import { type BookingStatus } from "@/data/site";
+import { safeExec } from "@/lib/ops";
+import { kickBookingDelivery } from "@/lib/booking-delivery";
 import {
-  cities,
-  extras,
-  packages,
-  quoteTotal,
-  type BookingStatus,
-  type PackageId,
-  type VehicleClass,
-} from "@/data/site";
-import {
-  queueBookingAutomation,
-  queueOwnerNotify,
-  flushOutboundEmailQueue,
-  safeExec,
-  OUTBOUND_QUEUED,
-  canAutoConfirmAppointment,
-  AUTO_CONFIRM_ACTOR,
-  type OccupiedAppointment,
-} from "@/lib/ops";
+  saveBookingRequest,
+  confirmBookingManually,
+  changeBookingStatus,
+  editBooking,
+} from "@/lib/booking-workflow";
+import { canConfirmBookings } from "@/lib/booking-owner";
+import { isCalendarDate } from "@/lib/calendar-date";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
-import { isEmailAddress } from "@/lib/utils";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema } from "@/lib/booking-schema";
 import {
-  assertAllowedUpload,
+  MAX_BASE64_UPLOAD_CHARS,
+  decodeUploadBase64,
+  deleteConditionPhotos,
   extensionForMime,
   uploadToConditionPhotos,
+  validateUploadBatch,
 } from "@/lib/booking-photos";
 import { randomBytes } from "node:crypto";
+import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
 import {
-  ensureQontoInvoiceForBooking,
-  type QontoBookingFields,
-} from "@/lib/qonto-invoice";
+  createRequestUploadCapability,
+  verifyUploadCapability,
+} from "@/lib/booking-upload-capability";
+import { getBookingUploadCookie, setBookingUploadCookie } from "@/lib/booking-upload-cookie.server";
+import { ensureQontoInvoiceForBooking, type QontoBookingFields } from "@/lib/qonto-invoice";
 
 export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
 
 const SHOP = "white-gloss";
-const extraIdSet = new Set(extras.map((item) => item.id));
-const citySlugSet = new Set(cities.map((item) => item.slug));
-
 export type BookingRow = {
   id: number;
+  version: number;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  cancelled_at: string | null;
   status: BookingStatus;
   customer_name: string;
   phone: string;
@@ -69,22 +67,9 @@ export type BookingRow = {
   qonto_sent_at: string | null;
 };
 
-function extraNames(ids: string[]) {
-  return extras.filter((e) => ids.includes(e.id)).map((e) => e.name);
-}
-
 function rejectHoneypot(website?: string) {
   if (website && website.trim().length > 0) {
     throw new Error("Anfrage abgelehnt.");
-  }
-}
-
-function assertKnownPricing(data: { extraIds: string[]; citySlug: string }) {
-  if (data.extraIds.some((id) => !extraIdSet.has(id))) {
-    throw new Error("Unbekanntes Extra.");
-  }
-  if (data.citySlug && !citySlugSet.has(data.citySlug)) {
-    throw new Error("Unbekannter Abholort.");
   }
 }
 
@@ -94,20 +79,11 @@ async function upsertCustomer(
   phone: string,
   email?: string,
 ) {
-  const existing = await sql<{ id: number }>`
-    select id from customers where shop_id = ${SHOP} and phone = ${phone} limit 1
-  `;
-  if (existing[0]) {
-    await sql`
-      update customers
-      set name = ${name}, email = coalesce(${email || null}, email)
-      where id = ${existing[0].id}
-    `;
-    return existing[0].id;
-  }
   const inserted = await sql<{ id: number }>`
     insert into customers (shop_id, name, phone, email)
     values (${SHOP}, ${name}, ${phone}, ${email || null})
+    on conflict (shop_id, phone) do update
+    set name = excluded.name, email = coalesce(excluded.email, customers.email)
     returning id
   `;
   return inserted[0]?.id ?? null;
@@ -118,178 +94,20 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     assertSameSiteRequest();
     assertPublicPostLimit("booking");
-    rejectHoneypot(data.website);
-    assertKnownPricing(data);
     const sql = await getSql();
-    const quote = quoteTotal({
-      packageId: data.packageId as PackageId,
-      classId: data.classId as VehicleClass["id"],
-      extraIds: data.extraIds,
-      citySlug: data.citySlug,
-    });
-    const city = cities.find((c) => c.slug === data.citySlug);
-    const pack = packages.find((p) => p.id === data.packageId);
-    const totalCents = Math.round(quote.total * 100);
-    const pickupCents = Math.round((quote.pickup ?? 0) * 100);
-    const extraList = extraNames(data.extraIds);
-    const preferredDate = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null;
-    const storedNote = [
-      data.note?.trim() || "",
-      quote.pickupOnRequest
-        ? "Abholung auf Anfrage – Preis nicht im gespeicherten Gesamtbetrag."
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const rows = await sql<{ id: number }>`
-      insert into bookings (
-        shop_id, customer_name, phone, email, preferred_date, preferred_slot,
-        package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents
-      ) values (
-        ${SHOP}, ${data.name}, ${data.phone}, ${data.email || null},
-        ${preferredDate}, ${data.slot || null},
-        ${data.packageId}, ${data.classId}, ${JSON.stringify(data.extraIds)},
-        ${data.citySlug}, ${storedNote || null}, ${totalCents}, ${pickupCents}
-      )
-      returning id
-    `;
-    const id = rows[0]?.id;
-    if (!id) throw new Error("Buchung konnte nicht gespeichert werden.");
-
-    await upsertCustomer(sql, data.name, data.phone, data.email || undefined);
-
-    const occupiedRows = preferredDate
-      ? await sql<{ preferred_date: string; preferred_slot: string | null; package_id: string }>`
-          select preferred_date::text as preferred_date, preferred_slot, package_id
-          from bookings
-          where shop_id = ${SHOP}
-            and id <> ${id}
-            and status in ('neu', 'bestaetigt')
-            and preferred_date = ${preferredDate}
-        `
-      : [];
-    const occupied: OccupiedAppointment[] = occupiedRows.map((row) => ({
-      date: row.preferred_date.slice(0, 10),
-      slot: row.preferred_slot,
-      packageId: row.package_id,
-    }));
-    const auto = canAutoConfirmAppointment({
-      kind: data.kind,
-      packageId: data.packageId,
-      preferredDate,
-      preferredSlot: data.slot || null,
-      occupied,
-    });
-    if (auto.ok) {
-      await sql`
-        update bookings
-        set status = ${"bestaetigt"}, handled_by = ${AUTO_CONFIRM_ACTOR}, updated_at = now()
-        where id = ${id} and shop_id = ${SHOP}
-      `;
-      await queueBookingAutomation(
-        sql,
-        {
-          id,
-          customer_name: data.name,
-          email: data.email || null,
-          phone: data.phone,
-          package_id: data.packageId,
-          preferred_date: preferredDate,
-          preferred_slot: data.slot || null,
-        },
-        "bestaetigt",
-        AUTO_CONFIRM_ACTOR,
-      );
-    }
-
-    const subject =
-      data.kind === "dent"
-        ? "Fotoanfrage Dellen"
-        : data.kind === "condition"
-          ? "Fotoanfrage Zustand"
-          : auto.ok
-            ? `Termin zugesagt ${pack?.name ?? data.packageId}`
-            : `Anfrage ${pack?.name ?? data.packageId}`;
-
-    const body = [
-      `${data.name} · ${data.phone}`,
-      data.email ? data.email : "",
-      pack ? pack.name : data.packageId,
-      city ? `${city.name} (${city.km} km)` : data.citySlug,
-      quote.pickupOnRequest ? "Abholung auf Anfrage" : "",
-      extraList.length ? `Extras: ${extraList.join(", ")}` : "",
-      preferredDate ? `Wunschtermin: ${preferredDate} ${data.slot ?? ""}` : "",
-      data.note ?? "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    await sql`
-      insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
-      values (${SHOP}, ${"form"}, ${data.name}, ${subject}, ${body}, ${id})
-    `;
-
-    const ack = [
-      `Guten Tag ${data.name},`,
-      "",
-      `wir haben Ihre Anfrage ${pack?.name ?? data.packageId} erhalten (Vorgang WG-${id}).`,
-      "Wir melden uns mit einem konkreten Terminvorschlag.",
-      "",
-      "White Gloss Detailing",
-      "Arnistal 27, 72160 Horb am Neckar",
-    ].join("\n");
-    if (!auto.ok) {
-      if (isEmailAddress(data.email)) {
-        await safeExec("ack-out", () =>
-          sql`
-            insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
-            values (
-              ${SHOP}, ${"email"}, ${data.email},
-              ${`Anfrage eingegangen · White Gloss WG-${id}`}, ${ack}, ${id}, ${OUTBOUND_QUEUED}
-            )
-          `,
-        );
-      }
-      await safeExec("ack-inbox", () =>
-        sql`
-          insert into inbox_messages (shop_id, channel, direction, sender, subject, body, booking_id)
-          values (
-            ${SHOP}, ${"email"}, ${"out"}, ${"White Gloss"},
-            ${`Anfrage eingegangen · WG-${id}`}, ${ack}, ${id}
-          )
-        `,
-      );
-      await safeExec("ack-event", () =>
-        sql`
-          insert into automation_events (shop_id, area, event, severity, context)
-          values (${SHOP}, ${"mail"}, ${"eingangsbestaetigung"}, ${"info"}, ${`WG-${id}`})
-        `,
-      );
-    }
-
-    await queueOwnerNotify(
-      sql,
-      {
-        id,
-        customer_name: data.name,
-        email: data.email || null,
-        phone: data.phone,
-        package_id: data.packageId,
-        preferred_date: preferredDate,
-        preferred_slot: data.slot || null,
-      },
-      auto.ok ? "Terminzusage" : subject,
-    );
-
-    await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
-
+    const capability = createRequestUploadCapability(data.idempotencyKey);
+    const result = await saveBookingRequest(sql, data, capability);
+    const expires = result.booking.upload_token_expires_at;
+    if (expires) capability.expiresAt = new Date(expires).toISOString();
+    setBookingUploadCookie(result.booking.id, capability);
+    // Provider failures never roll back the committed request or its durable outbox.
+    kickBookingDelivery(sql);
     return {
-      id,
-      reference: `WG-${id}`,
-      total: quote.total,
-      pickupOnRequest: quote.pickupOnRequest,
-      confirmed: auto.ok,
+      id: result.booking.id,
+      reference: `WG-${result.booking.id}`,
+      total: result.booking.total_cents / 100,
+      pickupOnRequest: result.quote.pickupOnRequest,
+      confirmed: false,
     };
   });
 
@@ -317,7 +135,9 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       `Name: ${data.name}`,
       `Telefon: ${data.phone}`,
       data.text,
-      data.files.length ? `Dateien (Namen): ${data.files.join(", ")}` : "Keine Dateinamen übermittelt.",
+      data.files.length
+        ? `Dateien (Namen): ${data.files.join(", ")}`
+        : "Keine Dateinamen übermittelt.",
     ].join("\n");
     const channel = /delle|hagel/i.test(data.title) ? "dellen" : "zustand";
     await sql`
@@ -326,16 +146,6 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     `;
     return { ok: true as const };
   });
-
-
-function decodeBase64Payload(raw: string): Uint8Array {
-  const trimmed = raw.trim();
-  const comma = trimmed.indexOf(",");
-  const payload =
-    trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
-  if (!payload) throw new Error("Die Datei ist leer.");
-  return Uint8Array.from(Buffer.from(payload, "base64"));
-}
 
 const attachBookingPhotosSchema = z.object({
   vorgang: z
@@ -347,11 +157,14 @@ const attachBookingPhotosSchema = z.object({
       z.object({
         name: z.string().trim().min(1).max(180),
         mime: z.string().trim().min(3).max(80),
-        base64: z.string().min(1),
+        base64: z
+          .string()
+          .min(1)
+          .max(MAX_BASE64_UPLOAD_CHARS, "Die Datei ist zu groß (höchstens 12 MB)."),
       }),
     )
     .min(1)
-    .max(8),
+    .max(MAX_UPLOAD_FILES),
 });
 
 export const attachBookingPhotos = createServerFn({ method: "POST" })
@@ -367,31 +180,71 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     }
 
     const sql = await getSql();
-    const bookings = await sql<{ id: number; customer_name: string }>`
-      select id, customer_name
+    const bookings = await sql<{
+      id: number;
+      customer_name: string;
+      upload_token_hash: string | null;
+      upload_token_expires_at: string | Date | null;
+    }>`
+      select id, customer_name, upload_token_hash, upload_token_expires_at
       from bookings
       where id = ${bookingId} and shop_id = ${SHOP}
       limit 1
     `;
     const booking = bookings[0];
-    if (!booking) throw new Error("Buchung nicht gefunden.");
+    if (
+      !booking ||
+      !verifyUploadCapability(
+        getBookingUploadCookie(bookingId),
+        booking.upload_token_hash,
+        booking.upload_token_expires_at,
+      )
+    ) {
+      throw new Error(
+        "Fotos können nur im Browser der ursprünglichen Anfrage innerhalb von sieben Tagen nachgereicht werden. Bitte kontaktieren Sie uns bei Bedarf.",
+      );
+    }
 
+    const validated = validateUploadBatch(data.files);
     const storedNames: string[] = [];
-    for (const file of data.files) {
-      const bytes = decodeBase64Payload(file.base64);
-      const { mime, ext } = assertAllowedUpload(bytes, file.mime);
-      const random = randomBytes(16).toString("hex");
-      const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
-      await uploadToConditionPhotos(storagePath, bytes, mime);
-      const safeName = file.name.slice(0, 180);
-      await sql`
-        insert into booking_photos (
-          shop_id, booking_id, storage_path, mime, size_bytes, original_name
-        ) values (
-          ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${bytes.byteLength}, ${safeName}
-        )
-      `;
-      storedNames.push(safeName);
+    const batchPaths: string[] = [];
+    try {
+      for (const [index, file] of data.files.entries()) {
+        const bytes = decodeUploadBase64(file.base64);
+        const { mime, ext, sizeBytes } = validated[index];
+        const random = randomBytes(16).toString("hex");
+        const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
+        // Track before sending: a lost response can still mean the object was stored.
+        batchPaths.push(storagePath);
+        await uploadToConditionPhotos(storagePath, bytes, mime);
+        const safeName = file.name.slice(0, 180);
+        await sql`
+          insert into booking_photos (
+            shop_id, booking_id, storage_path, mime, size_bytes, original_name
+          ) values (
+            ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${sizeBytes}, ${safeName}
+          )
+        `;
+        storedNames.push(safeName);
+      }
+    } catch (error) {
+      if (batchPaths.length) {
+        try {
+          await sql`
+            delete from booking_photos
+            where shop_id = ${SHOP} and booking_id = ${bookingId}
+              and storage_path = any(${batchPaths}::text[])
+          `;
+        } catch {
+          console.error("[booking-photos] failed batch metadata cleanup could not complete");
+        }
+        try {
+          await deleteConditionPhotos(batchPaths);
+        } catch {
+          console.error("[booking-photos] failed batch storage cleanup could not complete");
+        }
+      }
+      throw error;
     }
 
     const subject = `Fotos zu WG-${bookingId}`;
@@ -402,12 +255,15 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    await sql`
-      insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
-      values (
-        ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
-      )
-    `;
+    await safeExec(
+      "booking-photos-inbox",
+      () => sql`
+        insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
+        values (
+          ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
+        )
+      `,
+    );
 
     return { ok: true as const, count: storedNames.length };
   });
@@ -417,7 +273,7 @@ export const listBookings = createServerFn({ method: "GET" })
   .handler(async () => {
     const sql = await getSql();
     return sql<BookingRow>`
-      select id, status, customer_name, phone, email, preferred_date, preferred_slot,
+      select id, status, version, confirmed_at, confirmed_by, cancelled_at, customer_name, phone, email, preferred_date, preferred_slot,
              package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
              created_at, updated_at,
              qonto_client_id, qonto_invoice_id, qonto_invoice_number,
@@ -429,58 +285,115 @@ export const listBookings = createServerFn({ method: "GET" })
     `;
   });
 
+const bookingMutation = z.object({
+  id: z.number().int().positive(),
+  expectedVersion: z.number().int().positive(),
+});
+
+export const getBookingPermissions = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async ({ context }) => ({
+    canConfirm: await canConfirmBookings(await getSql(), context.userId),
+  }));
+
+export const confirmBooking = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => bookingMutation.parse(input))
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    try {
+      await confirmBookingManually(sql, data.id, data.expectedVersion, context.userId);
+    } finally {
+      kickBookingDelivery(sql);
+    }
+    return { ok: true as const };
+  });
+
 export const updateBookingStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
-    z
-      .object({
-        id: z.number().int().positive(),
-        status: z.enum(["neu", "bestaetigt", "abgelehnt", "erledigt"]),
+    bookingMutation
+      .extend({
+        status: z.enum([
+          "neu",
+          "bestaetigt",
+          "abgelehnt",
+          "storniert",
+          "erledigt",
+          "nicht_erschienen",
+        ]),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const sql = await getSql();
-    const rows = await sql<{
-      id: number;
-      customer_name: string;
-      email: string | null;
-      phone: string;
-      package_id: string;
-      preferred_date: string | null;
-      preferred_slot: string | null;
-      total_cents: number;
-    }>`
-      select id, customer_name, email, phone, package_id, preferred_date, preferred_slot, total_cents
-      from bookings
-      where id = ${data.id} and shop_id = ${SHOP}
-      limit 1
-    `;
-    const booking = rows[0];
-    if (!booking) throw new Error("Buchung nicht gefunden.");
-
-    await sql`
-      update bookings
-      set status = ${data.status}, handled_by = ${context.userId}, updated_at = now()
-      where id = ${data.id} and shop_id = ${SHOP}
-    `;
-
-    await queueBookingAutomation(sql, booking, data.status, context.userId);
-    await safeExec("flush-outbound-mail", () => flushOutboundEmailQueue(sql));
-
-    if (data.status === "erledigt") {
+    const result = await changeBookingStatus(
+      sql,
+      data.id,
+      data.expectedVersion,
+      data.status,
+      context.userId,
+    );
+    kickBookingDelivery(sql);
+    if (result.changed && data.status === "erledigt") {
       await safeExec("qonto-invoice", async () => {
-        const refreshed = await sql<QontoBookingFields>`
-          select id, customer_name, email, package_id, extra_ids, total_cents, pickup_cents,
-                 qonto_client_id, qonto_invoice_id, qonto_invoice_number, qonto_invoice_status
-          from bookings
-          where id = ${data.id} and shop_id = ${SHOP}
-          limit 1
-        `;
-        const row = refreshed[0];
-        if (row) await ensureQontoInvoiceForBooking(sql, row);
+        const [booking] = await sql<QontoBookingFields>`
+          select id,customer_name,email,package_id,extra_ids,total_cents,pickup_cents,
+            qonto_client_id,qonto_invoice_id,qonto_invoice_number,qonto_invoice_status
+          from bookings where id=${data.id} and shop_id=${SHOP}`;
+        if (booking) await ensureQontoInvoiceForBooking(sql, booking);
       });
     }
-
     return { ok: true as const };
+  });
+
+export const updateBookingDetails = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) =>
+    publicBookingSchema
+      .pick({
+        name: true,
+        phone: true,
+        email: true,
+        date: true,
+        slot: true,
+        packageId: true,
+        classId: true,
+        extraIds: true,
+        citySlug: true,
+        note: true,
+      })
+      .extend({
+        ...bookingMutation.shape,
+        date: z
+          .string()
+          .max(20)
+          .optional()
+          .refine((v) => !v || isCalendarDate(v), "Ungültiger Abgabetermin"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    await editBooking(sql, data.id, data.expectedVersion, data, context.userId);
+    kickBookingDelivery(sql);
+    return { ok: true as const };
+  });
+
+export const getBookingHistory = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ id: z.number().int().positive() }).parse(input))
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    return sql<{
+      id: number;
+      event: string;
+      actor: string;
+      version: number;
+      before_data: Record<string, string | number | boolean | null> | null;
+      after_data: Record<string, string | number | boolean | null>;
+      created_at: string;
+    }>`
+      select id,event,actor,version,before_data,after_data,created_at from booking_events
+      where shop_id=${SHOP} and booking_id=${data.id} order by version desc limit 100`;
   });

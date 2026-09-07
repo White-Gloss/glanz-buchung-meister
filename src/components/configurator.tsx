@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   cities,
   depositConfig,
@@ -14,14 +14,13 @@ import {
   type VehicleClass,
 } from "@/data/site";
 import { createPublicBooking } from "@/lib/bookings.functions";
-import { eur, isEmailAddress } from "@/lib/utils";
+import { eur } from "@/lib/utils";
+import { bookingFormErrors } from "@/lib/public-form-validation";
+import { bookingRequestId } from "@/lib/booking-request-id";
+import { usePublicFormErrors } from "./public-form-feedback";
 import { Button, Field, inputLine } from "./ui";
 
-export function Configurator({
-  initialPackage = "premium",
-}: {
-  initialPackage?: PackageId;
-}) {
+export function Configurator({ initialPackage = "premium" }: { initialPackage?: PackageId }) {
   const navigate = useNavigate();
   const [packageId, setPackageId] = useState<PackageId>(initialPackage);
   useEffect(() => {
@@ -40,6 +39,8 @@ export function Configurator({
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
+  const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
 
   const quote = useMemo(
     () => quoteTotal({ packageId, classId, extraIds, citySlug }),
@@ -47,35 +48,29 @@ export function Configurator({
   );
 
   function toggleExtra(id: string) {
-    setExtraIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitting.current) return;
     setError("");
-    if (!name.trim() || !phone.trim()) {
-      setError("Bitte Name und Telefon angeben.");
-      return;
-    }
-    if (!privacy) {
-      setError("Bitte die Datenschutzerklärung bestätigen.");
-      return;
-    }
-    if (email.trim() && !isEmailAddress(email)) {
-      setError("Bitte eine gültige E-Mail angeben oder das Feld leer lassen.");
-      return;
-    }
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    if (date && date < today) {
-      setError("Bitte einen Wunschtermin ab heute wählen.");
+    const errors = bookingFormErrors({ name, phone, email, date, note, privacy }, today);
+    if (e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput) {
+      errors.date = "Bitte einen vollständigen Wunschtermin angeben oder das Feld leer lassen.";
+    }
+    showErrors(errors, e.currentTarget);
+    if (Object.keys(errors).length) {
+      setError("Bitte prüfen Sie die markierten Felder.");
       return;
     }
+    submitting.current = true;
     setPending(true);
     try {
       const created = await createPublicBooking({
         data: {
+          idempotencyKey: bookingRequestId.get(),
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
@@ -95,11 +90,14 @@ export function Configurator({
         to: "/danke",
         search: {
           vorgang: created.reference,
-          ...(created.confirmed ? { zusage: "1" as const } : {}),
         },
       });
+      bookingRequestId.clear();
     } catch {
-      setError("Senden fehlgeschlagen. Bitte erreichen Sie uns telefonisch oder per WhatsApp.");
+      setError(
+        "Die Antwort ist nicht angekommen. Sie können dieselbe Anfrage erneut senden. Bei Unklarheiten erreichen Sie uns telefonisch oder per WhatsApp.",
+      );
+      submitting.current = false;
       setPending(false);
     }
   }
@@ -107,6 +105,7 @@ export function Configurator({
   return (
     <form
       onSubmit={onSubmit}
+      noValidate
       data-hide-whatsapp
       aria-labelledby="buchung-heading"
       aria-label="Unverbindliche Terminanfrage"
@@ -139,9 +138,7 @@ export function Configurator({
                   <span className="block text-sm text-muted">
                     ab {eur(p.price)} · {p.duration}
                   </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-subtle">
-                    {p.kicker}
-                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-subtle">{p.kicker}</span>
                 </span>
               </label>
             ))}
@@ -250,9 +247,8 @@ export function Configurator({
                 : ""}
         </p>
         <p className="text-xs text-subtle">
-          Das ist der Startpreis inkl. MwSt. Wenn der Zustand mehr Aufwand braucht,
-          stimmen wir den Endpreis nach dem Anschauen mit Ihnen ab.{" "}
-          {depositConfig.label}: {depositConfig.note}
+          Das ist der Startpreis inkl. MwSt. Wenn der Zustand mehr Aufwand braucht, stimmen wir den
+          Endpreis nach dem Anschauen mit Ihnen ab. {depositConfig.label}: {depositConfig.note}
         </p>
         <Field tone="public" id="name" label="Name">
           <input
@@ -260,10 +256,14 @@ export function Configurator({
             className={inputLine}
             autoComplete="name"
             name="name"
+            minLength={2}
+            maxLength={120}
+            {...fieldProps("name")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
+          {fieldError("name")}
         </Field>
         <Field tone="public" id="phone" label="Telefon">
           <input
@@ -273,10 +273,14 @@ export function Configurator({
             inputMode="tel"
             type="tel"
             name="tel"
+            minLength={6}
+            maxLength={40}
+            {...fieldProps("phone")}
             required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
+          {fieldError("phone")}
         </Field>
         <Field tone="public" id="email" label="E-Mail (optional)">
           <input
@@ -285,21 +289,26 @@ export function Configurator({
             className={inputLine}
             autoComplete="email"
             name="email"
+            maxLength={160}
+            {...fieldProps("email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {fieldError("email")}
         </Field>
         <Field tone="public" id="date" label="Wunschtermin (optional)">
           <input
             id="date"
             type="date"
+            {...fieldProps("date")}
             className={inputLine}
             min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
+          {fieldError("date")}
         </Field>
-        <Field tone="public" id="slot" label="Zeitfenster (optional)">
+        <Field tone="public" id="slot" label="Abgabezeit (optional)">
           <select
             id="slot"
             className={inputLine}
@@ -317,10 +326,13 @@ export function Configurator({
         <Field tone="public" id="note" label="Hinweis">
           <textarea
             id="note"
+            maxLength={2000}
+            {...fieldProps("note")}
             className={`${inputLine} min-h-24 py-2`}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+          {fieldError("note")}
         </Field>
         <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
           <label htmlFor="website">Website</label>
@@ -336,6 +348,7 @@ export function Configurator({
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input
             id="privacy"
+            {...fieldProps("privacy")}
             type="checkbox"
             className="mt-1"
             checked={privacy}
@@ -358,12 +371,33 @@ export function Configurator({
             .
           </span>
         </label>
+        {fieldError("privacy")}
         {error ? (
-          <p className="text-sm text-danger" role="alert">
-            {error}
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-danger" role="alert">
+              {error}
+            </p>
+            <Button
+              tone="public"
+              variant="line"
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                bookingRequestId.clear();
+                setError("");
+              }}
+            >
+              Stattdessen eine neue Anfrage beginnen
+            </Button>
+          </div>
         ) : null}
-        <Button tone="public" type="submit" className="w-full" disabled={pending} aria-busy={pending}>
+        <Button
+          tone="public"
+          type="submit"
+          className="w-full"
+          disabled={pending}
+          aria-busy={pending}
+        >
           {pending ? "Wird gesendet …" : "Terminanfrage senden"}
         </Button>
         <a

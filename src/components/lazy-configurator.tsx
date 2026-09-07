@@ -8,11 +8,7 @@ const Configurator = lazy(() =>
 
 function Skeleton() {
   return (
-    <div
-      className="gd-form min-h-[28rem]"
-      role="status"
-      aria-label="Buchungsformular wird geladen"
-    >
+    <div className="gd-form min-h-[28rem]" role="status" aria-label="Buchungsformular wird geladen">
       <div className="ga-fields rounded-card border border-line bg-surface" />
       <div className="ga-quote h-fit min-h-80 rounded-card border border-line bg-elevated" />
     </div>
@@ -28,11 +24,11 @@ export function LazyConfigurator({
 }) {
   const hash = useRouterState({ select: (s) => s.location.hash });
   const ref = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(eager || hash === "#buchung");
+  const [ready, setReady] = useState(eager || hash === "buchung");
 
   useEffect(() => {
-    if (hash === "#buchung") setReady(true);
-  }, [hash]);
+    if (eager || hash === "buchung") setReady(true);
+  }, [eager, hash]);
 
   useEffect(() => {
     if (ready) return;

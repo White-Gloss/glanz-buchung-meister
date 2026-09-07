@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { nav, footerExplore, openingHours, site } from "@/data/site";
 import { ConsentBanner } from "./consent-banner";
@@ -7,6 +7,7 @@ import { IconArrowRight, IconMessage } from "./icons";
 import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
 import { WhatsAppFloat } from "./whatsapp-float";
+import { RouteFocus } from "./route-focus";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -57,6 +58,8 @@ const MENU_SHOTS: ShotName[] = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [layer, setLayer] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const closeMenu = useCallback(() => setOpen(false), []);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hash = useRouterState({ select: (s) => s.location.hash });
 
@@ -95,46 +98,6 @@ export function SiteHeader() {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        return;
-      }
-      if (e.key !== "Tab") return;
-      const root = document.getElementById("site-nav");
-      const toggle = document.querySelector<HTMLElement>(".menu-toggle");
-      if (!root) return;
-      const focusable = [
-        toggle,
-        ...root.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ].filter((el): el is HTMLElement =>
-        Boolean(el && !el.hasAttribute("disabled") && el.tabIndex !== -1),
-      );
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    const t = window.requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>("#site-nav .film-menu-link")?.focus();
-    });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.cancelAnimationFrame(t);
-    };
-  }, [open]);
-
-  useEffect(() => {
     if (!layer) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -161,6 +124,7 @@ export function SiteHeader() {
         </Link>
         <div className="ga-tools flex items-center">
           <button
+            ref={toggleRef}
             type="button"
             className="menu-toggle"
             aria-expanded={open}
@@ -177,14 +141,7 @@ export function SiteHeader() {
           </button>
         </div>
       </div>
-      {layer ? (
-        <FilmMenu
-          closing={!open}
-          onClose={() => {
-            window.setTimeout(() => setOpen(false), 0);
-          }}
-        />
-      ) : null}
+      {layer ? <FilmMenu closing={!open} onClose={closeMenu} returnFocusRef={toggleRef} /> : null}
     </header>
   );
 }
@@ -192,26 +149,98 @@ export function SiteHeader() {
 function FilmMenu({
   onClose,
   closing,
+  returnFocusRef,
 }: {
   onClose: () => void;
   closing: boolean;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
 }) {
   const [visual, setVisual] = useState<ShotName>("private");
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || closing) return;
+    const trigger = returnFocusRef.current;
+    // showModal makes the rest of the document inert and keeps keyboard
+    // navigation inside the dialog, including its own close button.
+    dialog.showModal();
+    dialog.querySelector<HTMLElement>(".film-menu-link")?.focus();
+    return () => {
+      dialog.close();
+      if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    };
+  }, [closing, returnFocusRef]);
 
   if (typeof document === "undefined") return null;
 
   const items = [{ to: "/", label: "Startseite" as const }, ...nav];
 
   return createPortal(
-    <nav
+    <dialog
+      ref={dialogRef}
       id="site-nav"
-      role="dialog"
-      aria-modal="true"
       aria-label="Hauptnavigation"
       className={closing ? "film-menu is-closing" : "film-menu"}
-      aria-hidden={closing || undefined}
+      inert={closing}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const controls = event.currentTarget.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled])',
+        );
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      style={{
+        margin: 0,
+        padding: 0,
+        border: 0,
+        maxWidth: "none",
+        maxHeight: "none",
+        width: "100%",
+        height: "100%",
+        color: "inherit",
+      }}
     >
+      <div className="fixed inset-x-0 top-0 z-[110]">
+        <div className="gd-header mx-auto max-w-7xl px-4 sm:px-6 xl:max-w-[90rem] xl:px-10">
+          <Link
+            to="/"
+            onClick={onClose}
+            className="ga-logo group inline-flex min-h-11 items-center"
+            aria-label={`${site.name} Startseite`}
+          >
+            <BrandMark variant="header" decorative />
+          </Link>
+          <div className="ga-tools flex items-center">
+            <button
+              type="button"
+              className="menu-toggle"
+              aria-expanded={!closing}
+              aria-label="Menü schließen"
+              onClick={onClose}
+            >
+              <span className="burger" aria-hidden>
+                <span className="burger-line" />
+                <span className="burger-line" />
+                <span className="burger-line" />
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
       <div className="film-menu-visual" aria-hidden>
         {MENU_SHOTS.map((name) => (
           <Shot
@@ -224,7 +253,7 @@ function FilmMenu({
           />
         ))}
       </div>
-      <div className="film-menu-panel">
+      <nav className="film-menu-panel" aria-label="Hauptnavigation">
         <ul className="film-menu-list">
           {items.map((item, i) => {
             const shot = NAV_SHOT[item.label] ?? "hero";
@@ -268,18 +297,13 @@ function FilmMenu({
             Termin anfragen
             <IconArrowRight className="size-4" />
           </Link>
-          <a
-            href={site.whatsapp}
-            className={ctaGhost}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
             <IconMessage className="size-4" />
             WhatsApp
           </a>
         </div>
-      </div>
-    </nav>,
+      </nav>
+    </dialog>,
     document.body,
   );
 }
@@ -360,17 +384,12 @@ export function SiteFooter() {
       <div className="chrome-rule" aria-hidden />
       <div className="gd-footer mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="ga-brand">
-          <Link
-            to="/"
-            className="inline-block"
-            aria-label={`${site.name} Startseite`}
-          >
+          <Link to="/" className="inline-block" aria-label={`${site.name} Startseite`}>
             <BrandMark variant="footer" decorative />
           </Link>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            Fahrzeugaufbereitung in {site.city}: Innenraumreinigung,
-            Lackkorrektur und Keramikversiegelung, mit Hol- und Bringservice in
-            13 Städten.
+            Fahrzeugaufbereitung in {site.city}: Innenraumreinigung, Lackkorrektur und
+            Keramikversiegelung, mit Hol- und Bringservice in 13 Städten.
           </p>
           <address className="mt-4 not-italic text-sm text-muted" aria-label="Anschrift">
             {site.legalName}
@@ -398,15 +417,14 @@ export function SiteFooter() {
             {site.email}
           </a>
           <div className="mt-5 flex flex-wrap gap-2">
-            <a href={site.phoneHref} className={ctaPrimary} aria-label={`Anrufen ${site.phoneDisplay}`}>
+            <a
+              href={site.phoneHref}
+              className={ctaPrimary}
+              aria-label={`Anrufen ${site.phoneDisplay}`}
+            >
               Anrufen
             </a>
-            <a
-              href={site.whatsapp}
-              className={ctaGhost}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
               WhatsApp
             </a>
           </div>
@@ -451,12 +469,18 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link to="/preise" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+              <Link
+                to="/preise"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
                 Preise
               </Link>
             </li>
             <li>
-              <Link to="/luxusfahrzeuge" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+              <Link
+                to="/luxusfahrzeuge"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
                 Luxus
               </Link>
             </li>
@@ -472,7 +496,10 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-2 text-sm text-muted">
             {footerExplore.map((item) => (
               <li key={item.to}>
-                <Link to={item.to} className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+                <Link
+                  to={item.to}
+                  className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+                >
                   {item.label}
                 </Link>
               </li>
@@ -483,12 +510,18 @@ export function SiteFooter() {
           <p className="kicker">Rechtliches</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             <li>
-              <Link to="/impressum" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+              <Link
+                to="/impressum"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
                 Impressum
               </Link>
             </li>
             <li>
-              <Link to="/datenschutz" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+              <Link
+                to="/datenschutz"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
                 Datenschutz
               </Link>
             </li>
@@ -498,7 +531,10 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link to="/widerruf" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
+              <Link
+                to="/widerruf"
+                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
+              >
                 Widerruf
               </Link>
             </li>
@@ -538,6 +574,7 @@ export function Shell() {
   if (isApp) {
     return (
       <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="app">
+        <RouteFocus />
         <SkipLink />
         <Outlet />
       </div>
@@ -546,6 +583,7 @@ export function Shell() {
 
   return (
     <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public">
+      <RouteFocus />
       <SkipLink />
       <SiteHeader />
       <FilmScroll />

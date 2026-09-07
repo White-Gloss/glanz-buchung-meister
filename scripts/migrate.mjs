@@ -2,55 +2,63 @@
 /**
  * Deploy-time database migrator (node-postgres, `pg`).
  *
- * Runs during `npm run build` — on every Vercel deploy — applying pending files
- * in ../migrations to DATABASE_URL. Each file is applied in one transaction and
- * recorded in a `_migrations` table, so it runs once and is safe to re-run.
+ * Run explicitly with `npm run db:migrate` against a confirmed DATABASE_URL,
+ * separately from builds and read-only readiness checks. Each pending file in
+ * ../migrations is applied and recorded in one transaction.
  *
  * The read is non-recursive, so the opt-in auth schema under migrations/auth/
  * is not applied to an app that never asked for sign-in.
  *
- * No DATABASE_URL (local / preview builds) -> skip; the PGLite fallback applies
- * the same files at startup instead (see src/lib/db.ts).
+ * Missing configuration or an incompatible schema fails before any DDL. A new
+ * empty application schema needs the explicit --initialize option. Local PGlite
+ * previews apply their own isolated migrations (see src/lib/db.ts).
  */
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.log(
-    "[migrate] DATABASE_URL not set — skipping (the PGLite fallback migrates itself).",
-  );
-  process.exit(0);
-}
+import { releaseColumnsQuery, schemaCompatibilityProblems } from "./release-policy.mjs";
 
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
-async function main() {
-  let entries;
-  try {
-    entries = await readdir(migrationsDir);
-  } catch {
-    console.log("[migrate] no migrations/ directory — nothing to do.");
-    return;
-  }
-  // An app with no schema of its own must not pay for a database connection.
-  if (pendingMigrations(entries, []).length === 0) {
-    console.log("[migrate] no migrations — nothing to do.");
-    return;
-  }
+/** Only messages created by our preflight may be shown verbatim. */
+class MigrationPreflightError extends Error {}
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
-  const client = await pool.connect();
+/** @param {unknown} error */
+export function migrationFailureMessage(error) {
+  if (error instanceof MigrationPreflightError) return error.message;
+  if (error && typeof error === "object" && "code" in error) {
+    const code = error.code;
+    if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) {
+      return `Datenbankoperation fehlgeschlagen (SQLSTATE ${code}).`;
+    }
+  }
+  return "Migration fehlgeschlagen; Verbindung, Berechtigungen und Migrationsdateien prüfen. Keine Verbindungsdetails protokolliert.";
+}
+
+/**
+ * @param {Pick<pg.Pool, 'connect' | 'end'>} pool
+ * @param {string[]} entries
+ * @param {boolean} initialize
+ */
+export async function runMigrations(pool, entries, initialize = false) {
+  let client;
   try {
+    client = await pool.connect();
+    // Inspect the target before any DDL. The historical Supabase UUID schema is
+    // a different application model and must never be partially migrated here.
+    const columns = await client.query(releaseColumnsQuery);
+    const problems = schemaCompatibilityProblems(columns.rows, {
+      allowEmpty: initialize,
+    });
+    if (problems.length) throw new MigrationPreflightError(problems.join(" "));
+    // Serialize concurrent deployments; release also occurs on disconnection.
+    await client.query("select pg_advisory_lock(814702061)");
     await client.query(
       "CREATE TABLE IF NOT EXISTS _migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())",
     );
-    const applied = (await client.query("SELECT name FROM _migrations")).rows.map(
-      (r) => r.name,
-    );
+    const applied = (await client.query("SELECT name FROM _migrations")).rows.map((r) => r.name);
 
     let count = 0;
     for (const { name } of pendingMigrations(entries, applied)) {
@@ -73,18 +81,52 @@ async function main() {
       console.log(`[migrate] applied ${name}`);
       count += 1;
     }
-    console.log(count ? `[migrate] done — ${count} migration(s) applied.` : "[migrate] up to date.");
+    console.log(
+      count ? `[migrate] done — ${count} migration(s) applied.` : "[migrate] up to date.",
+    );
   } finally {
-    client.release();
-    await pool.end();
+    try {
+      if (client) {
+        await client.query("select pg_advisory_unlock(814702061)").catch(() => {});
+        client.release();
+      }
+    } finally {
+      // A rejected pool.connect() still leaves a pool that must be closed.
+      await pool.end();
+    }
   }
 }
 
-main().catch((err) => {
-  console.error("[migrate] failed:", err?.message || err);
-  // pg errors carry the context needed to debug a bad SQL file.
-  for (const key of ["code", "detail", "hint", "position", "where"]) {
-    if (err?.[key] != null) console.error(`[migrate]   ${key}: ${err[key]}`);
+async function main() {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (!databaseUrl) {
+    throw new MigrationPreflightError("DATABASE_URL fehlt; keine Migration ausgeführt.");
   }
-  process.exit(1);
-});
+  let entries;
+  try {
+    entries = await readdir(migrationsDir);
+  } catch {
+    throw new MigrationPreflightError(
+      "Migrationsverzeichnis fehlt oder ist nicht lesbar; keine Migration ausgeführt.",
+    );
+  }
+  if (pendingMigrations(entries, []).length === 0) {
+    throw new MigrationPreflightError(
+      "Keine Migrationsdateien gefunden; keine Migration ausgeführt.",
+    );
+  }
+  const pool = new pg.Pool({
+    connectionString: databaseUrl,
+    max: 1,
+    connectionTimeoutMillis: 5000,
+    statement_timeout: 30000,
+  });
+  await runMigrations(pool, entries, process.argv.includes("--initialize"));
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`[migrate] ${migrationFailureMessage(error)}`);
+    process.exitCode = 1;
+  });
+}

@@ -3,10 +3,13 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
-import { agentHelpText, parseAgentCommand } from "@/lib/agent";
+import { parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
-import { OUTBOUND_QUEUED, flushOutboundEmailQueue, queueBookingAutomation } from "@/lib/ops";
+import { OUTBOUND_QUEUED, flushOutboundEmailQueue } from "@/lib/ops";
+import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notification-worker";
+import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
+import { mailConfigured } from "@/lib/resend-mail";
 import {
   ensureQontoInvoiceForBooking,
   sendQontoInvoiceEmailForBooking,
@@ -19,6 +22,8 @@ import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 
 const SHOP = "white-gloss";
 const DEFAULT_OPERATOR_PIN = "WG-BETRIEB";
+const READ_ONLY_AGENT_HELP =
+  "termine – Terminübersicht | post – Posteingang | kunde <Name> – Kundensuche | rechnung <ID> – interner Entwurf | erinnerung – fällige Nachrichten prüfen. Termine ausschließlich persönlich unter Buchungen bestätigen oder ändern.";
 
 async function ensureShopSettings(sql: Awaited<ReturnType<typeof getSql>>) {
   await sql`
@@ -252,7 +257,11 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
     if (!booking) throw new Error("Buchung nicht gefunden.");
     const pack = packages.find((p) => p.id === booking.package_id);
     const kindLabel =
-      data.kind === "angebot" ? "Angebot" : data.kind === "rechnung" ? "Rechnung" : "Zahlungserinnerung";
+      data.kind === "angebot"
+        ? "Angebot"
+        : data.kind === "rechnung"
+          ? "Rechnung"
+          : "Zahlungserinnerung";
     const title = `${kindLabel} ${pack?.name ?? booking.package_id} · ${booking.customer_name}`;
     const body = [
       `${kindLabel} für ${booking.customer_name}`,
@@ -342,7 +351,7 @@ async function executeParsed(
   action: ReturnType<typeof parseAgentCommand>,
   userId: string,
 ): Promise<string> {
-  if (action.type === "help") return agentHelpText();
+  if (action.type === "help") return READ_ONLY_AGENT_HELP;
 
   if (action.type === "list-today") {
     const rows = await sql<{
@@ -382,23 +391,7 @@ async function executeParsed(
   }
 
   if (action.type === "status") {
-    const updated = await sql<{
-      id: number;
-      customer_name: string;
-      email: string | null;
-      phone: string;
-      package_id: string;
-      preferred_date: string | null;
-      preferred_slot: string | null;
-    }>`
-      update bookings
-      set status = ${action.status}, handled_by = ${userId}, updated_at = now()
-      where id = ${action.id} and shop_id = ${SHOP}
-      returning id, customer_name, email, phone, package_id, preferred_date, preferred_slot
-    `;
-    if (!updated[0]) return `Buchung #${action.id} nicht gefunden.`;
-    await queueBookingAutomation(sql, updated[0], action.status, userId);
-    return `Buchung #${updated[0].id} (${updated[0].customer_name}) ist jetzt ${action.status}.`;
+    return `Statusänderungen für WG-${action.id} erfolgen ausschließlich über die persönlichen Aktionen unter Buchungen. Es wurde kein Termin bestätigt oder verändert.`;
   }
 
   if (action.type === "customer") {
@@ -457,7 +450,7 @@ async function interpretWithGrok(text: string): Promise<string | null> {
         {
           role: "system",
           content:
-            "Du steuerst das White-Gloss-Admin. Antworte NUR mit einer Zeile in genau einem dieser Formate: status <id> <neu|bestaetigt|abgelehnt|erledigt> | termine | post | kunde <name> | rechnung <id> | erinnerung | hilfe. Keine Erklärungen.",
+            "Du unterstützt das White-Gloss-Admin. Du darfst keine Termine bestätigen oder Buchungsstatus ändern. Antworte NUR mit einer Zeile: termine | post | kunde <name> | rechnung <id> | erinnerung | hilfe. Bei Änderungs- oder Bestätigungswünschen antworte hilfe.",
         },
         { role: "user", content: text.slice(0, 400) },
       ],
@@ -489,9 +482,7 @@ export const runAgentCommand = createServerFn({ method: "POST" })
     let result = await executeParsed(sql, parsed, context.userId);
     if (!result) {
       result =
-        parsed.type === "unknown"
-          ? `Nicht erkannt. ${agentHelpText()}`
-          : "Keine Aktion.";
+        parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";
     }
     await sql`
       insert into agent_commands (shop_id, channel, input, result, user_id)
@@ -502,50 +493,11 @@ export const runAgentCommand = createServerFn({ method: "POST" })
 
 async function runReminderPass(
   sql: Awaited<ReturnType<typeof getSql>>,
-  userId: string,
+  _userId: string,
 ): Promise<string> {
-  const rows = await sql<{
-    id: number;
-    customer_name: string;
-    email: string | null;
-    phone: string;
-    preferred_date: string | null;
-    preferred_slot: string | null;
-    package_id: string;
-  }>`
-    select id, customer_name, email, phone, preferred_date, preferred_slot, package_id
-    from bookings
-    where shop_id = ${SHOP}
-      and status = 'bestaetigt'
-      and preferred_date is not null
-      and preferred_date <= (current_date + interval '1 day')
-      and preferred_date >= current_date
-  `;
-  if (rows.length === 0) return "Keine Termine in den nächsten 24 Stunden.";
-  for (const row of rows) {
-    const body = `Erinnerung: ${row.customer_name}, ${row.package_id}, ${row.preferred_date} ${row.preferred_slot ?? ""}`.trim();
-    if (isEmailAddress(row.email)) {
-      await sql`
-        insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
-        values (
-          ${SHOP}, ${"email"}, ${row.email},
-          ${`Terminerinnerung WG-${row.id}`}, ${body}, ${row.id}, ${OUTBOUND_QUEUED}
-        )
-      `;
-    }
-    await sql`
-      insert into documents (shop_id, booking_id, kind, title, amount_cents, status, body, created_by)
-      values (
-        ${SHOP}, ${row.id}, ${"erinnerung"}, ${`Terminerinnerung WG-${row.id}`},
-        ${0}, ${"entwurf"}, ${body}, ${userId}
-      )
-    `;
-  }
-  await sql`
-    insert into automation_events (shop_id, area, event, severity, context)
-    values (${SHOP}, ${"erinnerung"}, ${"lauf"}, ${"info"}, ${`${rows.length} Erinnerungen`})
-  `;
-  return `${rows.length} Erinnerung(en) in die Versandliste gelegt.`;
+  const checked = await scheduleDueBookingReminders(sql);
+  const result = await runNotificationWorker(sql);
+  return `${checked} bestätigte Termine geprüft. ${result.sent} Nachrichten übermittelt, ${result.retried} für einen weiteren Versuch vorgesehen, ${result.failed + result.review} benötigen Prüfung.`;
 }
 
 export const dashboardStats = createServerFn({ method: "GET" })
@@ -606,7 +558,7 @@ export const calendarIcs = createServerFn({ method: "GET" })
       select id, customer_name, package_id, preferred_date, preferred_slot, total_cents
       from bookings
       where shop_id = ${SHOP}
-        and status in ('neu', 'bestaetigt')
+        and status = 'bestaetigt'
         and preferred_date is not null
       order by preferred_date, preferred_slot
     `;
@@ -641,9 +593,7 @@ export const flushOutboundMail = createServerFn({ method: "POST" })
 
 export const sendQontoInvoice = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) =>
-    z.object({ bookingId: z.number().int().positive() }).parse(input),
-  )
+  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
     return sendQontoInvoiceEmailForBooking(sql, data.bookingId);
@@ -651,9 +601,7 @@ export const sendQontoInvoice = createServerFn({ method: "POST" })
 
 export const retryQontoInvoice = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) =>
-    z.object({ bookingId: z.number().int().positive() }).parse(input),
-  )
+  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
     const rows = await sql<QontoBookingFields>`
@@ -698,7 +646,7 @@ export const listAutomationEvents = createServerFn({ method: "GET" })
         limit 80
       `;
     } catch {
-      return [];
+      throw new Error("Automationsprotokoll konnte nicht geladen werden.");
     }
   });
 
@@ -713,16 +661,19 @@ export const listOutbound = createServerFn({ method: "GET" })
         to_addr: string | null;
         subject: string | null;
         status: string;
+        attempt_count: number;
+        last_error_code: string | null;
+        delivery_status: string;
         created_at: string;
       }>`
-        select id, channel, to_addr, subject, status, created_at
+        select id, channel, to_addr, subject, status, attempt_count, last_error_code, delivery_status, created_at
         from outbound_queue
         where shop_id = ${SHOP}
         order by created_at desc
         limit 40
       `;
     } catch {
-      return [];
+      throw new Error("Versandliste konnte nicht geladen werden.");
     }
   });
 
@@ -742,9 +693,7 @@ export const getOperatorSettings = createServerFn({ method: "GET" })
 
 export const setOperatorPin = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) =>
-    z.object({ pin: z.string().trim().min(6).max(40) }).parse(input),
-  )
+  .validator((input: unknown) => z.object({ pin: z.string().trim().min(6).max(40) }).parse(input))
   .handler(async ({ data }) => {
     if (data.pin === DEFAULT_OPERATOR_PIN) {
       throw new Error("Bitte einen eigenen PIN setzen, nicht den Vorgabewert.");
@@ -760,6 +709,7 @@ export const setOperatorPin = createServerFn({ method: "POST" })
   });
 
 export const inboundOperatorMessage = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -793,11 +743,27 @@ export const inboundOperatorMessage = createServerFn({ method: "POST" })
     let result = await executeParsed(sql, parsed, `operator:${data.channel}`);
     if (!result) {
       result =
-        parsed.type === "unknown" ? `Nicht erkannt. ${agentHelpText()}` : "Keine Aktion.";
+        parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";
     }
     await sql`
       insert into agent_commands (shop_id, channel, input, result, user_id)
       values (${SHOP}, ${data.channel}, ${data.text}, ${result}, ${`operator:${data.channel}`})
     `;
     return { ok: true as const, result, parsedType: parsed.type };
+  });
+
+export const getNotificationStatus = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async () => {
+    const whatsapp = validateWhatsAppConfiguration();
+    const sql = await getSql();
+    const [settings] = await sql<{ last_run: string | null }>`
+      select notification_worker_last_run_at::text as last_run from shop_settings where shop_id = ${SHOP}
+    `;
+    return {
+      whatsappConfigured: whatsapp.configured,
+      emailConfigured: mailConfigured(),
+      cronConfigured: (process.env.REMINDER_CRON_SECRET?.trim().length ?? 0) >= 32,
+      lastRun: settings?.last_run ?? null,
+    };
   });

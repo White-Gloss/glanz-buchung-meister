@@ -56,6 +56,9 @@ export function operatorEnforcementEnabled(): boolean {
 
 export async function requireOperator(userId: string) {
   if (!userId) throw new Error("Kein Betriebszugang.");
+  // A configured owner is also an operator, including an external login email.
+  // userId comes exclusively from the authenticated session middleware.
+  if (userId === process.env.OWNER_USER_ID?.trim() && userId !== "dev-user") return;
   if (userId === "dev-user") return;
   if (!operatorEnforcementEnabled()) return;
 
@@ -70,7 +73,9 @@ export async function requireOperator(userId: string) {
     from "account"
     where "userId" = ${userId}
   `;
-  if (accounts.some((account) => isOperatorProviderAccount(account.providerId, account.accountId))) {
+  if (
+    accounts.some((account) => isOperatorProviderAccount(account.providerId, account.accountId))
+  ) {
     return;
   }
 

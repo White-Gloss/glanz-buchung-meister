@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
@@ -8,7 +8,8 @@ export const Route = createFileRoute("/datenschutz")({
   head: () =>
     pageHead({
       title: `Datenschutzerklärung | ${site.name}`,
-      description: "Informationen zur Verarbeitung personenbezogener Daten bei White Gloss Detailing.",
+      description:
+        "Informationen zur Verarbeitung personenbezogener Daten bei White Gloss Detailing.",
       path: "/datenschutz",
     }),
 });
@@ -22,10 +23,7 @@ function PrivacyPage() {
         kicker="Rechtliches"
         title="Datenschutzerklärung."
         lead="Welche Daten wir brauchen, wofür, und wie lange sie bleiben."
-        crumbs={[
-          { label: "Startseite", to: "/" },
-          { label: "Datenschutz" },
-        ]}
+        crumbs={[{ label: "Startseite", to: "/" }, { label: "Datenschutz" }]}
       />
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <section>
@@ -74,8 +72,8 @@ function PrivacyPage() {
           </p>
           <p>
             Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche Maßnahmen auf Ihre
-            Anfrage). Die Anfrage ist unverbindlich. Ein Vertrag kommt erst mit unserer ausdrücklichen
-            Zusage oder mit Arbeitsbeginn nach abgestimmtem Umfang zustande.
+            Anfrage). Die Anfrage ist unverbindlich. Ein Vertrag kommt erst mit unserer
+            ausdrücklichen Zusage oder mit Arbeitsbeginn nach abgestimmtem Umfang zustande.
           </p>
         </section>
 
@@ -84,24 +82,42 @@ function PrivacyPage() {
           <p>
             Bei einer Kontaktaufnahme verarbeiten wir Ihre Kontaktdaten und den Inhalt Ihrer
             Nachricht, um das Anliegen zu beantworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
-            DSGVO bei vorvertraglichen oder vertraglichen Anliegen und im Übrigen Art. 6 Abs. 1
-            lit. f DSGVO.
+            DSGVO bei vorvertraglichen oder vertraglichen Anliegen und im Übrigen Art. 6 Abs. 1 lit.
+            f DSGVO.
           </p>
         </section>
 
         <section>
           <h2>5. WhatsApp, Instagram und Drittländer</h2>
           <p>
-            Die Website enthält nur Links, kein WhatsApp- oder Instagram-Skript. Erst wenn Sie
-            einen solchen Link antippen, stellen Sie selbst eine Verbindung zu Meta Platforms
-            Ireland Limited her. Dabei können Daten (etwa Gerät, IP-Adresse, die vorausgefüllte
-            Nachricht) in die USA und andere Drittländer übermittelt werden. Es gelten die
-            Datenschutzhinweise von WhatsApp bzw. Instagram. Meta stützt die Übermittlung auf
-            Standardvertragsklauseln. Für sensible Inhalte nutzen Sie Telefon oder E-Mail.
+            Die WhatsApp- und Instagram-Verweise auf dieser Website sind Links; es wird kein
+            WhatsApp- oder Instagram-Skript in Ihrem Browser geladen. Wenn Sie einen solchen Link
+            antippen, stellen Sie selbst eine Verbindung zu Meta Platforms Ireland Limited her.
+            Dabei können Daten (etwa Gerät, IP-Adresse, die vorausgefüllte Nachricht) in die USA und
+            andere Drittländer übermittelt werden. Es gelten die Datenschutzhinweise von WhatsApp
+            bzw. Instagram. Für sensible Inhalte nutzen Sie Telefon oder E-Mail.
           </p>
           <p>
-            Der schwebende WhatsApp-Button ist ebenfalls nur ein Link. Er lädt kein Widget und
-            setzt kein Cookie.
+            Der schwebende WhatsApp-Button ist ebenfalls nur ein Link. Er lädt kein Widget und setzt
+            kein Cookie.
+          </p>
+          <p>
+            Wenn die WhatsApp-Anbindung im Betrieb aktiviert ist, übermittelt unser Server
+            Buchungshinweise über die WhatsApp Cloud API an Meta und versendet sie als
+            Vorlagennachrichten an die konfigurierte WhatsApp-Nummer des Inhabers. Dies erfolgt zur
+            Bearbeitung von Buchungsanfragen und Änderungen auch ohne einen Klick auf einen
+            WhatsApp-Link. Die Hinweise können die Vorgangsnummer, den Kundennamen, die
+            Telefonnummer, die gewählte Leistung, Datum und Uhrzeit der Fahrzeugabgabe, eine
+            gekürzte Notiz sowie die Art des Vorgangs, etwa eine Bestätigung oder Stornierung,
+            enthalten. Bei Verschiebungen oder Stornierungen kann der bisherige Abgabetermin, bei
+            Stornierungen außerdem deren Zeitpunkt enthalten sein.
+          </p>
+          <p>
+            Diese Anbindung sendet keine WhatsApp-Nachrichten an Buchungskunden. Kundenhinweise und
+            Terminerinnerungen werden bei eingerichtetem E-Mail-Versand per E-Mail versendet. Meta
+            meldet Nachrichtenkennungen und Zustellstatus zurück, damit wir den Versand an den
+            Inhaber nachvollziehen und Zustellfehler prüfen können. WhatsApp-Nachrichten bestätigen
+            oder ändern keinen Termin; die Freigabe erfolgt persönlich im Betriebspanel.
           </p>
         </section>
 
@@ -118,11 +134,13 @@ function PrivacyPage() {
           <p>
             Das Skript wird technisch erst geladen, nachdem Sie im Cookie-Banner „Akzeptieren“
             gewählt haben (§ 25 Abs. 1 TDDDG). Rechtsgrundlage für den Einsatz ist Ihre
-            Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird kein Google Tag
-            geladen und es findet keine Übertragung an Google statt. Eine erteilte Einwilligung
-            können Sie jederzeit widerrufen, indem Sie in Ihrem Browser den lokalen Speicher
-            (localStorage-Eintrag „wg-consent“) dieser Seite löschen; das Banner erscheint dann
-            erneut.
+            Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird der Google Tag
+            nicht geladen. Um eine erteilte Einwilligung zurückzunehmen, löschen Sie in Ihrem
+            Browser den localStorage-Eintrag „wg-consent“ dieser Website und laden Sie die Seite
+            anschließend vollständig neu. Wählen Sie im erneut angezeigten Banner „Ablehnen“. Nach
+            dem Neuladen bleibt der Google Tag ohne erneute Zustimmung ausgeschaltet. Das Löschen
+            des Speichereintrags allein beendet ein bereits geladenes Skript im noch geöffneten
+            Dokument nicht.
           </p>
           <p>
             Nach Ihrer Einwilligung können Daten wie Ihre IP-Adresse und Gerätekennungen an Google
@@ -130,29 +148,30 @@ function PrivacyPage() {
             Übermittlungen auf Standardvertragsklauseln der EU-Kommission.
           </p>
           <p>
-            Darüber hinaus findet im öffentlich zugänglichen Bereich keine werbliche Reichweitenmessung
-            statt (kein Meta-Pixel).
+            Darüber hinaus findet im öffentlich zugänglichen Bereich keine werbliche
+            Reichweitenmessung statt (kein Meta-Pixel).
           </p>
           <p>
             Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
             Sicherheit verwendet werden (Sitzung). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+            Das Cookie für das Nachreichen von Fahrzeugfotos ist in Abschnitt 7 beschrieben.
           </p>
           <p>
-            Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie
-            „Google Maps laden – dabei werden Daten an Google übertragen“ antippen, wird Google Maps
-            (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland) in einem Rahmen
-            geladen. Danach können Daten in die USA übermittelt werden (Standardvertragsklauseln
-            von Google). Der Button „Google Maps“ öffnet Google in einem neuen Tab. Vor dem Klick
-            stellt Ihr Browser keine Verbindung zu Google her. Rechtsgrundlage nach dem Klick ist
-            Art. 6 Abs. 1 lit. a DSGVO.
+            Die Standortkarte zeigt zuerst ein eigenes Kartenbild. Erst wenn Sie „Google Maps laden
+            – dabei werden Daten an Google übertragen“ antippen, wird Google Maps (Google Ireland
+            Limited, Gordon House, Barrow Street, Dublin 4, Irland) in einem Rahmen geladen. Danach
+            können Daten in die USA übermittelt werden (Standardvertragsklauseln von Google). Der
+            Button „Google Maps“ öffnet Google in einem neuen Tab. Vor dem Klick stellt Ihr Browser
+            keine Verbindung zu Google her. Rechtsgrundlage nach dem Klick ist Art. 6 Abs. 1 lit. a
+            DSGVO.
           </p>
         </section>
 
         <section>
           <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
           <p>
-            Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung & Hagelschaden“ können
-            Sie uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
+            Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung & Hagelschaden“ können Sie
+            uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
             übermitteln. Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben
             auf Ihrem Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur
             Zuordnung, Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
@@ -161,27 +180,52 @@ function PrivacyPage() {
             Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
             separaten sicheren Kanal nachfordern.
           </p>
+          <p>
+            Nach einer Terminanfrage können Sie auf der Bestätigungsseite optional Fahrzeugfotos
+            oder kurze Videos zum Vorgang nachreichen. Bei dieser Uploadfunktion werden die
+            tatsächlichen Dateien über unseren Server in einem privaten Speicherbereich bei Supabase
+            gespeichert. Dateiname, Dateityp, Dateigröße und die Zuordnung zum Vorgang werden
+            ebenfalls gespeichert. Die Aufnahmen sind nicht öffentlich zugänglich und dienen der
+            Prüfung Ihrer Anfrage.
+          </p>
+          <p>
+            Für das Nachreichen speichert Ihr Browser nach der Anfrage eine zufällige,
+            vorgangsgebundene Upload-Berechtigung in einem HttpOnly-Cookie. Diese Berechtigung läuft
+            nach sieben Tagen ab. Der Upload setzt voraus, dass das Cookie im Browser der
+            ursprünglichen Anfrage noch vorhanden ist. Die siebentägige Frist betrifft die
+            Upload-Berechtigung; bereits gespeicherte Aufnahmen werden dadurch nicht automatisch
+            gelöscht. Für ihre Speicherdauer gilt Abschnitt 10.
+          </p>
         </section>
 
         <section>
           <h2>8. Betriebspanel (nur intern)</h2>
           <p>
             Die Anmeldung zum Betriebspanel ist ausschließlich für den Inhaber und beauftragte
-            Mitarbeiter bestimmt. Sie erfolgt per E-Mail und Passwort oder über Google
-            (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland).
-            Google-Anmeldung ist nur für Adressen @white-gloss.de und ausdrücklich
-            freigeschaltete Postfächer zulässig. Der Anmeldeanbieter X (Twitter) ist nicht
-            aktiv. Öffentliche Besucher können dort kein Konto einrichten.
+            Mitarbeiter bestimmt. Sie erfolgt per E-Mail und Passwort oder über Google (Google
+            Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Google-Anmeldung ist
+            nur für Adressen @white-gloss.de und ausdrücklich freigeschaltete Postfächer zulässig.
+            Der Anmeldeanbieter X (Twitter) ist nicht aktiv. Öffentliche Besucher können dort kein
+            Konto einrichten.
           </p>
         </section>
 
         <section>
           <h2>9. Empfänger</h2>
           <p>
-            Hosting: IONOS SE, Deutschland. Anfragen und Termine: intern bei White Gloss.
-            Nach bewusstem Klick: Google Ireland Limited (Karten, interne Anmeldung) und
-            Meta Platforms Ireland Limited (WhatsApp, Instagram). Eine automatische Weitergabe
-            an Werbenetzwerke findet nicht statt.
+            Hosting: IONOS SE, Deutschland. Anfragen und Termine werden von White Gloss bearbeitet.
+            Die optional nachgereichten Fahrzeugaufnahmen werden bei Supabase in einem privaten
+            Speicherbereich abgelegt. Wenn der E-Mail-Versand eingerichtet ist, werden
+            Benachrichtigungen über Resend versendet; dabei werden Empfängeradresse, Betreff und
+            Nachrichteninhalt an den Versanddienst übermittelt. Wenn die WhatsApp-Anbindung im
+            Betrieb aktiviert ist, erhält Meta zusätzlich die in Abschnitt 5 beschriebenen
+            Buchungshinweise zur Zustellung an den Inhaber.
+          </p>
+          <p>
+            Google Ads und gegebenenfalls Analytics werden erst nach Ihrer Einwilligung geladen.
+            Nach bewusstem Klick werden außerdem Google Ireland Limited (Karten, interne Anmeldung)
+            beziehungsweise Meta Platforms Ireland Limited (WhatsApp, Instagram) aufgerufen. Die
+            jeweiligen Abläufe sind in den Abschnitten 5, 6 und 8 beschrieben.
           </p>
         </section>
 
@@ -209,7 +253,8 @@ function PrivacyPage() {
           </p>
           <p>
             Für Datenschutzanfragen genügt eine Nachricht an{" "}
-            <a href={`mailto:${site.email}`}>{site.email}</a>.
+            <a href={`mailto:${site.email}`}>{site.email}</a>. Wie Sie eine Löschung anfragen
+            können, beschreibt die <Link to="/datenloeschung">Anleitung zur Datenlöschung</Link>.
           </p>
         </section>
 
@@ -221,7 +266,7 @@ function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 7. September 2026</p>
       </article>
     </main>
   );

@@ -145,7 +145,6 @@ function Home() {
                 <Link
                   to="/leistungen/$slug"
                   params={{ slug: packageServiceSlug[p.id] }}
-                  aria-label={`${p.searchLabel} in ${site.city}, Paket ${p.name} ab ${p.price} Euro`}
                   className="lift group gd-pack py-8"
                 >
                   <span className="ga-num font-display text-sm text-subtle tabular-nums">
@@ -303,7 +302,7 @@ function Home() {
         </Link>
       </section>
 
-      <section className="cv-auto gd-split gd-split--duo border-y border-line">
+      <section className="gd-split gd-split--duo border-y border-line">
         <Link
           to="/luxusfahrzeuge"
           className="ga-lux group relative block min-h-[28rem] overflow-hidden sm:min-h-[36rem]"

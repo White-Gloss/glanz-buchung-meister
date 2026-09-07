@@ -318,4 +318,3 @@ Plan complete and saved to docs/superpowers/plans/2026-09-06-qonto-rechnungen.md
 
 1. Subagent-Driven (recommended) — fresh subagent per task (superpowers:subagent-driven-development)
 2. Inline Execution — batch with checkpoints (superpowers:executing-plans)
-

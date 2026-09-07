@@ -9,15 +9,7 @@ import { BookingPhotoUpload } from "@/components/booking-photo-upload";
 
 type ThanksSearch = {
   vorgang?: string;
-  zusage?: string;
 };
-
-function isConfirmed(value: unknown): boolean {
-  if (value === true || value === 1) return true;
-  if (typeof value !== "string") return false;
-  const normalized = value.replace(/['"]/g, "").trim().toLowerCase();
-  return normalized === "1" || normalized === "true";
-}
 
 function asVorgang(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -28,7 +20,6 @@ function asVorgang(value: unknown): string | undefined {
 export const Route = createFileRoute("/danke")({
   validateSearch: (search: Record<string, unknown>): ThanksSearch => ({
     vorgang: asVorgang(search.vorgang),
-    zusage: isConfirmed(search.zusage) ? "1" : undefined,
   }),
   component: ThanksPage,
   head: () =>
@@ -41,8 +32,7 @@ export const Route = createFileRoute("/danke")({
 });
 
 function ThanksPage() {
-  const { vorgang, zusage } = Route.useSearch();
-  const confirmed = zusage === "1";
+  const { vorgang } = Route.useSearch();
 
   const conversionFired = useRef(false);
   useEffect(() => {
@@ -51,34 +41,33 @@ function ThanksPage() {
       trackGoogleAdsConversion();
     }
   }, []);
-  const steps = confirmed
-    ? [
-        ["01", "Termin gehalten", "Der Wunschtermin ist für Sie blockiert. Änderungen nur nach Rücksprache."],
-        ["02", "Fahrzeug bringen oder abholen", `Werkstatt ${site.street}, ${site.city} – oder Hol- und Bringservice nach Staffel.`],
-        ["03", "Preis nach dem Auto", "Der verbindliche Endpreis bleibt nach Begutachtung. Kein Automatismus an der Tür."],
-      ]
-    : [
-        ["01", "Anfrage ist da", "Unverbindlich vorgemerkt. Noch kein Vertrag, noch kein fester Termin."],
-        ["02", "Wir prüfen den Slot", "In der Regel Rückmeldung noch am selben Werktag – Telefon, Mail oder WhatsApp."],
-        ["03", "Erst die Zusage gilt", "Fest wird der Termin, wenn wir zusagen. Danach gilt die Widerrufsbelehrung."],
-      ];
+  const steps = [
+    [
+      "01",
+      "Anfrage ist da",
+      "Unverbindlich vorgemerkt. Noch kein Vertrag, noch kein fester Termin.",
+    ],
+    [
+      "02",
+      "Wir prüfen den Slot",
+      "In der Regel Rückmeldung noch am selben Werktag – Telefon, Mail oder WhatsApp.",
+    ],
+    [
+      "03",
+      "Erst die Zusage gilt",
+      "Fest wird der Termin, wenn wir zusagen. Danach gilt die Widerrufsbelehrung.",
+    ],
+  ];
 
   return (
     <main id="main-content" tabIndex={-1}>
       <PageHero
         shot="atelier"
         alt="Werkstatt von White Gloss in Horb am Neckar"
-        kicker={confirmed ? "Terminzusage" : "Bestätigung"}
-        title={confirmed ? "Termin ist zugesagt." : "Danke. Anfrage erhalten."}
-        lead={
-          confirmed
-            ? "Der Wunschtermin ist frei. Wir erwarten Sie in der Werkstatt – oder holen das Auto ab."
-            : "Unverbindlich vorgemerkt. Wir melden uns zur Abstimmung, in der Regel noch am selben Werktag."
-        }
-        crumbs={[
-          { label: "Startseite", to: "/" },
-          { label: "Danke" },
-        ]}
+        kicker="Anfrage eingegangen"
+        title="Danke. Anfrage erhalten."
+        lead="Ihr Wunschtermin wartet auf unsere persönliche Bestätigung. Wir melden uns zur Abstimmung, in der Regel noch am selben Werktag."
+        crumbs={[{ label: "Startseite", to: "/" }, { label: "Danke" }]}
         actions={
           <>
             <Link to="/" className={ctaPrimary}>
@@ -131,34 +120,13 @@ function ThanksPage() {
           </div>
         </dl>
 
-        {confirmed ? (
-          <div className="mt-14 space-y-3 border-t border-line pt-8 text-sm leading-relaxed text-muted">
-            <p>
-              Mit der Terminzusage kommt – soweit nichts anderes vereinbart ist – der Vertrag über
-              den abgestimmten Termin zustande. Der verbindliche Endpreis bleibt nach Begutachtung.
-            </p>
-            <p>
-              Verbraucher können den Vertrag binnen vierzehn Tagen ohne Angabe von Gründen
-              widerrufen. Die Belehrung und das Musterformular stehen unter{" "}
-              <Link to="/widerruf" className="underline hover:text-fg">
-                Widerruf
-              </Link>
-              . Es gelten die{" "}
-              <Link to="/agb" className="underline hover:text-fg">
-                AGB
-              </Link>
-              .
-            </p>
-          </div>
-        ) : (
-          <p className="mt-14 border-t border-line pt-8 text-sm text-muted">
-            Noch kein Vertrag. Sobald wir zusagen, gilt die{" "}
-            <Link to="/widerruf" className="underline hover:text-fg">
-              Widerrufsbelehrung
-            </Link>
-            .
-          </p>
-        )}
+        <p className="mt-14 border-t border-line pt-8 text-sm text-muted">
+          Noch kein Vertrag. Sobald wir zusagen, gilt die{" "}
+          <Link to="/widerruf" className="underline hover:text-fg">
+            Widerrufsbelehrung
+          </Link>
+          .
+        </p>
       </section>
     </main>
   );

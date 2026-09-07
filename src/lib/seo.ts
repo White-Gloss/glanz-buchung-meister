@@ -50,7 +50,7 @@ export function pageHead(opts: {
         as: "image",
         href: `/media/${opts.preloadShot}-800.avif`,
         type: "image/avif",
-        imageSrcSet: `/media/${opts.preloadShot}-480.avif 480w, /media/${opts.preloadShot}-800.avif 800w, /media/${opts.preloadShot}.avif 1200w`,
+        imageSrcSet: `/media/${opts.preloadShot}-480.avif 480w, /media/${opts.preloadShot}-800.avif 800w, /media/${opts.preloadShot}-1200.avif 1200w`,
         imageSizes: "100vw",
         fetchPriority: "high" as const,
       }

@@ -23,10 +23,7 @@ function TermsPage() {
         kicker="Rechtliches"
         title="Allgemeine Geschäftsbedingungen."
         lead="Anfrage, Ausführung, Zahlung – in klarer Sprache."
-        crumbs={[
-          { label: "Startseite", to: "/" },
-          { label: "AGB" },
-        ]}
+        crumbs={[{ label: "Startseite", to: "/" }, { label: "AGB" }]}
       />
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <p>
@@ -45,9 +42,9 @@ function TermsPage() {
             Nach Sichtung der Angaben, Fotos und – soweit erforderlich – nach Besichtigung des
             Fahrzeugs stimmen wir Leistungsumfang, verbindlichen Preis und Termin persönlich mit
             Ihnen ab. Ein Vertrag über die Aufbereitung kommt erst zustande, wenn wir den Auftrag
-            ausdrücklich bestätigen oder mit der vereinbarten Leistung beginnen. Ein freier
-            Wunschtermin an einem Werktag kann automatisch als Termin zugesagt werden; das ist
-            unsere Terminbestätigung, nicht automatisch der verbindliche Endpreis.
+            ausdrücklich bestätigen oder mit der vereinbarten Leistung beginnen. Ein Wunschtermin
+            wird erst nach persönlicher Prüfung ausdrücklich vom Inhaber bestätigt. Die Uhrzeit
+            bezeichnet die Fahrzeugabgabe. Der verbindliche Endpreis wird gesondert abgestimmt.
           </p>
         </section>
 
@@ -69,12 +66,12 @@ function TermsPage() {
         <section>
           <h2>3. Termine, Übergabe und Mitwirkung</h2>
           <p>
-            Der übermittelte Termin ist ein Terminwunsch. Ist der gewünschte Werktag mit einem
-            freien Zeitfenster verfügbar, sagen wir den Termin automatisch zu. Ohne Datum, an
-            Wochenenden, bei belegtem Slot oder vollem Tag bleibt die Anfrage offen. Den genauen
-            Hol- und Bringservice sowie die Übergabe stimmen wir in der Regel drei bis vier Tage
-            vor dem Termin telefonisch oder per E-Mail ab. Können wir den Wunschtermin nicht
-            anbieten, schlagen wir einen Ausweichtermin vor.
+            Der übermittelte Termin ist ein Terminwunsch. Der Inhaber prüft die Anfrage persönlich
+            und bestätigt den Termin ausdrücklich. Bis zu dieser Freigabe bleibt die Anfrage offen.
+            Die angegebene Uhrzeit bezeichnet die Fahrzeugabgabe. Den genauen Hol- und Bringservice
+            sowie die Übergabe stimmen wir in der Regel drei bis vier Tage vor dem Termin
+            telefonisch oder per E-Mail ab. Können wir den Wunschtermin nicht anbieten, schlagen wir
+            einen Ausweichtermin vor.
           </p>
           <p>
             Bitte übergeben Sie das Fahrzeug mit allen für die vereinbarte Leistung notwendigen
@@ -90,9 +87,9 @@ function TermsPage() {
           <p>
             Ein Hol- und Bringservice wird nur nach vorheriger Bestätigung erbracht. Abholort,
             Übergabezeit und Preis richten sich nach der vereinbarten Entfernung und dem
-            Fahrzeugzustand ({pickupTierSummary()}. {pickupKeramikNote()}).
-            Bei der Übergabe dokumentieren die Parteien erkennbare Vorschäden, soweit dies
-            angemessen möglich ist. Ausgeführt wird ausschließlich in der Werkstatt in {site.city}.
+            Fahrzeugzustand ({pickupTierSummary()}. {pickupKeramikNote()}). Bei der Übergabe
+            dokumentieren die Parteien erkennbare Vorschäden, soweit dies angemessen möglich ist.
+            Ausgeführt wird ausschließlich in der Werkstatt in {site.city}.
           </p>
         </section>
 
@@ -143,9 +140,8 @@ function TermsPage() {
             Verträgen die gesetzlich erforderliche Widerrufsbelehrung. Sie finden diese unter{" "}
             <Link to="/widerruf">Widerruf</Link>. Die Frist beginnt mit dem Vertragsschluss – also
             erst mit unserer ausdrücklichen Zusage oder mit Beginn der vereinbarten Leistung, nicht
-            schon mit der unverbindlichen Online-Anfrage. Eine automatische Terminbestätigung
-            für einen freien Werktag ändert das Widerrufsrecht nicht; sie ist die Zusage des
-            Termins. Die vollständige Widerrufsbelehrung erscheint auch auf der Bestätigungsseite.
+            schon mit der unverbindlichen Online-Anfrage. Die vollständige Widerrufsbelehrung
+            erscheint auch auf der Bestätigungsseite.
           </p>
         </section>
 
@@ -159,7 +155,7 @@ function TermsPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 7. September 2026</p>
       </article>
     </main>
   );

@@ -20,9 +20,9 @@
  *     and identities persist in the embedded PGLite DB (same DB as app data);
  *     the process restart wipes both. Live-preview iframe clients use a bearer
  *     token (partitioned cookies) — see `client.ts`.
- *   - Off (`VITE_AUTH_ENABLED=false`, the shipped default): no providers;
- *     `requireUserId` resolves a dev user with no database configured, and
- *     throws fail-closed once `DATABASE_URL` is set (see `verify.server.ts`).
+ *   - Preview off (`VITE_AUTH_ENABLED=false`): broker federation is disabled;
+ *     native Google/email sessions are still verified. A dev user is allowed
+ *     only in development/test without a database (see `verify.server.ts`).
  *
  * NEVER import this from client code — it pulls in `pg` + the preview secret +
  * server-only Better Auth internals. The client uses `@/lib/auth/client`;
@@ -41,6 +41,7 @@ import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
 import { googleOAuthCredentials } from "./google-oauth";
+import { resolveAuthConfiguration } from "./session-policy";
 import { isOperatorEmail, operatorEnforcementEnabled } from "../operator";
 import { APIError } from "better-auth/api";
 import {
@@ -79,8 +80,7 @@ const env = (key: string): string | undefined => {
   return value ? value : undefined;
 };
 
-// Explicit off-switch. The deployer sets `VITE_AUTH_ENABLED=true` when it
-// provisions auth; set it to "false" to force auth off everywhere (dev user).
+// Preview broker switch; native logins retain their own configuration.
 const authDisabled = env("VITE_AUTH_ENABLED") === "false";
 
 // Broker federation creds: the deployer injects a per-app client when deployed.
@@ -94,9 +94,17 @@ const grokClientId = env("GROK_AUTH_CLIENT_ID") ?? (usePreviewOAuth ? PREVIEW_CL
 const grokClientSecret =
   env("GROK_AUTH_CLIENT_SECRET") ?? (usePreviewOAuth ? PREVIEW_CLIENT_SECRET : undefined);
 
-/** True when federated sign-in is active (real auth is enforced). */
-export const authConfigured =
-  !authDisabled && Boolean(grokClientId && grokClientSecret);
+const googleOAuth = googleOAuthCredentials();
+const authConfiguration = resolveAuthConfiguration({
+  authDisabled,
+  brokerClientId: grokClientId,
+  brokerClientSecret: grokClientSecret,
+  googleEnabled: Boolean(googleOAuth),
+  emailEnabled: emailAndPasswordEnabled,
+});
+
+/** True when at least one app sign-in method is available. */
+export const authConfigured = authConfiguration.authConfigured;
 
 // This app's own Better Auth origin. When deployed the deployer injects the
 // public URL. In the sandbox live preview there's no fixed URL (each preview gets
@@ -171,7 +179,7 @@ export const SESSION_TOKEN_COOKIE = "__Host-grok-auth.session_token";
 
 // Built separately so the `betterAuth({...})` call stays easy to edit without
 // breaking brackets (models often trip on the conditional plugin spread).
-const grokOAuthPlugin = authConfigured
+const grokOAuthPlugin = authConfiguration.brokerEnabled
   ? genericOAuth({
       config: GROK_PROVIDERS.map(({ providerId, idp }) => ({
         providerId,
@@ -188,7 +196,6 @@ const grokOAuthPlugin = authConfigured
     })
   : null;
 
-const googleOAuth = googleOAuthCredentials();
 const googleSocial = googleOAuth
   ? {
       google: {

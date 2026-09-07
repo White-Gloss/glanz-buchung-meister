@@ -354,7 +354,7 @@ export function grokOgHeadTags({
   documentTitle = "",
   cwd = process.cwd(),
 } = {}) {
-  const title = resolveOgTitle(site, appName, host, documentTitle);
+  const title = String(documentTitle).trim() || resolveOgTitle(site, appName, host);
   const publicHost = resolvePublicHost(host);
   const tags = [
     `<meta name="twitter:card" content="summary_large_image">`,
@@ -397,6 +397,50 @@ export function stripShareMetaTags(html) {
     }
     return tag;
   });
+}
+
+function shareMetaFromTag(tag) {
+  const attrs = new Map(
+    [...tag.matchAll(/\s([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)]
+      .map((match) => [match[1].toLowerCase(), match[2] ?? match[3]]),
+  );
+  const key = (attrs.get("property") ?? attrs.get("name"))?.toLowerCase();
+  if (!SHARE_META_KEYS.has(key)) return null;
+  return { key, content: unescapeHtml(attrs.get("content") ?? "").trim() };
+}
+
+function validShareMeta({ key, content }) {
+  if (!content) return false;
+  if (["og:url", "og:image", "twitter:image", "x:game:image"].includes(key)) {
+    try {
+      const url = new URL(content);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }
+  if (/:image:(?:width|height)$/.test(key)) return /^[1-9]\d*$/.test(content);
+  return true;
+}
+
+/** Keep route metadata; platform defaults only fill missing values. */
+function mergeShareMetaTags(html, defaults) {
+  const existing = new Set();
+  const next = html.replace(/<meta\b[^>]*>/gi, (tag) => {
+    const meta = shareMetaFromTag(tag);
+    if (!meta) return tag;
+    if (!validShareMeta(meta)) return "";
+    existing.add(meta.key);
+    return tag;
+  });
+  const missing = defaults.filter((tag) => {
+    const meta = shareMetaFromTag(tag);
+    if (!meta || existing.has(meta.key)) return false;
+    // Default dimensions describe the default image, never a route's own image.
+    const imageKey = meta.key.match(/^(.*:image):(?:width|height)$/)?.[1];
+    return !imageKey || !existing.has(imageKey);
+  });
+  return missing.length ? insertAfterHeadOpen(next, missing.join("")) : next;
 }
 
 function insertAfterHeadOpen(html, snippet) {
@@ -446,7 +490,10 @@ export function injectGrokPwaHead(html, ctx = {}) {
     host,
     documentTitle,
   );
-  let next = stripShareMetaTags(html);
+  let next = mergeShareMetaTags(
+    html,
+    grokOgHeadTags({ host, appName, site, documentTitle, cwd }),
+  );
 
   const missing = grokPwaHeadTags(appName)
     .filter(([key]) => {
@@ -455,11 +502,6 @@ export function injectGrokPwaHead(html, ctx = {}) {
       return !next.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);
-
-  next = insertAfterHeadOpen(
-    next,
-    grokOgHeadTags({ host, appName, site, documentTitle, cwd }).join(""),
-  );
 
   if (shouldInjectGrokExtensions(host)) {
     if (!next.includes("/grok-app-builder/extensions.js")) {
@@ -500,7 +542,7 @@ function findHeadClose(buf) {
 
 /**
  * Streaming head injector: buffers only until `</head>` (ASCII marker; never
- * appears inside a UTF-8 continuation byte), overwrites share-card metas,
+ * appears inside a UTF-8 continuation byte), fills missing share-card metas,
  * then passes later chunks through so streaming SSR keeps streaming.
  */
 export function createHeadInjector(ctx = {}) {

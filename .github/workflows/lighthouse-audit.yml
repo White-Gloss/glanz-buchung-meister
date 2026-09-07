@@ -71,5 +71,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: lighthouse-reports
-          path: .lighthouseci
+          path: |
+            .lighthouseci/mobile/
+            .lighthouseci/desktop/
+          include-hidden-files: true
           if-no-files-found: warn
