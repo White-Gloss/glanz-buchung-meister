@@ -137,7 +137,6 @@ export function composeCandidate(original, target, signing, googleBytes, random 
   const google = idPresent
     ? { clientId: scalar(values.get("GOOGLE_CLIENT_ID"), 1024), clientSecret: scalar(values.get("GOOGLE_CLIENT_SECRET"), 4096) }
     : parseGeneratedGoogle(googleBytes);
-  if (!google) fail("google_credentials_missing");
   let reminder = values.get("REMINDER_CRON_SECRET");
   if (values.has("REMINDER_CRON_SECRET")) {
     scalar(reminder);
@@ -149,7 +148,7 @@ export function composeCandidate(original, target, signing, googleBytes, random 
   }
   const required = new Map([
     ["DATABASE_URL", database], ["BETTER_AUTH_SECRET", secret],
-    ["GOOGLE_CLIENT_ID", google.clientId], ["GOOGLE_CLIENT_SECRET", google.clientSecret],
+    ...(google ? [["GOOGLE_CLIENT_ID", google.clientId], ["GOOGLE_CLIENT_SECRET", google.clientSecret]] : []),
     ["REMINDER_CRON_SECRET", reminder], ["BETTER_AUTH_URL", ORIGIN],
   ]);
   const additions = [];
@@ -163,7 +162,7 @@ export function composeCandidate(original, target, signing, googleBytes, random 
   const candidate = Buffer.concat([original, Buffer.from(suffix, "utf8")]);
   const parsed = parseEnvironment(candidate);
   for (const [key, value] of required) if (parsed.get(key) !== value) fail("candidate_roundtrip_failed");
-  return { candidate, appendedKeys: additions.map(([key]) => key), googleRecovered: !idPresent, fields: Object.fromEntries(REQUIRED.map((key) => [key, true])) };
+  return { candidate, appendedKeys: additions.map(([key]) => key), googleRecovered: !idPresent && Boolean(google), fields: Object.fromEntries(REQUIRED.map((key) => [key, required.has(key)])) };
 }
 
 export function validateOptions(options) {

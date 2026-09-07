@@ -122,6 +122,30 @@ test("existing full Google pair stays intact; partial, empty and conflicting req
     assert.throws(() => composeCandidate(full, target, invalid, undefined, random));
 });
 
+test("a verified null Google configuration preserves credential login without adding Google variables", async () => {
+  const noGoogle = Buffer.from("/** Filled by CI when GOOGLE_CLIENT_ID/SECRET exist. Never commit real secrets. */\nexport const EMBEDDED_GOOGLE_OAUTH: { clientId: string; clientSecret: string } | null = null;\n");
+  const original = Buffer.from("PORT=3000\nMAIL_FROM=existing@example.invalid\n");
+  const result = composeCandidate(original, target, signing, noGoogle, random);
+  const values = parseEnvironment(result.candidate);
+  assert.ok(result.candidate.subarray(0, original.length).equals(original));
+  assert.equal(values.get("BETTER_AUTH_SECRET"), signing.toString());
+  assert.equal(values.get("DATABASE_URL"), database);
+  assert.equal(result.googleRecovered, false);
+  for (const key of ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"]) {
+    assert.equal(values.has(key), false);
+    assert.equal(result.fields[key], false);
+    assert.equal(result.appendedKeys.includes(key), false);
+    assert.throws(() => composeCandidate(Buffer.from(`${key}=partial\n`), target, signing, noGoogle, random), /google_existing_pair_partial/);
+  }
+  const f = fixture();
+  f.entries.get(`${f.release}/src/lib/auth/google-oauth.generated.ts`).bytes = noGoogle;
+  const staged = await stageRecoveryEnvironment(options, f.deps);
+  assert.equal(staged.ok, true);
+  assert.equal(staged.googleRecovered, false);
+  assert.equal(staged.fields.GOOGLE_CLIENT_ID, false);
+  assert.equal(staged.fields.GOOGLE_CLIENT_SECRET, false);
+});
+
 test("target credentials must match the provisioner's explicit local recovery database", () => {
   assert.equal(parseTargetEnvironment(target), database);
   for (const value of [database.replace("127.0.0.1", "example.invalid"), database.replace(":5432", ":6543"),
