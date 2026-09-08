@@ -1,3 +1,5 @@
+import { getStoredConsent } from "./consent.ts";
+
 /**
  * GOOGLE ADS / GA4 / GOOGLE TAG (GTAG.JS)
  * ---------------------------------------
@@ -73,10 +75,37 @@ export function resolveGa4MeasurementId(raw?: string | null): string | null {
 }
 
 let googleTagLoaded = false;
+// No browser storage before consent. Pending requests live only in this page session.
+const pendingConversions = new Set<string>();
+const sentConversions = new Set<string>();
+
+/** Call only after the booking server has successfully returned its reference. */
+export function queueBookingConversion(reference: string): void {
+  if (typeof window === "undefined" || !/^WG-\d+$/.test(reference)) return;
+  if (getStoredConsent() === "rejected" || sentConversions.has(reference)) return;
+  pendingConversions.add(reference);
+  flushBookingConversions();
+}
+
+export function clearPendingBookingConversions(): void {
+  pendingConversions.clear();
+}
+
+function flushBookingConversions(): void {
+  if (!googleTagLoaded || getStoredConsent() !== "accepted") return;
+  for (const reference of pendingConversions) {
+    if (trackGoogleAdsConversion({ transactionId: reference })) {
+      pendingConversions.delete(reference);
+      sentConversions.add(reference);
+    }
+  }
+}
 
 /** Nur für Tests: setzt den internen Ladezustand zurück. */
 export function __resetGoogleTagStateForTests(): void {
   googleTagLoaded = false;
+  pendingConversions.clear();
+  sentConversions.clear();
 }
 
 function ensureDataLayer(): void {
@@ -101,11 +130,11 @@ export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string 
   const adsId =
     options && options.adsId !== undefined
       ? options.adsId
-      : resolveGoogleAdsId(import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID);
+      : resolveGoogleAdsId(import.meta.env?.VITE_GOOGLE_ADS_CONVERSION_ID);
   const ga4Id =
     options && options.ga4Id !== undefined
       ? options.ga4Id
-      : resolveGa4MeasurementId(import.meta.env.VITE_GA4_MEASUREMENT_ID);
+      : resolveGa4MeasurementId(import.meta.env?.VITE_GA4_MEASUREMENT_ID);
 
   if (!adsId && !ga4Id) return false;
 
@@ -118,6 +147,7 @@ export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string 
       ad_personalization: "granted",
       analytics_storage: "granted",
     });
+    flushBookingConversions();
     return true;
   }
 
@@ -138,6 +168,7 @@ export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string 
   if (ga4Id) window.gtag?.("config", ga4Id);
 
   googleTagLoaded = true;
+  flushBookingConversions();
   return true;
 }
 
@@ -150,22 +181,36 @@ export function trackGoogleAdsConversion(options?: {
   label?: string | null;
   value?: number;
   currency?: string;
+  transactionId?: string;
 }): boolean {
   if (typeof window === "undefined" || typeof window.gtag !== "function") {
     return false;
   }
 
-  const adsId = options?.adsId ?? resolveGoogleAdsId(import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID);
+  if (getStoredConsent() !== "accepted") return false;
+
+  const adsId =
+    options?.adsId !== undefined
+      ? options.adsId
+      : resolveGoogleAdsId(import.meta.env?.VITE_GOOGLE_ADS_CONVERSION_ID);
   if (!adsId) return false;
 
-  const label = options?.label ?? import.meta.env.VITE_GOOGLE_ADS_CONVERSION_LABEL ?? "";
-  const sendTo = label ? `${adsId}/${label}` : adsId;
+  const label =
+    options?.label ?? import.meta.env?.VITE_GOOGLE_ADS_CONVERSION_LABEL ?? "c4P4CLfJue0cEOqLtr5E";
+  if (!label.trim()) return false;
+  const sendTo = `${adsId}/${label.trim()}`;
 
-  window.gtag("event", "conversion", {
-    send_to: sendTo,
-    value: options?.value,
-    currency: options?.currency ?? "EUR",
-  });
+  try {
+    window.gtag("event", "conversion", {
+      send_to: sendTo,
+      value: options?.value ?? 1.0,
+      currency: options?.currency ?? "EUR",
+      ...(options?.transactionId ? { transaction_id: options.transactionId } : {}),
+    });
+  } catch {
+    // Tracking must never turn a saved booking into a submission error.
+    return false;
+  }
 
   return true;
 }
