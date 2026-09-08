@@ -46,7 +46,7 @@ function AdminOdoo() {
       setMessage(
         result.connected
           ? `Odoo verbunden${result.uid ? ` · Benutzer-ID ${result.uid}` : ""}. Schreibzugriffe bleiben gesperrt.`
-          : "API-Schlüssel gespeichert, Odoo-Anmeldung fehlgeschlagen. Bitte Schlüssel und Custom-Tarif prüfen.",
+          : "Odoo-Anmeldung fehlgeschlagen. Der neue Schlüssel wurde nicht gespeichert. Bitte Schlüssel und API-Zugang prüfen.",
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Verbindung fehlgeschlagen.");

@@ -115,6 +115,14 @@ export const saveOdooApiKey = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     assertSameSiteRequest();
+    const probe = await probeOdoo({
+      baseUrl: ODOO_DEFAULT_BASE_URL,
+      database: ODOO_DEFAULT_DATABASE,
+      apiKey: data.apiKey,
+    });
+    if (!probe.ok) {
+      return { ok: false, connected: false, uid: probe.uid, error: probe.error };
+    }
     const sql = await getSql();
     await ensureOdooSettings(sql);
     await sql`
@@ -126,10 +134,5 @@ export const saveOdooApiKey = createServerFn({ method: "POST" })
         updated_at = now()
       where shop_id = ${SHOP}
     `;
-    const probe = await probeOdoo({
-      baseUrl: ODOO_DEFAULT_BASE_URL,
-      database: ODOO_DEFAULT_DATABASE,
-      apiKey: data.apiKey,
-    });
     return { ok: probe.ok, connected: probe.ok, uid: probe.uid, error: probe.error };
   });
