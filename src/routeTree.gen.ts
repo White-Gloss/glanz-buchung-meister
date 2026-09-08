@@ -45,6 +45,7 @@ import { Route as AdminGalerieRouteImport } from './routes/admin.galerie'
 import { Route as AdminKalenderRouteImport } from './routes/admin.kalender'
 import { Route as AdminKundenRouteImport } from './routes/admin.kunden'
 import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
+import { Route as AdminOdooRouteImport } from './routes/admin.odoo'
 import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
 import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
@@ -239,6 +240,11 @@ const AdminLeistungenRoute = AdminLeistungenRouteImport.update({
   path: '/leistungen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOdooRoute = AdminOdooRouteImport.update({
+  id: '/odoo',
+  path: '/odoo',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPosteingangRoute = AdminPosteingangRouteImport.update({
   id: '/posteingang',
   path: '/posteingang',
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/admin/kalender': typeof AdminKalenderRoute
   '/admin/kunden': typeof AdminKundenRoute
   '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/admin/kalender': typeof AdminKalenderRoute
   '/admin/kunden': typeof AdminKundenRoute
   '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/admin/kalender': typeof AdminKalenderRoute
   '/admin/kunden': typeof AdminKundenRoute
   '/admin/leistungen': typeof AdminLeistungenRoute
+  '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin/kalender'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin/kalender'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/admin/kalender'
     | '/admin/kunden'
     | '/admin/leistungen'
+    | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
     | '/admin/zustand'
@@ -889,6 +901,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeistungenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/odoo': {
+      id: '/admin/odoo'
+      path: '/odoo'
+      fullPath: '/admin/odoo'
+      preLoaderRoute: typeof AdminOdooRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/posteingang': {
       id: '/admin/posteingang'
       path: '/posteingang'
@@ -1008,6 +1027,7 @@ interface AdminRouteChildren {
   AdminKalenderRoute: typeof AdminKalenderRoute
   AdminKundenRoute: typeof AdminKundenRoute
   AdminLeistungenRoute: typeof AdminLeistungenRoute
+  AdminOdooRoute: typeof AdminOdooRoute
   AdminPosteingangRoute: typeof AdminPosteingangRoute
   AdminUnterlagenRoute: typeof AdminUnterlagenRoute
   AdminZustandRoute: typeof AdminZustandRoute
@@ -1025,6 +1045,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminKalenderRoute: AdminKalenderRoute,
   AdminKundenRoute: AdminKundenRoute,
   AdminLeistungenRoute: AdminLeistungenRoute,
+  AdminOdooRoute: AdminOdooRoute,
   AdminPosteingangRoute: AdminPosteingangRoute,
   AdminUnterlagenRoute: AdminUnterlagenRoute,
   AdminZustandRoute: AdminZustandRoute,
@@ -1109,13 +1130,10 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-
 import type { createStart } from '@tanstack/react-start'
-
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
-
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }
