@@ -98,7 +98,7 @@ function AdminOdoo() {
         <ul className="mt-3 grid gap-2 text-sm text-muted md:grid-cols-2">
           <li>Odoo: {connected ? "verbunden" : "noch nicht verbunden"}</li>
           <li>Qonto: Rechnung und Zahlstatus führend</li>
-          <li>Supabase: Website-Buchung und unveränderte Quellrevision</li>
+          <li>Website: Buchungsdaten; produktive Datenquelle noch zu bestätigen</li>
           <li>
             <a className="hover:text-fg" href={driveFolderUrl} target="_blank" rel="noreferrer">
               Google Drive: zentraler Auftragsordner

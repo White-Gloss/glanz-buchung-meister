@@ -32,7 +32,14 @@ export function normalizeOdooBaseUrl(raw: string | null | undefined): string | n
     return null;
   }
   if (url.protocol !== "https:" || url.username || url.password) return null;
-  if (!ODOO_ALLOWED_HOSTS.has(url.hostname) || (url.pathname && url.pathname !== "/")) return null;
+  if (
+    !ODOO_ALLOWED_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.search ||
+    url.hash ||
+    (url.pathname && url.pathname !== "/")
+  )
+    return null;
   return url.origin;
 }
 
@@ -122,14 +129,14 @@ export async function probeOdoo(
       status: result.response.status,
       error: null,
     };
-  } catch (error) {
+  } catch {
     return {
       ok: false,
       uid: null,
       language: null,
       timezone: null,
       status: null,
-      error: sanitizeOdooError(error instanceof Error ? error.message : "odoo_unreachable"),
+      error: "odoo_unreachable",
     };
   }
 }

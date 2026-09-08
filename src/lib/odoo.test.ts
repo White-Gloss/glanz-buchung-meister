@@ -17,6 +17,9 @@ describe("Odoo connection helpers", () => {
     assert.equal(normalizeOdooBaseUrl("http://white-gloss-detailing-1.odoo.com"), null);
     assert.equal(normalizeOdooBaseUrl("https://evil.example"), null);
     assert.equal(normalizeOdooBaseUrl(`${ODOO_DEFAULT_BASE_URL}/web/login`), null);
+    assert.equal(normalizeOdooBaseUrl(`${ODOO_DEFAULT_BASE_URL}:8443`), null);
+    assert.equal(normalizeOdooBaseUrl(`${ODOO_DEFAULT_BASE_URL}?api_key=secret`), null);
+    assert.equal(normalizeOdooBaseUrl(`${ODOO_DEFAULT_BASE_URL}#secret`), null);
   });
 
   it("keeps Odoo write switches default-deny", () => {
@@ -77,5 +80,17 @@ describe("Odoo connection helpers", () => {
     );
     assert.equal(probe.ok, false);
     assert.equal(probe.error, "odoo_auth_failed");
+  });
+
+  it("never returns transport exception contents to the browser", async () => {
+    const probe = await probeOdoo(
+      { baseUrl: ODOO_DEFAULT_BASE_URL, database: ODOO_DEFAULT_DATABASE, apiKey: "private-key" },
+      async () => {
+        throw new Error('request headers {"Authorization":"private-key"}');
+      },
+    );
+    assert.equal(probe.ok, false);
+    assert.equal(probe.error, "odoo_unreachable");
+    assert.equal(JSON.stringify(probe).includes("private-key"), false);
   });
 });

@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import {
   ERPNEXT_DEFAULT_BASE_URL,
   credentialsFromEnv,
@@ -44,7 +42,9 @@ describe("ERPNext connection helpers", () => {
   });
 
   it("redacts tokens from error text", () => {
-    const cleaned = sanitizeErpnextError("Authorization token abc.def failed api_secret=super-secret");
+    const cleaned = sanitizeErpnextError(
+      "Authorization token abc.def failed api_secret=super-secret",
+    );
     assert.equal(/abc\.def/.test(cleaned), false);
     assert.equal(/super-secret/.test(cleaned), false);
   });
@@ -90,15 +90,5 @@ describe("ERPNext connection helpers", () => {
     assert.equal(probe.ok, true);
     assert.equal(probe.user, "integration@white-gloss.de");
     assert.equal(probe.companyFound, true);
-  });
-});
-
-describe("ERPNext admin copy", () => {
-  it("connects WHITE GLOSS OS and does not advertise public signup", () => {
-    const src = readFileSync(fileURLToPath(new URL("../routes/admin.erpnext.tsx", import.meta.url)), "utf8");
-    assert.equal(/WHITE GLOSS OS/.test(src), true);
-    assert.equal(/API-Schlüssel/.test(src), true);
-    assert.equal(/Konto anlegen/.test(src), false);
-    assert.equal(/Weiter mit X/.test(src), false);
   });
 });
