@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { getStoredConsent, setStoredConsent } from "@/lib/consent";
-import { loadGoogleTag } from "@/lib/googleTag";
+import { clearPendingBookingConversions, loadGoogleTag } from "@/lib/googleTag";
 import { ctaGhost, ctaPrimary } from "./ui";
 
 /**
@@ -70,6 +70,7 @@ export function ConsentBanner() {
   }
 
   function reject() {
+    clearPendingBookingConversions();
     setStoredConsent("rejected");
     dismiss();
   }

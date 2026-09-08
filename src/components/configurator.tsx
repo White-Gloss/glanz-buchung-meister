@@ -16,6 +16,7 @@ import {
 import { createPublicBooking } from "@/lib/bookings.functions";
 import { eur } from "@/lib/utils";
 import { bookingFormErrors } from "@/lib/public-form-validation";
+import { queueBookingConversion } from "@/lib/googleTag";
 import { bookingRequestId } from "@/lib/booking-request-id";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { Button, Field, inputLine } from "./ui";
@@ -86,6 +87,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           website,
         },
       });
+      queueBookingConversion(created.reference);
       await navigate({
         to: "/danke",
         search: {

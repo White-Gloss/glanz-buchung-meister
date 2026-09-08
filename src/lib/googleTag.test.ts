@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import {
+  queueBookingConversion,
+  clearPendingBookingConversions,
   DEFAULT_GOOGLE_ADS_ID,
   __resetGoogleTagStateForTests,
   loadGoogleTag,
@@ -34,7 +36,9 @@ function installFakeBrowser() {
     },
   };
 
+  const storage = new Map<string, string>([["wg-consent", "accepted"]]);
   const fakeWindow = {
+    localStorage: { getItem: (key: string) => storage.get(key) ?? null },
     dataLayer: undefined as unknown[] | undefined,
     gtag: undefined as ((...args: unknown[]) => void) | undefined,
   };
@@ -42,7 +46,7 @@ function installFakeBrowser() {
   (globalThis as { window?: unknown }).window = fakeWindow;
   (globalThis as { document?: unknown }).document = fakeDocument;
 
-  return { appendedScripts, fakeWindow };
+  return { appendedScripts, fakeWindow, storage };
 }
 
 function uninstallFakeBrowser() {
@@ -161,7 +165,86 @@ describe("loadGoogleTag", () => {
     installFakeBrowser();
     loadGoogleTag({ adsId: DEFAULT_GOOGLE_ADS_ID, ga4Id: null });
 
-    const result = trackGoogleAdsConversion({ adsId: DEFAULT_GOOGLE_ADS_ID, label: "" });
+    const result = trackGoogleAdsConversion({
+      adsId: DEFAULT_GOOGLE_ADS_ID,
+      label: "c4P4CLfJue0cEOqLtr5E",
+    });
     assert.equal(result, true);
+  });
+});
+
+describe("booking conversion lifecycle", () => {
+  afterEach(uninstallFakeBrowser);
+  const conversions = () =>
+    ((window.dataLayer as unknown[][]) ?? []).filter((row) => row[0] === "event");
+
+  it("sends one EUR lead after server success, with a stable transaction ID", () => {
+    installFakeBrowser();
+    loadGoogleTag();
+    assert.equal(conversions().length, 0);
+    queueBookingConversion("WG-123");
+    queueBookingConversion("WG-123");
+    loadGoogleTag();
+    assert.deepEqual(conversions(), [
+      [
+        "event",
+        "conversion",
+        {
+          send_to: "AW-18384520682/c4P4CLfJue0cEOqLtr5E",
+          value: 1,
+          currency: "EUR",
+          transaction_id: "WG-123",
+        },
+      ],
+    ]);
+    queueBookingConversion("WG-124");
+    assert.equal(conversions().length, 2);
+  });
+
+  it("waits for late consent and does not send on a fresh page load", () => {
+    const { storage, appendedScripts } = installFakeBrowser();
+    storage.clear();
+    queueBookingConversion("WG-123");
+    assert.equal(appendedScripts.length, 0);
+    assert.equal(conversions().length, 0);
+    storage.set("wg-consent", "accepted");
+    loadGoogleTag();
+    assert.equal(conversions().length, 1);
+    uninstallFakeBrowser();
+    installFakeBrowser();
+    loadGoogleTag();
+    assert.equal(conversions().length, 0);
+  });
+
+  it("drops rejected and invalid requests", () => {
+    const { storage } = installFakeBrowser();
+    storage.clear();
+    queueBookingConversion("WG-123");
+    clearPendingBookingConversions();
+    storage.set("wg-consent", "rejected");
+    queueBookingConversion("WG-124");
+    storage.set("wg-consent", "accepted");
+    loadGoogleTag();
+    queueBookingConversion("arbitrary-url");
+    assert.equal(conversions().length, 0);
+  });
+
+  it("does not send with missing consent, missing label or disabled Ads", () => {
+    const { storage } = installFakeBrowser();
+    loadGoogleTag();
+    assert.equal(trackGoogleAdsConversion({ label: "" }), false);
+    assert.equal(trackGoogleAdsConversion({ adsId: null }), false);
+    storage.set("wg-consent", "rejected");
+    assert.equal(trackGoogleAdsConversion(), false);
+    assert.equal(conversions().length, 0);
+  });
+
+  it("isolates tag errors from the successful booking", () => {
+    const { fakeWindow } = installFakeBrowser();
+    loadGoogleTag();
+    fakeWindow.gtag = () => {
+      throw new Error("blocked");
+    };
+    assert.doesNotThrow(() => queueBookingConversion("WG-123"));
   });
 });

@@ -1,9 +1,7 @@
-import { useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
-import { trackGoogleAdsConversion } from "@/lib/googleTag";
 import { pageHead } from "@/lib/seo";
 import { BookingPhotoUpload } from "@/components/booking-photo-upload";
 
@@ -34,13 +32,6 @@ export const Route = createFileRoute("/danke")({
 function ThanksPage() {
   const { vorgang } = Route.useSearch();
 
-  const conversionFired = useRef(false);
-  useEffect(() => {
-    if (!conversionFired.current) {
-      conversionFired.current = true;
-      trackGoogleAdsConversion();
-    }
-  }, []);
   const steps = [
     [
       "01",
