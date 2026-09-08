@@ -24,17 +24,14 @@ const icons: Record<string, typeof CalendarDays> = {
   Leitstand: Workflow,
   Kundenakten: Users,
   Dokumente: BookOpenText,
-  Buchhaltung: Database,
+  "Odoo & Qonto": Database,
   Einstellungen: Settings,
 };
 
 export const Route = createFileRoute("/admin")({
   component: AdminShell,
   head: () => ({
-    meta: [
-      { title: `Betrieb | ${site.name}` },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: `Betrieb | ${site.name}` }, { name: "robots", content: "noindex,nofollow" }],
   }),
 });
 
@@ -92,9 +89,7 @@ function AdminShell() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-h-11 items-center gap-3">
             <BrandMark variant="header" decorative />
-            <p className="text-xs uppercase tracking-[0.16em] text-subtle">
-              Betrieb
-            </p>
+            <p className="text-xs uppercase tracking-[0.16em] text-subtle">Betrieb</p>
           </div>
           <div className="flex shrink-0 items-center gap-4">
             <Link to="/" className="text-sm text-muted hover:text-fg">
@@ -124,7 +119,9 @@ function AdminShell() {
                 aria-current={active ? "page" : undefined}
                 className={[
                   "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm px-3 text-sm",
-                  active ? "bg-accent text-accent-fg" : "text-muted hover:bg-elevated hover:text-fg",
+                  active
+                    ? "bg-accent text-accent-fg"
+                    : "text-muted hover:bg-elevated hover:text-fg",
                 ].join(" ")}
               >
                 <Icon aria-hidden className="size-4" />

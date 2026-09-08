@@ -156,7 +156,7 @@ function AdminBookings() {
             ["Wartet auf Bestätigung", String(stats.neu), "/admin/posteingang"] as const,
             ["Heute", String(stats.today), "/admin/kalender"] as const,
             ["Ungelesen", String(stats.unread), "/admin/posteingang"] as const,
-            ["Bestätigt", eur(stats.confirmedCents / 100), "/admin/erpnext"] as const,
+            ["Bestätigt", eur(stats.confirmedCents / 100), "/admin/odoo"] as const,
           ].map(([t, v, to]) => (
             <Link
               key={t}

@@ -21,6 +21,7 @@ export const expectedMigrations = [
   "0007_booking_workflow.sql",
   "0008_notification_delivery.sql",
   "0009_whatsapp_receipts.sql",
+  "0010_odoo_integration.sql",
 ];
 const tables = [
   "_migrations",

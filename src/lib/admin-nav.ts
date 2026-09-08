@@ -5,6 +5,6 @@ export const adminNav = [
   { to: "/admin/automatisierung", label: "Leitstand", match: "prefix" as const },
   { to: "/admin/kunden", label: "Kundenakten", match: "prefix" as const },
   { to: "/admin/unterlagen", label: "Dokumente", match: "prefix" as const },
-  { to: "/admin/erpnext", label: "Buchhaltung", match: "prefix" as const },
+  { to: "/admin/odoo", label: "Odoo & Qonto", match: "prefix" as const },
   { to: "/admin/einstellungen", label: "Einstellungen", match: "prefix" as const },
 ] as const;
