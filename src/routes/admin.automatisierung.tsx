@@ -114,7 +114,7 @@ function AdminAutomation() {
             {
               Icon: ReceiptText,
               title: "Buchhaltung",
-              text: "Qonto erstellt die Rechnung, sobald du die Buchung manuell als erledigt markierst",
+              text: "Neue Rechnungen erstellst und versendest du manuell in Odoo. Qonto bleibt das Bankkonto.",
             },
             {
               Icon: BellRing,
@@ -144,7 +144,11 @@ function AdminAutomation() {
             ["2", "Eingang", "Akte, Posteingang, interne Meldung"],
             ["3", "Zusage", "Ausschließlich persönlich unter Buchungen"],
             ["4", "Abgabe", "Bestätigte Abgabezeit im Kalender, Erinnerung vorab"],
-            ["5", "Abschluss", "Manuell als erledigt markieren; Rechnung über Qonto"],
+            [
+              "5",
+              "Abschluss",
+              "Manuell als erledigt markieren; Rechnung in Odoo erstellen und prüfen",
+            ],
           ].map(([n, t, d]) => (
             <div key={n} className="rounded-sm border border-line bg-bg p-4">
               <p className="text-xs text-subtle">Schritt {n}</p>

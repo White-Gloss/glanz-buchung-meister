@@ -32,7 +32,6 @@ import {
   verifyUploadCapability,
 } from "@/lib/booking-upload-capability";
 import { getBookingUploadCookie, setBookingUploadCookie } from "@/lib/booking-upload-cookie.server";
-import { ensureQontoInvoiceForBooking, type QontoBookingFields } from "@/lib/qonto-invoice";
 
 export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
@@ -327,23 +326,8 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const sql = await getSql();
-    const result = await changeBookingStatus(
-      sql,
-      data.id,
-      data.expectedVersion,
-      data.status,
-      context.userId,
-    );
+    await changeBookingStatus(sql, data.id, data.expectedVersion, data.status, context.userId);
     kickBookingDelivery(sql);
-    if (result.changed && data.status === "erledigt") {
-      await safeExec("qonto-invoice", async () => {
-        const [booking] = await sql<QontoBookingFields>`
-          select id,customer_name,email,package_id,extra_ids,total_cents,pickup_cents,
-            qonto_client_id,qonto_invoice_id,qonto_invoice_number,qonto_invoice_status
-          from bookings where id=${data.id} and shop_id=${SHOP}`;
-        if (booking) await ensureQontoInvoiceForBooking(sql, booking);
-      });
-    }
     return { ok: true as const };
   });
 

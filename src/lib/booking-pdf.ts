@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { packages, extras, vehicleClasses, site } from "../data/site.ts";
+import { documentLogoBase64 } from "./document-logo.generated.ts";
 
 export type BookingPdfData = {
   id: number;
@@ -13,164 +14,178 @@ export type BookingPdfData = {
   preferred_slot?: string | null;
   total_cents?: number;
   note?: string | null;
+  created_at?: string | Date | null;
 };
 
-/** Only for initial requests; never implies confirmation or an invoice. */
+/** Request snapshot in the owner's business stationery; never an invoice or confirmation. */
 export async function createBookingRequestPdf(booking: BookingPdfData): Promise<string> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const logo = await doc.embedPng(documentLogoBase64);
   doc.setTitle(`Buchungsanfrage WG-${booking.id}`);
   doc.setAuthor(site.legalName);
   const page = doc.addPage([595.28, 841.89]);
-  const ink = rgb(0.12, 0.14, 0.17);
-  page.drawRectangle({ x: 0, y: 748, width: 595.28, height: 94, color: ink });
-  page.drawText("WHITE GLOSS", { x: 48, y: 792, size: 25, font: bold, color: rgb(1, 1, 1) });
-  page.drawText("DETAILING  |  FAHRZEUGAUFBEREITUNG", {
-    x: 49,
-    y: 771,
-    size: 9,
-    font,
-    color: rgb(0.82, 0.84, 0.86),
-  });
-  page.drawText("Buchungsanfrage", { x: 48, y: 714, size: 20, font: bold, color: ink });
-  const reference = `WG-${booking.id}`;
-  page.drawText(reference, {
-    x: 547 - bold.widthOfTextAtSize(reference, 13),
-    y: 716,
-    size: 13,
-    font: bold,
-    color: ink,
-  });
-  page.drawLine({
-    start: { x: 48, y: 697 },
-    end: { x: 547, y: 697 },
-    thickness: 1,
-    color: rgb(0.8, 0.82, 0.84),
-  });
-  let y = 673;
-  const lines: { text: string; size: number; strong: boolean; y: number }[] = [];
-  // Standard font supports German/Euro. Unsupported characters are made visible
-  // as '?' rather than allowing user input to break booking persistence.
-  const clean = (value: string) =>
-    Array.from(value.normalize("NFC"), (c) => {
-      if (c === "\n") return c;
-      if (c < " ") return " ";
+  const black = rgb(0.12, 0.12, 0.12),
+    grey = rgb(0.4, 0.4, 0.4);
+  const clean = (s: string) =>
+    Array.from(s.normalize("NFC").replace(/\s+/g, " "), (c) => {
       try {
         font.encodeText(c);
         return c;
       } catch {
         return "?";
       }
-    }).join("");
-  const line = (text: string, size = 11, strong = false) => {
-    lines.push({ text, size, strong, y });
-    y -= size + 5;
-  };
-  const paragraph = (text: string, size = 11, strong = false) => {
+    })
+      .join("")
+      .trim();
+  const text = (s: string, x: number, y: number, size = 9, strong = false, muted = false) =>
+    page.drawText(clean(s), {
+      x,
+      y,
+      size,
+      font: strong ? bold : font,
+      color: muted ? grey : black,
+    });
+  const right = (s: string, edge: number, y: number, size = 9, strong = false) => {
     const f = strong ? bold : font;
-    for (const raw of clean(text).split("\n")) {
-      let current = "";
-      for (const c of raw) {
-        if (f.widthOfTextAtSize(current + c, size) > 495) {
-          const split = current.lastIndexOf(" ");
-          if (split > 0) {
-            line(current.slice(0, split), size, strong);
-            current = current.slice(split + 1);
-          } else {
-            line(current, size, strong);
-            current = "";
-          }
-        }
-        current += c;
-      }
-      line(current, size, strong);
-    }
+    text(s, edge - f.widthOfTextAtSize(clean(s), size), y, size, strong);
   };
-  paragraph("UNVERBINDLICHE ANFRAGE", 13, true);
-  paragraph("Termin noch nicht bestätigt. Keine Rechnung.");
-  paragraph("Wir prüfen Ihre Anfrage und stimmen den Termin persönlich mit Ihnen ab.");
-  y -= 12;
-  paragraph(`Name: ${booking.customer_name}`);
-  paragraph(`Telefon: ${booking.phone}`);
-  if (booking.email) paragraph(`E-Mail: ${booking.email}`);
-  paragraph(`Wunschtermin: ${booking.preferred_date?.slice(0, 10) || "noch offen"}`);
-  paragraph(`Zeitfenster: ${booking.preferred_slot || "noch offen"}`);
-  y -= 12;
-  paragraph("Gewählte Leistungen", 13, true);
-  paragraph(packages.find((p) => p.id === booking.package_id)?.name || booking.package_id);
-  if (booking.class_id)
-    paragraph(
-      `Fahrzeugklasse: ${vehicleClasses.find((v) => v.id === booking.class_id)?.label || booking.class_id}`,
-    );
+  const wrap = (s: string, width: number, size = 9) => {
+    const result: string[] = [];
+    let line = "";
+    for (const c of clean(s)) {
+      if (font.widthOfTextAtSize(line + c, size) > width) {
+        const split = line.lastIndexOf(" ");
+        if (split > 0) {
+          result.push(line.slice(0, split));
+          line = line.slice(split + 1);
+        } else {
+          result.push(line);
+          line = "";
+        }
+      }
+      line += c;
+    }
+    if (line) result.push(line);
+    return result;
+  };
+  text("Buchungsanfrage", 63, 775, 18, true);
+  page.drawImage(logo, { x: 451, y: 703, width: 92, height: (92 * logo.height) / logo.width });
+  text(
+    `${site.legalName} - ${site.owner}  ·  ${site.street}, ${site.postalCode} ${site.city}`,
+    63,
+    661,
+    6.5,
+  );
+  let customerY = 634;
+  for (const l of wrap(booking.customer_name, 240, 10)) {
+    text(l, 63, customerY, 10, true);
+    customerY -= 13;
+  }
+  text(booking.phone, 63, customerY - 5, 9);
+  for (const l of wrap(booking.email || "", 240, 9)) {
+    customerY -= 12;
+    text(l, 63, customerY - 5);
+  }
+  text("Vorgangsnummer", 325, 634, 9, true);
+  text(`WG-${booking.id}`, 420, 634);
+  const issued = booking.created_at ? new Date(booking.created_at) : null;
+  text("Anfragedatum", 325, 620, 9, true);
+  text(
+    issued && !Number.isNaN(issued.getTime())
+      ? issued.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })
+      : "-",
+    420,
+    620,
+  );
+  text("Wunschtermin", 325, 606, 9, true);
+  text(booking.preferred_date?.slice(0, 10) || "noch offen", 420, 606);
+  text("Zeitfenster", 325, 592, 9, true);
+  text(booking.preferred_slot || "noch offen", 420, 592);
   let ids: string[] = [];
   try {
-    const value: unknown = JSON.parse(booking.extra_ids || "[]");
-    if (Array.isArray(value)) ids = value.filter((v): v is string => typeof v === "string");
+    const v: unknown = JSON.parse(booking.extra_ids || "[]");
+    if (Array.isArray(v)) ids = v.filter((x): x is string => typeof x === "string");
   } catch {
-    /* Legacy data */
+    /* Legacy row */
   }
-  if (ids.length)
-    paragraph(
-      `Extras: ${ids
-        .slice(0, 30)
-        .map((id) => extras.find((e) => e.id === id)?.name || id)
-        .join(", ")}`,
-    );
-  if (typeof booking.total_cents === "number") {
-    y -= 8;
-    paragraph(
-      `Unverbindlicher Gesamtpreis: ${(booking.total_cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`,
-      13,
-      true,
-    );
-    paragraph(
-      "Preisübersicht zur Anfrage, keine Zahlungsaufforderung. Den endgültigen Umfang und Preis stimmen wir nach Begutachtung ab.",
-    );
+  const description = [
+    packages.find((p) => p.id === booking.package_id)?.name || booking.package_id,
+    booking.class_id
+      ? `Fahrzeugklasse: ${vehicleClasses.find((v) => v.id === booking.class_id)?.label || booking.class_id}`
+      : "",
+    ids.length
+      ? `Extras: ${ids
+          .slice(0, 30)
+          .map((id) => extras.find((e) => e.id === id)?.name || id)
+          .join(", ")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .flatMap((s) => wrap(s, 295, 9));
+  const headerY = Math.min(558, customerY - 35);
+  page.drawRectangle({ x: 63, y: headerY - 19, width: 480, height: 19, color: black });
+  for (const [label, x] of [
+    ["Beschreibung", 72],
+    ["Menge", 381],
+    ["Gesamtpreis", 475],
+  ] as const)
+    page.drawText(label, { x, y: headerY - 12, size: 8, font: bold, color: rgb(1, 1, 1) });
+  let y = headerY - 37;
+  for (const l of description) {
+    text(l, 72, y, 9);
+    y -= 13;
   }
-  if (booking.note) {
-    y -= 12;
-    paragraph("Ihr Hinweis", 13, true);
-    paragraph(booking.note.slice(0, 2000).replace(/\s+/g, " ").trim());
-  }
-  // Keep the complete request on one page, with a fixed, unobstructed footer.
-  const scale = Math.min(1, 570 / (673 - y));
-  for (const item of lines)
-    page.drawText(item.text, {
-      x: 48,
-      y: 673 - (673 - item.y) * scale,
-      size: item.size * scale,
-      font: item.strong ? bold : font,
-      color: ink,
-    });
+  text("1", 393, headerY - 37);
+  const price =
+    typeof booking.total_cents === "number"
+      ? (booking.total_cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })
+      : "nach Prüfung";
+  right(price, 534, headerY - 37);
+  y -= 5;
   page.drawLine({
-    start: { x: 48, y: 80 },
-    end: { x: 547, y: 80 },
-    thickness: 1,
-    color: rgb(0.8, 0.82, 0.84),
+    start: { x: 63, y },
+    end: { x: 543, y },
+    thickness: 0.5,
+    color: rgb(0.8, 0.8, 0.8),
   });
-  page.drawText(`${site.legalName} | ${site.owner}`, {
-    x: 48,
-    y: 62,
-    size: 9,
-    font: bold,
-    color: ink,
-  });
-  page.drawText(`${site.street} | ${site.postalCode} ${site.city}`, {
-    x: 48,
-    y: 48,
-    size: 9,
-    font,
-    color: ink,
-  });
-  page.drawText(`${site.email} | ${site.phoneDisplay}`, {
-    x: 48,
-    y: 34,
-    size: 9,
-    font,
-    color: ink,
-  });
-  page.drawText("white-gloss.de", { x: 457, y: 62, size: 10, font: bold, color: ink });
-  page.drawText("Seite 1 / 1", { x: 505, y: 34, size: 8, font, color: ink });
+  y -= 30;
+  page.drawRectangle({ x: 321, y: y - 8, width: 222, height: 25, color: rgb(0.95, 0.95, 0.95) });
+  text("Unverbindlicher Gesamtpreis", 330, y + 1, 8, true);
+  right(price, 534, y + 1, 9, true);
+  y -= 40;
+  const details = [
+    { s: "UNVERBINDLICHE ANFRAGE - TERMIN NOCH NICHT BESTÄTIGT", strong: true },
+    {
+      s: "Wir prüfen Ihre Anfrage und stimmen den Termin persönlich mit Ihnen ab. Diese Preisübersicht ist keine Rechnung und keine Zahlungsaufforderung.",
+      strong: false,
+    },
+    {
+      s: "Den endgültigen Leistungsumfang und Preis stimmen wir nach Begutachtung ab.",
+      strong: false,
+    },
+    ...(booking.note
+      ? [
+          { s: "Ihr Hinweis", strong: true },
+          { s: booking.note.slice(0, 2000), strong: false },
+        ]
+      : []),
+  ].flatMap((p) => [
+    ...wrap(p.s, 480, 9).map((s) => ({ s, strong: p.strong })),
+    { s: "", strong: false },
+  ]);
+  const scale = Math.min(1, (y - 95) / (details.length * 13));
+  for (const l of details) {
+    text(l.s, 63, y, 9 * scale, l.strong);
+    y -= 13 * scale;
+  }
+  text(`${site.legalName} - ${site.owner}`, 63, 59, 6.5, false, true);
+  text(site.street, 63, 49, 6.5, false, true);
+  text(`${site.postalCode} ${site.city}, Deutschland`, 63, 39, 6.5, false, true);
+  text(site.email, 63, 29, 6.5, false, true);
+  text(site.phoneDisplay, 290, 59, 6.5, false, true);
+  text("white-gloss.de", 290, 49, 6.5, false, true);
+  right("Seite 1/1", 543, 79, 6.5);
   return Buffer.from(await doc.save()).toString("base64");
 }

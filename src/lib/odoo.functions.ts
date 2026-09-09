@@ -9,10 +9,12 @@ import {
   ODOO_DEFAULT_DATABASE,
   normalizeOdooBaseUrl,
   odooCredentialsFromEnv,
-  odooWritesEnabled,
+  odooJson2,
   probeOdoo,
   type OdooCredentials,
 } from "@/lib/odoo";
+import { canConfirmBookings } from "@/lib/booking-owner";
+import { readOdooCredentials } from "@/lib/odoo-credentials.server";
 
 const SHOP = "white-gloss";
 
@@ -79,9 +81,13 @@ export const odooStatus = createServerFn({ method: "GET" })
   .handler(async () => {
     const stored = await storedKey();
     const { creds, source } = resolveCredentials(stored);
+    const sql = await getSql();
+    const [setting] = await sql<{
+      odoo_sync_enabled: boolean;
+    }>`select odoo_sync_enabled from shop_settings where shop_id=${SHOP}`;
     const writes = {
-      customers: odooWritesEnabled(process.env.ODOO_CUSTOMER_WRITE_ENABLED),
-      operations: odooWritesEnabled(process.env.ODOO_OPERATIONAL_WRITES_ENABLED),
+      customers: Boolean(setting?.odoo_sync_enabled),
+      operations: Boolean(setting?.odoo_sync_enabled),
     };
     if (!creds) {
       return {
@@ -106,6 +112,84 @@ export const odooStatus = createServerFn({ method: "GET" })
       writes,
       error: probe.ok ? null : probe.error,
     };
+  });
+
+export const odooSyncOverview = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const rows = await sql<{
+      booking_id: number;
+      requested_version: number;
+      synced_version: number;
+      status: string;
+      last_error: string | null;
+      odoo_order_id: number | null;
+      updated_at: string;
+    }>`
+      select booking_id,requested_version,synced_version,status,last_error,odoo_order_id,updated_at
+      from odoo_sync_queue where shop_id=${SHOP} order by booking_id desc limit 100`;
+    return { rows, canManage: await canConfirmBookings(sql, context.userId) };
+  });
+
+export const setOdooSyncEnabled = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der angemeldete Inhaber darf die Übertragung umstellen.");
+    if (data.enabled) {
+      const creds = await readOdooCredentials(sql);
+      if (!creds || !(await probeOdoo(creds)).ok)
+        throw new Error("Bitte zuerst Odoo erfolgreich verbinden.");
+      const fields = await odooJson2<Record<string, unknown>>(creds, "x_auftrage", "fields_get", {
+        attributes: ["type"],
+      });
+      if (
+        !fields.response.ok ||
+        ![
+          "x_studio_notes",
+          "x_studio_value",
+          "x_studio_partner_id",
+          "x_studio_date",
+          "x_studio_char_1",
+          "x_studio_stage_id",
+        ].every((key) => fields.payload?.[key])
+      )
+        throw new Error("Die Odoo-Auftragsfelder sind noch nicht vollständig eingerichtet.");
+      const stages = await odooJson2<{ x_name: string }[]>(
+        creds,
+        "x_auftrage_stage",
+        "search_read",
+        { domain: [], fields: ["x_name"], context: { lang: "de_DE" } },
+      );
+      if (
+        !stages.response.ok ||
+        !["Neu", "In Bearbeitung", "Erledigt", "Abgelehnt", "Storniert", "Nicht erschienen"].every(
+          (name) => stages.payload?.some((stage) => stage.x_name === name),
+        )
+      )
+        throw new Error(
+          "Bitte die Auftragsphasen Neu, In Bearbeitung, Erledigt, Abgelehnt, Storniert und Nicht erschienen in Odoo einrichten.",
+        );
+    }
+    await sql`update shop_settings set odoo_sync_enabled=${data.enabled},updated_at=now() where shop_id=${SHOP}`;
+    return { enabled: data.enabled };
+  });
+
+export const retryOdooSync = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
+  .handler(async ({ data, context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der angemeldete Inhaber darf eine erneute Prüfung starten.");
+    await sql`update odoo_sync_queue set status='pending',attempts=0,next_attempt_at=now(),updated_at=now()
+      where shop_id=${SHOP} and booking_id=${data.bookingId} and status in ('failed','review')`;
+    return { ok: true };
   });
 
 export const saveOdooApiKey = createServerFn({ method: "POST" })
