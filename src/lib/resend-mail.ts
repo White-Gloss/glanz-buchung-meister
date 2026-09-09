@@ -23,6 +23,7 @@ export async function sendResendEmail(input: {
   text: string;
   idempotencyKey?: string;
   from?: string;
+  attachments?: { filename: string; content: string; content_type: string }[];
 }): Promise<{ id: string }> {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const from = (input.from || process.env.MAIL_FROM || "").trim();
@@ -46,6 +47,7 @@ export async function sendResendEmail(input: {
         to: [input.to],
         subject: input.subject,
         text: input.text,
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       }),
     });
   } catch {

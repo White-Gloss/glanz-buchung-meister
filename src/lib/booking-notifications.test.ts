@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
+import { PDFDocument } from "pdf-lib";
+import { createBookingRequestPdf } from "./booking-pdf.ts";
 import type { Sql } from "./db.ts";
 import {
   enqueueNotification,
@@ -23,6 +25,21 @@ function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql 
   sql.transaction = transaction ?? ((work) => work(sql));
   return sql;
 }
+
+test("PDF handles long notes and unsupported characters without breaking a request", async () => {
+  const content = await createBookingRequestPdf({
+    id: 999,
+    customer_name: "Müller 🚗 李",
+    phone: "+490000000000",
+    package_id: "premium",
+    note: "Eine lange mehrzeilige Notiz.\n".repeat(65),
+    total_cents: 34900,
+  });
+  const doc = await PDFDocument.load(Buffer.from(content, "base64"));
+  assert.equal(doc.getPageCount(), 1);
+  assert.equal(doc.getTitle(), "Buchungsanfrage WG-999");
+  assert.ok(Buffer.from(content, "base64").length < 100_000);
+});
 
 async function booking(sql: Sql, overrides: Partial<NotificationBooking> = {}) {
   const data = {
@@ -69,6 +86,7 @@ async function event(
 }
 
 type Message = {
+  attachments: { filename: string; content: string; content_type: string }[];
   id: number;
   channel: string;
   to_addr: string;
@@ -119,6 +137,19 @@ test("booking notifications persist against all production migrations", async (t
         assert.equal(messages.length, 3);
         const emails = messages.filter((message) => message.channel === "email");
         assert.equal(emails.length, 2);
+        assert.equal(emails[0].attachments.length, 1);
+        assert.deepEqual(emails[0].attachments, emails[1].attachments);
+        assert.equal(emails[0].attachments[0].filename, `White-Gloss-Anfrage-WG-${row.id}.pdf`);
+        const pdf = await PDFDocument.load(Buffer.from(emails[0].attachments[0].content, "base64"));
+        assert.equal(pdf.getTitle(), `Buchungsanfrage WG-${row.id}`);
+        assert.equal(pdf.getPageCount(), 1);
+        assert.ok(
+          messages.filter((m) => m.channel !== "email").every((m) => m.attachments.length === 0),
+        );
+        await sql`update bookings set customer_name='Changed later' where id=${row.id}`;
+        const [snapshot] =
+          await sql<Message>`select attachments from outbound_queue where id=${emails[0].id}`;
+        assert.deepEqual(snapshot.attachments, emails[0].attachments);
         assert.ok(emails.every((message) => message.to_addr === environment.OWNER_EMAIL));
         assert.ok(emails.some((message) => message.event_key.includes(":owner:email:")));
         assert.ok(emails.some((message) => message.event_key.includes(":customer:email:")));

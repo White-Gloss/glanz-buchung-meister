@@ -62,6 +62,9 @@ describe("Resend delivery contract", () => {
     text: "Isolated test",
     idempotencyKey: "booking:1:event:1:customer:email:fixture",
     from: "Snapshot <snapshot@example.invalid>",
+    attachments: [
+      { filename: "booking.pdf", content: "JVBERi0xLjc=", content_type: "application/pdf" },
+    ],
   };
 
   it("uses stable idempotency keys, immutable sender, timeout and provider message id", async () => {
@@ -70,6 +73,7 @@ describe("Resend delivery contract", () => {
         assert.equal(url, "https://api.resend.com/emails");
         assert.equal(new Headers(init?.headers).get("Idempotency-Key"), input.idempotencyKey);
         assert.equal(JSON.parse(String(init?.body)).from, input.from);
+        assert.deepEqual(JSON.parse(String(init?.body)).attachments, input.attachments);
         assert.ok(init?.signal instanceof AbortSignal);
         assert.equal(init?.redirect, "error");
         return Response.json({ id: "email-fixture" });

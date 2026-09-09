@@ -23,6 +23,7 @@ export type OutboundMessage = {
   to_addr: string | null;
   subject: string | null;
   body: string;
+  attachments?: { filename: string; content: string; content_type: string }[];
   event_key: string;
   event_type: string | null;
   booking_id: number | null;
@@ -216,6 +217,7 @@ export async function runNotificationWorker(
           text: row.body,
           idempotencyKey: row.event_key,
           from: row.from_addr || undefined,
+          attachments: row.attachments,
         });
       } else if (row.channel === "whatsapp") {
         delivered = await (options.sendWhatsApp ?? sendWhatsAppNotification)({

@@ -9,5 +9,6 @@
   "0007_booking_workflow.sql",
   "0008_notification_delivery.sql",
   "0009_whatsapp_receipts.sql",
-  "0010_odoo_integration.sql"
+  "0010_odoo_integration.sql",
+  "0011_booking_pdf.sql"
 ]
