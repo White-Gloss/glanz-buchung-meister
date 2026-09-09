@@ -35,7 +35,7 @@ const pageChecks = [
   { path: "/login", markers: ["Betrieb"] },
   { path: "/admin", markers: [] },
   { path: "/b2b", markers: ["Firmenkunden"] },
-  { path: "/luxusfahrzeuge", markers: ["Private Client"] },
+  { path: "/luxusfahrzeuge", markers: ["Luxusfahrzeuge", "80.000"] },
   { path: "/qualitaet", markers: ["Wie wir arbeiten"] },
   { path: "/fahrzeug-zustand", markers: ["Zustand prüfen"] },
   { path: "/dellen-hagelschaden", markers: ["Dellenentfernung"] },
@@ -216,7 +216,7 @@ try {
   const { response, body } = await get("/diese-seite-gibt-es-nicht");
   if (response.status !== 404) {
     fail("/404", `HTTP ${response.status}, erwartet 404`);
-  } else if (!/Diese Seite gibt es nicht/i.test(body)) {
+  } else if (!/(?:Seite nicht gefunden|Diese Seite gibt es nicht)/i.test(body)) {
     fail("/404", "deutsche 404-Meldung fehlt");
   } else {
     console.log(`PASS /404 -> ${response.status}`);
