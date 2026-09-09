@@ -176,12 +176,17 @@ test("transient retries preserve the payload and key, back off, then stop at the
   const { pg, sql } = await database();
   try {
     const id = await enqueue(sql, "retry:email");
+    const attachments = [
+      { filename: "request.pdf", content: "JVBERi0xLjc=", content_type: "application/pdf" },
+    ];
+    await sql`update outbound_queue set attachments=${JSON.stringify(attachments)}::jsonb where id=${id}`;
     const inputs: unknown[] = [];
     for (let attempt = 1; attempt <= MAX_DELIVERY_ATTEMPTS; attempt++) {
       const result = await runNotificationWorker(sql, {
         ...providers,
         limit: 1,
         sendEmail: async (input) => {
+          assert.deepEqual(input.attachments, attachments);
           inputs.push(input);
           throw new EmailDeliveryError("email_http_503", true);
         },

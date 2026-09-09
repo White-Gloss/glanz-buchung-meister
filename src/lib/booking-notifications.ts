@@ -3,6 +3,7 @@ import { packages } from "../data/site.ts";
 import { ownerNotifyTargets, type BookingLite, type QueueTarget } from "./ops.ts";
 import { isEmailAddress } from "./utils.ts";
 import type { Sql } from "./db.ts";
+import { createBookingRequestPdf, type BookingPdfData } from "./booking-pdf.ts";
 
 export type BookingEvent =
   | "booking.created"
@@ -14,12 +15,13 @@ export type BookingEvent =
   | "booking.completed"
   | "booking.no_show";
 
-export type NotificationBooking = BookingLite & {
-  status?: string;
-  version?: number;
-  note?: string | null;
-  confirmed_at?: string | Date | null;
-};
+export type NotificationBooking = BookingLite &
+  BookingPdfData & {
+    status?: string;
+    version?: number;
+    note?: string | null;
+    confirmed_at?: string | Date | null;
+  };
 
 export function recipientHash(to: string): string {
   return createHash("sha256").update(to.trim().toLowerCase()).digest("hex").slice(0, 24);
@@ -37,18 +39,19 @@ export async function enqueueNotification(
     bookingId?: number | null;
     bookingVersion?: number | null;
     runAt?: string | null;
+    attachments?: { filename: string; content: string; content_type: string }[];
   },
 ) {
   const rows = await sql<{ id: number }>`
     insert into outbound_queue (
       shop_id, channel, to_addr, subject, body, booking_id, status, event_key,
-      event_type, booking_version, from_addr, next_attempt_at
+      event_type, booking_version, from_addr, next_attempt_at, attachments
     ) values (
       ${"white-gloss"}, ${input.channel}, ${input.to}, ${input.subject}, ${input.body},
       ${input.bookingId ?? null}, ${"queued"}, ${input.key}, ${input.eventType},
       ${input.bookingVersion ?? null},
       ${input.channel === "email" ? process.env.MAIL_FROM?.trim() || null : null},
-      coalesce(${input.runAt ?? null}::timestamptz, now())
+      coalesce(${input.runAt ?? null}::timestamptz, now()), ${JSON.stringify(input.attachments ?? [])}::jsonb
     ) on conflict (shop_id, event_key) do nothing returning id
   `;
   return rows[0]?.id ?? null;
@@ -129,6 +132,16 @@ export async function queueBookingEvent(
   `;
   const owner = ownerNotifyTargets();
   const subject = `${eventLabels[event]} · WG-${booking.id}`;
+  const attachments =
+    event === "booking.created"
+      ? [
+          {
+            filename: `White-Gloss-Anfrage-WG-${booking.id}.pdf`,
+            content: await createBookingRequestPdf(booking),
+            content_type: "application/pdf",
+          },
+        ]
+      : undefined;
   const targets: QueueTarget[] = [];
   if (owner.whatsapp) targets.push({ channel: "whatsapp", to: owner.whatsapp });
   if (owner.email) targets.push({ channel: "email", to: owner.email });
@@ -142,6 +155,7 @@ export async function queueBookingEvent(
       body: target.channel === "whatsapp" ? ownerBody.slice(0, 700) : ownerBody,
       bookingId: booking.id,
       bookingVersion: version,
+      attachments: target.channel === "email" ? attachments : undefined,
     });
   }
   if (isEmailAddress(booking.email) && !["booking.completed", "booking.no_show"].includes(event)) {
@@ -163,7 +177,8 @@ export async function queueBookingEvent(
       channel: "email",
       to: booking.email,
       subject,
-      body: `Guten Tag ${booking.customer_name},\n\n${message}\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`,
+      body: `Guten Tag ${booking.customer_name},\n\n${message}\nVorgang WG-${booking.id}${attachments ? "\n\nIhre Anfrage mit den gewählten Leistungen und der Preisübersicht finden Sie im PDF-Anhang." : ""}\n\nWhite Gloss Detailing`,
+      attachments,
       bookingId: booking.id,
       bookingVersion: version,
     });
