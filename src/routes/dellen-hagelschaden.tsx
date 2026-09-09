@@ -25,7 +25,7 @@ function DellenPage() {
         alt="Parkdelle unter Streiflicht, bevor wir ausbeulen"
         kicker="Smart Repair"
         title="Dellenentfernung und Hagelschaden."
-        lead="Lackschadenfrei, wenn es geht. Sonst sagen wir nein."
+        lead="Wir entfernen Dellen ohne Neulackierung, sofern der Schaden und der Lackzustand es zulassen."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen", to: "/leistungen" },
@@ -39,8 +39,8 @@ function DellenPage() {
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <p className="text-sm text-muted leading-relaxed">
-        Einen Preis gibt es erst, wenn wir den Schaden gesehen haben. Ohne Ihre
-        Zustimmung machen wir nichts. Bei kleinen Stellen reicht oft ein Foto
+        Einen Preis gibt es erst, wenn wir den Schaden gesehen haben. Wir beginnen erst mit Ihrer
+        Zustimmung. Bei kleinen Stellen reicht oft ein Foto
         zur ersten Einschätzung.
       </p>
       <ul className="mt-10 grid gap-3 sm:grid-cols-2">
@@ -58,8 +58,8 @@ function DellenPage() {
       </ul>
       <div className="mt-12">
         <PhotoInquiry
-          title="Begutachtung Dellen & Hagel"
-          hint="Mehrere Fotos: Gesamtansicht, schräges Licht, Nahaufnahme. Dateien bleiben auf Ihrem Gerät. Übermittelt werden nur Dateinamen zur Zuordnung – die eigentliche Begutachtung holen wir bei Bedarf über einen sicheren Kanal nach."
+          title="Begutachtung anfragen"
+          hint="Hilfreich sind eine Gesamtansicht, eine Nahaufnahme und ein Foto bei schrägem Lichteinfall. Beschreiben Sie zunächst den Schaden; die Übermittlung benötigter Fotos stimmen wir mit Ihnen ab."
         />
       </div>
       </div>

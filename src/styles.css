@@ -1988,3 +1988,10 @@
     transform: none;
   }
 }
+
+/* German service names must wrap inside narrow cards and navigation columns. */
+[data-shell="public"] :is(h1, h2, h3, .heading-page, .heading-2, .heading-3, .ga-pack-copy, .ga-fields label, .ga-quote, nav a) {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+[data-shell="public"] .ga-fields label > span { min-width: 0; }

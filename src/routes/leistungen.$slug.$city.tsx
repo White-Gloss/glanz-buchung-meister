@@ -17,8 +17,8 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
     const city = loaderData?.city;
     if (!service || !city) return {};
     return pageHead({
-      title: `${service.nav} ${city.name} | White Gloss`,
-      description: `${service.nav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
+      title: `${service.seoNav} ${city.name} | White Gloss`,
+      description: `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
       path: `/leistungen/${service.slug}/${city.slug}`,
     });
   },
@@ -35,7 +35,7 @@ function ServiceCityPage() {
     "@graph": [
       {
         "@type": "Service",
-        name: `${service.nav} ${city.name}`,
+        name: `${service.seoNav} ${city.name}`,
         provider: {
           "@type": "AutoRepair",
           name: site.legalName,
@@ -58,7 +58,7 @@ function ServiceCityPage() {
           {
             "@type": "ListItem",
             position: 3,
-            name: service.nav,
+            name: service.seoNav,
             item: `${site.origin}/leistungen/${service.slug}`,
           },
           {
@@ -82,7 +82,7 @@ function ServiceCityPage() {
         src={service.image}
         alt={service.imageAlt}
         kicker={`${city.name} · ${city.km} km`}
-        title={`${service.nav} in ${city.name}`}
+        title={`${service.seoNav} in ${city.name}`}
         lead={service.teaser}
         crumbs={[
           { label: "Startseite", to: "/" },
@@ -98,8 +98,8 @@ function ServiceCityPage() {
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <p className="rounded-card border border-line bg-surface p-4 text-sm">
-          Hol- & Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
-          Ausführung immer in {site.street}, {site.postalCode} {site.city}.
+          Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
+          Die Aufbereitung erfolgt in unserer Werkstatt: {site.street}, {site.postalCode} {site.city}.
         </p>
         <ul className="mt-8 space-y-3">
           {service.bullets.map((b) => (
@@ -120,7 +120,7 @@ function ServiceCityPage() {
         </div>
         {service.slug === "keramikversiegelung" ? (
           <p className="mt-8 text-sm">
-            Paket Keramik ab {eur(packages[2].price)} {site.vatNote}, {pickupKeramikNote()}.
+            Paket Keramikschutz ab {eur(packages[2].price)} {site.vatNote}, {pickupKeramikNote()}.
           </p>
         ) : null}
         <Link
@@ -130,7 +130,7 @@ function ServiceCityPage() {
         >
           Abholung aus {city.name} anfragen
         </Link>
-        <h2 className="mt-16 font-display text-2xl">Weitere Leistungen in {city.name}</h2>
+        <h2 className="mt-16 font-display text-2xl">Weitere Leistungen für {city.name}</h2>
         <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-muted">
           {otherServices.map((s) => (
             <li key={s.slug}>

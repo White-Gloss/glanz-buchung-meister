@@ -38,7 +38,7 @@ function LeistungenIndex() {
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
         kicker="Leistungsspektrum"
         title="Was wir am Auto machen."
-        lead="Kein Waschstraßenprogramm. Innenraum, Lack, Keramik, Leder und Dellen – in der Werkstatt in Horb, ein Auto nach dem anderen."
+        lead="Innenraumreinigung, Lackpflege, Keramikversiegelung und Reparaturen in unserer Werkstatt in Horb am Neckar."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen" },
@@ -53,8 +53,8 @@ function LeistungenIndex() {
 
       <section className="border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-4">
-          <p className="kicker">Atelier</p>
-          <h2 className="heading-2 mt-4 max-w-xl">Die Arbeit am Auto.</h2>
+          <p className="kicker">Fahrzeugpflege</p>
+          <h2 className="heading-2 mt-4 max-w-xl">Reinigung, Politur und Schutz</h2>
         </div>
         <div className="gd-split gd-split--duo">
           {atelier.map((s) => (
@@ -96,13 +96,13 @@ function LeistungenIndex() {
             to="/luxusfahrzeuge"
             className="block border-b border-line lg:odd:border-r"
           >
-            <MediaTile shot="private" alt="Atelierfahrzeug von White Gloss, Kennzeichen entfernt">
-              <p className="kicker">Private Client</p>
+            <MediaTile shot="private" alt="Eigenes Fahrzeug von White Gloss, Kennzeichen entfernt">
+              <p className="kicker">Luxusfahrzeuge</p>
               <h2 className="heading-2 mt-3 max-w-md">
                 Luxusfahrzeuge ab ca. 80.000 €
               </h2>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-                Nicht über den Rechner. Erst am Telefon, dann am Auto.
+                Telefonische Beratung und anschließende Begutachtung vor Ort.
               </p>
             </MediaTile>
           </Link>
@@ -111,7 +111,7 @@ function LeistungenIndex() {
 
       <section className="section mx-auto max-w-7xl px-4 sm:px-6">
         <p className="kicker">Nacharbeit</p>
-        <h2 className="heading-2 mt-4 max-w-xl">Dellen, Leder, Licht, Geruch.</h2>
+        <h2 className="heading-2 mt-4 max-w-xl">Reparaturen und weitere Pflegeleistungen</h2>
         <ol className="mt-12 divide-y divide-line border-y border-line">
           {finish.map((s, i) => (
             <li key={s.slug}>
@@ -155,9 +155,8 @@ function LeistungenIndex() {
         <p className="kicker">13 Städte</p>
         <h2 className="heading-2 mt-4">Leistungen nach Stadt</h2>
         <p className="mt-4 max-w-2xl text-muted">
-          Für jede Leistung und jeden Abholort gibt es eine eigene Seite – damit
-          Sie uns in Tübingen, Nagold, Freudenstadt oder Böblingen ebenso finden
-          wie in Horb am Neckar.
+          Wählen Sie Ihren Ort und informieren Sie sich über unsere Leistungen
+          und die Abholung. Die Aufbereitung erfolgt in Horb am Neckar.
         </p>
         <ul className="mt-8 flex flex-wrap gap-2">
           {cities.map((c) => (

@@ -11,6 +11,8 @@ export type Article = {
   slug: string;
   title: string;
   excerpt: string;
+  /** Original search description, independent of visible editorial copy. */
+  seoExcerpt?: string;
   date: string;
   image: string;
   minutes: number;
@@ -20,18 +22,20 @@ export type Article = {
 export const articles: Article[] = [
   {
     slug: "keramikversiegelung-langzeitschutz",
+    seoExcerpt:
+      "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket Keramik steckt, und was die Schicht nicht kann.",
     title: "Keramikversiegelung: wie lange der Schutz wirklich hält",
     excerpt:
-      "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket Keramik steckt, und was die Schicht nicht kann.",
+      "Wie Produkt und Pflege die Haltbarkeit beeinflussen, was das Paket Keramikschutz enthält und welche Grenzen die Beschichtung hat.",
     date: "2026-08-20",
     image: "/media/keramik.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Keine pauschalen Werbejahre",
+        heading: "Wovon die Haltbarkeit abhängt",
         paragraphs: [
-          "Wie lange eine Keramikversiegelung hält, steht auf dem Produkt und an der Pflege – nicht auf einem Plakat. Im Paket Keramik ab 899 Euro ist die Beschichtung enthalten, nachdem der Lack vorbereitet wurde.",
-          "Fünf Jahre als Standardversprechen verkaufen wir nicht. Dichterer Schichtaufbau nur nach Prüfung, auf Anfrage. So bleibt der Preis ehrlich.",
+          "Die Haltbarkeit einer Keramikversiegelung hängt vom Produkt und der anschließenden Pflege ab. Das Paket Keramikschutz ab 899 € enthält die Lackvorbereitung und die Beschichtung.",
+          "Eine feste Haltbarkeit von 5 Jahren sagen wir nicht pauschal zu. Zusätzliche Keramikschichten sind nach Prüfung des Lacks auf Anfrage möglich.",
         ],
       },
       {
@@ -44,17 +48,19 @@ export const articles: Article[] = [
       {
         heading: "Pflege danach",
         paragraphs: [
-          "Die ersten sieben Tage nicht waschen. Regen in dieser Zeit ist kein Problem. Danach Handwäsche mit pH-neutralem Shampoo. Bürstenanlagen erzeugen neue Swirls in der Keramik genauso wie im Klarlack.",
-          "Hol- und Bringservice bis 60 Kilometer ist im Paket Keramik enthalten. Aus Horb, Nagold, Tübingen und den übrigen Abholstädten kommt das Auto in die Werkstatt – nicht die Politur an die Straße.",
+          "Die ersten sieben Tage nicht waschen. Regen in dieser Zeit ist kein Problem. Danach Handwäsche mit pH-neutralem Shampoo. Bürstenanlagen erzeugen neue feine Waschkratzer in der Keramik genauso wie im Klarlack.",
+          "Der Hol- und Bringservice bis 60 km ist im Paket Keramikschutz enthalten. Wir holen Ihr Fahrzeug in Horb, Nagold, Tübingen und den weiteren Abholorten ab. Die Aufbereitung erfolgt in unserer Werkstatt.",
         ],
       },
     ],
   },
   {
     slug: "keramikversiegelung-kosten",
+    seoExcerpt:
+      "Startpreis, was den Aufwand treibt und warum die Vorbereitung den Preis entscheidet – ohne Showroom-Versprechen.",
     title: "Was kostet eine Keramikversiegelung in Horb am Neckar?",
     excerpt:
-      "Startpreis, was den Aufwand treibt und warum die Vorbereitung den Preis entscheidet – ohne Showroom-Versprechen.",
+      "Welche Leistungen im Preis enthalten sind und wie Fahrzeuggröße, Lackzustand und Vorbereitung den Aufwand beeinflussen.",
     date: "2026-08-12",
     image: "/media/keramik.webp",
     minutes: 6,
@@ -62,15 +68,15 @@ export const articles: Article[] = [
       {
         heading: "Der Startpreis ist kein Endpreis",
         paragraphs: [
-          "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramik ab 899 Euro. Dieser Betrag gilt für die Kompaktklasse bei Lack, der eine nachvollziehbare Vorbereitung noch trägt.",
-          "SUV, Limousine und Transporter werden mit einem festen Faktor kalkuliert. Entscheidend bleibt der Zustand: starke Swirls, alte Wachsschichten oder Steinschläge verlängern die Korrektur – und damit die Arbeitszeit.",
+          "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Dieser Betrag gilt für die Kompaktklasse bei einem Lackzustand, der die notwendige Vorbereitung zulässt.",
+          "SUV, Limousine und Transporter werden mit einem festen Faktor kalkuliert. Entscheidend bleibt der Zustand: ausgeprägte feine Waschkratzer, alte Wachsschichten oder Steinschläge verlängern die Korrektur – und damit die Arbeitszeit.",
         ],
       },
       {
         heading: "Wofür Sie bezahlen",
         paragraphs: [
-          "Der größte Teil der Zeit entfällt nicht auf das Auftragen der Keramik, sondern auf Reinigung, Dekontamination und Lackkorrektur. Ohne diese Schritte haftet die Beschichtung ungleichmäßig.",
-          "Im Paket enthalten sind außerdem Glas- und Felgenversiegelung, Lederpflege und der Hol- und Bringservice bis 60 Kilometer. Rechnen Sie mit rund zwei Tagen.",
+          "Der größte Teil der Zeit entfällt nicht auf das Auftragen der Keramik, sondern auf Reinigung, Entfernung von Ablagerungen und Lackkorrektur. Ohne diese Schritte haftet die Beschichtung ungleichmäßig.",
+          "Im Paket enthalten sind außerdem Glas- und Felgenversiegelung, Lederpflege und der Hol- und Bringservice bis 60 km. Rechnen Sie mit rund zwei Tagen.",
         ],
       },
       {
@@ -84,6 +90,8 @@ export const articles: Article[] = [
   },
   {
     slug: "lackkorrektur-swirls",
+    seoExcerpt:
+      "Waschkratzer, Hologramme und Grenzen der Politur. Wann eine Stufe reicht und wann mehrstufig gearbeitet werden muss.",
     title: "Lackkorrektur: Was Swirls wirklich sind – und was Politur leistet",
     excerpt:
       "Waschkratzer, Hologramme und Grenzen der Politur. Wann eine Stufe reicht und wann mehrstufig gearbeitet werden muss.",
@@ -92,26 +100,28 @@ export const articles: Article[] = [
     minutes: 5,
     sections: [
       {
-        heading: "Swirls entstehen meist in der Wäsche",
+        heading: "Wie feine Waschkratzer entstehen",
         paragraphs: [
           "Feine, kreisförmige Kratzer im Klarlack entstehen typischerweise durch Bürstenanlagen, schmutzige Schwämme oder trockenes Reiben. Sie streuen Licht und lassen den Lack milchig oder holografisch wirken.",
-          "Politur trägt Klarlack kontrolliert ab, bis die Kratzer weniger tief sind als die restliche Schicht. Deshalb prüfen wir vorab, ob der Lack die Bearbeitung noch trägt.",
+          "Bei der Politur wird eine dünne Schicht Klarlack kontrolliert abgetragen, um feine Kratzer zu reduzieren. Wir prüfen vorab, ob die Lackschicht für die Bearbeitung geeignet ist.",
         ],
       },
       {
         heading: "Einstufig oder mehrstufig",
         paragraphs: [
-          "Eine einstufige Politur gehört zum Paket Signature und reicht oft, wenn der Lack gepflegt und nur leicht verkratzt ist.",
-          "Mehrstufige Korrektur ist Teil des Pakets Keramik. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht das, was sie verspricht.",
+          "Eine einstufige Politur gehört zum Paket Reinigung & Politur und reicht oft, wenn der Lack gepflegt und nur leicht verkratzt ist.",
+          "Mehrstufige Korrektur ist Teil des Pakets Keramikschutz. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht das, was sie verspricht.",
         ],
       },
     ],
   },
   {
     slug: "innenraumreinigung-gerueche",
+    seoExcerpt:
+      "Warum Lufterfrischer scheitern, wann Ozon sinnvoll ist und wie materialgerechte Reinigung Sitze und Kunststoffe schont.",
     title: "Innenraumreinigung: Gerüche lösen, nicht überdecken",
     excerpt:
-      "Warum Lufterfrischer scheitern, wann Ozon sinnvoll ist und wie materialgerechte Reinigung Sitze und Kunststoffe schont.",
+      "Wie wir Geruchsursachen behandeln und Sitze und Kunststoffe reinigen. Eine Ozonbehandlung kann die Reinigung ergänzen.",
     date: "2026-07-09",
     image: "/media/leder.webp",
     minutes: 5,
@@ -127,16 +137,16 @@ export const articles: Article[] = [
         heading: "Was Ozon kann – und was nicht",
         paragraphs: [
           "Ozon bricht Geruchsmoleküle auf. Es ersetzt keine Nassreinigung und macht ein verschimmeltes Interieur nicht neu. Nach der Behandlung muss das Fahrzeug gelüftet werden.",
-          "Lederflächen werden nach der Reinigung konditioniert, damit sie nicht austrocknen. Aggressive Chemie glänzt kurz und macht das Material spröde.",
+          "Nach der Reinigung pflegen wir Lederflächen mit geeigneten Produkten, um das Material vor dem Austrocknen zu schützen. Ungeeignete Reinigungsmittel können es angreifen.",
         ],
       },
     ],
   },
   {
     slug: "hol-und-bringservice",
+    seoExcerpt: `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
     title: "Hol- und Bringservice: So funktioniert die Abholung um Horb",
-    excerpt:
-      `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
+    excerpt: `Kostenlose Abholung bis 10 km, weitere Entfernungen nach Preistabelle. Im Paket Keramikschutz ist der Service bis 60 km enthalten.`,
     date: "2026-06-22",
     image: "/media/hero.webp",
     minutes: 4,
@@ -144,24 +154,26 @@ export const articles: Article[] = [
       {
         heading: "Warum wir nicht vor Ort arbeiten",
         paragraphs: [
-          "Lackkorrektur, Keramik und Innenraumreinigung brauchen kontrolliertes Licht, Wasserwirtschaft und geschützte Ablüftung. Deshalb holen wir das Fahrzeug ab und arbeiten in Horb am Neckar.",
+          "Lackkorrektur, Keramik und Innenraumreinigung brauchen geeignete Beleuchtung, eine geregelte Wasserversorgung und geschützte Bedingungen zum Ablüften. Deshalb holen wir das Fahrzeug ab und arbeiten in Horb am Neckar.",
           "Das spart Ihnen Wartezeit vor Ort und hält die Qualität unabhängig vom Wetter.",
         ],
       },
       {
-        heading: "Die Preistafel",
+        heading: "Preise für die Abholung",
         paragraphs: [
-          `${pickupTierSummary()}. Darüber nur auf Anfrage.`,
-          `${pickupKeramikNote()}. Städte wie Tübingen, Nagold, Freudenstadt, Böblingen und Sindelfingen liegen in der regelmäßigen Tour.`,
+          `${pickupTierSummary()}.`,
+          `${pickupKeramikNote()}. Zu unseren Abholorten zählen Tübingen, Nagold, Freudenstadt, Böblingen und Sindelfingen. Für Entfernungen außerhalb des regulären Abholradius gelten die genannten Bedingungen.`,
         ],
       },
     ],
   },
   {
     slug: "leasingrueckgabe-checkliste",
+    seoExcerpt:
+      "Innenraum, Felgen, Lackbilder – und was sich vor dem Termin noch lohnt. Kein Showroom-Ideal, sondern priorisierte Arbeit.",
     title: "Leasingrückgabe: Welche Spuren Gutachter wirklich sehen",
     excerpt:
-      "Innenraum, Felgen, Lackbilder – und was sich vor dem Termin noch lohnt. Kein Showroom-Ideal, sondern priorisierte Arbeit.",
+      "Welche Gebrauchsspuren an Innenraum, Felgen und Lack vor der Rückgabe geprüft werden sollten und welche Arbeiten sinnvoll sein können.",
     date: "2026-06-04",
     image: "/media/felgen.webp",
     minutes: 5,
@@ -169,24 +181,26 @@ export const articles: Article[] = [
       {
         heading: "Nicht alles muss perfekt sein",
         paragraphs: [
-          "Leasinggutachter bewerten Gebrauchsspuren nach Katalogen, nicht nach Instagram. Tiefe Kratzer an Türen, starke Innenraumverschmutzung und Felgenschäden fallen auf. Leichte Waschkratzer oft weniger.",
+          "Leasinggutachter bewerten Gebrauchsspuren anhand festgelegter Kriterien. Tiefe Kratzer an Türen, starke Innenraumverschmutzung und Felgenschäden fallen auf. Leichte Waschkratzer oft weniger.",
           "Wir priorisieren die Stellen, die typischerweise zu Nachforderungen führen, und sagen offen, welche Spuren bleiben.",
         ],
       },
       {
         heading: "Zeitpunkt",
         paragraphs: [
-          "Zwei Wochen vor der Rückgabe ist ein sinnvolles Fenster: genug Zeit für Nacharbeit, ohne dass neue Alltagsflecken das Ergebnis überholen.",
-          "Für Autohäuser und Flotten kalkulieren wir B2B ohne Pauschalpreis – Umfang und Stückzahl bestimmen den Satz.",
+          "Zwei Wochen vor der Rückgabe ist ein sinnvolles Fenster: genug Zeit für Nacharbeit, mit ausreichend Abstand zur erneuten Nutzung im Alltag.",
+          "Für Autohäuser und Flotten erstellen wir individuelle Angebote nach Leistungsumfang und Fahrzeuganzahl.",
         ],
       },
     ],
   },
   {
     slug: "keramikversiegelung-pflege",
+    seoExcerpt:
+      "Nicht waschen, nicht abreiben, pH-neutral bleiben. Was die Beschichtung hält – und was sie zerstört.",
     title: "Keramikversiegelung pflegen: die ersten sieben Tage und danach",
     excerpt:
-      "Nicht waschen, nicht abreiben, pH-neutral bleiben. Was die Beschichtung hält – und was sie zerstört.",
+      "Hinweise zur Aushärtung, zur Handwäsche mit pH-neutralem Shampoo und zum schonenden Umgang mit der Beschichtung.",
     date: "2026-05-18",
     image: "/media/keramik.webp",
     minutes: 4,
@@ -201,7 +215,7 @@ export const articles: Article[] = [
       {
         heading: "Alltag danach",
         paragraphs: [
-          "Handwäsche mit pH-neutralem Shampoo erhält den Abperleffekt. Bürstenanlagen erzeugen neue Swirls in der Keramik genauso wie im Klarlack.",
+          "Handwäsche mit pH-neutralem Shampoo erhält den Abperleffekt. Bürstenanlagen erzeugen neue feine Waschkratzer in der Keramik genauso wie im Klarlack.",
           "Eine jährliche Kontrolle in der Werkstatt zeigt, ob eine Auffrischung reicht oder ob Stellen nachbeschichtet werden sollten.",
         ],
       },
@@ -209,6 +223,8 @@ export const articles: Article[] = [
   },
   {
     slug: "lackkorrektur-swirls-kratzer-politur",
+    seoExcerpt:
+      "Wann eine Stufe reicht, wann mehrstufig gearbeitet wird und welche Kratzer Politur nicht schließt. Mit den Startpreisen aus der Horber Werkstatt.",
     title: "Lackkorrektur bei Swirls und Kratzern – was Politur in Horb leistet",
     excerpt:
       "Wann eine Stufe reicht, wann mehrstufig gearbeitet wird und welche Kratzer Politur nicht schließt. Mit den Startpreisen aus der Horber Werkstatt.",
@@ -219,14 +235,14 @@ export const articles: Article[] = [
       {
         heading: "Was Politur kann – und wo sie endet",
         paragraphs: [
-          "Swirls und Waschkratzer liegen im Klarlack. Eine kontrollierte Politur trägt so wenig Material ab, dass das Licht wieder gleichmäßig reflektiert. Tiefe Kratzer bis zur Grundierung oder ins Blech schließt sie nicht.",
-          "Bei White Gloss gehört die einstufige Lackpolitur zum Paket Signature ab 349 Euro. Mehrstufige Korrektur ist Teil des Pakets Keramik ab 899 Euro. Der Faktor SUV/Limousine beträgt 1,25, Transporter 1,55.",
+          "Feine Waschkratzer, auch Swirls genannt, liegen im Klarlack. Eine kontrollierte Politur trägt so wenig Material ab, dass das Licht wieder gleichmäßig reflektiert. Tiefe Kratzer bis zur Grundierung oder ins Blech schließt sie nicht.",
+          "Bei White Gloss gehört die einstufige Lackpolitur zum Paket Reinigung & Politur ab 349 €. Mehrstufige Korrektur ist Teil des Pakets Keramikschutz ab 899 €. Der Faktor SUV/Limousine beträgt 1,25, Transporter 1,55.",
         ],
       },
       {
         heading: "Vor der Arbeit",
         paragraphs: [
-          "Wir prüfen das Lackbild unter Werkstattlicht. Wenn die Schicht eine Korrektur nicht mehr trägt, sagen wir das, bevor unnötiger Abtrag entsteht.",
+          "Wir prüfen das Lackbild unter Werkstattlicht. Ist die Lackschicht für eine Korrektur zu dünn, erklären wir Ihnen dies vor der Behandlung.",
           "Parkdellen und Steinschläge gehören nicht in die Politur. Dafür gibt es Smart Repair nach Begutachtung – ohne Pauschalpreis, weil jeder Schaden anders liegt.",
         ],
       },
@@ -234,74 +250,80 @@ export const articles: Article[] = [
   },
   {
     slug: "innenraumreinigung-komplettguide-auto",
+    seoExcerpt:
+      "Sitze, Teppiche, Kunststoffe, Leder und Gerüche – materialgerecht statt Duftbaum. Ozon nur, wenn die Quelle beseitigt ist.",
     title: "Innenraumreinigung: der Ablauf in der Werkstatt Horb",
     excerpt:
-      "Sitze, Teppiche, Kunststoffe, Leder und Gerüche – materialgerecht statt Duftbaum. Ozon nur, wenn die Quelle beseitigt ist.",
+      "So reinigen und pflegen wir Sitze, Teppiche, Kunststoffe und Leder. Vor einer Ozonbehandlung muss die Geruchsursache beseitigt werden.",
     date: "2026-04-18",
     image: "/media/leder.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Reihenfolge statt Chemie-Show",
+        heading: "Der Ablauf der Innenraumreinigung",
         paragraphs: [
           "Zuerst grober Schmutz, dann Nassreinigung der textilen Flächen, dann Kunststoffe, dann Leder. Ohne diese Reihenfolge verschmieren Rückstände.",
-          `Pur enthält Aussaugen und Entstauben. Signature vertieft Textilien. Lederatelier kostet zusätzlich ${extraEuro("leder")}, Air Pure (Ozon) ${extraEuro("ozon")}.`,
+          `Das Paket Basisreinigung enthält Aussaugen und Entstauben. Das Paket Reinigung & Politur ergänzt die Tiefenreinigung von Textilien. Lederpflege kostet zusätzlich ${extraEuro("leder")}, Geruchsbehandlung mit Ozon (Ozon) ${extraEuro("ozon")}.`,
         ],
       },
       {
-        heading: "Gerüche aus Horb, Nagold, Tübingen",
+        heading: "Geruchsbehandlung in unserer Werkstatt",
         paragraphs: [
           "Nikotin und Feuchtigkeit sitzen im Schaumstoff. Ozon bricht Moleküle, ersetzt aber keine Nassreinigung. Nach der Behandlung muss das Fahrzeug gelüftet werden.",
-          `${pickupTierSummary()}. Ausführung bleibt in Arnistal 27.`,
+          `${pickupTierSummary()}. Die Aufbereitung erfolgt an der Adresse Arnistal 27 in Horb am Neckar.`,
         ],
       },
     ],
   },
   {
     slug: "smart-repair-oder-lackkorrektur",
+    seoExcerpt:
+      "Parkdellen, Steinschläge, Swirls: welche Methode zum Schaden passt – und warum Politur keine Delle schließt.",
     title: "Smart Repair oder Lackkorrektur – wann was in Horb greift",
     excerpt:
-      "Parkdellen, Steinschläge, Swirls: welche Methode zum Schaden passt – und warum Politur keine Delle schließt.",
+      "Welche Behandlung für einzelne Schäden oder feine Waschkratzer infrage kommt und wo die Grenzen einer Politur liegen.",
     date: "2026-04-05",
     image: "/media/dellen.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Zwei Werkzeuge, ein Ziel",
+        heading: "Zwei unterschiedliche Verfahren",
         paragraphs: [
           "Smart Repair bearbeitet einzelne Stellen: Parkdellen ohne Lackbruch, kleine Steinschläge, begrenzte Kratzer. Lackkorrektur arbeitet flächig am Klarlack.",
-          "Politur macht aus einem tiefen Kratzer bis ins Blech keinen neuen Lack. Umgekehrt macht Smart Repair aus einem swirligen Gesamtlack kein Showroom-Finish.",
+          "Eine Politur kann tiefe Kratzer bis ins Blech nicht reparieren. Punktuelle Reparaturen ersetzen wiederum keine flächige Politur bei vielen feinen Waschkratzern.",
         ],
       },
       {
         heading: "Wie wir in Horb entscheiden",
         paragraphs: [
           "Dellen und Hagelschäden begutachten wir zuerst – oft per Foto, verbindlich erst am Fahrzeug. Es gibt keinen Katalogpreis, weil Zugänglichkeit und Lackzustand den Aufwand bestimmen.",
-          "Swirls und Waschkratzer gehören in Signature ab 349 Euro oder in die mehrstufige Korrektur der Keramik ab 899 Euro. Beides lässt sich kombinieren, wenn Einzelschäden und Flächenbild zusammenkommen.",
+          "Feine Waschkratzer behandeln wir im Paket Reinigung & Politur ab 349 € oder mit der mehrstufigen Lackkorrektur im Paket Keramikschutz ab 899 €. Beides lässt sich kombinieren, wenn Einzelschäden und Flächenbild zusammenkommen.",
         ],
       },
     ],
   },
   {
     slug: "leasingrueckgabe-aufbereitung-vermeiden-mehrkosten",
+    seoExcerpt:
+      "Was Gutachter typischerweise sehen, was Politur noch rettet und warum zwei Wochen vor dem Termin sinnvoll sind.",
     title: "Leasingrückgabe: Aufbereitung gegen teure Nachforderungen",
     excerpt:
-      "Was Gutachter typischerweise sehen, was Politur noch rettet und warum zwei Wochen vor dem Termin sinnvoll sind.",
+      "Welche Gebrauchsspuren geprüft werden, was eine Politur verbessern kann und warum etwa 2 Wochen Vorlauf sinnvoll sind.",
     date: "2026-03-22",
     image: "/media/hero.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Katalog, kein Instagram",
+        heading: "Gebrauchsspuren gezielt prüfen",
         paragraphs: [
           "Leasinggutachter bewerten Felgen, Innenraum, Türkanten und tiefe Kratzer. Leichte Waschkratzer fallen oft weniger ins Gewicht als ein verklebter Fußraum.",
-          "Wir priorisieren die Stellen, die Nachforderungen auslösen, statt ein Showroom-Ideal zu versprechen. Was bleibt, benennen wir vorher.",
+          "Wir konzentrieren uns auf Gebrauchsspuren, die bei der Rückgabe zu Nachforderungen führen können. Welche Spuren bleiben, besprechen wir vorab.",
         ],
       },
       {
         heading: "Paketwahl vor der Rückgabe",
         paragraphs: [
-          "Signature ab 349 Euro deckt Innenraum und einstufige Politur. Das Paket Keramik lohnt sich nur, wenn das Fahrzeug danach noch länger bleibt.",
+          "Das Paket Reinigung & Politur ab 349 € umfasst die Innenraumreinigung und eine einstufige Lackpolitur. Das Paket Keramikschutz lohnt sich nur, wenn das Fahrzeug danach noch länger bleibt.",
           "Für Autohäuser und Flotten rechnen wir B2B ohne Pauschalpreis. Privatkunden aus Horb, Nagold, Rottenburg und Freudenstadt holen wir nach der bekannten Staffel ab.",
         ],
       },
@@ -309,9 +331,11 @@ export const articles: Article[] = [
   },
   {
     slug: "fahrzeugaufbereitung-horb-am-neckar",
+    seoExcerpt:
+      "Standort Arnistal 27, Hol- und Bringservice in 13 Städten, klare Pakete ab 149 Euro. Warum die Ausführung in Horb bleibt.",
     title: "Fahrzeugaufbereitung in Horb am Neckar – Werkstatt statt Waschstraße",
     excerpt:
-      "Standort Arnistal 27, Hol- und Bringservice in 13 Städten, klare Pakete ab 149 Euro. Warum die Ausführung in Horb bleibt.",
+      "Standort Arnistal 27, Hol- und Bringservice in 13 Städten, klare Pakete ab 149 €. Warum die Ausführung in Horb bleibt.",
     date: "2026-03-08",
     image: "/media/hero.webp",
     minutes: 5,
@@ -320,13 +344,13 @@ export const articles: Article[] = [
         heading: "Ein Standort, 13 Abholorte",
         paragraphs: [
           "White Gloss Detailing arbeitet in Horb am Neckar. Aus Nagold, Rottenburg, Freudenstadt, Tübingen, Herrenberg, Calw, Balingen, Rottweil, Böblingen, Reutlingen, Oberndorf und Sindelfingen holen wir Fahrzeuge ab.",
-          `${pickupTierSummary()}. ${pickupKeramikNote()}. Vor Ort an der Straße polieren wir nicht – Licht, Wasser und Ablüftung sind in der Werkstatt.`,
+          `${pickupTierSummary()}. ${pickupKeramikNote()}. Die Politur erfolgt in unserer Werkstatt mit geeigneter Beleuchtung und geschützten Arbeitsbedingungen.`,
         ],
       },
       {
         heading: "Drei Pakete, ein Inhaber",
         paragraphs: [
-          "Pur ab 149 Euro, Signature ab 349 Euro, Keramik ab 899 Euro. Inhaber Lars Hägele, Arnistal 27, 72160 Horb am Neckar.",
+          "Basisreinigung ab 149 €, Reinigung & Politur ab 349 €, Keramikschutz ab 899 €. Inhaber Lars Hägele, Arnistal 27, 72160 Horb am Neckar.",
           "Anfragen über den Konfigurator, telefonisch unter 0152 33540284 oder per WhatsApp. Unverbindlich, Endpreis nach Begutachtung, wenn der Zustand mehr verlangt.",
         ],
       },
@@ -334,17 +358,19 @@ export const articles: Article[] = [
   },
   {
     slug: "keramikversiegelung-lackvorbereitung-pflege",
+    seoExcerpt:
+      "Haftung entscheidet sich in der Vorbereitung. Sieben Tage nicht waschen, danach pH-neutral. Start ab 899 Euro in Horb.",
     title: "Keramikversiegelung vorbereiten und pflegen",
     excerpt:
-      "Haftung entscheidet sich in der Vorbereitung. Sieben Tage nicht waschen, danach pH-neutral. Start ab 899 Euro in Horb.",
+      "Haftung entscheidet sich in der Vorbereitung. Sieben Tage nicht waschen, danach pH-neutral. Start ab 899 € in Horb.",
     date: "2026-02-20",
     image: "/media/keramik.webp",
     minutes: 6,
     sections: [
       {
-        heading: "Ohne Korrektur hält nichts, was versprochen wird",
+        heading: "Warum die Lackvorbereitung wichtig ist",
         paragraphs: [
-          "Keramik verbindet sich mit sauberem, gleichmäßigem Klarlack. Deshalb gehört mehrstufige Korrektur ins Paket Keramik ab 899 Euro, nicht nur das Auftragen der Schicht.",
+          "Keramik verbindet sich mit sauberem, gleichmäßigem Klarlack. Deshalb gehört mehrstufige Korrektur ins Paket Keramikschutz ab 899 €, nicht nur das Auftragen der Schicht.",
           `Rechnen Sie mit rund zwei Tagen. Glas- und Felgenversiegelung sowie Lederpflege sind enthalten. ${pickupKeramikNote()}.`,
         ],
       },

@@ -35,18 +35,18 @@ function ThanksPage() {
   const steps = [
     [
       "01",
-      "Anfrage ist da",
+      "Anfrage eingegangen",
       "Unverbindlich vorgemerkt. Noch kein Vertrag, noch kein fester Termin.",
     ],
     [
       "02",
-      "Wir prüfen den Slot",
-      "In der Regel Rückmeldung noch am selben Werktag – Telefon, Mail oder WhatsApp.",
+      "Wir prüfen Ihren Wunschtermin",
+      "In der Regel melden wir uns noch am selben Werktag telefonisch, per E-Mail oder per WhatsApp.",
     ],
     [
       "03",
-      "Erst die Zusage gilt",
-      "Fest wird der Termin, wenn wir zusagen. Danach gilt die Widerrufsbelehrung.",
+      "Persönliche Bestätigung",
+      "Der Termin wird erst durch unsere Zusage verbindlich. Danach gilt die Widerrufsbelehrung.",
     ],
   ];
 

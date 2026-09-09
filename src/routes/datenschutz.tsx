@@ -22,7 +22,7 @@ function PrivacyPage() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker="Rechtliches"
         title="Datenschutzerklärung."
-        lead="Welche Daten wir brauchen, wofür, und wie lange sie bleiben."
+        lead="Welche personenbezogenen Daten wir verarbeiten, zu welchem Zweck und wie lange wir sie speichern."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Datenschutz" }]}
       />
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
@@ -170,7 +170,7 @@ function PrivacyPage() {
         <section>
           <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
           <p>
-            Über die Seiten „Zustand prüfen lassen“ und „Dellenentfernung & Hagelschaden“ können Sie
+            Über die Seiten „Zustand prüfen lassen“ und „Dellen- und Hagelschäden“ können Sie
             uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
             übermitteln. Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben
             auf Ihrem Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur

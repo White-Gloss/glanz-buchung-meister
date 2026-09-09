@@ -45,13 +45,13 @@ function LuxuryPage() {
       />
       <PageHero
         shot="hero"
-        alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
-        kicker="Private Client"
+        alt="Eigenes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+        kicker="Luxusfahrzeuge"
         title="Fahrzeuge ab etwa 80.000 €"
-        lead="Erst anrufen, dann anschauen. Kein Konfigurator, kein Paket von der Stange."
+        lead="Wir besprechen Ihre Wünsche am Telefon und erstellen nach der Begutachtung ein individuelles Angebot."
         crumbs={[
           { label: "Startseite", to: "/" },
-          { label: "Private Client" },
+          { label: "Luxusfahrzeuge" },
         ]}
         actions={
           <a href={site.phoneHref} className={ctaPrimary}>
@@ -64,15 +64,15 @@ function LuxuryPage() {
           {[
             [
               "Anrufen",
-              "Am Telefon klären wir in Ruhe, um welches Auto es geht, wie es genutzt wird und was Sie sich wünschen. Über die Website lässt sich in diesem Bereich nicht buchen – das wäre zu grob.",
+              "Am Telefon besprechen wir Ihr Fahrzeug, seine Nutzung und Ihre Wünsche. Die Aufbereitung von Luxusfahrzeugen können Sie ausschließlich persönlich anfragen.",
             ],
             [
-              "Auto zeigen",
+              "Fahrzeug begutachten",
               "Lack, Karosserie, Leder und die empfindlichen Stellen schauen wir uns gemeinsam in der Werkstatt in Horb an. Erst dann ist klar, was wirklich nötig ist.",
             ],
             [
-              "Konzept",
-              "Verfahren, Schutz und Zeitrahmen entstehen erst danach. Nachvollziehbar, ohne Standardpaket, und so, dass Sie den Umfang verstehen.",
+              "Umfang festlegen",
+              "Nach der Begutachtung besprechen wir die geeigneten Verfahren, den Schutz und den Zeitrahmen. Sie erhalten ein individuelles Angebot mit dem vereinbarten Leistungsumfang.",
             ],
             [
               "Umsetzen",
@@ -90,8 +90,8 @@ function LuxuryPage() {
         </ol>
         <ul className="mt-14 space-y-3 text-sm text-muted">
           <li>Erstgespräch nur am Telefon</li>
-          <li>Das Auto muss bei uns in Horb vorgefahren werden</li>
-          <li>Umfang und Preis erst nach dem Anschauen</li>
+          <li>Begutachtung des Fahrzeugs in unserer Werkstatt in Horb</li>
+          <li>Leistungsumfang und Preis nach der Begutachtung</li>
           <li>Keine Online-Buchung, kein Standardpaket</li>
         </ul>
         <p className="mt-8 text-xs text-subtle">
@@ -115,7 +115,7 @@ function LuxuryPage() {
           <figure className="mt-12">
             <Shot
               name="hero"
-              alt="Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+              alt="Eigenes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
               className="aspect-[2/1] w-full"
               sizes="100vw"
             />
@@ -140,7 +140,7 @@ function LuxuryPage() {
           </div>
           <PhotoNote className="mt-4" />
           <a href={site.phoneHref} className={`${ctaPrimary} mt-8`}>
-            Private Client anrufen · {site.phoneDisplay}
+            Persönliche Beratung · {site.phoneDisplay}
           </a>
         </div>
       </section>

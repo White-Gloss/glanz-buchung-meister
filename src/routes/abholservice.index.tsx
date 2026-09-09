@@ -27,7 +27,7 @@ function AbholIndex() {
         lead="Wir holen das Auto ab und bringen es wieder. Die Arbeit bleibt in Horb."
         crumbs={[
           { label: "Startseite", to: "/" },
-          { label: "Hol- & Bringservice" },
+          { label: "Hol- und Bringservice" },
         ]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
