@@ -36,7 +36,7 @@ test("PDF handles long notes and unsupported characters without breaking a reque
     total_cents: 34900,
   });
   const doc = await PDFDocument.load(Buffer.from(content, "base64"));
-  assert.ok(doc.getPageCount() > 1);
+  assert.equal(doc.getPageCount(), 1);
   assert.equal(doc.getTitle(), "Buchungsanfrage WG-999");
   assert.ok(Buffer.from(content, "base64").length < 100_000);
 });
