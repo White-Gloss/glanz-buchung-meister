@@ -55,3 +55,5 @@ Nicht belegte Vergleiche mit regionalen Wettbewerberpreisen und abwertende Aussa
 1. Sprache, Anrede und sichtbare Bezeichnungen erneut kontrolliert.
 2. Preise gegen db1a957 verglichen; 1.755 Berechnungen unverändert. Auch die 13 dynamisch eingebundenen Ratgeber-Metabeschreibungen werden getrennt von den sichtbaren Einleitungen bewahrt.
 3. Produktionsbuild erneut erfolgreich; Browserkontrolle bei 320, 390 und 1.366 Pixel Breite, ohne horizontalen Seitenüberlauf und ohne Fehler im abschließend geprüften Browserprotokoll.
+
+Die erweiterte SSR-Prüfung deckte noch die indirekte H1-Verknüpfung auf Ortsseiten auf. Die bisherigen H1-Texte bleiben nun ebenfalls über seoNav erhalten. Anschließend bestanden alle isolierten SSR-, Buchungs- und Sitemapprüfungen.

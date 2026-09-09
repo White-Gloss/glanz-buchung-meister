@@ -82,7 +82,7 @@ function ServiceCityPage() {
         src={service.image}
         alt={service.imageAlt}
         kicker={`${city.name} · ${city.km} km`}
-        title={`${service.nav} in ${city.name}`}
+        title={`${service.seoNav} in ${city.name}`}
         lead={service.teaser}
         crumbs={[
           { label: "Startseite", to: "/" },

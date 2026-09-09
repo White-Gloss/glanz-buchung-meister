@@ -42,7 +42,7 @@ test("all published service/city combinations render their own route", async () 
       const { response, html } = await get(path);
       assert.equal(response.status, 200, path);
       const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
-      assert.equal(h1, `${service.nav} in ${city.name}`, path);
+      assert.equal(h1, `${service.seoNav} in ${city.name}`, path);
       assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     }
   }
