@@ -8,25 +8,25 @@ import {
 } from "./qonto-mail.ts";
 
 const PACKAGE_LABELS: Record<string, string> = {
-  basis: "Pur",
-  premium: "Signature",
-  keramik: "Keramik",
+  basis: "Basisreinigung",
+  premium: "Reinigung & Politur",
+  keramik: "Keramikschutz",
 };
 
 const EXTRA_LABELS: Record<string, string> = {
-  felgen: "Felgen Gloss",
-  ozon: "Air Pure",
-  motor: "Engine Finish",
-  leder: "Lederatelier",
-  alcantara: "Alcantara Care",
-  dachhimmel: "Himmel Finish",
-  scheinwerfer: "Lichtklar",
-  glas: "Glass Coat",
-  "keramik-ultra": "Keramik Extra",
-  cabrio: "Soft Top Care",
-  tierhaar: "Tierhaarfrei",
-  "leder-repair": "Lederrestauration",
-  "stoff-loch": "Textilrestauration",
+  felgen: "Felgenreinigung und Versiegelung",
+  ozon: "Geruchsbehandlung mit Ozon",
+  motor: "Motorraumreinigung",
+  leder: "Lederpflege",
+  alcantara: "Alcantarareinigung",
+  dachhimmel: "Dachhimmelreinigung",
+  scheinwerfer: "Scheinwerferaufbereitung",
+  glas: "Scheibenversiegelung",
+  "keramik-ultra": "Zusätzliche Keramikschichten",
+  cabrio: "Cabrioverdeckpflege",
+  tierhaar: "Tierhaarentfernung",
+  "leder-repair": "Lederreparatur",
+  "stoff-loch": "Textilreparatur",
 };
 
 function isEmailAddress(value: string | null | undefined): value is string {

@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { site } from "@/data/site";
 import { createPublicPhotoInquiry } from "@/lib/bookings.functions";
 import { photoInquiryErrors } from "@/lib/public-form-validation";
 import { usePublicFormErrors } from "./public-form-feedback";
@@ -44,7 +43,7 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
       });
       setSent(true);
     } catch {
-      setError("Senden fehlgeschlagen. Bitte erreichen Sie uns telefonisch oder per WhatsApp.");
+      setError("Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns telefonisch oder per WhatsApp.");
       setPending(false);
     }
   }
@@ -52,7 +51,7 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
   if (sent) {
     return (
       <SubmissionResult className="rounded-card border border-line bg-elevated p-5 text-sm text-muted">
-        Anfrage im Posteingang. Wir melden uns unter der angegebenen Nummer. {site.phoneDisplay}
+        Vielen Dank für Ihre Anfrage. Wir melden uns unter der angegebenen Telefonnummer.
       </SubmissionResult>
     );
   }
@@ -68,14 +67,14 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
       <h2 className="font-display text-2xl">{title}</h2>
       <p className="text-sm text-muted">{hint}</p>
       <p className="text-xs text-subtle">
-        Es findet kein Datei-Upload statt. Die Aufnahmen bleiben auf diesem Gerät. Übermittelt
-        werden Name, Telefon, Beschreibung und Dateinamen zur Zuordnung. Für die Begutachtung
-        fordern wir Fotos bei Bedarf über einen separaten sicheren Kanal an.
+        Dieses Formular übermittelt Ihre Kontaktdaten, Ihre Beschreibung und die Namen
+        ausgewählter Dateien. Die Fotos und Videos selbst bleiben auf Ihrem Gerät.
+        Benötigen wir die Aufnahmen zur Begutachtung, stimmen wir eine sichere Übermittlung mit Ihnen ab.
       </p>
       <Field
         tone="public"
         id="media"
-        label="Fotos oder kurzes Video (max. 8, Dateinamen zur Zuordnung)"
+        label="Aufnahmen auswählen (optional, max. 8 Dateien; nur Dateinamen werden übermittelt)"
       >
         <input
           id="media"
@@ -88,7 +87,7 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
         />
         {fieldError("media")}
         {files.length ? (
-          <p className="text-xs text-subtle">{files.length} Datei(en) gewählt</p>
+          <p className="text-xs text-subtle">{files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}</p>
         ) : null}
       </Field>
       <Field tone="public" id="desc" label="Beschreibung">

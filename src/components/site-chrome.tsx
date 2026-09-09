@@ -35,14 +35,14 @@ const NAV_SHOT: Record<string, ShotName> = {
   Leistungen: "lack",
   Luxusfahrzeuge: "private",
   "Preise & Pakete": "finish",
-  Qualitätsanspruch: "atelier",
-  "Hol- & Bringservice": "felgen",
+  Arbeitsweise: "atelier",
+  "Hol- und Bringservice": "felgen",
   "Individuelles Angebot": "keramik",
   Ratgeber: "dellen",
   "Häufige Fragen": "atelier",
   Werkstatt: "atelier",
   Kontakt: "finish",
-  B2B: "private",
+  Geschäftskunden: "private",
 };
 
 const MENU_SHOTS: ShotName[] = [
@@ -438,7 +438,7 @@ export function SiteFooter() {
                 params={{ slug: "keramikversiegelung" }}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
-                Ceramic Gloss
+                Keramikversiegelung
               </Link>
             </li>
             <li>
@@ -447,7 +447,7 @@ export function SiteFooter() {
                 params={{ slug: "lackkorrektur" }}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
-                Lackatelier
+                Lackkorrektur
               </Link>
             </li>
             <li>
@@ -456,7 +456,7 @@ export function SiteFooter() {
                 params={{ slug: "innenraumreinigung" }}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
-                Interior Gloss
+                Innenraumreinigung
               </Link>
             </li>
             <li>
@@ -465,7 +465,7 @@ export function SiteFooter() {
                 params={{ slug: "lederreparatur" }}
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
-                Lederrestauration
+                Lederreparatur
               </Link>
             </li>
             <li>
@@ -481,18 +481,18 @@ export function SiteFooter() {
                 to="/luxusfahrzeuge"
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >
-                Luxus
+                Luxusfahrzeuge
               </Link>
             </li>
             <li>
               <Link to="/b2b" className="link-draw inline-flex min-h-11 items-center hover:text-fg">
-                B2B
+                Geschäftskunden
               </Link>
             </li>
           </ul>
         </nav>
-        <nav aria-label="Studio" className="ga-studio">
-          <p className="kicker">Studio</p>
+        <nav aria-label="Informationen" className="ga-studio">
+          <p className="kicker">Informationen</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             {footerExplore.map((item) => (
               <li key={item.to}>

@@ -59,7 +59,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const errors = bookingFormErrors({ name, phone, email, date, note, privacy }, today);
     if (e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput) {
-      errors.date = "Bitte einen vollständigen Wunschtermin angeben oder das Feld leer lassen.";
+      errors.date = "Bitte geben Sie ein vollständiges Datum an oder lassen Sie das Feld leer.";
     }
     showErrors(errors, e.currentTarget);
     if (Object.keys(errors).length) {
@@ -97,7 +97,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
       bookingRequestId.clear();
     } catch {
       setError(
-        "Die Antwort ist nicht angekommen. Sie können dieselbe Anfrage erneut senden. Bei Unklarheiten erreichen Sie uns telefonisch oder per WhatsApp.",
+        "Wir konnten den Eingang Ihrer Anfrage nicht bestätigen. Sie können dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
       );
       submitting.current = false;
       setPending(false);
@@ -177,7 +177,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Extras</legend>
+          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Zusatzleistungen</legend>
           {(["pflege", "reparatur"] as const).map((group) => (
             <div key={group} className="mt-4">
               <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">
@@ -249,8 +249,8 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                 : ""}
         </p>
         <p className="text-xs text-subtle">
-          Das ist der Startpreis inkl. MwSt. Wenn der Zustand mehr Aufwand braucht, stimmen wir den
-          Endpreis nach dem Anschauen mit Ihnen ab. {depositConfig.label}: {depositConfig.note}
+          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand
+          zusätzlichen Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab. {depositConfig.label}: {depositConfig.note}
         </p>
         <Field tone="public" id="name" label="Name">
           <input
@@ -310,7 +310,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           />
           {fieldError("date")}
         </Field>
-        <Field tone="public" id="slot" label="Abgabezeit (optional)">
+        <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
             id="slot"
             className={inputLine}
@@ -320,12 +320,12 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             <option value="">Keine Angabe</option>
             {timeSlots.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {s} Uhr
               </option>
             ))}
           </select>
         </Field>
-        <Field tone="public" id="note" label="Hinweis">
+        <Field tone="public" id="note" label="Ihre Nachricht (optional)">
           <textarea
             id="note"
             maxLength={2000}
@@ -389,7 +389,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                 setError("");
               }}
             >
-              Stattdessen eine neue Anfrage beginnen
+              Neue Anfrage beginnen
             </Button>
           </div>
         ) : null}

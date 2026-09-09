@@ -5,7 +5,7 @@ import { MAX_UPLOAD_BYTES, uploadSelectionError } from "./upload-policy.ts";
 const image = { name: "auto.jpg", size: 100, type: "image/jpeg" };
 test("rejects an invalid selection before reading or submitting any files", () => {
   assert.match(uploadSelectionError([]), /mindestens/);
-  assert.match(uploadSelectionError(Array(9).fill(image)), /acht/);
+  assert.match(uploadSelectionError(Array(9).fill(image)), /8 Aufnahmen/);
   assert.match(uploadSelectionError([image, { ...image, size: 0 }]), /leer/);
   assert.match(uploadSelectionError([image, { ...image, size: MAX_UPLOAD_BYTES + 1 }]), /12 MB/);
   assert.match(uploadSelectionError([{ ...image, type: "image/heic" }]), /Unterstützt/);

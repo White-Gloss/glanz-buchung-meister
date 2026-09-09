@@ -13,8 +13,8 @@ export const UPLOAD_MIME_TYPES = [
 export function uploadSelectionError(
   files: readonly { name: string; size: number; type: string }[],
 ): string {
-  if (files.length === 0) return "Bitte mindestens eine Aufnahme wählen.";
-  if (files.length > MAX_UPLOAD_FILES) return "Bitte höchstens acht Aufnahmen auswählen.";
+  if (files.length === 0) return "Bitte wählen Sie mindestens eine Aufnahme aus.";
+  if (files.length > MAX_UPLOAD_FILES) return "Bitte wählen Sie höchstens 8 Aufnahmen aus.";
   for (const file of files) {
     if (!file.size) return `${file.name}: Die Datei ist leer.`;
     if (file.size > MAX_UPLOAD_BYTES) return `${file.name}: Höchstens 12 MB pro Aufnahme.`;

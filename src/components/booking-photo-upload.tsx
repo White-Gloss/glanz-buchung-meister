@@ -55,7 +55,7 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
       const message =
         err instanceof Error && err.message.trim()
           ? err.message
-          : "Upload fehlgeschlagen. Bitte später erneut versuchen oder uns telefonisch erreichen.";
+          : "Die Dateien konnten nicht hochgeladen werden. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns telefonisch.";
       setError(message);
       setPending(false);
     }
@@ -65,8 +65,8 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
     return (
       <SubmissionResult className="mt-12 rounded-card border border-line bg-elevated p-5 text-sm text-muted">
         {count === 1
-          ? "Eine Aufnahme ist eingegangen. Wir schauen sie uns zum Vorgang an."
-          : `${count} Aufnahmen sind eingegangen. Wir schauen sie uns zum Vorgang an.`}
+          ? "Eine Aufnahme ist eingegangen. Wir prüfen sie im Zusammenhang mit Ihrer Anfrage."
+          : `${count} Aufnahmen sind eingegangen. Wir prüfen sie im Zusammenhang mit Ihrer Anfrage.`}
       </SubmissionResult>
     );
   }
@@ -80,9 +80,9 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
     >
       <h2 className="font-display text-2xl">Fahrzeugfotos nachreichen</h2>
       <p className="text-sm text-muted">
-        Optional bis zu acht Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos
-        (MP4, WebM, MOV) sind möglich. Die Dateien landen nur im Betriebsarchiv und sind nicht
-        öffentlich. Höchstens 12 MB pro Aufnahme. Bitte innerhalb von sieben Tagen im Browser
+        Optional bis zu 8 Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos
+        (MP4, WebM, MOV) sind möglich. Die Dateien werden ausschließlich im internen Archiv gespeichert und sind nicht
+        öffentlich. Höchstens 12 MB pro Aufnahme. Bitte innerhalb von 7 Tagen im Browser
         Ihrer Anfrage nachreichen.
       </p>
       <Field tone="public" id="booking-photos" label="Fotos oder kurzes Video (max. 8)">
@@ -103,7 +103,7 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
         />
         {files.length ? (
           <ul className="space-y-1 text-xs text-subtle">
-            <li>{files.length} Datei(en) gewählt</li>
+            <li>{files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}</li>
             {files.map((file) => (
               <li className="break-all" key={`${file.name}-${file.size}-${file.lastModified}`}>{file.name}</li>
             ))}
@@ -121,7 +121,7 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
         disabled={pending || files.length === 0}
         aria-busy={pending}
       >
-        {pending ? "Wird hochgeladen …" : "Fotos senden"}
+        {pending ? "Wird hochgeladen …" : "Aufnahmen senden"}
       </Button>
     </form>
   );

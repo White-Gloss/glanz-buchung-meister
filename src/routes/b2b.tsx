@@ -24,10 +24,10 @@ function B2bPage() {
         alt="Werkstatt mit LED-Licht"
         kicker="Geschäftskunden"
         title="Firmenkunden, Flotten, Autohäuser."
-        lead="Flotte und Leasingrückläufer. Preis nach Umfang, keine Pauschale."
+        lead="Aufbereitung für Flotten und Leasingrückläufer mit einem Angebot passend zu Ihrem Bedarf."
         crumbs={[
           { label: "Startseite", to: "/" },
-          { label: "B2B" },
+          { label: "Geschäftskunden" },
         ]}
         actions={
           <>
@@ -48,10 +48,10 @@ function B2bPage() {
       </p>
       <div className="mt-10 grid gap-4">
         {[
-          ["Leasingrückläufer", "Vor der Rückgabe holen wir die Stellen, die Gutachter sehen, im Umfang, über den wir uns einig sind."],
+          ["Leasingrückläufer", "Vor der Leasingrückgabe behandeln wir relevante Gebrauchsspuren im vereinbarten Umfang."],
           ["Flotten- & Fuhrparkreinigung", "Einmal oder in einem Rhythmus, der zu Ihrem Betrieb passt."],
           ["Autohäuser & Fahrzeughandel", "Aufbereitung für Verkauf, Standfläche und Auslieferung."],
-          ["Firmen- & Poolfahrzeuge", "Innen und außen so, dass die Autos im Alltag wieder anständig aussehen."],
+          ["Firmen- & Poolfahrzeuge", "Reinigung und Pflege von Innenraum und Außenflächen für den täglichen Einsatz."],
         ].map(([t, d]) => (
           <section key={t} className="border border-line bg-surface p-6">
             <h2 className="font-display text-2xl tracking-tight">{t}</h2>

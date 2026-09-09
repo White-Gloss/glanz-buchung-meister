@@ -11,12 +11,12 @@ function contactErrors({ name, phone, privacy }: ContactFields): PublicFormError
   const errors: PublicFormErrors = {};
   // Match the existing public booking/photo-inquiry server validators.
   if (name.trim().length < 2 || name.trim().length > 120) {
-    errors.name = "Bitte einen Namen mit 2 bis 120 Zeichen angeben.";
+    errors.name = "Bitte geben Sie Ihren Namen mit 2 bis 120 Zeichen an.";
   }
   if (phone.trim().length < 6 || phone.trim().length > 40) {
-    errors.phone = "Bitte eine Telefonnummer mit 6 bis 40 Zeichen angeben.";
+    errors.phone = "Bitte geben Sie Ihre Telefonnummer mit 6 bis 40 Zeichen an.";
   }
-  if (!privacy) errors.privacy = "Bitte die Datenschutzerklärung bestätigen.";
+  if (!privacy) errors.privacy = "Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.";
   return errors;
 }
 
@@ -26,13 +26,13 @@ export function bookingFormErrors(
 ): PublicFormErrors {
   const errors = contactErrors(values);
   if (values.email.trim().length > 160 || (values.email.trim() && !isEmailAddress(values.email))) {
-    errors.email = "Bitte eine gültige E-Mail angeben oder das Feld leer lassen.";
+    errors.email = "Bitte geben Sie eine gültige E-Mail-Adresse an oder lassen Sie das Feld leer.";
   }
   if (values.date && (!isCalendarDate(values.date) || values.date < today)) {
-    errors.date = "Bitte einen Wunschtermin ab heute wählen.";
+    errors.date = "Bitte wählen Sie heute oder ein späteres Datum.";
   }
   if (values.note.length > 2000)
-    errors.note = "Bitte den Hinweis auf höchstens 2000 Zeichen kürzen.";
+    errors.note = "Bitte kürzen Sie Ihre Nachricht auf höchstens 2.000 Zeichen.";
   return errors;
 }
 
@@ -41,13 +41,13 @@ export function photoInquiryErrors(
 ): PublicFormErrors {
   const errors = contactErrors(values);
   if (!values.text.trim() && values.files.length === 0) {
-    errors.text = "Bitte eine kurze Beschreibung angeben oder mindestens eine Aufnahme wählen.";
+    errors.text = "Bitte beschreiben Sie Ihr Anliegen oder wählen Sie mindestens eine Aufnahme aus.";
   }
   if (values.text.length > 2000)
-    errors.text = "Bitte die Beschreibung auf höchstens 2000 Zeichen kürzen.";
+    errors.text = "Bitte kürzen Sie die Beschreibung auf höchstens 2.000 Zeichen.";
   if (values.files.some((file) => file.name.length > 180)) {
     errors.media =
-      "Bitte Dateinamen auf höchstens 180 Zeichen kürzen und die Dateien erneut wählen.";
+      "Bitte kürzen Sie die Dateinamen auf höchstens 180 Zeichen und wählen Sie die Dateien erneut aus.";
   }
   return errors;
 }

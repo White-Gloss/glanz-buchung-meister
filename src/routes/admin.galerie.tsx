@@ -7,7 +7,7 @@ export const Route = createFileRoute("/admin/galerie")({
       kind="gallery"
       kicker="Angebot & Website"
       heading="Fahrzeuggalerie"
-      hint="Fotos unter /media/hero.jpg (Atelierfahrzeug), plus Lack, Felgen, Keramik, Leder, Finish, Dellen. Bildtext ehrlich: kein Kundenname, keine Kennzeichen."
+      hint="Fotos unter /media/hero.jpg (eigenes Fahrzeug), plus Lack, Felgen, Keramik, Leder, Finish, Dellen. Bildtext ehrlich: kein Kundenname, keine Kennzeichen."
       extraLabel="Bildadresse"
     />
   ),

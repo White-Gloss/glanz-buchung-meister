@@ -34,7 +34,7 @@ function PreisePage() {
         alt="Keramikversiegelung von Hand auf dem Lack"
         kicker="Pakete & Preise"
         title="Preise für die Aufbereitung."
-        lead="Drei Pakete. Endpreise. Größe und Extras rechnet der Konfigurator dazu."
+        lead="Vergleichen Sie unsere drei Pakete. Der Preisrechner berücksichtigt Fahrzeugklasse und Zusatzleistungen."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Preise & Pakete" },
@@ -53,8 +53,8 @@ function PreisePage() {
               {String(i + 1).padStart(2, "0")}.
             </p>
             <div className="ga-pack-copy">
-              <p className="kicker">{p.name}</p>
-              <h2 className="heading-2 mt-2">{p.searchLabel}</h2>
+              <p className="kicker">Paket {i + 1}</p>
+              <h2 className="heading-2 mt-2">{p.name}</h2>
               <p className="mt-2 text-sm text-muted">{p.kicker}</p>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted">{p.body}</p>
               <ul className="mt-5 space-y-2 text-sm text-muted">
@@ -71,7 +71,7 @@ function PreisePage() {
                 hash="buchung"
                 className={`${ctaPrimary} mt-6`}
               >
-                {p.searchLabel} anfragen
+                Paket anfragen
               </Link>
             </div>
             <p className="ga-price min-w-[8.5rem]">
@@ -90,13 +90,10 @@ function PreisePage() {
         ))}
       </ol>
       <p className="mt-8 max-w-2xl text-sm leading-relaxed text-muted">
-        In der Region gibt es Innenreinigung schon unter 80 € und Politur-Pakete
-        um 180 € – oft ohne echte Korrektur. Keramik wird zwischen ein paar
-        Hundert und über 1.500 € angeboten. Unsere Startpreise liegen bewusst
-        in der Werkstatt-Mitte: Pur 149 €, Signature 349 € mit Innenraum und
-        Politur, Keramik 899 € inklusive Vorbereitung. Was darunter liegt,
-        spart meist die Arbeit, die den Unterschied macht. Pauschale fünf
-        Jahre rechnen wir nicht.
+        Die angegebenen Einstiegspreise gelten für die Kompaktklasse und enthalten
+        die Mehrwertsteuer. Fahrzeugklasse und Zusatzleistungen bestimmen den
+        berechneten Preis. Entsteht durch Verschmutzung oder Lackzustand
+        zusätzlicher Aufwand, stimmen wir diesen vor Beginn mit Ihnen ab.
       </p>
       <h2 className="heading-2 mt-20">Fahrzeuggröße</h2>
       <div className="gd-tiles gd-tiles-3 mt-8">
@@ -112,8 +109,8 @@ function PreisePage() {
       </div>
       <h2 className="heading-2 mt-20">Zusatzleistungen</h2>
       <p className="mt-4 max-w-2xl text-sm text-muted">
-        Alle Beträge {site.vatNote}. Reparaturen nur, wenn sie halten – sonst
-        sagen wir vorher nein.
+        Alle Beträge {site.vatNote} Vor einer Reparatur prüfen wir, ob das
+        Material geeignet ist.
       </p>
       {(["pflege", "reparatur"] as const).map((group) => (
         <div key={group}>
@@ -142,7 +139,7 @@ function PreisePage() {
       </p>
       <div id="buchung" className="mt-16">
         <h2 id="buchung-heading" className="mb-8 font-display text-3xl">
-          Preis konfigurieren
+          Preis berechnen
         </h2>
         <LazyConfigurator eager />
       </div>

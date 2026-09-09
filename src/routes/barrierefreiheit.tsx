@@ -23,7 +23,7 @@ function AccessibilityPage() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker="Rechtliches"
         title="Barrierefreiheit."
-        lead="Was schon geht, was noch fehlt, und wohin Sie schreiben."
+        lead="Informationen zur Bedienbarkeit der Website, zu bekannten Einschränkungen und zu Ihren Kontaktmöglichkeiten."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Barrierefreiheit" },
@@ -45,23 +45,23 @@ function AccessibilityPage() {
           <ul>
             <li>Sprungmarke zum Inhalt</li>
             <li>Überschriften und Tastaturbedienung der wesentlichen Seiten</li>
-            <li>Texte zu Bildern, soweit sie Inhalt tragen</li>
+            <li>Alternativtexte für Bilder mit inhaltlicher Bedeutung</li>
             <li>Formulare mit Beschriftung, die Anfrage ist unverbindlich</li>
           </ul>
         </section>
         <section>
           <h2>Bekannte Grenzen</h2>
           <p>
-            Einzelne Bildstrecken und der bewegte Hero-Film können für Nutzer mit eingeschränkter
-            Bewegung oder geringem Kontrast anstrengend sein. Der Film startet nicht, wenn das
-            Gerät weniger Bewegung verlangt. PDF-Belege und eingebettete Karten nach Klick sind
+            Einzelne Bildstrecken und das Video im Kopfbereich können für Menschen mit
+            eingeschränktem Sehvermögen oder Empfindlichkeit gegenüber Bewegung anstrengend sein.
+            Das Video startet nicht, wenn auf dem Gerät eine reduzierte Bewegung eingestellt ist. PDF-Belege und eingebettete Karten nach Klick sind
             nicht vollständig barrierefrei.
           </p>
         </section>
         <section>
           <h2>Kontakt</h2>
           <p>
-            Barrieren bitte an{" "}
+            Bitte melden Sie Barrieren an{" "}
             <a href={`mailto:${site.email}`}>{site.email}</a> oder{" "}
             <a href={site.phoneHref}>{site.phoneDisplay}</a>. Wir antworten in der Regel innerhalb
             von fünf Werktagen.

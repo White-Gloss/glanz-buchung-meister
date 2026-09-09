@@ -63,7 +63,7 @@ function RatgeberIndex() {
         alt="Keramikversiegelung von Hand auf dem Lack"
         kicker="Wissen aus der Werkstatt"
         title="Ratgeber Fahrzeugpflege."
-        lead="Aus der Werkstatt. Ohne große Versprechen."
+        lead="Tipps und Erläuterungen zu Reinigung, Lackpflege und Versiegelung."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Ratgeber" },

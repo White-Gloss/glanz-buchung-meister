@@ -25,7 +25,7 @@ function KontaktPage() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker={`Werkstatt ${site.city}`}
         title="Kontakt."
-        lead="Anrufen, schreiben oder vorbeikommen. Die Werkstatt steht in Horb."
+        lead="Sie erreichen uns telefonisch, per E-Mail oder WhatsApp und in unserer Werkstatt in Horb am Neckar."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Kontakt" },
