@@ -35,7 +35,7 @@ export const Route = createFileRoute("/ratgeber/$slug")({
   head: ({ loaderData }) =>
     pageHead({
       title: `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
-      description: loaderData?.excerpt ?? "",
+      description: loaderData?.seoExcerpt ?? loaderData?.excerpt ?? "",
       path: `/ratgeber/${loaderData?.slug ?? ""}`,
     }),
   component: ArticlePage,
@@ -52,7 +52,7 @@ function ArticlePage() {
     author: { "@type": "Organization", name: site.legalName },
     publisher: { "@type": "Organization", name: site.legalName },
     image: `${site.origin}${a.image}`,
-    description: a.excerpt,
+    description: a.seoExcerpt ?? a.excerpt,
   };
 
   return (

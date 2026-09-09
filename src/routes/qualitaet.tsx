@@ -30,7 +30,7 @@ function QualityPage() {
         lead="Ein Auto nach dem anderen. Erst anschauen, dann arbeiten, dann kontrollieren."
         crumbs={[
           { label: "Startseite", to: "/" },
-          { label: "Qualitätsanspruch" },
+          { label: "Arbeitsweise" },
         ]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
@@ -58,23 +58,20 @@ function QualityPage() {
         <h2 className="mt-20 font-display text-4xl tracking-tight">Was Sie erwarten dürfen</h2>
         <ul className="mt-6 space-y-4 text-sm leading-relaxed text-muted">
           <li>
-            <strong className="text-fg">Ehrlich anschauen.</strong> Material, Schmutz
-            und Schäden bestimmen, was sinnvoll ist – nicht ein Katalog, der für
-            jedes Auto gleich aussieht.
+            <strong className="text-fg">Sorgfältige Begutachtung.</strong> Material, Schmutz
+            und Schäden bestimmen, welche Behandlung sinnvoll ist.
           </li>
           <li>
             <strong className="text-fg">Passendes Verfahren.</strong> Werkzeug und
-            Chemie richten sich nach Lack und Leder, nicht danach, was am
-            schärfsten wäre.
+            Reinigungsmittel stimmen wir auf Lack, Leder und weitere Materialien ab.
           </li>
           <li>
-            <strong className="text-fg">Keine Showroom-Märchen.</strong> Grenzen
+            <strong className="text-fg">Realistische Einschätzung.</strong> Grenzen
             sagen wir vorher, bevor unnötig Lack abgetragen wird.
           </li>
           <li>
             <strong className="text-fg">Kontrolle vor der Übergabe.</strong> Die
-            kritischen Stellen gehen wir noch einmal durch, damit nichts
-            durchrutscht.
+            bearbeiteten Stellen prüfen wir vor der Übergabe noch einmal sorgfältig.
           </li>
         </ul>
         <blockquote className="mt-14 max-w-xl font-display text-3xl leading-snug tracking-tight">
@@ -85,7 +82,7 @@ function QualityPage() {
           hash="buchung"
           className="mt-10 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
         >
-          Fahrzeug anfragen
+          Aufbereitung anfragen
         </Link>
       </div>
     </main>

@@ -23,7 +23,7 @@ function WithdrawalPage() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker="Rechtliches"
         title="Widerrufsbelehrung."
-        lead="Vierzehn Tage. Ohne Angabe von Gründen. Das Formular steht darunter."
+        lead="Informationen zum Widerrufsrecht und ein Musterformular für Ihren Widerruf."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Widerruf" },

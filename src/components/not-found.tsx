@@ -6,10 +6,10 @@ export function NotFoundComponent() {
   return (
     <main id="main-content" className="page-doc mx-auto max-w-3xl px-4 pb-24 sm:px-6" tabIndex={-1}>
       <p className="kicker">404</p>
-      <h1 className="heading-2 mt-4">Diese Seite gibt es nicht.</h1>
+      <h1 className="heading-2 mt-4">Seite nicht gefunden</h1>
       <p className="mt-5 max-w-xl text-muted leading-relaxed">
-        Die Adresse führt ins Leere – vertippt, veraltet oder nie vorhanden.
-        Zurück zur Startseite, zu den Preisen oder direkt anfragen.
+        Unter dieser Adresse wurde keine Seite gefunden. Prüfen Sie die Adresse
+        oder nutzen Sie die Links zur Startseite, zu den Preisen und zum Kontakt.
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
         <Link to="/" className={ctaPrimary}>

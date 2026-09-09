@@ -13,7 +13,7 @@ export function AppErrorComponent({ error }: ErrorComponentProps) {
       </span>
       <h1 className="font-display text-2xl tracking-tight">Etwas ist schiefgelaufen.</h1>
       <p className="max-w-md text-sm break-words text-muted">
-        {error.message || "Unerwarteter Fehler. Bitte die Seite neu laden."}
+        {error.message || "Die Seite konnte nicht geladen werden. Bitte laden Sie sie erneut."}
       </p>
       <Link
         to="/"

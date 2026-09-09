@@ -51,7 +51,7 @@ function Home() {
         <div className="hero-stage-media" data-parallax>
           <HeroMedia
             priority
-            alt="Weißes Atelierfahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+            alt="Weißes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
             className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
           />
         </div>
@@ -63,7 +63,7 @@ function Home() {
           </h1>
           <span className="hero-rule hero-in" aria-hidden style={{ ["--d" as string]: 1 }} />
           <p className="heading-tagline hero-in mt-7" style={{ ["--d" as string]: 2 }}>
-            No compromise. Only results.
+            Fahrzeugpflege mit Sorgfalt.
           </p>
           <Link
             to="/"
@@ -83,7 +83,7 @@ function Home() {
       <section aria-label="Auf einen Blick" className="hero-follow border-b border-line">
         <ul className="gd-stats mx-auto max-w-7xl">
           {[
-            ["13 Städte", "Hol- & Bringservice"],
+            ["13 Städte", "Hol- und Bringservice"],
             [site.hoursLabel.replace(" Uhr", ""), "Werkstatt geöffnet"],
             ["ab 149 €", "Kompaktklasse inkl. MwSt."],
             ["je nach Produkt", "Keramikschutz"],
@@ -110,14 +110,14 @@ function Home() {
         <div className="film-chapter-copy" data-reveal>
           <p className="kicker">Werkstatt Horb</p>
           <p className="mt-5 max-w-3xl font-display text-4xl leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
-            Kein Waschstraßenprogramm.
+            Sorgfalt für Ihr Fahrzeug.
             <br />
-            Ein Auto nach dem anderen.
+            In unserer Werkstatt in Horb.
           </p>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            Wir nehmen uns jedes Auto einzeln vor: Lack, Leder und Felgen so
-            gründlich wie nötig, so schonend wie möglich. Die Arbeit läuft in der
-            Werkstatt in Horb, nicht draußen an der Straße.
+            Wir stimmen die Pflege von Lack, Leder und Felgen auf den Zustand Ihres
+            Fahrzeugs ab. Alle Arbeiten führen wir in unserer Werkstatt in Horb
+            am Neckar aus.
           </p>
         </div>
       </section>
@@ -135,7 +135,7 @@ function Home() {
               to="/preise"
               className="inline-flex min-h-11 items-center gap-2 text-sm text-fg"
             >
-              Alle Preise & Extras
+              Preise und Zusatzleistungen
               <IconArrowRight className="link-arrow size-4" aria-hidden />
             </Link>
           </div>
@@ -156,7 +156,7 @@ function Home() {
                         {p.name}
                       </span>
                       {p.featured ? (
-                        <span className="kicker">Bestseller</span>
+                        <span className="kicker">Empfohlen</span>
                       ) : null}
                     </span>
                     <span className="mt-1 block text-xs uppercase tracking-[0.16em] text-subtle">
@@ -193,8 +193,8 @@ function Home() {
               So läuft’s bei uns.
             </h2>
             <p className="mt-5 max-w-xl text-muted">
-              Bevor etwas angefasst wird, schauen wir uns das Auto an. Der Ablauf
-              richtet sich nach dem Zustand – nicht nach einem festen Programm.
+              Wir prüfen Ihr Fahrzeug vor Beginn und besprechen mit Ihnen die nötigen
+              Arbeiten. Der Ablauf richtet sich nach Zustand und vereinbartem Umfang.
             </p>
             <ol className="gd-tiles mt-12">
               {processSteps.map((s) => (
@@ -233,14 +233,14 @@ function Home() {
             className="ga-media aspect-[4/3] w-full"
           />
           <div className="ga-copy" data-reveal>
-            <p className="kicker">Geht auch extra</p>
+            <p className="kicker">Weitere Leistungen</p>
             <h2 className="heading-2 mt-4">
-              Dellenentfernung & Hagelschaden
+              Dellen- und Hagelschäden
             </h2>
             <p className="mt-5 max-w-md text-muted leading-relaxed">
-              Ob Parkdelle oder Hagel: Schicken Sie uns ein paar Fotos, und wir
-              sagen Ihnen ehrlich, ob sich die Arbeit lohnt. Den Preis machen wir
-              erst, wenn wir uns den Schaden angeschaut haben.
+              Ob Parkdelle oder Hagelschaden: Anhand von Fotos geben wir Ihnen eine
+              erste Einschätzung. Den Preis nennen wir nach der Begutachtung
+              des Schadens.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/dellen-hagelschaden" className={ctaPrimary}>
@@ -309,20 +309,20 @@ function Home() {
         >
           <Shot
             name="private"
-            alt="Atelierfahrzeug von White Gloss – für Fahrzeuge ab 80.000 € extra Zeit"
+            alt="Eigenes Fahrzeug von White Gloss – für Fahrzeuge ab 80.000 € extra Zeit"
             className="absolute inset-0 h-full w-full"
             sizes="(min-width: 1024px) 50vw, 100vw"
             framed={false}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
-            <p className="kicker">Private Client</p>
+            <p className="kicker">Luxusfahrzeuge</p>
             <h2 className="heading-2 mt-4 max-w-md">
               Fahrzeuge ab 80.000 €
             </h2>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted sm:text-base">
-              Nicht über den Rechner. Wir sprechen zuerst, schauen uns das Auto
-              an und bauen den Umfang extra für dieses Fahrzeug.
+              Nach einem telefonischen Erstgespräch prüfen wir Ihr Fahrzeug vor Ort
+              und erstellen ein individuelles Angebot.
             </p>
             <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
               Individuelles Angebot
@@ -348,11 +348,11 @@ function Home() {
               Firmen, Flotten, Autohäuser
             </h2>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted sm:text-base">
-              Leasingrückläufer, Fuhrpark, Verkaufsvorbereitung. Den Preis
-              rechnen wir am Umfang, nicht an einer Pauschale.
+              Aufbereitung für Leasingrückgabe, Fuhrpark und Verkauf. Wir kalkulieren
+              nach Fahrzeuganzahl, Zustand und vereinbartem Umfang.
             </p>
             <span className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
-              B2B-Anfrage
+              Angebot für Geschäftskunden
               <IconArrowRight className="link-arrow size-4" aria-hidden />
             </span>
           </div>
@@ -390,7 +390,7 @@ function Home() {
               </ul>
             </div>
             <div className="ga-media">
-              <p className="kicker">Hol- & Bringservice · 13 Städte</p>
+              <p className="kicker">Hol- und Bringservice · 13 Städte</p>
               <h3 className="heading-3 mt-4">Abholung mit klarer Staffel</h3>
               <p className="mt-4 text-sm leading-relaxed text-muted">
                 {pickupTierSummary()}. {pickupKeramikNote()}.
@@ -432,9 +432,8 @@ function Home() {
             Werkstatt in {site.city}
           </h2>
           <p className="mt-5 max-w-xl text-muted">
-            {site.street}, {site.postalCode} {site.city}. Die Arbeit läuft hier –
-            den Hol- und Bringservice gibt es in 13 Städten. Die Karte ist
-            interaktiv, auch auf dem Handy.
+            {site.street}, {site.postalCode} {site.city}. Hier bereiten wir Ihr
+            Fahrzeug auf. Unser Hol- und Bringservice umfasst 13 Städte.
           </p>
           <WorkshopMap className="mt-10" />
         </div>
@@ -457,9 +456,9 @@ function Home() {
             Fahrzeugaufbereitung in {site.city}
           </h2>
           <p className="mt-5 max-w-xl text-muted leading-relaxed">
-            Fahrzeugaufbereitung heißt bei uns: Innenraum, Lack und Keramik in
-            der Werkstatt – nicht an der Straße. White Gloss Detailing in{" "}
-            {site.city}, mit Hol- und Bringservice in der Region.
+            Innenraumreinigung, Lackkorrektur und Keramikversiegelung: Wir beraten
+            Sie zur passenden Aufbereitung in unserer Werkstatt in {site.city}.
+            In der Region bieten wir einen Hol- und Bringservice an.
           </p>
         </div>
       </section>
@@ -471,11 +470,11 @@ function Home() {
       >
         <p className="kicker">Online anfragen</p>
         <h2 id="buchung-heading" className="heading-2 mt-4">
-          Termin anfragen, Preis sofort sehen.
+          Aufbereitung planen und Termin anfragen
         </h2>
         <p className="mt-5 mb-12 max-w-xl text-muted">
-          Wählen Sie Fahrzeugklasse, Paket und Extras – den Preis sehen Sie
-          sofort. Die Anfrage ist unverbindlich, wir melden uns mit einem
+          Wählen Sie Fahrzeugklasse, Paket und Zusatzleistungen. Der Preisrechner
+          zeigt Ihnen den voraussichtlichen Preis. Die Anfrage ist unverbindlich, wir melden uns mit einem
           Terminvorschlag.
         </p>
         <LazyConfigurator eager={Boolean(paket)} initialPackage={paket} />
