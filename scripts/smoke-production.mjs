@@ -439,4 +439,3 @@ if (failures.length > 0) {
 } else {
   console.log(`\nProduction-Smoke-Test erfolgreich für ${BASE_URL}`);
 }
-
