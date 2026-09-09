@@ -161,6 +161,32 @@ test("Odoo synchronization preserves booking safety across retries and interrupt
       assert.equal(queue.requested_version, 2);
       assert.equal(queue.synced_version, 1);
     });
+    await t.test("recovers a booking saved by an older release without a queue event", async () => {
+      const row = await fixture(),
+        api = remote();
+      await sql`delete from odoo_sync_queue where booking_id=${row.id}`;
+      assert.equal(
+        (await runOdooSync(sql, { call: api.call, bookingId: row.id, limit: 1 })).synced,
+        1,
+      );
+      assert.deepEqual(api.creates, ["res.partner", "x_auftrage"]);
+    });
+    await t.test("an expired runner cannot start another remote write", async () => {
+      const row = await fixture(),
+        api = remote();
+      const call: OdooCall = async <T>(
+        model: string,
+        method: string,
+        body: Record<string, unknown>,
+      ) => {
+        const result = await api.call<T>(model, method, body);
+        await sql`update odoo_sync_runner set lease_token='new-runner' where shop_id='white-gloss'`;
+        return result;
+      };
+      assert.equal((await runOdooSync(sql, { call, bookingId: row.id, limit: 1 })).review, 1);
+      assert.equal(api.creates.length, 0);
+      await sql`update odoo_sync_runner set lease_token=null,locked_until=null where shop_id='white-gloss'`;
+    });
     await t.test("disabled synchronization performs no remote calls", async () => {
       const row = await fixture(),
         api = remote();

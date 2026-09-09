@@ -200,8 +200,25 @@ export async function runOdooSync(
     await sql`update odoo_sync_runner set lease_token=${token},locked_until=now()+interval '90 seconds'
     where shop_id=${SHOP} and (locked_until is null or locked_until < now()) returning shop_id`;
   if (!lease.length) return result;
-  const call = options.call || remoteCall(creds!, deadline);
+  const transport = options.call || remoteCall(creds!, deadline);
+  const call: OdooCall = async <T>(
+    model: string,
+    method: string,
+    body: Record<string, unknown>,
+  ) => {
+    const active = await sql`select shop_id from odoo_sync_runner where shop_id=${SHOP}
+      and lease_token=${token} and locked_until>now()`;
+    if (!active.length) throw new OdooSyncError("odoo_runner_expired", true);
+    return transport<T>(model, method, body);
+  };
   try {
+    // Recover requests/edits written by an older release or a legacy import.
+    // A compatible rollback must not permanently lose a synchronization event.
+    await sql`insert into odoo_sync_queue(booking_id,shop_id,requested_version)
+      select id,shop_id,version from bookings where shop_id=${SHOP}
+      on conflict(booking_id) do update set requested_version=excluded.requested_version,
+      status='pending',next_attempt_at=now(),updated_at=now()
+      where excluded.requested_version>odoo_sync_queue.requested_version`;
     for (let i = 0; i < (options.limit ?? 3) && Date.now() < deadline; i++) {
       const [row] =
         await sql<WorkflowBooking>`select b.* from odoo_sync_queue q join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
