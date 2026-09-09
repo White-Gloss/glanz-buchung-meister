@@ -16,9 +16,13 @@ export const Route = createFileRoute("/api/automation-cron")({
           const { getSql } = await import("@/lib/db");
           const sql = await getSql();
           const remindersChecked = await scheduleDueBookingReminders(sql);
-          const delivery = await runNotificationWorker(sql);
+          const { runOdooSync } = await import("@/lib/odoo-sync");
+          const [delivery, odoo] = await Promise.all([
+            runNotificationWorker(sql),
+            runOdooSync(sql),
+          ]);
           return Response.json(
-            { ok: true, remindersChecked, ...delivery },
+            { ok: true, remindersChecked, ...delivery, odoo },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {

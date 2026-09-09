@@ -23,6 +23,7 @@ export const expectedMigrations = [
   "0009_whatsapp_receipts.sql",
   "0010_odoo_integration.sql",
   "0011_booking_pdf.sql",
+  "0012_odoo_sync.sql",
 ];
 const tables = [
   "_migrations",
@@ -44,6 +45,9 @@ const tables = [
   "booking_workflow_locks",
   "booking_capacity_claims",
   "whatsapp_webhook_receipts",
+  "odoo_sync_queue",
+  "odoo_record_links",
+  "odoo_sync_runner",
 ];
 const requiredColumns = [
   ["outbound_queue", "attachments", "jsonb"],

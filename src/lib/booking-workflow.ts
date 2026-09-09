@@ -10,6 +10,7 @@ import {
   type BookingEvent,
 } from "./booking-notifications.ts";
 import type { UploadCapability } from "./booking-upload-capability.ts";
+import { queueOdooBooking } from "./odoo-sync.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -87,6 +88,7 @@ async function event(
     returning id
   `;
   await enqueue(tx, row, name, saved.id, actor);
+  await queueOdooBooking(tx, row);
 }
 
 async function findBooking(tx: Sql, id: number) {

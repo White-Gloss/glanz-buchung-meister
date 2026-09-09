@@ -10,11 +10,7 @@ import { OUTBOUND_QUEUED, flushOutboundEmailQueue } from "@/lib/ops";
 import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notification-worker";
 import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
 import { mailConfigured } from "@/lib/resend-mail";
-import {
-  ensureQontoInvoiceForBooking,
-  sendQontoInvoiceEmailForBooking,
-  type QontoBookingFields,
-} from "@/lib/qonto-invoice";
+import { sendQontoInvoiceEmailForBooking } from "@/lib/qonto-invoice";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
@@ -597,33 +593,6 @@ export const sendQontoInvoice = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sql = await getSql();
     return sendQontoInvoiceEmailForBooking(sql, data.bookingId);
-  });
-
-export const retryQontoInvoice = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
-    const sql = await getSql();
-    const rows = await sql<QontoBookingFields>`
-      select id, customer_name, email, package_id, extra_ids, total_cents, pickup_cents,
-             qonto_client_id, qonto_invoice_id, qonto_invoice_number, qonto_invoice_status
-      from bookings
-      where id = ${data.bookingId} and shop_id = ${SHOP}
-      limit 1
-    `;
-    const booking = rows[0];
-    if (!booking) throw new Error("Buchung nicht gefunden.");
-    if (!booking.qonto_invoice_id) {
-      await sql`
-        update bookings
-        set qonto_invoice_status = null,
-            qonto_invoice_error = null,
-            updated_at = now()
-        where id = ${booking.id} and shop_id = ${SHOP}
-      `;
-      booking.qonto_invoice_status = null;
-    }
-    return ensureQontoInvoiceForBooking(sql, booking);
   });
 
 export const listAutomationEvents = createServerFn({ method: "GET" })

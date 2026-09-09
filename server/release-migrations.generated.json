@@ -10,5 +10,6 @@
   "0008_notification_delivery.sql",
   "0009_whatsapp_receipts.sql",
   "0010_odoo_integration.sql",
-  "0011_booking_pdf.sql"
+  "0011_booking_pdf.sql",
+  "0012_odoo_sync.sql"
 ]
