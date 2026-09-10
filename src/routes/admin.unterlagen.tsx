@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   listDocuments,
   updateDocumentStatus,
@@ -12,8 +12,9 @@ import {
   lexwareSyncOverview,
   setLexwareSyncEnabled,
   retryLexwareSync,
+  saveLexwareApiKey,
 } from "@/lib/lexware.functions";
-import { Button } from "@/components/ui";
+import { Button, Field, inputClass } from "@/components/ui";
 import { eur } from "@/lib/utils";
 import { ODOO_DEFAULT_BASE_URL } from "@/lib/odoo-site";
 
@@ -40,6 +41,7 @@ function AdminDocs() {
     null,
   );
   const [lexPending, setLexPending] = useState(false);
+  const [lexKey, setLexKey] = useState("");
 
   async function reload() {
     const [d, b, status, transfers] = await Promise.all([
@@ -80,9 +82,52 @@ function AdminDocs() {
         </p>
         <p className="mt-2 text-sm text-muted">
           {lexStatus?.configured
-            ? "Umgebung gesetzt · Lexware Office Public API"
-            : "Umgebung fehlt noch — LEXWARE_API_KEY in der Serverumgebung setzen, siehe docs/ops-lexware-env.md."}
+            ? lexStatus.source === "env"
+              ? "Schlüssel liegt in der Serverumgebung."
+              : "Schlüssel ist im Betriebspanel hinterlegt."
+            : "Noch kein Schlüssel — unten einfügen, nicht in den Chat."}
         </p>
+        {lexSync?.canManage ? (
+          <form
+            className="mt-4 max-w-xl space-y-3"
+            onSubmit={async (event: FormEvent) => {
+              event.preventDefault();
+              setLexPending(true);
+              setActionMsg(null);
+              try {
+                const result = await saveLexwareApiKey({ data: { apiKey: lexKey } });
+                setLexKey("");
+                await reload();
+                setActionMsg(
+                  result.connected
+                    ? "Lexware-Schlüssel gespeichert und geprüft."
+                    : result.error || "Schlüssel wurde nicht gespeichert.",
+                );
+              } catch (error) {
+                setActionMsg(error instanceof Error ? error.message : "Speichern fehlgeschlagen.");
+              } finally {
+                setLexPending(false);
+              }
+            }}
+          >
+            <Field id="lexware-key" label="Lexware-API-Schlüssel">
+              <input
+                id="lexware-key"
+                type="password"
+                className={inputClass}
+                value={lexKey}
+                onChange={(e) => setLexKey(e.target.value)}
+                autoComplete="new-password"
+                required
+                minLength={20}
+                spellCheck={false}
+              />
+            </Field>
+            <Button type="submit" disabled={lexPending || !lexKey.trim()}>
+              {lexPending ? "Prüfe Verbindung …" : "Schlüssel speichern"}
+            </Button>
+          </form>
+        ) : null}
         {lexSync?.canManage ? (
           <Button
             type="button"

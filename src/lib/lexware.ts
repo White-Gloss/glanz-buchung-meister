@@ -58,6 +58,25 @@ export function lexwareCredentialsFromEnv(): LexwareCredentials | null {
   };
 }
 
+export async function probeLexware(
+  creds: LexwareCredentials,
+  options: { fetchImpl?: typeof fetch } = {},
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const request = createLexwareClient(creds, {
+      fetchImpl: options.fetchImpl,
+      minIntervalMs: 0,
+      maxRetries: 0,
+    });
+    await request("GET", "/profile");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof LexwareError && (error.status === 401 || error.status === 403))
+      return { ok: false, error: "Zugang verweigert. Bitte den Lexware-Schlüssel prüfen." };
+    return { ok: false, error: "Lexware Office ist gerade nicht erreichbar." };
+  }
+}
+
 export function extractLexwareId(payload: unknown): string | null {
   if (typeof payload === "string" && UUID_RE.test(payload)) return payload;
   if (!payload || typeof payload !== "object") return null;

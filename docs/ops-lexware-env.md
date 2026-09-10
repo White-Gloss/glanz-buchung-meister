@@ -4,20 +4,24 @@ Website-Buchungen bleiben lokal. Die durable Queue legt den Kundenkontakt in Lex
 
 Das ist die **Lexware Office Public API** (`https://api.lexware.io/v1`), nicht Lexware Desktop. Desktop hat keine REST-API.
 
-## Variablen in /etc/white-gloss/environment
+## Schlüssel eintragen
 
-Werte mit Leerzeichen immer quoten. Niemals Secrets committen. Den Schlüssel nicht im Chat, in GitHub oder in WhatsApp schicken.
+Bevorzugt im Admin unter **Dokumente** (nur Inhaber): Feld „Lexware-API-Schlüssel“ → Speichern.
+Der Schlüssel bleibt auf dem Server und wird nicht zurück ins Browserformular gelegt.
 
-Required:
-LEXWARE_API_KEY
+Alternativ in `/etc/white-gloss/environment` (hat Vorrang vor dem Panel):
+
+```text
+LEXWARE_API_KEY="…"
+```
+
+Den Schlüssel nicht im Chat, in GitHub oder in WhatsApp schicken.
 
 Optional:
 LEXWARE_API_BASE (default https://api.lexware.io/v1, no trailing slash)
 
-Schlüssel anlegen: Lexware Office → Add-ons → Public API
-(`https://app.lexoffice.de/addons/public-api`). Authorization: Bearer.
-
-Rate limit: 2 requests/second; Client drosselt und wiederholt bei HTTP 429.
+Schlüssel anlegen: [Public API](https://app.lexware.de/addons/public-api)
+Authorization: Bearer. Rate limit: 2 requests/second.
 
 ## Was übertragen wird
 

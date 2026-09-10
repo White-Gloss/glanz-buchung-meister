@@ -5,21 +5,29 @@ import { operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
-import { lexwareCredentialsFromEnv } from "@/lib/lexware";
+import { lexwareCredentialsFromEnv, probeLexware, LEXWARE_DEFAULT_API_BASE } from "@/lib/lexware";
+import { readLexwareCredentials } from "@/lib/lexware-credentials.server";
 
 const SHOP = "white-gloss";
+
+async function ensureLexwareKeyColumn(sql: Awaited<ReturnType<typeof getSql>>) {
+  await sql`alter table shop_settings add column if not exists lexware_api_key text`;
+}
 
 export const lexwareStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
+    await ensureLexwareKeyColumn(sql);
     const [setting] = await sql<{
       lexware_sync_enabled: boolean;
     }>`select lexware_sync_enabled from shop_settings where shop_id=${SHOP}`;
-    const creds = lexwareCredentialsFromEnv();
+    const fromEnv = Boolean(lexwareCredentialsFromEnv());
+    const creds = await readLexwareCredentials(sql);
     return {
       configured: Boolean(creds),
       enabled: Boolean(setting?.lexware_sync_enabled),
+      source: fromEnv ? ("env" as const) : creds ? ("panel" as const) : ("none" as const),
       apiBase: creds?.apiBase ?? null,
     };
   });
@@ -44,6 +52,26 @@ export const lexwareSyncOverview = createServerFn({ method: "GET" })
     return { rows, canManage: await canConfirmBookings(sql, context.userId) };
   });
 
+export const saveLexwareApiKey = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) =>
+    z.object({ apiKey: z.string().trim().min(20).max(512) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der angemeldete Inhaber darf den Lexware-Schlüssel speichern.");
+    const probe = await probeLexware({
+      apiKey: data.apiKey,
+      apiBase: LEXWARE_DEFAULT_API_BASE,
+    });
+    if (!probe.ok) return { ok: false, connected: false, error: probe.error };
+    await ensureLexwareKeyColumn(sql);
+    await sql`update shop_settings set lexware_api_key=${data.apiKey},updated_at=now() where shop_id=${SHOP}`;
+    return { ok: true, connected: true, error: null as string | null };
+  });
+
 export const setLexwareSyncEnabled = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
@@ -52,10 +80,8 @@ export const setLexwareSyncEnabled = createServerFn({ method: "POST" })
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf die Lexware-Übertragung umstellen.");
-    if (data.enabled && !lexwareCredentialsFromEnv())
-      throw new Error(
-        "Bitte zuerst LEXWARE_API_KEY in der Serverumgebung setzen (Lexware Office Public API).",
-      );
+    if (data.enabled && !(await readLexwareCredentials(sql)))
+      throw new Error("Bitte zuerst den Lexware-API-Schlüssel unter Dokumente speichern.");
     await sql`update shop_settings set lexware_sync_enabled=${data.enabled},updated_at=now() where shop_id=${SHOP}`;
     return { enabled: data.enabled };
   });

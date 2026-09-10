@@ -6,6 +6,7 @@ import {
   extractLexwareId,
   LexwareError,
   normalizeLexwareApiBase,
+  probeLexware,
   type LexwareCredentials,
 } from "./lexware.ts";
 
@@ -92,4 +93,16 @@ test("401 is review, 5xx is retryable", async () => {
     (err: unknown) =>
       err instanceof LexwareError && err.code === "lexware_request_failed" && err.retryable,
   );
+});
+
+test("probeLexware accepts a valid key and rejects 401 without storing details", async () => {
+  const ok = await probeLexware(creds, {
+    fetchImpl: async () => new Response("{}", { status: 200 }),
+  });
+  assert.equal(ok.ok, true);
+  const denied = await probeLexware(creds, {
+    fetchImpl: async () => new Response("{}", { status: 401 }),
+  });
+  assert.equal(denied.ok, false);
+  if (!denied.ok) assert.match(denied.error, /prüfen/);
 });

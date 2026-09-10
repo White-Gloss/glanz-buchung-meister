@@ -7,12 +7,12 @@ import {
   createInvoiceDraft,
   createLexwareClient,
   findContactByEmail,
-  lexwareCredentialsFromEnv,
   LexwareError,
   type LexwareCredentials,
   type LexwareInvoiceLine,
   type LexwareRequest,
 } from "./lexware.ts";
+import { readLexwareCredentials } from "./lexware-credentials.server.ts";
 
 const SHOP = "white-gloss";
 const VAT_FACTOR = 1.19;
@@ -180,7 +180,7 @@ export async function runLexwareSync(
     lexware_sync_enabled: boolean;
   }>`select lexware_sync_enabled from shop_settings where shop_id=${SHOP}`;
   if (!settings?.lexware_sync_enabled) return result;
-  const creds = options.creds || (options.request ? null : lexwareCredentialsFromEnv());
+  const creds = options.creds || (options.request ? null : await readLexwareCredentials(sql));
   if (!options.request && !creds) return result;
   const token = randomUUID();
   const deadline = Date.now() + 35_000;

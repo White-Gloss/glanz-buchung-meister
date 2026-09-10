@@ -1,4 +1,5 @@
 alter table shop_settings add column if not exists lexware_sync_enabled boolean not null default false;
+alter table shop_settings add column if not exists lexware_api_key text;
 
 create table if not exists lexware_sync_queue (
   booking_id integer primary key references bookings(id),

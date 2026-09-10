@@ -13,6 +13,7 @@ import {
   type LexwareCall,
 } from "./lexware-sync.ts";
 import { createInvoiceDraft, LexwareError, type LexwareCredentials } from "./lexware.ts";
+import { readLexwareCredentials } from "./lexware-credentials.server.ts";
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
@@ -334,6 +335,26 @@ test("Lexware synchronization creates contact and draft invoice, retries partial
       await sql`update shop_settings set lexware_sync_enabled=true where shop_id='white-gloss'`;
     });
   } finally {
+    await pg.close();
+  }
+});
+
+test("stored Lexware key is used when the environment is empty", async () => {
+  const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } }),
+    sql = wrap(pg);
+  for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
+    await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+  const previous = process.env.LEXWARE_API_KEY;
+  delete process.env.LEXWARE_API_KEY;
+  try {
+    assert.equal(await readLexwareCredentials(sql), null);
+    await sql`update shop_settings set lexware_api_key=${"panel-stored-lexware-key"} where shop_id='white-gloss'`;
+    const stored = await readLexwareCredentials(sql);
+    assert.equal(stored?.apiKey, "panel-stored-lexware-key");
+    assert.equal(stored?.apiBase, "https://api.lexware.io/v1");
+  } finally {
+    if (previous === undefined) delete process.env.LEXWARE_API_KEY;
+    else process.env.LEXWARE_API_KEY = previous;
     await pg.close();
   }
 });
