@@ -11,6 +11,7 @@ import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notifi
 import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
 import { mailConfigured } from "@/lib/resend-mail";
 import { sendQontoInvoiceEmailForBooking } from "@/lib/qonto-invoice";
+import { lexwareCredentialsFromEnv } from "@/lib/lexware";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
@@ -325,7 +326,7 @@ export const accountingSummary = createServerFn({ method: "GET" })
       paidInvoiceCents: paid?.sum ?? 0,
       vatRate: 0.19,
       erpConnected: false,
-      lexwareConnected: false,
+      lexwareConnected: Boolean(lexwareCredentialsFromEnv()),
     };
   });
 

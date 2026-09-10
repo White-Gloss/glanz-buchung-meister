@@ -7,6 +7,12 @@ import {
   type DocumentRow,
 } from "@/lib/admin.functions";
 import { listBookings, type BookingRow } from "@/lib/bookings.functions";
+import {
+  lexwareStatus,
+  lexwareSyncOverview,
+  setLexwareSyncEnabled,
+  retryLexwareSync,
+} from "@/lib/lexware.functions";
 import { Button } from "@/components/ui";
 import { eur } from "@/lib/utils";
 import { ODOO_DEFAULT_BASE_URL } from "@/lib/odoo-site";
@@ -15,16 +21,37 @@ export const Route = createFileRoute("/admin/unterlagen")({
   component: AdminDocs,
 });
 
+function lexwareStatusLabel(status: string) {
+  if (status === "synced") return "Übertragen";
+  if (status === "pending") return "Wartet auf Übertragung";
+  if (status === "review") return "Prüfung erforderlich";
+  return "Übertragung fehlgeschlagen";
+}
+
 function AdminDocs() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [lexStatus, setLexStatus] = useState<Awaited<ReturnType<typeof lexwareStatus>> | null>(
+    null,
+  );
+  const [lexSync, setLexSync] = useState<Awaited<ReturnType<typeof lexwareSyncOverview>> | null>(
+    null,
+  );
+  const [lexPending, setLexPending] = useState(false);
 
   async function reload() {
-    const [d, b] = await Promise.all([listDocuments(), listBookings()]);
+    const [d, b, status, transfers] = await Promise.all([
+      listDocuments(),
+      listBookings(),
+      lexwareStatus().catch(() => null),
+      lexwareSyncOverview().catch(() => null),
+    ]);
     setDocs(d);
     setBookings(b);
+    setLexStatus(status);
+    setLexSync(transfers);
   }
 
   useEffect(() => {
@@ -38,10 +65,107 @@ function AdminDocs() {
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">Verwaltung</p>
       <h1 className="mt-2 font-display text-4xl">Dokumente</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Neue Angebote, Rechnungen und Mahnungen erstellst du in Odoo. Der Rechnungsversand erfolgt
-        manuell. Bestehende Qonto-Rechnungen bleiben hier erhalten.
+        Kundenkontakte und Rechnungsentwürfe können nach Lexware Office übertragen werden.
+        Finalisieren und Versand bleiben manuell in Lexware. Qonto- und Odoo-Rechnungen bleiben
+        parallel erhalten.
       </p>
       {actionMsg ? <p className="mt-4 text-sm text-muted">{actionMsg}</p> : null}
+
+      <section className="mt-8 rounded-md border border-line bg-surface p-5">
+        <h2 className="font-display text-2xl">Buchungen nach Lexware übertragen</h2>
+        <p className="mt-2 text-sm text-muted">
+          Nach der lokalen Speicherung legt die Queue den Kundenkontakt in Lexware Office an. Eine
+          Entwurfsrechnung entsteht erst bei Status erledigt — ohne automatisches Finalisieren oder
+          Versenden.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          {lexStatus?.configured
+            ? "Umgebung gesetzt · Lexware Office Public API"
+            : "Umgebung fehlt noch — LEXWARE_API_KEY in der Serverumgebung setzen, siehe docs/ops-lexware-env.md."}
+        </p>
+        {lexSync?.canManage ? (
+          <Button
+            type="button"
+            className="mt-4"
+            disabled={lexPending || !lexStatus?.configured}
+            onClick={async () => {
+              setLexPending(true);
+              setActionMsg(null);
+              try {
+                await setLexwareSyncEnabled({ data: { enabled: !lexStatus?.enabled } });
+                await reload();
+              } catch (error) {
+                setActionMsg(error instanceof Error ? error.message : "Umstellung fehlgeschlagen.");
+              } finally {
+                setLexPending(false);
+              }
+            }}
+          >
+            {lexStatus?.enabled
+              ? "Lexware-Übertragung pausieren"
+              : "Lexware-Übertragung einschalten"}
+          </Button>
+        ) : null}
+        <Button type="button" variant="ghost" className="mt-4" onClick={() => void reload()}>
+          Status aktualisieren
+        </Button>
+        {lexSync ? (
+          lexSync.rows.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">Noch keine Lexware-Übertragungen.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-line">
+              {lexSync.rows.map((row) => (
+                <li
+                  key={row.booking_id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+                >
+                  <span>
+                    WG-{row.booking_id} · {lexwareStatusLabel(row.status)}
+                    {row.lex_contact_id ? (
+                      <span className="block text-xs text-muted">
+                        Kontakt {row.lex_contact_id}
+                        {row.lex_invoice_id
+                          ? ` · Entwurf ${row.lex_invoice_id}`
+                          : " · noch keine Rechnung"}
+                      </span>
+                    ) : null}
+                    {row.last_error ? (
+                      <span className="block text-xs text-muted">{row.last_error}</span>
+                    ) : null}
+                  </span>
+                  {lexSync.canManage && ["failed", "review"].includes(row.status) ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={lexPending}
+                      onClick={async () => {
+                        setLexPending(true);
+                        try {
+                          await retryLexwareSync({ data: { bookingId: row.booking_id } });
+                          await reload();
+                        } catch (error) {
+                          setActionMsg(
+                            error instanceof Error ? error.message : "Prüfung fehlgeschlagen.",
+                          );
+                        } finally {
+                          setLexPending(false);
+                        }
+                      }}
+                    >
+                      Erneut prüfen
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            Lexware-Übertragungsstatus konnte nicht geladen werden.
+          </p>
+        )}
+      </section>
+
       <a
         className="mt-6 inline-flex min-h-11 items-center rounded-md border border-line px-4 text-sm underline"
         href={`${ODOO_DEFAULT_BASE_URL}/odoo/accounting`}

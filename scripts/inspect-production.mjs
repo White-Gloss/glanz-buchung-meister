@@ -25,6 +25,7 @@ export const expectedMigrations = [
   "0011_booking_pdf.sql",
   "0012_odoo_sync.sql",
   "0013_roapp_sync.sql",
+  "0014_lexware_sync.sql",
 ];
 const tables = [
   "_migrations",
@@ -49,6 +50,8 @@ const tables = [
   "odoo_sync_queue",
   "odoo_record_links",
   "odoo_sync_runner",
+  "lexware_sync_queue",
+  "lexware_sync_runner",
 ];
 const requiredColumns = [
   ["outbound_queue", "attachments", "jsonb"],
@@ -192,6 +195,7 @@ export function inspectConfiguration(env) {
     "QONTO_LOGIN",
     "QONTO_SECRET_KEY",
     "QONTO_IBAN",
+    "LEXWARE_API_KEY",
   ])
     field(key);
   const storageConfigured =
@@ -480,6 +484,7 @@ export function inspectionSummary(report) {
     `Owner: ${owner.selector ?? "not checked"}; exists=${owner.exists === true}; verified=${owner.emailVerified === true}; may-confirm=${owner.canConfirmByIdentity === true}`,
     `Providers: storage=${config?.storageConfigured === true}; mail=${fields.RESEND_API_KEY?.present && fields.MAIL_FROM?.valid ? "configured" : "incomplete"}; WhatsApp fields=${config?.whatsappConfigurationPresent === true}`,
     `Qonto presence: login=${fields.QONTO_LOGIN?.present === true}; secret=${fields.QONTO_SECRET_KEY?.present === true}; IBAN=${fields.QONTO_IBAN?.present === true}`,
+    `Lexware presence: key=${fields.LEXWARE_API_KEY?.present === true}`,
     `Worker: last successful run=${report.notificationWorker?.lastSuccessfulRun ?? "not recorded"}`,
   ];
   if (report.failure)
