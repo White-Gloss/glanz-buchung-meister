@@ -7,18 +7,15 @@ import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
 import { lexwareCredentialsFromEnv, probeLexware, LEXWARE_DEFAULT_API_BASE } from "@/lib/lexware";
 import { readLexwareCredentials } from "@/lib/lexware-credentials.server";
+import { ensureLexwareSchema } from "@/lib/lexware-sync";
 
 const SHOP = "white-gloss";
-
-async function ensureLexwareKeyColumn(sql: Awaited<ReturnType<typeof getSql>>) {
-  await sql`alter table shop_settings add column if not exists lexware_api_key text`;
-}
 
 export const lexwareStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
-    await ensureLexwareKeyColumn(sql);
+    await ensureLexwareSchema(sql);
     const [setting] = await sql<{
       lexware_sync_enabled: boolean;
     }>`select lexware_sync_enabled from shop_settings where shop_id=${SHOP}`;
@@ -36,6 +33,7 @@ export const lexwareSyncOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
+    await ensureLexwareSchema(sql);
     const rows = await sql<{
       booking_id: number;
       requested_version: number;
@@ -67,7 +65,7 @@ export const saveLexwareApiKey = createServerFn({ method: "POST" })
       apiBase: LEXWARE_DEFAULT_API_BASE,
     });
     if (!probe.ok) return { ok: false, connected: false, error: probe.error };
-    await ensureLexwareKeyColumn(sql);
+    await ensureLexwareSchema(sql);
     await sql`update shop_settings set lexware_api_key=${data.apiKey},updated_at=now() where shop_id=${SHOP}`;
     return { ok: true, connected: true, error: null as string | null };
   });
@@ -78,6 +76,7 @@ export const setLexwareSyncEnabled = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
     const sql = await getSql();
+    await ensureLexwareSchema(sql);
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf die Lexware-Übertragung umstellen.");
     if (data.enabled && !(await readLexwareCredentials(sql)))
@@ -92,6 +91,7 @@ export const retryLexwareSync = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
     const sql = await getSql();
+    await ensureLexwareSchema(sql);
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf eine erneute Lexware-Prüfung starten.");
     await sql`update lexware_sync_queue set status='pending',attempts=0,next_attempt_at=now(),updated_at=now()

@@ -7,6 +7,7 @@ import type { WorkflowBooking } from "./booking-workflow.ts";
 import {
   berlinDateTime,
   buildLexwareInvoiceLines,
+  ensureLexwareSchema,
   queueLexwareBooking,
   runLexwareSync,
   splitCustomerName,
@@ -205,6 +206,7 @@ test("Lexware synchronization creates contact and draft invoice, retries partial
     sql = wrap(pg);
   for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
     await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+  await ensureLexwareSchema(sql);
   await sql`insert into shop_settings(shop_id,lexware_sync_enabled) values('white-gloss',true)
     on conflict(shop_id) do update set lexware_sync_enabled=true`;
 
@@ -344,6 +346,7 @@ test("stored Lexware key is used when the environment is empty", async () => {
     sql = wrap(pg);
   for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
     await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+  await ensureLexwareSchema(sql);
   const previous = process.env.LEXWARE_API_KEY;
   delete process.env.LEXWARE_API_KEY;
   try {

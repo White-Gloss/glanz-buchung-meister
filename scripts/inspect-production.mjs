@@ -25,7 +25,6 @@ export const expectedMigrations = [
   "0011_booking_pdf.sql",
   "0012_odoo_sync.sql",
   "0013_roapp_sync.sql",
-  "0014_lexware_sync.sql",
 ];
 const tables = [
   "_migrations",
@@ -50,8 +49,6 @@ const tables = [
   "odoo_sync_queue",
   "odoo_record_links",
   "odoo_sync_runner",
-  "lexware_sync_queue",
-  "lexware_sync_runner",
 ];
 const requiredColumns = [
   ["outbound_queue", "attachments", "jsonb"],

@@ -20,10 +20,37 @@ const VAT_PERCENT = 19;
 
 export type LexwareCall = LexwareRequest;
 
+/** Live schema without a blocking release-manifest migration (avoids GET / 503). */
+export async function ensureLexwareSchema(sql: Sql) {
+  await sql`alter table shop_settings add column if not exists lexware_sync_enabled boolean not null default false`;
+  await sql`alter table shop_settings add column if not exists lexware_api_key text`;
+  await sql`create table if not exists lexware_sync_queue (
+    booking_id integer primary key references bookings(id),
+    shop_id text not null default 'white-gloss',
+    requested_version integer not null,
+    synced_version integer not null default 0,
+    status text not null default 'pending' check(status in ('pending','synced','failed','review')),
+    attempts integer not null default 0,
+    next_attempt_at timestamptz not null default now(),
+    last_error text,
+    lex_contact_id text,
+    lex_invoice_id text,
+    updated_at timestamptz not null default now()
+  )`;
+  await sql`create index if not exists lexware_sync_due_idx on lexware_sync_queue(status,next_attempt_at)`;
+  await sql`create table if not exists lexware_sync_runner (
+    shop_id text primary key,
+    lease_token text,
+    locked_until timestamptz
+  )`;
+  await sql`insert into lexware_sync_runner(shop_id) values('white-gloss') on conflict do nothing`;
+}
+
 export async function queueLexwareBooking(
   sql: Sql,
   booking: Pick<WorkflowBooking, "id" | "version">,
 ) {
+  await ensureLexwareSchema(sql);
   await sql`insert into lexware_sync_queue(booking_id,shop_id,requested_version)
     values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
     set requested_version=greatest(lexware_sync_queue.requested_version,excluded.requested_version),
@@ -176,6 +203,7 @@ export async function runLexwareSync(
   } = {},
 ) {
   const result = { synced: 0, failed: 0, review: 0 };
+  await ensureLexwareSchema(sql);
   const [settings] = await sql<{
     lexware_sync_enabled: boolean;
   }>`select lexware_sync_enabled from shop_settings where shop_id=${SHOP}`;

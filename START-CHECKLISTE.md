@@ -139,9 +139,8 @@ Die Website spricht **Lexware Office** (Cloud, Public API) an, nicht Lexware Des
 
 1. Ein Lexware-Office-Konto (nicht nur Desktop)
 2. Einen Public-API-Schlüssel unter Add-ons → Public API
-3. Den Schlüssel **nur** in `/etc/white-gloss/environment` als `LEXWARE_API_KEY` eintragen — nicht in diesen Chat, nicht in GitHub, nicht in WhatsApp
-4. Migration `0014_lexware_sync.sql` auf der Live-Datenbank, **bevor** das Release aktiv wird
-5. Im Admin unter **Dokumente** den Schalter „Lexware-Übertragung einschalten“ (nur Inhaber)
+3. Den Schlüssel **im Admin unter Dokumente** einfügen (Feld Lexware-API-Schlüssel) — nicht in diesen Chat, nicht in GitHub, nicht in WhatsApp
+4. Danach „Lexware-Übertragung einschalten“ (nur Inhaber)
 
 Der Schalter startet aus. Ohne Schlüssel passiert nichts. Testrechnung erst als Entwurf prüfen, dann in Lexware selbst freigeben.
 

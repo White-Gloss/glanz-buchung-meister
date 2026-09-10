@@ -34,9 +34,9 @@ Authorization: Bearer. Rate limit: 2 requests/second.
 ## Deploy-Check
 
 1. Env speichern und quoten
-2. Migration `0014_lexware_sync.sql` auf der Live-Datenbank einspielen (`db:migrate`), **bevor** das Release mit der Datei aktiviert wird — sonst liefert GET / 503
-3. systemctl restart white-gloss.service
-4. Im Admin unter Dokumente Lexware-Übertragung einschalten (nur Inhaber)
+2. Schema legt sich beim ersten Speichern/Übertragen selbst an (kein blockierendes `0014` im Release)
+3. systemctl restart white-gloss.service nach dem Release
+4. Im Admin unter Dokumente Schlüssel einfügen, speichern, Übertragung einschalten
 5. Testbuchung anlegen; nach **erledigt** Draft in Lexware Office prüfen
 6. Qonto- und Odoo-Sync unverändert smoke-testen
 

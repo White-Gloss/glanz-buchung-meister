@@ -25,4 +25,4 @@ Kundenbuchungen der Website in Lexware Office (Public API) als Kontakt anlegen u
 
 ## Migration
 
-`0014_lexware_sync.sql` muss auf der Live-Datenbank liegen, bevor das Release mit dieser Datei im Manifest aktiviert wird.
+Das Schema wird beim ersten Speichern/Übertragen mit `CREATE/ALTER … IF NOT EXISTS` angelegt, damit das Release ohne neue Manifest-Migration live gehen kann.
