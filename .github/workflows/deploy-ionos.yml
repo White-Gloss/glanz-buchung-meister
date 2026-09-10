@@ -8,6 +8,7 @@ on:
       - completed
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,8 +18,138 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+
+    env:
+      IONOS_SSH_HOST: ${{ secrets.IONOS_SSH_HOST }}
+      IONOS_SSH_USER: ${{ secrets.IONOS_SSH_USER }}
+      IONOS_SSH_PRIVATE_KEY: ${{ secrets.IONOS_SSH_PRIVATE_KEY }}
+      IONOS_SSH_KNOWN_HOSTS: ${{ secrets.IONOS_SSH_KNOWN_HOSTS }}
+      IONOS_SSH_PORT: ${{ secrets.IONOS_SSH_PORT }}
+
+    steps:
+      - name: Deployment-Konfiguration validieren
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in \
+            IONOS_SSH_HOST \
+            IONOS_SSH_USER \
+            IONOS_SSH_PRIVATE_KEY \
+            IONOS_SSH_KNOWN_HOSTS
+          do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Erforderliche Produktionskonfiguration fehlt: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: SSH mit festem Hostschlüssel einrichten
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          install -m 600 /dev/null "$HOME/.ssh/id_ionos"
+          install -m 600 /dev/null "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$IONOS_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ionos"
+          printf '%s\n' "$IONOS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          port="${IONOS_SSH_PORT:-22}"
+          if [[ ! "$port" =~ ^[0-9]{1,5}$ ]]; then
+            echo "IONOS_SSH_PORT ist ungültig" >&2
+            exit 1
+          fi
+          {
+            echo "Host ionos-production"
+            echo "  HostName $IONOS_SSH_HOST"
+            echo "  User $IONOS_SSH_USER"
+            echo "  Port $port"
+            echo "  IdentityFile $HOME/.ssh/id_ionos"
+            echo "  IdentitiesOnly yes"
+            echo "  BatchMode yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  UserKnownHostsFile $HOME/.ssh/known_hosts"
+          } > "$HOME/.ssh/config"
+          chmod 600 "$HOME/.ssh/config"
+
+      - name: Produktionsstand lesend prüfen
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh ionos-production 'bash -s' <<'EOS'
+          set -Eeuo pipefail
+          echo "inspect_user=$(whoami)"
+          echo "inspect_host=$(hostname)"
+          echo "inspect_time_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          current_link="/srv/white-gloss-current"
+          if current_path="$(readlink -f "$current_link" 2>/dev/null)"; then
+            echo "current_path_ok=yes"
+            echo "current_release=$(basename "$current_path")"
+          else
+            echo "current_path_ok=no"
+            echo "current_release="
+          fi
+          echo "current_link_stat=$(stat -c '%U:%G %a %N' "$current_link" 2>/dev/null || echo unreadable)"
+
+          echo "service_active=$(systemctl is-active white-gloss.service 2>/dev/null || echo unknown)"
+          systemctl show white-gloss.service \
+            -p MainPID,ActiveState,SubState,FragmentPath,WorkingDirectory,User,NRestarts,ActiveEnterTimestamp,ExecMainStartTimestamp,Result \
+            --no-pager 2>/dev/null || echo "service_show=denied"
+
+          main_pid="$(systemctl show white-gloss.service -p MainPID --value 2>/dev/null || true)"
+          if [[ "$main_pid" =~ ^[1-9][0-9]*$ ]]; then
+            echo "main_pid=$main_pid"
+            echo "main_lstart=$(ps -o lstart= -p "$main_pid" 2>/dev/null || echo unknown)"
+            echo "main_etime=$(ps -o etime= -p "$main_pid" 2>/dev/null || echo unknown)"
+            echo "main_cwd=$(readlink -f "/proc/$main_pid/cwd" 2>/dev/null || echo unreadable)"
+            echo "main_exe=$(readlink -f "/proc/$main_pid/exe" 2>/dev/null || echo unreadable)"
+            cmdline="$(tr "\0" " " < "/proc/$main_pid/cmdline" 2>/dev/null || true)"
+            echo "main_cmdline=${cmdline:0:200}"
+          else
+            echo "main_pid=unavailable"
+          fi
+
+          echo "local_http=$(curl --silent --output /dev/null --write-out "%{http_code}" --max-time 5 http://127.0.0.1:3000/ || echo fail)"
+
+          set +e
+          listen_line="$(ss -ltn 2>/dev/null | grep 3000 | head -n 1 || true)"
+          echo "listen_3000=${listen_line:-none}"
+          postgres_tcp="$(ss -tn 2>/dev/null | awk '{print $5}' | awk -F: '{print $NF}' | grep -E '^(5432|6543)$' | wc -l | tr -d ' ' || true)"
+          echo "postgres_like_estab=${postgres_tcp:-0}"
+          postgres_unix="$(ss -lxn 2>/dev/null | grep postgres | wc -l | tr -d ' ' || true)"
+          echo "postgres_unix_sockets=${postgres_unix:-0}"
+          echo "postgres_run_dir=$(ls /var/run/postgresql 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
+
+          echo "envfile_exists=$(test -e /etc/white-gloss/environment && echo yes || echo no)"
+          echo "envfile_readable=$(test -r /etc/white-gloss/environment && echo yes || echo no)"
+
+          for sha in \
+            6719b507ecfd8e11d2896d010ee77af1b5e3732f \
+            38a6894792735e0eedce78e632d36622595762cb \
+            2926846a680dba134ed53bff673bce83979b2070 \
+            bb1b87106ee3919431e2c0203e5f2c74951c3078 \
+            08aed32a090815467560d7c453c79498e420a839
+          do
+            path="/srv/white-gloss-releases/$sha"
+            if [[ -e "$path" ]]; then
+              echo "release_dir $sha exists"
+            else
+              echo "release_dir $sha missing_or_unreadable"
+            fi
+          done
+
+          echo "helper_sha=$(sha256sum /usr/local/sbin/white-gloss-deploy 2>/dev/null | cut -d ' ' -f 1 || echo unreadable)"
+          echo "unit_sha=$(sha256sum /etc/systemd/system/white-gloss.service 2>/dev/null | cut -d ' ' -f 1 || echo unreadable)"
+          echo "sudo_deploy=$(sudo -n /usr/local/sbin/white-gloss-deploy 2>&1 | head -n 1 || true)"
+          EOS
+
   deploy:
     if: >-
+      github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.event == 'push' &&
@@ -58,6 +189,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
 
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -76,7 +208,33 @@ jobs:
             exit 1
           fi
 
+      - name: Nur-Workflow-Änderungen erkennen
+        id: scope
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$RELEASE_ID")
+          if [[ "${#changed[@]}" -eq 0 ]]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Keine Dateiliste für diesen Commit; Deployment wird nicht übersprungen."
+            exit 0
+          fi
+          skip=true
+          for path in "${changed[@]}"; do
+            case "$path" in
+              .github/workflows/*) ;;
+              *) skip=false; break ;;
+            esac
+          done
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "Geänderte Dateien:"
+          printf '%s\n' "${changed[@]}"
+          if [[ "$skip" == "true" ]]; then
+            echo "Nur Workflow-Dateien geändert; Produktionsrelease und Dienst bleiben unverändert."
+          fi
+
       - name: Produktions-Build reproduzieren
+        if: steps.scope.outputs.skip != 'true'
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
@@ -88,6 +246,7 @@ jobs:
           npm run build
 
       - name: Release-Paket erstellen
+        if: steps.scope.outputs.skip != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -96,6 +255,7 @@ jobs:
           sha256sum release.tgz > release.tgz.sha256
 
       - name: SSH mit festem Hostschlüssel einrichten
+        if: steps.scope.outputs.skip != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -123,9 +283,11 @@ jobs:
           chmod 600 "$HOME/.ssh/config"
 
       - name: Release übertragen
+        if: steps.scope.outputs.skip != 'true'
         run: scp release.tgz "ionos-production:${REMOTE_ARCHIVE}"
 
       - name: Übertragung und privilegierten Helfer verifizieren
+        if: steps.scope.outputs.skip != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -160,13 +322,14 @@ jobs:
 
       - name: Release atomar aktivieren
         id: activate
+        if: steps.scope.outputs.skip != 'true'
         shell: bash
         run: |
           set -Eeuo pipefail
-          previous_release="$({
+          previous_release="$(
             ssh ionos-production \
               "sudo -n /usr/local/sbin/white-gloss-deploy activate ${RELEASE_ID} ${REMOTE_ARCHIVE}"
-          })"
+          )"
           if [[ -n "$previous_release" && ! "$previous_release" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Der Server lieferte eine ungültige vorherige Release-ID" >&2
             exit 1
@@ -175,6 +338,7 @@ jobs:
 
       - name: Live-Smoke-Test
         id: smoke
+        if: steps.scope.outputs.skip != 'true'
         continue-on-error: true
         run: node scripts/smoke-production.mjs
         env:
@@ -182,7 +346,7 @@ jobs:
           SMOKE_TIMEOUT_MS: "15000"
 
       - name: Bei fehlgeschlagenem Smoke-Test zurückrollen
-        if: steps.smoke.outcome == 'failure' && steps.activate.outputs.previous_release != ''
+        if: steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'failure' && steps.activate.outputs.previous_release != ''
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -194,7 +358,7 @@ jobs:
             node scripts/smoke-production.mjs
 
       - name: Aktive Release-ID bestätigen
-        if: steps.smoke.outcome == 'success'
+        if: steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'success'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -207,11 +371,11 @@ jobs:
           }
 
       - name: Deployment bei fehlgeschlagenem Smoke-Test abbrechen
-        if: steps.smoke.outcome == 'failure'
+        if: steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'failure'
         run: |
           echo "Der Live-Smoke-Test ist fehlgeschlagen; ein vorhandenes vorheriges Release wurde reaktiviert." >&2
           exit 1
 
       - name: Temporäre Serverdatei entfernen
-        if: always()
+        if: always() && steps.scope.outputs.skip != 'true'
         run: ssh ionos-production "rm -f '${REMOTE_ARCHIVE}'" || true
