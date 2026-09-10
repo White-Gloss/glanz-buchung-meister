@@ -126,14 +126,20 @@ jobs:
 
           echo "envfile_exists=$(test -e /etc/white-gloss/environment && echo yes || echo no)"
           echo "envfile_readable=$(test -r /etc/white-gloss/environment && echo yes || echo no)"
+          echo "etc_dir_stat=$(stat -c '%U:%G %a' /etc/white-gloss 2>/dev/null || echo unreadable)"
+          echo "envfile_stat=$(stat -c '%U:%G %a' /etc/white-gloss/environment 2>/dev/null || echo unreadable)"
           echo "unit_envfiles=$(systemctl show white-gloss.service -p EnvironmentFiles --value 2>/dev/null || echo unavailable)"
+          unit_env_keys="$(systemctl show white-gloss.service -p Environment --value 2>/dev/null | tr ' ' '\n' | awk -F= 'NF{print $1}' | paste -sd, - || true)"
+          echo "unit_env_keys=${unit_env_keys:-none}"
 
           echo "timer_active=$(systemctl is-active white-gloss-reminder.timer 2>/dev/null || echo unknown)"
           echo "timer_enabled=$(systemctl is-enabled white-gloss-reminder.timer 2>/dev/null || echo unknown)"
+          echo "timer_unit=$(test -e /etc/systemd/system/white-gloss-reminder.timer && echo exists || echo missing)"
           systemctl show white-gloss-reminder.timer \
             -p LastTriggerUSec,NextElapseUSec,Triggers,Unit \
             --no-pager 2>/dev/null || echo "timer_show=denied"
           echo "reminder_service=$(systemctl is-active white-gloss-reminder.service 2>/dev/null || echo unknown)"
+          echo "journal_unit_readable=$(journalctl -u white-gloss.service -n 1 --no-pager >/dev/null 2>&1 && echo yes || echo no)"
 
           for sha in \
             3fe08020a4d1f1e6a7abb7548a8999defb75871b \
@@ -152,84 +158,99 @@ jobs:
           done
 
           echo "server_index_readable=$(test -r /srv/white-gloss-current/.output/server/index.mjs && echo yes || echo no)"
-          echo "public_ro_asset=$(curl --silent --max-time 5 http://127.0.0.1:3000/admin/odoo | grep -c 'Buchungen nach RO App' || true)"
+          if test -r /srv/white-gloss-current/.output/server/index.mjs; then
+            echo "server_roapp_symbols=$(grep -c 'roapp_sync' /srv/white-gloss-current/.output/server/index.mjs || true)"
+          fi
+          admin_html="$(curl --silent --max-time 5 http://127.0.0.1:3000/admin/odoo || true)"
+          admin_asset="$(printf '%s' "$admin_html" | tr -d '\000' | grep -oE '/assets/admin\.odoo-[^" ]+\.js' | head -n 1 || true)"
+          echo "admin_odoo_asset=${admin_asset:-none}"
+          if [[ -n "${admin_asset:-}" ]]; then
+            echo "public_ro_asset=$(curl --silent --max-time 5 "http://127.0.0.1:3000${admin_asset}" | tr -d '\000' | grep -c 'Buchungen nach RO App' || true)"
+          else
+            echo "public_ro_asset=0"
+          fi
 
           if [[ "${main_pid:-}" =~ ^[1-9][0-9]*$ ]]; then
             echo "environ_readable=$(test -r "/proc/$main_pid/environ" && echo yes || echo no)"
             echo "fd_dir_readable=$(test -r "/proc/$main_pid/fd" && echo yes || echo no)"
-            python3 - "$main_pid" <<'PY'
-import sys
-from urllib.parse import urlparse
-pid = sys.argv[1]
-path = f"/proc/{pid}/environ"
-wanted = [
-    "DATABASE_URL",
-    "ROAPP_API_KEY",
-    "ROAPP_BRANCH_ID",
-    "ROAPP_ASSIGNEE_ID",
-    "ROAPP_ORDER_TYPE_ID",
-    "ROAPP_ENTITY_MAP",
-    "ROAPP_API_BASE",
-    "REMINDER_CRON_SECRET",
-    "ALLOW_LOCAL_PGLITE",
-    "HOST",
-]
-try:
-    data = open(path, "rb").read().split(b"\0")
-except OSError:
-    print("environ_parse=unreadable")
-    raise SystemExit(0)
-env = {}
-for item in data:
-    if not item or b"=" not in item:
-        continue
-    key, value = item.split(b"=", 1)
-    try:
-        env[key.decode()] = value
-    except UnicodeDecodeError:
-        continue
-print(f"environ_keys={len(env)}")
-for key in wanted:
-    raw = env.get(key, b"")
-    present = "yes" if raw else "no"
-    text = raw.decode("utf-8", "replace").strip() if raw else ""
-    length = len(text)
-    if key == "DATABASE_URL" and text:
-        try:
-            parsed = urlparse(text)
-            host = (parsed.hostname or "").lower()
-            if host in {"localhost", "127.0.0.1", "::1"}:
-                kind = "localhost"
-            elif "supabase.co" in host:
-                kind = "supabase"
-            elif "neon.tech" in host:
-                kind = "neon"
-            elif host.endswith(".internal") or host.endswith(".local"):
-                kind = "private"
-            elif host:
-                kind = "other"
-            else:
-                kind = "empty_host"
-            db = (parsed.path or "/")[1:]
-            db_ok = "yes" if db and all(c.isalnum() or c in "._-" for c in db) else "no"
-            print(
-                f"env_{key.lower()}=present:{present} length:{length} proto:{parsed.scheme} host_kind:{kind} port:{parsed.port or 'default'} db_name_ok:{db_ok}"
-            )
-        except Exception:
-            print(f"env_{key.lower()}=present:{present} length:{length} parse:failed")
-        continue
-    if key in {"ROAPP_BRANCH_ID", "ROAPP_ASSIGNEE_ID", "ROAPP_ORDER_TYPE_ID"} and text:
-        valid = "yes" if text.isdigit() and int(text) > 0 else "no"
-        print(f"env_{key.lower()}=present:{present} length:{length} int_valid:{valid} value:{text if valid == 'yes' else 'invalid'}")
-        continue
-    if key == "ROAPP_ENTITY_MAP":
-        print(f"env_{key.lower()}=present:{present} length:{length} empty:{'yes' if length == 0 else 'no'}")
-        continue
-    if key == "HOST" and text:
-        print(f"env_host=present:{present} length:{length}")
-        continue
-    print(f"env_{key.lower()}=present:{present} length:{length}")
-PY
+            if test -r "/proc/$main_pid/environ"; then
+              echo "environ_keys=$(tr '\0' '\n' < "/proc/$main_pid/environ" | grep -c '=' || true)"
+              probe_env_key() {
+                local key="$1"
+                local val=""
+                val="$(tr '\0' '\n' < "/proc/$main_pid/environ" | awk -F= -v k="$key" '$1==k {print substr($0, index($0,"=")+1); exit}')"
+                local name
+                name="$(printf '%s' "$key" | tr 'A-Z' 'a-z')"
+                if [[ -z "$val" ]]; then
+                  echo "env_${name}=present:no length:0"
+                  return 0
+                fi
+                local length="${#val}"
+                case "$key" in
+                  DATABASE_URL)
+                    local proto rest hostport host port path kind db_ok
+                    proto="${val%%://*}"
+                    rest="${val#*://}"
+                    rest="${rest#*@}"
+                    hostport="${rest%%/*}"
+                    path="${rest#*/}"
+                    path="${path%%\?*}"
+                    if [[ "$hostport" == \[* ]]; then
+                      host="ipv6"
+                      port="unknown"
+                    elif [[ "$hostport" == *:* ]]; then
+                      host="${hostport%%:*}"
+                      port="${hostport##*:}"
+                    else
+                      host="$hostport"
+                      port="default"
+                    fi
+                    host="$(printf '%s' "$host" | tr 'A-Z' 'a-z')"
+                    case "$host" in
+                      localhost|127.0.0.1|::1) kind=localhost ;;
+                      *supabase.co*) kind=supabase ;;
+                      *neon.tech*) kind=neon ;;
+                      *.internal|*.local) kind=private ;;
+                      "") kind=empty_host ;;
+                      *) kind=other ;;
+                    esac
+                    db_ok=no
+                    if [[ -n "$path" && "$path" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                      db_ok=yes
+                    fi
+                    echo "env_database_url=present:yes length:${length} proto:${proto} host_kind:${kind} port:${port} db_name_ok:${db_ok}"
+                    ;;
+                  ROAPP_BRANCH_ID|ROAPP_ASSIGNEE_ID|ROAPP_ORDER_TYPE_ID)
+                    if [[ "$val" =~ ^[1-9][0-9]*$ ]]; then
+                      echo "env_${name}=present:yes length:${length} int_valid:yes value:${val}"
+                    else
+                      echo "env_${name}=present:yes length:${length} int_valid:no value:invalid"
+                    fi
+                    ;;
+                  ROAPP_ENTITY_MAP)
+                    echo "env_roapp_entity_map=present:yes length:${length} empty:$([[ $length -eq 0 ]] && echo yes || echo no)"
+                    ;;
+                  HOST)
+                    echo "env_host=present:yes length:${length}"
+                    ;;
+                  *)
+                    echo "env_${name}=present:yes length:${length}"
+                    ;;
+                esac
+              }
+              probe_env_key DATABASE_URL
+              probe_env_key ROAPP_API_KEY
+              probe_env_key ROAPP_BRANCH_ID
+              probe_env_key ROAPP_ASSIGNEE_ID
+              probe_env_key ROAPP_ORDER_TYPE_ID
+              probe_env_key ROAPP_ENTITY_MAP
+              probe_env_key ROAPP_API_BASE
+              probe_env_key REMINDER_CRON_SECRET
+              probe_env_key ALLOW_LOCAL_PGLITE
+              probe_env_key HOST
+            else
+              echo "environ_parse=unreadable"
+            fi
           fi
 
           echo "helper_sha=$(sha256sum /usr/local/sbin/white-gloss-deploy 2>/dev/null | cut -d ' ' -f 1 || echo unreadable)"
@@ -280,7 +301,7 @@ PY
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 2
+          fetch-depth: 5
 
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -304,7 +325,11 @@ PY
         shell: bash
         run: |
           set -Eeuo pipefail
-          mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$RELEASE_ID")
+          if git rev-parse --verify --quiet "${RELEASE_ID}^2" >/dev/null; then
+            mapfile -t changed < <(git diff --name-only "${RELEASE_ID}^1" "${RELEASE_ID}")
+          else
+            mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$RELEASE_ID")
+          fi
           if [[ "${#changed[@]}" -eq 0 ]]; then
             echo "skip=false" >> "$GITHUB_OUTPUT"
             echo "Keine Dateiliste für diesen Commit; Deployment wird nicht übersprungen."
