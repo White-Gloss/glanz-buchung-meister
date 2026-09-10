@@ -79,7 +79,9 @@ export function AdminBookingEditor({
   }
 
   const prefix = row ? `booking-${row.id}` : "booking-new";
-  const quote = quoteTotal(values);
+  const knownPackage = packages.some((pack) => pack.id === values.packageId);
+  const knownClass = vehicleClasses.some((item) => item.id === values.classId);
+  const quote = knownPackage && knownClass ? quoteTotal(values) : null;
   return (
     <form
       className="mt-5 space-y-4 border-t border-line pt-5"
@@ -166,6 +168,11 @@ export function AdminBookingEditor({
             value={values.packageId}
             onChange={(e) => update("packageId", e.target.value as PackageId)}
           >
+            {!knownPackage ? (
+              <option value={values.packageId} disabled>
+                Bitte aktuelle Leistung auswählen
+              </option>
+            ) : null}
             {packages.map((pack) => (
               <option key={pack.id} value={pack.id}>
                 {pack.name}
@@ -180,6 +187,11 @@ export function AdminBookingEditor({
             value={values.classId}
             onChange={(e) => update("classId", e.target.value as VehicleClass["id"])}
           >
+            {!knownClass ? (
+              <option value={values.classId} disabled>
+                Bitte Fahrzeugklasse auswählen
+              </option>
+            ) : null}
             {vehicleClasses.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
@@ -250,12 +262,19 @@ export function AdminBookingEditor({
           </label>
         ) : null}
       </fieldset>
-      <p className="text-sm">
-        Preis laut Leistungsauswahl: <strong>{eur(quote.total)}</strong>
-        {quote.pickupOnRequest ? " · Abholung auf Anfrage, noch nicht enthalten" : ""}
-      </p>
+      {quote ? (
+        <p className="text-sm">
+          Preis laut Leistungsauswahl: <strong>{eur(quote.total)}</strong>
+          {quote.pickupOnRequest ? " · Abholung auf Anfrage, noch nicht enthalten" : ""}
+        </p>
+      ) : (
+        <p role="status" className="text-sm text-muted">
+          Diese ältere Buchung enthält eine unbekannte Leistung oder Fahrzeugklasse. Bitte wähle die
+          passenden aktuellen Angaben aus.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={pending} aria-busy={pending}>
+        <Button type="submit" disabled={pending || !quote} aria-busy={pending}>
           {pending ? "Wird gespeichert …" : row ? "Änderungen speichern" : "Buchung anlegen"}
         </Button>
         <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
