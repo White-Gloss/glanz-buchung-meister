@@ -170,7 +170,12 @@ test("buildLexwareInvoiceLines uses 19% net EUR and splits pickup", () => {
 
 test("createInvoiceDraft never sends finalize", async () => {
   const seen: string[] = [];
-  const request: LexwareCall = async (method, path, body, query) => {
+  const request: LexwareCall = async <T>(
+    method: string,
+    path: string,
+    body?: Record<string, unknown> | null,
+    query?: Record<string, string | string[] | undefined>,
+  ): Promise<T> => {
     seen.push(`${method} ${path}${query ? JSON.stringify(query) : ""}`);
     assert.equal(path, "/invoices");
     assert.equal(query, undefined);
@@ -179,7 +184,7 @@ test("createInvoiceDraft never sends finalize", async () => {
       (body as { shippingConditions: { shippingType: string } }).shippingConditions.shippingType,
       "service",
     );
-    return { id: INVOICE_ID };
+    return { id: INVOICE_ID } as T;
   };
   const id = await createInvoiceDraft(request, {
     voucherDate: "2026-09-10T00:00:00.000+02:00",
