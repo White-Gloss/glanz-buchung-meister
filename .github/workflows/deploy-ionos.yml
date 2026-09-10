@@ -126,8 +126,17 @@ jobs:
 
           echo "envfile_exists=$(test -e /etc/white-gloss/environment && echo yes || echo no)"
           echo "envfile_readable=$(test -r /etc/white-gloss/environment && echo yes || echo no)"
+          echo "unit_envfiles=$(systemctl show white-gloss.service -p EnvironmentFiles --value 2>/dev/null || echo unavailable)"
+
+          echo "timer_active=$(systemctl is-active white-gloss-reminder.timer 2>/dev/null || echo unknown)"
+          echo "timer_enabled=$(systemctl is-enabled white-gloss-reminder.timer 2>/dev/null || echo unknown)"
+          systemctl show white-gloss-reminder.timer \
+            -p LastTriggerUSec,NextElapseUSec,Triggers,Unit \
+            --no-pager 2>/dev/null || echo "timer_show=denied"
+          echo "reminder_service=$(systemctl is-active white-gloss-reminder.service 2>/dev/null || echo unknown)"
 
           for sha in \
+            3fe08020a4d1f1e6a7abb7548a8999defb75871b \
             6719b507ecfd8e11d2896d010ee77af1b5e3732f \
             38a6894792735e0eedce78e632d36622595762cb \
             2926846a680dba134ed53bff673bce83979b2070 \
@@ -142,9 +151,91 @@ jobs:
             fi
           done
 
+          echo "server_index_readable=$(test -r /srv/white-gloss-current/.output/server/index.mjs && echo yes || echo no)"
+          echo "public_ro_asset=$(curl --silent --max-time 5 http://127.0.0.1:3000/admin/odoo | grep -c 'Buchungen nach RO App' || true)"
+
+          if [[ "${main_pid:-}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "environ_readable=$(test -r "/proc/$main_pid/environ" && echo yes || echo no)"
+            echo "fd_dir_readable=$(test -r "/proc/$main_pid/fd" && echo yes || echo no)"
+            python3 - "$main_pid" <<'PY'
+import sys
+from urllib.parse import urlparse
+pid = sys.argv[1]
+path = f"/proc/{pid}/environ"
+wanted = [
+    "DATABASE_URL",
+    "ROAPP_API_KEY",
+    "ROAPP_BRANCH_ID",
+    "ROAPP_ASSIGNEE_ID",
+    "ROAPP_ORDER_TYPE_ID",
+    "ROAPP_ENTITY_MAP",
+    "ROAPP_API_BASE",
+    "REMINDER_CRON_SECRET",
+    "ALLOW_LOCAL_PGLITE",
+    "HOST",
+]
+try:
+    data = open(path, "rb").read().split(b"\0")
+except OSError:
+    print("environ_parse=unreadable")
+    raise SystemExit(0)
+env = {}
+for item in data:
+    if not item or b"=" not in item:
+        continue
+    key, value = item.split(b"=", 1)
+    try:
+        env[key.decode()] = value
+    except UnicodeDecodeError:
+        continue
+print(f"environ_keys={len(env)}")
+for key in wanted:
+    raw = env.get(key, b"")
+    present = "yes" if raw else "no"
+    text = raw.decode("utf-8", "replace").strip() if raw else ""
+    length = len(text)
+    if key == "DATABASE_URL" and text:
+        try:
+            parsed = urlparse(text)
+            host = (parsed.hostname or "").lower()
+            if host in {"localhost", "127.0.0.1", "::1"}:
+                kind = "localhost"
+            elif "supabase.co" in host:
+                kind = "supabase"
+            elif "neon.tech" in host:
+                kind = "neon"
+            elif host.endswith(".internal") or host.endswith(".local"):
+                kind = "private"
+            elif host:
+                kind = "other"
+            else:
+                kind = "empty_host"
+            db = (parsed.path or "/")[1:]
+            db_ok = "yes" if db and all(c.isalnum() or c in "._-" for c in db) else "no"
+            print(
+                f"env_{key.lower()}=present:{present} length:{length} proto:{parsed.scheme} host_kind:{kind} port:{parsed.port or 'default'} db_name_ok:{db_ok}"
+            )
+        except Exception:
+            print(f"env_{key.lower()}=present:{present} length:{length} parse:failed")
+        continue
+    if key in {"ROAPP_BRANCH_ID", "ROAPP_ASSIGNEE_ID", "ROAPP_ORDER_TYPE_ID"} and text:
+        valid = "yes" if text.isdigit() and int(text) > 0 else "no"
+        print(f"env_{key.lower()}=present:{present} length:{length} int_valid:{valid} value:{text if valid == 'yes' else 'invalid'}")
+        continue
+    if key == "ROAPP_ENTITY_MAP":
+        print(f"env_{key.lower()}=present:{present} length:{length} empty:{'yes' if length == 0 else 'no'}")
+        continue
+    if key == "HOST" and text:
+        print(f"env_host=present:{present} length:{length}")
+        continue
+    print(f"env_{key.lower()}=present:{present} length:{length}")
+PY
+          fi
+
           echo "helper_sha=$(sha256sum /usr/local/sbin/white-gloss-deploy 2>/dev/null | cut -d ' ' -f 1 || echo unreadable)"
           echo "unit_sha=$(sha256sum /etc/systemd/system/white-gloss.service 2>/dev/null | cut -d ' ' -f 1 || echo unreadable)"
           echo "sudo_deploy=$(sudo -n /usr/local/sbin/white-gloss-deploy 2>&1 | head -n 1 || true)"
+          echo "sudo_list=$(sudo -n -l 2>&1 | tr '\n' ';' | head -c 400)"
           EOS
 
   deploy:
