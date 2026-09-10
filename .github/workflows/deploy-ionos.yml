@@ -113,12 +113,16 @@ jobs:
             echo "main_pid=unavailable"
           fi
 
-          echo "local_http=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" --max-time 5 http://127.0.0.1:3000/ || echo fail)"
+          echo "local_http=$(curl --silent --output /dev/null --write-out "%{http_code}" --max-time 5 http://127.0.0.1:3000/ || echo fail)"
 
+          set +e
           listen_line="$(ss -ltn 2>/dev/null | grep 3000 | head -n 1 || true)"
           echo "listen_3000=${listen_line:-none}"
-          postgres_peers="$(ss -tn 2>/dev/null | awk '{print $1,$5}' | awk '$1=="ESTAB" {print $2}' | awk -F: '{print $NF}' | grep -E '^(5432|6543)$' | wc -l | tr -d ' ')"
-          echo "postgres_like_estab=${postgres_peers:-0}"
+          postgres_tcp="$(ss -tn 2>/dev/null | awk '{print $5}' | awk -F: '{print $NF}' | grep -E '^(5432|6543)$' | wc -l | tr -d ' ' || true)"
+          echo "postgres_like_estab=${postgres_tcp:-0}"
+          postgres_unix="$(ss -lxn 2>/dev/null | grep postgres | wc -l | tr -d ' ' || true)"
+          echo "postgres_unix_sockets=${postgres_unix:-0}"
+          echo "postgres_run_dir=$(ls /var/run/postgresql 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
 
           echo "envfile_exists=$(test -e /etc/white-gloss/environment && echo yes || echo no)"
           echo "envfile_readable=$(test -r /etc/white-gloss/environment && echo yes || echo no)"
