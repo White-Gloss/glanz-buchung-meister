@@ -17,6 +17,7 @@ import {
 } from "./booking-notifications.ts";
 import type { UploadCapability } from "./booking-upload-capability.ts";
 import { queueOdooBooking } from "./odoo-sync.ts";
+import { queueRoappBooking } from "./roapp-sync.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -95,6 +96,7 @@ async function event(
   `;
   await enqueue(tx, row, name, saved.id, actor);
   await queueOdooBooking(tx, row);
+  await queueRoappBooking(tx, row);
 }
 
 async function findBooking(tx: Sql, id: number) {

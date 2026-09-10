@@ -8,6 +8,12 @@ import {
   setOdooSyncEnabled,
   retryOdooSync,
 } from "@/lib/odoo.functions";
+import {
+  roappStatus,
+  roappSyncOverview,
+  setRoappSyncEnabled,
+  retryRoappSync,
+} from "@/lib/roapp.functions";
 import { ODOO_DEFAULT_BASE_URL } from "@/lib/odoo-site";
 import { eur } from "@/lib/utils";
 import { site } from "@/data/site";
@@ -21,23 +27,36 @@ export const Route = createFileRoute("/admin/odoo")({
 
 type OdooStatus = Awaited<ReturnType<typeof odooStatus>>;
 
+function statusLabel(status: string) {
+  if (status === "synced") return "Übertragen";
+  if (status === "pending") return "Wartet auf Übertragung";
+  if (status === "review") return "Prüfung erforderlich";
+  return "Übertragung fehlgeschlagen";
+}
+
 function AdminOdoo() {
   const [data, setData] = useState<Awaited<ReturnType<typeof accountingSummary>> | null>(null);
   const [status, setStatus] = useState<OdooStatus | null>(null);
   const [sync, setSync] = useState<Awaited<ReturnType<typeof odooSyncOverview>> | null>(null);
+  const [roStatus, setRoStatus] = useState<Awaited<ReturnType<typeof roappStatus>> | null>(null);
+  const [roSync, setRoSync] = useState<Awaited<ReturnType<typeof roappSyncOverview>> | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
 
   async function refresh() {
-    const [summary, next, transfers] = await Promise.all([
+    const [summary, next, transfers, roNext, roTransfers] = await Promise.all([
       accountingSummary().catch(() => null),
       odooStatus().catch(() => null),
       odooSyncOverview().catch(() => null),
+      roappStatus().catch(() => null),
+      roappSyncOverview().catch(() => null),
     ]);
     setData(summary);
     setStatus(next);
     setSync(transfers);
+    setRoStatus(roNext);
+    setRoSync(roTransfers);
   }
 
   useEffect(() => {
@@ -105,6 +124,14 @@ function AdminOdoo() {
         <h2 className="font-display text-2xl">Systemgrenzen</h2>
         <ul className="mt-3 grid gap-2 text-sm text-muted md:grid-cols-2">
           <li>Odoo: {connected ? "verbunden" : "noch nicht verbunden"}</li>
+          <li>
+            RO App:{" "}
+            {roStatus?.configured
+              ? roStatus.enabled
+                ? "Übertragung aktiv"
+                : "konfiguriert, pausiert"
+              : "Umgebung noch nicht gesetzt"}
+          </li>
           <li>Qonto: Bankkonto und bestehende Rechnungen</li>
           <li>Website: Buchungsdaten aus der produktiven PostgreSQL-Datenbank</li>
           <li>
@@ -170,14 +197,7 @@ function AdminOdoo() {
                 className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
               >
                 <span>
-                  WG-{row.booking_id} ·{" "}
-                  {row.status === "synced"
-                    ? "Übertragen"
-                    : row.status === "pending"
-                      ? "Wartet auf Übertragung"
-                      : row.status === "review"
-                        ? "Prüfung erforderlich"
-                        : "Übertragung fehlgeschlagen"}
+                  WG-{row.booking_id} · {statusLabel(row.status)}
                   {row.last_error ? (
                     <span className="block text-xs text-muted">
                       {row.last_error === "odoo_create_needs_review"
@@ -225,6 +245,99 @@ function AdminOdoo() {
           </ul>
         ) : (
           <p className="mt-4 text-sm text-muted">Übertragungsstatus konnte nicht geladen werden.</p>
+        )}
+      </section>
+
+      <section className="mt-8 rounded-md border border-line bg-surface p-5">
+        <h2 className="font-display text-2xl">Buchungen nach RO App übertragen</h2>
+        <p className="mt-2 text-sm text-muted">
+          Nach der lokalen Speicherung legt die Queue Kontakt, Termin und Auftrag in RO App an.
+          Odoo bleibt parallel aktiv. Schlüssel und IDs kommen aus der Serverumgebung (
+          ROAPP_API_KEY, Branch, Assignee, Order-Type, Entity-Map).
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          {roStatus?.configured
+            ? `Umgebung gesetzt · Branch ${roStatus.branchId} · Assignee ${roStatus.assigneeId} · ${roStatus.entityCount} Entity-Zuordnungen`
+            : "Umgebung fehlt noch — siehe docs/ops-roapp-env.md."}
+        </p>
+        {roSync?.canManage ? (
+          <Button
+            type="button"
+            className="mt-4"
+            disabled={pending || !roStatus?.configured}
+            onClick={async () => {
+              setPending(true);
+              setMessage("");
+              try {
+                await setRoappSyncEnabled({ data: { enabled: !roStatus?.enabled } });
+                await refresh();
+              } catch (error) {
+                setMessage(error instanceof Error ? error.message : "Umstellung fehlgeschlagen.");
+              } finally {
+                setPending(false);
+              }
+            }}
+          >
+            {roStatus?.enabled ? "RO-App-Übertragung pausieren" : "RO-App-Übertragung einschalten"}
+          </Button>
+        ) : null}
+        <Button type="button" variant="ghost" className="mt-4" onClick={() => void refresh()}>
+          Status aktualisieren
+        </Button>
+        {roSync ? (
+          <ul className="mt-4 divide-y divide-line">
+            {roSync.rows.map((row) => (
+              <li
+                key={row.booking_id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+              >
+                <span>
+                  WG-{row.booking_id} · {statusLabel(row.status)}
+                  {row.ro_order_id ? (
+                    <span className="block text-xs text-muted">
+                      RO Kontakt {row.ro_contact_id ?? "—"} · Termin {row.ro_booking_id ?? "—"} ·
+                      Auftrag {row.ro_order_id}
+                    </span>
+                  ) : null}
+                  {row.last_error ? (
+                    <span className="block text-xs text-muted">
+                      {row.last_error === "roapp_missing_slot"
+                        ? "Kein Wunschtermin/-slot: bitte Termin ergänzen und erneut prüfen."
+                        : row.last_error}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="flex gap-3">
+                  {roSync.canManage && ["failed", "review"].includes(row.status) ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={pending}
+                      onClick={async () => {
+                        setPending(true);
+                        try {
+                          await retryRoappSync({ data: { bookingId: row.booking_id } });
+                          await refresh();
+                        } catch (error) {
+                          setMessage(
+                            error instanceof Error ? error.message : "Prüfung fehlgeschlagen.",
+                          );
+                        } finally {
+                          setPending(false);
+                        }
+                      }}
+                    >
+                      Erneut prüfen
+                    </Button>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            RO-App-Übertragungsstatus konnte nicht geladen werden.
+          </p>
         )}
       </section>
 
