@@ -49,3 +49,11 @@ export const publicBookingSchema = z.object({
 });
 
 export type PublicBookingInput = z.infer<typeof publicBookingSchema>;
+
+/** A signed-in operator records the request; no customer checkbox is impersonated. */
+export const manualBookingSchema = publicBookingSchema
+  .omit({ privacy: true, website: true })
+  .extend({
+    notifyCustomer: z.boolean().default(false),
+  });
+export type ManualBookingInput = z.infer<typeof manualBookingSchema>;

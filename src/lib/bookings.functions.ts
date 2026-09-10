@@ -8,6 +8,7 @@ import { safeExec } from "@/lib/ops";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
 import {
   saveBookingRequest,
+  saveManualBookingRequest,
   confirmBookingManually,
   changeBookingStatus,
   editBooking,
@@ -16,7 +17,7 @@ import { canConfirmBookings } from "@/lib/booking-owner";
 import { isCalendarDate } from "@/lib/calendar-date";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
-import { publicBookingSchema } from "@/lib/booking-schema";
+import { publicBookingSchema, manualBookingSchema } from "@/lib/booking-schema";
 import {
   MAX_BASE64_UPLOAD_CHARS,
   decodeUploadBase64,
@@ -108,6 +109,16 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       pickupOnRequest: result.quote.pickupOnRequest,
       confirmed: false,
     };
+  });
+
+export const createManualBooking = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => manualBookingSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const result = await saveManualBookingRequest(sql, data, context.userId);
+    kickBookingDelivery(sql);
+    return { id: result.booking.id, confirmed: false as const };
   });
 
 export const createPublicPhotoInquiry = createServerFn({ method: "POST" })

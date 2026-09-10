@@ -5,11 +5,13 @@ import {
   packages,
   timeSlots,
   vehicleClasses,
+  quoteTotal,
   type PackageId,
   type VehicleClass,
 } from "@/data/site";
 import type { BookingRow } from "@/lib/bookings.functions";
 import { Button, Field, inputClass } from "./ui";
+import { eur } from "@/lib/utils";
 
 export type BookingEditValues = {
   id: number;
@@ -24,6 +26,7 @@ export type BookingEditValues = {
   extraIds: string[];
   citySlug: string;
   note: string;
+  notifyCustomer?: boolean;
 };
 
 function selectedExtras(raw: string): string[] {
@@ -41,25 +44,26 @@ export function AdminBookingEditor({
   onSave,
   onCancel,
 }: {
-  row: BookingRow;
+  row?: BookingRow;
   pending: boolean;
   onSave: (values: BookingEditValues) => Promise<void>;
   onCancel: () => void;
 }) {
   const nameInput = useRef<HTMLInputElement>(null);
   const [values, setValues] = useState<BookingEditValues>(() => ({
-    id: row.id,
-    expectedVersion: row.version,
-    name: row.customer_name,
-    phone: row.phone,
-    email: row.email ?? "",
-    date: row.preferred_date?.slice(0, 10) ?? "",
-    slot: row.preferred_slot ?? "",
-    packageId: row.package_id as PackageId,
-    classId: row.class_id as VehicleClass["id"],
-    extraIds: selectedExtras(row.extra_ids),
-    citySlug: row.city_slug ?? "",
-    note: row.note ?? "",
+    id: row?.id ?? 0,
+    expectedVersion: row?.version ?? 1,
+    name: row?.customer_name ?? "",
+    phone: row?.phone ?? "",
+    email: row?.email ?? "",
+    date: row?.preferred_date?.slice(0, 10) ?? "",
+    slot: row?.preferred_slot ?? "",
+    packageId: (row?.package_id as PackageId) ?? "basis",
+    classId: (row?.class_id as VehicleClass["id"]) ?? "kompakt",
+    extraIds: selectedExtras(row?.extra_ids ?? "[]"),
+    citySlug: row?.city_slug ?? "",
+    note: row?.note ?? "",
+    notifyCustomer: false,
   }));
   useEffect(() => {
     nameInput.current?.focus();
@@ -74,7 +78,8 @@ export function AdminBookingEditor({
     if (!pending) await onSave(values);
   }
 
-  const prefix = `booking-${row.id}`;
+  const prefix = row ? `booking-${row.id}` : "booking-new";
+  const quote = quoteTotal(values);
   return (
     <form
       className="mt-5 space-y-4 border-t border-line pt-5"
@@ -82,12 +87,18 @@ export function AdminBookingEditor({
       aria-labelledby={`${prefix}-edit`}
     >
       <h3 id={`${prefix}-edit`} className="font-display text-2xl">
-        Anfrage bearbeiten
+        {row ? "Anfrage bearbeiten" : "Buchung manuell hinzufügen"}
       </h3>
-      {row.status === "bestaetigt" ? (
+      {row?.status === "bestaetigt" ? (
         <p className="text-sm text-muted">
           Änderungen an Datum, Abgabezeit oder Leistung setzen den Termin zurück auf „Wartet auf
           Bestätigung“. Die erneute Freigabe erfolgt anschließend separat.
+        </p>
+      ) : null}
+      {!row ? (
+        <p className="text-sm text-muted">
+          Für Telefon- oder Vor-Ort-Anfragen. Der Termin wartet nach dem Speichern auf deine
+          Bestätigung und wird nach Odoo übertragen.
         </p>
       ) : null}
       <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
@@ -214,7 +225,10 @@ export function AdminBookingEditor({
           </div>
         </fieldset>
         <div className="sm:col-span-2">
-          <Field id={`${prefix}-note`} label="Notiz">
+          <Field
+            id={`${prefix}-note`}
+            label="Fahrzeug, Kennzeichen und weitere Hinweise (optional)"
+          >
             <textarea
               id={`${prefix}-note`}
               className={`${inputClass} min-h-24 py-2`}
@@ -224,10 +238,25 @@ export function AdminBookingEditor({
             />
           </Field>
         </div>
+        {!row ? (
+          <label className="inline-flex min-h-11 items-center gap-3 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={values.notifyCustomer}
+              disabled={!values.email.trim()}
+              onChange={(e) => update("notifyCustomer", e.target.checked)}
+            />
+            Buchungsanfrage mit PDF per E-Mail an den Kunden senden
+          </label>
+        ) : null}
       </fieldset>
+      <p className="text-sm">
+        Preis laut Leistungsauswahl: <strong>{eur(quote.total)}</strong>
+        {quote.pickupOnRequest ? " · Abholung auf Anfrage, noch nicht enthalten" : ""}
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={pending} aria-busy={pending}>
-          {pending ? "Wird gespeichert …" : "Änderungen speichern"}
+          {pending ? "Wird gespeichert …" : row ? "Änderungen speichern" : "Buchung anlegen"}
         </Button>
         <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
           Abbrechen

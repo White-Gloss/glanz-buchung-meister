@@ -488,6 +488,50 @@ assert.equal(state.tables.bookings.find((row) => row.id === id3).status, "abgele
 results.push(
   "Signed WhatsApp receipts are idempotent; missing signature fails and incoming chat text never confirms bookings",
 );
+const manual = {
+  ...input,
+  idempotencyKey: randomUUID(),
+  name: "QA Telefonbuchung",
+  notifyCustomer: false,
+};
+assert.ok((await rpc("createManualBooking", manual)).body.error, "Anonymous creation must fail");
+assert.ok(
+  (await rpc("createManualBooking", manual, outsider.cookie)).body.error,
+  "Non-operators cannot create manual bookings",
+);
+const added = await rpc("createManualBooking", manual, operator.cookie);
+assert.ok(added.body.result?.id, JSON.stringify(added.body));
+assert.equal(added.body.result.confirmed, false);
+const manualId = added.body.result.id;
+assert.equal((await rpc("createManualBooking", manual, operator.cookie)).body.result?.id, manualId);
+state = await evidence();
+assert.equal(state.tables.bookings.filter((row) => row.id === manualId).length, 1);
+assert.equal(state.tables.bookings.find((row) => row.id === manualId).status, "neu");
+assert.equal(
+  state.tables.booking_events.find((row) => row.booking_id === manualId).actor,
+  operator.userId,
+);
+assert.equal(
+  state.tables.outbound_queue.filter(
+    (row) => row.booking_id === manualId && row.to_addr === manual.email,
+  ).length,
+  0,
+);
+const withEmail = await rpc(
+  "createManualBooking",
+  { ...manual, idempotencyKey: randomUUID(), notifyCustomer: true },
+  owner.cookie,
+);
+assert.ok(withEmail.body.result?.id);
+state = await evidence();
+const manualMail = state.tables.outbound_queue.find(
+  (row) => row.booking_id === withEmail.body.result.id && row.to_addr === manual.email,
+);
+assert.equal(manualMail.attachments.length, 1);
+assert.equal(manualMail.event_type, "booking.created");
+results.push(
+  "Manual bookings require an operator, record the real actor, remain unconfirmed and send the customer PDF only on opt-in; retries do not duplicate bookings",
+);
 assert.equal(state.blocked.length, 0);
 await writeFile(
   ".qa-output/flow-results.json",

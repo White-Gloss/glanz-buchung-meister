@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { dashboardStats } from "@/lib/admin.functions";
 import {
   confirmBooking,
+  createManualBooking,
   getBookingPermissions,
   listBookings,
   updateBookingDetails,
@@ -12,7 +13,7 @@ import {
 import { bookingStatuses, cities, extras, packages, type BookingStatus } from "@/data/site";
 import { eur } from "@/lib/utils";
 import { Button, inputClass } from "@/components/ui";
-import { AdminBookingEditor } from "@/components/admin-booking-editor";
+import { AdminBookingEditor, type BookingEditValues } from "@/components/admin-booking-editor";
 import { AdminBookingHistory } from "@/components/admin-booking-history";
 
 export const Route = createFileRoute("/admin/")({
@@ -42,6 +43,10 @@ function AdminBookings() {
   const [canConfirm, setCanConfirm] = useState(false);
   const [actionError, setActionError] = useState<{ id: number; message: string } | null>(null);
   const [notice, setNotice] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const createRequestId = useRef<string | null>(null);
+  const returnToCreateButton = useRef(false);
   const mutating = useRef(false);
   const returnFocus = useRef<number | null>(null);
   const selectedHash = useRouterState({ select: (state) => state.location.hash });
@@ -63,6 +68,13 @@ function AdminBookings() {
       returnFocus.current = null;
     }
   }, [editing]);
+
+  useEffect(() => {
+    if (!creating && pending === null && returnToCreateButton.current) {
+      document.getElementById("add-booking")?.focus();
+      returnToCreateButton.current = false;
+    }
+  }, [creating, pending]);
 
   async function reload() {
     const [bookings, dash, permissions] = await Promise.all([
@@ -106,6 +118,54 @@ function AdminBookings() {
     setEditing(null);
   }
 
+  async function addBooking(values: BookingEditValues) {
+    if (mutating.current) return;
+    mutating.current = true;
+    setPending(0);
+    setCreateError("");
+    try {
+      createRequestId.current ??= crypto.randomUUID();
+      const result = await createManualBooking({
+        data: {
+          idempotencyKey: createRequestId.current,
+          name: values.name,
+          phone: values.phone,
+          email: values.email,
+          date: values.date,
+          slot: values.slot,
+          packageId: values.packageId,
+          classId: values.classId,
+          extraIds: values.extraIds,
+          citySlug: values.citySlug,
+          note: values.note,
+          kind: "booking",
+          notifyCustomer: !!values.notifyCustomer && !!values.email.trim(),
+        },
+      });
+      // The write succeeded; a failed list refresh must never invite another creation.
+      createRequestId.current = null;
+      returnToCreateButton.current = true;
+      setCreating(false);
+      setFilter("alle");
+      setQuery("");
+      setNotice(`WG-${result.id}: Manuell angelegt. Wartet auf Bestätigung.`);
+      try {
+        await reload();
+      } catch {
+        setError(
+          "Buchung gespeichert. Die Liste konnte nicht neu geladen werden. Bitte die Seite aktualisieren.",
+        );
+      }
+    } catch (error) {
+      setCreateError(
+        error instanceof Error ? error.message : "Buchung konnte nicht gespeichert werden.",
+      );
+    } finally {
+      mutating.current = false;
+      setPending(null);
+    }
+  }
+
   useEffect(() => {
     void reload().catch(() => setError("Buchungen konnten nicht geladen werden."));
   }, []);
@@ -134,6 +194,18 @@ function AdminBookings() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            id="add-booking"
+            type="button"
+            disabled={pending !== null || creating}
+            onClick={() => {
+              setEditing(null);
+              setCreateError("");
+              setCreating(true);
+            }}
+          >
+            Buchung hinzufügen
+          </Button>
           {(["alle", ...bookingStatuses.map((s) => s.id)] as const).map((id) => (
             <button
               key={id}
@@ -149,6 +221,28 @@ function AdminBookings() {
           ))}
         </div>
       </div>
+
+      {creating ? (
+        <section
+          className="mt-6 rounded-md border border-line bg-surface p-5"
+          aria-label="Neue manuelle Buchung"
+        >
+          {createError ? (
+            <p role="alert" className="text-sm text-red-600">
+              {createError}
+            </p>
+          ) : null}
+          <AdminBookingEditor
+            pending={pending === 0}
+            onSave={addBooking}
+            onCancel={() => {
+              returnToCreateButton.current = true;
+              setCreating(false);
+              createRequestId.current = null;
+            }}
+          />
+        </section>
+      ) : null}
 
       {stats ? (
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
