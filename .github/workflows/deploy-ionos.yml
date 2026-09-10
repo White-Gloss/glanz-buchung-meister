@@ -138,8 +138,36 @@ jobs:
           systemctl show white-gloss-reminder.timer \
             -p LastTriggerUSec,NextElapseUSec,Triggers,Unit \
             --no-pager 2>/dev/null || echo "timer_show=denied"
-          echo "reminder_service=$(systemctl is-active white-gloss-reminder.service 2>/dev/null || echo unknown)"
+          reminder_active="$(systemctl is-active white-gloss-reminder.service 2>/dev/null || true)"
+          echo "reminder_service=${reminder_active:-unknown}"
+          systemctl show white-gloss-reminder.service \
+            -p Result,ExecMainStatus,ExecMainCode,ExecMainStartTimestamp \
+            --no-pager 2>/dev/null || echo "reminder_show=denied"
           echo "journal_unit_readable=$(journalctl -u white-gloss.service -n 1 --no-pager >/dev/null 2>&1 && echo yes || echo no)"
+          echo "release_journal=$(journalctl -u white-gloss.service --since '2026-09-10 06:50:00 UTC' --no-pager -o cat 2>/dev/null | grep -E '\\[release\\]' | tail -n 20 | tr '\\n' '|' | head -c 800)"
+          echo "reminder_journal=$(journalctl -u white-gloss-reminder.service -n 8 --no-pager -o cat 2>/dev/null | tr '\\n' '|' | head -c 800)"
+          postgres_peers="$(ss -tn 2>/dev/null | awk '$5 ~ /:(5432|6543)$/ {print $5}' | sort -u || true)"
+          peer_kinds=""
+          peer_count=0
+          if [[ -n "$postgres_peers" ]]; then
+            while IFS= read -r peer; do
+              [[ -z "$peer" ]] && continue
+              peer_count=$((peer_count + 1))
+              host="${peer%:*}"
+              port="${peer##*:}"
+              host_lc="$(printf '%s' "$host" | tr 'A-Z' 'a-z')"
+              case "$host_lc" in
+                127.0.0.1|::1|localhost) kind=localhost ;;
+                *supabase.co*) kind=supabase ;;
+                *neon.tech*) kind=neon ;;
+                *) kind=other ;;
+              esac
+              hash="$(printf '%s' "$host_lc" | sha256sum | cut -c1-12)"
+              peer_kinds="${peer_kinds}${peer_kinds:+,}kind:${kind}:port:${port}:hash:${hash}"
+            done <<< "$postgres_peers"
+          fi
+          echo "postgres_peer_count=${peer_count}"
+          echo "postgres_peer_kinds=${peer_kinds:-none}"
 
           for sha in \
             3fe08020a4d1f1e6a7abb7548a8999defb75871b \
@@ -325,10 +353,11 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          git fetch --no-tags --deepen=20 origin main >/dev/null 2>&1 || true
           if git rev-parse --verify --quiet "${RELEASE_ID}^2" >/dev/null; then
             mapfile -t changed < <(git diff --name-only "${RELEASE_ID}^1" "${RELEASE_ID}")
           else
-            mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$RELEASE_ID")
+            mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r -m --first-parent "$RELEASE_ID")
           fi
           if [[ "${#changed[@]}" -eq 0 ]]; then
             echo "skip=false" >> "$GITHUB_OUTPUT"
