@@ -50,7 +50,11 @@ function mockApi() {
   let rateLimitOnce = false;
   let failNext: string | null = null;
 
-  const request: RoappCall = async (method, path, body) => {
+  const respond = async (
+    method: string,
+    path: string,
+    body?: Record<string, unknown> | null,
+  ): Promise<unknown> => {
     calls.push(`${method} ${path}`);
     if (rateLimitOnce) {
       rateLimitOnce = false;
@@ -102,6 +106,13 @@ function mockApi() {
     }
     throw new Error(`Unexpected ${method} ${path}`);
   };
+
+  // Keep the generic response assertion at the simulated transport boundary.
+  const request: RoappCall = async <T>(
+    method: string,
+    path: string,
+    body?: Record<string, unknown> | null,
+  ): Promise<T> => (await respond(method, path, body)) as T;
 
   return {
     request,

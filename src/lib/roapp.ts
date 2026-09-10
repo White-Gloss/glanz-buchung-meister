@@ -159,7 +159,12 @@ export function createRoappClient(
   const sleepImpl = options.sleepImpl || sleep;
   let lastAt = 0;
 
-  return async <T>(method, path, body = null, query) => {
+  return async <T>(
+    method: string,
+    path: string,
+    body: Record<string, unknown> | null = null,
+    query?: Record<string, string | string[] | undefined>,
+  ): Promise<T> => {
     const url = `${creds.apiBase}${path.startsWith("/") ? path : `/${path}`}${buildQuery(query)}`;
     let attempt = 0;
     while (true) {
