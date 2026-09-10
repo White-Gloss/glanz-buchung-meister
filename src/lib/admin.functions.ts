@@ -11,6 +11,7 @@ import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notifi
 import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
 import { mailConfigured } from "@/lib/resend-mail";
 import { sendQontoInvoiceEmailForBooking } from "@/lib/qonto-invoice";
+import { lexwareCredentialsFromEnv } from "@/lib/lexware";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { isEmailAddress } from "@/lib/utils";
@@ -316,6 +317,11 @@ export const accountingSummary = createServerFn({ method: "GET" })
       from documents
       where shop_id = ${SHOP} and kind = 'rechnung' and status = 'bezahlt'
     `;
+    await sql`alter table shop_settings add column if not exists lexware_api_key text`;
+    const [lex] = await sql<{ stored: boolean }>`
+      select coalesce(length(trim(lexware_api_key)) > 0, false) as stored
+      from shop_settings where shop_id = ${SHOP}
+    `;
     return {
       confirmedCount: booked?.n ?? 0,
       confirmedCents: booked?.sum ?? 0,
@@ -325,7 +331,7 @@ export const accountingSummary = createServerFn({ method: "GET" })
       paidInvoiceCents: paid?.sum ?? 0,
       vatRate: 0.19,
       erpConnected: false,
-      lexwareConnected: false,
+      lexwareConnected: Boolean(lexwareCredentialsFromEnv()) || Boolean(lex?.stored),
     };
   });
 

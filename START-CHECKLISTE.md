@@ -7,15 +7,18 @@ Diese Liste ist für die Zeit **nach Gewerbeanmeldung** und **vor dem Firmenstar
 ## 1. Gewerbe, Steuern und Rechnung fertig machen
 
 ### Was du brauchst
+
 - Steuernummer vom Finanzamt
 - Entscheiden: Kleinunternehmerregelung nach § 19 UStG oder Umsatzsteuer ausweisen
 - Geschäftskonto: Kontoinhaber, IBAN und BIC
 - Falls vorhanden: USt-IdNr.
 
 ### Warum das wichtig ist
+
 Ohne diese Daten darf keine vollständige Rechnung erzeugt oder verschickt werden. Deshalb ist die Rechnungsfunktion aktuell absichtlich gesperrt. So wird nicht versehentlich eine fehlerhafte Rechnung an Kunden gesendet.
 
 ### Was du danach machst
+
 1. Schicke mir **keine Passwörter**, aber diese normalen Firmendaten: Steuernummer, ob Kleinunternehmer ja/nein, Kontoinhaber, IBAN, BIC und USt-IdNr. falls vorhanden.
 2. Ich trage die Daten ein.
 3. Ich aktiviere den Rechnungsexport erst dann.
@@ -30,9 +33,11 @@ Ohne diese Daten darf keine vollständige Rechnung erzeugt oder verschickt werde
 Die Website verwendet Resend für E-Mails. Der Code für Eingangsbestätigung und Auftragsbestätigung ist vorhanden.
 
 ### In einfachen Worten
+
 Resend ist der Briefträger. Die Website schreibt die E-Mail, Resend liefert sie aus. Damit der Brief nicht im Spam landet, muss Resend wissen, dass `whitegloss.de` wirklich dir gehört.
 
 ### Prüfe in Resend
+
 1. Melde dich bei [resend.com](https://resend.com) an.
 2. Öffne **Domains**.
 3. Prüfe, ob `whitegloss.de` den Status **Verified** hat.
@@ -40,6 +45,7 @@ Resend ist der Briefträger. Die Website schreibt die E-Mail, Resend liefert sie
 5. Lege eine Absenderadresse fest, zum Beispiel `buchung@whitegloss.de`.
 
 ### Prüfe in hPanel
+
 In **hPanel → Hermes Agent → Dashboard → Environment** müssen diese Werte vorhanden sein:
 
 ```text
@@ -53,7 +59,9 @@ MAIL_TO_OWNER=deine-eigene-empfangsadresse@example.de
 - `MAIL_TO_OWNER` ist die Adresse, an die du jede neue Anfrage zusätzlich bekommst.
 
 ### Test vor dem Start
+
 Mache eine echte Testanfrage mit einer Test-E-Mail-Adresse. Prüfe danach:
+
 - Kommt die Kundenmail an?
 - Kommt deine interne Benachrichtigung an?
 - Liegt etwas im Spam?
@@ -70,6 +78,7 @@ Für **neue Kunden** rechnet die Website jetzt 10 % des angezeigten Gesamtpreise
 Wichtig: Der Website-Preis ist ein **voraussichtlicher Preis**, weil Verschmutzung, Kratzer, Gerüche und Materialien erst nach Fotos oder Besichtigung fair eingeschätzt werden können. Erst wenn du die Anfrage annimmst, wird daraus der verbindliche Preis bzw. das verbindliche Angebot.
 
 Wenn ein Kunde bei der Anfrage ungenaue Angaben gemacht hat:
+
 1. Prüfe Bilder und Beschreibung.
 2. Ruf den Kunden an oder schreibe ihm.
 3. Nenne den korrekten Preis.
@@ -83,6 +92,7 @@ Wenn ein Kunde bei der Anfrage ungenaue Angaben gemacht hat:
 Für die Feedback-Mail 14 Tage nach dem Termin brauche ich deinen direkten Google-Bewertungslink.
 
 So findest du ihn:
+
 1. Öffne dein Google Business Profile.
 2. Klicke auf **Um Rezensionen bitten**.
 3. Kopiere den erzeugten Link.
@@ -95,13 +105,16 @@ Dann kann die Feedback-Mail freundlich nach der Zufriedenheit fragen und den Bew
 ## 5. Erinnerungen und Feedback-Automatisierung aktivieren
 
 Geplanter Ablauf:
+
 - **3 Tage vor dem bestätigten Termin:** Erinnerungs-E-Mail.
 - **14 Tage nach abgeschlossenem Termin:** Feedback-E-Mail mit Google-Bewertungslink.
 
 ### Wichtig
+
 In Hermes wurde kein eigener Cronjob gefunden. Wenn bei dir schon ein Cronjob existiert, läuft er also wahrscheinlich im Hosting oder in Supabase.
 
 Bitte prüfe in deiner Deployment-Plattform:
+
 1. Öffne die Website bzw. das Hosting.
 2. Suche nach **Cron Jobs** oder **Geplante Aufgaben**.
 3. Mache einen Screenshot mit dem Jobnamen und dem Zeitplan — keine Geheimnisse oder Tokens sichtbar lassen.
@@ -111,17 +124,25 @@ Dann prüfe ich, ob er wirklich täglich läuft und ob er vor Doppelversand sch�
 
 ---
 
-## 6. Lexware Desktop vorbereiten
+## 6. Lexware Office anbinden
 
-Du nutzt Lexware Desktop. Die technische Anbindung muss deshalb separat geprüft werden, weil sich Lexware Desktop je nach Produktversion anders verhält als Lexware Office.
+Die Website spricht **Lexware Office** (Cloud, Public API) an, nicht Lexware Desktop. Desktop hat keine REST-API.
 
-Bitte sammle:
-- den exakten Produktnamen und die Version (zum Beispiel im Menü **Hilfe → Info**),
-- welche Daten du übertragen willst: nur Rechnungen, auch Kunden, Zahlungen oder Artikel,
-- ob dein vorhandenes „APZ-Token“ zu einer API, einem Zusatzmodul oder einem anderen Programm gehört,
-- einen Screenshot der Schnittstellen-Einstellungen ohne Token.
+### Was die Anbindung tut
 
-Danach erstelle ich eine genaue Einrichtungsschrittfolge passend zu deiner Version. Bis dahin wird keine Rechnung automatisch an Lexware geschickt — so entstehen keine doppelt gebuchten oder fehlerhaften Belege.
+- Kundenkontakt aus jeder gespeicherten Buchung (Lookup per E-Mail, sonst neu)
+- Rechnungs**entwurf** erst wenn die Buchung **erledigt** ist
+- Kein automatisches Finalisieren, kein Versand — das bleibt in Lexware
+- Qonto und Odoo bleiben parallel an
+
+### Was du brauchst
+
+1. Ein Lexware-Office-Konto (nicht nur Desktop)
+2. Einen Public-API-Schlüssel unter Add-ons → Public API
+3. Den Schlüssel **im Admin unter Dokumente** einfügen (Feld Lexware-API-Schlüssel) — nicht in diesen Chat, nicht in GitHub, nicht in WhatsApp
+4. Danach „Lexware-Übertragung einschalten“ (nur Inhaber)
+
+Der Schalter startet aus. Ohne Schlüssel passiert nichts. Testrechnung erst als Entwurf prüfen, dann in Lexware selbst freigeben.
 
 ---
 
@@ -130,6 +151,7 @@ Danach erstelle ich eine genaue Einrichtungsschrittfolge passend zu deiner Versi
 Die Website sagt aktuell „Mo–Fr 09:00–17:00 Uhr“, bietet im Anfrageformular aber mehrere bevorzugte Zeitfenster an. Das ist eine Anfrage, keine automatische feste Terminvergabe.
 
 Bitte entscheide vor dem Start:
+
 - Arbeitest du Samstag? Ja oder nein?
 - Welche Tage sind immer geschlossen?
 - Soll **Premium Glanz** oder nur **High-End Keramik** einen ganzen Tag blockieren?
@@ -142,6 +164,7 @@ Danach passe ich Kalender und Blockierungslogik exakt an deinen echten Ablauf an
 ## 8. Rechtstexte final prüfen lassen
 
 Die Seiten `/agb` und `/widerruf` sind erstellt und berücksichtigen:
+
 - unverbindliche Anfrage statt sofortigem Vertrag,
 - Preisprüfung nach Fahrzeugzustand,
 - Terminabstimmung drei bis vier Tage vorher,

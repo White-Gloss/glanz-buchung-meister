@@ -101,8 +101,10 @@ test("terminal summary stays compact, reports Qonto presence and never prints cr
     ...env,
     QONTO_LOGIN: "private-qonto-login",
     QONTO_SECRET_KEY: "private-qonto-secret",
+    LEXWARE_API_KEY: "private-lexware-key",
   });
   assert.equal(configuration.fields.QONTO_LOGIN.present, true);
+  assert.equal(configuration.fields.LEXWARE_API_KEY.present, true);
   const summary = inspectionSummary({
     completed: true,
     transactionReadOnly: true,
@@ -111,6 +113,7 @@ test("terminal summary stays compact, reports Qonto presence and never prints cr
   });
   assert.ok(summary.split("\n").length <= 25);
   assert.match(summary, /Qonto presence: login=true; secret=true/);
+  assert.match(summary, /Lexware presence: key=true/);
   assert.doesNotMatch(summary, /private-|490000123456/);
   const incomplete = inspectionSummary({
     completed: false,

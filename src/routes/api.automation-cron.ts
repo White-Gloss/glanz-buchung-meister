@@ -18,13 +18,15 @@ export const Route = createFileRoute("/api/automation-cron")({
           const remindersChecked = await scheduleDueBookingReminders(sql);
           const { runOdooSync } = await import("@/lib/odoo-sync");
           const { runRoappSync } = await import("@/lib/roapp-sync");
-          const [delivery, odoo, roapp] = await Promise.all([
+          const { runLexwareSync } = await import("@/lib/lexware-sync");
+          const [delivery, odoo, roapp, lexware] = await Promise.all([
             runNotificationWorker(sql),
             runOdooSync(sql),
             runRoappSync(sql),
+            runLexwareSync(sql),
           ]);
           return Response.json(
-            { ok: true, remindersChecked, ...delivery, odoo, roapp },
+            { ok: true, remindersChecked, ...delivery, odoo, roapp, lexware },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {
