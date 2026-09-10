@@ -92,6 +92,7 @@ export async function queueBookingEvent(
   event: BookingEvent,
   eventId: number,
   _actor: string,
+  options: { notifyCustomer?: boolean } = {},
 ) {
   const version = booking.version ?? 1;
   const [storedEvent] = await sql<{
@@ -158,7 +159,11 @@ export async function queueBookingEvent(
       attachments: target.channel === "email" ? attachments : undefined,
     });
   }
-  if (isEmailAddress(booking.email) && !["booking.completed", "booking.no_show"].includes(event)) {
+  if (
+    options.notifyCustomer !== false &&
+    isEmailAddress(booking.email) &&
+    !["booking.completed", "booking.no_show"].includes(event)
+  ) {
     const when =
       `${booking.preferred_date?.slice(0, 10) || "noch offen"} ${booking.preferred_slot || ""}`.trim();
     const message =

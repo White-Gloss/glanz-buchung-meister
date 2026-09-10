@@ -6,6 +6,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import {
   saveBookingRequest,
+  saveManualBookingRequest,
   confirmBookingManually,
   changeBookingStatus,
   editBooking,
@@ -64,6 +65,47 @@ test("owner confirmation excludes general operators, unverified email and previe
     { id: "dev-user", email: env.OWNER_EMAIL, emailVerified: true },
   ])
     assert.equal(isBookingOwner(u, env), false);
+});
+
+test("manual requests keep audit, Odoo queue and separate confirmation; customer email is opt-in and retries are safe", async () => {
+  const { pg, sql } = await database();
+  try {
+    const { privacy: _privacy, ...details } = input();
+    const data = { ...details, notifyCustomer: false };
+    const first = await saveManualBookingRequest(sql, data, "owner");
+    const retry = await saveManualBookingRequest(sql, data, "owner");
+    assert.equal(first.booking.id, retry.booking.id);
+    assert.equal(first.booking.status, "neu");
+    assert.equal(first.booking.confirmed_at, null);
+    assert.equal(
+      (await sql`select actor from booking_events where booking_id=${first.booking.id}`)[0].actor,
+      "owner",
+    );
+    assert.equal(
+      (await sql`select * from odoo_sync_queue where booking_id=${first.booking.id}`).length,
+      1,
+    );
+    assert.equal((await sql`select * from outbound_queue where to_addr=${data.email}`).length, 0);
+    await assert.rejects(
+      () => saveManualBookingRequest(sql, { ...data, notifyCustomer: true }, "owner"),
+      /Anfragekennung/,
+    );
+    const second = await saveManualBookingRequest(
+      sql,
+      { ...data, idempotencyKey: randomUUID(), notifyCustomer: true },
+      "operator",
+    );
+    const mail = await sql<{
+      attachments: unknown[];
+    }>`select attachments from outbound_queue where booking_id=${second.booking.id} and to_addr=${data.email}`;
+    assert.equal(mail.length, 1);
+    assert.equal(mail[0].attachments.length, 1);
+    // A public request cannot replay a private manual request with the same UUID.
+    const publicRequest = await create(sql, { ...details, privacy: true });
+    assert.notEqual(publicRequest.id, first.booking.id);
+  } finally {
+    await pg.close();
+  }
 });
 
 test("booking workflow commits requests, audit and durable notifications atomically", async () => {

@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "./db.ts";
-import { publicBookingSchema, type PublicBookingInput } from "./booking-schema.ts";
+import {
+  publicBookingSchema,
+  manualBookingSchema,
+  type PublicBookingInput,
+  type ManualBookingInput,
+} from "./booking-schema.ts";
+import { createRequestUploadCapability } from "./booking-upload-capability.ts";
 import { cities, extras, quoteTotal, timeSlots } from "../data/site.ts";
 import { berlinCalendarDate, berlinMinutesSinceMidnight } from "./ops.ts";
 import { requireBookingOwner } from "./booking-owner.ts";
@@ -125,9 +131,39 @@ export async function saveBookingRequest(
 ) {
   const data = publicBookingSchema.parse(raw);
   if (data.website?.trim()) throw new Error("Anfrage abgelehnt.");
+  return persistBookingRequest(sql, data, capability, enqueue);
+}
+
+/** actor comes only from the authenticated operator middleware. */
+export async function saveManualBookingRequest(sql: Sql, raw: ManualBookingInput, actor: string) {
+  if (!actor.trim()) throw new Error("Kein Betriebszugang.");
+  const { notifyCustomer, ...data } = manualBookingSchema.parse(raw);
+  const requestKey = `manual:${actor}:${data.idempotencyKey}`;
+  return persistBookingRequest(
+    sql,
+    data,
+    createRequestUploadCapability(requestKey),
+    (tx, booking, event, eventId, eventActor) =>
+      queueBookingEvent(tx, booking, event, eventId, eventActor, { notifyCustomer }),
+    { actor, requestKey, notifyCustomer },
+  );
+}
+
+async function persistBookingRequest(
+  sql: Sql,
+  data: Omit<PublicBookingInput, "privacy"> & { privacy?: true },
+  capability: UploadCapability,
+  enqueue: Enqueue,
+  manual?: { actor: string; requestKey: string; notifyCustomer: boolean },
+) {
   assertPricing(data);
-  const key = hash(data.idempotencyKey);
-  const content = { ...data, idempotencyKey: undefined, website: undefined };
+  const key = hash(manual?.requestKey ?? data.idempotencyKey);
+  const content = {
+    ...data,
+    idempotencyKey: undefined,
+    website: undefined,
+    ...(manual ? { notifyCustomer: manual.notifyCustomer } : {}),
+  };
   const fingerprint = hash(JSON.stringify(content));
   const quote = quoteTotal(data);
   try {
@@ -158,7 +194,7 @@ export async function saveBookingRequest(
         on conflict(shop_id,phone) do update set name=excluded.name,email=coalesce(excluded.email,customers.email)`;
       await tx`insert into inbox_messages(shop_id,channel,sender,subject,body,booking_id)
         values(${SHOP},'form',${data.name},${`Neue Anfrage WG-${booking.id}`},${`${data.name} · ${data.phone}\n${data.packageId}\nWunschtermin: ${data.date || "offen"} ${data.slot || ""}\nStatus: Wartet auf Bestätigung\n${note}`},${booking.id})`;
-      await event(tx, booking, null, "booking.created", "customer", enqueue);
+      await event(tx, booking, null, "booking.created", manual?.actor ?? "customer", enqueue);
       return { booking, replayed: false, quote };
     });
   } catch (error) {
