@@ -43,7 +43,14 @@ export function normalizeLexwareApiBase(raw: string | null | undefined): string 
   } catch {
     throw new LexwareError("lexware_invalid_api_base", { review: true });
   }
-  if (url.protocol !== "https:" || url.username || url.password)
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "api.lexware.io" ||
+    url.port ||
+    url.pathname.replace(/\/+$/, "") !== "/v1" ||
+    url.username ||
+    url.password
+  )
     throw new LexwareError("lexware_invalid_api_base", { review: true });
   if (url.search || url.hash) throw new LexwareError("lexware_invalid_api_base", { review: true });
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
@@ -144,7 +151,7 @@ export function createLexwareClient(
     body: Record<string, unknown> | null = null,
     query?: Record<string, string | string[] | undefined>,
   ): Promise<T> => {
-    const url = `${creds.apiBase}${path.startsWith("/") ? path : `/${path}`}${buildQuery(query)}`;
+    const url = `${normalizeLexwareApiBase(creds.apiBase)}${path.startsWith("/") ? path : `/${path}`}${buildQuery(query)}`;
     let attempt = 0;
     while (true) {
       const wait = minIntervalMs - (now() - lastAt);
@@ -154,6 +161,8 @@ export function createLexwareClient(
       try {
         response = await fetchImpl(url, {
           method,
+          signal: AbortSignal.timeout(15_000),
+          redirect: "error",
           headers: {
             Authorization: `Bearer ${creds.apiKey}`,
             Accept: "application/json",
@@ -162,7 +171,10 @@ export function createLexwareClient(
           body: body ? JSON.stringify(body) : undefined,
         });
       } catch (cause) {
-        throw new LexwareError("lexware_unreachable", { retryable: true, cause });
+        throw new LexwareError(
+          method === "GET" ? "lexware_unreachable" : "lexware_write_uncertain",
+          { retryable: method === "GET", review: method !== "GET", cause },
+        );
       }
       const text = await response.text();
       let payload: unknown = null;
@@ -190,7 +202,8 @@ export function createLexwareClient(
       if (!response.ok)
         throw new LexwareError("lexware_request_failed", {
           status: response.status,
-          retryable: response.status >= 500,
+          retryable: response.status >= 500 && method === "GET",
+          review: method !== "GET",
         });
       return payload as T;
     }
@@ -204,16 +217,26 @@ export async function findContactByEmail(
   const value = (email || "").trim();
   if (value.length < 3) return null;
   const payload = await request<unknown>("GET", "/contacts", null, {
-    email: value,
+    email: value.replace(/[\\%_]/g, "\\$&"),
     customer: "true",
   });
   const list = extractLexwareContacts(payload);
+  const matches: string[] = [];
   for (const row of list) {
     if (row.archived === true) continue;
+    const addresses =
+      row.emailAddresses && typeof row.emailAddresses === "object"
+        ? Object.values(row.emailAddresses)
+            .flat()
+            .filter((v): v is string => typeof v === "string")
+        : [];
+    if (!addresses.some((address) => address.trim().toLowerCase() === value.toLowerCase()))
+      continue;
     const id = extractLexwareId(row);
-    if (id) return id;
+    if (id) matches.push(id);
   }
-  return null;
+  if (matches.length > 1) throw new LexwareError("lexware_contact_ambiguous", { review: true });
+  return matches[0] ?? null;
 }
 
 export async function createContact(
@@ -252,7 +275,8 @@ export type LexwareInvoiceLine = {
   unitName: string;
   unitPrice: {
     currency: "EUR";
-    netAmount: number;
+    netAmount?: number;
+    grossAmount?: number;
     taxRatePercentage: number;
   };
 };
@@ -268,26 +292,38 @@ export async function createInvoiceDraft(
     title?: string;
     introduction?: string;
     remark: string;
+    finalize?: boolean;
+    billingAddress?: { street: string; zip: string; city: string; countryCode: string };
   },
 ): Promise<string> {
-  const payload = await request<unknown>("POST", "/invoices", {
-    voucherDate: input.voucherDate,
-    contactId: input.contactId,
-    address: {
-      name: input.addressName,
-      countryCode: "DE",
+  const payload = await request<unknown>(
+    "POST",
+    "/invoices",
+    {
+      voucherDate: input.voucherDate,
+      address: {
+        contactId: input.contactId,
+        name: input.addressName,
+        countryCode: "DE",
+        ...input.billingAddress,
+      },
+      lineItems: input.lineItems,
+      totalPrice: { currency: "EUR" },
+      taxConditions: {
+        taxType: input.lineItems.every((line) => line.unitPrice.grossAmount !== undefined)
+          ? "gross"
+          : "net",
+      },
+      shippingConditions: {
+        shippingDate: input.shippingDate,
+        shippingType: "service",
+      },
+      title: input.title || "Rechnung",
+      introduction: input.introduction,
+      remark: input.remark,
     },
-    lineItems: input.lineItems,
-    totalPrice: { currency: "EUR" },
-    taxConditions: { taxType: "net" },
-    shippingConditions: {
-      shippingDate: input.shippingDate,
-      shippingType: "service",
-    },
-    title: input.title || "Rechnung",
-    introduction: input.introduction,
-    remark: input.remark,
-  });
+    input.finalize ? { finalize: "true" } : undefined,
+  );
   const id = extractLexwareId(payload);
   if (!id) throw new LexwareError("lexware_create_needs_review", { review: true });
   return id;

@@ -70,7 +70,9 @@ function mockApi() {
     if (method === "GET" && path === "/contacts") {
       const email = typeof query?.email === "string" ? query.email : "";
       return {
-        content: contacts.filter((c) => !email || c.email === email),
+        content: contacts
+          .filter((c) => !email || c.email === email)
+          .map((c) => ({ ...c, emailAddresses: { business: [c.email] } })),
       };
     }
     if (method === "POST" && path === "/contacts") {
@@ -89,7 +91,7 @@ function mockApi() {
       const tax = body?.taxConditions as { taxType?: string } | undefined;
       invoices.push({
         id: INVOICE_ID,
-        contactId: body?.contactId as string,
+        contactId: (body?.address as { contactId: string }).contactId,
         remark: body?.remark as string | undefined,
         shippingType: shipping?.shippingType,
         taxType: tax?.taxType,
@@ -136,7 +138,7 @@ test("berlinDateTime keeps calendar dates", () => {
   assert.match(berlinDateTime(null), /^\d{4}-\d{2}-\d{2}T00:00:00.000\+02:00$/);
 });
 
-test("buildLexwareInvoiceLines uses 19% net EUR and splits pickup", () => {
+test("buildLexwareInvoiceLines preserves exact 19% gross EUR and splits pickup", () => {
   const lines = buildLexwareInvoiceLines({
     id: 40,
     status: "erledigt",
@@ -162,9 +164,9 @@ test("buildLexwareInvoiceLines uses 19% net EUR and splits pickup", () => {
   assert.equal(lines.length, 2);
   assert.equal(lines[0].unitPrice.currency, "EUR");
   assert.equal(lines[0].unitPrice.taxRatePercentage, 19);
-  assert.equal(lines[0].unitPrice.netAmount, 100);
+  assert.equal(lines[0].unitPrice.grossAmount, 119);
   assert.equal(lines[1].name.includes("Abholung"), true);
-  assert.equal(lines[1].unitPrice.netAmount, 20);
+  assert.equal(lines[1].unitPrice.grossAmount, 23.8);
   assert.match(lines[0].name, /Politur|premium|Felgen/i);
 });
 
@@ -281,7 +283,7 @@ test("Lexware synchronization creates contact and draft invoice, retries partial
       );
       assert.equal(api.invoices.length, 1);
       assert.equal(api.invoices[0].shippingType, "service");
-      assert.equal(api.invoices[0].taxType, "net");
+      assert.equal(api.invoices[0].taxType, "gross");
       assert.match(api.invoices[0].remark || "", /WG-\d+/);
       assert.ok(!api.calls.some((c) => /finalize/i.test(c)));
       const [queue] = await sql<{
@@ -292,31 +294,24 @@ test("Lexware synchronization creates contact and draft invoice, retries partial
       assert.equal(queue.lex_invoice_id, INVOICE_ID);
     });
 
-    await t.test("resumes after invoice failure without duplicating the contact", async () => {
+    await t.test("an uncertain write survives later events and never auto-retries", async () => {
       const api = mockApi();
       const row = await fixture({ status: "erledigt", email: "retry@example.invalid" });
       api.failNext("POST /invoices");
       assert.equal(
-        (await runLexwareSync(sql, { request: api.request, creds, bookingId: row.id, limit: 1 }))
-          .failed,
+        (await runLexwareSync(sql, { request: api.request, creds, bookingId: row.id })).review,
         1,
       );
       const [mid] = await sql<{
-        lex_contact_id: string | null;
-        lex_invoice_id: string | null;
         status: string;
-      }>`select lex_contact_id,lex_invoice_id,status from lexware_sync_queue where booking_id=${row.id}`;
-      assert.equal(mid.status, "pending");
-      assert.ok(mid.lex_contact_id);
-      assert.equal(mid.lex_invoice_id, null);
-      await sql`update lexware_sync_queue set next_attempt_at=now() where booking_id=${row.id}`;
-      assert.equal(
-        (await runLexwareSync(sql, { request: api.request, creds, bookingId: row.id, limit: 1 }))
-          .synced,
-        1,
-      );
+        write_pending: string;
+      }>`select status,write_pending from lexware_sync_queue where booking_id=${row.id}`;
+      assert.equal(mid.status, "review");
+      assert.equal(mid.write_pending, "invoice");
+      await queueLexwareBooking(sql, { ...row, version: row.version + 1 });
+      await runLexwareSync(sql, { request: api.request, creds, bookingId: row.id });
+      assert.equal(api.calls.filter((c) => c === "POST /invoices").length, 1);
       assert.equal(api.contacts.length, 1);
-      assert.equal(api.invoices.length, 1);
     });
 
     await t.test("does not create a second invoice on later events", async () => {

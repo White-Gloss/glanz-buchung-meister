@@ -14,6 +14,7 @@ import { bookingStatuses, cities, extras, packages, type BookingStatus } from "@
 import { eur } from "@/lib/utils";
 import { Button, inputClass } from "@/components/ui";
 import { AdminBookingEditor, type BookingEditValues } from "@/components/admin-booking-editor";
+import { AdminBookingPhotos } from "@/components/admin-booking-photos";
 import { AdminBookingHistory } from "@/components/admin-booking-history";
 
 export const Route = createFileRoute("/admin/")({
@@ -370,6 +371,10 @@ function AdminBookings() {
                     : ""}
                   {extra ? ` · ${extra}` : ""}
                 </p>
+                <AdminBookingPhotos bookingId={row.id} />
+                <Link to="/admin/unterlagen" className="mt-2 inline-block text-sm underline">
+                  Rechnungen in Lexware verwalten
+                </Link>
                 {row.note ? (
                   <p className="mt-2 whitespace-pre-wrap break-words text-sm text-fg">{row.note}</p>
                 ) : null}

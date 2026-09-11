@@ -102,8 +102,12 @@ test("manual requests keep audit, Odoo queue and separate confirmation; customer
     const mail = await sql<{
       attachments: unknown[];
     }>`select attachments from outbound_queue where booking_id=${second.booking.id} and to_addr=${data.email}`;
-    assert.equal(mail.length, 1);
-    assert.equal(mail[0].attachments.length, 1);
+    assert.equal(mail.length, 1, "Explicit opt-in creates one Resend customer notification");
+    assert.deepEqual(
+      mail[0].attachments,
+      [],
+      "Do not generate a competing local accounting document",
+    );
     // A public request cannot replay a private manual request with the same UUID.
     const publicRequest = await create(sql, { ...details, privacy: true });
     assert.notEqual(publicRequest.id, first.booking.id);

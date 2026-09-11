@@ -15,6 +15,11 @@ export const Route = createFileRoute("/api/automation-cron")({
         try {
           const { getSql } = await import("@/lib/db");
           const sql = await getSql();
+          const { cleanupFailedBookingPhotos } = await import("@/lib/booking-photo-storage");
+          const photoCleanup = await cleanupFailedBookingPhotos(sql).then(
+            () => "ok",
+            () => "failed",
+          );
           const remindersChecked = await scheduleDueBookingReminders(sql);
           const { runOdooSync } = await import("@/lib/odoo-sync");
           const { runRoappSync } = await import("@/lib/roapp-sync");
@@ -25,8 +30,21 @@ export const Route = createFileRoute("/api/automation-cron")({
             runRoappSync(sql),
             runLexwareSync(sql),
           ]);
+          const { scheduleLexwareMail } = await import("@/lib/lexware-mail");
+          const lexwareMail = await scheduleLexwareMail(sql).catch(() => ({
+            error: "lexware_mail_check_failed",
+          }));
           return Response.json(
-            { ok: true, remindersChecked, ...delivery, odoo, roapp, lexware },
+            {
+              ok: true,
+              remindersChecked,
+              ...delivery,
+              odoo,
+              roapp,
+              lexware,
+              photoCleanup,
+              lexwareMail,
+            },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {

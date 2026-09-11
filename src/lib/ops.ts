@@ -57,14 +57,7 @@ export function resolveCustomerConfirmRecipients(booking: BookingLite): QueueTar
   return isEmailAddress(booking.email) ? [{ channel: "email", to: booking.email.trim() }] : [];
 }
 
-export function berlinCalendarDate(now = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Berlin",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-}
+export { berlinCalendarDate } from "./calendar-date.ts";
 export function berlinMinutesSinceMidnight(now = new Date()): number {
   const parts = new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",

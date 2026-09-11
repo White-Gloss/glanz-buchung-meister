@@ -36,11 +36,7 @@ export function sniffMagicMime(bytes: Uint8Array): string | null {
   if (bytes.length >= 8 && PNG_SIG.every((b, i) => bytes[i] === b)) {
     return "image/png";
   }
-  if (
-    bytes.length >= 12 &&
-    asciiAt(bytes, 0, 4) === "RIFF" &&
-    asciiAt(bytes, 8, 4) === "WEBP"
-  ) {
+  if (bytes.length >= 12 && asciiAt(bytes, 0, 4) === "RIFF" && asciiAt(bytes, 8, 4) === "WEBP") {
     return "image/webp";
   }
   if (
@@ -108,18 +104,14 @@ export function assertAllowedUpload(
   }
   const declared = normalizeDeclaredMime(declaredMime);
   if (!ALLOWED.has(declared)) {
-    throw new Error(
-      "Unterstützt werden JPEG, PNG, WebP sowie MP4, MOV und WebM.",
-    );
+    throw new Error("Unterstützt werden JPEG, PNG, WebP sowie MP4, MOV und WebM.");
   }
   const sniffed = sniffMagicMime(bytes);
   if (!sniffed) {
     throw new Error("Die Datei konnte nicht als Bild oder Video erkannt werden.");
   }
   if (!mimeMatches(sniffed, declared)) {
-    throw new Error(
-      "Die Datei stimmt nicht mit dem angegebenen Format überein.",
-    );
+    throw new Error("Die Datei stimmt nicht mit dem angegebenen Format überein.");
   }
   // Prefer the client's declared label when it is an allowed ftyp alias.
   const mime = declared;
@@ -133,8 +125,7 @@ export function decodeUploadBase64(raw: string): Uint8Array {
   }
   const trimmed = raw.trim();
   const comma = trimmed.indexOf(",");
-  const payload =
-    trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
+  const payload = trimmed.startsWith("data:") && comma !== -1 ? trimmed.slice(comma + 1) : trimmed;
   if (!payload) throw new Error("Die Datei ist leer.");
   if (payload.length > MAX_BASE64_FILE_CHARS) {
     throw new Error("Die Datei ist zu groß (höchstens 12 MB).");
@@ -188,6 +179,7 @@ export async function uploadToConditionPhotos(
   const body = Buffer.from(bytes);
   const response = await fetch(endpoint, {
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
     headers: {
       Authorization: `Bearer ${key}`,
       apikey: key,
@@ -198,11 +190,7 @@ export async function uploadToConditionPhotos(
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    console.error(
-      "[booking-photos] storage upload failed",
-      response.status,
-      detail.slice(0, 300),
-    );
+    console.error("[booking-photos] storage upload failed", response.status, detail.slice(0, 300));
     throw new Error("Die Aufnahme konnte nicht hochgeladen werden.");
   }
 }
@@ -217,6 +205,7 @@ export async function deleteConditionPhotos(paths: readonly string[]): Promise<v
   const { url, key } = serviceRoleConfig();
   const response = await fetch(`${url}/storage/v1/object/${CONDITION_PHOTOS_BUCKET}`, {
     method: "DELETE",
+    signal: AbortSignal.timeout(15_000),
     headers: {
       Authorization: `Bearer ${key}`,
       apikey: key,
@@ -227,4 +216,20 @@ export async function deleteConditionPhotos(paths: readonly string[]): Promise<v
   if (!response.ok) {
     throw new Error("Die fehlgeschlagenen Uploads konnten nicht vollständig bereinigt werden.");
   }
+}
+
+export async function createSignedPhotoUrl(path: string): Promise<string> {
+  if (!/^bookings\/[1-9]\d*\/[a-f0-9]{32}\.(jpg|png|webp|mp4|webm|mov)$/.test(path))
+    throw new Error("Ungültiger Aufnahmepfad.");
+  const { url, key } = serviceRoleConfig();
+  const response = await fetch(`${url}/storage/v1/object/sign/${CONDITION_PHOTOS_BUCKET}/${path}`, {
+    method: "POST",
+    signal: AbortSignal.timeout(10_000),
+    headers: { Authorization: `Bearer ${key}`, apikey: key, "Content-Type": "application/json" },
+    body: JSON.stringify({ expiresIn: 600 }),
+  });
+  if (!response.ok) throw new Error("Vorschau derzeit nicht verfügbar.");
+  const body = (await response.json()) as { signedURL?: string };
+  if (!body.signedURL?.startsWith("/object/sign/")) throw new Error("Ungültige Vorschauantwort.");
+  return `${url}/storage/v1${body.signedURL}`;
 }

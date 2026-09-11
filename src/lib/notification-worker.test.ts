@@ -80,10 +80,10 @@ async function enqueue(
   eventType = "booking.created",
 ) {
   const id = await enqueueNotification(sql, {
-    key,
+    key: `${key}:owner:email:fixture`,
     channel,
     eventType,
-    to: channel === "email" ? "customer@example.invalid" : "+490000111111",
+    to: channel === "email" ? "owner@example.invalid" : "+490000111111",
     subject: "Fixture",
     body: "Isolated test",
   });
@@ -425,12 +425,12 @@ test("the scheduler skips short-notice confirmations while retaining a legacy re
     assert.equal(await scheduleDueBookingReminders(sql), 1);
     assert.equal(
       (await sql`select * from outbound_queue where event_type='booking.reminder'`).length,
-      1,
+      0,
     );
     await scheduleDueBookingReminders(sql);
     assert.equal(
       (await sql`select * from outbound_queue where event_type='booking.reminder'`).length,
-      1,
+      0,
     );
   } finally {
     await pg.close();

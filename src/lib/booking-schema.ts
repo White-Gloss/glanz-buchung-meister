@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { berlinCalendarDate } from "./ops.ts";
+import { berlinCalendarDate } from "./calendar-date.ts";
 import { isEmailAddress } from "./utils.ts";
 import { isCalendarDate } from "./calendar-date.ts";
 import { timeSlots } from "../data/site.ts";

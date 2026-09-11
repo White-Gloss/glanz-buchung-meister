@@ -1,6 +1,11 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 import {
+  isOwnerNotification,
+  isApprovedCustomerNotification,
+  LEXWARE_ONLY,
+} from "./billing-policy.ts";
+import {
   enqueueNotification,
   queueBookingReminder,
   type NotificationBooking,
@@ -185,6 +190,16 @@ export async function runNotificationWorker(
       from candidate where q.id = candidate.id returning q.*
     `;
     if (!row) break;
+    if (
+      LEXWARE_ONLY &&
+      !isOwnerNotification(row.event_key, row.event_type) &&
+      !isApprovedCustomerNotification(row.event_key, row.event_type)
+    ) {
+      await sql`update outbound_queue set status='blocked',last_error_code='lexware_only',lease_token=null,locked_until=null,updated_at=now()
+        where id=${row.id} and shop_id=${SHOP} and lease_token=${token}`;
+      result.skipped++;
+      continue;
+    }
     // Recheck immediately before delivery; edits/cancellations invalidate old reminders.
     if (row.event_type === "booking.reminder" || row.event_type === "booking.confirmed") {
       const [current] = await sql<{ valid: boolean }>`
@@ -211,6 +226,16 @@ export async function runNotificationWorker(
         throw new EmailDeliveryError("email_idempotency_window_expired", false, true);
       }
       if (row.channel === "email") {
+        if (row.event_type?.startsWith("lexware.")) {
+          const { prepareLexwareMail } = await import("./lexware-mail.ts");
+          const prepared = await prepareLexwareMail(sql, row);
+          if (!prepared) {
+            await sql`update outbound_queue set status='cancelled',last_error_code='lexware_state_changed',lease_token=null,locked_until=null,updated_at=now() where id=${row.id} and lease_token=${token}`;
+            result.skipped++;
+            continue;
+          }
+          row.attachments = prepared;
+        }
         delivered = await (options.sendEmail ?? sendResendEmail)({
           to: row.to_addr || "",
           subject: row.subject || "White Gloss",

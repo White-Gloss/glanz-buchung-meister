@@ -25,6 +25,7 @@ export const expectedMigrations = [
   "0011_booking_pdf.sql",
   "0012_odoo_sync.sql",
   "0013_roapp_sync.sql",
+  "0014_booking_photo_recovery.sql",
 ];
 const tables = [
   "_migrations",

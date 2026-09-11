@@ -164,7 +164,10 @@ results.push("Invalid second file rejects entire batch before first write");
 await control({ failStorage: true });
 const failed = await rpc("attachBookingPhotos", payload, booking.cookie);
 assert.ok(failed.body.error);
-assert.equal((await evidence()).tables.booking_photos.length, 0);
+assert.equal(
+  (await evidence()).tables.booking_photos.filter((row) => row.upload_state === "failed").length,
+  1,
+);
 await control({ failStorage: false });
 const uploaded = await rpc("attachBookingPhotos", payload, booking.cookie);
 assert.equal(uploaded.body.result?.count, 1);
@@ -172,21 +175,32 @@ state = await evidence();
 assert.equal(state.uploads.length, 1);
 assert.equal(state.tables.booking_photos.length, 1);
 results.push("Storage failure reported; retry succeeds and persists exactly one photo");
-await control({ failStorageNth: 2 });
+await control({ failStorageNth: 1 });
 const partial = await rpc(
   "attachBookingPhotos",
-  { ...payload, files: [file, { ...file, name: "zweites-fahrzeug.webp" }] },
+  {
+    ...payload,
+    files: [
+      file,
+      {
+        ...file,
+        name: "zweites-fahrzeug.webp",
+        base64: Buffer.concat([Buffer.from(file.base64, "base64"), Buffer.from([1])]).toString(
+          "base64",
+        ),
+      },
+    ],
+  },
   booking.cookie,
 );
 assert.ok(partial.body.error);
 state = await evidence();
 assert.equal(state.objects.length, 1);
-assert.equal(state.tables.booking_photos.length, 1);
-assert.equal(state.deletions.at(-1).length, 2);
+assert.equal(state.tables.booking_photos.length, 2);
+assert.equal(state.tables.booking_photos.filter((row) => row.upload_state === "ready").length, 1);
+assert.equal(state.tables.booking_photos.filter((row) => row.upload_state === "failed").length, 1);
 await control({ failStorageNth: 0 });
-results.push(
-  "Second storage failure compensates exact batch objects/metadata; earlier upload survives",
-);
+results.push("Retry deduplicates earlier files and preserves a recoverable failed reservation");
 const photo = await rpc("createPublicPhotoInquiry", {
   title: "Begutachtung Dellen",
   name: "QA Fotoanfrage",
@@ -359,9 +373,9 @@ assert.equal(current.version, 3);
 assert.equal(current.confirmed_at, null);
 assert.equal(current.confirmed_by, null);
 assert.ok(
-  state.tables.outbound_queue.some(
+  !state.tables.outbound_queue.some(
     (row) =>
-      row.booking_id === id2 && row.event_type === "booking.reminder" && row.status === "cancelled",
+      row.booking_id === id2 && row.event_type === "booking.reminder" && ["queued", "processing"].includes(row.status),
   ),
 );
 assert.ok(
@@ -527,10 +541,10 @@ state = await evidence();
 const manualMail = state.tables.outbound_queue.find(
   (row) => row.booking_id === withEmail.body.result.id && row.to_addr === manual.email,
 );
-assert.equal(manualMail.attachments.length, 1);
-assert.equal(manualMail.event_type, "booking.created");
+assert.ok(manualMail, "Explicit opt-in creates a customer notification through Resend");
+assert.deepEqual(manualMail.attachments, [], "No competing locally generated accounting PDF");
 results.push(
-  "Manual bookings require an operator, record the real actor, remain unconfirmed and send the customer PDF only on opt-in; retries do not duplicate bookings",
+  "Manual bookings require an operator, record the real actor, remain unconfirmed and notify the customer only on opt-in; retries do not duplicate bookings",
 );
 assert.equal(state.blocked.length, 0);
 await writeFile(

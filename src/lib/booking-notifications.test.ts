@@ -135,26 +135,12 @@ test("booking notifications persist against all production migrations", async (t
         const messages =
           await sql<Message>`select * from outbound_queue where booking_id=${row.id}`;
         assert.equal(messages.length, 3);
-        const emails = messages.filter((message) => message.channel === "email");
-        assert.equal(emails.length, 2);
-        assert.equal(emails[0].attachments.length, 1);
-        assert.deepEqual(emails[0].attachments, emails[1].attachments);
-        assert.equal(emails[0].attachments[0].filename, `White-Gloss-Anfrage-WG-${row.id}.pdf`);
-        const pdf = await PDFDocument.load(Buffer.from(emails[0].attachments[0].content, "base64"));
-        assert.equal(pdf.getTitle(), `Buchungsanfrage WG-${row.id}`);
-        assert.equal(pdf.getPageCount(), 1);
-        assert.ok(
-          messages.filter((m) => m.channel !== "email").every((m) => m.attachments.length === 0),
-        );
-        await sql`update bookings set customer_name='Changed later' where id=${row.id}`;
-        const [snapshot] =
-          await sql<Message>`select attachments from outbound_queue where id=${emails[0].id}`;
-        assert.deepEqual(snapshot.attachments, emails[0].attachments);
-        assert.ok(emails.every((message) => message.to_addr === environment.OWNER_EMAIL));
-        assert.ok(emails.some((message) => message.event_key.includes(":owner:email:")));
-        assert.ok(emails.some((message) => message.event_key.includes(":customer:email:")));
-        assert.ok(emails.some((message) => message.body.includes("noch nicht bestätigt")));
-        assert.ok(messages.every((message) => message.status === "queued"));
+        assert.equal(messages.filter((m) => m.channel === "email").length, 2);
+        assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 2);
+        const customer = messages.find((m) => m.event_key.includes(":customer-v2:"));
+        assert.ok(customer);
+        assert.match(customer.body, /noch nicht bestätigt/);
+        assert.ok(messages.every((m) => m.attachments.length === 0));
         assert.equal(fetchMock.mock.callCount(), 0);
       },
     );
@@ -184,7 +170,7 @@ test("booking notifications persist against all production migrations", async (t
     );
 
     await t.test(
-      "pending requests never get reminders; confirmed drop-offs use exact 24-hour DST timing and version dedupe",
+      "appointment reminders remain disabled independently of payment reminders",
       async () => {
         const pending = await booking(sql, {
           preferred_date: "2027-03-28",
@@ -195,7 +181,7 @@ test("booking notifications persist against all production migrations", async (t
           (await sql`select id from outbound_queue where booking_id=${pending.id}`).length,
           0,
         );
-        for (const [date, expectedUtc] of [
+        for (const [date] of [
           ["2027-03-28", "2027-03-27T07:00:00.000Z"],
           ["2027-10-31", "2027-10-30T08:00:00.000Z"],
         ]) {
@@ -208,15 +194,10 @@ test("booking notifications persist against all production migrations", async (t
           await queueBookingReminder(sql, row);
           let reminders =
             await sql<Message>`select * from outbound_queue where booking_id=${row.id}`;
-          assert.equal(reminders.length, 1);
-          assert.equal(new Date(reminders[0].next_attempt_at).toISOString(), expectedUtc);
+          assert.equal(reminders.length, 0);
           await queueBookingReminder(sql, { ...row, version: 2 });
-          reminders =
-            await sql<Message>`select * from outbound_queue where booking_id=${row.id} order by booking_version`;
-          assert.deepEqual(
-            reminders.map((message) => message.booking_version),
-            [1, 2],
-          );
+          reminders = await sql<Message>`select * from outbound_queue where booking_id=${row.id}`;
+          assert.equal(reminders.length, 0);
         }
       },
     );
@@ -258,8 +239,7 @@ test("booking notifications persist against all production migrations", async (t
         });
         await queueBookingReminder(sql, { ...early, confirmed_at: "2027-04-07T06:00:00Z" });
         const rows = await sql<Message>`select * from outbound_queue where booking_id=${early.id}`;
-        assert.equal(rows.length, 1);
-        assert.equal(new Date(rows[0].next_attempt_at).toISOString(), "2027-04-07T07:00:00.000Z");
+        assert.equal(rows.length, 0);
       },
     );
 
