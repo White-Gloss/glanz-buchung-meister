@@ -15,7 +15,6 @@ import {
 import { readLexwareCredentials } from "./lexware-credentials.server.ts";
 
 const SHOP = "white-gloss";
-const VAT_FACTOR = 1.19;
 const VAT_PERCENT = 19;
 
 export type LexwareCall = LexwareRequest;
@@ -24,6 +23,8 @@ export type LexwareCall = LexwareRequest;
 export async function ensureLexwareSchema(sql: Sql) {
   await sql`alter table shop_settings add column if not exists lexware_sync_enabled boolean not null default false`;
   await sql`alter table shop_settings add column if not exists lexware_api_key text`;
+  await sql`alter table shop_settings add column if not exists lexware_auto_finalize boolean not null default false`;
+  await sql`alter table shop_settings add column if not exists lexware_mail_enabled boolean not null default false`;
   await sql`create table if not exists lexware_sync_queue (
     booking_id integer primary key references bookings(id),
     shop_id text not null default 'white-gloss',
@@ -38,12 +39,20 @@ export async function ensureLexwareSchema(sql: Sql) {
     updated_at timestamptz not null default now()
   )`;
   await sql`create index if not exists lexware_sync_due_idx on lexware_sync_queue(status,next_attempt_at)`;
+  await sql`alter table lexware_sync_queue add column if not exists write_pending text`;
+  await sql`alter table lexware_sync_queue add column if not exists invoice_status text`;
+  await sql`alter table lexware_sync_queue add column if not exists invoice_number text`;
+  await sql`alter table lexware_sync_queue add column if not exists invoice_checked_at timestamptz`;
+  await sql`alter table lexware_sync_queue add column if not exists billing_data jsonb`;
+  await sql`alter table lexware_sync_queue add column if not exists mail_checked_at timestamptz`;
+  await sql`alter table lexware_sync_queue enable row level security`;
   await sql`create table if not exists lexware_sync_runner (
     shop_id text primary key,
     lease_token text,
     locked_until timestamptz
   )`;
   await sql`insert into lexware_sync_runner(shop_id) values('white-gloss') on conflict do nothing`;
+  await sql`alter table lexware_sync_runner enable row level security`;
 }
 
 export async function queueLexwareBooking(
@@ -54,7 +63,8 @@ export async function queueLexwareBooking(
   await sql`insert into lexware_sync_queue(booking_id,shop_id,requested_version)
     values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
     set requested_version=greatest(lexware_sync_queue.requested_version,excluded.requested_version),
-    status='pending',next_attempt_at=now(),updated_at=now()`;
+    status=case when lexware_sync_queue.status='review' or lexware_sync_queue.write_pending is not null then 'review' else 'pending' end,
+    next_attempt_at=now(),updated_at=now()`;
 }
 
 export function normalizePhone(phone: string): string {
@@ -80,7 +90,12 @@ function berlinDay(offsetDays = 0): string {
 
 export function berlinDateTime(date?: string | null): string {
   const day = date && /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? date.trim() : berlinDay();
-  return `${day}T00:00:00.000+02:00`;
+  const offset =
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", timeZoneName: "longOffset" })
+      .formatToParts(new Date(`${day}T00:00:00Z`))
+      .find((p) => p.type === "timeZoneName")
+      ?.value.replace("GMT", "") || "+01:00";
+  return `${day}T00:00:00.000${offset}`;
 }
 
 function parseExtraIds(raw: string | null | undefined): string[] {
@@ -91,10 +106,6 @@ function parseExtraIds(raw: string | null | undefined): string[] {
   } catch {
     return [];
   }
-}
-
-function netFromGrossCents(cents: number): number {
-  return Number((Math.max(0, cents) / 100 / VAT_FACTOR).toFixed(2));
 }
 
 export function buildLexwareInvoiceLines(booking: WorkflowBooking): LexwareInvoiceLine[] {
@@ -117,7 +128,7 @@ export function buildLexwareInvoiceLines(booking: WorkflowBooking): LexwareInvoi
       unitName: "Leistung",
       unitPrice: {
         currency: "EUR",
-        netAmount: netFromGrossCents(serviceCents || total),
+        grossAmount: (serviceCents || total) / 100,
         taxRatePercentage: VAT_PERCENT,
       },
     });
@@ -131,7 +142,7 @@ export function buildLexwareInvoiceLines(booking: WorkflowBooking): LexwareInvoi
       unitName: "Leistung",
       unitPrice: {
         currency: "EUR",
-        netAmount: netFromGrossCents(pickup),
+        grossAmount: pickup / 100,
         taxRatePercentage: VAT_PERCENT,
       },
     });
@@ -142,12 +153,24 @@ export function buildLexwareInvoiceLines(booking: WorkflowBooking): LexwareInvoi
 type QueueProgress = {
   lex_contact_id: string | null;
   lex_invoice_id: string | null;
+  write_pending?: string | null;
+  billing_data?: {
+    street: string;
+    zip: string;
+    city: string;
+    countryCode: string;
+    serviceDate: string;
+    totalCents: number;
+    bookingVersion: number;
+    bookingStatus?: string;
+  } | null;
 };
 
 async function saveProgress(sql: Sql, bookingId: number, patch: Partial<QueueProgress>) {
   await sql`update lexware_sync_queue set
     lex_contact_id=coalesce(${patch.lex_contact_id ?? null},lex_contact_id),
     lex_invoice_id=coalesce(${patch.lex_invoice_id ?? null},lex_invoice_id),
+    write_pending=null,
     updated_at=now()
     where booking_id=${bookingId}`;
 }
@@ -157,7 +180,11 @@ export async function syncOneLexwareBooking(
   booking: WorkflowBooking,
   request: LexwareCall,
   progress: QueueProgress,
+  finalize = false,
 ) {
+  // A crash after a POST can leave a real Lexware object without its local ID.
+  // Preserve the intent until a confirmed response has been durably recorded.
+  if (progress.write_pending) throw new LexwareError("lexware_write_uncertain", { review: true });
   const names = splitCustomerName(booking.customer_name);
   const phone = normalizePhone(booking.phone);
 
@@ -165,6 +192,7 @@ export async function syncOneLexwareBooking(
   if (!contactId) {
     contactId = await findContactByEmail(request, booking.email);
     if (!contactId) {
+      await sql`update lexware_sync_queue set write_pending='contact',updated_at=now() where booking_id=${booking.id} and shop_id=${SHOP}`;
       contactId = await createContact(request, {
         firstName: names.firstName,
         lastName: names.lastName,
@@ -178,6 +206,30 @@ export async function syncOneLexwareBooking(
 
   let invoiceId = progress.lex_invoice_id;
   if (!invoiceId && booking.status === "erledigt") {
+    const billing = progress.billing_data;
+    if (
+      finalize &&
+      (!billing ||
+        !billing.street ||
+        !billing.zip ||
+        !billing.city ||
+        !billing.serviceDate ||
+        billing.totalCents !== booking.total_cents ||
+        booking.version !==
+          billing.bookingVersion + (billing.bookingStatus === "bestaetigt" ? 1 : 0))
+    )
+      throw new LexwareError("lexware_billing_approval_required", { review: true });
+    if (
+      !Number.isSafeInteger(booking.total_cents) ||
+      booking.total_cents <= 0 ||
+      booking.pickup_cents > booking.total_cents
+    )
+      throw new LexwareError("lexware_invalid_total", { review: true });
+    const [legacy] = await sql<{
+      exists: boolean;
+    }>`select exists(select 1 from bookings where id=${booking.id} and qonto_invoice_id is not null) as exists`;
+    if (legacy?.exists) throw new LexwareError("lexware_existing_legacy_invoice", { review: true });
+    await sql`update lexware_sync_queue set write_pending='invoice',updated_at=now() where booking_id=${booking.id} and shop_id=${SHOP}`;
     invoiceId = await createInvoiceDraft(request, {
       voucherDate: berlinDateTime(),
       contactId,
@@ -186,8 +238,19 @@ export async function syncOneLexwareBooking(
       shippingDate: berlinDateTime(booking.preferred_date),
       introduction: `Fahrzeugaufbereitung White Gloss · WG-${booking.id}`,
       remark: `Website-Buchung WG-${booking.id}`,
+      finalize,
+      billingAddress: billing
+        ? {
+            street: billing.street,
+            zip: billing.zip,
+            city: billing.city,
+            countryCode: billing.countryCode,
+          }
+        : undefined,
+      ...(billing ? { shippingDate: berlinDateTime(billing.serviceDate) } : {}),
     });
     await saveProgress(sql, booking.id, { lex_invoice_id: invoiceId });
+    await sql`update lexware_sync_queue set invoice_status=${finalize ? "open" : "draft"},invoice_checked_at=now() where booking_id=${booking.id} and shop_id=${SHOP}`;
   }
 
   return { contactId, invoiceId };
@@ -206,7 +269,8 @@ export async function runLexwareSync(
   await ensureLexwareSchema(sql);
   const [settings] = await sql<{
     lexware_sync_enabled: boolean;
-  }>`select lexware_sync_enabled from shop_settings where shop_id=${SHOP}`;
+    lexware_auto_finalize: boolean;
+  }>`select lexware_sync_enabled,lexware_auto_finalize from shop_settings where shop_id=${SHOP}`;
   if (!settings?.lexware_sync_enabled) return result;
   const creds = options.creds || (options.request ? null : await readLexwareCredentials(sql));
   if (!options.request && !creds) return result;
@@ -235,7 +299,8 @@ export async function runLexwareSync(
         where q.shop_id=${SHOP} and q.status='pending' and q.next_attempt_at<=now() and (${options.bookingId ?? null}::integer is null or b.id=${options.bookingId ?? null})
         order by q.next_attempt_at,q.booking_id limit 1`;
       if (!row) break;
-      const [progress] = await sql<QueueProgress>`select lex_contact_id,lex_invoice_id
+      const [progress] =
+        await sql<QueueProgress>`select lex_contact_id,lex_invoice_id,write_pending,billing_data
         from lexware_sync_queue where booking_id=${row.id}`;
       try {
         if (!options.request && !creds)
@@ -245,6 +310,7 @@ export async function runLexwareSync(
           row,
           request,
           progress || { lex_contact_id: null, lex_invoice_id: null },
+          settings.lexware_auto_finalize,
         );
         await sql`update lexware_sync_queue set synced_version=${row.version},
           lex_contact_id=${ids.contactId},lex_invoice_id=${ids.invoiceId ?? null},
@@ -252,8 +318,19 @@ export async function runLexwareSync(
           where booking_id=${row.id}`;
         result.synced++;
       } catch (error) {
+        if (
+          error instanceof LexwareError &&
+          error.status &&
+          [400, 401, 403, 404, 406, 422, 429].includes(error.status)
+        ) {
+          await sql`update lexware_sync_queue set write_pending=null where booking_id=${row.id} and shop_id=${SHOP}`;
+        }
         const code = error instanceof LexwareError ? error.code : "lexware_processing_failed";
-        const review = error instanceof LexwareError && error.review;
+        const [pending] = await sql<{
+          write_pending: string | null;
+        }>`select write_pending from lexware_sync_queue where booking_id=${row.id}`;
+        const review =
+          Boolean(pending?.write_pending) || (error instanceof LexwareError && error.review);
         await sql`update lexware_sync_queue set attempts=attempts+1,
           status=case when ${review} then 'review' when attempts>=5 then 'failed' else 'pending' end,
           last_error=${code},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id}`;

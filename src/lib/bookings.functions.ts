@@ -4,7 +4,6 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { type BookingStatus } from "@/data/site";
-import { safeExec } from "@/lib/ops";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
 import {
   saveBookingRequest,
@@ -18,15 +17,9 @@ import { isCalendarDate } from "@/lib/calendar-date";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema, manualBookingSchema } from "@/lib/booking-schema";
-import {
-  MAX_BASE64_UPLOAD_CHARS,
-  decodeUploadBase64,
-  deleteConditionPhotos,
-  extensionForMime,
-  uploadToConditionPhotos,
-  validateUploadBatch,
-} from "@/lib/booking-photos";
-import { randomBytes } from "node:crypto";
+import { MAX_BASE64_UPLOAD_CHARS } from "@/lib/booking-photos";
+import { saveBookingPhotos } from "@/lib/booking-photo-storage";
+import { createSignedPhotoUrl } from "@/lib/booking-photos";
 import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
 import {
   createRequestUploadCapability,
@@ -181,7 +174,7 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
   .validator((input: unknown) => attachBookingPhotosSchema.parse(input))
   .handler(async ({ data }) => {
     assertSameSiteRequest();
-    assertPublicPostLimit("booking-photos", 6);
+    assertPublicPostLimit("booking-photos", 24);
 
     const match = /^WG-(\d+)$/i.exec(data.vorgang.trim());
     const bookingId = Number(match?.[1] ?? 0);
@@ -215,67 +208,7 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
       );
     }
 
-    const validated = validateUploadBatch(data.files);
-    const storedNames: string[] = [];
-    const batchPaths: string[] = [];
-    try {
-      for (const [index, file] of data.files.entries()) {
-        const bytes = decodeUploadBase64(file.base64);
-        const { mime, ext, sizeBytes } = validated[index];
-        const random = randomBytes(16).toString("hex");
-        const storagePath = `bookings/${bookingId}/${random}.${ext || extensionForMime(mime)}`;
-        // Track before sending: a lost response can still mean the object was stored.
-        batchPaths.push(storagePath);
-        await uploadToConditionPhotos(storagePath, bytes, mime);
-        const safeName = file.name.slice(0, 180);
-        await sql`
-          insert into booking_photos (
-            shop_id, booking_id, storage_path, mime, size_bytes, original_name
-          ) values (
-            ${SHOP}, ${bookingId}, ${storagePath}, ${mime}, ${sizeBytes}, ${safeName}
-          )
-        `;
-        storedNames.push(safeName);
-      }
-    } catch (error) {
-      if (batchPaths.length) {
-        try {
-          await sql`
-            delete from booking_photos
-            where shop_id = ${SHOP} and booking_id = ${bookingId}
-              and storage_path = any(${batchPaths}::text[])
-          `;
-        } catch {
-          console.error("[booking-photos] failed batch metadata cleanup could not complete");
-        }
-        try {
-          await deleteConditionPhotos(batchPaths);
-        } catch {
-          console.error("[booking-photos] failed batch storage cleanup could not complete");
-        }
-      }
-      throw error;
-    }
-
-    const subject = `Fotos zu WG-${bookingId}`;
-    const body = [
-      `${storedNames.length} Aufnahme(n) zu Vorgang WG-${bookingId}.`,
-      storedNames.length ? `Dateien: ${storedNames.join(", ")}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    await safeExec(
-      "booking-photos-inbox",
-      () => sql`
-        insert into inbox_messages (shop_id, channel, sender, subject, body, booking_id)
-        values (
-          ${SHOP}, ${"form"}, ${booking.customer_name}, ${subject}, ${body}, ${bookingId}
-        )
-      `,
-    );
-
-    return { ok: true as const, count: storedNames.length };
+    return saveBookingPhotos(sql, bookingId, data.files);
   });
 
 export const listBookings = createServerFn({ method: "GET" })
@@ -293,6 +226,34 @@ export const listBookings = createServerFn({ method: "GET" })
       order by created_at desc
       limit 200
     `;
+  });
+
+export const listBookingPhotos = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    const rows = await sql<{
+      id: number;
+      original_name: string;
+      mime: string;
+      storage_path: string;
+      upload_state: string;
+    }>`
+      select id,original_name,mime,storage_path,upload_state from booking_photos
+      where shop_id=${SHOP} and booking_id=${data.bookingId} order by id limit 8`;
+    return Promise.all(
+      rows.map(async (row) => ({
+        id: row.id,
+        name: row.original_name,
+        mime: row.mime,
+        state: row.upload_state,
+        url:
+          row.upload_state === "ready"
+            ? await createSignedPhotoUrl(row.storage_path).catch(() => null)
+            : null,
+      })),
+    );
   });
 
 const bookingMutation = z.object({

@@ -10,7 +10,7 @@ import { OUTBOUND_QUEUED, flushOutboundEmailQueue } from "@/lib/ops";
 import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notification-worker";
 import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
 import { mailConfigured } from "@/lib/resend-mail";
-import { sendQontoInvoiceEmailForBooking } from "@/lib/qonto-invoice";
+import { assertLegacyBillingDisabled, LEXWARE_ONLY } from "@/lib/billing-policy";
 import { lexwareCredentialsFromEnv } from "@/lib/lexware";
 import { requireOperator } from "@/lib/operator";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
@@ -126,6 +126,7 @@ export const replyInbox = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    if (LEXWARE_ONLY) assertLegacyBillingDisabled();
     const sql = await getSql();
     const source = await sql<InboxRow>`
       select id, channel, direction, sender, subject, body, booking_id, read_at, created_at
@@ -238,6 +239,7 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (LEXWARE_ONLY) assertLegacyBillingDisabled();
     const sql = await getSql();
     const bookings = await sql<{
       id: number;
@@ -408,6 +410,7 @@ async function executeParsed(
   }
 
   if (action.type === "invoice") {
+    if (LEXWARE_ONLY) assertLegacyBillingDisabled();
     const bookings = await sql<{
       id: number;
       customer_name: string;
@@ -596,9 +599,8 @@ export const flushOutboundMail = createServerFn({ method: "POST" })
 export const sendQontoInvoice = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
-    const sql = await getSql();
-    return sendQontoInvoiceEmailForBooking(sql, data.bookingId);
+  .handler(async (): Promise<{ ok: boolean; error: string }> => {
+    return assertLegacyBillingDisabled();
   });
 
 export const listAutomationEvents = createServerFn({ method: "GET" })

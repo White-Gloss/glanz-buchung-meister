@@ -3,7 +3,8 @@ import { packages } from "../data/site.ts";
 import { ownerNotifyTargets, type BookingLite, type QueueTarget } from "./ops.ts";
 import { isEmailAddress } from "./utils.ts";
 import type { Sql } from "./db.ts";
-import { createBookingRequestPdf, type BookingPdfData } from "./booking-pdf.ts";
+import { type BookingPdfData } from "./booking-pdf.ts";
+import { LEXWARE_ONLY } from "./billing-policy.ts";
 
 export type BookingEvent =
   | "booking.created"
@@ -133,16 +134,8 @@ export async function queueBookingEvent(
   `;
   const owner = ownerNotifyTargets();
   const subject = `${eventLabels[event]} · WG-${booking.id}`;
-  const attachments =
-    event === "booking.created"
-      ? [
-          {
-            filename: `White-Gloss-Anfrage-WG-${booking.id}.pdf`,
-            content: await createBookingRequestPdf(booking),
-            content_type: "application/pdf",
-          },
-        ]
-      : undefined;
+  const attachments: { filename: string; content: string; content_type: string }[] | undefined =
+    undefined;
   const targets: QueueTarget[] = [];
   if (owner.whatsapp) targets.push({ channel: "whatsapp", to: owner.whatsapp });
   if (owner.email) targets.push({ channel: "email", to: owner.email });
@@ -177,12 +170,12 @@ export async function queueBookingEvent(
               ? "Ihre Terminanfrage wurde abgelehnt. Für eine Alternative melden Sie sich gerne."
               : `Ihre Buchungsdaten wurden aktualisiert. Gewünschter Termin: ${when}.`;
     await enqueueNotification(sql, {
-      key: `booking:${booking.id}:event:${eventId}:customer:email:${recipientHash(booking.email)}`,
+      key: `booking:${booking.id}:event:${eventId}:customer-v2:email:${recipientHash(booking.email)}`,
       eventType: event,
       channel: "email",
       to: booking.email,
       subject,
-      body: `Guten Tag ${booking.customer_name},\n\n${message}\nVorgang WG-${booking.id}${attachments ? "\n\nIhre Anfrage mit den gewählten Leistungen und der Preisübersicht finden Sie im PDF-Anhang." : ""}\n\nWhite Gloss Detailing`,
+      body: `Guten Tag ${booking.customer_name},\n\n${message}\nVorgang WG-${booking.id}\nLeistung: ${packages.find((p) => p.id === booking.package_id)?.name || booking.package_id}\nPreis laut Auftrag: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format((booking.total_cents || 0) / 100)}\n\nWhite Gloss Detailing`,
       attachments,
       bookingId: booking.id,
       bookingVersion: version,
@@ -192,6 +185,7 @@ export async function queueBookingEvent(
 }
 
 export async function queueBookingReminder(sql: Sql, booking: NotificationBooking) {
+  if (LEXWARE_ONLY) return;
   const version = booking.version ?? 1;
   if (
     booking.status === "bestaetigt" &&

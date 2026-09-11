@@ -13,12 +13,13 @@ import {
   type PackageId,
   type VehicleClass,
 } from "@/data/site";
-import { createPublicBooking } from "@/lib/bookings.functions";
+import { attachBookingPhotos, createPublicBooking } from "@/lib/bookings.functions";
 import { eur } from "@/lib/utils";
 import { bookingFormErrors } from "@/lib/public-form-validation";
 import { queueBookingConversion } from "@/lib/googleTag";
 import { bookingRequestId } from "@/lib/booking-request-id";
 import { usePublicFormErrors } from "./public-form-feedback";
+import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
 
 export function Configurator({ initialPackage = "premium" }: { initialPackage?: PackageId }) {
@@ -41,6 +42,10 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const submitting = useRef(false);
+  const [media, setMedia] = useState<File[]>([]);
+  const [savedReference, setSavedReference] = useState<string | null>(null);
+  const saved = useRef<{ reference: string } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState("");
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
 
   const quote = useMemo(
@@ -57,8 +62,13 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
     if (submitting.current) return;
     setError("");
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    const errors = bookingFormErrors({ name, phone, email, date, note, privacy }, today);
-    if (e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput) {
+    const errors = saved.current
+      ? {}
+      : bookingFormErrors({ name, phone, email, date, note, privacy }, today);
+    if (
+      !saved.current &&
+      e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput
+    ) {
       errors.date = "Bitte geben Sie ein vollständiges Datum an oder lassen Sie das Feld leer.";
     }
     showErrors(errors, e.currentTarget);
@@ -69,25 +79,44 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
     submitting.current = true;
     setPending(true);
     try {
-      const created = await createPublicBooking({
-        data: {
-          idempotencyKey: bookingRequestId.get(),
-          name: name.trim(),
-          phone: phone.trim(),
-          email: email.trim(),
-          date,
-          slot,
-          note,
-          packageId,
-          classId,
-          extraIds,
-          citySlug,
-          kind: "booking",
-          privacy: true as const,
-          website,
-        },
-      });
+      const created =
+        saved.current ??
+        (await createPublicBooking({
+          data: {
+            idempotencyKey: bookingRequestId.get(),
+            name: name.trim(),
+            phone: phone.trim(),
+            email: email.trim(),
+            date,
+            slot,
+            note,
+            packageId,
+            classId,
+            extraIds,
+            citySlug,
+            kind: "booking",
+            privacy: true as const,
+            website,
+          },
+        }));
+      saved.current = created;
+      setSavedReference(created.reference);
       queueBookingConversion(created.reference);
+      const remaining = [...media];
+      for (const [index, file] of media.entries()) {
+        setUploadProgress(`Aufnahme ${index + 1} von ${media.length} wird übertragen …`);
+        await attachBookingPhotos({
+          data: {
+            vorgang: created.reference,
+            files: [
+              { name: file.name.slice(0, 180), mime: file.type, base64: await mediaBase64(file) },
+            ],
+          },
+        });
+        remaining.shift();
+        setMedia([...remaining]);
+      }
+      setUploadProgress("");
       await navigate({
         to: "/danke",
         search: {
@@ -97,8 +126,11 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
       bookingRequestId.clear();
     } catch {
       setError(
-        "Wir konnten den Eingang Ihrer Anfrage nicht bestätigen. Sie können dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
+        saved.current
+          ? `Ihre Anfrage ${saved.current.reference} ist gespeichert. Die übrigen Fotos konnten nicht übertragen werden. Bitte erneut versuchen oder die Fotoauswahl entfernen, um ohne weitere Fotos fortzufahren.`
+          : "Wir konnten den Eingang Ihrer Anfrage nicht bestätigen. Sie können dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
       );
+      setUploadProgress("");
       submitting.current = false;
       setPending(false);
     }
@@ -125,6 +157,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                 }`}
               >
                 <input
+                  disabled={pending || savedReference !== null}
                   type="radio"
                   name="paket"
                   value={p.id}
@@ -160,6 +193,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                 }`}
               >
                 <input
+                  disabled={pending || savedReference !== null}
                   type="radio"
                   name="klasse"
                   value={c.id}
@@ -177,7 +211,9 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Zusatzleistungen</legend>
+          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">
+            Zusatzleistungen
+          </legend>
           {(["pflege", "reparatur"] as const).map((group) => (
             <div key={group} className="mt-4">
               <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">
@@ -193,6 +229,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                     >
                       <span className="flex min-w-0 items-start">
                         <input
+                          disabled={pending || savedReference !== null}
                           id={`extra-${ex.id}`}
                           type="checkbox"
                           className="mt-1 mr-3"
@@ -219,6 +256,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
 
         <Field tone="public" id="city" label="Abholort">
           <select
+            disabled={pending || savedReference !== null}
             id="city"
             className={inputLine}
             value={citySlug}
@@ -249,11 +287,13 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
                 : ""}
         </p>
         <p className="text-xs text-subtle">
-          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand
-          zusätzlichen Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab. {depositConfig.label}: {depositConfig.note}
+          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
+          Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
+          {depositConfig.label}: {depositConfig.note}
         </p>
         <Field tone="public" id="name" label="Name">
           <input
+            disabled={pending || savedReference !== null}
             id="name"
             className={inputLine}
             autoComplete="name"
@@ -269,6 +309,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
         <Field tone="public" id="phone" label="Telefon">
           <input
+            disabled={pending || savedReference !== null}
             id="phone"
             className={inputLine}
             autoComplete="tel"
@@ -286,6 +327,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
         <Field tone="public" id="email" label="E-Mail (optional)">
           <input
+            disabled={pending || savedReference !== null}
             id="email"
             type="email"
             className={inputLine}
@@ -300,6 +342,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
         <Field tone="public" id="date" label="Wunschtermin (optional)">
           <input
+            disabled={pending || savedReference !== null}
             id="date"
             type="date"
             {...fieldProps("date")}
@@ -312,6 +355,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
+            disabled={pending || savedReference !== null}
             id="slot"
             className={inputLine}
             value={slot}
@@ -327,6 +371,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">
           <textarea
+            disabled={pending || savedReference !== null}
             id="note"
             maxLength={2000}
             {...fieldProps("note")}
@@ -339,6 +384,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
           <label htmlFor="website">Website</label>
           <input
+            disabled={pending || savedReference !== null}
             id="website"
             name="website"
             tabIndex={-1}
@@ -347,8 +393,20 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             onChange={(e) => setWebsite(e.target.value)}
           />
         </div>
+        <BookingMediaPicker files={media} onChange={setMedia} disabled={pending} />
+        {uploadProgress ? (
+          <p role="status" className="text-sm">
+            {uploadProgress}
+          </p>
+        ) : null}
+        {savedReference ? (
+          <p role="status" className="text-sm">
+            Anfrage {savedReference} gespeichert. Noch keine Terminzusage.
+          </p>
+        ) : null}
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input
+            disabled={pending || savedReference !== null}
             id="privacy"
             {...fieldProps("privacy")}
             type="checkbox"
@@ -385,6 +443,8 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
               type="button"
               disabled={pending}
               onClick={() => {
+                saved.current = null;
+                setSavedReference(null);
                 bookingRequestId.clear();
                 setError("");
               }}
@@ -400,7 +460,13 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           disabled={pending}
           aria-busy={pending}
         >
-          {pending ? "Wird gesendet …" : "Terminanfrage senden"}
+          {pending
+            ? "Wird gesendet …"
+            : savedReference
+              ? media.length
+                ? "Übrige Fotos erneut senden"
+                : "Weiter zur Bestätigung"
+              : "Terminanfrage senden"}
         </Button>
         <a
           href={site.whatsapp}
