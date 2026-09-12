@@ -4,20 +4,31 @@ import { runZohoSync } from "./zoho-sync.ts";
 
 /** IONOS runs a persistent Node process. Start delivery after the durable commit,
  * without making the customer wait on providers. The timer recovers work after
- * a restart; correctness never depends on this in-process optimisation. */
+ * a restart; correctness never depends on this in-process optimisation.
+ * Zoho sync must not share the notification lock: a hanging CRM call would
+ * leave customer mail queued. */
 export function kickBookingDelivery(sql: Sql): void {
-  const state = globalThis as typeof globalThis & { __bookingDeliveryKick?: () => void };
+  const state = globalThis as typeof globalThis & {
+    __bookingDeliveryKick?: () => void;
+    __zohoSyncKick?: () => void;
+  };
   state.__bookingDeliveryKick ??= createDeliveryKick(
     async () => {
       await runNotificationWorker(sql);
-      await runZohoSync(sql);
     },
     () =>
       console.error(
         "[booking:delivery] Versandjob unterbrochen; gespeicherte Warteschlange bleibt erhalten.",
       ),
   );
+  state.__zohoSyncKick ??= createDeliveryKick(
+    async () => {
+      await runZohoSync(sql);
+    },
+    () => console.error("[zoho:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
+  );
   state.__bookingDeliveryKick();
+  state.__zohoSyncKick();
 }
 
 export function createDeliveryKick(run: () => Promise<unknown>, onError: () => void): () => void {
