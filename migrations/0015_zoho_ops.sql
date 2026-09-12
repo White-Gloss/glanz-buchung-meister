@@ -138,6 +138,8 @@ insert into zoho_sync_runner (shop_id) values ('white-gloss') on conflict do not
 
 alter table shop_settings add column if not exists zoho_ops_enabled boolean not null default false;
 alter table shop_settings add column if not exists zoho_dc text;
+alter table shop_settings add column if not exists zoho_client_id text;
+alter table shop_settings add column if not exists zoho_client_secret text;
 alter table shop_settings add column if not exists zoho_refresh_token text;
 alter table shop_settings add column if not exists zoho_access_token text;
 alter table shop_settings add column if not exists zoho_access_expires_at timestamptz;

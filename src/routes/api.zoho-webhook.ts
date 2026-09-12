@@ -4,10 +4,13 @@ export const Route = createFileRoute("/api/zoho-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { zohoWebhookAuthorized, handleZohoInbound } = await import("@/lib/zoho-inbound");
+        const { zohoWebhookAuthorized, handleZohoInbound, resolveZohoWebhookSecret } = await import("@/lib/zoho-inbound");
         const url = new URL(request.url);
         const header = request.headers.get("authorization") || request.headers.get("x-zoho-webhook-token");
-        if (!zohoWebhookAuthorized(header, url.searchParams.get("token"))) {
+        const { getSql } = await import("@/lib/db");
+        const sql = await getSql();
+        const secret = await resolveZohoWebhookSecret(sql);
+        if (!zohoWebhookAuthorized(header, url.searchParams.get("token"), secret)) {
           return Response.json(
             { ok: false, error: "unauthorized" },
             { status: 401, headers: { "cache-control": "no-store" } },
@@ -18,8 +21,6 @@ export const Route = createFileRoute("/api/zoho-webhook")({
           return Response.json({ ok: false, error: "invalid_payload" }, { status: 400 });
         }
         try {
-          const { getSql } = await import("@/lib/db");
-          const sql = await getSql();
           const actor = (process.env.OWNER_USER_ID || process.env.OWNER_EMAIL || "").trim();
           const result = await handleZohoInbound(sql, payload, actor);
           const { kickBookingDelivery } = await import("@/lib/booking-delivery");

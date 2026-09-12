@@ -48,10 +48,13 @@ import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
 import { Route as AdminOdooRouteImport } from './routes/admin.odoo'
 import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
 import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
+import { Route as AdminZohoRouteImport } from './routes/admin.zoho'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
 import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
+import { Route as ApiAvailabilityRouteImport } from './routes/api.availability'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
+import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
 import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
@@ -255,6 +258,11 @@ const AdminUnterlagenRoute = AdminUnterlagenRouteImport.update({
   path: '/unterlagen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminZohoRoute = AdminZohoRouteImport.update({
+  id: '/zoho',
+  path: '/zoho',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminZustandRoute = AdminZustandRouteImport.update({
   id: '/zustand',
   path: '/zustand',
@@ -265,6 +273,11 @@ const ApiAutomationCronRoute = ApiAutomationCronRouteImport.update({
   path: '/api/automation-cron',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAvailabilityRoute = ApiAvailabilityRouteImport.update({
+  id: '/api/availability',
+  path: '/api/availability',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
@@ -273,6 +286,11 @@ const ApiOperatorRoute = ApiOperatorRouteImport.update({
 const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
   id: '/api/whatsapp-webhook',
   path: '/api/whatsapp-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiZohoWebhookRoute = ApiZohoWebhookRouteImport.update({
+  id: '/api/zoho-webhook',
+  path: '/api/zoho-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenIndexRoute = LeistungenIndexRouteImport.update({
@@ -349,10 +367,13 @@ export interface FileRoutesByFullPath {
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
+  '/api/availability': typeof ApiAvailabilityRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
+  '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -397,10 +418,13 @@ export interface FileRoutesByTo {
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
+  '/api/availability': typeof ApiAvailabilityRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
+  '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice': typeof AbholserviceIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -449,10 +473,13 @@ export interface FileRoutesById {
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
+  '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
+  '/api/availability': typeof ApiAvailabilityRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
+  '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
   '/ratgeber/$slug': typeof RatgeberSlugRoute
   '/abholservice/': typeof AbholserviceIndexRoute
@@ -503,10 +530,13 @@ export interface FileRouteTypes {
     | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
+    | '/admin/zoho'
     | '/admin/zustand'
     | '/api/automation-cron'
+    | '/api/availability'
     | '/api/operator'
     | '/api/whatsapp-webhook'
+    | '/api/zoho-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -551,10 +581,13 @@ export interface FileRouteTypes {
     | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
+    | '/admin/zoho'
     | '/admin/zustand'
     | '/api/automation-cron'
+    | '/api/availability'
     | '/api/operator'
     | '/api/whatsapp-webhook'
+    | '/api/zoho-webhook'
     | '/ratgeber/$slug'
     | '/abholservice'
     | '/admin'
@@ -602,10 +635,13 @@ export interface FileRouteTypes {
     | '/admin/odoo'
     | '/admin/posteingang'
     | '/admin/unterlagen'
+    | '/admin/zoho'
     | '/admin/zustand'
     | '/api/automation-cron'
+    | '/api/availability'
     | '/api/operator'
     | '/api/whatsapp-webhook'
+    | '/api/zoho-webhook'
     | '/leistungen/$slug'
     | '/ratgeber/$slug'
     | '/abholservice/'
@@ -642,8 +678,10 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WiderrufRoute: typeof WiderrufRoute
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
+  ApiAvailabilityRoute: typeof ApiAvailabilityRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
+  ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -922,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUnterlagenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/zoho': {
+      id: '/admin/zoho'
+      path: '/zoho'
+      fullPath: '/admin/zoho'
+      preLoaderRoute: typeof AdminZohoRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/zustand': {
       id: '/admin/zustand'
       path: '/zustand'
@@ -936,6 +981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutomationCronRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/availability': {
+      id: '/api/availability'
+      path: '/api/availability'
+      fullPath: '/api/availability'
+      preLoaderRoute: typeof ApiAvailabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
@@ -948,6 +1000,13 @@ declare module '@tanstack/react-router' {
       path: '/api/whatsapp-webhook'
       fullPath: '/api/whatsapp-webhook'
       preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/zoho-webhook': {
+      id: '/api/zoho-webhook'
+      path: '/api/zoho-webhook'
+      fullPath: '/api/zoho-webhook'
+      preLoaderRoute: typeof ApiZohoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leistungen/': {
@@ -1030,6 +1089,7 @@ interface AdminRouteChildren {
   AdminOdooRoute: typeof AdminOdooRoute
   AdminPosteingangRoute: typeof AdminPosteingangRoute
   AdminUnterlagenRoute: typeof AdminUnterlagenRoute
+  AdminZohoRoute: typeof AdminZohoRoute
   AdminZustandRoute: typeof AdminZustandRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1048,6 +1108,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminOdooRoute: AdminOdooRoute,
   AdminPosteingangRoute: AdminPosteingangRoute,
   AdminUnterlagenRoute: AdminUnterlagenRoute,
+  AdminZohoRoute: AdminZohoRoute,
   AdminZustandRoute: AdminZustandRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -1121,8 +1182,10 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WiderrufRoute: WiderrufRoute,
   ApiAutomationCronRoute: ApiAutomationCronRoute,
+  ApiAvailabilityRoute: ApiAvailabilityRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
+  ApiZohoWebhookRoute: ApiZohoWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

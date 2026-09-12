@@ -5,31 +5,38 @@ const SHOP = "white-gloss";
 
 export async function readZohoCredentials(sql: Sql): Promise<ZohoCredentials | null> {
   const fromEnv = zohoCredentialsFromEnv();
-  if (fromEnv) return fromEnv;
   const [row] = await sql<{
     zoho_dc: string | null;
+    zoho_client_id: string | null;
+    zoho_client_secret: string | null;
     zoho_refresh_token: string | null;
     zoho_access_token: string | null;
     zoho_access_expires_at: string | Date | null;
     zoho_books_org_id: string | null;
   }>`
-    select zoho_dc, zoho_refresh_token, zoho_access_token, zoho_access_expires_at, zoho_books_org_id
+    select zoho_dc, zoho_client_id, zoho_client_secret, zoho_refresh_token,
+           zoho_access_token, zoho_access_expires_at, zoho_books_org_id
     from shop_settings where shop_id = ${SHOP}
-  `;
-  const refresh = row?.zoho_refresh_token?.trim();
-  const clientId = (process.env.ZOHO_CLIENT_ID || "").trim();
-  const clientSecret = (process.env.ZOHO_CLIENT_SECRET || "").trim();
-  if (!refresh || !clientId || !clientSecret) return null;
+  `.catch(() => []);
+  const clientId = (process.env.ZOHO_CLIENT_ID || "").trim() || row?.zoho_client_id?.trim() || "";
+  const clientSecret =
+    (process.env.ZOHO_CLIENT_SECRET || "").trim() || row?.zoho_client_secret?.trim() || "";
+  const refreshToken =
+    (process.env.ZOHO_REFRESH_TOKEN || "").trim() || row?.zoho_refresh_token?.trim() || "";
+  if (!clientId || !clientSecret || !refreshToken) {
+    return fromEnv;
+  }
   return {
-    dc: normalizeZohoDc(row?.zoho_dc),
+    dc: normalizeZohoDc(process.env.ZOHO_DC || row?.zoho_dc),
     clientId,
     clientSecret,
-    refreshToken: refresh,
-    accessToken: row?.zoho_access_token?.trim() || undefined,
+    refreshToken,
+    accessToken: fromEnv?.accessToken || row?.zoho_access_token?.trim() || undefined,
     accessExpiresAt: row?.zoho_access_expires_at
       ? new Date(row.zoho_access_expires_at).getTime()
       : undefined,
-    booksOrgId: row?.zoho_books_org_id?.trim() || undefined,
+    booksOrgId:
+      (process.env.ZOHO_BOOKS_ORG_ID || "").trim() || row?.zoho_books_org_id?.trim() || undefined,
   };
 }
 

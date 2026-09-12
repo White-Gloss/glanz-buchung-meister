@@ -402,13 +402,8 @@ export async function processZohoJob(
 export async function runZohoSync(sql: Sql, options: { limit?: number } = {}) {
   const result = { processed: 0, failed: 0, review: 0 };
   await ensureZohoSchema(sql);
-  if (!(await zohoOpsEnabled(sql)) && !process.env.ZOHO_CLIENT_ID) {
-    const pending = await sql<{ id: number }>`
-      select id from zoho_job_queue
-      where shop_id = ${SHOP} and status = 'pending' and job in ('confirmation', 'record', 'photos')
-      limit 1
-    `;
-    if (!pending.length) return result;
+  if (!(await zohoOpsEnabled(sql))) {
+    return result;
   }
   const token = randomUUID();
   const lease = await sql`
