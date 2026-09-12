@@ -256,6 +256,26 @@ test("no date, past date and weekend cannot be manually confirmed; completion re
   }
 });
 
+test("website booking queues Bitrix without numbered 0015/0016 already applied", async () => {
+  const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } });
+  try {
+    for (const f of (await readdir("migrations"))
+      .filter((name) => name.endsWith(".sql") && name < "0015")
+      .sort())
+      await pg.exec(await readFile(`migrations/${f}`, "utf8"));
+    const sql = wrap(pg, (fn) => pg.transaction((tx) => fn(wrap(tx))));
+    const created = await create(sql);
+    assert.equal(created.status, "neu");
+    assert.equal(
+      (await sql`select * from bitrix_sync_queue where booking_id=${created.id}`).length,
+      1,
+    );
+    assert.ok((await sql`select * from zoho_job_queue where booking_id=${created.id}`).length >= 1);
+  } finally {
+    await pg.close();
+  }
+});
+
 test("migration preserves historical confirmations and refuses conflicting legacy data atomically", async () => {
   for (const collision of [false, true]) {
     const pg = new PGlite();
