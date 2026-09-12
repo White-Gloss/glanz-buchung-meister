@@ -196,4 +196,12 @@ test("probeBitrix accepts a valid key and rejects 401 without storing details", 
   });
   assert.equal(denied.ok, false);
   if (!denied.ok) assert.match(denied.error, /prüfen/);
+  const inactive = await probeBitrix("vibe_api_test_key_1234567890", {
+    fetchImpl: async () =>
+      new Response(JSON.stringify({ success: false, error: { code: "KEY_INACTIVE" } }), {
+        status: 401,
+      }),
+  });
+  assert.equal(inactive.ok, false);
+  if (!inactive.ok) assert.match(inactive.error, /gesperrt/);
 });
