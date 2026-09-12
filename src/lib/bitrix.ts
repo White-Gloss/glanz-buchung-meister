@@ -1,5 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { BitrixError, type BitrixCall } from "./bitrix-error.ts";
+import {
+  createBitrixRestClient,
+  normalizeBitrixRestWebhook,
+  probeBitrixRest,
+} from "./bitrix-rest.ts";
+
+export { BitrixError, type BitrixCall } from "./bitrix-error.ts";
+export { normalizeBitrixRestWebhook } from "./bitrix-rest.ts";
 
 const DEFAULT_BASE = "https://vibecode.bitrix24.com/v1";
 
@@ -36,7 +45,9 @@ export async function probeBitrix(
   options: { fetchImpl?: typeof fetch; apiBase?: string } = {},
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const key = apiKey.trim();
-  if (key.length < 20) return { ok: false, error: "Bitte den Bitrix-Schlüssel einfügen." };
+  if (key.length < 20) return { ok: false, error: "Bitte den Bitrix-Schlüssel oder die REST-Webhook-URL einfügen." };
+  const webhook = normalizeBitrixRestWebhook(key);
+  if (webhook) return probeBitrixRest(webhook, { fetchImpl: options.fetchImpl });
   const base = (options.apiBase || vibeApiBase()).replace(/\/$/, "");
   const fetchImpl = options.fetchImpl ?? fetch;
   try {
@@ -76,28 +87,6 @@ export async function probeBitrix(
   }
 }
 
-export class BitrixError extends Error {
-  code: string;
-  status: number;
-  review: boolean;
-  retryable: boolean;
-  constructor(
-    message: string,
-    code: string,
-    status = 0,
-    opts?: { review?: boolean; retryable?: boolean },
-  ) {
-    super(message);
-    this.name = "BitrixError";
-    this.code = code;
-    this.status = status;
-    this.review = opts?.review ?? false;
-    this.retryable = opts?.retryable ?? (status === 429 || status >= 500);
-  }
-}
-
-export type BitrixCall = <T>(method: string, path: string, body?: unknown) => Promise<T>;
-
 type VibeResponse<T> = {
   success?: boolean;
   data?: T;
@@ -110,6 +99,8 @@ export function createBitrixClient(apiKey = vibeApiKey(), base = vibeApiBase()):
       review: true,
     });
   }
+  const webhook = normalizeBitrixRestWebhook(apiKey);
+  if (webhook) return createBitrixRestClient(webhook);
   return async <T>(method: string, path: string, body?: unknown) => {
     const headers: Record<string, string> = {
       "X-Api-Key": apiKey,

@@ -77,11 +77,15 @@ function AdminBitrix() {
             ? status.source === "env"
               ? "Schlüssel liegt in der Serverumgebung."
               : "Schlüssel ist im Betriebspanel hinterlegt."
-            : "Noch kein Schlüssel — unten einfügen. Ohne Schlüssel bleibt die Website-Buchung gespeichert, Bitrix wartet."}
+            : "Noch kein Schlüssel — unten die REST-Webhook-URL aus Bitrix24 einfügen. Ohne Verbindung bleibt die Website-Buchung gespeichert, Bitrix wartet."}
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          REST-API in Bitrix24: Anwendungen → Entwicklerressourcen → Anderes → Eingehender Webhook.
+          Rechte CRM und Kalender. Die URL hier einfügen, nicht in den Chat.
         </p>
         {sync?.canManage ? (
           <form className="mt-4 max-w-xl space-y-3" onSubmit={onSave}>
-            <Field id="bitrix-key" label="Bitrix-API-Schlüssel">
+            <Field id="bitrix-key" label="REST-Webhook-URL oder API-Schlüssel">
               <input
                 id="bitrix-key"
                 type="password"

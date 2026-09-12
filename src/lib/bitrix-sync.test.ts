@@ -13,6 +13,7 @@ import {
   stageForStatus,
 } from "./bitrix-sync.ts";
 import { DEFAULT_PRODUCT_MAP, probeBitrix } from "./bitrix.ts";
+import { createBitrixRestClient, normalizeBitrixRestWebhook, toRestDealFields } from "./bitrix-rest.ts";
 import { readVibeApiKey } from "./bitrix-credentials.server.ts";
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
@@ -204,4 +205,41 @@ test("probeBitrix accepts a valid key and rejects 401 without storing details", 
   });
   assert.equal(inactive.ok, false);
   if (!inactive.ok) assert.match(inactive.error, /gesperrt/);
+});
+
+test("Bitrix REST webhook URL is accepted and mapped to crm.deal.add", async () => {
+  assert.equal(
+    normalizeBitrixRestWebhook("https://b24-emfor7.bitrix24.de/rest/1/examplecode123/crm.deal.add.json"),
+    "https://b24-emfor7.bitrix24.de/rest/1/examplecode123/",
+  );
+  assert.equal(normalizeBitrixRestWebhook("https://evil.example/rest/1/abc"), null);
+  const fields = toRestDealFields({
+    title: "WG-17 · Test",
+    contactId: 9,
+    stageId: "NEW",
+    amount: 149,
+    ufCrmWgPackage: "Basisreinigung",
+  });
+  assert.equal(fields.TITLE, "WG-17 · Test");
+  assert.equal(fields.CONTACT_ID, 9);
+  assert.equal(fields.UF_CRM_WG_PACKAGE, "Basisreinigung");
+  const calls: string[] = [];
+  const ok = await probeBitrix("https://b24-emfor7.bitrix24.de/rest/1/examplecode123/", {
+    fetchImpl: async (input) => {
+      calls.push(String(input));
+      return new Response(JSON.stringify({ result: [] }), { status: 200 });
+    },
+  });
+  assert.equal(ok.ok, true);
+  assert.match(calls[0] || "", /crm\.deal\.list\.json/);
+  const request = createBitrixRestClient(
+    "https://b24-emfor7.bitrix24.de/rest/1/examplecode123/",
+    async (input) => {
+      const url = String(input);
+      if (url.includes("crm.deal.add")) return new Response(JSON.stringify({ result: 22 }), { status: 200 });
+      return new Response(JSON.stringify({ result: true }), { status: 200 });
+    },
+  );
+  const created = await request<{ id: number }>("POST", "/deals", { title: "WG-1", contactId: 5, amount: 149 });
+  assert.equal(created.id, 22);
 });
