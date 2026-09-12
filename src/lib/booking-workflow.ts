@@ -20,6 +20,7 @@ import { queueOdooBooking } from "./odoo-sync.ts";
 import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
 import { enqueueZohoJob, zohoOpsEnabled } from "./zoho-ops.ts";
+import { queueBitrixBooking } from "./bitrix-sync.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -108,6 +109,7 @@ async function event(
   if (name === "booking.cancelled" || name === "booking.rejected") {
     await enqueueZohoJob(tx, row.id, "calendar", `calendar-release:${row.id}:${row.version}`);
   }
+  await queueBitrixBooking(tx, row);
   if (!(await zohoOpsEnabled(tx))) {
     await queueOdooBooking(tx, row);
     await queueRoappBooking(tx, row);

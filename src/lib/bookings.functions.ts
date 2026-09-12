@@ -208,7 +208,15 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
       );
     }
 
-    return saveBookingPhotos(sql, bookingId, data.files);
+    const saved = await saveBookingPhotos(sql, bookingId, data.files);
+    const [row] = await sql<{ id: number; version: number }>`
+      select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
+    if (row) {
+      const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
+      await queueBitrixPhotos(sql, row).catch(() => undefined);
+      kickBookingDelivery(sql);
+    }
+    return saved;
   });
 
 export const listBookings = createServerFn({ method: "GET" })
