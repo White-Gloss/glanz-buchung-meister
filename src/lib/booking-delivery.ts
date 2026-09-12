@@ -11,6 +11,7 @@ export function kickBookingDelivery(sql: Sql): void {
   const state = globalThis as typeof globalThis & {
     __bookingDeliveryKick?: () => void;
     __zohoSyncKick?: () => void;
+    __bitrixSyncKick?: () => void;
   };
   state.__bookingDeliveryKick ??= createDeliveryKick(
     async () => {
@@ -27,8 +28,16 @@ export function kickBookingDelivery(sql: Sql): void {
     },
     () => console.error("[zoho:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
   );
+  state.__bitrixSyncKick ??= createDeliveryKick(
+    async () => {
+      const { runBitrixSync } = await import("./bitrix-sync.ts");
+      await runBitrixSync(sql);
+    },
+    () => console.error("[bitrix:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
+  );
   state.__bookingDeliveryKick();
   state.__zohoSyncKick();
+  state.__bitrixSyncKick();
 }
 
 export function createDeliveryKick(run: () => Promise<unknown>, onError: () => void): () => void {

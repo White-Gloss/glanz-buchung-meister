@@ -89,6 +89,10 @@ test("manual requests keep audit, Odoo queue and separate confirmation; customer
       (await sql`select * from lexware_sync_queue where booking_id=${first.booking.id}`).length,
       1,
     );
+    assert.equal(
+      (await sql`select * from bitrix_sync_queue where booking_id=${first.booking.id}`).length,
+      1,
+    );
     assert.equal((await sql`select * from outbound_queue where to_addr=${data.email}`).length, 0);
     await assert.rejects(
       () => saveManualBookingRequest(sql, { ...data, notifyCustomer: true }, "owner"),

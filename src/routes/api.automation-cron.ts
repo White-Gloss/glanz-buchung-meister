@@ -25,12 +25,14 @@ export const Route = createFileRoute("/api/automation-cron")({
           const { runRoappSync } = await import("@/lib/roapp-sync");
           const { runLexwareSync } = await import("@/lib/lexware-sync");
           const { runZohoSync } = await import("@/lib/zoho-sync");
-          const [delivery, odoo, roapp, lexware, zoho] = await Promise.all([
+          const { runBitrixSync } = await import("@/lib/bitrix-sync");
+          const [delivery, odoo, roapp, lexware, zoho, bitrix] = await Promise.all([
             runNotificationWorker(sql),
             runOdooSync(sql),
             runRoappSync(sql),
             runLexwareSync(sql),
             runZohoSync(sql),
+            runBitrixSync(sql),
           ]);
           const { scheduleLexwareMail } = await import("@/lib/lexware-mail");
           const lexwareMail = await scheduleLexwareMail(sql).catch(() => ({
@@ -45,6 +47,7 @@ export const Route = createFileRoute("/api/automation-cron")({
               roapp,
               lexware,
               zoho,
+              bitrix,
               photoCleanup,
               lexwareMail,
             },
