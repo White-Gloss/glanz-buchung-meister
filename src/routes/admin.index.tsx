@@ -247,11 +247,17 @@ function AdminBookings() {
                 ? bitrix.source === "env"
                   ? "Verbindung steht über die Serverumgebung."
                   : "Verbindung steht im Betriebspanel."
-                : "Jede Anfrage von #buchung wird nach Bitrix24 übertragen, sobald der persönliche API-Schlüssel hier gespeichert ist. Die Website-Buchung bleibt gespeichert."}
+                : "Jede Anfrage von #buchung wird nach Bitrix24 übertragen, sobald der REST-Webhook oder API-Schlüssel hier gespeichert ist. Die Website-Buchung bleibt gespeichert."}
               {bitrix?.configured && bitrixPending > 0
                 ? ` ${bitrixPending} offene Übertragungen.`
                 : ""}
             </p>
+            {!bitrix?.configured ? (
+              <p className="mt-2 max-w-2xl text-sm text-muted">
+                In Bitrix24: Anwendungen → Entwicklerressourcen → Anderes → Eingehender Webhook, Rechte
+                CRM und Kalender. Die Webhook-URL hier einfügen.
+              </p>
+            ) : null}
           </div>
           <Link to="/admin/bitrix" className="min-h-11 text-sm underline">
             Bitrix24-Übersicht
@@ -280,7 +286,7 @@ function AdminBookings() {
               }
             }}
           >
-            <Field id="admin-bitrix-key" label="Persönlicher Bitrix-API-Schlüssel">
+            <Field id="admin-bitrix-key" label="REST-Webhook-URL oder API-Schlüssel">
               <input
                 id="admin-bitrix-key"
                 type="password"

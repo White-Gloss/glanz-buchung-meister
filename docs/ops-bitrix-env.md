@@ -18,6 +18,11 @@ Required:
 VIBE_API_KEY
 ```
 
+`VIBE_API_KEY` darf der VibeCode-Schlüssel (`vibe_api_…`) **oder** die URL eines
+eingehenden Bitrix24-REST-Webhooks sein
+(`https://….bitrix24.de/rest/…/…/`). Der Inhaber kann denselben Wert unter
+`/admin` speichern.
+
 Optional:
 
 ```

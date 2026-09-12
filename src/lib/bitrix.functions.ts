@@ -52,7 +52,7 @@ export const bitrixSyncOverview = createServerFn({ method: "GET" })
 export const saveBitrixApiKey = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
-    z.object({ apiKey: z.string().trim().min(20).max(512) }).parse(input),
+    z.object({ apiKey: z.string().trim().min(20).max(1024) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
