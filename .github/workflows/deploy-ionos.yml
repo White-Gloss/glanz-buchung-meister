@@ -367,6 +367,7 @@ jobs:
           skip=true
           for path in "${changed[@]}"; do
             case "$path" in
+              .github/workflows/deploy-ionos.yml) skip=false; break ;;
               .github/workflows/*) ;;
               *) skip=false; break ;;
             esac
