@@ -13,6 +13,7 @@ import {
   type LexwareRequest,
 } from "./lexware.ts";
 import { readLexwareCredentials } from "./lexware-credentials.server.ts";
+import { zohoOpsEnabled } from "./zoho-credentials.server.ts";
 
 const SHOP = "white-gloss";
 const VAT_PERCENT = 19;
@@ -59,6 +60,7 @@ export async function queueLexwareBooking(
   sql: Sql,
   booking: Pick<WorkflowBooking, "id" | "version">,
 ) {
+  if (await zohoOpsEnabled(sql).catch(() => false)) return;
   await ensureLexwareSchema(sql);
   await sql`insert into lexware_sync_queue(booking_id,shop_id,requested_version)
     values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
@@ -266,6 +268,7 @@ export async function runLexwareSync(
   } = {},
 ) {
   const result = { synced: 0, failed: 0, review: 0 };
+  if (await zohoOpsEnabled(sql).catch(() => false)) return result;
   await ensureLexwareSchema(sql);
   const [settings] = await sql<{
     lexware_sync_enabled: boolean;

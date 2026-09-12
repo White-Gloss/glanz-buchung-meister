@@ -19,6 +19,7 @@ import type { UploadCapability } from "./booking-upload-capability.ts";
 import { queueOdooBooking } from "./odoo-sync.ts";
 import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
+import { enqueueZohoJob, zohoOpsEnabled } from "./zoho-ops.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -96,9 +97,22 @@ async function event(
     returning id
   `;
   await enqueue(tx, row, name, saved.id, actor);
-  await queueOdooBooking(tx, row);
-  await queueRoappBooking(tx, row);
-  await queueLexwareBooking(tx, row);
+  await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`);
+  if (name === "booking.created") {
+    await enqueueZohoJob(tx, row.id, "photos", `photos:${row.id}:created`);
+  }
+  if (name === "booking.confirmed") {
+    await enqueueZohoJob(tx, row.id, "calendar", `calendar:${row.id}:${row.version}`);
+    await enqueueZohoJob(tx, row.id, "confirmation", `confirmation:${row.id}:${row.version}`);
+  }
+  if (name === "booking.cancelled" || name === "booking.rejected") {
+    await enqueueZohoJob(tx, row.id, "calendar", `calendar-release:${row.id}:${row.version}`);
+  }
+  if (!(await zohoOpsEnabled(tx))) {
+    await queueOdooBooking(tx, row);
+    await queueRoappBooking(tx, row);
+    await queueLexwareBooking(tx, row);
+  }
 }
 
 async function findBooking(tx: Sql, id: number) {
@@ -191,8 +205,8 @@ async function persistBookingRequest(
         .filter(Boolean)
         .join("\n");
       const [booking] = await tx<WorkflowBooking>`
-        insert into bookings(shop_id,status,customer_name,phone,email,preferred_date,preferred_slot,package_id,class_id,extra_ids,city_slug,note,total_cents,pickup_cents,upload_token_hash,upload_token_expires_at,request_key_hash,request_fingerprint)
-        values(${SHOP},'neu',${data.name},${data.phone},${data.email || null},${data.date || null},${data.slot || null},${data.packageId},${data.classId},${JSON.stringify(data.extraIds)},${data.citySlug || null},${note || null},${Math.round(quote.total * 100)},${Math.round((quote.pickup ?? 0) * 100)},${capability.hash},${capability.expiresAt},${key},${fingerprint}) returning *
+        insert into bookings(shop_id,status,customer_name,phone,email,preferred_date,preferred_slot,package_id,class_id,extra_ids,city_slug,note,total_cents,pickup_cents,estimated_price_cents,vehicle_make,vehicle_model,vehicle_plate,upload_token_hash,upload_token_expires_at,request_key_hash,request_fingerprint)
+        values(${SHOP},'neu',${data.name},${data.phone},${data.email || null},${data.date || null},${data.slot || null},${data.packageId},${data.classId},${JSON.stringify(data.extraIds)},${data.citySlug || null},${note || null},${Math.round(quote.total * 100)},${Math.round((quote.pickup ?? 0) * 100)},${Math.round(quote.total * 100)},${"vehicleMake" in data ? data.vehicleMake || null : null},${"vehicleModel" in data ? data.vehicleModel || null : null},${"vehiclePlate" in data ? data.vehiclePlate || null : null},${capability.hash},${capability.expiresAt},${key},${fingerprint}) returning *
       `;
       await tx`insert into customers(shop_id,name,phone,email) values(${SHOP},${data.name},${data.phone},${data.email || null})
         on conflict(shop_id,phone) do update set name=excluded.name,email=coalesce(excluded.email,customers.email)`;
@@ -280,6 +294,11 @@ export async function changeBookingStatus(
   if (!actor || actor === "auto" || actor.startsWith("operator:"))
     throw new Error("Eine angemeldete Benutzeraktion ist erforderlich.");
   if (status === "bestaetigt") throw new Error("Bitte die manuelle Terminbestätigung verwenden.");
+  if (status === "erledigt" && (await zohoOpsEnabled(sql))) {
+    throw new Error(
+      "Bitte den Leistungsabschluss mit Zahlungsvariante im Zoho-Arbeitsplatz verwenden. Eine Rechnung entsteht nicht allein durch den Statuswechsel.",
+    );
+  }
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);

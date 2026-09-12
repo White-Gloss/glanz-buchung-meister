@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import {
   BookOpenText,
+  CalendarClock,
   CalendarDays,
   ClipboardList,
   Database,
@@ -19,6 +20,7 @@ import { site } from "@/data/site";
 
 const icons: Record<string, typeof CalendarDays> = {
   Buchungen: ClipboardList,
+  "Zoho Betrieb": CalendarClock,
   Posteingang: Inbox,
   Kalender: CalendarDays,
   Leitstand: Workflow,

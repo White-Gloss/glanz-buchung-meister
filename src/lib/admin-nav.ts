@@ -1,5 +1,6 @@
 export const adminNav = [
   { to: "/admin", label: "Buchungen", match: "exact" as const },
+  { to: "/admin/zoho", label: "Zoho Betrieb", match: "prefix" as const },
   { to: "/admin/posteingang", label: "Posteingang", match: "prefix" as const },
   { to: "/admin/kalender", label: "Kalender", match: "prefix" as const },
   { to: "/admin/automatisierung", label: "Leitstand", match: "prefix" as const },

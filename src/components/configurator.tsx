@@ -37,6 +37,10 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState("");
   const [note, setNote] = useState("");
+  const [vehicleMake, setVehicleMake] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [busyDays, setBusyDays] = useState<string[]>([]);
   const [privacy, setPrivacy] = useState(false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
@@ -47,6 +51,27 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const saved = useRef<{ reference: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState("");
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
+
+  useEffect(() => {
+    const from = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    const until = new Date();
+    until.setDate(until.getDate() + 60);
+    const to = until.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    void fetch(`/api/availability?from=${from}&to=${to}`)
+      .then((response) => response.json())
+      .then((payload: { windows?: { start: string; end: string }[] }) => {
+        const days = new Set<string>();
+        for (const window of payload.windows || []) {
+          const start = new Date(window.start);
+          const end = new Date(window.end);
+          for (let time = start.getTime(); time < end.getTime(); time += 12 * 60 * 60 * 1000) {
+            days.add(new Date(time).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }));
+          }
+        }
+        setBusyDays([...days]);
+      })
+      .catch(() => undefined);
+  }, []);
 
   const quote = useMemo(
     () => quoteTotal({ packageId, classId, extraIds, citySlug }),
@@ -94,6 +119,9 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             classId,
             extraIds,
             citySlug,
+            vehicleMake: vehicleMake.trim() || undefined,
+            vehicleModel: vehicleModel.trim() || undefined,
+            vehiclePlate: vehiclePlate.trim() || undefined,
             kind: "booking",
             privacy: true as const,
             website,
@@ -340,6 +368,37 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           />
           {fieldError("email")}
         </Field>
+        <Field tone="public" id="vehicleMake" label="Fahrzeugmarke (optional)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="vehicleMake"
+            className={inputLine}
+            maxLength={80}
+            value={vehicleMake}
+            onChange={(e) => setVehicleMake(e.target.value)}
+          />
+        </Field>
+        <Field tone="public" id="vehicleModel" label="Fahrzeugmodell (optional)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="vehicleModel"
+            className={inputLine}
+            maxLength={80}
+            value={vehicleModel}
+            onChange={(e) => setVehicleModel(e.target.value)}
+          />
+        </Field>
+        <Field tone="public" id="vehiclePlate" label="Kennzeichen (optional)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="vehiclePlate"
+            className={inputLine}
+            maxLength={20}
+            autoComplete="off"
+            value={vehiclePlate}
+            onChange={(e) => setVehiclePlate(e.target.value)}
+          />
+        </Field>
         <Field tone="public" id="date" label="Wunschtermin (optional)">
           <input
             disabled={pending || savedReference !== null}
@@ -352,6 +411,12 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             onChange={(e) => setDate(e.target.value)}
           />
           {fieldError("date")}
+          {date && busyDays.includes(date) ? (
+            <p className="text-xs text-muted">
+              Dieser Tag ist in der Werkstatt bereits belegt. Die Anfrage bleibt unverbindlich; wir
+              schlagen nach der Prüfung einen freien Zeitraum vor.
+            </p>
+          ) : null}
         </Field>
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select

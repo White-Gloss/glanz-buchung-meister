@@ -5,6 +5,7 @@ import { isEmailAddress } from "./utils.ts";
 import type { Sql } from "./db.ts";
 import { type BookingPdfData } from "./booking-pdf.ts";
 import { LEXWARE_ONLY } from "./billing-policy.ts";
+import { receiptEmailCopy } from "./zoho-documents.ts";
 
 export type BookingEvent =
   | "booking.created"
@@ -155,27 +156,28 @@ export async function queueBookingEvent(
   if (
     options.notifyCustomer !== false &&
     isEmailAddress(booking.email) &&
-    !["booking.completed", "booking.no_show"].includes(event)
+    !["booking.completed", "booking.no_show", "booking.confirmed"].includes(event)
   ) {
     const when =
       `${booking.preferred_date?.slice(0, 10) || "noch offen"} ${booking.preferred_slot || ""}`.trim();
-    const message =
+    const body =
       event === "booking.created" || event === "booking.rescheduled"
-        ? "Ihre Anfrage ist eingegangen. Der Termin ist noch nicht bestätigt. Wir melden uns nach der Prüfung."
-        : event === "booking.confirmed"
-          ? `Ihre Abgabe wurde persönlich bestätigt: ${when}.`
-          : event === "booking.cancelled"
-            ? "Ihr Termin wurde storniert."
-            : event === "booking.rejected"
-              ? "Ihre Terminanfrage wurde abgelehnt. Für eine Alternative melden Sie sich gerne."
-              : `Ihre Buchungsdaten wurden aktualisiert. Gewünschter Termin: ${when}.`;
+        ? receiptEmailCopy(booking.customer_name, `WG-${booking.id}`)
+        : event === "booking.cancelled"
+          ? `Guten Tag ${booking.customer_name},\n\nIhr Termin wurde storniert.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`
+          : event === "booking.rejected"
+            ? `Guten Tag ${booking.customer_name},\n\nIhre Terminanfrage wurde abgelehnt. Für eine Alternative melden Sie sich gerne.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`
+            : `Guten Tag ${booking.customer_name},\n\nIhre Buchungsdaten wurden aktualisiert. Gewünschter Termin: ${when}.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`;
     await enqueueNotification(sql, {
       key: `booking:${booking.id}:event:${eventId}:customer-v2:email:${recipientHash(booking.email)}`,
       eventType: event,
       channel: "email",
       to: booking.email,
-      subject,
-      body: `Guten Tag ${booking.customer_name},\n\n${message}\nVorgang WG-${booking.id}\nLeistung: ${packages.find((p) => p.id === booking.package_id)?.name || booking.package_id}\nPreis laut Auftrag: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format((booking.total_cents || 0) / 100)}\n\nWhite Gloss Detailing`,
+      subject:
+        event === "booking.created"
+          ? `Anfrage eingegangen · White Gloss WG-${booking.id}`
+          : subject,
+      body,
       attachments,
       bookingId: booking.id,
       bookingVersion: version,

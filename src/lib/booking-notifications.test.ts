@@ -139,7 +139,7 @@ test("booking notifications persist against all production migrations", async (t
         assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 2);
         const customer = messages.find((m) => m.event_key.includes(":customer-v2:"));
         assert.ok(customer);
-        assert.match(customer.body, /noch nicht bestätigt/);
+        assert.match(customer.body, /noch nicht verbindlich bestätigt/);
         assert.ok(messages.every((m) => m.attachments.length === 0));
         assert.equal(fetchMock.mock.callCount(), 0);
       },

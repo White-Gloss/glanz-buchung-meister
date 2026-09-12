@@ -23,7 +23,8 @@ export function isApprovedCustomerNotification(
         "booking.updated",
       ].includes(event)) ||
     (/^lexware-mail:v1:[a-f0-9-]{36}:(invoice|reminder)$/.test(key) &&
-      ["lexware.invoice", "lexware.reminder"].includes(event))
+      ["lexware.invoice", "lexware.reminder"].includes(event)) ||
+    (key.startsWith("zoho:confirmation:") && event === "booking.confirmed")
   );
 }
 
