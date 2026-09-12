@@ -276,6 +276,8 @@ jobs:
               probe_env_key REMINDER_CRON_SECRET
               probe_env_key ALLOW_LOCAL_PGLITE
               probe_env_key HOST
+              probe_env_key VIBE_API_KEY
+              probe_env_key VIBE_API_BASE
             else
               echo "environ_parse=unreadable"
             fi
@@ -397,6 +399,21 @@ jobs:
         run: |
           npm ci --ignore-scripts
           npm run build
+
+      - name: Bitrix-Schlüssel ins Release legen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        env:
+          VIBE_API_KEY: ${{ secrets.VIBE_API_KEY }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${VIBE_API_KEY:-}" ]]; then
+            echo "Kein GitHub-Secret VIBE_API_KEY; Bitrix bleibt no-op, bis der VPS-Wert gesetzt ist."
+            exit 0
+          fi
+          umask 077
+          printf 'VIBE_API_KEY=%s\n' "$VIBE_API_KEY" > .output/runtime-vibe.env
+          echo "runtime-vibe.env geschrieben."
 
       - name: Release-Paket erstellen
         if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'

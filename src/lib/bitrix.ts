@@ -1,7 +1,30 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 const DEFAULT_BASE = "https://vibecode.bitrix24.com/v1";
 
+function keyFromReleaseOverlay() {
+  const candidates = [
+    join(process.cwd(), ".output/runtime-vibe.env"),
+    join(process.cwd(), "runtime-vibe.env"),
+  ];
+  for (const path of candidates) {
+    try {
+      if (!existsSync(path)) continue;
+      const line = readFileSync(path, "utf8")
+        .split(/\r?\n/)
+        .find((entry) => entry.startsWith("VIBE_API_KEY="));
+      const value = line?.slice("VIBE_API_KEY=".length).trim() || "";
+      if (value) return value;
+    } catch {
+      /* overlay is optional */
+    }
+  }
+  return "";
+}
+
 export function vibeApiKey() {
-  return (process.env.VIBE_API_KEY || "").trim();
+  return (process.env.VIBE_API_KEY || keyFromReleaseOverlay()).trim();
 }
 
 export function vibeApiBase() {

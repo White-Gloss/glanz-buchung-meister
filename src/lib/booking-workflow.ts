@@ -19,7 +19,7 @@ import type { UploadCapability } from "./booking-upload-capability.ts";
 import { queueOdooBooking } from "./odoo-sync.ts";
 import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
-import { enqueueZohoJob, zohoOpsEnabled } from "./zoho-ops.ts";
+import { enqueueZohoJob, ensureZohoSchema, zohoOpsEnabled } from "./zoho-ops.ts";
 import { queueBitrixBooking } from "./bitrix-sync.ts";
 
 const SHOP = "white-gloss";
@@ -186,6 +186,7 @@ async function persistBookingRequest(
   };
   const fingerprint = hash(JSON.stringify(content));
   const quote = quoteTotal(data);
+  await ensureZohoSchema(sql);
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);
@@ -244,6 +245,7 @@ export async function confirmBookingManually(
   enqueue: Enqueue = queueBookingEvent,
 ) {
   await requireBookingOwner(sql, actor);
+  await ensureZohoSchema(sql);
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);
@@ -296,6 +298,7 @@ export async function changeBookingStatus(
   if (!actor || actor === "auto" || actor.startsWith("operator:"))
     throw new Error("Eine angemeldete Benutzeraktion ist erforderlich.");
   if (status === "bestaetigt") throw new Error("Bitte die manuelle Terminbestätigung verwenden.");
+  await ensureZohoSchema(sql);
   if (status === "erledigt" && (await zohoOpsEnabled(sql))) {
     throw new Error(
       "Bitte den Leistungsabschluss mit Zahlungsvariante im Zoho-Arbeitsplatz verwenden. Eine Rechnung entsteht nicht allein durch den Statuswechsel.",
