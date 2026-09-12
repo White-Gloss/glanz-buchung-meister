@@ -465,6 +465,18 @@ jobs:
             exit 1
           }
 
+      - name: Produktionsdatenbank migrieren
+        if: steps.scope.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh ionos-production 'sudo -n systemd-run --wait --pipe --collect --service-type=exec \\
+            --property=EnvironmentFile=/etc/white-gloss/environment \\
+            --property=WorkingDirectory=/srv/white-gloss-current \\
+            --property=User=deploy \\
+            --property=Group=deploy \\
+            /usr/bin/npm run db:migrate'
+
       - name: Release atomar aktivieren
         id: activate
         if: steps.scope.outputs.skip != 'true'
