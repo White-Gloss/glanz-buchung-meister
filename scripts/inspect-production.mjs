@@ -27,6 +27,7 @@ export const expectedMigrations = [
   "0013_roapp_sync.sql",
   "0014_booking_photo_recovery.sql",
   "0015_zoho_ops.sql",
+  "0016_bitrix_sync.sql",
 ];
 const tables = [
   "_migrations",
@@ -195,6 +196,7 @@ export function inspectConfiguration(env) {
     "QONTO_SECRET_KEY",
     "QONTO_IBAN",
     "LEXWARE_API_KEY",
+    "VIBE_API_KEY",
   ])
     field(key);
   const storageConfigured =
@@ -484,6 +486,7 @@ export function inspectionSummary(report) {
     `Providers: storage=${config?.storageConfigured === true}; mail=${fields.RESEND_API_KEY?.present && fields.MAIL_FROM?.valid ? "configured" : "incomplete"}; WhatsApp fields=${config?.whatsappConfigurationPresent === true}`,
     `Qonto presence: login=${fields.QONTO_LOGIN?.present === true}; secret=${fields.QONTO_SECRET_KEY?.present === true}; IBAN=${fields.QONTO_IBAN?.present === true}`,
     `Lexware presence: key=${fields.LEXWARE_API_KEY?.present === true}`,
+    `Bitrix presence: key=${fields.VIBE_API_KEY?.present === true}`,
     `Worker: last successful run=${report.notificationWorker?.lastSuccessfulRun ?? "not recorded"}`,
   ];
   if (report.failure)
