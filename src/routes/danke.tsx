@@ -36,17 +36,17 @@ function ThanksPage() {
     [
       "01",
       "Anfrage eingegangen",
-      "Unverbindlich vorgemerkt. Noch kein Vertrag, noch kein fester Termin.",
+      "Deine Buchungsanfrage ist bei uns eingegangen. Der Wunschtermin ist noch nicht verbindlich bestätigt.",
     ],
     [
       "02",
-      "Wir prüfen Ihren Wunschtermin",
-      "In der Regel melden wir uns noch am selben Werktag telefonisch, per E-Mail oder per WhatsApp.",
+      "Prüfung von Aufwand und Fotos",
+      "Wir prüfen Angaben und Fahrzeugfotos, legen den Aufwand, den endgültigen Preis und die benötigte Zeit fest.",
     ],
     [
       "03",
-      "Persönliche Bestätigung",
-      "Der Termin wird erst durch unsere Zusage verbindlich. Danach gilt die Widerrufsbelehrung.",
+      "Separate Terminbestätigung",
+      "Nach der Prüfung erhältst du eine Buchungsbestätigung. Das ist keine Rechnung. Die Rechnung folgt erst nach erbrachter Leistung.",
     ],
   ];
 
@@ -57,7 +57,7 @@ function ThanksPage() {
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Anfrage eingegangen"
         title="Danke. Anfrage erhalten."
-        lead="Ihr Wunschtermin wartet auf unsere persönliche Bestätigung. Wir melden uns zur Abstimmung, in der Regel noch am selben Werktag."
+        lead="Deine Buchungsanfrage ist eingegangen. Wir prüfen jetzt Angaben und Fotos. Dein Wunschtermin ist noch nicht verbindlich bestätigt."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Danke" }]}
         actions={
           <>

@@ -46,6 +46,9 @@ export const publicBookingSchema = z.object({
   kind: z.enum(["booking", "dent", "condition"]).default("booking"),
   privacy: z.literal(true),
   website: z.string().max(120).optional(),
+  vehicleMake: z.string().trim().max(80).optional(),
+  vehicleModel: z.string().trim().max(80).optional(),
+  vehiclePlate: z.string().trim().max(20).optional(),
 });
 
 export type PublicBookingInput = z.infer<typeof publicBookingSchema>;

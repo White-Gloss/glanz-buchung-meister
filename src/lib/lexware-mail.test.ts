@@ -154,5 +154,9 @@ test("new customer flow never unlocks historical messages", () => {
     isApprovedCustomerNotification(lexwareMailKey(voucher.id, "invoice"), "lexware.invoice"),
     true,
   );
+  assert.equal(
+    isApprovedCustomerNotification("zoho:confirmation:12:3:email:abc", "booking.confirmed"),
+    true,
+  );
   assert.equal(lexwareMailKey(voucher.id, "invoice"), lexwareMailKey(voucher.id, "invoice"));
 });
