@@ -8,6 +8,7 @@ import {
   Database,
   Inbox,
   Settings,
+  Share2,
   Users,
   Workflow,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { site } from "@/data/site";
 const icons: Record<string, typeof CalendarDays> = {
   Buchungen: ClipboardList,
   "Zoho Betrieb": CalendarClock,
+  Bitrix24: Share2,
   Posteingang: Inbox,
   Kalender: CalendarDays,
   Leitstand: Workflow,

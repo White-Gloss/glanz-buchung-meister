@@ -30,9 +30,14 @@ nicht ins Repository.
 
 Ohne `VIBE_API_KEY` bleibt die Warteschlange liegen; die Website-Buchung ist trotzdem gespeichert.
 
-Der IONOS-Deploy kann denselben Schlüssel aus dem GitHub-Secret `VIBE_API_KEY`
-als Release-Overlay mitgeben, falls die Datei `/etc/white-gloss/environment`
-noch keinen Eintrag hat.
+Der Schlüssel kann ohne Serverzugang im Betriebspanel unter
+[white-gloss.de/admin/bitrix](https://white-gloss.de/admin/bitrix) gespeichert werden
+(wie Lexware unter Dokumente). Alternativ:
+
+- `VIBE_API_KEY` in `/etc/white-gloss/environment`
+- GitHub-Secret `VIBE_API_KEY` (der IONOS-Deploy schreibt dann ein Release-Overlay)
+
+Die Serverumgebung hat Vorrang vor dem Panel-Wert.
 
 ## Leistungskatalog
 
@@ -50,7 +55,7 @@ Fahrzeugklassen skalieren den Richtpreis: Kompakt 1,0 · SUV/Limousine 1,25 · T
 
 ## Deploy-Check
 
-1. `VIBE_API_KEY` in `/etc/white-gloss/environment` oder als GitHub-Secret `VIBE_API_KEY` hinterlegen
+1. Bitrix-Schlüssel im Betriebspanel unter `/admin/bitrix` speichern (Inhaberkonto) — oder in `/etc/white-gloss/environment` / GitHub-Secret `VIBE_API_KEY`
 2. GitHub-Deploy nach grünem CI abwarten. `0015_zoho_ops.sql` und `0016_bitrix_sync.sql` werden zur Laufzeit angelegt (wie Lexware) und blockieren den Healthcheck nicht
 3. Testbuchung auf `/#buchung` mit Paket, Extra und optionalem Foto
 4. In Bitrix24 Deal `WG-{id}` prüfen; im Leitstand Termin, PDF, Abschluss und Rechnung wie bisher
