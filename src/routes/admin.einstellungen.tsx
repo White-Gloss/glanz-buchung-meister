@@ -11,6 +11,7 @@ import {
   Newspaper,
   Settings,
   Sparkles,
+  Workflow,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { extras, packages, pickupPricing, site } from "@/data/site";
@@ -87,6 +88,12 @@ const groups = [
         label: "Dokumentvorbereitung",
         text: "Angebote, Rechnungen und Zahlungserinnerungen.",
         icon: BookOpenText,
+      },
+      {
+        to: "/admin/bitrix" as const,
+        label: "Bitrix24",
+        text: "API-Schlüssel und Übertragung der Website-Buchungen als Aufträge.",
+        icon: Workflow,
       },
     ],
   },

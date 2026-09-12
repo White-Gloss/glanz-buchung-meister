@@ -31,6 +31,39 @@ export function vibeApiBase() {
   return (process.env.VIBE_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
 }
 
+export async function probeBitrix(
+  apiKey: string,
+  options: { fetchImpl?: typeof fetch; apiBase?: string } = {},
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const key = apiKey.trim();
+  if (key.length < 20) return { ok: false, error: "Bitte den Bitrix-Schlüssel einfügen." };
+  const base = (options.apiBase || vibeApiBase()).replace(/\/$/, "");
+  const fetchImpl = options.fetchImpl ?? fetch;
+  try {
+    const response = await fetchImpl(`${base}/deals?limit=1`, {
+      method: "GET",
+      headers: { "X-Api-Key": key, Accept: "application/json" },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, error: "Zugang verweigert. Bitte den Bitrix-Schlüssel prüfen." };
+    }
+    const text = await response.text();
+    let json: VibeResponse<unknown> | null = null;
+    try {
+      json = text ? (JSON.parse(text) as VibeResponse<unknown>) : null;
+    } catch {
+      return { ok: false, error: "Bitrix24 ist gerade nicht erreichbar." };
+    }
+    if (!response.ok || json?.success === false) {
+      return { ok: false, error: "Zugang verweigert. Bitte den Bitrix-Schlüssel prüfen." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Bitrix24 ist gerade nicht erreichbar." };
+  }
+}
+
 export class BitrixError extends Error {
   code: string;
   status: number;

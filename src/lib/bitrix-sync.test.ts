@@ -12,7 +12,8 @@ import {
   splitCustomerName,
   stageForStatus,
 } from "./bitrix-sync.ts";
-import { DEFAULT_PRODUCT_MAP } from "./bitrix.ts";
+import { DEFAULT_PRODUCT_MAP, probeBitrix } from "./bitrix.ts";
+import { readVibeApiKey } from "./bitrix-credentials.server.ts";
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
@@ -160,6 +161,39 @@ test("Bitrix sync is a no-op without API key", async () => {
     assert.equal(result.synced, 0);
   } finally {
     if (previous !== undefined) process.env.VIBE_API_KEY = previous;
+    else delete process.env.VIBE_API_KEY;
     await pg.close();
   }
+});
+
+test("stored Bitrix key is used when the environment is empty", async () => {
+  const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } });
+  const sql = wrap(pg);
+  for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort()) {
+    await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+  }
+  const previous = process.env.VIBE_API_KEY;
+  delete process.env.VIBE_API_KEY;
+  try {
+    assert.equal(await readVibeApiKey(sql), "");
+    await sql`alter table shop_settings add column if not exists vibe_api_key text`;
+    await sql`update shop_settings set vibe_api_key=${"panel-stored-bitrix-key"} where shop_id='white-gloss'`;
+    assert.equal(await readVibeApiKey(sql), "panel-stored-bitrix-key");
+  } finally {
+    if (previous !== undefined) process.env.VIBE_API_KEY = previous;
+    else delete process.env.VIBE_API_KEY;
+    await pg.close();
+  }
+});
+
+test("probeBitrix accepts a valid key and rejects 401 without storing details", async () => {
+  const ok = await probeBitrix("vibe_api_test_key_1234567890", {
+    fetchImpl: async () => new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
+  });
+  assert.equal(ok.ok, true);
+  const denied = await probeBitrix("vibe_api_test_key_1234567890", {
+    fetchImpl: async () => new Response(JSON.stringify({ success: false }), { status: 401 }),
+  });
+  assert.equal(denied.ok, false);
+  if (!denied.ok) assert.match(denied.error, /prüfen/);
 });

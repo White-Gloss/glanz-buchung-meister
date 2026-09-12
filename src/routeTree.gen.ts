@@ -36,6 +36,7 @@ import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.ind
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAutomatisierungRouteImport } from './routes/admin.automatisierung'
+import { Route as AdminBitrixRouteImport } from './routes/admin.bitrix'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminDellenRouteImport } from './routes/admin.dellen'
 import { Route as AdminEinstellungenRouteImport } from './routes/admin.einstellungen'
@@ -198,6 +199,11 @@ const AdminAutomatisierungRoute = AdminAutomatisierungRouteImport.update({
   path: '/automatisierung',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBitrixRoute = AdminBitrixRouteImport.update({
+  id: '/bitrix',
+  path: '/bitrix',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBlogRoute = AdminBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/bitrix': typeof AdminBitrixRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/dellen': typeof AdminDellenRoute
   '/admin/einstellungen': typeof AdminEinstellungenRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/bitrix': typeof AdminBitrixRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/dellen': typeof AdminDellenRoute
   '/admin/einstellungen': typeof AdminEinstellungenRoute
@@ -461,6 +469,7 @@ export interface FileRoutesById {
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
+  '/admin/bitrix': typeof AdminBitrixRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/dellen': typeof AdminDellenRoute
   '/admin/einstellungen': typeof AdminEinstellungenRoute
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
+    | '/admin/bitrix'
     | '/admin/blog'
     | '/admin/dellen'
     | '/admin/einstellungen'
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
+    | '/admin/bitrix'
     | '/admin/blog'
     | '/admin/dellen'
     | '/admin/einstellungen'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
+    | '/admin/bitrix'
     | '/admin/blog'
     | '/admin/dellen'
     | '/admin/einstellungen'
@@ -876,6 +888,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAutomatisierungRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bitrix': {
+      id: '/admin/bitrix'
+      path: '/bitrix'
+      fullPath: '/admin/bitrix'
+      preLoaderRoute: typeof AdminBitrixRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/blog': {
       id: '/admin/blog'
       path: '/blog'
@@ -1077,6 +1096,7 @@ const AbholserviceRouteWithChildren = AbholserviceRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAutomatisierungRoute: typeof AdminAutomatisierungRoute
+  AdminBitrixRoute: typeof AdminBitrixRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminDellenRoute: typeof AdminDellenRoute
   AdminEinstellungenRoute: typeof AdminEinstellungenRoute
@@ -1096,6 +1116,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAutomatisierungRoute: AdminAutomatisierungRoute,
+  AdminBitrixRoute: AdminBitrixRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminDellenRoute: AdminDellenRoute,
   AdminEinstellungenRoute: AdminEinstellungenRoute,

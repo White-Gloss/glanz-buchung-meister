@@ -14,9 +14,9 @@ import {
   BitrixError,
   createBitrixClient,
   productMapFromEnv,
-  vibeApiKey,
   type BitrixCall,
 } from "./bitrix.ts";
+import { readVibeApiKey } from "./bitrix-credentials.server.ts";
 
 const SHOP = "white-gloss";
 const UF = {
@@ -82,6 +82,7 @@ export async function ensureBitrixSchema(sql: Sql) {
     locked_until timestamptz
   )`;
   await sql`insert into bitrix_sync_runner(shop_id) values('white-gloss') on conflict do nothing`;
+  await sql`alter table shop_settings add column if not exists vibe_api_key text`;
 }
 
 export async function queueBitrixBooking(
@@ -430,7 +431,7 @@ export async function runBitrixSync(
 ) {
   const result = { synced: 0, failed: 0, review: 0, skipped: 0 };
   await ensureBitrixSchema(sql);
-  if (!options.request && !vibeApiKey()) {
+  if (!options.request && !(await readVibeApiKey(sql))) {
     result.skipped = 1;
     return result;
   }
@@ -440,7 +441,7 @@ export async function runBitrixSync(
     await sql`update bitrix_sync_runner set lease_token=${token},locked_until=now()+interval '90 seconds'
     where shop_id=${SHOP} and (locked_until is null or locked_until < now()) returning shop_id`;
   if (!lease.length) return result;
-  const request = options.request || createBitrixClient();
+  const request = options.request || createBitrixClient(await readVibeApiKey(sql));
   const productMap = options.productMap || productMapFromEnv();
   try {
     for (let i = 0; i < (options.limit ?? 3) && Date.now() < deadline; i++) {
