@@ -47,11 +47,10 @@ Fahrzeugklassen skalieren den Richtpreis: Kompakt 1,0 · SUV/Limousine 1,25 · T
 ## Deploy-Check
 
 1. `VIBE_API_KEY` in `/etc/white-gloss/environment` speichern
-2. Migration `0016_bitrix_sync.sql` einspielen (oder einmalig den Sync-Worker laufen lassen – Schema wird nachgezogen)
-3. `systemctl restart white-gloss.service`
+2. `npm run db:migrate` auf dem VPS (zieht `0015_zoho_ops.sql` und `0016_bitrix_sync.sql` nach). Ohne diese Migrationen bleibt der Healthcheck auf 503 und der Deploy wird zurückgerollt.
+3. `systemctl restart white-gloss.service` — oder den GitHub-Deploy nach grünem CI abwarten
 4. Testbuchung auf `/#buchung` mit Paket, Extra und optionalem Foto
-5. Automation-Cron ausführen; in Bitrix24 Deal `WG-{id}` prüfen
-6. Im Leitstand Termin, PDF, Abschluss und Rechnung wie bisher
+5. In Bitrix24 Deal `WG-{id}` prüfen; im Leitstand Termin, PDF, Abschluss und Rechnung wie bisher
 
 ## Nicht tun
 
