@@ -108,6 +108,40 @@ async function refreshAccessToken(creds: ZohoCredentials): Promise<TokenState> {
   };
 }
 
+export async function exchangeAuthorizationCode(input: {
+  dc?: string | null;
+  clientId: string;
+  clientSecret: string;
+  code: string;
+}): Promise<{ refreshToken: string }> {
+  const dc = normalizeZohoDc(input.dc);
+  const url = new URL("/oauth/v2/token", ACCOUNTS[dc]);
+  url.searchParams.set("grant_type", "authorization_code");
+  url.searchParams.set("client_id", input.clientId.trim());
+  url.searchParams.set("client_secret", input.clientSecret.trim());
+  url.searchParams.set("code", input.code.trim());
+  let response: Response;
+  try {
+    response = await fetch(url, { method: "POST", signal: AbortSignal.timeout(12_000) });
+  } catch {
+    throw new ZohoError("zoho_unreachable", { retryable: true });
+  }
+  const body = (await response.json().catch(() => null)) as {
+    refresh_token?: string;
+    error?: string;
+    error_description?: string;
+  } | null;
+  if (!body?.refresh_token) {
+    throw new ZohoError(
+      body?.error === "invalid_code" || body?.error === "invalid_grant"
+        ? "zoho_grant_expired"
+        : "zoho_grant_exchange",
+      { status: response.status, review: true },
+    );
+  }
+  return { refreshToken: body.refresh_token };
+}
+
 export type ZohoRequest = {
   method?: string;
   path: string;

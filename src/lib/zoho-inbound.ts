@@ -15,8 +15,16 @@ export function zohoWebhookSecret() {
   return (process.env.ZOHO_WEBHOOK_SECRET || "").trim();
 }
 
-export function zohoWebhookAuthorized(header: string | null, queryToken: string | null) {
-  const secret = zohoWebhookSecret();
+export async function resolveZohoWebhookSecret(sql: Sql) {
+  const fromEnv = zohoWebhookSecret();
+  if (fromEnv.length >= 24) return fromEnv;
+  const [row] = await sql<{ zoho_webhook_secret: string | null }>`
+    select zoho_webhook_secret from shop_settings where shop_id = ${SHOP}
+  `.catch(() => []);
+  return row?.zoho_webhook_secret?.trim() || "";
+}
+
+export function zohoWebhookAuthorized(header: string | null, queryToken: string | null, secret = zohoWebhookSecret()) {
   if (!secret || secret.length < 24) return false;
   const provided = (header?.replace(/^Bearer\s+/i, "") || queryToken || "").trim();
   if (!provided) return false;

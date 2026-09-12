@@ -135,6 +135,15 @@ export async function ensureZohoSchema(sql: Sql) {
   `);
   await sql`insert into zoho_sync_runner (shop_id) values ('white-gloss') on conflict do nothing`;
   await sql`alter table shop_settings add column if not exists zoho_ops_enabled boolean not null default false`;
+  await sql`alter table shop_settings add column if not exists zoho_dc text`;
+  await sql`alter table shop_settings add column if not exists zoho_client_id text`;
+  await sql`alter table shop_settings add column if not exists zoho_client_secret text`;
+  await sql`alter table shop_settings add column if not exists zoho_refresh_token text`;
+  await sql`alter table shop_settings add column if not exists zoho_access_token text`;
+  await sql`alter table shop_settings add column if not exists zoho_access_expires_at timestamptz`;
+  await sql`alter table shop_settings add column if not exists zoho_books_org_id text`;
+  await sql`alter table shop_settings add column if not exists zoho_webhook_secret text`;
+  await sql`alter table shop_settings add column if not exists zoho_tax_id text`;
 }
 
 function snapshot(row: ZohoBooking) {

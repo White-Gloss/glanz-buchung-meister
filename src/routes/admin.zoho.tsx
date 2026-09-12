@@ -4,8 +4,10 @@ import {
   setZohoOpsSwitch,
   zohoComplete,
   zohoConfirm,
+  zohoProbeSetup,
   zohoReject,
   zohoRunSync,
+  zohoSaveSetup,
   zohoWorkplace,
 } from "@/lib/zoho.functions";
 import { defaultDurationMinutes } from "@/lib/zoho-time";
@@ -64,6 +66,11 @@ function AdminZoho() {
   const [cashEuros, setCashEuros] = useState("");
   const [cashDate, setCashDate] = useState(berlinToday());
   const [payment, setPayment] = useState<"bar" | "ueberweisung">("ueberweisung");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [grantCode, setGrantCode] = useState("");
+  const [booksOrgId, setBooksOrgId] = useState("");
+  const [setupNote, setSetupNote] = useState("");
 
   async function reload() {
     const next = await zohoWorkplace();
@@ -139,8 +146,142 @@ function AdminZoho() {
           <p className="mt-2 text-muted">
             {data.connected
               ? "Offene Anfragen gehören in Zoho CRM als Deal. Dieser Arbeitsplatz bleibt die technische Reservierung und zeigt Übertragungsfehler."
-              : "Ohne OAuth-Zugang ist das der operative Arbeitsplatz. Eine Live-Übertragung nach Zoho ist ohne Client-ID, Secret, Refresh-Token und Books-Organisation nicht möglich."}
+              : "Du musst kein Refresh-Token verstehen. In Zoho holst du einen kurzen Code, hier fügst du ihn ein — den Dauerschlüssel erzeugt die App selbst."}
           </p>
+          {data.canConfirm ? (
+            <form
+              className="mt-4 grid gap-3 sm:grid-cols-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void act(async () => {
+                  const report = await zohoSaveSetup({
+                    data: {
+                      clientId: clientId || undefined,
+                      clientSecret: clientSecret || undefined,
+                      grantCode: grantCode || undefined,
+                      booksOrgId: booksOrgId || undefined,
+                    },
+                  });
+                  setClientSecret("");
+                  setGrantCode("");
+                  const lines = [
+                    report.auth ? "Verbindung steht." : "Noch nicht verbunden.",
+                    report.orgName
+                      ? `Books: ${report.orgName}`
+                      : report.orgId
+                        ? `Books-Mandant ${report.orgId}`
+                        : "Books-Mandant fehlt.",
+                    report.tax19
+                      ? "19 % MwSt. in Books gefunden."
+                      : "19 % MwSt. in Books fehlt — nicht erfunden.",
+                    report.crm ? "CRM erreichbar." : "CRM nicht erreichbar.",
+                    report.webhookSecretPreview
+                      ? `Webhook-Geheimnis (einmalig notieren): ${report.webhookSecretPreview}`
+                      : "",
+                    ...report.errors,
+                  ].filter(Boolean);
+                  setSetupNote(lines.join(" "));
+                  return lines.join(" ");
+                }, "Verbindung geprüft.");
+              }}
+            >
+              <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-muted sm:col-span-2">
+                <li>
+                  Öffne{" "}
+                  <a className="underline" href="https://api-console.zoho.eu" target="_blank" rel="noreferrer">
+                    api-console.zoho.eu
+                  </a>{" "}
+                  mit deinem Zoho-Konto (Europa, dasselbe wie CRM und Books).
+                </li>
+                <li>
+                  <strong>Add Client</strong> → <strong>Self Client</strong>. Unter{" "}
+                  <strong>Client Secret</strong> siehst du Client-ID und Secret — die beiden oberen Felder.
+                </li>
+                <li>
+                  Reiter <strong>Generate Code</strong>. Bei Scope genau das einfügen:
+                  <code className="mt-1 block break-all rounded-md bg-bg px-2 py-1 text-xs text-fg">
+                    ZohoCRM.modules.ALL,ZohoCRM.files.CREATE,ZohoBooks.fullaccess.all
+                  </code>
+                  Zeit <strong>10 minutes</strong>, dann Create. Wenn Zoho fragt: CRM und Books, deutscher
+                  Mandant, Production.
+                </li>
+                <li>
+                  Den angezeigten Code sofort ins Feld <strong>Code aus Zoho</strong> kopieren und speichern.
+                  Er gilt nur wenige Minuten. Das Refresh-Token erzeugt die App daraus selbst.
+                </li>
+              </ol>
+              <Field id="zoho-client" label="Client-ID">
+                <input
+                  id="zoho-client"
+                  className={inputClass}
+                  value={clientId}
+                  autoComplete="off"
+                  placeholder={data.hasClient ? "liegt vor — leer lassen zum Behalten" : "beginnt oft mit 1000."}
+                  onChange={(event) => setClientId(event.target.value)}
+                />
+              </Field>
+              <Field id="zoho-secret" label="Client-Secret">
+                <input
+                  id="zoho-secret"
+                  type="password"
+                  className={inputClass}
+                  value={clientSecret}
+                  autoComplete="new-password"
+                  placeholder="aus der Konsole, nicht in den Chat"
+                  onChange={(event) => setClientSecret(event.target.value)}
+                />
+              </Field>
+              <Field id="zoho-grant" label="Code aus Zoho (Generate Code)">
+                <input
+                  id="zoho-grant"
+                  className={inputClass}
+                  value={grantCode}
+                  autoComplete="off"
+                  placeholder="den kurzen Code, nicht irgendetwas mit refresh"
+                  onChange={(event) => setGrantCode(event.target.value)}
+                />
+              </Field>
+              <Field id="zoho-org" label="Books-Mandant (meist leer lassen)">
+                <input
+                  id="zoho-org"
+                  className={inputClass}
+                  value={booksOrgId}
+                  placeholder={data.hasOrg ? "bereits gesetzt" : "leer = App liest den Mandanten"}
+                  onChange={(event) => setBooksOrgId(event.target.value)}
+                />
+              </Field>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="submit" disabled={pending}>
+                  Code einlösen und verbinden
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() =>
+                    void act(async () => {
+                      const report = await zohoProbeSetup();
+                      const text = [
+                        report.auth ? "OAuth gültig." : "OAuth fehlt.",
+                        report.tax19 ? "19 % Steuer gefunden." : "19 % Steuer fehlt.",
+                        report.crm ? "CRM ok." : "CRM fehlt.",
+                        ...report.errors,
+                      ].join(" ");
+                      setSetupNote(text);
+                      return text;
+                    }, "Prüfung abgeschlossen.")
+                  }
+                >
+                  Nur prüfen, nichts speichern
+                </Button>
+              </div>
+              {setupNote ? <p className="text-sm text-muted sm:col-span-2">{setupNote}</p> : null}
+            </form>
+          ) : (
+            <p className="mt-4 text-muted">
+              Nur das Inhaberkonto darf Client-ID, Secret und Refresh-Token speichern.
+            </p>
+          )}
           <p className="mt-2 text-muted">
             Alte Lexware-/Odoo-/RO-App-Automatiken bleiben aktiv, bis der kontrollierte Wechsel
             eingeschaltet wird. Derzeit: {data.enabled ? "Zoho führt den Betrieb" : "Wechsel noch nicht aktiv"}.

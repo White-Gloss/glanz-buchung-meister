@@ -18,6 +18,7 @@ import {
   type ZohoBooking,
 } from "@/lib/zoho-ops";
 import { runZohoSync } from "@/lib/zoho-sync";
+import { applyZohoSetup, probeZohoSetup } from "@/lib/zoho-setup";
 import { formatBerlinRange } from "@/lib/zoho-time";
 
 const SHOP = "white-gloss";
@@ -78,11 +79,12 @@ export const zohoWorkplace = createServerFn({ method: "GET" })
     return {
       enabled,
       connected: Boolean(creds || env),
-      hasClient: Boolean((process.env.ZOHO_CLIENT_ID || "").trim()),
+      hasClient: Boolean((process.env.ZOHO_CLIENT_ID || "").trim() || creds?.clientId),
+      hasRefresh: Boolean((process.env.ZOHO_REFRESH_TOKEN || "").trim() || creds?.refreshToken),
       hasOrg: Boolean((process.env.ZOHO_BOOKS_ORG_ID || "").trim() || creds?.booksOrgId),
       dc: creds?.dc || env?.dc || "eu",
       canConfirm: await canConfirmBookings(sql, context.userId),
-      configured: zohoConfigured(),
+      configured: zohoConfigured() || Boolean(creds),
       bookings: bookings.map((row) => ({
         ...row,
         workLabel:
@@ -182,6 +184,33 @@ export const setZohoOpsSwitch = createServerFn({ method: "POST" })
       where shop_id = ${SHOP}
     `;
     return { enabled: data.enabled };
+  });
+
+export const zohoSaveSetup = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) =>
+    z
+      .object({
+        clientId: z.string().trim().max(200).optional(),
+        clientSecret: z.string().trim().max(200).optional(),
+        refreshToken: z.string().trim().max(400).optional(),
+        grantCode: z.string().trim().max(400).optional(),
+        booksOrgId: z.string().trim().max(80).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    await requireBookingOwner(sql, context.userId);
+    return applyZohoSetup(sql, data);
+  });
+
+export const zohoProbeSetup = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    await requireBookingOwner(sql, context.userId);
+    return probeZohoSetup(sql);
   });
 
 export const publicBusyWindows = createServerFn({ method: "GET" })
