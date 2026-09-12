@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { dashboardStats } from "@/lib/admin.functions";
 import {
   confirmBooking,
@@ -10,9 +10,14 @@ import {
   updateBookingStatus,
   type BookingRow,
 } from "@/lib/bookings.functions";
+import {
+  bitrixStatus,
+  bitrixSyncOverview,
+  saveBitrixApiKey,
+} from "@/lib/bitrix.functions";
 import { bookingStatuses, cities, extras, packages, type BookingStatus } from "@/data/site";
 import { eur } from "@/lib/utils";
-import { Button, inputClass } from "@/components/ui";
+import { Button, Field, inputClass } from "@/components/ui";
 import { AdminBookingEditor, type BookingEditValues } from "@/components/admin-booking-editor";
 import { AdminBookingPhotos } from "@/components/admin-booking-photos";
 import { AdminBookingHistory } from "@/components/admin-booking-history";
@@ -46,6 +51,11 @@ function AdminBookings() {
   const [notice, setNotice] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [bitrix, setBitrix] = useState<Awaited<ReturnType<typeof bitrixStatus>> | null>(null);
+  const [bitrixPending, setBitrixPending] = useState(0);
+  const [bitrixKey, setBitrixKey] = useState("");
+  const [bitrixBusy, setBitrixBusy] = useState(false);
+  const [bitrixMsg, setBitrixMsg] = useState("");
   const createRequestId = useRef<string | null>(null);
   const returnToCreateButton = useRef(false);
   const mutating = useRef(false);
@@ -78,14 +88,18 @@ function AdminBookings() {
   }, [creating, pending]);
 
   async function reload() {
-    const [bookings, dash, permissions] = await Promise.all([
+    const [bookings, dash, permissions, bx, bxSync] = await Promise.all([
       listBookings(),
       dashboardStats(),
       getBookingPermissions(),
+      bitrixStatus().catch(() => null),
+      bitrixSyncOverview().catch(() => null),
     ]);
     setRows(bookings);
     setStats(dash);
     setCanConfirm(permissions.canConfirm);
+    setBitrix(bx);
+    setBitrixPending(bxSync?.rows.filter((row) => row.status === "pending").length ?? 0);
   }
 
   async function change(row: BookingRow, action: () => Promise<unknown>, message: string) {
@@ -222,6 +236,70 @@ function AdminBookings() {
           ))}
         </div>
       </div>
+
+      <section className="mt-6 rounded-md border border-line bg-surface p-5" aria-label="Bitrix24">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.14em] text-subtle">Bitrix24</p>
+            <h2 className="mt-1 font-display text-2xl">Aufträge aus dem Buchungspanel</h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              {bitrix?.configured
+                ? bitrix.source === "env"
+                  ? "Verbindung steht über die Serverumgebung."
+                  : "Verbindung steht im Betriebspanel."
+                : "Jede Anfrage von #buchung wird nach Bitrix24 übertragen, sobald der persönliche API-Schlüssel hier gespeichert ist. Die Website-Buchung bleibt gespeichert."}
+              {bitrix?.configured && bitrixPending > 0
+                ? ` ${bitrixPending} offene Übertragungen.`
+                : ""}
+            </p>
+          </div>
+          <Link to="/admin/bitrix" className="min-h-11 text-sm underline">
+            Bitrix24-Übersicht
+          </Link>
+        </div>
+        {canConfirm && !bitrix?.configured ? (
+          <form
+            className="mt-4 max-w-xl space-y-3"
+            onSubmit={async (event: FormEvent) => {
+              event.preventDefault();
+              setBitrixBusy(true);
+              setBitrixMsg("");
+              try {
+                const result = await saveBitrixApiKey({ data: { apiKey: bitrixKey } });
+                setBitrixKey("");
+                await reload();
+                setBitrixMsg(
+                  result.connected
+                    ? "Bitrix-Schlüssel gespeichert. Offene Anfragen werden übertragen."
+                    : result.error || "Schlüssel wurde nicht gespeichert.",
+                );
+              } catch (cause) {
+                setBitrixMsg(cause instanceof Error ? cause.message : "Speichern fehlgeschlagen.");
+              } finally {
+                setBitrixBusy(false);
+              }
+            }}
+          >
+            <Field id="admin-bitrix-key" label="Persönlicher Bitrix-API-Schlüssel">
+              <input
+                id="admin-bitrix-key"
+                type="password"
+                className={inputClass}
+                value={bitrixKey}
+                onChange={(event) => setBitrixKey(event.target.value)}
+                autoComplete="new-password"
+                required
+                minLength={20}
+                spellCheck={false}
+              />
+            </Field>
+            <Button type="submit" disabled={bitrixBusy || !bitrixKey.trim()}>
+              {bitrixBusy ? "Prüfe Verbindung …" : "Schlüssel speichern"}
+            </Button>
+          </form>
+        ) : null}
+        {bitrixMsg ? <p className="mt-3 text-sm text-muted">{bitrixMsg}</p> : null}
+      </section>
 
       {creating ? (
         <section

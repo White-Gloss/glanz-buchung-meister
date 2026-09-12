@@ -45,15 +45,27 @@ export async function probeBitrix(
       headers: { "X-Api-Key": key, Accept: "application/json" },
       signal: AbortSignal.timeout(15_000),
     });
-    if (response.status === 401 || response.status === 403) {
-      return { ok: false, error: "Zugang verweigert. Bitte den Bitrix-Schlüssel prüfen." };
-    }
     const text = await response.text();
     let json: VibeResponse<unknown> | null = null;
     try {
       json = text ? (JSON.parse(text) as VibeResponse<unknown>) : null;
     } catch {
-      return { ok: false, error: "Bitrix24 ist gerade nicht erreichbar." };
+      json = null;
+    }
+    const code = json?.error?.code || "";
+    if (response.status === 401 || response.status === 403 || code === "KEY_INACTIVE" || code === "KEY_EXPIRED") {
+      if (code === "KEY_INACTIVE")
+        return {
+          ok: false,
+          error:
+            "Dieser Schlüssel ist gesperrt. Bitte in Bitrix24 einen neuen persönlichen API-Schlüssel erzeugen und hier einfügen — nicht in den Chat.",
+        };
+      if (code === "KEY_EXPIRED")
+        return {
+          ok: false,
+          error: "Dieser Schlüssel ist abgelaufen. Bitte einen neuen persönlichen API-Schlüssel hier einfügen.",
+        };
+      return { ok: false, error: "Zugang verweigert. Bitte den Bitrix-Schlüssel prüfen." };
     }
     if (!response.ok || json?.success === false) {
       return { ok: false, error: "Zugang verweigert. Bitte den Bitrix-Schlüssel prüfen." };
