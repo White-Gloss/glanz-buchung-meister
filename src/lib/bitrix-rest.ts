@@ -12,6 +12,17 @@ const UF: Record<string, string> = {
   ufCrmWgAppointment: "UF_CRM_WG_APPOINTMENT",
   ufCrmWgPrefDates: "UF_CRM_WG_PREF_DATES",
   ufCrmWgClass: "UF_CRM_WG_CLASS",
+  ufCrmWgBookingRef: "UF_CRM_WG_BOOKING_REF",
+  ufCrmWgBookingVersion: "UF_CRM_WG_BOOKING_VERSION",
+  ufCrmWgWorkEnd: "UF_CRM_WG_WORK_END",
+  ufCrmWgDurationMinutes: "UF_CRM_WG_DURATION_MINUTES",
+  ufCrmWgResourceId: "UF_CRM_WG_RESOURCE_ID",
+  ufCrmWgAgreedPrice: "UF_CRM_WG_AGREED_PRICE",
+  ufCrmWgServiceLines: "UF_CRM_WG_SERVICE_LINES",
+  ufCrmWgAcceptedAt: "UF_CRM_WG_ACCEPTED_AT",
+  ufCrmWgPaymentMethod: "UF_CRM_WG_PAYMENT_METHOD",
+  ufCrmWgCashAmount: "UF_CRM_WG_CASH_AMOUNT",
+  ufCrmWgPaymentDate: "UF_CRM_WG_PAYMENT_DATE",
 };
 
 export function normalizeBitrixRestWebhook(raw: string): string | null {
