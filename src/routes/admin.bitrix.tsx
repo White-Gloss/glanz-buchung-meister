@@ -8,6 +8,7 @@ import {
   saveBitrixApiKey,
 } from "@/lib/bitrix.functions";
 import { Button, Field, inputClass } from "@/components/ui";
+import { BitrixAgentPanel } from "@/components/bitrix-agent-panel";
 
 export const Route = createFileRoute("/admin/bitrix")({
   component: AdminBitrix,
@@ -66,8 +67,9 @@ function AdminBitrix() {
       <h1 className="mt-2 font-display text-4xl">Bitrix24</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
         Das öffentliche Buchungspanel bleibt auf der Website. Jede gespeicherte Anfrage wird als
-        Auftrag WG-… nach Bitrix24 übertragen: Kontakt, Leistungen, Fotos, später Termin und
-        Rechnung. Zoho, Lexware und die lokale Buchung bleiben unverändert.
+        Auftrag WG-… nach Bitrix24 übertragen. Der KI-Agent hilft bei der Prüfung. Den
+        Übertragungsstatus siehst du unten; der vollständige Rechnungsablauf benötigt noch
+        Einrichtung.
       </p>
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
@@ -77,7 +79,7 @@ function AdminBitrix() {
             ? status.source === "env"
               ? "Schlüssel liegt in der Serverumgebung."
               : "Schlüssel ist im Betriebspanel hinterlegt."
-            : "Noch kein Schlüssel — unten die REST-Webhook-URL aus Bitrix24 einfügen. Ohne Verbindung bleibt die Website-Buchung gespeichert, Bitrix wartet."}
+            : "Noch kein Schlüssel — unten deinen persönlichen VibeCode-API-Schlüssel einfügen. Ohne Verbindung bleibt die Website-Buchung gespeichert, Bitrix wartet."}
         </p>
         <p className="mt-2 text-sm text-muted">
           REST-API in Bitrix24: Anwendungen → Entwicklerressourcen → Anderes → Eingehender Webhook.
@@ -144,6 +146,8 @@ function AdminBitrix() {
           Bitrix24-Portal öffnen
         </a>
       </section>
+
+      <BitrixAgentPanel />
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
         <h2 className="font-display text-2xl">Übertragungen</h2>
