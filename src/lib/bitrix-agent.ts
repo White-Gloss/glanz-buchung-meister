@@ -15,7 +15,9 @@ export const agentAnswerSchema = z
       .nullish()
       .transform((value) => value ?? ""),
   })
-  .strict();
+  // Providers may add explanation metadata. Only these validated display fields
+  // are retained; additional fields never become commands or tool calls.
+  .strip();
 export type AgentAnswer = z.infer<typeof agentAnswerSchema>;
 
 export const BOOKING_AGENT_RULES = `Du unterstützt Lars bei White-Gloss Detailing auf Deutsch.
