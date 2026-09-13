@@ -210,12 +210,7 @@ export function receiptEmailCopy(name: string, reference: string) {
   return [
     `Hallo ${name},`,
     "",
-    "vielen Dank für deine Anfrage bei White Gloss Detailing.",
-    "Deine Buchungsanfrage ist bei uns eingegangen.",
-    "",
-    "Wir prüfen nun deine Angaben und die hochgeladenen Fahrzeugfotos, um den Aufwand, den endgültigen Preis und die benötigte Zeit festzulegen.",
-    "Dein Wunschtermin ist noch nicht verbindlich bestätigt.",
-    "Nach unserer Prüfung erhältst du eine separate Terminbestätigung.",
+    "Vielen Dank für deine Buchungsanfrage bei White-Gloss Detailing. Deine Anfrage ist bei uns eingegangen. Wir prüfen deine Angaben und Fahrzeugfotos, um den Fahrzeugzustand, den genauen Preis und die benötigte Arbeitszeit einzuschätzen. Dein Wunschtermin ist noch nicht verbindlich bestätigt. Die endgültige Buchungsbestätigung erhältst du nach unserer manuellen Prüfung und Freigabe.",
     "",
     `Vorgang: ${reference}`,
     "",
@@ -225,7 +220,12 @@ export function receiptEmailCopy(name: string, reference: string) {
   ].join("\n");
 }
 
-export function confirmationEmailCopy(name: string, reference: string, when: string, price: string) {
+export function confirmationEmailCopy(
+  name: string,
+  reference: string,
+  when: string,
+  price: string,
+) {
   return [
     `Hallo ${name},`,
     "",

@@ -1,3 +1,4 @@
+import { berlinWallToUtc, formatBerlinRange } from "./zoho-time.ts";
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
@@ -10,12 +11,7 @@ import {
   type PackageId,
 } from "../data/site.ts";
 import { createSignedPhotoUrl } from "./booking-photos.ts";
-import {
-  BitrixError,
-  createBitrixClient,
-  productMapFromEnv,
-  type BitrixCall,
-} from "./bitrix.ts";
+import { BitrixError, createBitrixClient, productMapFromEnv, type BitrixCall } from "./bitrix.ts";
 import { readVibeApiKey } from "./bitrix-credentials.server.ts";
 
 const SHOP = "white-gloss";
@@ -44,6 +40,12 @@ export type BitrixBooking = WorkflowBooking & {
   bitrix_contact_id?: number | null;
   bitrix_deal_id?: number | null;
   bitrix_event_id?: number | null;
+  work_start_at?: string | Date | null;
+  work_end_at?: string | Date | null;
+  agreed_price_cents?: number | null;
+  ops_stage?: string;
+  invoice_status?: string;
+  payment_status?: string;
 };
 
 type QueueProgress = {
@@ -51,6 +53,7 @@ type QueueProgress = {
   bitrix_deal_id: number | null;
   bitrix_event_id: number | null;
   photos_done: boolean;
+  write_pending?: string | null;
 };
 
 type PhotoInput = { name: string; mime: string; base64: string };
@@ -75,6 +78,7 @@ export async function ensureBitrixSchema(sql: Sql) {
     photos_done boolean not null default false,
     updated_at timestamptz not null default now()
   )`;
+  await sql`alter table bitrix_sync_queue add column if not exists write_pending text`;
   await sql`create index if not exists bitrix_sync_due_idx on bitrix_sync_queue(status,next_attempt_at)`;
   await sql`create table if not exists bitrix_sync_runner (
     shop_id text primary key,
@@ -93,10 +97,13 @@ export async function queueBitrixBooking(
   await sql`insert into bitrix_sync_queue(booking_id,shop_id,requested_version)
     values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
     set requested_version=greatest(bitrix_sync_queue.requested_version,excluded.requested_version),
-    status='pending',next_attempt_at=now(),updated_at=now()`;
+    status=case when bitrix_sync_queue.status='review' then 'review' else 'pending' end,next_attempt_at=now(),updated_at=now()`;
 }
 
-export async function queueBitrixPhotos(sql: Sql, booking: Pick<WorkflowBooking, "id" | "version">) {
+export async function queueBitrixPhotos(
+  sql: Sql,
+  booking: Pick<WorkflowBooking, "id" | "version">,
+) {
   await queueBitrixBooking(sql, booking);
   await sql`update bitrix_sync_queue set photos_done=false,status='pending',next_attempt_at=now(),updated_at=now()
     where booking_id=${booking.id}`;
@@ -174,6 +181,20 @@ export function bookingLineItems(booking: BitrixBooking, productMap: Record<stri
       });
     }
   }
+  if (booking.agreed_price_cents != null && items.length) {
+    const total = items.reduce((sum, item) => sum + Math.round(item.price * 100), 0);
+    let remaining = booking.agreed_price_cents;
+    items.forEach((item, index) => {
+      const cents =
+        index === items.length - 1
+          ? remaining
+          : total
+            ? Math.round((Math.round(item.price * 100) / total) * booking.agreed_price_cents!)
+            : 0;
+      remaining -= cents;
+      item.price = cents / 100;
+    });
+  }
   return items;
 }
 
@@ -187,8 +208,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
   const vehicle = bookingVehicle(booking) || "Fahrzeug laut Anfrage";
   const wish = [booking.preferred_date, booking.preferred_slot].filter(Boolean).join(" ");
   const pickupKm = city?.km;
-  const pickup =
-    pickupKm == null ? null : pickupFee(pickupKm, booking.package_id as PackageId);
+  const pickup = pickupKm == null ? null : pickupFee(pickupKm, booking.package_id as PackageId);
   return {
     title: `WG-${booking.id} · ${vehicle} · ${pack?.name || booking.package_id}`,
     contactId,
@@ -209,6 +229,15 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
       city ? `Ort: ${city.name}` : booking.city_slug ? `Ort: ${booking.city_slug}` : null,
       pickup === null ? "Abholung auf Anfrage – nicht im Richtpreis." : null,
       wish ? `Wunschtermin: ${wish}` : null,
+      `Arbeitsstand: ${booking.ops_stage || booking.status}`,
+      booking.agreed_price_cents != null
+        ? `Vereinbarter Preis: ${(booking.agreed_price_cents / 100).toFixed(2)} EUR`
+        : `Vorläufiger Richtpreis: ${(booking.total_cents / 100).toFixed(2)} EUR; noch keine verbindliche Zusage.`,
+      booking.work_start_at && booking.work_end_at
+        ? `Geplanter Zeitraum: ${formatBerlinRange(new Date(booking.work_start_at), new Date(booking.work_end_at))}`
+        : "Arbeitsdauer noch manuell festzulegen.",
+      `Rechnungsstatus (Website): ${booking.invoice_status || "nicht_erstellt"}; Zahlung: ${booking.payment_status || "offen"}`,
+      "Buchungsfreigabe und Leistungsabschluss erfolgen manuell. Dieser Deal ist keine Rechnung.",
       booking.note || null,
     ]
       .filter(Boolean)
@@ -227,6 +256,7 @@ async function saveProgress(sql: Sql, bookingId: number, patch: Partial<QueuePro
     bitrix_contact_id=coalesce(${patch.bitrix_contact_id ?? null},bitrix_contact_id),
     bitrix_deal_id=coalesce(${patch.bitrix_deal_id ?? null},bitrix_deal_id),
     bitrix_event_id=coalesce(${patch.bitrix_event_id ?? null},bitrix_event_id),
+    write_pending=case when ${Boolean(patch.bitrix_contact_id || patch.bitrix_deal_id || patch.bitrix_event_id)} then null else write_pending end,
     photos_done=case when ${patch.photos_done ?? null}::boolean is null then photos_done else ${patch.photos_done ?? false} end,
     updated_at=now()
     where booking_id=${bookingId}`;
@@ -283,11 +313,7 @@ async function attachProducts(
     taxIncluded: true,
   }));
   if (!products.length) return;
-  try {
-    await request("POST", `/deals/${dealId}/products`, { products });
-  } catch {
-    await request("POST", `/deals/${dealId}/products/set`, { products }).catch(() => undefined);
-  }
+  await request("POST", `/deals/${dealId}/products`, { products });
 }
 
 async function loadReadyPhotos(sql: Sql, bookingId: number): Promise<PhotoInput[]> {
@@ -318,41 +344,68 @@ function durationHours(packageId: string) {
   return 3;
 }
 
-async function ensureCalendar(
+export async function ensureCalendar(
   request: BitrixCall,
   booking: BitrixBooking,
   dealId: number,
   existingEventId: number | null,
 ) {
-  if (booking.status !== "bestaetigt") return existingEventId;
+  if (["storniert", "abgelehnt", "nicht_erschienen", "neu"].includes(booking.status)) {
+    if (existingEventId) {
+      try {
+        await request("DELETE", `/calendar-events/${existingEventId}`, {
+          type: "user",
+          ownerId: 1,
+        });
+      } catch (error) {
+        if (!(error instanceof BitrixError && error.status === 404)) throw error;
+      }
+    }
+    return null;
+  }
+  if (booking.status !== "bestaetigt" && booking.status !== "erledigt") return existingEventId;
   const date = (booking.preferred_date || "").trim();
   const slot = (booking.preferred_slot || "").trim();
   if (!date || !slot) return existingEventId;
-  if (existingEventId) return existingEventId;
-  const start = new Date(`${date}T${slot}:00+02:00`);
+  const start = booking.work_start_at
+    ? new Date(booking.work_start_at)
+    : berlinWallToUtc(date, slot);
   if (Number.isNaN(start.getTime())) return existingEventId;
-  const end = new Date(start.getTime() + durationHours(booking.package_id) * 3600 * 1000);
+  const end = booking.work_end_at
+    ? new Date(booking.work_end_at)
+    : new Date(start.getTime() + durationHours(booking.package_id) * 3600 * 1000);
+  if (!Number.isFinite(end.getTime()) || end <= start)
+    throw new BitrixError("Ungültiger Arbeitszeitraum.", "bitrix_invalid_interval", 0, {
+      review: true,
+    });
   const vehicle = bookingVehicle(booking) || `WG-${booking.id}`;
-  const event = await request<{ id: number }>("POST", "/calendar-events", {
-    name: `Aufbereitung · ${vehicle} · ${booking.customer_name}`,
-    description: [`WG-${booking.id}`, booking.customer_name, booking.phone, booking.note]
-      .filter(Boolean)
-      .join("\n"),
-    type: "user",
-    ownerId: 1,
-    sectionId: 2,
-    from: start.toISOString(),
-    to: end.toISOString(),
-    location: "White Gloss, Arnistal 27, 72160 Horb am Neckar",
-    accessibility: "busy",
-    importance: "high",
-  });
+  const event = await request<{ id: number }>(
+    existingEventId ? "PATCH" : "POST",
+    existingEventId ? `/calendar-events/${existingEventId}` : "/calendar-events",
+    {
+      name: `Aufbereitung · ${vehicle} · ${booking.customer_name}`,
+      description: [`WG-${booking.id}`, booking.customer_name, booking.phone, booking.note]
+        .filter(Boolean)
+        .join("\n"),
+      type: "user",
+      ownerId: 1,
+      sectionId: 2,
+      from: start.toISOString(),
+      to: end.toISOString(),
+      timezoneFrom: "Europe/Berlin",
+      timezoneTo: "Europe/Berlin",
+      crmFields: [`D_${dealId}`],
+      location: "White Gloss, Arnistal 27, 72160 Horb am Neckar",
+      accessibility: "busy",
+      importance: "high",
+    },
+  );
   await request("PATCH", `/deals/${dealId}`, {
     [UF.appointment]: start.toISOString(),
     closedAt: end.toISOString(),
     begindate: start.toISOString(),
-  }).catch(() => undefined);
-  return event.id;
+  });
+  return existingEventId ?? event.id;
 }
 
 export async function syncOneBitrixBooking(
@@ -363,12 +416,23 @@ export async function syncOneBitrixBooking(
   progress: QueueProgress,
   loadPhotos: (bookingId: number) => Promise<PhotoInput[]> = (id) => loadReadyPhotos(sql, id),
 ) {
+  if (progress.write_pending)
+    throw new BitrixError(
+      "Unklarer Bitrix-Schreibvorgang. Vor Wiederholung externen Datensatz zuordnen.",
+      "bitrix_write_uncertain",
+      0,
+      { review: true },
+    );
+  const markWrite = async (kind: string) => {
+    await sql`update bitrix_sync_queue set write_pending=${kind} where booking_id=${booking.id}`;
+  };
   const names = splitCustomerName(booking.customer_name);
   let contactId = progress.bitrix_contact_id;
   if (!contactId) {
     const existing = await findContact(request, booking.email, booking.phone);
     if (existing) contactId = existing.id;
     else {
+      await markWrite("contact");
       const created = await request<{ id: number }>("POST", "/contacts", {
         name: names.name,
         lastName: names.lastName,
@@ -386,13 +450,15 @@ export async function syncOneBitrixBooking(
   const body = bookingDealBody(booking, contactId);
   let dealId = progress.bitrix_deal_id;
   if (!dealId) {
+    await markWrite("deal");
     const created = await request<{ id: number }>("POST", "/deals", body);
     dealId = created.id;
     await saveProgress(sql, booking.id, { bitrix_deal_id: dealId });
-    await attachProducts(request, dealId, booking, productMap);
   } else {
     await request("PATCH", `/deals/${dealId}`, body);
   }
+
+  await attachProducts(request, dealId, booking, productMap);
 
   if (!progress.photos_done) {
     const photos = await loadPhotos(booking.id);
@@ -401,21 +467,39 @@ export async function syncOneBitrixBooking(
         [UF.photos]: photos.map((photo) => [photo.name, photo.base64]),
       });
     }
-    const pending =
-      await sql<{ count: number }>`select count(*)::integer as count from booking_photos
+    const pending = await sql<{
+      count: number;
+    }>`select count(*)::integer as count from booking_photos
         where shop_id=${SHOP} and booking_id=${booking.id} and upload_state <> 'ready'`;
-    const ready =
-      await sql<{ count: number }>`select count(*)::integer as count from booking_photos
+    const ready = await sql<{ count: number }>`select count(*)::integer as count from booking_photos
         where shop_id=${SHOP} and booking_id=${booking.id} and upload_state='ready'`;
-    const photosDone = !pending[0]?.count && (photos.length > 0 || !ready[0]?.count);
+    const photosDone = !pending[0]?.count && photos.length === (ready[0]?.count ?? 0);
+    if (!photosDone)
+      throw new BitrixError(
+        "Fahrzeugfotos noch nicht vollständig übertragen.",
+        "bitrix_photos_pending",
+        0,
+        { retryable: true },
+      );
     if (photosDone) await saveProgress(sql, booking.id, { photos_done: true });
   }
 
+  if (
+    !progress.bitrix_event_id &&
+    ["bestaetigt", "erledigt"].includes(booking.status) &&
+    booking.preferred_date &&
+    booking.preferred_slot
+  )
+    await markWrite("calendar");
   const eventId = await ensureCalendar(request, booking, dealId, progress.bitrix_event_id);
   if (eventId && eventId !== progress.bitrix_event_id) {
     await saveProgress(sql, booking.id, { bitrix_event_id: eventId });
   }
 
+  if (!eventId && progress.bitrix_event_id) {
+    await sql`update bitrix_sync_queue set bitrix_event_id=null where booking_id=${booking.id}`;
+    await sql`update bookings set bitrix_event_id=null where id=${booking.id} and shop_id=${SHOP}`;
+  }
   return { contactId, dealId, eventId: eventId ?? null };
 }
 
@@ -441,7 +525,20 @@ export async function runBitrixSync(
     await sql`update bitrix_sync_runner set lease_token=${token},locked_until=now()+interval '90 seconds'
     where shop_id=${SHOP} and (locked_until is null or locked_until < now()) returning shop_id`;
   if (!lease.length) return result;
-  const request = options.request || createBitrixClient(await readVibeApiKey(sql));
+  const upstream = options.request || createBitrixClient(await readVibeApiKey(sql));
+  const request: BitrixCall = async <T>(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<T> => {
+    const renewed = await sql`update bitrix_sync_runner set locked_until=now()+interval '90 seconds'
+      where shop_id=${SHOP} and lease_token=${token} and locked_until>now() returning shop_id`;
+    if (!renewed.length)
+      throw new BitrixError("Bitrix-Synchronisation wurde unterbrochen.", "bitrix_lease_lost", 0, {
+        review: true,
+      });
+    return upstream<T>(method, path, body);
+  };
   const productMap = options.productMap || productMapFromEnv();
   try {
     for (let i = 0; i < (options.limit ?? 3) && Date.now() < deadline; i++) {
@@ -450,7 +547,8 @@ export async function runBitrixSync(
         where q.shop_id=${SHOP} and q.status='pending' and q.next_attempt_at<=now() and (${options.bookingId ?? null}::integer is null or b.id=${options.bookingId ?? null})
         order by q.next_attempt_at,q.booking_id limit 1`;
       if (!row) break;
-      const [progress] = await sql<QueueProgress>`select bitrix_contact_id,bitrix_deal_id,bitrix_event_id,photos_done
+      const [progress] =
+        await sql<QueueProgress>`select bitrix_contact_id,bitrix_deal_id,bitrix_event_id,photos_done,write_pending
         from bitrix_sync_queue where booking_id=${row.id}`;
       try {
         const ids = await syncOneBitrixBooking(
@@ -473,7 +571,11 @@ export async function runBitrixSync(
         result.synced++;
       } catch (error) {
         const code = error instanceof BitrixError ? error.code : "bitrix_processing_failed";
-        const review = error instanceof BitrixError && error.review;
+        const [uncertain] = await sql<{
+          write_pending: string | null;
+        }>`select write_pending from bitrix_sync_queue where booking_id=${row.id}`;
+        const review =
+          Boolean(uncertain?.write_pending) || (error instanceof BitrixError && error.review);
         await sql`update bitrix_sync_queue set attempts=attempts+1,
           status=case when ${review} then 'review' when attempts>=5 then 'failed' else 'pending' end,
           last_error=${code},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id}`;

@@ -13,6 +13,7 @@ import {
   runReminders,
   type AgentLogRow,
 } from "@/lib/admin.functions";
+import { BitrixAiAgent } from "@/components/bitrix-ai-agent";
 import { Button, inputClass } from "@/components/ui";
 import { stamp } from "@/lib/utils";
 
@@ -164,11 +165,13 @@ function AdminAutomation() {
         </p>
       </section>
 
+      <BitrixAiAgent />
+
       <form
         onSubmit={onSubmit}
         className="mt-8 space-y-4 rounded-md border border-line bg-surface p-5"
       >
-        <h2 className="font-display text-2xl">KI-Agent</h2>
+        <h2 className="font-display text-2xl">Kurzbefehle</h2>
         <p className="text-sm text-muted">
           Unterstützt bei Übersichten und internen Entwürfen. Die KI darf keine Termine bestätigen
           oder Buchungsstatus ändern.
@@ -197,7 +200,7 @@ function AdminAutomation() {
         </label>
         <label className="flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
-          Freitext mit KI interpretieren
+          Mit Bitrix-KI als internen Entwurf beantworten
         </label>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={pending}>

@@ -258,7 +258,7 @@ export function AdminBookingEditor({
               disabled={!values.email.trim()}
               onChange={(e) => update("notifyCustomer", e.target.checked)}
             />
-            Buchungsanfrage mit PDF per E-Mail an den Kunden senden
+            Unverbindliche Eingangsbestätigung ohne PDF per E-Mail senden
           </label>
         ) : null}
       </fieldset>

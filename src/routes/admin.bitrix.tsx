@@ -8,6 +8,7 @@ import {
   saveBitrixApiKey,
 } from "@/lib/bitrix.functions";
 import { Button, Field, inputClass } from "@/components/ui";
+import { BitrixAiAgent } from "@/components/bitrix-ai-agent";
 
 export const Route = createFileRoute("/admin/bitrix")({
   component: AdminBitrix,
@@ -66,9 +67,11 @@ function AdminBitrix() {
       <h1 className="mt-2 font-display text-4xl">Bitrix24</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
         Das öffentliche Buchungspanel bleibt auf der Website. Jede gespeicherte Anfrage wird als
-        Auftrag WG-… nach Bitrix24 übertragen: Kontakt, Leistungen, Fotos, später Termin und
-        Rechnung. Zoho, Lexware und die lokale Buchung bleiben unverändert.
+        Auftrag WG-… nach Bitrix24 übertragen: Kontakt, Leistungen und Fotos. Der KI-Agent hilft bei
+        deiner Prüfung. Die Übertragung von Rechnungen und Zahlungen ist separat einzurichten.
       </p>
+
+      <BitrixAiAgent />
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
         <h2 className="font-display text-2xl">Verbindung</h2>

@@ -3,6 +3,9 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
+import { readVibeAiKey, loadAgentContext } from "@/lib/vibe-agent.server";
+import { askVibeAi } from "@/lib/vibe-ai";
+import { assertRateLimit } from "@/lib/rate-limit";
 import { parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
@@ -20,7 +23,7 @@ import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 const SHOP = "white-gloss";
 const DEFAULT_OPERATOR_PIN = "WG-BETRIEB";
 const READ_ONLY_AGENT_HELP =
-  "termine – Terminübersicht | post – Posteingang | kunde <Name> – Kundensuche | rechnung <ID> – interner Entwurf | erinnerung – fällige Nachrichten prüfen. Termine ausschließlich persönlich unter Buchungen bestätigen oder ändern.";
+  "termine – Terminübersicht | post – Posteingang | kunde <Name> – Kundensuche | rechnung <ID> – Rechnungsstatus | erinnerung – fällige Nachrichten prüfen. Termine ausschließlich persönlich unter Buchungen bestätigen oder ändern.";
 
 async function ensureShopSettings(sql: Awaited<ReturnType<typeof getSql>>) {
   await sql`
@@ -410,26 +413,10 @@ async function executeParsed(
   }
 
   if (action.type === "invoice") {
-    if (LEXWARE_ONLY) assertLegacyBillingDisabled();
-    const bookings = await sql<{
-      id: number;
-      customer_name: string;
-      package_id: string;
-      total_cents: number;
-    }>`
-      select id, customer_name, package_id, total_cents
-      from bookings where id = ${action.id} and shop_id = ${SHOP} limit 1
-    `;
-    const booking = bookings[0];
-    if (!booking) return `Buchung #${action.id} nicht gefunden.`;
-    const title = `Rechnung ${booking.package_id} · ${booking.customer_name}`;
-    const body = `Rechnung für ${booking.customer_name}, ${(booking.total_cents / 100).toFixed(2)} EUR brutto.`;
-    const doc = await sql<{ id: number }>`
-      insert into documents (shop_id, booking_id, kind, title, amount_cents, status, body, created_by)
-      values (${SHOP}, ${booking.id}, ${"rechnung"}, ${title}, ${booking.total_cents}, ${"entwurf"}, ${body}, ${userId})
-      returning id
-    `;
-    return `Rechnung-Entwurf #${doc[0]?.id} angelegt (${title}).`;
+    const [booking] = await sql<{ status: string; invoice_status: string; payment_status: string }>`
+      select status,invoice_status,payment_status from bookings where shop_id=${SHOP} and id=${action.id}`;
+    if (!booking) return `Buchung WG-${action.id} nicht gefunden.`;
+    return `WG-${action.id}: ${booking.status}. Rechnung: ${booking.invoice_status}; Zahlung: ${booking.payment_status}. Der KI-Agent erstellt keine Rechnungen. Voraussetzung ist dein manueller Leistungsabschluss mit Zahlungswahl.`;
   }
 
   if (action.type === "remind") {
@@ -439,31 +426,16 @@ async function executeParsed(
   return "";
 }
 
-async function interpretWithGrok(text: string): Promise<string | null> {
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) return null;
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-4.5",
-      max_tokens: 180,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Du unterstützt das White-Gloss-Admin. Du darfst keine Termine bestätigen oder Buchungsstatus ändern. Antworte NUR mit einer Zeile: termine | post | kunde <name> | rechnung <id> | erinnerung | hilfe. Bei Änderungs- oder Bestätigungswünschen antworte hilfe.",
-        },
-        { role: "user", content: text.slice(0, 400) },
-      ],
-    }),
-  });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return body.choices?.[0]?.message?.content?.trim() ?? null;
+async function answerWithVibe(
+  sql: Awaited<ReturnType<typeof getSql>>,
+  text: string,
+  userId: string,
+) {
+  assertRateLimit("vibe-legacy", userId, 8);
+  const key = await readVibeAiKey(sql);
+  if (!key) throw new Error("Bitte zuerst den VibeCode-KI-Schlüssel unter Bitrix24 speichern.");
+  const ref = /\bWG[- ]?(\d+)\b/i.exec(text);
+  return askVibeAi(key, text, await loadAgentContext(sql, ref ? Number(ref[1]) : undefined));
 }
 
 export const runAgentCommand = createServerFn({ method: "POST" })
@@ -479,12 +451,11 @@ export const runAgentCommand = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const sql = await getSql();
-    let parsed = parseAgentCommand(data.text);
-    if (parsed.type === "unknown" && data.useAi) {
-      const interpreted = await interpretWithGrok(data.text);
-      if (interpreted) parsed = parseAgentCommand(interpreted);
-    }
-    let result = await executeParsed(sql, parsed, context.userId);
+    assertSameSiteRequest();
+    const parsed = parseAgentCommand(data.text);
+    let result = data.useAi
+      ? await answerWithVibe(sql, data.text, context.userId)
+      : await executeParsed(sql, parsed, context.userId);
     if (!result) {
       result =
         parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";
@@ -712,12 +683,10 @@ export const inboundOperatorMessage = createServerFn({ method: "POST" })
     if (data.pin !== pin) {
       return { ok: false as const, result: "PIN ungültig." };
     }
-    let parsed = parseAgentCommand(data.text);
-    if (parsed.type === "unknown" && data.useAi) {
-      const interpreted = await interpretWithGrok(data.text);
-      if (interpreted) parsed = parseAgentCommand(interpreted);
-    }
-    let result = await executeParsed(sql, parsed, `operator:${data.channel}`);
+    const parsed = parseAgentCommand(data.text);
+    let result = data.useAi
+      ? await answerWithVibe(sql, data.text, `operator:${data.channel}`)
+      : await executeParsed(sql, parsed, `operator:${data.channel}`);
     if (!result) {
       result =
         parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";

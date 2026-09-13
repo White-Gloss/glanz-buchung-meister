@@ -98,13 +98,18 @@ function AdminZoho() {
       ((selected.agreed_price_cents ?? selected.estimated_price_cents ?? selected.total_cents) / 100).toFixed(2),
     );
     setNotes(selected.internal_notes || "");
-    setAccepted(Boolean(selected.customer_accepted_at));
+    setAccepted(false);
     setCashEuros(
       ((selected.payment_recorded_cents ?? selected.agreed_price_cents ?? selected.total_cents) / 100).toFixed(2),
     );
     setCashDate(selected.payment_recorded_on || berlinToday());
     setPayment(selected.payment_method === "bar" ? "bar" : "ueberweisung");
   }, [selected?.id, selected?.version]);
+
+  // A recorded acceptance applies only to the offer currently displayed.
+  useEffect(() => {
+    setAccepted(false);
+  }, [startDate, startTime, endDate, endTime, duration, price]);
 
   const photos = data?.photos.filter((photo) => photo.bookingId === selectedId) ?? [];
   const jobs = data?.jobs.filter((job) => job.booking_id === selectedId) ?? [];

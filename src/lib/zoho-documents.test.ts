@@ -33,7 +33,7 @@ test("confirmation PDF is titled as booking confirmation and never as an invoice
 
 test("receipt copy states the request is unconfirmed and names the process", () => {
   const body = receiptEmailCopy("Lars", "WG-7");
-  assert.match(body, /Buchungsanfrage ist bei uns eingegangen/);
+  assert.match(body, /Deine Anfrage ist bei uns eingegangen/);
   assert.match(body, /noch nicht verbindlich bestätigt/);
   assert.match(body, /WG-7/);
   assert.doesNotMatch(body, /Rechnung/);
