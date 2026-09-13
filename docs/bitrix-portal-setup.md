@@ -296,3 +296,18 @@ Die Summenfelder müssen aus diesen Positionen berechnet werden.
 Die Buchungsbestätigung enthält Beginn, Ende, Dauer, Ort und Keine-Rechnung-
 Hinweis; keine Zahlungsaufforderung. PDF im Repository ist eine Layoutvorschau
 mit Platzhaltern, keine an einen Kunden ausgegebene Bestätigung.
+
+
+## Autorisierter Versandtest
+
+Der Inhaber hat eine Testbuchung einschließlich E-Mail-Test ausdrücklich
+autorisiert. Am 13.09.2026 wurde genau eine eindeutig gekennzeichnete Testmail
+über `POST /v1/mail/messages` gesendet: von `buchung@white-gloss.de` an
+`info@white-gloss.de`, Referenz `WG-MAIL-20260913-01`. Die API bestätigte
+`data.success=true`; der Ausgang wurde als Nachricht ID 2640 in Mailbox 4
+mit passendem Absender und Empfänger zurückgelesen. Keine Anhänge, keine
+Terminreservierung, keine Rechnung oder Zahlung durch diesen Verbindungstest.
+Kein automatischer Wiederholungsversand. Nachricht im empfangenden Postfach
+war bei der ersten Prüfung noch nicht nachgewiesen; Versandannahme und
+Ausgangseintrag sind kein Zustellnachweis. Dies ist noch kein erfolgreicher
+Ende-zu-Ende-Test des weiterhin unvollständigen Buchungsablaufs.
