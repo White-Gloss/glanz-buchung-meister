@@ -118,13 +118,14 @@ export async function readBitrixCalendar(
     );
   const events: CalendarEvent[] = [];
   const seen = new Set<string>();
-  let total: number | undefined;
   for (let page = 0; page < 10; page++) {
     const response = await fetchImpl(`${vibeApiBase()}/calendar-events/search`, {
       method: "POST",
       headers: { "X-Api-Key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         filter: { type: "user", ownerId: 1, section: 2, from, to },
+        autoWindow: false,
+        withTotal: false,
         limit: 500,
         offset: events.length,
       }),
@@ -140,11 +141,11 @@ export async function readBitrixCalendar(
       result.success !== true ||
       !Array.isArray(result.data) ||
       typeof result.meta?.hasMore !== "boolean" ||
-      !Number.isInteger(result.meta.total)
+      result.meta.truncated === true ||
+      result.meta.pageErrorSample != null ||
+      (result.meta.windowErrors ?? 0) !== 0
     )
       throw failure();
-    if (total !== undefined && total !== result.meta.total) throw failure();
-    total = result.meta.total;
     for (const event of result.data as CalendarEvent[]) {
       const identity = `${event.id}:${event.occurrenceIndex ?? 0}:${event.from}`;
       if (seen.has(identity)) throw failure();
@@ -152,7 +153,6 @@ export async function readBitrixCalendar(
       events.push(event);
     }
     if (!result.meta.hasMore) {
-      if (events.length !== total) throw failure();
       return eventWindows(events);
     }
     if (!result.data.length) throw failure();

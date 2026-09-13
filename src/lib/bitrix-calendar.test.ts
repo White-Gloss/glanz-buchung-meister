@@ -59,13 +59,23 @@ test("calendar search follows metadata, preserves recurring occurrences and refu
   const rows = await readBitrixCalendar("test-key", event.from, event.to, async (_url, init) => {
     const request = JSON.parse(String(init?.body));
     assert.equal(request.offset, count);
+    assert.equal(request.autoWindow, false);
     count++;
     return envelope([{ ...event, occurrenceIndex: count }], 2, count === 1);
   });
   assert.equal(count, 2);
   assert.equal(rows.length, 4);
+  assert.equal((await readBitrixCalendar("test-key", event.from, event.to, async () =>
+    Response.json({ success: true, data: [event], meta: { hasMore: false } }),
+  )).length, 2);
+  for (const extra of [{ truncated: true }, { windowErrors: 1 }]) {
+    await assert.rejects(readBitrixCalendar("test-key", event.from, event.to, async () =>
+      Response.json({ success: true, data: [event], meta: { hasMore: false, ...extra } }),
+    ), /vollständig/);
+  }
+
   await assert.rejects(
-    readBitrixCalendar("test-key", event.from, event.to, async () => envelope([event], 2, false)),
+    readBitrixCalendar("test-key", event.from, event.to, async () => Response.json({ success: true, data: [event], meta: { hasMore: false, pageErrorSample: { code: "PAGE2_COUNT_FAILED" } } })),
     /vollständig/,
   );
   await assert.rejects(

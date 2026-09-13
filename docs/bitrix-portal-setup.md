@@ -103,7 +103,10 @@ Dabei darf kein globaler Absenderwechsel normale Webmail-Nachrichten betreffen.
 - Persönlicher VibeCode-Kalenderzugang mit dem echten Portal lesend geprüft.
   `calendar-events/search` liefert die angefragte Zeitspanne; die allgemeine
   Listenroute hat dagegen nur ein festes Zeitfenster und wird nicht verwendet.
-- Alle Antwortseiten werden anhand von `meta.hasMore` und `meta.total` geprüft.
+- Alle Antwortseiten werden anhand von `meta.hasMore` geprüft. `meta.total` ist
+  laut aktuellem API-Vertrag optional und kein Abschlussnachweis. Manuelle
+  Pagination deaktiviert automatisches Windowing; Teilfehler und Kürzungen
+  führen zum Abbruch.
   Unvollständige, widersprüchliche oder fehlerhafte Antworten blockieren die Freigabe.
 - Manuelle belegte Termine im bestehenden gemeinsamen Kalender (Nutzer 1,
   Abschnitt 2) sperren beide Ressourcen. Freie und gelöschte Termine werden
@@ -176,3 +179,38 @@ und darf nicht ungeprüft als Zahlungsschnittstelle für CRM-Rechnungen verwende
 
 KI-Modell bleibt fest `bitrix/bitrixgpt-5.5` über den VibeCode AI Router. Die KI
 erteilt keine Buchungsfreigabe und erzeugt keine Rechnungen oder Zahlungen.
+
+
+## Fortsetzung: CRM-Postfächer und verbleibender Zugang
+
+Am 13.09.2026 wurde im Portal geprüft: `info@white-gloss.de` hat keine aktive
+CRM-Zuordnung mehr, `buchung@white-gloss.de` ist CRM-verbunden. Beim Buchungspostfach
+wurden Kontaktanlage aus vCards und die automatische Kontaktanlage aus erstmalig
+versendeten E-Mails ausgeschaltet; eingehende neue Adressen bleiben als Lead
+zulässig. Bekannte Kontakte werden weiterhin ihren Verantwortlichen zugeordnet.
+
+Die Absender-API `/v1/mail/mailboxes/4/senders` liefert trotz Mailbox-ID 4 **beide**
+Absender. Deshalb später nach `mailboxId === 4` und exakter Adresse
+`buchung@white-gloss.de` filtern; niemals den ersten Eintrag oder `senderId`
+allein auswählen (beide Einträge hatten dieselbe senderId).
+
+Der dokumentierte `POST /v1/mail/messages` unterstützt `from`, `to`, `subject`,
+`body`, `cc`, `bcc`. Keine dokumentierten PDF-Anhänge oder Idempotenzparameter;
+die Antwort hat `data.success` und `data.to`, aber keine Nachrichten-ID.
+Den bisherigen Resend-Worker daher nicht einfach auf diesen Endpoint umbiegen:
+Er setzt für sichere Wiederholung eine Provider-Idempotenz voraus. Vor IONOS-
+Aktivierung einen geeigneten Versandweg samt unveränderlichem Provider pro
+Queue-Eintrag, Anhängen und Prüfung unklarer Zustellungen fertigstellen.
+
+Der vorhandene App-Server `WhiteGloss` ist weiter einem anderen Schlüssel
+zugeordnet. Aktueller persönlicher Schlüssel: keine eigenen oder als
+Collaborator freigegebenen Server. Die offizielle Wiederherstellung beschreibt
+`https://vibecode.bitrix24.com/black-hole` → Server → Change managing key.
+Diese Zuordnung muss der Inhaber im Dashboard vornehmen; ausdrücklich kein
+V1-Endpunkt und laut Anbieter keine automatisierte Schlüsselübernahme.
+Keine alten Schlüssel aus App-Quellen verwenden. Erst danach die bestehende
+App über den freigegebenen Zugang überarbeiten.
+
+Quellen: `https://vibecode.bitrix24.com/docs-content-en/mail/messages/send.md`,
+`https://vibecode.bitrix24.com/docs-content-en/infra/server-access-recovery.md`,
+aktuelle API-Selbstbeschreibung `/v1/me` und `/v1/guide`.
