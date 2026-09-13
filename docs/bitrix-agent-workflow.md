@@ -36,8 +36,9 @@ in öffentliche Build-Variablen oder in Logs.
 `VIBE_AI_API_KEY` kann serverseitig einen getrennten KI-Schlüssel bereitstellen.
 Sonst verwendet der Agent den separat gespeicherten KI-Schlüssel, danach die vorhandene VibeCode-Konfiguration.
 Das Speichern des KI-Zugangs startet keine Buchungsübertragungen oder Versandjobs. Ein für den
-CRM-Abgleich gespeicherter REST-Webhook ist kein KI-Schlüssel. Das bestehende
-Server-Overlay/`VIBE_API_KEY` hat weiterhin Vorrang vor dem Panel-Wert.
+CRM-Abgleich gespeicherter REST-Webhook ist kein KI-Schlüssel. Nur beim Rückgriff
+auf die bestehende CRM-Konfiguration hat deren Server-Overlay/`VIBE_API_KEY`
+Vorrang vor deren Panel-Wert; der getrennte KI-Schlüssel hat Vorrang vor diesem Rückgriff.
 
 Die additive Migration `0017_bitrix_agent.sql` wird im lokalen Schema und beim
 expliziten Datenbank-Migrationslauf berücksichtigt. Auf bestehenden VPS-Ständen
@@ -83,7 +84,16 @@ Umstellung nicht nochmals angelegt oder versendet werden.
   `condition-photos` vorhanden. Das historische Supabase-Buchungsschema ist nicht
   das aktuelle VPS-Anwendungsschema. Keine Vermischung oder Migration produktiver
   Altbuchungen im Rahmen dieser Agenten-Erweiterung.
-- Anmeldung im Live-Admin im Verlauf erfolgreich. Schlüsselablage und produktive
-  Agenten-Prüfung erfolgen nach Deployment.
+- PR #191 wurde übernommen und erfolgreich auf IONOS veröffentlicht. Der persönliche
+  KI-Schlüssel wurde über den separaten Inhaber-Dialog geprüft und gespeichert.
+- Eine vorhandene Testbuchung wurde im Live-Panel erfolgreich analysiert. Der Agent
+  meldete fehlende Fotos, Preis-/Zeitangaben und einen widersprüchlichen Altstatus.
+  Er nannte manuelle Freigabe plus Reservierung als Voraussetzung für die
+  Bestätigungs-PDF und den tatsächlichen Leistungsabschluss als Voraussetzung für die Rechnung.
+- Eine vorangegangene Antwort wurde wegen des Antwortformats abgewiesen; die genaue
+  Unterursache wurde damals nicht gespeichert. Die Ausgabevorgabe ist deshalb nun
+  ausdrücklich begrenzt, fehlende/leere Kundentwürfe werden als leer normalisiert,
+  und sichere Fehlermeldungen unterscheiden Abbruch, Modellabweichung, JSON- und
+  Schemafehler. Kein automatischer zweiter Modellaufruf bei Fehlern.
 
 Offizielle Schnittstelle: <https://vibecode.bitrix24.com/docs/ai>.
