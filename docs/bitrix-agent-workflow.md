@@ -95,5 +95,10 @@ Umstellung nicht nochmals angelegt oder versendet werden.
   ausdrücklich begrenzt, fehlende/leere Kundentwürfe werden als leer normalisiert,
   und sichere Fehlermeldungen unterscheiden Abbruch, Modellabweichung, JSON- und
   Schemafehler. Kein automatischer zweiter Modellaufruf bei Fehlern.
+- Die umfangreiche Prüffrage wurde anschließend mit einem synthetischen Datensatz
+  reproduziert: Der Anbieter ergänzte ein zusätzliches `explanation`-Objekt neben
+  den fünf korrekt gefüllten Antwortfeldern. Der Parser behält jetzt ausschließlich
+  die geprüften Anzeigefelder und verwirft Zusatzfelder. Echte `tool_calls`, falsche
+  Modelle, abgebrochene Antworten und ungültige Pflichtfelder werden weiterhin abgewiesen.
 
 Offizielle Schnittstelle: <https://vibecode.bitrix24.com/docs/ai>.

@@ -155,6 +155,32 @@ test("empty customer drafts are harmless while malformed analysis stays visibly 
   }
 });
 
+test("extra provider explanation and action metadata cannot escape the display schema", async () => {
+  const result = await askBitrixAgent({
+    apiKey: key,
+    question: "Prüfen und Voraussetzungen erklären",
+    snapshot,
+    fetchImpl: async () =>
+      response({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                ...answer,
+                explanation: { invoice: "Erst nach manuellem Leistungsabschluss" },
+                actions: [{ type: "create_invoice", bookingId: 42 }],
+              }),
+            },
+          },
+        ],
+      }),
+  });
+  assert.deepEqual(result, answer);
+  assert.equal("actions" in result, false);
+  assert.equal("explanation" in result, false);
+});
+
 function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
     (
