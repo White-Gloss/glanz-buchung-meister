@@ -6,6 +6,7 @@ import {
   retryBitrixSync,
   runBitrixNow,
   saveBitrixApiKey,
+  enableBitrixCalendar,
 } from "@/lib/bitrix.functions";
 import { Button, Field, inputClass } from "@/components/ui";
 import { BitrixAgentPanel } from "@/components/bitrix-agent-panel";
@@ -136,7 +137,11 @@ function AdminBitrix() {
         <Button type="button" variant="ghost" className="mt-4" onClick={() => void refresh()}>
           Status aktualisieren
         </Button>
-        {message ? <p className="mt-4 text-sm text-muted">{message}</p> : null}
+        {message ? (
+          <p role="status" className="mt-4 text-sm text-muted">
+            {message}
+          </p>
+        ) : null}
         <a
           className="mt-4 inline-flex min-h-11 items-center rounded-md border border-line px-4 text-sm underline"
           href="https://b24-emfor7.bitrix24.de"
@@ -148,6 +153,46 @@ function AdminBitrix() {
       </section>
 
       <BitrixAgentPanel />
+
+      <section className="mt-8 rounded-md border border-line bg-surface p-5">
+        <h2 className="font-display text-2xl">Kalenderabgleich</h2>
+        <p className="mt-2 text-sm text-muted">
+          {status?.calendarEnabled
+            ? "Aktiv: Bitrix-Sperrzeiten werden auf der Website berücksichtigt und vor jeder Freigabe erneut geprüft."
+            : "Der Kalenderabgleich ist noch nicht aktiviert."}
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Manuelle Termine im gemeinsamen Werkstattkalender sperren beide Kapazitäten. Buchungen mit
+          eigenem Zeitraum behalten ihre zugewiesene Kapazität. Die Website zeigt Sperrzeiten mit
+          höchstens 30 Sekunden Verzögerung.
+        </p>
+        {sync?.canManage && !status?.calendarEnabled ? (
+          <Button
+            className="mt-4"
+            disabled={pending || !status?.configured}
+            onClick={async () => {
+              setPending(true);
+              try {
+                await enableBitrixCalendar();
+                await refresh();
+                setMessage("Kalenderzugang geprüft und Abgleich aktiviert.");
+              } catch (error) {
+                setMessage(
+                  error instanceof Error ? error.message : "Kalenderprüfung fehlgeschlagen.",
+                );
+              } finally {
+                setPending(false);
+              }
+            }}
+          >
+            Kalender prüfen und aktivieren
+          </Button>
+        ) : null}
+        <p className="mt-2 text-sm text-muted">
+          Bei einem Kalenderfehler bleibt die Freigabe gesperrt. Änderungen direkt im
+          Bitrix-Kalender verschieben eine bestätigte Website-Buchung noch nicht automatisch.
+        </p>
+      </section>
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
         <h2 className="font-display text-2xl">Übertragungen</h2>

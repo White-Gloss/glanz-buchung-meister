@@ -9,8 +9,25 @@ import { kickBookingDelivery } from "@/lib/booking-delivery";
 import { probeBitrix, vibeApiKey } from "@/lib/bitrix";
 import { readVibeApiKey } from "@/lib/bitrix-credentials.server";
 import { ensureBitrixSchema, runBitrixSync } from "@/lib/bitrix-sync";
+import { bitrixCalendarEnabled, bitrixBusyWindows, calendarDateRange } from "@/lib/bitrix-calendar";
 
 const SHOP = "white-gloss";
+
+export const enableBitrixCalendar = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async ({ context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der Inhaber darf den Kalenderabgleich einrichten.");
+    await bitrixCalendarEnabled(sql);
+    const today = new Date().toISOString().slice(0, 10);
+    const until = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
+    const range = calendarDateRange(today, until);
+    await bitrixBusyWindows(sql, range.from, range.to, { fresh: true, force: true });
+    await sql`update shop_settings set bitrix_calendar_enabled=true,updated_at=now() where shop_id=${SHOP}`;
+    return { ok: true };
+  });
 
 export const bitrixStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
@@ -21,6 +38,7 @@ export const bitrixStatus = createServerFn({ method: "GET" })
     const key = await readVibeApiKey(sql);
     return {
       configured: Boolean(key),
+      calendarEnabled: await bitrixCalendarEnabled(sql),
       source: fromEnv ? ("env" as const) : key ? ("panel" as const) : ("none" as const),
     };
   });
@@ -89,6 +107,7 @@ export const runBitrixNow = createServerFn({ method: "POST" })
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf Bitrix-Übertragungen anstoßen.");
-    if (!(await readVibeApiKey(sql))) throw new Error("Bitte zuerst den Bitrix-Schlüssel speichern.");
+    if (!(await readVibeApiKey(sql)))
+      throw new Error("Bitte zuerst den Bitrix-Schlüssel speichern.");
     return runBitrixSync(sql, { limit: 8 });
   });

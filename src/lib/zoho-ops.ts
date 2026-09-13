@@ -9,6 +9,7 @@ import { queueOdooBooking } from "./odoo-sync.ts";
 import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
 import { packages, extras as extraCatalog, vehicleClasses } from "../data/site.ts";
+import { assertBitrixCalendarAvailable, bitrixBusyWindows } from "./bitrix-calendar.ts";
 
 const SHOP = "white-gloss";
 
@@ -375,6 +376,7 @@ export async function confirmBookingWithSchedule(
         return { booking, changed: true, acceptance, awaitingCustomer: true as const };
       }
       const wall = utcToBerlinWall(interval.start);
+      await assertBitrixCalendarAvailable(tx, interval.start, interval.end, input.resourceId ?? 1);
       await tx`select set_config('white_gloss.confirm_actor', ${actor}, true)`;
       const [booking] = await tx<ZohoBooking>`
         update bookings set
@@ -559,6 +561,7 @@ export async function listBusyWindows(
       end: new Date(row.end_at).toISOString(),
       resourceId: row.resource_id,
     })),
+    ...(await bitrixBusyWindows(sql, fromIso, toIso)),
     ...claims.map((row) => ({
       start: berlinWallToUtc(row.appointment_date.slice(0, 10), "09:00").toISOString(),
       end: berlinWallToUtc(row.appointment_date.slice(0, 10), "17:00").toISOString(),

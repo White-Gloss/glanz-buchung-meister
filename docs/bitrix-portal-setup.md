@@ -75,21 +75,63 @@ Buchungsfreigabe in der Website-Datenbank.
 
 ## E-Mail: neue Vorgabe des Inhabers
 
-Der Inhaber setzt die E-Mail-Einstellungen zurück und entfernt Zoho.
-Der vorbereitete Zoho-Verbindungsdialog wurde ohne Verbindung abgebrochen.
-Neuen Mailanbieter und Versandweg klären, bevor Zugangsdaten oder Versandregeln
-eingerichtet werden. Keine Zoho-Verbindung erneut anlegen. Das Entfernen eines
-Postfachanbieters ersetzt nicht automatisch die bestehende Buchungslogik im
-Website-Modul `zoho-ops.ts`.
+Der Inhaber entfernt Zoho und nutzt IONOS. Ein Postfach `info@white-gloss.de`
+ist inzwischen in Bitrix vorhanden (Mailbox-ID 2, per API und im Webmail geprüft).
+Ein Versandtest wurde nicht ausgelöst. Da dort sämtliche normalen E-Mails
+erscheinen, soll ein separates Buchungspostfach angebunden werden. Der Inhaber hat dafür ausdrücklich `buchung@white-gloss.de` gewählt. Die
+Bitrix-Verbindung mit IONOS wurde über die sichere Passworteingabe hergestellt
+und per API sowie im Webmail bestätigt (Mailbox-ID 4). Eingang und Gesendet
+werden synchronisiert; gesendete Mails werden auf dem Server abgelegt. Empfang
+über IMAP 993 und Versand über SMTP 465 sind mit SSL/TLS eingerichtet. Automatische
+Kalendertermine aus eingehenden Mails sind ausgeschaltet. Ein tatsächlicher
+Testversand wurde nicht ausgelöst. Es wurde kein neues IONOS-Postfach bestellt. Ein Alias desselben Postfachs trennt den Posteingang nicht.
+Der Inhaber hat anschließend ausdrücklich klargestellt: `info@white-gloss.de`
+bleibt für das normale Webmail verbunden. Ausschließlich `buchung@white-gloss.de`
+ist für automatische Buchungsnachrichten vorgesehen. Beide Verbindungen bleiben
+bestehen; eine Trennung von `info@white-gloss.de` ist nicht mehr beabsichtigt.
+Der gespeicherte Absendername von Mailbox 4 wurde per API als
+`White-Gloss Detailing` verifiziert. Keine historischen Nachrichten oder CRM-Daten
+wurden gelöscht. Keine Zoho-Verbindung erneut anlegen.
+
+Die Mailbox-Verbindung allein aktiviert noch keinen automatischen Buchungsversand.
+Der bestehende Website-Versand verwendet aktuell Resend und `MAIL_FROM`; die
+verbindliche Zuordnung der Buchungsautomationen zu IONOS/Mailbox 4 steht noch aus.
+Dabei darf kein globaler Absenderwechsel normale Webmail-Nachrichten betreffen.
+
+## Kalenderabgleich im Entwurf ergänzt
+
+- Persönlicher VibeCode-Kalenderzugang mit dem echten Portal lesend geprüft.
+  `calendar-events/search` liefert die angefragte Zeitspanne; die allgemeine
+  Listenroute hat dagegen nur ein festes Zeitfenster und wird nicht verwendet.
+- Alle Antwortseiten werden anhand von `meta.hasMore` und `meta.total` geprüft.
+  Unvollständige, widersprüchliche oder fehlerhafte Antworten blockieren die Freigabe.
+- Manuelle belegte Termine im bestehenden gemeinsamen Kalender (Nutzer 1,
+  Abschnitt 2) sperren beide Ressourcen. Freie und gelöschte Termine werden
+  ignoriert. Ganztägige Termine folgen Berliner Kalendertagen inklusive Zeitumstellung.
+- Eigene Kalenderexporte werden nur bei exakt passender gespeicherter Ereignis-ID
+  und Start-/Endzeit von zusätzlichen Sperren ausgenommen. Abweichende manuelle
+  Änderungen bleiben sichtbar als Sperre; die Website-Buchung wird nicht stillschweigend geändert.
+- Die Website-Auswahl prüft die vorläufige Paketdauer pro Kapazität. Fehler werden
+  angezeigt; es werden keine vermeintlich freien Abgabezeiten angeboten.
+- Aktivierung ist standardmäßig aus. Nur der Inhaber kann sie im Bitrix-Bereich
+  nach erfolgreicher vollständiger Kalenderprüfung einschalten. Ab dann prüft die
+  manuelle Freigabe den Kalender ohne Cache innerhalb des gesperrten
+  Buchungsvorgangs. Die alte Freigabe ohne Arbeitszeit wird gesperrt.
+- Öffentliche Terminauskünfte verwenden einen begrenzten Cache von 30 Sekunden;
+  sie enthalten nur Zeiträume und Ressourcen, keine Titel oder Kundendaten.
+- Diese Prüfung ist keine systemübergreifende atomare Reservierung. Eine
+  gleichzeitige externe Kalenderänderung nach dem Lesen ist weiterhin möglich.
+  Vor PDF/Versand braucht es die noch ausstehende Reservierungsbestätigung und
+  Konfliktbehandlung im vollständigen Bitrix-Aktionsablauf.
 
 ## Noch erforderlich für den vollständigen Ablauf
 
 1. In Bitrix manuelle Aktionen mit verifizierter Inhaberidentität, Versionsprüfung
    und derselben transaktionalen Reservierung wie auf der Website anbinden.
    Kundenzustimmung an genau eine Angebotsversion binden.
-2. Kalender je Kapazität zuordnen; manuell in Bitrix angelegte Termine/Sperren
-   vollständig zur Website übernehmen. Importfehler dürfen keine scheinbar freien
-   Zeiten freigeben. Aktuell exportiert der Adapter in Nutzer 1 / Kalender 2.
+2. Kalenderabgleich aus diesem Entwurf bereitstellen und live aktivieren; bei Bedarf
+   getrennte Kalender je Kapazität ergänzen. Änderungen an bereits bestätigten
+   Buchungen über einen versionierten Umbuchungsablauf abwickeln.
 3. Vor Bestätigungs-PDF und E-Mail den erfolgreich reservierten Gesamtzeitraum
    nachweisen. Eigene White-Gloss-PDF ist im Website-Dokumentmodul vorhanden;
    native Dokumentvorlagen und Versandzuordnung sind noch nicht eingerichtet.
@@ -120,10 +162,13 @@ und darf nicht ungeprüft als Zahlungsschnittstelle für CRM-Rechnungen verwende
 
 ## Prüfung dieses Teilstands
 
-- 12 gezielte Synchronisierungstests erfolgreich, einschließlich fehlender
+- 29 gezielte Kalender-, Synchronisierungs- und Buchungsworkflowtests erfolgreich, einschließlich fehlender
   Zeitplanung, mehrtägiger Zeiträume, Updates/Stornierung, Betragskonsistenz und
   Schutz vor Wiederholung nach unklarem externem Schreibvorgang.
-- TypeScript-Prüfung und Produktionsbuild erfolgreich.
+- TypeScript-Prüfung, ESLint für die geänderten Dateien und Produktionsbuild erfolgreich.
+- Fünf SSR-/Frontendprüfungen erfolgreich gegen den isolierten Produktionsserver;
+  echte Daten und externe Versanddienste dabei gesperrt. Der erste normale
+  Preview-Aufruf scheiterte am absichtlich strengen Produktionsgate ohne Zugangsdaten.
 - Live zurückgelesen: Phasen, 28 Felddefinitionen inklusive der 19 neuen Felder,
   eigenes Unternehmen. Keine Geschäftsaktionen mit realen Kunden ausgeführt.
 - Lokale Browserprüfung durch `ERR_BLOCKED_BY_CLIENT` des verfügbaren Browsers
