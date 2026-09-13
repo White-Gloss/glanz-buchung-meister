@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { bitrixCalendarEnabled } from "./bitrix-calendar.ts";
 import type { Sql } from "./db.ts";
 import {
   publicBookingSchema,
@@ -260,6 +261,10 @@ export async function confirmBookingManually(
       checkVersion(before, expectedVersion);
       if (before.status !== "neu") throw new Error("Nur offene Anfragen können bestätigt werden.");
       assertConfirmable(before);
+      if (await bitrixCalendarEnabled(tx))
+        throw new Error(
+          "Bitte die Buchung mit Preis, Start und Ende im Betriebsbereich manuell freigeben, damit auch der Bitrix-Kalender geprüft wird.",
+        );
       await tx`select set_config('white_gloss.confirm_actor',${actor},true)`;
       const [booking] =
         await tx<WorkflowBooking>`update bookings set status='bestaetigt',confirmed_at=now(),confirmed_by=${actor},handled_by=${actor},updated_at=now(),version=version+1

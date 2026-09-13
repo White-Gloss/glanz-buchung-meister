@@ -21,6 +21,7 @@ import { bookingRequestId } from "@/lib/booking-request-id";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
+import { requestedSlotBusy, type SlotBusyWindow } from "@/lib/booking-slot-availability";
 
 export function Configurator({ initialPackage = "premium" }: { initialPackage?: PackageId }) {
   const navigate = useNavigate();
@@ -40,7 +41,17 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const [vehicleMake, setVehicleMake] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [vehiclePlate, setVehiclePlate] = useState("");
-  const [busyDays, setBusyDays] = useState<string[]>([]);
+  const [busyWindows, setBusyWindows] = useState<SlotBusyWindow[]>([]);
+  const [availability, setAvailability] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const blockedSlots = useMemo(
+    () =>
+      new Set(
+        date
+          ? timeSlots.filter((time) => requestedSlotBusy(busyWindows, date, time, packageId))
+          : [],
+      ),
+    [busyWindows, date, packageId],
+  );
   const [privacy, setPrivacy] = useState(false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
@@ -53,25 +64,32 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
 
   useEffect(() => {
-    const from = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    const until = new Date();
-    until.setDate(until.getDate() + 60);
-    const to = until.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    void fetch(`/api/availability?from=${from}&to=${to}`)
-      .then((response) => response.json())
-      .then((payload: { windows?: { start: string; end: string }[] }) => {
-        const days = new Set<string>();
-        for (const window of payload.windows || []) {
-          const start = new Date(window.start);
-          const end = new Date(window.end);
-          for (let time = start.getTime(); time < end.getTime(); time += 12 * 60 * 60 * 1000) {
-            days.add(new Date(time).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }));
-          }
+    if (!date || !Number.isFinite(Date.parse(date))) {
+      setAvailability("idle");
+      return;
+    }
+    const abort = new AbortController();
+    setAvailability("loading");
+    const to = new Date(Date.parse(date) + 14 * 86_400_000).toISOString().slice(0, 10);
+    void fetch(`/api/availability?from=${date}&to=${to}`, { signal: abort.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("availability");
+        const payload = await response.json();
+        if (payload.ok !== true || !Array.isArray(payload.windows)) throw new Error("availability");
+        if (!abort.signal.aborted) {
+          setBusyWindows(payload.windows);
+          setAvailability("ready");
         }
-        setBusyDays([...days]);
       })
-      .catch(() => undefined);
-  }, []);
+      .catch(() => {
+        if (!abort.signal.aborted) setAvailability("error");
+      });
+    return () => abort.abort();
+  }, [date]);
+
+  useEffect(() => {
+    if (slot && (availability !== "ready" || blockedSlots.has(slot))) setSlot("");
+  }, [availability, blockedSlots, slot]);
 
   const quote = useMemo(
     () => quoteTotal({ packageId, classId, extraIds, citySlug }),
@@ -408,19 +426,23 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             className={inputLine}
             min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setSlot("");
+              setAvailability("loading");
+            }}
           />
           {fieldError("date")}
-          {date && busyDays.includes(date) ? (
+          {availability === "error" ? (
             <p className="text-xs text-muted">
-              Dieser Tag ist in der Werkstatt bereits belegt. Die Anfrage bleibt unverbindlich; wir
-              schlagen nach der Prüfung einen freien Zeitraum vor.
+              Die Terminauskunft ist gerade nicht verfügbar. Sie können Ihre Anfrage ohne Abgabezeit
+              senden; wir stimmen den Termin mit Ihnen ab.
             </p>
           ) : null}
         </Field>
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
-            disabled={pending || savedReference !== null}
+            disabled={pending || savedReference !== null || availability !== "ready"}
             id="slot"
             className={inputLine}
             value={slot}
@@ -428,11 +450,17 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           >
             <option value="">Keine Angabe</option>
             {timeSlots.map((s) => (
-              <option key={s} value={s}>
+              <option key={s} value={s} disabled={blockedSlots.has(s)}>
                 {s} Uhr
+                {blockedSlots.has(s) ? " · belegt" : ""}
               </option>
             ))}
           </select>
+          <p className="text-xs text-muted">
+            {availability === "loading"
+              ? "Freie Zeiträume werden geprüft …"
+              : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+          </p>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">
           <textarea
