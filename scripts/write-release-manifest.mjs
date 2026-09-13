@@ -12,6 +12,7 @@ export const RUNTIME_ENSURED_MIGRATIONS = [
   "0015_zoho_ops.sql",
   "0016_bitrix_sync.sql",
   "0017_bitrix_agent.sql",
+  "0018_bitrix_workshop_bridge.sql",
 ];
 
 /** @param {string[]} names */

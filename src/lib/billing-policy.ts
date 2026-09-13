@@ -24,7 +24,9 @@ export function isApprovedCustomerNotification(
       ].includes(event)) ||
     (/^lexware-mail:v1:[a-f0-9-]{36}:(invoice|reminder)$/.test(key) &&
       ["lexware.invoice", "lexware.reminder"].includes(event)) ||
-    (key.startsWith("zoho:confirmation:") && event === "booking.confirmed")
+    (key.startsWith("zoho:confirmation:") && event === "booking.confirmed") ||
+    (key.startsWith("bitrix:confirmation:") && event === "booking.confirmed") ||
+    (/^bitrix:invoice:\d+:[a-f0-9]{24}$/.test(key) && event === "bitrix.invoice")
   );
 }
 

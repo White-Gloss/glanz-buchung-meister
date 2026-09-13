@@ -1,5 +1,7 @@
 # White-Gloss: KI-Agent und Bitrix24-Zielablauf
 
+Aktueller Werkstattablauf: [Bitrix-Werkstatt](bitrix-workshop.md). Die folgende Bestandsaufnahme beschreibt den Stand vor dieser Anbindung.
+
 ## Implementiert
 
 Der Agent steht unter `/admin/bitrix` und `/admin/automatisierung`. Er verwendet

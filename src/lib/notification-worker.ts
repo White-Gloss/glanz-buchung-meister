@@ -267,8 +267,12 @@ export async function runNotificationWorker(
         where id = ${row.id} and shop_id = ${SHOP} and status = 'processing' and lease_token = ${token}
         returning id
       `;
-      if (changed.length) result.sent++;
-      else {
+      if (changed.length) {
+        result.sent++;
+        if (row.event_type === "bitrix.invoice" && row.booking_id) {
+          await sql`update bitrix_sync_queue set status=case when status='review' then status else 'pending' end,next_attempt_at=now() where booking_id=${row.booking_id} and shop_id=${SHOP}`;
+        }
+      } else {
         // A receipt may have already committed while the provider request was in flight.
         const [current] = await sql<{ status: string }>`select status from outbound_queue
           where id=${row.id} and shop_id=${SHOP}`;
