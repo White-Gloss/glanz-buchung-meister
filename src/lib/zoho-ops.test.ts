@@ -107,7 +107,12 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
       berlinWallToUtc("2026-11-05", "00:00").toISOString(),
       berlinWallToUtc("2026-11-07", "00:00").toISOString(),
     );
-    assert.ok(busy.some((window) => new Date(window.end).getTime() > berlinWallToUtc("2026-11-06", "08:00").getTime()));
+    assert.ok(
+      busy.some(
+        (window) =>
+          new Date(window.end).getTime() > berlinWallToUtc("2026-11-06", "08:00").getTime(),
+      ),
+    );
   } finally {
     await pg.close();
   }
@@ -126,17 +131,29 @@ test("price increase or date change waits for customer acceptance and does not r
     assert.equal(result.awaitingCustomer, true);
     assert.equal(result.booking.status, "neu");
     assert.equal(result.booking.ops_stage, "kundenrueckmeldung");
-    assert.equal((await sql`select * from booking_time_blocks where booking_id=${row.id}`).length, 0);
-    const confirmed = await confirmBookingWithSchedule(sql, row.id, result.booking.version, "owner", {
-      startDate: "2026-11-09",
-      startTime: "09:00",
-      durationMinutes: 180,
-      agreedCents: 24900,
-      customerAccepted: true,
-    });
+    assert.equal(
+      (await sql`select * from booking_time_blocks where booking_id=${row.id}`).length,
+      0,
+    );
+    const confirmed = await confirmBookingWithSchedule(
+      sql,
+      row.id,
+      result.booking.version,
+      "owner",
+      {
+        startDate: "2026-11-09",
+        startTime: "09:00",
+        durationMinutes: 180,
+        agreedCents: 24900,
+        customerAccepted: true,
+      },
+    );
     assert.equal(confirmed.awaitingCustomer, false);
     assert.equal(confirmed.booking.status, "bestaetigt");
-    assert.equal((await sql`select * from booking_time_blocks where booking_id=${row.id}`).length, 1);
+    assert.equal(
+      (await sql`select * from booking_time_blocks where booking_id=${row.id}`).length,
+      1,
+    );
   } finally {
     await pg.close();
   }
@@ -169,19 +186,33 @@ test("confirmation queues a PDF mail and never an invoice; completion is the inv
       booking_id: confirmed.booking.id,
       payload: {},
     });
-    const mail = await sql<{ event_key: string; subject: string; attachments: { filename: string }[] }>`
+    const mail = await sql<{
+      event_key: string;
+      subject: string;
+      attachments: { filename: string }[];
+    }>`
       select event_key, subject, attachments from outbound_queue
       where booking_id=${confirmed.booking.id} and event_key like 'zoho:confirmation:%'
     `;
     assert.equal(mail.length, 1);
     assert.match(mail[0].subject, /Terminbestätigung/);
     assert.match(mail[0].attachments[0]?.filename || "", /Buchungsbestaetigung/);
-    await completeServiceWithPayment(sql, confirmed.booking.id, confirmed.booking.version, "owner", {
-      payment: "bar",
-      cashCents: 14900,
-      cashDate: "2026-11-02",
-    });
-    const billed = await sql<{ invoice_status: string; zoho_invoice_id: string | null; job: string }>`
+    await completeServiceWithPayment(
+      sql,
+      confirmed.booking.id,
+      confirmed.booking.version,
+      "owner",
+      {
+        payment: "bar",
+        cashCents: 14900,
+        cashDate: "2026-11-02",
+      },
+    );
+    const billed = await sql<{
+      invoice_status: string;
+      zoho_invoice_id: string | null;
+      job: string;
+    }>`
       select b.invoice_status, b.zoho_invoice_id, q.job
       from bookings b
       join zoho_job_queue q on q.booking_id = b.id
@@ -189,6 +220,32 @@ test("confirmation queues a PDF mail and never an invoice; completion is the inv
     `;
     assert.equal(billed[0].invoice_status, "ausstehend");
     assert.equal(billed[0].zoho_invoice_id, null);
+  } finally {
+    await pg.close();
+  }
+});
+
+test("an old customer acceptance never approves a revised offer", async () => {
+  const { pg, sql } = await database();
+  try {
+    const row = await create(sql);
+    await sql`update bookings set customer_accepted_at=now() where id=${row.id}`;
+    const result = await confirmBookingWithSchedule(sql, row.id, row.version, "owner", {
+      startDate: "2026-11-02",
+      startTime: "09:00",
+      durationMinutes: 180,
+      agreedCents: 34900,
+    });
+    assert.equal(result.awaitingCustomer, true);
+    assert.equal(result.booking.customer_accepted_at, null);
+    assert.equal(
+      (await sql`select * from booking_time_blocks where booking_id=${row.id}`).length,
+      0,
+    );
+    const [queued] = await sql<{
+      requested_version: number;
+    }>`select requested_version from bitrix_sync_queue where booking_id=${row.id}`;
+    assert.equal(queued.requested_version, result.booking.version);
   } finally {
     await pg.close();
   }

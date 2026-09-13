@@ -4,6 +4,7 @@ import { requireBookingOwner } from "./booking-owner.ts";
 import { queueBookingEvent, type BookingEvent } from "./booking-notifications.ts";
 import { berlinWallToUtc, defaultWorkEnd, utcToBerlinWall } from "./zoho-time.ts";
 import { zohoOpsEnabled as zohoOpsEnabledFromSettings } from "./zoho-credentials.server.ts";
+import { queueBitrixBooking } from "./bitrix-sync.ts";
 import { queueOdooBooking } from "./odoo-sync.ts";
 import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
@@ -251,6 +252,7 @@ async function recordEvent(
     returning id
   `;
   await queueBookingEvent(tx, row, name, saved.id, actor);
+  await queueBitrixBooking(tx, row);
   await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`, {
     version: row.version,
   });
@@ -338,21 +340,26 @@ export async function confirmBookingWithSchedule(
       }
       checkVersion(before, expectedVersion);
       if (before.status === "bestaetigt") {
-        throw new Error("Bitte den Termin zuerst stornieren oder über die Umbuchung neu bestätigen.");
+        throw new Error(
+          "Bitte den Termin zuerst stornieren oder über die Umbuchung neu bestätigen.",
+        );
       }
       if (!["neu"].includes(before.status) && before.ops_stage !== "kundenrueckmeldung") {
-        throw new Error("Nur offene oder zur Rückmeldung vorgemerkte Anfragen können bestätigt werden.");
+        throw new Error(
+          "Nur offene oder zur Rückmeldung vorgemerkte Anfragen können bestätigt werden.",
+        );
       }
       const acceptance = needsCustomerAcceptance(before, {
         agreedCents: input.agreedCents,
         start: interval.start,
         end: interval.end,
       });
-      if (acceptance.required && !input.customerAccepted && !before.customer_accepted_at) {
+      if (acceptance.required && !input.customerAccepted) {
         const [booking] = await tx<ZohoBooking>`
           update bookings set
             ops_stage = 'kundenrueckmeldung',
             customer_acceptance_required = true,
+            customer_accepted_at = null,
             agreed_price_cents = ${input.agreedCents},
             work_start_at = ${interval.start.toISOString()}::timestamptz,
             work_end_at = ${interval.end.toISOString()}::timestamptz,
@@ -413,7 +420,9 @@ export async function confirmBookingWithSchedule(
       );
     }
     if (code === "23514" || code === "42501") {
-      throw new Error("Diese Terminbestätigung ist nicht zulässig. Bitte Zeitraum und Berechtigung prüfen.");
+      throw new Error(
+        "Diese Terminbestätigung ist nicht zulässig. Bitte Zeitraum und Berechtigung prüfen.",
+      );
     }
     throw error;
   }
@@ -449,7 +458,12 @@ export async function rejectOrCancelBooking(
       status === "abgelehnt" ? "booking.rejected" : "booking.cancelled",
       actor,
     );
-    await enqueueZohoJob(tx, booking.id, "calendar", `calendar-release:${booking.id}:${booking.version}`);
+    await enqueueZohoJob(
+      tx,
+      booking.id,
+      "calendar",
+      `calendar-release:${booking.id}:${booking.version}`,
+    );
     return { booking, changed: true };
   });
 }
@@ -499,8 +513,8 @@ export async function completeServiceWithPayment(
         total_cents = ${agreed},
         payment_method = ${input.payment},
         payment_status = 'offen',
-        payment_recorded_cents = ${input.payment === "bar" ? input.cashCents ?? null : null},
-        payment_recorded_on = ${input.payment === "bar" ? input.cashDate ?? null : null},
+        payment_recorded_cents = ${input.payment === "bar" ? (input.cashCents ?? null) : null},
+        payment_recorded_on = ${input.payment === "bar" ? (input.cashDate ?? null) : null},
         invoice_status = 'ausstehend',
         handled_by = ${actor},
         updated_at = now(),

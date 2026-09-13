@@ -52,9 +52,14 @@ async function restCall(
   try {
     json = text ? (JSON.parse(text) as RestJson) : null;
   } catch {
-    throw new BitrixError(text.slice(0, 280) || "Ungültige Antwort", "bitrix_invalid_json", response.status, {
-      retryable: response.status >= 500,
-    });
+    throw new BitrixError(
+      text.slice(0, 280) || "Ungültige Antwort",
+      "bitrix_invalid_json",
+      response.status,
+      {
+        retryable: response.status >= 500,
+      },
+    );
   }
   if (!json || json.error || !response.ok) {
     throw new BitrixError(
@@ -70,7 +75,9 @@ async function restCall(
 function asId(value: unknown): number {
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) {
-    throw new BitrixError("Bitrix hat keine ID geliefert.", "bitrix_invalid_id", 0, { review: true });
+    throw new BitrixError("Bitrix hat keine ID geliefert.", "bitrix_invalid_id", 0, {
+      review: true,
+    });
   }
   return id;
 }
@@ -102,10 +109,6 @@ export function toRestDealFields(body: Record<string, unknown>) {
   return fields;
 }
 
-function withoutUserFields(fields: Record<string, unknown>) {
-  return Object.fromEntries(Object.entries(fields).filter(([key]) => !key.startsWith("UF_")));
-}
-
 export async function probeBitrixRest(
   webhook: string,
   options: { fetchImpl?: typeof fetch } = {},
@@ -114,24 +117,21 @@ export async function probeBitrixRest(
     await restCall(webhook, "crm.deal.list", { start: 0, select: ["ID"] }, options.fetchImpl);
     return { ok: true };
   } catch (error) {
-    if (error instanceof BitrixError && /invalid|access|auth|webhook|credential/i.test(error.message + error.code))
+    if (
+      error instanceof BitrixError &&
+      /invalid|access|auth|webhook|credential/i.test(error.message + error.code)
+    )
       return { ok: false, error: "Zugang verweigert. Bitte die REST-Webhook-URL prüfen." };
     return { ok: false, error: "Bitrix24 ist gerade nicht erreichbar." };
   }
 }
 
-export function createBitrixRestClient(webhook: string, fetchImpl: typeof fetch = fetch): BitrixCall {
+export function createBitrixRestClient(
+  webhook: string,
+  fetchImpl: typeof fetch = fetch,
+): BitrixCall {
   const call = (method: string, params?: Record<string, unknown>) =>
     restCall(webhook, method, params, fetchImpl);
-
-  async function writeDeal(method: "crm.deal.add" | "crm.deal.update", params: Record<string, unknown>) {
-    try {
-      return await call(method, params);
-    } catch {
-      const fields = withoutUserFields((params.fields || {}) as Record<string, unknown>);
-      return await call(method, { ...params, fields });
-    }
-  }
 
   return async <T>(method: string, path: string, body?: unknown) => {
     const payload = (body || {}) as Record<string, unknown>;
@@ -154,12 +154,8 @@ export function createBitrixRestClient(webhook: string, fetchImpl: typeof fetch 
         fields: {
           NAME: payload.name,
           LAST_NAME: payload.lastName,
-          EMAIL: payload.email
-            ? [{ VALUE: payload.email, VALUE_TYPE: "WORK" }]
-            : undefined,
-          PHONE: payload.phone
-            ? [{ VALUE: payload.phone, VALUE_TYPE: "WORK" }]
-            : undefined,
+          EMAIL: payload.email ? [{ VALUE: payload.email, VALUE_TYPE: "WORK" }] : undefined,
+          PHONE: payload.phone ? [{ VALUE: payload.phone, VALUE_TYPE: "WORK" }] : undefined,
           SOURCE_ID: payload.sourceId || "WEB",
           TYPE_ID: payload.typeId || "CLIENT",
           OPENED: payload.opened ? "Y" : "N",
@@ -168,12 +164,12 @@ export function createBitrixRestClient(webhook: string, fetchImpl: typeof fetch 
       return { id: asId(id) } as T;
     }
     if (method === "POST" && path === "/deals") {
-      const id = await writeDeal("crm.deal.add", { fields: toRestDealFields(payload) });
+      const id = await call("crm.deal.add", { fields: toRestDealFields(payload) });
       return { id: asId(id) } as T;
     }
     if (method === "PATCH" && path.startsWith("/deals/")) {
       const id = Number(path.split("/")[2]);
-      await writeDeal("crm.deal.update", { id, fields: toRestDealFields(payload) });
+      await call("crm.deal.update", { id, fields: toRestDealFields(payload) });
       return { ok: true } as T;
     }
     if (method === "POST" && /\/deals\/\d+\/products/.test(path)) {
@@ -192,8 +188,21 @@ export function createBitrixRestClient(webhook: string, fetchImpl: typeof fetch 
       });
       return { ok: true } as T;
     }
-    if (method === "POST" && path === "/calendar-events") {
-      const id = await call("calendar.event.add", {
+    if (method === "DELETE" && /^\/calendar-events\/\d+$/.test(path)) {
+      await call("calendar.event.delete", {
+        id: Number(path.split("/")[2]),
+        type: payload.type || "user",
+        ownerId: payload.ownerId || 1,
+      });
+      return { ok: true } as T;
+    }
+    if (
+      (method === "POST" && path === "/calendar-events") ||
+      (method === "PATCH" && /^\/calendar-events\/\d+$/.test(path))
+    ) {
+      const existingId = method === "PATCH" ? Number(path.split("/")[2]) : null;
+      const id = await call(existingId ? "calendar.event.update" : "calendar.event.add", {
+        ...(existingId ? { id: existingId } : {}),
         type: payload.type || "user",
         ownerId: payload.ownerId || 1,
         name: payload.name,
@@ -202,11 +211,20 @@ export function createBitrixRestClient(webhook: string, fetchImpl: typeof fetch 
         to: typeof payload.to === "string" ? restDate(payload.to) : payload.to,
         location: payload.location,
         section: payload.sectionId,
+        timezone_from: "Europe/Berlin",
+        timezone_to: "Europe/Berlin",
+        accessibility: payload.accessibility,
+        crm_fields: payload.crmFields,
       });
-      return { id: asId(id) } as T;
+      return { id: existingId ?? asId(id) } as T;
     }
-    throw new BitrixError(`Unbekannte Bitrix-REST-Aktion ${method} ${path}`, "bitrix_unsupported", 0, {
-      review: true,
-    });
+    throw new BitrixError(
+      `Unbekannte Bitrix-REST-Aktion ${method} ${path}`,
+      "bitrix_unsupported",
+      0,
+      {
+        review: true,
+      },
+    );
   };
 }

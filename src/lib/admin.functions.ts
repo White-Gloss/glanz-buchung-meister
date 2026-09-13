@@ -20,7 +20,7 @@ import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 const SHOP = "white-gloss";
 const DEFAULT_OPERATOR_PIN = "WG-BETRIEB";
 const READ_ONLY_AGENT_HELP =
-  "termine – Terminübersicht | post – Posteingang | kunde <Name> – Kundensuche | rechnung <ID> – Hinweise zum manuellen Leistungsabschluss | erinnerung – fällige Nachrichten prüfen. Termine ausschließlich persönlich unter Buchungen bestätigen oder ändern.";
+  "termine – Terminübersicht | post – Posteingang | kunde <Name> – Kundensuche | rechnung <ID> – Rechnungsstatus | erinnerung – fällige Nachrichten prüfen. Termine ausschließlich persönlich unter Buchungen bestätigen oder ändern.";
 
 async function ensureShopSettings(sql: Awaited<ReturnType<typeof getSql>>) {
   await sql`
@@ -410,7 +410,10 @@ async function executeParsed(
   }
 
   if (action.type === "invoice") {
-    return `Für WG-${action.id} muss zuerst der tatsächliche Leistungsabschluss mit finalen Leistungen, Betrag und Zahlungsvariante persönlich geprüft werden. Der Agent erstellt oder versendet keine Rechnung.`;
+    const [booking] = await sql<{ status: string; invoice_status: string; payment_status: string }>`
+      select status,invoice_status,payment_status from bookings where shop_id=${SHOP} and id=${action.id}`;
+    if (!booking) return `Buchung WG-${action.id} nicht gefunden.`;
+    return `WG-${action.id}: ${booking.status}. Rechnung: ${booking.invoice_status}; Zahlung: ${booking.payment_status}. Der KI-Agent erstellt keine Rechnungen. Voraussetzung ist dein manueller Leistungsabschluss mit Zahlungswahl.`;
   }
 
   if (action.type === "remind") {
@@ -431,8 +434,9 @@ export const runAgentCommand = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
+    .handler(async ({ data, context }) => {
+      assertSameSiteRequest();
+      const sql = await getSql();
     if (data.useAi)
       throw new Error(
         "Bitte den VibeCode-KI-Agenten unter Bitrix24 oder Automatisierung verwenden.",

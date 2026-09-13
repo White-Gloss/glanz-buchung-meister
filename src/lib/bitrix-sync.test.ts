@@ -5,6 +5,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
 import {
+  ensureCalendar,
   bookingDealBody,
   bookingLineItems,
   queueBitrixBooking,
@@ -13,7 +14,11 @@ import {
   stageForStatus,
 } from "./bitrix-sync.ts";
 import { DEFAULT_PRODUCT_MAP, probeBitrix } from "./bitrix.ts";
-import { createBitrixRestClient, normalizeBitrixRestWebhook, toRestDealFields } from "./bitrix-rest.ts";
+import {
+  createBitrixRestClient,
+  normalizeBitrixRestWebhook,
+  toRestDealFields,
+} from "./bitrix-rest.ts";
 import { readVibeApiKey } from "./bitrix-credentials.server.ts";
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
@@ -42,7 +47,8 @@ function mockBitrix() {
     if (method === "POST" && path === "/contacts/search") {
       const filter = (payload.filter || {}) as { email?: string; phone?: string };
       const found = contacts.filter(
-        (c) => (filter.email && c.email === filter.email) || (filter.phone && c.phone === filter.phone),
+        (c) =>
+          (filter.email && c.email === filter.email) || (filter.phone && c.phone === filter.phone),
       );
       return found as T;
     }
@@ -120,8 +126,7 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
   for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort()) {
     await pg.exec(await readFile(`migrations/${file}`, "utf8"));
   }
-  const [row] =
-    await sql<WorkflowBooking>`insert into bookings(
+  const [row] = await sql<WorkflowBooking>`insert into bookings(
       shop_id,customer_name,phone,email,package_id,class_id,extra_ids,total_cents,pickup_cents,preferred_date,preferred_slot,note,city_slug
     ) values(
       'white-gloss','Integration Test','+4900000011','bitrix@example.invalid',
@@ -189,7 +194,8 @@ test("stored Bitrix key is used when the environment is empty", async () => {
 
 test("probeBitrix accepts a valid key and rejects 401 without storing details", async () => {
   const ok = await probeBitrix("vibe_api_test_key_1234567890", {
-    fetchImpl: async () => new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
+    fetchImpl: async () =>
+      new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
   });
   assert.equal(ok.ok, true);
   const denied = await probeBitrix("vibe_api_test_key_1234567890", {
@@ -209,7 +215,9 @@ test("probeBitrix accepts a valid key and rejects 401 without storing details", 
 
 test("Bitrix REST webhook URL is accepted and mapped to crm.deal.add", async () => {
   assert.equal(
-    normalizeBitrixRestWebhook("https://b24-emfor7.bitrix24.de/rest/1/examplecode123/crm.deal.add.json"),
+    normalizeBitrixRestWebhook(
+      "https://b24-emfor7.bitrix24.de/rest/1/examplecode123/crm.deal.add.json",
+    ),
     "https://b24-emfor7.bitrix24.de/rest/1/examplecode123/",
   );
   assert.equal(normalizeBitrixRestWebhook("https://evil.example/rest/1/abc"), null);
@@ -236,10 +244,103 @@ test("Bitrix REST webhook URL is accepted and mapped to crm.deal.add", async () 
     "https://b24-emfor7.bitrix24.de/rest/1/examplecode123/",
     async (input) => {
       const url = String(input);
-      if (url.includes("crm.deal.add")) return new Response(JSON.stringify({ result: 22 }), { status: 200 });
+      if (url.includes("crm.deal.add"))
+        return new Response(JSON.stringify({ result: 22 }), { status: 200 });
       return new Response(JSON.stringify({ result: true }), { status: 200 });
     },
   );
-  const created = await request<{ id: number }>("POST", "/deals", { title: "WG-1", contactId: 5, amount: 149 });
+  const created = await request<{ id: number }>("POST", "/deals", {
+    title: "WG-1",
+    contactId: 5,
+    amount: 149,
+  });
   assert.equal(created.id, 22);
+});
+
+test("Bitrix calendar preserves agreed overnight interval, updates and cancels", async () => {
+  const calls: { method: string; path: string; body: any }[] = [];
+  const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+    calls.push({ method, path, body });
+    return { id: 77 } as T;
+  };
+  const booking = {
+    id: 1,
+    status: "bestaetigt",
+    preferred_date: "2026-11-02",
+    preferred_slot: "09:00",
+    package_id: "basis",
+    customer_name: "QA",
+    phone: "123456",
+    work_start_at: "2026-11-02T08:00:00Z",
+    work_end_at: "2026-11-03T14:00:00Z",
+  } as any;
+  assert.equal(await ensureCalendar(request, booking, 8, null), 77);
+  assert.equal(calls[0].body.from, "2026-11-02T08:00:00.000Z");
+  assert.equal(calls[0].body.to, "2026-11-03T14:00:00.000Z");
+  calls.length = 0;
+  assert.equal(await ensureCalendar(request, booking, 8, 77), 77);
+  assert.equal(calls[0].method, "PATCH");
+  assert.equal(calls[0].path, "/calendar-events/77");
+  calls.length = 0;
+  assert.equal(await ensureCalendar(request, { ...booking, status: "storniert" }, 8, 77), null);
+  assert.deepEqual(
+    calls.map((c) => c.method),
+    ["DELETE"],
+  );
+});
+
+test("agreed prices and Bitrix product rows have identical totals", () => {
+  const booking = {
+    package_id: "premium",
+    class_id: "suv",
+    extra_ids: '["felgen","ozon"]',
+    pickup_cents: 5000,
+    agreed_price_cents: 54321,
+  } as any;
+  const rows = bookingLineItems(booking, DEFAULT_PRODUCT_MAP);
+  assert.equal(
+    rows.reduce((sum, r) => sum + Math.round(r.price * 100), 0),
+    54321,
+  );
+});
+
+test("REST deal creation never retries a timed-out POST with stripped fields", async () => {
+  let calls = 0;
+  const request = createBitrixRestClient(
+    "https://example.bitrix24.de/rest/1/examplecode123/",
+    async () => {
+      calls++;
+      throw new Error("lost response");
+    },
+  );
+  await assert.rejects(request("POST", "/deals", { title: "WG-1" }));
+  assert.equal(calls, 1);
+});
+
+test("uncertain external creation enters review and cannot duplicate on retry", async () => {
+  const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } });
+  try {
+    const sql = wrap(pg);
+    for (const f of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
+      await pg.exec(await readFile(`migrations/${f}`, "utf8"));
+    const [row] =
+      await sql<WorkflowBooking>`insert into bookings(shop_id,customer_name,phone,package_id,class_id,extra_ids,total_cents,pickup_cents)
+      values('white-gloss','QA','123456','basis','kompakt','[]',14900,0) returning *`;
+    await queueBitrixBooking(sql, row);
+    let creates = 0;
+    const request = async <T>(method: string, path: string): Promise<T> => {
+      if (path === "/contacts/search") return [{ id: 1 }] as T;
+      if (path === "/deals" && method === "POST") {
+        creates++;
+        throw new Error("response lost after external creation");
+      }
+      throw new Error("unexpected request");
+    };
+    assert.equal((await runBitrixSync(sql, { request, limit: 1 })).review, 1);
+    await sql`update bitrix_sync_queue set status='pending',next_attempt_at=now() where booking_id=${row.id}`;
+    assert.equal((await runBitrixSync(sql, { request, limit: 1 })).review, 1);
+    assert.equal(creates, 1);
+  } finally {
+    await pg.close();
+  }
 });
