@@ -3,9 +3,6 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
-import { readVibeAiKey, loadAgentContext } from "@/lib/vibe-agent.server";
-import { askVibeAi } from "@/lib/vibe-ai";
-import { assertRateLimit } from "@/lib/rate-limit";
 import { parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
 import { buildCalendarIcs } from "@/lib/calendar-ics";
@@ -426,18 +423,6 @@ async function executeParsed(
   return "";
 }
 
-async function answerWithVibe(
-  sql: Awaited<ReturnType<typeof getSql>>,
-  text: string,
-  userId: string,
-) {
-  assertRateLimit("vibe-legacy", userId, 8);
-  const key = await readVibeAiKey(sql);
-  if (!key) throw new Error("Bitte zuerst den VibeCode-KI-Schlüssel unter Bitrix24 speichern.");
-  const ref = /\bWG[- ]?(\d+)\b/i.exec(text);
-  return askVibeAi(key, text, await loadAgentContext(sql, ref ? Number(ref[1]) : undefined));
-}
-
 export const runAgentCommand = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) =>
@@ -449,13 +434,15 @@ export const runAgentCommand = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    assertSameSiteRequest();
+    .handler(async ({ data, context }) => {
+      assertSameSiteRequest();
+      const sql = await getSql();
+    if (data.useAi)
+      throw new Error(
+        "Bitte den VibeCode-KI-Agenten unter Bitrix24 oder Automatisierung verwenden.",
+      );
     const parsed = parseAgentCommand(data.text);
-    let result = data.useAi
-      ? await answerWithVibe(sql, data.text, context.userId)
-      : await executeParsed(sql, parsed, context.userId);
+    let result = await executeParsed(sql, parsed, context.userId);
     if (!result) {
       result =
         parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";
@@ -683,10 +670,12 @@ export const inboundOperatorMessage = createServerFn({ method: "POST" })
     if (data.pin !== pin) {
       return { ok: false as const, result: "PIN ungültig." };
     }
+    if (data.useAi)
+      throw new Error(
+        "Bitte den VibeCode-KI-Agenten unter Bitrix24 oder Automatisierung verwenden.",
+      );
     const parsed = parseAgentCommand(data.text);
-    let result = data.useAi
-      ? await answerWithVibe(sql, data.text, `operator:${data.channel}`)
-      : await executeParsed(sql, parsed, `operator:${data.channel}`);
+    let result = await executeParsed(sql, parsed, `operator:${data.channel}`);
     if (!result) {
       result =
         parsed.type === "unknown" ? `Nicht erkannt. ${READ_ONLY_AGENT_HELP}` : "Keine Aktion.";

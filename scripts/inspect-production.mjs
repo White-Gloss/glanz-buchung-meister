@@ -28,7 +28,7 @@ export const expectedMigrations = [
   "0014_booking_photo_recovery.sql",
   "0015_zoho_ops.sql",
   "0016_bitrix_sync.sql",
-  "0017_vibe_ai.sql",
+  "0017_bitrix_agent.sql",
 ];
 const tables = [
   "_migrations",

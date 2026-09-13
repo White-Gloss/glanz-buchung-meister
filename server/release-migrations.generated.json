@@ -13,6 +13,5 @@
   "0011_booking_pdf.sql",
   "0012_odoo_sync.sql",
   "0013_roapp_sync.sql",
-  "0014_booking_photo_recovery.sql",
-  "0017_vibe_ai.sql"
+  "0014_booking_photo_recovery.sql"
 ]

@@ -1,16 +1,18 @@
 # White-Gloss: Bitrix-KI-Agent und verbindlicher Zielablauf
 
-Stand: 13.09.2026. Dieser Stand ergänzt den internen KI-Assistenten; er ist **keine abgeschlossene Migration des Rechnungsbetriebs zu Bitrix24**.
+Stand: 13.09.2026, PR #192 mit dem veröffentlichten Stand aus PR #191, #193 und #194 zusammengeführt. Der bereits veröffentlichte KI-Agent bleibt die einzige Agenten-Implementierung. Die zusätzlichen Änderungen in diesem PR betreffen die Buchungssynchronisation; sie sind **keine abgeschlossene Migration des Rechnungsbetriebs zu Bitrix24**.
+
+Agent, Zugang, Schema und Live-Prüfung sind in [bitrix-agent-workflow.md](bitrix-agent-workflow.md) dokumentiert.
 
 ## Implementiert
 
 - Agent unter `/admin/bitrix` und `/admin/automatisierung`, Modell ausschließlich `bitrix/bitrixgpt-5.5` über `https://vibecode.bitrix24.com/v1/chat/completions`.
 - Anmeldung und Betriebsberechtigung für alle Funktionen, Schlüsselverwaltung nur durch den Inhaber. Schlüssel werden niemals an den Browser zurückgegeben oder in den Quellcode geschrieben.
-- Separate Konfiguration `VIBE_AI_API_KEY` oder das Passwortfeld „VibeCode-KI-Schlüssel“. Ein persönlicher Schlüssel aus der bestehenden CRM-Konfiguration kann wiederverwendet werden. REST-Webhook-URLs werden niemals als AI-Router-Schlüssel versendet. Ein eigener KI-Schlüssel überschreibt die CRM-Verbindung nicht.
-- Explizit gewählter Auftrag als Kontext: Leistungen, Hinweis, Preis, Beginn/Ende, Annahme-, Rechnungs-, Zahlungs-, Foto-Upload- und Versandstatus. Keine anderen Kunden, Telefonnummern, E-Mail-Adressen, Kennzeichen, Bilddateien oder signierten Foto-URLs werden automatisch übertragen. Freitexte können vom Benutzer eingegebene persönliche Angaben enthalten.
+- Separate Konfiguration `VIBE_AI_API_KEY` oder den separaten Dialog „KI-Zugang“. Ein persönlicher Schlüssel aus der bestehenden CRM-Konfiguration kann wiederverwendet werden. REST-Webhook-URLs werden niemals als AI-Router-Schlüssel versendet. Ein eigener KI-Schlüssel überschreibt die CRM-Verbindung nicht.
+- Der veröffentlichte Agent prüft einen ausgewählten Auftrag mit Buchungsversion und optional bis zu vier zugeordneten Bildern. Er übermittelt relevante Buchungsfelder und geladene Bilddaten, keine signierten Foto-URLs oder Schlüssel. Die allgemeine Ablaufhilfe erhält eine begrenzte Übersicht offener Buchungen. Umfang und Grenzen werden im Agenten erklärt.
 - Antworten sind als interne KI-Entwürfe markiert. Keine Tool-Ausführung, keine Buchungs- oder Zahlungsmutation und kein Dokumentenversand aus Modellantworten. Ein Prompt ist nicht die Sicherheitsgrenze: Es gibt im KI-Ausführungspfad keine Mutationswerkzeuge.
-- Persistente Anfragekennungen, serverseitiges Limit, Zeitlimit und sichtbare Fehler. Identische Wiederholungen liefern den gespeicherten Ausgang. „Neue Auswertung“ erzeugt bewusst einen neuen Aufruf mit aktuellem Datenstand.
-- Der alte Grok-Interpreter verwendet jetzt ebenfalls den Bitrix-Router. Der Kurzbefehl `rechnung` zeigt nur den Status, statt einen zusätzlichen Rechnungsentwurf anzulegen.
+- Persistente Anfragekennungen, serverseitiges Limit, Zeitlimit und sichtbare Fehler. Identische Wiederholungen liefern den gespeicherten Ausgang. Eine bewusst neu gestartete Analyse erhält eine neue Kennung und verwendet den ausgewählten Buchungsstand.
+- Der alte Grok-Interpreter bleibt entfernt. KI-Anfragen laufen ausschließlich über den veröffentlichten Agenten; die alten Befehlsschnittstellen aktivieren keinen zweiten KI-Weg. Der Kurzbefehl `rechnung` zeigt nur den Status, statt einen zusätzlichen Rechnungsentwurf anzulegen.
 - Erweiterte manuelle Zeitplanung/Leistungsabschluss stellen nun auch einen Bitrix-Sync in die Queue. Frühere Kundenannahmen bestätigen kein geändertes Angebot automatisch.
 - Bitrix-Kalender übernimmt gespeicherte Start-/Endzeitpunkte, aktualisiert bestehende Termine und entfernt den Eintrag bei Stornierung, Ablehnung oder Rückkehr zur offenen Anfrage. Für historische Datensätze ohne Arbeitszeitraum bleibt die bisherige Paketdauer als Kompatibilität erhalten; dies ersetzt keine manuelle Dauerfreigabe.
 - Positionssummen entsprechen einem gespeicherten vereinbarten Preis. Fehler bei Positionen/Fotos sind sichtbar. Ein unsicherer Kontakt-/Deal-/Kalender-POST geht auf `review`, statt denselben Datensatz erneut anzulegen. REST-POSTs werden nicht mehr nach beliebigen Fehlern ohne benutzerdefinierte Felder wiederholt. Der Worker erneuert seine Sperre vor jedem externen Aufruf.
@@ -31,7 +33,7 @@ Der Agent kennt diese Anforderungen und benennt fehlende Nachweise. Seine Antwor
 
 ## Bereitstellung und Verifikation
 
-1. `0017_vibe_ai.sql` auf der tatsächlich genutzten Anwendungsdatenbank vor Aktivierung des Releases ausführen. Der vorhandene Release-Check verlangt diese Migration ausdrücklich; er wird nicht abgeschwächt. Nicht auf das getrennte historische Supabase-UUID-Schema anwenden.
+1. Keine zweite Agenten-Migration ausführen: Die noch nicht veröffentlichte `0017_vibe_ai.sql` und ihre parallelen Agenten-Dateien wurden bei der Konfliktauflösung durch die bereits veröffentlichte `0017_bitrix_agent.sql` und deren Implementierung ersetzt. Der bestehende Release-Vertrag und die geprüfte Schemaanlage bleiben erhalten. Nicht auf das getrennte historische Supabase-UUID-Schema anwenden.
 2. Geprüfte Version über den bestehenden IONOS-Releaseweg bereitstellen. Ein grüner Build oder PR allein bedeutet noch keinen Live-Deploy.
 3. Im Inhaberkonto unter Bitrix24 den KI-Schlüssel speichern oder `VIBE_AI_API_KEY` serverseitig setzen. Kein `VITE_`-Präfix, kein Schlüssel im Git-Repository. Das in dieser Sitzung verwendete Schlüsselmaterial ist nicht Teil des PRs.
 4. Einen internen KI-Aufruf gegen das reale Modell prüfen. Für Tests keine Kunden-E-Mails senden, keine echten Rechnungen erstellen oder Zahlungen als erhalten markieren.
