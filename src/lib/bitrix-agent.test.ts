@@ -117,6 +117,44 @@ test("rejects other model, tool calls, truncated output and provider errors with
   );
 });
 
+test("empty customer drafts are harmless while malformed analysis stays visibly rejected", async () => {
+  for (const customerDraft of [undefined, null, ""]) {
+    const result = await askBitrixAgent({
+      apiKey: key,
+      question: "Prüfen, keinen Kundentext erzeugen",
+      snapshot,
+      fetchImpl: async () =>
+        response({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: JSON.stringify({ ...answer, customerDraft }) },
+            },
+          ],
+        }),
+    });
+    assert.deepEqual(result, answer);
+  }
+  for (const [content, expected] of [
+    ["private invalid response", /kein gültiges JSON/],
+    [JSON.stringify({ ...answer, observations: [{ private: "secret" }] }), /Ausgabeformat/],
+  ] as const) {
+    await assert.rejects(
+      () =>
+        askBitrixAgent({
+          apiKey: key,
+          question: "Prüfen",
+          snapshot,
+          fetchImpl: async () =>
+            response({
+              choices: [{ finish_reason: "stop", message: { content } }],
+            }),
+        }),
+      (error: Error) => expected.test(error.message) && !/private|secret/.test(error.message),
+    );
+  }
+});
+
 function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
     (

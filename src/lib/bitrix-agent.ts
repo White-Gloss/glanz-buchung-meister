@@ -9,7 +9,11 @@ export const agentAnswerSchema = z
     observations: z.array(z.string().max(2000)).max(12),
     missingInformation: z.array(z.string().max(1000)).max(12),
     recommendations: z.array(z.string().max(2000)).max(12),
-    customerDraft: z.string().max(6000),
+    customerDraft: z
+      .string()
+      .max(6000)
+      .nullish()
+      .transform((value) => value ?? ""),
   })
   .strict();
 export type AgentAnswer = z.infer<typeof agentAnswerSchema>;
@@ -30,7 +34,9 @@ Diese sieben Schritte sind die verbindliche ZIELVORGABE, kein Beleg für bereits
 Deine Aufgabe: Fakten aus DATEN von Schätzungen trennen, fehlende Angaben nennen, nächste MANUELLE Schritte empfehlen, optional einen ungesendeten Kundentext vorbereiten. Weder Preise noch Schäden aus Fotos als gesichert darstellen. Sichtbare Verschmutzung beschreiben; verdeckte Schäden, Lackdicke, garantierte Ergebnisse und endgültigen Aufwand nicht erfinden. Nenne bei Bildern die Grenzen der Sichtprüfung.
 Bei fehlenden/nicht geladenen Fotos ausdrücklich keine Fotoprüfung behaupten. Videos werden nicht analysiert. Nur photosAnalyzed wurden dir tatsächlich als Bild übergeben.
 Die Integration capabilities ist verbindlich: vorbereitete oder fehlende Funktionen niemals als live/funktionsfähig darstellen. Kein Zugriff auf aktuelle Bitrix-Rechnungen, Bankkonten oder Kalender außerhalb der übergebenen DATEN.
-Antworte ausschließlich als JSON mit genau diesen Feldern: summary (Text), observations (Textliste), missingInformation (Textliste), recommendations (Textliste), customerDraft (Text oder leer). Keine Statusbefehle und keine Tool-Aufrufe.`;
+Antworte ausschließlich als JSON mit genau diesen Feldern: summary (Text), observations (Textliste), missingInformation (Textliste), recommendations (Textliste), customerDraft (Text oder leer). Keine Statusbefehle und keine Tool-Aufrufe.
+Halte die gesamte Antwort unter 600 Wörtern. Pro Textliste höchstens acht kurze Einträge; jeder Eintrag ist eine Zeichenfolge, niemals ein Objekt. Wenn kein Kundentext gewünscht ist, setze customerDraft auf die leere Zeichenfolge "". Verwende keine Markdown-Codeblöcke um JSON.
+Die genaue Struktur lautet: {"summary":"Kurze Zusammenfassung","observations":["Beobachtung"],"missingInformation":["Fehlende Angabe"],"recommendations":["Nächster Schritt"],"customerDraft":""}.`;
 
 export type AgentSnapshot = {
   booking: Record<string, unknown> | null;
@@ -97,21 +103,35 @@ export async function askBitrixAgent(input: {
     throw new Error("Die KI ist gerade nicht erreichbar. Deine Buchung wurde nicht verändert.");
   }
   if (!response.ok) throw new Error(agentProviderError(response.status));
+  let body;
   try {
     const raw = await response.text();
     if (raw.length > 100_000) throw new Error("oversized");
-    const body = JSON.parse(raw);
-    const choice = body.choices?.[0];
-    if (
-      body.model !== BITRIX_AGENT_MODEL ||
-      choice?.finish_reason !== "stop" ||
-      choice?.message?.tool_calls?.length
-    )
-      throw new Error("Unexpected model or incomplete answer");
-    return agentAnswerSchema.parse(JSON.parse(choice.message.content));
+    body = JSON.parse(raw);
   } catch {
-    throw new Error(
-      "Die KI-Antwort war unvollständig oder ungültig. Bitte eine neue Analyse starten.",
-    );
+    throw new Error("Die KI-Antwort konnte nicht gelesen werden. Bitte eine neue Analyse starten.");
   }
+  const choice = body?.choices?.[0];
+  if (body?.model !== BITRIX_AGENT_MODEL)
+    throw new Error(
+      "Das KI-Modell in der Antwort entspricht nicht dem eingerichteten BitrixGPT 5.5.",
+    );
+  if (choice?.message?.tool_calls?.length)
+    throw new Error("Die KI-Antwort enthält einen unzulässigen Aktionsaufruf und wurde verworfen.");
+  if (choice?.finish_reason !== "stop")
+    throw new Error(
+      "Die KI-Antwort wurde vom Anbieter abgebrochen. Bitte die Frage kürzer fassen und eine neue Analyse starten.",
+    );
+  let content;
+  try {
+    content = JSON.parse(choice.message.content);
+  } catch {
+    throw new Error("Die KI-Antwort enthält kein gültiges JSON. Bitte eine neue Analyse starten.");
+  }
+  const parsed = agentAnswerSchema.safeParse(content);
+  if (!parsed.success)
+    throw new Error(
+      "Die KI-Antwort passt nicht zum Ausgabeformat. Bitte eine neue Analyse starten.",
+    );
+  return parsed.data;
 }
