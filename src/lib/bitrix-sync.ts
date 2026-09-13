@@ -313,7 +313,7 @@ async function attachProducts(
     taxIncluded: true,
   }));
   if (!products.length) return;
-  await request("POST", `/deals/${dealId}/products`, { products });
+  await request("PUT", `/deals/${dealId}/products`, { items: products });
 }
 
 async function loadReadyPhotos(sql: Sql, bookingId: number): Promise<PhotoInput[]> {

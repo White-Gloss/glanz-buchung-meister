@@ -69,9 +69,10 @@ function mockBitrix() {
     if (method === "PATCH" && path.startsWith("/deals/")) {
       return { ok: true } as T;
     }
-    if (method === "POST" && path.endsWith("/products")) {
+    if (method === "PUT" && path.endsWith("/products")) {
       const id = Number(path.split("/")[2]);
-      products[id] = (payload.products as unknown[]) || [];
+      assert.ok(Array.isArray(payload.items), "VibeCode requires the items array");
+      products[id] = payload.items as unknown[];
       return { ok: true } as T;
     }
     if (method === "POST" && path === "/calendar-events") {
@@ -150,7 +151,78 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
     select status, bitrix_deal_id from bitrix_sync_queue where booking_id=${row.id}`;
   assert.equal(queued[0].status, "synced");
   assert.equal(queued[0].bitrix_deal_id, api.deals[0].id);
+  const originalRows = structuredClone(api.products[api.deals[0].id]);
+  await queueBitrixBooking(sql, row);
+  const repeated = await runBitrixSync(sql, {
+    request: api.request,
+    bookingId: row.id,
+    limit: 1,
+    loadPhotos: async () => [],
+  });
+  assert.equal(repeated.synced, 1);
+  assert.equal(api.deals.length, 1);
+  assert.equal(api.contacts.length, 1);
+  assert.deepEqual(api.products[api.deals[0].id], originalRows);
+  assert.equal(api.calls.filter((call) => call.endsWith("/products")).length, 2);
+  assert.ok(
+    api.calls.filter((call) => call.endsWith("/products")).every((call) => call.startsWith("PUT ")),
+  );
   await pg.close();
+});
+
+test("REST product replacement maps the shared PUT/items contract without appending rows", async () => {
+  const requests: Array<{ url: string; body: Record<string, unknown> }> = [];
+  const request = createBitrixRestClient(
+    "https://example.bitrix24.de/rest/1/testcode123/",
+    async (url, init) => {
+      requests.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+      return new Response(JSON.stringify({ result: true }), { status: 200 });
+    },
+  );
+  const items = [
+    {
+      productId: 4,
+      productName: "Politur",
+      price: 349,
+      quantity: 1,
+      taxRate: 19,
+      taxIncluded: true,
+    },
+    {
+      productId: 20,
+      productName: "Felgen",
+      price: 49,
+      quantity: 1,
+      taxRate: 19,
+      taxIncluded: true,
+    },
+  ];
+  await request("PUT", "/deals/412/products", { items });
+  await request("PUT", "/deals/412/products", { items });
+  assert.equal(requests.length, 2);
+  assert.ok(requests.every((call) => call.url.endsWith("/crm.deal.productrows.set.json")));
+  assert.deepEqual(requests[0].body, {
+    id: 412,
+    rows: [
+      {
+        PRODUCT_ID: 4,
+        PRODUCT_NAME: "Politur",
+        PRICE: 349,
+        QUANTITY: 1,
+        TAX_RATE: 19,
+        TAX_INCLUDED: "Y",
+      },
+      {
+        PRODUCT_ID: 20,
+        PRODUCT_NAME: "Felgen",
+        PRICE: 49,
+        QUANTITY: 1,
+        TAX_RATE: 19,
+        TAX_INCLUDED: "Y",
+      },
+    ],
+  });
+  assert.deepEqual(requests[1], requests[0]);
 });
 
 test("Bitrix sync is a no-op without API key", async () => {
