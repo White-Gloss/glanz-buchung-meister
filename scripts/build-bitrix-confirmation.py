@@ -1,13 +1,14 @@
 """Build the native Bitrix confirmation template; fill only after a reserved approval."""
 from pathlib import Path
-import base64, io, re
+import io
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 root = Path(__file__).resolve().parents[1]
-logo_source = (root / 'src/lib/document-logo.generated.ts').read_text()
-logo = base64.b64decode(re.search(r'[\"\']([A-Za-z0-9+/=]{100,})[\"\']', logo_source)[1])
+logo = (root / 'docs/bitrix/templates/white-gloss-logo.png').read_bytes()
 doc = Document()
 # Remove inherited title rules from the runtime's default template.
 for border in list(doc.styles.element.xpath('.//w:pBdr')):
@@ -24,8 +25,12 @@ for name in ['Title', 'Heading 1', 'Heading 2']:
     doc.styles[name].font.name = 'Arial'
     doc.styles[name].font.color.rgb = RGBColor(0,0,0)
 p = doc.add_paragraph()
-p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-p.add_run().add_picture(io.BytesIO(logo), width=Inches(1.05))
+p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+# Preserve the supplied transparent logo; give its white lettering contrast.
+shade = OxmlElement('w:shd')
+shade.set(qn('w:fill'), '111111')
+p._p.get_or_add_pPr().append(shade)
+p.add_run().add_picture(io.BytesIO(logo), width=Inches(2.5))
 doc.add_paragraph('Buchungsbestätigung', 'Title')
 p = doc.add_paragraph('White Gloss Detailing · Lars Hägele\nArnistal 27 · 72160 Horb am Neckar')
 p.runs[0].font.size = Pt(8)

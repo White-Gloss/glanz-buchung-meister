@@ -254,3 +254,15 @@ separate Dokument- und Zahlungsobjekte; geeigneter IONOS-PDF-Versand mit Schutz
 bei unklarer Zustellung. Keine dieser Lücken durch automatische Phasenwechsel,
 pauschale Bezahlmarkierungen oder eine direkte Weiterleitung des alten
 Resend-Workers umgehen.
+
+
+## Bestätigte Steuer- und Logovorgaben
+
+Lars bestätigt 19 Prozent Umsatzsteuer. Die USt-ID wird nachgereicht und bleibt
+bis dahin leer; keine erfundene Nummer und kein sichtbarer Platzhalter auf
+Kundendokumenten. Eine verwendbare Steuernummer und die IBAN sind weiterhin
+nicht hinterlegt. Das ist keine Bestätigung der vollständigen Rechnungsreife.
+Das am 13.09.2026 gelieferte transparente Logo liegt unverändert unter
+`docs/bitrix/templates/white-gloss-logo.png` und ersetzt das bisherige Logo
+in der vorbereiteten nativen Buchungsbestätigung. Die weiße Schrift erhält
+einen dunklen Hintergrund im Dokument; die Bilddatei selbst bleibt unverändert.
