@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
  * the Lexware pattern. Including them in the GET / gate 503s every IONOS
  * activate until a root shell can migrate — GitHub CI cannot.
  */
-export const RUNTIME_ENSURED_MIGRATIONS = ["0015_zoho_ops.sql", "0016_bitrix_sync.sql"];
+export const RUNTIME_ENSURED_MIGRATIONS = [
+  "0015_zoho_ops.sql",
+  "0016_bitrix_sync.sql",
+  "0017_bitrix_agent.sql",
+];
 
 /** @param {string[]} names */
 export function requiredReleaseMigrations(names) {

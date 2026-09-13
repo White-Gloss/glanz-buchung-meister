@@ -1,20 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { BellRing, CalendarDays, Mail, ReceiptText, ShieldCheck, Workflow } from "lucide-react";
 import {
-  flushOutboundMail,
   getOperatorSettings,
   getNotificationStatus,
   inboundOperatorMessage,
   listAgentLog,
   listAutomationEvents,
   listOutbound,
-  runAgentCommand,
-  runReminders,
   type AgentLogRow,
 } from "@/lib/admin.functions";
 import { Button, inputClass } from "@/components/ui";
 import { stamp } from "@/lib/utils";
+import { BitrixAgentPanel } from "@/components/bitrix-agent-panel";
 
 export const Route = createFileRoute("/admin/automatisierung")({
   component: AdminAutomation,
@@ -31,9 +29,6 @@ const deliveryStatusLabels: Record<string, string> = {
 };
 
 function AdminAutomation() {
-  const [text, setText] = useState("");
-  const [channel, setChannel] = useState<"panel" | "whatsapp" | "telegram">("panel");
-  const [useAi, setUseAi] = useState(false);
   const [result, setResult] = useState("");
   const [log, setLog] = useState<AgentLogRow[]>([]);
   const [events, setEvents] = useState<Awaited<ReturnType<typeof listAutomationEvents>>>([]);
@@ -67,21 +62,6 @@ function AdminAutomation() {
     );
   }, []);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setPending(true);
-    try {
-      const res = await runAgentCommand({ data: { text, channel, useAi } });
-      setResult(res.result);
-      await reload();
-      setText("");
-    } catch (err) {
-      setResult(err instanceof Error ? err.message : "Befehl fehlgeschlagen.");
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <main id="main-content" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <p className="text-xs uppercase tracking-[0.16em] text-subtle">White Gloss Workflow</p>
@@ -114,7 +94,7 @@ function AdminAutomation() {
             {
               Icon: ReceiptText,
               title: "Buchhaltung",
-              text: "Neue Rechnungen erstellst und versendest du manuell in Odoo. Qonto bleibt das Bankkonto.",
+              text: "Leistungsabschluss und Zahlungsvariante manuell prüfen. Bitrix-Rechnungsautomatik noch einzurichten.",
             },
             {
               Icon: BellRing,
@@ -147,7 +127,7 @@ function AdminAutomation() {
             [
               "5",
               "Abschluss",
-              "Manuell als erledigt markieren; Rechnung in Odoo erstellen und prüfen",
+              "Leistungsabschluss und Zahlung manuell prüfen; separate Rechnung erst danach",
             ],
           ].map(([n, t, d]) => (
             <div key={n} className="rounded-sm border border-line bg-bg p-4">
@@ -164,87 +144,7 @@ function AdminAutomation() {
         </p>
       </section>
 
-      <form
-        onSubmit={onSubmit}
-        className="mt-8 space-y-4 rounded-md border border-line bg-surface p-5"
-      >
-        <h2 className="font-display text-2xl">KI-Agent</h2>
-        <p className="text-sm text-muted">
-          Unterstützt bei Übersichten und internen Entwürfen. Die KI darf keine Termine bestätigen
-          oder Buchungsstatus ändern.
-        </p>
-        <label className="flex flex-col gap-2 text-sm">
-          Kanal
-          <select
-            className={inputClass}
-            value={channel}
-            onChange={(e) => setChannel(e.target.value as typeof channel)}
-          >
-            <option value="panel">Betriebspanel</option>
-            <option value="whatsapp">WhatsApp (Simulation)</option>
-            <option value="telegram">Telegram (Simulation)</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          Befehl
-          <textarea
-            className={`${inputClass} min-h-24 py-2`}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="termine"
-            required
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
-          Freitext mit KI interpretieren
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={pending}>
-            Befehl ausführen
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={async () => {
-              setPending(true);
-              try {
-                const res = await runReminders();
-                setResult(res.result);
-                await reload();
-              } catch {
-                setResult("Erinnerungen konnten nicht verarbeitet werden. Bitte erneut versuchen.");
-              } finally {
-                setPending(false);
-              }
-            }}
-            disabled={pending}
-          >
-            Erinnerungen jetzt
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={async () => {
-              setPending(true);
-              try {
-                const res = await flushOutboundMail();
-                setResult(
-                  `Versandliste: ${res.sent} übermittelt, ${res.retried} erneut geplant, ${res.failed + res.review} benötigen Prüfung.`,
-                );
-                await reload();
-              } catch (err) {
-                setResult(err instanceof Error ? err.message : "Versand fehlgeschlagen.");
-              } finally {
-                setPending(false);
-              }
-            }}
-            disabled={pending}
-          >
-            Versandliste jetzt prüfen
-          </Button>
-        </div>
-      </form>
+      <BitrixAgentPanel />
 
       <form
         className="mt-8 space-y-4 rounded-md border border-line bg-surface p-5"
@@ -257,7 +157,7 @@ function AdminAutomation() {
                 pin: inboundPin,
                 text: inboundText,
                 channel: inboundChannel,
-                useAi: useAi,
+                useAi: false,
               },
             });
             setResult(
