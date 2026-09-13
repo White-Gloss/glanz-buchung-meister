@@ -311,3 +311,32 @@ Kein automatischer Wiederholungsversand. Nachricht im empfangenden Postfach
 war bei der ersten Prüfung noch nicht nachgewiesen; Versandannahme und
 Ausgangseintrag sind kein Zustellnachweis. Dies ist noch kein erfolgreicher
 Ende-zu-Ende-Test des weiterhin unvollständigen Buchungsablaufs.
+
+## Verifizierte Firmendaten und Importblocker (13.09.2026)
+
+Die Übernahme der Firmendaten ist jetzt erfolgt; die oben erwähnte spätere
+Übernahme ist damit erledigt. Eigenes Unternehmen ID 2 verwendet die bereits
+vorhandene Requisite ID 6 (keine zweite Requisite angelegt). Vollständiger Name:
+White-Gloss Detailing - Lars Marco Hägele. Rechnungssteller ist Umsatzsteuerzahler;
+USt-ID bleibt leer. Rechtliche Anschrift unter Typ 6 / Entität 8 / ID 6:
+Arnistal 27, 72160 Horb (Dettingen), Deutschland. Bestehende Lieferanschrift
+bleibt erhalten. Bankdatensatz ID 2 ist Requisite 6 zugeordnet; IBAN-Endung 1821.
+Bank und SWIFT wurden aus der privaten Referenz übernommen und zurückgelesen.
+Vollständige Bankdaten gehören weiterhin nicht in dieses öffentliche Repository.
+
+Native CRM-Vorlagen sind vorhanden (IDs 2, 4, 6, 8). Die leere Liste der
+VibeCode-REST-Vorlagen beweist daher nicht, dass das CRM keine Vorlagen enthält.
+Der Upload der gültigen Buchungsbestätigungs-DOCX über das native Vorlagenfenster
+scheiterte zweimal mit `Unexpected server response.`. Importdialog geschlossen;
+keine White-Gloss-Vorlage erfolgreich installiert. Der Zugriff über
+`GET /v1/doc-templates/8` lieferte HTTP 422 / `DOCGEN_ACCESS_ERROR` / `Access denied`.
+Keine Berechtigungen erweitert und keine vorhandene Standardvorlage ersetzt.
+
+Eine native Automatisierungsregel „Ausgehender WebHook“ ist verfügbar. Der
+testweise geöffnete Editor wurde samt ungespeicherten Änderungen abgebrochen;
+keine neue Regel aktiviert. Vor Verbindung fehlen weiterhin der authentifizierte
+Empfänger für manuelle Geschäftsentscheidungen, dessen idempotente Verarbeitung
+und die vollständige Dokument-/Rechnungsanbindung. Die alte Zoho-Webhook-Route
+ist dafür kein fertiger Ersatz. Eine einfache Phasenänderung darf nicht ohne
+expliziten Leistungsabschluss eine Rechnung erzeugen. PR bleibt Entwurf;
+keine vollständige Testbuchung, Kundenbestätigung oder echte Rechnung ausgelöst.
