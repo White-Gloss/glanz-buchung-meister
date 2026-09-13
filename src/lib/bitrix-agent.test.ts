@@ -11,7 +11,7 @@ import {
   type AgentSnapshot,
 } from "./bitrix-agent.ts";
 import { BOOKING_AGENT_SCHEMA, ensureBookingAgentSchema } from "./bitrix-agent-schema.ts";
-import { analyzeBooking } from "./bitrix-agent.server.ts";
+import { agentKey, analyzeBooking } from "./bitrix-agent.server.ts";
 
 const answer = {
   summary: "Anfrage prüfen",
@@ -38,7 +38,9 @@ const response = (overrides: Record<string, unknown> = {}) =>
 test("runtime bootstrap applies the same reviewed migration and protects its table", async () => {
   assert.equal(BOOKING_AGENT_SCHEMA, await readFile("migrations/0017_bitrix_agent.sql", "utf8"));
   const pg = new PGlite();
-  await pg.exec("create table bookings(id serial primary key)");
+  await pg.exec(
+    "create table bookings(id serial primary key); create table shop_settings(shop_id text primary key)",
+  );
   const sql = wrap(pg, (fn) => pg.transaction((tx) => fn(wrap(tx))));
   try {
     await Promise.all([ensureBookingAgentSchema(sql), ensureBookingAgentSchema(sql)]);
@@ -146,6 +148,14 @@ test("analysis replay is cached, concurrent calls are claimed once, and business
       version: number;
     }>`insert into bookings(shop_id,customer_name,phone,package_id,class_id,extra_ids,total_cents,pickup_cents)
       values('white-gloss','Synthetic customer','00000','basis','kompakt','[]',14900,0) returning id,version`;
+    await sql`alter table shop_settings add column if not exists vibe_api_key text`;
+    await sql`update shop_settings set vibe_api_key='https://example.bitrix24.de/rest/1/existing/',vibe_ai_api_key=${key} where shop_id='white-gloss'`;
+    delete process.env.VIBE_AI_API_KEY;
+    assert.equal(
+      await agentKey(sql),
+      key,
+      "Dedicated AI key works alongside the existing CRM webhook",
+    );
     const input = {
       requestId: randomUUID(),
       bookingId: booking.id,

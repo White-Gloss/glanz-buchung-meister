@@ -9,7 +9,14 @@ import { ensureBookingAgentSchema } from "./bitrix-agent-schema.ts";
 const SHOP = "white-gloss";
 
 export async function agentKey(sql: Sql) {
-  const key = process.env.VIBE_AI_API_KEY?.trim() || (await readVibeApiKey(sql));
+  await ensureBookingAgentSchema(sql);
+  const [settings] = await sql<{
+    vibe_ai_api_key: string | null;
+  }>`select vibe_ai_api_key from shop_settings where shop_id=${SHOP}`;
+  const key =
+    process.env.VIBE_AI_API_KEY?.trim() ||
+    settings?.vibe_ai_api_key?.trim() ||
+    (await readVibeApiKey(sql));
   return /^vibe_api_[A-Za-z0-9_-]+$/.test(key) ? key : "";
 }
 

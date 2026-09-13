@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bot, RefreshCw } from "lucide-react";
 import { Button, Field, inputClass } from "@/components/ui";
-import { bitrixAgentContext, runBitrixAgent } from "@/lib/bitrix-agent.functions";
+import {
+  bitrixAgentContext,
+  runBitrixAgent,
+  saveBitrixAgentKey,
+} from "@/lib/bitrix-agent.functions";
 import { BITRIX_AGENT_MODEL, type AgentAnswer } from "@/lib/bitrix-agent";
 
 const steps = [
@@ -46,6 +50,8 @@ export function BitrixAgentPanel() {
   const [answerLabel, setAnswerLabel] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [keyMessage, setKeyMessage] = useState("");
   const active = useRef(false);
 
   async function refresh() {
@@ -111,6 +117,67 @@ export function BitrixAgentPanel() {
         bestätigst du persönlich.
       </p>
       <p className="text-xs text-subtle">{BITRIX_AGENT_MODEL} · VibeCode AI Router</p>
+      {context?.canManage ? (
+        <details className="rounded-md border border-line p-4" open={!context.configured}>
+          <summary className="cursor-pointer text-sm font-medium">
+            KI-Zugang {context.configured ? "eingerichtet" : "einrichten"}
+          </summary>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (active.current) return;
+              active.current = true;
+              setPending(true);
+              setKeyMessage("");
+              try {
+                const saved = await saveBitrixAgentKey({ data: { apiKey } });
+                setApiKey("");
+                await refresh();
+                setKeyMessage(
+                  saved.overriddenByEnvironment
+                    ? "Schlüssel gespeichert. Der KI-Schlüssel in der Serverumgebung hat Vorrang."
+                    : "KI-Schlüssel geprüft und gespeichert. Du kannst die Analyse starten.",
+                );
+              } catch (err) {
+                setKeyMessage(
+                  err instanceof Error ? err.message : "KI-Zugang konnte nicht gespeichert werden.",
+                );
+              } finally {
+                active.current = false;
+                setPending(false);
+              }
+            }}
+          >
+            <Field id="agent-api-key" label="Persönlicher VibeCode-API-Schlüssel für die KI">
+              <input
+                id="agent-api-key"
+                type="password"
+                className={inputClass}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                autoComplete="new-password"
+                spellCheck={false}
+                required
+                minLength={20}
+                disabled={pending}
+              />
+            </Field>
+            <p className="text-xs leading-5 text-muted">
+              Der Schlüssel wird ausschließlich serverseitig gespeichert. Die vorhandene
+              CRM-Verbindung bleibt separat eingerichtet.
+            </p>
+            <Button type="submit" disabled={pending || !apiKey.trim()}>
+              KI-Schlüssel prüfen und speichern
+            </Button>
+            {keyMessage ? (
+              <p className="text-sm" role="status">
+                {keyMessage}
+              </p>
+            ) : null}
+          </form>
+        </details>
+      ) : null}
       {context && !context.configured ? (
         <p className="text-sm" role="status">
           Der persönliche VibeCode-API-Schlüssel fehlt.{" "}

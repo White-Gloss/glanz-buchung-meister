@@ -1,5 +1,6 @@
 -- Advisory AI only. The application connects with its server database role.
 -- No browser/Data API access to prompts, results or credentials.
+alter table shop_settings add column if not exists vibe_ai_api_key text;
 create table if not exists booking_agent_runs (
   request_id uuid primary key,
   shop_id text not null,

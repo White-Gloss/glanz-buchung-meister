@@ -29,12 +29,13 @@ eine neue Kennung. Ergebnisse sind immer an ihren Buchungsstand gebunden.
 ## Schlüssel und Inbetriebnahme
 
 Ein persönlicher `vibe_api_…`-Schlüssel mit `vibe:ai` ist erforderlich. Der schon
-vorhandene, ausschließlich für den Inhaber zugängliche Schlüssel-Dialog unter
+ausschließlich für den Inhaber zugängliche Dialog „KI-Zugang“ unter
 `/admin/bitrix` kann ihn hinterlegen. Der Schlüssel gehört niemals ins Repository,
 in öffentliche Build-Variablen oder in Logs.
 
 `VIBE_AI_API_KEY` kann serverseitig einen getrennten KI-Schlüssel bereitstellen.
-Sonst verwendet der Agent die vorhandene VibeCode-Konfiguration. Ein für den
+Sonst verwendet der Agent den separat gespeicherten KI-Schlüssel, danach die vorhandene VibeCode-Konfiguration.
+Das Speichern des KI-Zugangs startet keine Buchungsübertragungen oder Versandjobs. Ein für den
 CRM-Abgleich gespeicherter REST-Webhook ist kein KI-Schlüssel. Das bestehende
 Server-Overlay/`VIBE_API_KEY` hat weiterhin Vorrang vor dem Panel-Wert.
 
@@ -82,7 +83,7 @@ Umstellung nicht nochmals angelegt oder versendet werden.
   `condition-photos` vorhanden. Das historische Supabase-Buchungsschema ist nicht
   das aktuelle VPS-Anwendungsschema. Keine Vermischung oder Migration produktiver
   Altbuchungen im Rahmen dieser Agenten-Erweiterung.
-- Live-Admin verlangte eine Anmeldung. Schlüsselablage und die vollständige
-  Bedienung im produktiven Admin waren damit noch nicht prüfbar.
+- Anmeldung im Live-Admin im Verlauf erfolgreich. Schlüsselablage und produktive
+  Agenten-Prüfung erfolgen nach Deployment.
 
 Offizielle Schnittstelle: <https://vibecode.bitrix24.com/docs/ai>.
