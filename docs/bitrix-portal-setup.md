@@ -214,3 +214,43 @@ App über den freigegebenen Zugang überarbeiten.
 Quellen: `https://vibecode.bitrix24.com/docs-content-en/mail/messages/send.md`,
 `https://vibecode.bitrix24.com/docs-content-en/infra/server-access-recovery.md`,
 aktuelle API-Selbstbeschreibung `/v1/me` und `/v1/guide`.
+
+
+## Zielarchitektur vom Inhaber geändert
+
+Der Inhaber hat die separate WhiteGloss-App als Arbeitsoberfläche abgewählt.
+Alle operativen Entscheidungen sollen im normalen Bitrix24 erfolgen. Die
+Schlüsselübernahme des separaten App-Servers ist deshalb **keine Voraussetzung**
+mehr und darf nicht erneut vom Inhaber verlangt werden. Die Website bleibt
+Anfragekanal und braucht weiter einen authentifizierten Abgleich mit Bitrix24.
+
+Die acht konfigurierten Phasen wurden nach Neuladen im nativen Automatisierungs-
+bereich verifiziert. Bestehende Standardregeln enthalten Benachrichtigungen,
+Anrufplanung und Kontrollen; aus diesen Regeln folgt noch kein implementierter
+Buchungs-, Reservierungs- oder Rechnungsprozess.
+
+Eine Word-Vorlage für die native Buchungsbestätigung liegt unter
+`docs/bitrix/templates/buchungsbestaetigung.docx`; reproduzierbarer Generator:
+`scripts/build-bitrix-confirmation.py`. Original-Logo aus dem Websiteprojekt,
+A4-Geschäftspapier, eigene Buchungsreferenz, Kundendaten, Fahrzeug, Leistungen,
+vereinbarter Preis, Beginn/Ende/Dauer, Ort und Hinweise. Als eine Seite gerendert
+und visuell geprüft. Noch nicht als Bitrix-Vorlage installiert oder versendet.
+Die Platzhalter sind ein Vertrag für die spätere Feldzuordnung, noch keine
+automatische Bindung an CRM-Felder. Vor Verwendung echte und lange Feldwerte
+sowie die vollständige Reservierung prüfen.
+
+Im Portal sind laut `/v1/doc-templates` noch keine Vorlagen vorhanden. Für das
+eigene Unternehmen ID 2 liefert `/v1/requisites` keine Rechnungsstellerdetails.
+Website-Stammdaten nennen White Gloss Detailing, Lars Hägele, Arnistal 27,
+72160 Horb am Neckar und 19 Prozent Umsatzsteuer; die USt-ID ist leer.
+Steuernummer/USt-ID und Bankverbindung fehlen für die Rechnungsfertigstellung.
+Die steuerliche Behandlung muss der Inhaber bestätigen, nicht aus dem
+Website-Preishinweis allein ableiten.
+
+Offene technische Arbeit bleibt: native ausdrückliche Freigabeaktionen mit
+verifizierter Identität und Versionsbindung; atomare lokale Reservierung plus
+externe Konfliktabstimmung vor Versand; genau ein aktiver Rechnungsersteller;
+separate Dokument- und Zahlungsobjekte; geeigneter IONOS-PDF-Versand mit Schutz
+bei unklarer Zustellung. Keine dieser Lücken durch automatische Phasenwechsel,
+pauschale Bezahlmarkierungen oder eine direkte Weiterleitung des alten
+Resend-Workers umgehen.
