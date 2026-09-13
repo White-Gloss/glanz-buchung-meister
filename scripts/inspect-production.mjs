@@ -29,6 +29,7 @@ export const expectedMigrations = [
   "0015_zoho_ops.sql",
   "0016_bitrix_sync.sql",
   "0017_bitrix_agent.sql",
+  "0018_bitrix_workshop_bridge.sql",
 ];
 const tables = [
   "_migrations",

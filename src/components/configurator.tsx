@@ -21,6 +21,7 @@ import { bookingRequestId } from "@/lib/booking-request-id";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
+import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/zoho-time";
 
 export function Configurator({ initialPackage = "premium" }: { initialPackage?: PackageId }) {
   const navigate = useNavigate();
@@ -40,7 +41,10 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const [vehicleMake, setVehicleMake] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [vehiclePlate, setVehiclePlate] = useState("");
-  const [busyDays, setBusyDays] = useState<string[]>([]);
+  const [busyWindows, setBusyWindows] = useState<{ start: string; end: string }[]>([]);
+  const [availabilityState, setAvailabilityState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const [privacy, setPrivacy] = useState(false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
@@ -53,25 +57,39 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
 
   useEffect(() => {
-    const from = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    const until = new Date();
-    until.setDate(until.getDate() + 60);
-    const to = until.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-    void fetch(`/api/availability?from=${from}&to=${to}`)
-      .then((response) => response.json())
-      .then((payload: { windows?: { start: string; end: string }[] }) => {
-        const days = new Set<string>();
-        for (const window of payload.windows || []) {
-          const start = new Date(window.start);
-          const end = new Date(window.end);
-          for (let time = start.getTime(); time < end.getTime(); time += 12 * 60 * 60 * 1000) {
-            days.add(new Date(time).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }));
-          }
-        }
-        setBusyDays([...days]);
+    const controller = new AbortController();
+    const from = /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? date
+      : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    const until = new Date(`${from}T12:00:00Z`);
+    until.setUTCDate(until.getUTCDate() + 60);
+    const to = until.toISOString().slice(0, 10);
+    setAvailabilityState("loading");
+    void fetch(`/api/availability?from=${from}&to=${to}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("unavailable");
+        return response.json();
       })
-      .catch(() => undefined);
-  }, []);
+      .then((payload: { ok: boolean; windows?: { start: string; end: string }[] }) => {
+        if (!payload.ok || !Array.isArray(payload.windows)) throw new Error("unavailable");
+        setBusyWindows(payload.windows);
+        setAvailabilityState("ready");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAvailabilityState("error");
+      });
+    return () => controller.abort();
+  }, [date]);
+  const blockedSlots = useMemo(() => {
+    if (!date) return [];
+    return timeSlots.filter((time) => {
+      const start = berlinWallToUtc(date, time),
+        end = defaultWorkEnd(packageId, start);
+      return busyWindows.some((window) =>
+        rangesOverlap(start, end, new Date(window.start), new Date(window.end)),
+      );
+    });
+  }, [date, packageId, busyWindows]);
 
   const quote = useMemo(
     () => quoteTotal({ packageId, classId, extraIds, citySlug }),
@@ -96,6 +114,9 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
     ) {
       errors.date = "Bitte geben Sie ein vollständiges Datum an oder lassen Sie das Feld leer.";
     }
+    if (!saved.current && slot && (blockedSlots.includes(slot) || availabilityState !== "ready"))
+      errors.date =
+        "Bitte wählen Sie eine verfügbare Abgabezeit oder fragen Sie ohne feste Uhrzeit an.";
     showErrors(errors, e.currentTarget);
     if (Object.keys(errors).length) {
       setError("Bitte prüfen Sie die markierten Felder.");
@@ -411,13 +432,20 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             onChange={(e) => setDate(e.target.value)}
           />
           {fieldError("date")}
-          {date && busyDays.includes(date) ? (
+          {date && blockedSlots.length > 0 ? (
             <p className="text-xs text-muted">
-              Dieser Tag ist in der Werkstatt bereits belegt. Die Anfrage bleibt unverbindlich; wir
-              schlagen nach der Prüfung einen freien Zeitraum vor.
+              Einige Zeiträume sind bereits belegt. Bitte wählen Sie eine verfügbare Abgabezeit oder
+              fragen Sie ohne feste Uhrzeit an.
             </p>
           ) : null}
         </Field>
+        {availabilityState !== "ready" ? (
+          <p role="status" className="text-xs text-muted">
+            {availabilityState === "loading"
+              ? "Verfügbarkeit wird geprüft …"
+              : "Die Kalenderprüfung ist vorübergehend nicht verfügbar. Eine Anfrage ohne feste Uhrzeit ist möglich."}
+          </p>
+        ) : null}
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
             disabled={pending || savedReference !== null}
@@ -428,8 +456,12 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           >
             <option value="">Keine Angabe</option>
             {timeSlots.map((s) => (
-              <option key={s} value={s}>
-                {s} Uhr
+              <option
+                key={s}
+                value={s}
+                disabled={blockedSlots.includes(s) || availabilityState !== "ready"}
+              >
+                {s} Uhr{blockedSlots.includes(s) ? " - belegt" : ""}
               </option>
             ))}
           </select>

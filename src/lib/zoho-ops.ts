@@ -29,6 +29,7 @@ export type OpsStage = (typeof OPS_STAGES)[number];
 export type PaymentVariant = "bar" | "ueberweisung";
 
 export type ZohoBooking = WorkflowBooking & {
+  bitrix_workshop_managed?: boolean;
   estimated_price_cents: number | null;
   agreed_price_cents: number | null;
   work_start_at: string | Date | null;
@@ -253,6 +254,7 @@ async function recordEvent(
   `;
   await queueBookingEvent(tx, row, name, saved.id, actor);
   await queueBitrixBooking(tx, row);
+  if (row.bitrix_workshop_managed) return;
   await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`, {
     version: row.version,
   });
@@ -403,13 +405,20 @@ export async function confirmBookingWithSchedule(
         returning *
       `;
       await recordEvent(tx, booking, before, "booking.confirmed", actor);
-      await enqueueZohoJob(tx, booking.id, "calendar", `calendar:${booking.id}:${booking.version}`);
-      await enqueueZohoJob(
-        tx,
-        booking.id,
-        "confirmation",
-        `confirmation:${booking.id}:${booking.version}`,
-      );
+      if (!booking.bitrix_workshop_managed)
+        await enqueueZohoJob(
+          tx,
+          booking.id,
+          "calendar",
+          `calendar:${booking.id}:${booking.version}`,
+        );
+      if (!booking.bitrix_workshop_managed)
+        await enqueueZohoJob(
+          tx,
+          booking.id,
+          "confirmation",
+          `confirmation:${booking.id}:${booking.version}`,
+        );
       return { booking, changed: true, acceptance, awaitingCustomer: false as const };
     });
   } catch (error) {
@@ -458,12 +467,13 @@ export async function rejectOrCancelBooking(
       status === "abgelehnt" ? "booking.rejected" : "booking.cancelled",
       actor,
     );
-    await enqueueZohoJob(
-      tx,
-      booking.id,
-      "calendar",
-      `calendar-release:${booking.id}:${booking.version}`,
-    );
+    if (!booking.bitrix_workshop_managed)
+      await enqueueZohoJob(
+        tx,
+        booking.id,
+        "calendar",
+        `calendar-release:${booking.id}:${booking.version}`,
+      );
     return { booking, changed: true };
   });
 }
@@ -523,11 +533,12 @@ export async function completeServiceWithPayment(
       returning *
     `;
     await recordEvent(tx, booking, before, "booking.completed", actor);
-    await enqueueZohoJob(tx, booking.id, "invoice", `invoice:${booking.id}`, {
-      payment: input.payment,
-      cashCents: input.cashCents ?? null,
-      cashDate: input.cashDate ?? null,
-    });
+    if (!booking.bitrix_workshop_managed)
+      await enqueueZohoJob(tx, booking.id, "invoice", `invoice:${booking.id}`, {
+        payment: input.payment,
+        cashCents: input.cashCents ?? null,
+        cashDate: input.cashDate ?? null,
+      });
     return { booking, changed: true };
   });
 }
@@ -554,6 +565,9 @@ export async function listBusyWindows(
       and resource <= 2
   `;
   return [
+    ...(await (
+      await import("./bitrix-workshop-calendar.ts")
+    ).externalBitrixBusyWindows(sql, fromIso, toIso)),
     ...blocks.map((row) => ({
       start: new Date(row.start_at).toISOString(),
       end: new Date(row.end_at).toISOString(),

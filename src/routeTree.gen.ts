@@ -53,6 +53,7 @@ import { Route as AdminZohoRouteImport } from './routes/admin.zoho'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
 import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
 import { Route as ApiAvailabilityRouteImport } from './routes/api.availability'
+import { Route as ApiBitrixWorkshopRouteImport } from './routes/api/bitrix-workshop'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
@@ -284,6 +285,11 @@ const ApiAvailabilityRoute = ApiAvailabilityRouteImport.update({
   path: '/api/availability',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBitrixWorkshopRoute = ApiBitrixWorkshopRouteImport.update({
+  id: '/api/bitrix-workshop',
+  path: '/api/bitrix-workshop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
@@ -378,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
+  '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
+  '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/admin/zustand': typeof AdminZustandRoute
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
+  '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/admin/zustand'
     | '/api/automation-cron'
     | '/api/availability'
+    | '/api/bitrix-workshop'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/admin/zustand'
     | '/api/automation-cron'
     | '/api/availability'
+    | '/api/bitrix-workshop'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/admin/zustand'
     | '/api/automation-cron'
     | '/api/availability'
+    | '/api/bitrix-workshop'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -691,6 +703,7 @@ export interface RootRouteChildren {
   WiderrufRoute: typeof WiderrufRoute
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiAvailabilityRoute: typeof ApiAvailabilityRoute
+  ApiBitrixWorkshopRoute: typeof ApiBitrixWorkshopRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
@@ -1007,6 +1020,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAvailabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bitrix-workshop': {
+      id: '/api/bitrix-workshop'
+      path: '/api/bitrix-workshop'
+      fullPath: '/api/bitrix-workshop'
+      preLoaderRoute: typeof ApiBitrixWorkshopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
@@ -1204,6 +1224,7 @@ const rootRouteChildren: RootRouteChildren = {
   WiderrufRoute: WiderrufRoute,
   ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiAvailabilityRoute: ApiAvailabilityRoute,
+  ApiBitrixWorkshopRoute: ApiBitrixWorkshopRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,

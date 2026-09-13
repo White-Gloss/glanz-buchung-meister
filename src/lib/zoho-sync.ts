@@ -330,6 +330,7 @@ export async function processZohoJob(
     select * from bookings where shop_id = ${SHOP} and id = ${job.booking_id}
   `;
   if (!booking) throw new ZohoError("zoho_booking_missing", { review: true });
+  if (booking.bitrix_workshop_managed) return;
   if (job.job === "confirmation") {
     await sendConfirmationDocument(sql, booking);
     return;

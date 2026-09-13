@@ -1,3 +1,4 @@
+import { ensureBitrixWorkshopSchema } from "./bitrix-workshop-schema.ts";
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
@@ -22,6 +23,7 @@ export type LexwareCall = LexwareRequest;
 
 /** Live schema without a blocking release-manifest migration (avoids GET / 503). */
 export async function ensureLexwareSchema(sql: Sql) {
+  await ensureBitrixWorkshopSchema(sql);
   await sql`alter table shop_settings add column if not exists lexware_sync_enabled boolean not null default false`;
   await sql`alter table shop_settings add column if not exists lexware_api_key text`;
   await sql`alter table shop_settings add column if not exists lexware_auto_finalize boolean not null default false`;
@@ -299,7 +301,7 @@ export async function runLexwareSync(
     for (let i = 0; i < (options.limit ?? 3) && Date.now() < deadline; i++) {
       const [row] =
         await sql<WorkflowBooking>`select b.* from lexware_sync_queue q join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
-        where q.shop_id=${SHOP} and q.status='pending' and q.next_attempt_at<=now() and (${options.bookingId ?? null}::integer is null or b.id=${options.bookingId ?? null})
+        where q.shop_id=${SHOP} and not b.bitrix_workshop_managed and q.status='pending' and q.next_attempt_at<=now() and (${options.bookingId ?? null}::integer is null or b.id=${options.bookingId ?? null})
         order by q.next_attempt_at,q.booking_id limit 1`;
       if (!row) break;
       const [progress] =

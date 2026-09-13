@@ -1,3 +1,4 @@
+import { ensureBitrixWorkshopSchema } from "./bitrix-workshop-schema.ts";
 import { berlinWallToUtc, formatBerlinRange } from "./zoho-time.ts";
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
@@ -34,6 +35,9 @@ const STAGE = {
 } as const;
 
 export type BitrixBooking = WorkflowBooking & {
+  bitrix_workshop_managed?: boolean;
+  bitrix_final_rows?: Record<string, unknown>[] | null;
+  bitrix_invoice_id?: number | null;
   vehicle_make?: string | null;
   vehicle_model?: string | null;
   vehicle_plate?: string | null;
@@ -59,6 +63,7 @@ type QueueProgress = {
 type PhotoInput = { name: string; mime: string; base64: string };
 
 export async function ensureBitrixSchema(sql: Sql) {
+  await ensureBitrixWorkshopSchema(sql);
   await sql`alter table bookings add column if not exists bitrix_contact_id integer`;
   await sql`alter table bookings add column if not exists bitrix_deal_id integer`;
   await sql`alter table bookings add column if not exists bitrix_event_id integer`;
@@ -455,10 +460,36 @@ export async function syncOneBitrixBooking(
     dealId = created.id;
     await saveProgress(sql, booking.id, { bitrix_deal_id: dealId });
   } else {
-    await request("PATCH", `/deals/${dealId}`, body);
+    // The owner edits the deal and its rows in Bitrix after taking over the request.
+    if (!booking.bitrix_workshop_managed) await request("PATCH", `/deals/${dealId}`, body);
   }
 
-  await attachProducts(request, dealId, booking, productMap);
+  if (!booking.bitrix_workshop_managed) await attachProducts(request, dealId, booking, productMap);
+  if (booking.bitrix_workshop_managed) {
+    await request("PATCH", `/deals/${dealId}`, {
+      stageId:
+        booking.payment_status === "bezahlt"
+          ? "WON"
+          : booking.ops_stage === "kundenrueckmeldung"
+            ? "PREPAYMENT_INVOICE"
+            : stageForStatus(booking.status),
+    });
+    if (booking.bitrix_invoice_id) {
+      const [mail] = await sql<{
+        status: string;
+      }>`select status from outbound_queue where shop_id=${SHOP} and booking_id=${booking.id} and event_type='bitrix.invoice' order by id desc limit 1`;
+      if (booking.payment_status === "bezahlt" || mail?.status === "sent") {
+        const invoice = await request<{ stageId: string }>(
+          "GET",
+          `/invoices/${booking.bitrix_invoice_id}`,
+        );
+        if (invoice.stageId !== "DT31_6:P")
+          await request("PATCH", `/invoices/${booking.bitrix_invoice_id}`, {
+            stageId: booking.payment_status === "bezahlt" ? "DT31_6:P" : "DT31_6:S",
+          });
+      }
+    }
+  }
 
   if (!progress.photos_done) {
     const photos = await loadPhotos(booking.id);

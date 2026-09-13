@@ -55,7 +55,10 @@ export type ConfirmationPdfInput = Pick<
   | "vehicle_model"
   | "vehicle_plate"
   | "confirmation_pdf_version"
-> & { payment_method?: string | null };
+> & {
+  payment_method?: string | null;
+  final_rows?: { name: string; quantity: number; grossCents: number }[];
+};
 
 export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput): Promise<string> {
   const doc = await PDFDocument.create();
@@ -65,7 +68,7 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
   const version = Math.max(1, booking.confirmation_pdf_version || 1);
   doc.setTitle(`Buchungsbestaetigung WG-${booking.id}`);
   doc.setAuthor(site.legalName);
-  const page = doc.addPage([595.28, 841.89]);
+  let page = doc.addPage([595.28, 841.89]);
   const black = rgb(0.12, 0.12, 0.12);
   const grey = rgb(0.4, 0.4, 0.4);
   const text = (value: string, x: number, y: number, size = 9, strong = false, muted = false) => {
@@ -142,9 +145,13 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
     .join(" · ");
   const extrasList = extraNames(booking.extra_ids);
   const description = [
-    packages.find((item) => item.id === booking.package_id)?.name || booking.package_id,
+    ...(booking.final_rows?.length
+      ? booking.final_rows.map((row) => `${row.quantity} x ${row.name}: ${euros(row.grossCents)}`)
+      : [packages.find((item) => item.id === booking.package_id)?.name || booking.package_id]),
     vehicle ? `Fahrzeug: ${vehicle}` : "",
-    extrasList.length ? `Zusatzleistungen: ${extrasList.join(", ")}` : "",
+    !booking.final_rows?.length && extrasList.length
+      ? `Zusatzleistungen: ${extrasList.join(", ")}`
+      : "",
     booking.city_slug ? `Abholort: ${booking.city_slug}` : "",
     `Leistungsort: ${site.street}, ${site.postalCode} ${site.city}`,
   ].filter(Boolean);
@@ -152,14 +159,21 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
   const headerY = Math.min(548, whenY - 24);
   page.drawRectangle({ x: 63, y: headerY - 19, width: 480, height: 19, color: black });
   page.drawText("Leistung", { x: 72, y: headerY - 12, size: 8, font: bold, color: rgb(1, 1, 1) });
-  page.drawText("Betrag", { x: 475, y: headerY - 12, size: 8, font: bold, color: rgb(1, 1, 1) });
   let cursor = headerY - 38;
+  const ensureSpace = (height: number) => {
+    if (cursor - height < 100) {
+      page = doc.addPage([595.28, 841.89]);
+      text(`Buchungsbestätigung WG-${booking.id} - Fortsetzung`, 63, 785, 13, true);
+      cursor = 750;
+    }
+  };
   for (const line of description.flatMap((entry) => wrap(entry, 390, 9))) {
+    ensureSpace(13);
     text(line, 72, cursor);
     cursor -= 13;
   }
   const amount = booking.agreed_price_cents ?? booking.total_cents ?? 0;
-  text(euros(amount), 470, headerY - 38, 10, true);
+  ensureSpace(120);
   cursor -= 10;
   page.drawLine({
     start: { x: 63, y: cursor },
@@ -193,16 +207,21 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
     text("Hinweise", 63, cursor, 9, true);
     cursor -= 14;
     for (const line of wrap(booking.note.slice(0, 800), 480, 9)) {
+      ensureSpace(12);
       text(line, 63, cursor);
       cursor -= 12;
     }
   }
-  text(`${site.legalName} · ${site.owner}`, 63, 59, 6.5, false, true);
-  text(`${site.street}, ${site.postalCode} ${site.city}`, 63, 49, 6.5, false, true);
-  text(site.email, 63, 39, 6.5, false, true);
-  text(site.phoneDisplay, 290, 59, 6.5, false, true);
-  text("white-gloss.de", 290, 49, 6.5, false, true);
-  text("Seite 1/1 · Keine Rechnung", 400, 39, 6.5, false, true);
+  const pages = doc.getPages();
+  for (const [index, footerPage] of pages.entries()) {
+    page = footerPage;
+    text(`${site.legalName} · ${site.owner}`, 63, 59, 6.5, false, true);
+    text(`${site.street}, ${site.postalCode} ${site.city}`, 63, 49, 6.5, false, true);
+    text(site.email, 63, 39, 6.5, false, true);
+    text(site.phoneDisplay, 290, 59, 6.5, false, true);
+    text("white-gloss.de", 290, 49, 6.5, false, true);
+    text(`Seite ${index + 1}/${pages.length} · Keine Rechnung`, 400, 39, 6.5, false, true);
+  }
   return Buffer.from(await doc.save()).toString("base64");
 }
 
