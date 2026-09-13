@@ -172,9 +172,9 @@ export function createBitrixRestClient(
       await call("crm.deal.update", { id, fields: toRestDealFields(payload) });
       return { ok: true } as T;
     }
-    if (method === "POST" && /\/deals\/\d+\/products/.test(path)) {
+    if (method === "PUT" && /^\/deals\/\d+\/products$/.test(path)) {
       const id = Number(path.split("/")[2]);
-      const products = (payload.products as Array<Record<string, unknown>>) || [];
+      const products = (payload.items as Array<Record<string, unknown>>) || [];
       await call("crm.deal.productrows.set", {
         id,
         rows: products.map((item) => ({
