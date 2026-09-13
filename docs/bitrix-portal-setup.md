@@ -266,3 +266,33 @@ Das am 13.09.2026 gelieferte transparente Logo liegt unverändert unter
 `docs/bitrix/templates/white-gloss-logo.png` und ersetzt das bisherige Logo
 in der vorbereiteten nativen Buchungsbestätigung. Die weiße Schrift erhält
 einen dunklen Hintergrund im Dokument; die Bilddatei selbst bleibt unverändert.
+
+
+## Verbindliche Layoutreferenz vom Inhaber
+
+Die hochgeladene Rechnung `2609-RE-2026-001-White-Gloss-Detailing-Lars-Marco-.pdf`
+ist ausdrücklich auch die Layoutvorlage für die Buchungsbestätigungs-PDF.
+Beide Vorlagen verwenden Titel links, kleines unverändertes Logo rechts auf
+weißem Grund, zweigeteilten Adress-/Referenzblock, dunklen Tabellenkopf,
+rechtsbündige Nettosumme/19-Prozent-Umsatzsteuer/Gesamtsumme und Fußzeile.
+Die dunkle Logofläche der vorigen Fassung ist damit überholt.
+
+Firmenname aus der Referenz: White-Gloss Detailing - Lars Marco Hägele.
+Bankverbindung wurde in der Referenz gefunden (IBAN endet auf 1821); nicht
+nochmals beim Inhaber anfordern. Die vollständige Bankverbindung und fremde
+Kundendaten der Beispielrechnung werden nicht im öffentlichen Git-Repository
+gespeichert. Die Referenzdatei bleibt die Quelle für eine spätere autorisierte
+Übernahme in private Bitrix-Firmendaten.
+
+Die Beispielrechnung hat 15 Tage Zahlungsziel; für neue Überweisungsrechnungen
+gilt unverändert die Vorgabe von sieben Kalendertagen ab Rechnungsdatum.
+Beispielnummer RE-2026-001 und Beispiel-Verwendungszweck niemals kopieren.
+`WGPaymentText` wird aus tatsächlichem Barzahlungsstatus oder dem berechneten
+Fälligkeitsdatum erzeugt. `WGTaxIdentification` bleibt leer, solange keine
+verwendbare Nummer vorliegt. Alle Platzhalter vor Versand vollständig auflösen.
+`WGServiceLines`, `Qty`, `UnitNet`, `LineNet` müssen später als wiederholbare
+Positionszeilen angebunden werden; die Vorlage allein implementiert das nicht.
+Die Summenfelder müssen aus diesen Positionen berechnet werden.
+Die Buchungsbestätigung enthält Beginn, Ende, Dauer, Ort und Keine-Rechnung-
+Hinweis; keine Zahlungsaufforderung. PDF im Repository ist eine Layoutvorschau
+mit Platzhaltern, keine an einen Kunden ausgegebene Bestätigung.
