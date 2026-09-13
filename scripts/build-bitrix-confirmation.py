@@ -23,6 +23,15 @@ def borderless(table):
         e=OxmlElement('w:'+side);e.set(qn('w:val'),'nil');borders.append(e)
     table._tbl.tblPr.append(borders)
 
+def cell_lines(cell, lines):
+    # Bitrix replaces runs containing placeholders and may drop w:br nodes.
+    # Separate paragraphs preserve the intended layout in its own PDF renderer.
+    cell.text=''
+    for index,line in enumerate(lines):
+        p=cell.paragraphs[0] if index==0 else cell.add_paragraph()
+        p.paragraph_format.space_after=Pt(2)
+        p.add_run(line)
+
 def build(invoice=False):
     doc=Document()
     for border in list(doc.styles.element.xpath('.//w:pBdr')):
@@ -50,10 +59,8 @@ def build(invoice=False):
     p=doc.add_paragraph('White-Gloss Detailing - Lars Marco Hägele · Arnistal 27 · 72160 Horb (Dettingen)')
     p.runs[0].font.size=Pt(7)
     addresses=doc.add_table(rows=1,cols=2);borderless(addresses)
-    addresses.cell(0,0).text='{WGCustomerName}\n{WGCustomerAddress}'
-    addresses.cell(0,1).text=('Rechnungsnummer: {WGInvoiceNumber}' if invoice else 'Buchungsreferenz: {WGReference}')+'\nAusgestellt am: {WGIssuedOn}'
-    if invoice:addresses.cell(0,1).add_paragraph('Buchungsreferenz: {WGReference}\nLeistungsdatum: {WGServiceDate}')
-    else:addresses.cell(0,0).add_paragraph('{WGCustomerEmail}\n{WGCustomerPhone}')
+    cell_lines(addresses.cell(0,0),['{WGCustomerName}','{WGCustomerAddress}']+([] if invoice else ['{WGCustomerEmail}','{WGCustomerPhone}']))
+    cell_lines(addresses.cell(0,1),[('Rechnungsnummer: {WGInvoiceNumber}' if invoice else 'Buchungsreferenz: {WGReference}'),'Ausgestellt am: {WGIssuedOn}']+(['Buchungsreferenz: {WGReference}','Leistungsdatum: {WGServiceDate}'] if invoice else []))
     doc.add_paragraph()
     doc.add_paragraph('Vielen Dank für deinen Auftrag. Wir berechnen die folgenden ausgeführten Leistungen:' if invoice else 'Vielen Dank für deine Buchung. Nach unserer Prüfung bestätigen wir die folgenden Leistungen und den vereinbarten Termin:')
     doc.add_paragraph('Fahrzeug: {WGVehicle} · Kennzeichen: {WGPlate}')
@@ -82,15 +89,16 @@ def build(invoice=False):
         doc.add_paragraph('Verwendungszweck: {WGPaymentReference}')
         doc.add_paragraph('{WGTaxIdentification}')
     else:
-        doc.add_paragraph('Beginn: {WGStart}\nEnde: {WGEnd}\nVereinbarte Dauer: {WGDuration}\nLeistungsort: {WGLocation}')
+        for line in ['Beginn: {WGStart}','Ende: {WGEnd}','Vereinbarte Dauer: {WGDuration}','Leistungsort: {WGLocation}']:
+            p=doc.add_paragraph(line);p.paragraph_format.space_after=Pt(2)
     doc.add_paragraph('Hinweise: {WGNotes}')
     doc.add_paragraph('Vielen Dank für die gute Zusammenarbeit.\nWhite-Gloss Detailing')
     if not invoice:
         doc.add_paragraph('Diese Buchungsbestätigung ist keine Rechnung. Die Rechnung wird nach der Durchführung der Dienstleistung separat erstellt.')
     footer=section.footer
     f=footer.add_table(rows=1,cols=2,width=Inches(6.6));borderless(f)
-    f.cell(0,0).text='White-Gloss Detailing - Lars Marco Hägele\nArnistal 27 · 72160 Horb (Dettingen), DE\nbuchung@white-gloss.de'
-    f.cell(0,1).text=('{WGBankName}\nIBAN {WGIban}\nBIC {WGBic}' if invoice else 'white-gloss.de\nBuchungsreferenz {WGReference}')
+    cell_lines(f.cell(0,0),['White-Gloss Detailing - Lars Marco Hägele','Arnistal 27 · 72160 Horb (Dettingen), DE','buchung@white-gloss.de'])
+    cell_lines(f.cell(0,1),['{WGBankName}','IBAN {WGIban}','BIC {WGBic}'] if invoice else ['white-gloss.de','Buchungsreferenz {WGReference}'])
     for cell in f.rows[0].cells:
         for p in cell.paragraphs:
             for run in p.runs:run.font.size=Pt(7)

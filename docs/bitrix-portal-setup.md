@@ -340,3 +340,53 @@ und die vollständige Dokument-/Rechnungsanbindung. Die alte Zoho-Webhook-Route
 ist dafür kein fertiger Ersatz. Eine einfache Phasenänderung darf nicht ohne
 expliziten Leistungsabschluss eine Rechnung erzeugen. PR bleibt Entwurf;
 keine vollständige Testbuchung, Kundenbestätigung oder echte Rechnung ausgelöst.
+
+## Fortsetzung: Dokumentimport gelöst, Übergabestand
+
+Die eigene REST-Vorlage ließ sich erfolgreich über `POST /v1/doc-templates`
+importieren. Der verweigerte Zugriff auf native CRM-Standardvorlagen bedeutet
+nicht, dass eigene REST-Vorlagen nicht angelegt werden dürfen. Die tatsächlichen
+Numerator-IDs wurden aus dem nativen Vorlageneditor gelesen: 8 für
+Auftragsbestätigungen, 4 für Rechnungen. Keine Standardvorlage geändert.
+
+Aktuelle eigene Vorlagen: ID 14 `WG_BOOKING_CONFIRMATION_V2` und ID 16
+`WG_INVOICE_V2`, beide inaktiv. Ältere Layoutfassungen 10 und 12 bleiben inaktiv.
+Diese Vorlagen gehören zum REST-Datenprovider; eine native CRM-Bereichsbindung
+oder automatische Zuordnung zum Auftrag wurde noch nicht eingerichtet.
+
+`src/lib/bitrix-documents.ts` bindet die freigegebenen DOCX-Platzhalter, übergibt
+Positionen als `ArrayDataProvider`, rechnet Netto/19-Prozent-USt./Brutto und
+verweigert abweichende vereinbarte Summen. Sieben Kalendertage Fälligkeit,
+mehrtägige Zeiten, tatsächliche vollständige/teilweise Barzahlungen und leere
+USt-ID sind berücksichtigt. Fünf gezielte Tests bestanden. Dies ist eine
+Datenaufbereitung, noch kein produktiver Dokument- oder Rechnungsworker.
+
+Native Testdokumente (keine Buchungen/Rechnungen/Zahlungen): ID 4 für die erste
+Layoutprüfung; ID 6 für die korrigierte Fassung, Referenz
+`TEST-WG-DOC-20260913-02`. Die PDF von ID 6 wurde heruntergeladen und visuell
+geprüft: zwei getrennte Positionen, 150 EUR netto, 28,50 EUR USt., 178,50 EUR
+brutto, 01.11.2026 23:00 bis 03.11.2026 08:00 Berliner Zeit, 33 Stunden,
+sichtbarer Test- und Keine-Rechnung-Hinweis. Keine Mail mit dieser PDF versendet.
+Bitrix entfernte Zeilenumbrüche innerhalb ersetzter Word-Runs; getrennte
+Absätze im Generator beheben das. Aktuelle DOCX-Dateien wurden auch lokal gerendert.
+
+`src/lib/ionos-mail.server.ts` ist ein noch nicht angebundener SMTP-Adapter mit
+festem Postfach `buchung@white-gloss.de`, SMTP 465/TLS und deaktivierten Datei-/
+URL-Anhangzugriffen. Nodemailer und Typen sind fest versioniert. Kein Passwort
+übernommen, keine Aktivierung, keine Schemaänderung in der Produktionsdatenbank.
+Der vorhandene Notification-Worker wurde unverändert belassen. Vor Nutzung muss
+er den Versandprovider je Nachricht dauerhaft speichern, SMTP-Verbindungsabbrüche
+und abgelaufene Versand-Leases auf Prüfung setzen und darf dabei nicht die
+Resend-Wiederholungslogik auf SMTP anwenden. Eine feste Message-ID allein bietet
+keinen Schutz gegen doppelten SMTP-Versand. Zugang nur über einen geschützten
+Einrichtungsweg erfassen; niemals Passwörter im Chat oder öffentlichen Git speichern.
+
+Beide verbundenen Supabase-Projekte wurden nur lesend geprüft. Sie enthalten
+keine `shop_settings`, `booking_time_blocks` oder `bitrix_sync_queue` und wurden
+nicht als Produktionsdatenbank dieses Node-Projekts angenommen oder verändert.
+Die produktive Datenbankzuordnung vor weiteren Schemaänderungen prüfen.
+
+Weiterhin offen: authentifizierte native manuelle Entscheidungen, revisionsgebundene
+Kundenzustimmung, reservierter Zeitraum vor PDF-Versand, dauerhafter Dokument-/
+Rechnungs-/Zahlungsworker, sicher eingerichteter IONOS-Versand und vollständiger
+Echtablauf-Test. Keine Freigabeautomatik aktiviert. PR bleibt Entwurf.
