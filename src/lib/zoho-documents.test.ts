@@ -26,7 +26,7 @@ test("confirmation PDF is titled as booking confirmation and never as an invoice
     confirmation_pdf_version: 1,
   });
   const doc = await PDFDocument.load(Buffer.from(content, "base64"));
-  assert.equal(doc.getTitle(), "Buchungsbestaetigung WG-42");
+  assert.equal(doc.getTitle(), "Buchungsbestätigung WG-42");
   assert.equal(doc.getPageCount(), 1);
   assert.ok(!/rechnung/i.test(doc.getTitle() || ""));
 });
