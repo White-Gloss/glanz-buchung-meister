@@ -122,7 +122,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto border-t border-line">
+      <section className="border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -185,7 +185,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto border-t border-line">
+      <section className="border-t border-line">
         <div className="section gd-split mx-auto max-w-7xl px-4 sm:px-6">
           <div className="ga-copy" data-reveal>
             <p className="kicker">Prozess</p>
@@ -224,7 +224,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto border-t border-line bg-surface">
+      <section className="border-t border-line bg-surface">
         <div className="section gd-split gd-split--media mx-auto max-w-7xl px-4 sm:px-6">
           <Shot
             name="dellen"
@@ -254,7 +254,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
+      <section className="section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
         <p className="kicker">Aus der Werkstatt</p>
         <h2 className="heading-2 mt-4 max-w-2xl">
           So sieht die Arbeit aus.
@@ -359,7 +359,7 @@ function Home() {
         </Link>
       </section>
 
-      <section className="cv-auto border-t border-line bg-surface">
+      <section className="border-t border-line bg-surface">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Leistungen & Abholung</h2>
           <div className="gd-split mt-12">
@@ -425,7 +425,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cv-auto border-t border-line" aria-labelledby="standort-heading">
+      <section className="border-t border-line" aria-labelledby="standort-heading">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <p className="kicker">Standort</p>
           <h2 id="standort-heading" className="heading-2 mt-4">

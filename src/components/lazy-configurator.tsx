@@ -24,7 +24,8 @@ export function LazyConfigurator({
 }) {
   const hash = useRouterState({ select: (s) => s.location.hash });
   const ref = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(eager || hash === "buchung");
+  // URL fragments are absent on the server; keep the initial client render identical.
+  const [ready, setReady] = useState(eager);
 
   useEffect(() => {
     if (eager || hash === "buchung") setReady(true);
