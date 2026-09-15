@@ -170,11 +170,11 @@ function PrivacyPage() {
         <section>
           <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
           <p>
-            Über die Seiten „Zustand prüfen lassen“ und „Dellen- und Hagelschäden“ können Sie
-            uns eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos
-            übermitteln. Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben
-            auf Ihrem Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur
-            Zuordnung, Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
+            Über die Seiten „Zustand prüfen lassen“ und „Dellen- und Hagelschäden“ können Sie uns
+            eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos übermitteln.
+            Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben auf Ihrem
+            Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur Zuordnung,
+            Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
           </p>
           <p>
             Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
@@ -212,6 +212,14 @@ function PrivacyPage() {
 
         <section>
           <h2>9. Empfänger</h2>
+          <p>
+            Unsere Bewertungslinks führen zu unserem Unternehmensprofil bei Google. Erst beim Öffnen
+            eines solchen Links verbindet sich Ihr Browser mit Google. Wenn Rezensionen direkt auf
+            unserer Website angezeigt werden, ruft unser Server die öffentlichen Angaben von Google
+            ab und hält sie für höchstens eine Stunde im Arbeitsspeicher bereit. Dabei werden keine
+            Besucherdaten an Google übermittelt. Angezeigt werden Autorenname, Bewertung,
+            Rezensionstext und Veröffentlichungsdatum; Profilbilder werden nicht geladen.
+          </p>
           <p>
             Hosting: IONOS SE, Deutschland. Anfragen und Termine werden von White Gloss bearbeitet.
             Die optional nachgereichten Fahrzeugaufnahmen werden bei Supabase in einem privaten
@@ -266,7 +274,7 @@ function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 7. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 15. September 2026</p>
       </article>
     </main>
   );

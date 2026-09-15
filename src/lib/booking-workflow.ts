@@ -7,7 +7,7 @@ import {
   type ManualBookingInput,
 } from "./booking-schema.ts";
 import { createRequestUploadCapability } from "./booking-upload-capability.ts";
-import { cities, extras, quoteTotal, timeSlots } from "../data/site.ts";
+import { cities, extras, extraIncluded, quoteTotal, timeSlots } from "../data/site.ts";
 import { berlinCalendarDate, berlinMinutesSinceMidnight } from "./ops.ts";
 import { requireBookingOwner } from "./booking-owner.ts";
 import {
@@ -178,6 +178,7 @@ async function persistBookingRequest(
 ) {
   assertPricing(data);
   const key = hash(manual?.requestKey ?? data.idempotencyKey);
+  data = { ...data, extraIds: data.extraIds.filter((id) => !extraIncluded(data.packageId, id)) };
   const content = {
     ...data,
     idempotencyKey: undefined,
@@ -356,6 +357,7 @@ export async function editBooking(
 ) {
   assertPricing(data);
   const quote = quoteTotal(data);
+  data = { ...data, extraIds: data.extraIds.filter((id) => !extraIncluded(data.packageId, id)) };
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);

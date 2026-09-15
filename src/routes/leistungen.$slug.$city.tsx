@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, packages, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
+import { serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
 
 function ServiceCityPage() {
   const { service, city } = Route.useLoaderData();
+  const request = serviceBookingSelection(service.slug, city.slug);
   const otherCities = cities.filter((c) => c.slug !== city.slug);
   const otherServices = services.filter((s) => s.slug !== service.slug);
   const pickup = pickupPriceText(city.km);
@@ -54,7 +56,12 @@ function ServiceCityPage() {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
-          { "@type": "ListItem", position: 2, name: "Leistungen", item: `${site.origin}/leistungen` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Leistungen",
+            item: `${site.origin}/leistungen`,
+          },
           {
             "@type": "ListItem",
             position: 3,
@@ -91,15 +98,20 @@ function ServiceCityPage() {
           { label: city.name },
         ]}
         actions={
-          <Link to="/" hash="buchung" className={ctaPrimary}>
+          <Link
+            to={request.leistung ? "/fahrzeug-zustand" : "/"}
+            hash="buchung"
+            search={request}
+            className={ctaPrimary}
+          >
             Abholung anfragen
           </Link>
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <p className="rounded-card border border-line bg-surface p-4 text-sm">
-          Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}.
-          Die Aufbereitung erfolgt in unserer Werkstatt: {site.street}, {site.postalCode} {site.city}.
+          Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}. Die Aufbereitung
+          erfolgt in unserer Werkstatt: {site.street}, {site.postalCode} {site.city}.
         </p>
         <ul className="mt-8 space-y-3">
           {service.bullets.map((b) => (
@@ -124,7 +136,8 @@ function ServiceCityPage() {
           </p>
         ) : null}
         <Link
-          to="/"
+          to={request.leistung ? "/fahrzeug-zustand" : "/"}
+          search={request}
           hash="buchung"
           className="mt-10 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
         >

@@ -5,13 +5,14 @@ import { photoInquiryErrors } from "@/lib/public-form-validation";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { SubmissionResult } from "./submission-result";
 import { Button, Field, inputLine } from "./ui";
+import { useBookingDraft, clearBookingDraft } from "./booking-draft";
 
 export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [text, setText] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [privacy, setPrivacy] = useState(false);
+  const [files, setFiles] = useBookingDraft<File[]>("photo.files", []);
+  const [text, setText] = useBookingDraft("photo.text", "");
+  const [name, setName] = useBookingDraft("photo.name", "");
+  const [phone, setPhone] = useBookingDraft("photo.phone", "");
+  const [privacy, setPrivacy] = useBookingDraft("photo.privacy", false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -42,8 +43,11 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
         },
       });
       setSent(true);
+      clearBookingDraft("photo.");
     } catch {
-      setError("Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns telefonisch oder per WhatsApp.");
+      setError(
+        "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns telefonisch oder per WhatsApp.",
+      );
       setPending(false);
     }
   }
@@ -67,9 +71,9 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
       <h2 className="font-display text-2xl">{title}</h2>
       <p className="text-sm text-muted">{hint}</p>
       <p className="text-xs text-subtle">
-        Dieses Formular übermittelt Ihre Kontaktdaten, Ihre Beschreibung und die Namen
-        ausgewählter Dateien. Die Fotos und Videos selbst bleiben auf Ihrem Gerät.
-        Benötigen wir die Aufnahmen zur Begutachtung, stimmen wir eine sichere Übermittlung mit Ihnen ab.
+        Dieses Formular übermittelt Ihre Kontaktdaten, Ihre Beschreibung und die Namen ausgewählter
+        Dateien. Die Fotos und Videos selbst bleiben auf Ihrem Gerät. Benötigen wir die Aufnahmen
+        zur Begutachtung, stimmen wir eine sichere Übermittlung mit Ihnen ab.
       </p>
       <Field
         tone="public"
@@ -87,7 +91,9 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
         />
         {fieldError("media")}
         {files.length ? (
-          <p className="text-xs text-subtle">{files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}</p>
+          <p className="text-xs text-subtle">
+            {files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}
+          </p>
         ) : null}
       </Field>
       <Field tone="public" id="desc" label="Beschreibung">

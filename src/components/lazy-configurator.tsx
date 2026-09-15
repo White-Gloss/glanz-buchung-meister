@@ -18,9 +18,11 @@ function Skeleton() {
 export function LazyConfigurator({
   eager = false,
   initialPackage,
+  initialCity,
 }: {
   eager?: boolean;
   initialPackage?: PackageId;
+  initialCity?: string;
 }) {
   const hash = useRouterState({ select: (s) => s.location.hash });
   const ref = useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ export function LazyConfigurator({
     <div ref={ref}>
       {ready ? (
         <Suspense fallback={<Skeleton />}>
-          <Configurator initialPackage={initialPackage} />
+          <Configurator initialPackage={initialPackage} initialCity={initialCity} />
         </Suspense>
       ) : (
         <Skeleton />
