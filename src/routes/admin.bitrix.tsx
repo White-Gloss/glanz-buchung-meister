@@ -4,6 +4,7 @@ import {
   bitrixStatus,
   bitrixSyncOverview,
   retryBitrixSync,
+  repairBitrixContact,
   runBitrixNow,
   saveBitrixApiKey,
 } from "@/lib/bitrix.functions";
@@ -174,6 +175,35 @@ function AdminBitrix() {
                       <span className="block text-xs text-muted">{row.last_error}</span>
                     ) : null}
                   </span>
+                  {sync.canManage && row.status === "synced" && row.bitrix_deal_id ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={pending}
+                      onClick={async () => {
+                        setPending(true);
+                        try {
+                          const result = await repairBitrixContact({
+                            data: { bookingId: row.booking_id },
+                          });
+                          await refresh();
+                          setMessage(
+                            `WG-${row.booking_id}: Kontakt ${result.contactId} mit Buchungs-E-Mail ${result.email} verknüpft. Bestehende Dokumente werden dadurch nicht neu versendet.`,
+                          );
+                        } catch (error) {
+                          setMessage(
+                            error instanceof Error
+                              ? error.message
+                              : "Kontaktabgleich fehlgeschlagen.",
+                          );
+                        } finally {
+                          setPending(false);
+                        }
+                      }}
+                    >
+                      Buchungskontakt abgleichen
+                    </Button>
+                  ) : null}
                   {sync.canManage && ["failed", "review"].includes(row.status) ? (
                     <Button
                       type="button"
