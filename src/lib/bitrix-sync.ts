@@ -524,13 +524,22 @@ export async function syncOneBitrixBooking(
     if (photosDone) await saveProgress(sql, booking.id, { photos_done: true });
   }
 
-  if (
-    !progress.bitrix_event_id &&
-    ["bestaetigt", "erledigt"].includes(booking.status) &&
-    booking.preferred_date &&
-    booking.preferred_slot
-  )
+  if (!progress.bitrix_event_id && ["bestaetigt", "erledigt"].includes(booking.status)) {
+    if (!booking.work_start_at || !booking.work_end_at)
+      throw new BitrixError(
+        "Start und Ende der Arbeit müssen vor der Kalenderübertragung manuell festgelegt werden.",
+        "bitrix_schedule_required",
+        0,
+        { review: true },
+      );
+    const start = new Date(booking.work_start_at);
+    const end = new Date(booking.work_end_at);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start)
+      throw new BitrixError("Ungültiger Arbeitszeitraum.", "bitrix_invalid_interval", 0, {
+        review: true,
+      });
     await markWrite("calendar");
+  }
   const eventId = await ensureCalendar(request, booking, dealId, progress.bitrix_event_id);
   if (eventId && eventId !== progress.bitrix_event_id) {
     await saveProgress(sql, booking.id, { bitrix_event_id: eventId });

@@ -4,6 +4,12 @@ export const Route = createFileRoute("/api/availability")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { assertRateLimit, clientIp } = await import("@/lib/rate-limit");
+        try {
+          assertRateLimit("availability", clientIp(request), 8, 60_000);
+        } catch {
+          return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
+        }
         const url = new URL(request.url);
         const from = url.searchParams.get("from") || "";
         const to = url.searchParams.get("to") || "";
@@ -11,10 +17,10 @@ export const Route = createFileRoute("/api/availability")({
           return Response.json({ ok: false, error: "invalid_range" }, { status: 400 });
         }
         try {
-          const { calendarDateRange } = await import("@/lib/bitrix-calendar");
+          const { publicAvailabilityDateRange } = await import("@/lib/bitrix-calendar");
           let range;
           try {
-            range = calendarDateRange(from, to);
+            range = publicAvailabilityDateRange(from, to);
           } catch {
             return Response.json({ ok: false, error: "invalid_range" }, { status: 400 });
           }

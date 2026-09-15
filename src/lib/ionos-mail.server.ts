@@ -4,6 +4,18 @@ import { EmailDeliveryError } from "./resend-mail.ts";
 
 export const BOOKING_SENDER = "White-Gloss Detailing <buchung@white-gloss.de>";
 export const BOOKING_MAILBOX = "buchung@white-gloss.de";
+type IonosTransport = {
+  verify: () => Promise<unknown>;
+  sendMail: (message: {
+    from: string;
+    to: string;
+    subject: string;
+    text: string;
+    messageId: string;
+    attachments?: { filename: string; content: Buffer; contentType: string }[];
+  }) => Promise<{ accepted?: unknown[] }>;
+  close: () => void;
+};
 
 export async function ensureIonosMailSchema(sql: Sql) {
   await sql`alter table shop_settings add column if not exists booking_ionos_password text`;
@@ -39,7 +51,7 @@ async function transport(password: string) {
     disableUrlAccess: true,
     logger: false,
     debug: false,
-  });
+  }) as IonosTransport;
 }
 
 /** Verifies credentials without sending any email. Never returns SMTP diagnostics or secrets. */
@@ -65,8 +77,12 @@ export async function sendIonosEmail(
     idempotencyKey: string;
     attachments?: { filename: string; content: string; content_type: string }[];
   },
+  dependencies: {
+    readConfig?: typeof ionosMailConfig;
+    createTransport?: (password: string) => Promise<IonosTransport>;
+  } = {},
 ): Promise<{ id: string }> {
-  const config = await ionosMailConfig(sql);
+  const config = await (dependencies.readConfig ?? ionosMailConfig)(sql);
   if (!config.enabled) throw new EmailDeliveryError("ionos_not_configured", false);
   if (
     !/^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/.test(input.to) ||
@@ -74,7 +90,7 @@ export async function sendIonosEmail(
     !input.idempotencyKey
   )
     throw new EmailDeliveryError("ionos_invalid_message", false);
-  const smtp = await transport(config.password);
+  const smtp = await (dependencies.createTransport ?? transport)(config.password);
   // Message-ID helps reconciliation, but is NOT provider-side deduplication.
   const id = `<wg-${createHash("sha256").update(input.idempotencyKey).digest("hex")}@white-gloss.de>`;
   try {

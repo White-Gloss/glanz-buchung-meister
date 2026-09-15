@@ -5,6 +5,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import {
   calendarDateRange,
+  publicAvailabilityDateRange,
   eventWindows,
   readBitrixCalendar,
   bitrixBusyWindows,
@@ -52,6 +53,15 @@ test("availability queries use inclusive Berlin dates and reject invalid or unbo
   });
   assert.throws(() => calendarDateRange("2026-02-30", "2026-03-01"));
   assert.throws(() => calendarDateRange("2026-01-01", "2027-01-01"));
+});
+
+test("public availability stays inside the supported booking horizon", () => {
+  assert.deepEqual(publicAvailabilityDateRange("2026-03-01", "2026-03-14", "2026-03-01"), {
+    from: "2026-02-28T23:00:00.000Z",
+    to: "2026-03-14T23:00:00.000Z",
+  });
+  assert.throws(() => publicAvailabilityDateRange("2026-02-29", "2026-03-14", "2026-03-01"));
+  assert.throws(() => publicAvailabilityDateRange("2026-03-01", "2026-06-03", "2026-03-01"));
 });
 
 test("calendar search follows metadata, preserves recurring occurrences and refuses incomplete pages", async () => {

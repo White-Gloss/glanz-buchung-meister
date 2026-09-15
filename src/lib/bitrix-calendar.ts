@@ -57,6 +57,17 @@ export function calendarDateRange(from: string, to: string) {
   };
 }
 
+export function publicAvailabilityDateRange(
+  from: string,
+  to: string,
+  today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" }),
+) {
+  const last = new Date(Date.parse(today) + 92 * 86_400_000).toISOString().slice(0, 10);
+  if (from < today || to > last)
+    throw new Error("Bitte nur Zeiträume innerhalb der nächsten 93 Tage auswählen.");
+  return calendarDateRange(from, to);
+}
+
 export function eventWindows(events: CalendarEvent[]): EventWindow[] {
   return events.flatMap((event) => {
     if (!event || !Number.isInteger(event.sectionId)) throw failure();
@@ -189,7 +200,9 @@ export async function bitrixBusyWindows(
     select bitrix_event_id, work_start_at, work_end_at from bookings
     where shop_id=${SHOP} and bitrix_event_id is not null
       and work_start_at is not null and work_end_at is not null
-      and status in ('bestaetigt','erledigt','nicht_erschienen')`;
+      and status in ('bestaetigt','erledigt','nicht_erschienen')
+      and work_start_at < ${to}::timestamptz
+      and work_end_at > ${from}::timestamptz`;
   return events
     .filter(
       (event) =>
