@@ -36,7 +36,10 @@ const response = (overrides: Record<string, unknown> = {}) =>
   });
 
 test("runtime bootstrap applies the same reviewed migration and protects its table", async () => {
-  assert.equal(BOOKING_AGENT_SCHEMA, await readFile("migrations/0017_bitrix_agent.sql", "utf8"));
+  assert.equal(
+    BOOKING_AGENT_SCHEMA,
+    (await readFile("migrations/0017_bitrix_agent.sql", "utf8")).replace(/\r\n/g, "\n"),
+  );
   const pg = new PGlite();
   await pg.exec(
     "create table bookings(id serial primary key); create table shop_settings(shop_id text primary key)",
