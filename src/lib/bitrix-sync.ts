@@ -273,21 +273,19 @@ async function saveProgress(sql: Sql, bookingId: number, patch: Partial<QueuePro
     where id=${bookingId} and shop_id=${SHOP}`;
 }
 
-async function findContact(
+export async function findContact(
   request: BitrixCall,
   email: string | null,
   phone: string,
 ): Promise<{ id: number } | null> {
   if (email) {
-    try {
-      const found = await request<{ id: number }[]>("POST", "/contacts/search", {
-        filter: { email },
-        limit: 5,
-      });
-      if (found?.[0]?.id) return found[0];
-    } catch {
-      /* search is best-effort */
-    }
+    const found = await request<{ id: number }[]>("POST", "/contacts/search", {
+      filter: { email: email.trim() },
+      limit: 5,
+    });
+    // A shared phone is not permission to send documents to another email.
+    // Search failures must remain retryable rather than creating duplicates.
+    return found?.[0]?.id ? found[0] : null;
   }
   if (phone) {
     try {
@@ -301,6 +299,48 @@ async function findContact(
     }
   }
   return null;
+}
+
+export async function repairBookingContact(sql: Sql, bookingId: number, request: BitrixCall) {
+  const [booking] =
+    await sql<BitrixBooking>`select * from bookings where shop_id=${SHOP} and id=${bookingId}`;
+  if (!booking?.email || !booking.bitrix_deal_id)
+    throw new Error("Keine Buchungs-E-Mail oder kein verknüpfter Bitrix-Auftrag vorhanden.");
+  const claimed = await sql<{ booking_id: number }>`update bitrix_sync_queue
+    set write_pending='contact_repair',updated_at=now()
+    where shop_id=${SHOP} and booking_id=${bookingId} and status='synced' and write_pending is null
+    returning booking_id`;
+  if (!claimed.length)
+    throw new Error(
+      "Übertragung läuft oder benötigt Prüfung. Kontaktabgleich später erneut starten.",
+    );
+  let creating = false;
+  try {
+    let contact = await findContact(request, booking.email, booking.phone);
+    if (!contact) {
+      creating = true;
+      contact = await request<{ id: number }>("POST", "/contacts", {
+        ...splitCustomerName(booking.customer_name),
+        email: booking.email,
+        phone: booking.phone,
+        sourceId: "WEB",
+        typeId: "CLIENT",
+        opened: true,
+      });
+    }
+    // Persist the selected contact before the idempotent relationship update.
+    await saveProgress(sql, bookingId, { bitrix_contact_id: contact.id });
+    creating = false;
+    await request("PATCH", `/deals/${booking.bitrix_deal_id}`, { contactId: contact.id });
+    return { contactId: contact.id, email: booking.email };
+  } catch (error) {
+    if (creating) {
+      await sql`update bitrix_sync_queue set status='review',last_error='Kontaktanlage unklar. Vor Wiederholung extern prüfen.' where booking_id=${bookingId} and shop_id=${SHOP}`;
+    } else {
+      await sql`update bitrix_sync_queue set write_pending=null where booking_id=${bookingId} and shop_id=${SHOP}`;
+    }
+    throw error;
+  }
 }
 
 async function attachProducts(

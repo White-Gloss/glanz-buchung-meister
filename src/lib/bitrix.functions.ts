@@ -6,11 +6,25 @@ import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
-import { probeBitrix, vibeApiKey } from "@/lib/bitrix";
+import { createBitrixClient, probeBitrix, vibeApiKey } from "@/lib/bitrix";
 import { readVibeApiKey } from "@/lib/bitrix-credentials.server";
-import { ensureBitrixSchema, runBitrixSync } from "@/lib/bitrix-sync";
+import { ensureBitrixSchema, repairBookingContact, runBitrixSync } from "@/lib/bitrix-sync";
 
 const SHOP = "white-gloss";
+
+export const repairBitrixContact = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
+  .handler(async ({ data, context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der Inhaber darf Kontakte abgleichen.");
+    await ensureBitrixSchema(sql);
+    const key = await readVibeApiKey(sql);
+    if (!key) throw new Error("Bitrix-Verbindung fehlt.");
+    return repairBookingContact(sql, data.bookingId, createBitrixClient(key));
+  });
 
 export const bitrixStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
@@ -89,6 +103,7 @@ export const runBitrixNow = createServerFn({ method: "POST" })
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf Bitrix-Übertragungen anstoßen.");
-    if (!(await readVibeApiKey(sql))) throw new Error("Bitte zuerst den Bitrix-Schlüssel speichern.");
+    if (!(await readVibeApiKey(sql)))
+      throw new Error("Bitte zuerst den Bitrix-Schlüssel speichern.");
     return runBitrixSync(sql, { limit: 8 });
   });

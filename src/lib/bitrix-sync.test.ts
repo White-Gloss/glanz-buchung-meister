@@ -6,6 +6,8 @@ import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
 import {
   ensureCalendar,
+  findContact,
+  repairBookingContact,
   bookingDealBody,
   bookingLineItems,
   queueBitrixBooking,
@@ -20,6 +22,38 @@ import {
   toRestDealFields,
 } from "./bitrix-rest.ts";
 import { readVibeApiKey } from "./bitrix-credentials.server.ts";
+
+test("booking email must not fall back to a different email sharing the phone", async () => {
+  const api = mockBitrix();
+  api.contacts.push({ id: 414, email: "office@example.invalid", phone: "+4900000011" });
+  assert.equal(await findContact(api.request, "customer@example.invalid", "+4900000011"), null);
+  assert.deepEqual(api.contacts, [
+    { id: 414, email: "office@example.invalid", phone: "+4900000011" },
+  ]);
+});
+
+test("contact lookup preserves matching email and phone-only bookings", async () => {
+  const api = mockBitrix();
+  api.contacts.push({ id: 414, email: "customer@example.invalid", phone: "+4900000011" });
+  assert.equal(
+    (await findContact(api.request, "customer@example.invalid", "+4900000011"))?.id,
+    414,
+  );
+  assert.equal((await findContact(api.request, null, "+4900000011"))?.id, 414);
+});
+
+test("email search failure is not treated as a missing contact", async () => {
+  await assert.rejects(
+    findContact(
+      async () => {
+        throw new Error("unavailable");
+      },
+      "customer@example.invalid",
+      "+4900000011",
+    ),
+    /unavailable/,
+  );
+});
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
@@ -67,6 +101,7 @@ function mockBitrix() {
       return created as T;
     }
     if (method === "PATCH" && path.startsWith("/deals/")) {
+      Object.assign(deals.find((deal) => deal.id === Number(path.split("/")[2])) || {}, payload);
       return { ok: true } as T;
     }
     if (method === "PUT" && path.endsWith("/products")) {
@@ -167,6 +202,21 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
   assert.ok(
     api.calls.filter((call) => call.endsWith("/products")).every((call) => call.startsWith("PUT ")),
   );
+  api.contacts[0].email = "office@example.invalid";
+  api.deals[0].stageId = "PREPAYMENT_INVOICE";
+  const preservedRows = structuredClone(api.products);
+  const repaired = await repairBookingContact(sql, row.id, api.request);
+  assert.equal(repaired.contactId, 2);
+  assert.equal(api.contacts[0].email, "office@example.invalid");
+  assert.equal(api.deals[0].contactId, 2);
+  assert.equal(api.deals[0].stageId, "PREPAYMENT_INVOICE");
+  assert.deepEqual(api.products, preservedRows);
+  const [stored] = await sql<{
+    bitrix_contact_id: number;
+  }>`select bitrix_contact_id from bookings where id=${row.id}`;
+  assert.equal(stored.bitrix_contact_id, 2);
+  assert.equal((await repairBookingContact(sql, row.id, api.request)).contactId, 2);
+  assert.equal(api.contacts.length, 2);
   await pg.close();
 });
 
