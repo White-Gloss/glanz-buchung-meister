@@ -1,9 +1,10 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   cities,
   depositConfig,
   extras,
+  extraIncluded,
   packages,
   pickupPriceText,
   quoteTotal,
@@ -18,43 +19,91 @@ import { eur } from "@/lib/utils";
 import { bookingFormErrors } from "@/lib/public-form-validation";
 import { queueBookingConversion } from "@/lib/googleTag";
 import { bookingRequestId } from "@/lib/booking-request-id";
+import { applyBookingSelection } from "@/lib/booking-selection";
 import { usePublicFormErrors } from "./public-form-feedback";
 import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
+import { useBookingDraft, clearBookingDraft, appliedBookingEntries } from "./booking-draft";
 import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/zoho-time";
 
-export function Configurator({ initialPackage = "premium" }: { initialPackage?: PackageId }) {
+export function Configurator({
+  initialPackage,
+  initialCity,
+}: {
+  initialPackage?: PackageId;
+  initialCity?: string;
+}) {
   const navigate = useNavigate();
-  const [packageId, setPackageId] = useState<PackageId>(initialPackage);
-  useEffect(() => {
-    setPackageId(initialPackage);
-  }, [initialPackage]);
-  const [classId, setClassId] = useState<VehicleClass["id"]>("kompakt");
-  const [extraIds, setExtraIds] = useState<string[]>([]);
-  const [citySlug, setCitySlug] = useState("horb-am-neckar");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [date, setDate] = useState("");
-  const [slot, setSlot] = useState("");
-  const [note, setNote] = useState("");
-  const [vehicleMake, setVehicleMake] = useState("");
-  const [vehicleModel, setVehicleModel] = useState("");
-  const [vehiclePlate, setVehiclePlate] = useState("");
+  const entryKey = useRouterState({
+    select: (state) => state.location.state.__TSR_key ?? state.location.href,
+  });
+  const [packageId, setPackageId] = useBookingDraft<PackageId>(
+    "packageId",
+    initialPackage ?? "premium",
+  );
+  const [step, setStep] = useState(1);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  function changeStep(next: number) {
+    setStep(next);
+    window.requestAnimationFrame(() => {
+      stepHeading.current?.focus({ preventScroll: true });
+      stepHeading.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    });
+  }
+  const [classId, setClassId] = useBookingDraft<VehicleClass["id"]>("classId", "kompakt");
+  const [extraIds, setExtraIds] = useBookingDraft<string[]>("extraIds", []);
+  const [citySlug, setCitySlug] = useBookingDraft("citySlug", initialCity ?? "horb-am-neckar");
+  const [name, setName] = useBookingDraft("name", "");
+  const [phone, setPhone] = useBookingDraft("phone", "");
+  const [email, setEmail] = useBookingDraft("email", "");
+  const [date, setDate] = useBookingDraft("date", "");
+  const [slot, setSlot] = useBookingDraft("slot", "");
+  const [note, setNote] = useBookingDraft("note", "");
+  const [vehicleMake, setVehicleMake] = useBookingDraft("vehicleMake", "");
+  const [vehicleModel, setVehicleModel] = useBookingDraft("vehicleModel", "");
+  const [vehiclePlate, setVehiclePlate] = useBookingDraft("vehiclePlate", "");
   const [busyWindows, setBusyWindows] = useState<{ start: string; end: string }[]>([]);
   const [availabilityState, setAvailabilityState] = useState<"loading" | "ready" | "error">(
     "loading",
   );
-  const [privacy, setPrivacy] = useState(false);
+  const [privacy, setPrivacy] = useBookingDraft("privacy", false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const submitting = useRef(false);
-  const [media, setMedia] = useState<File[]>([]);
+  const [media, setMedia] = useBookingDraft<File[]>("media", []);
   const [savedReference, setSavedReference] = useState<string | null>(null);
   const saved = useRef<{ reference: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState("");
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
+
+  useEffect(() => {
+    if (appliedBookingEntries.has(entryKey) || pending || savedReference) return;
+    appliedBookingEntries.add(entryKey);
+    const selection = applyBookingSelection(
+      { packageId, citySlug },
+      { paket: initialPackage, ort: initialCity },
+    );
+    setPackageId(selection.packageId);
+    setCitySlug(selection.citySlug);
+  }, [
+    entryKey,
+    initialPackage,
+    initialCity,
+    packageId,
+    citySlug,
+    pending,
+    savedReference,
+    setPackageId,
+    setCitySlug,
+  ]);
+
+  useEffect(() => {
+    setExtraIds((current) => {
+      const remaining = current.filter((id) => !extraIncluded(packageId, id));
+      return remaining.length === current.length ? current : remaining;
+    });
+  }, [packageId, setExtraIds]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,12 +146,17 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
   );
 
   function toggleExtra(id: string) {
+    if (extraIncluded(packageId, id)) return;
     setExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting.current) return;
+    if (step < 3) {
+      changeStep(step + 1);
+      return;
+    }
     setError("");
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const errors = saved.current
@@ -138,7 +192,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             note,
             packageId,
             classId,
-            extraIds,
+            extraIds: extraIds.filter((id) => !extraIncluded(packageId, id)),
             citySlug,
             vehicleMake: vehicleMake.trim() || undefined,
             vehicleModel: vehicleModel.trim() || undefined,
@@ -166,6 +220,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         setMedia([...remaining]);
       }
       setUploadProgress("");
+      clearBookingDraft();
       await navigate({
         to: "/danke",
         search: {
@@ -192,9 +247,38 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
       data-hide-whatsapp
       aria-labelledby="buchung-heading"
       aria-label="Unverbindliche Terminanfrage"
-      className="gd-form"
+      className="booking-flow"
     >
-      <div className="ga-fields space-y-8">
+      <nav aria-label="Schritte der Terminanfrage" className="booking-steps">
+        {["Fahrzeug & Paket", "Extras & Abholung", "Kontakt & Anfrage"].map((label, index) => (
+          <button
+            key={label}
+            type="button"
+            aria-current={step === index + 1 ? "step" : undefined}
+            disabled={pending || savedReference !== null}
+            onClick={() => changeStep(index + 1)}
+          >
+            <span aria-hidden="true">{index + 1}.</span> {label}
+          </button>
+        ))}
+      </nav>
+      <div className="booking-price" aria-live="polite" aria-atomic="true">
+        <span>
+          Voraussichtlicher Gesamtpreis
+          {quote.pickupOnRequest ? " zzgl. Abholung nach Absprache" : ""}
+          <small> inkl. MwSt.</small>
+        </span>
+        <strong>{eur(quote.total)}</strong>
+      </div>
+      <h3
+        ref={stepHeading}
+        tabIndex={-1}
+        className="font-display text-2xl"
+        style={{ scrollMarginTop: "6rem" }}
+      >
+        {step === 1 ? "Fahrzeug & Paket" : step === 2 ? "Extras & Abholung" : "Kontakt & Anfrage"}
+      </h3>
+      <div hidden={step !== 1} className="space-y-8">
         <fieldset>
           <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Paket</legend>
           <div className="mt-3 flex flex-col gap-3">
@@ -258,50 +342,64 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             ))}
           </div>
         </fieldset>
-
-        <fieldset>
-          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">
-            Zusatzleistungen
-          </legend>
-          {(["pflege", "reparatur"] as const).map((group) => (
-            <div key={group} className="mt-4">
-              <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">
-                {group === "pflege" ? "Pflege" : "Reparatur"}
-              </p>
-              <div className="mt-2 grid gap-2">
-                {extras
-                  .filter((ex) => ex.group === group)
-                  .map((ex) => (
-                    <label
-                      key={ex.id}
-                      className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3"
-                    >
-                      <span className="flex min-w-0 items-start">
-                        <input
-                          disabled={pending || savedReference !== null}
-                          id={`extra-${ex.id}`}
-                          type="checkbox"
-                          className="mt-1 mr-3"
-                          checked={extraIds.includes(ex.id)}
-                          onChange={() => toggleExtra(ex.id)}
-                        />
-                        <span>
-                          <span className="block text-sm text-fg">{ex.name}</span>
-                          <span className="mt-0.5 block text-xs text-subtle">
-                            {ex.hint}
-                            {ex.inspect ? " · nach Prüfung" : ""}
+      </div>
+      <div hidden={step !== 2} className="space-y-6">
+        <details className="booking-extras" open={extraIds.length > 0 ? true : undefined}>
+          <summary>
+            Zusatzleistungen (optional){extraIds.length ? ` · ${extraIds.length} ausgewählt` : ""}
+          </summary>
+          <fieldset className="mt-4">
+            <legend className="sr-only">Zusatzleistungen</legend>
+            {(["pflege", "reparatur"] as const).map((group) => (
+              <div key={group} className="mt-4">
+                <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">
+                  {group === "pflege" ? "Pflege" : "Reparatur"}
+                </p>
+                <div className="mt-2 grid gap-2">
+                  {extras
+                    .filter((ex) => ex.group === group)
+                    .map((ex) => (
+                      <label
+                        key={ex.id}
+                        className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3"
+                      >
+                        <span className="flex min-w-0 items-start">
+                          <input
+                            disabled={
+                              pending || savedReference !== null || extraIncluded(packageId, ex.id)
+                            }
+                            id={`extra-${ex.id}`}
+                            type="checkbox"
+                            className="mt-1 mr-3"
+                            checked={extraIds.includes(ex.id) || extraIncluded(packageId, ex.id)}
+                            onChange={() => toggleExtra(ex.id)}
+                          />
+                          <span>
+                            <span className="block text-sm text-fg">{ex.name}</span>
+                            <span className="mt-0.5 block text-xs text-subtle">
+                              {ex.hint}
+                              {packageId === "keramik" && ex.id === "felgen"
+                                ? " · Felgenversiegelung ist im Paket enthalten; dieses Extra umfasst zusätzlich die Demontage und Tiefenreinigung."
+                                : ""}
+                              {packageId === "keramik" && ex.id === "leder"
+                                ? " · Lederpflege ist im Paket enthalten. Einen darüber hinausgehenden Aufwand stimmen wir nach der Begutachtung mit Ihnen ab."
+                                : ""}
+                              {ex.inspect ? " · nach Prüfung" : ""}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                      <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
-                        ab {eur(ex.price)}
-                      </span>
-                    </label>
-                  ))}
+                        <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
+                          {extraIncluded(packageId, ex.id)
+                            ? "Im Paket enthalten"
+                            : `ab ${eur(ex.price)}`}
+                        </span>
+                      </label>
+                    ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </fieldset>
+            ))}
+          </fieldset>
+        </details>
 
         <Field tone="public" id="city" label="Abholort">
           <select
@@ -320,7 +418,10 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         </Field>
       </div>
 
-      <div className="ga-quote h-fit space-y-5 rounded-card border border-line bg-elevated p-5">
+      <div
+        hidden={step !== 3}
+        className="space-y-5 rounded-card border border-line bg-elevated p-5"
+      >
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">Unverbindliche Anfrage</p>
         <p className="font-display text-3xl text-fg" aria-live="polite">
           {eur(quote.total)}
@@ -340,7 +441,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
           {depositConfig.label}: {depositConfig.note}
         </p>
-        <Field tone="public" id="name" label="Name">
+        <Field tone="public" id="name" label="Name (Pflichtfeld)">
           <input
             disabled={pending || savedReference !== null}
             id="name"
@@ -356,7 +457,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           />
           {fieldError("name")}
         </Field>
-        <Field tone="public" id="phone" label="Telefon">
+        <Field tone="public" id="phone" label="Telefon (Pflichtfeld)">
           <input
             disabled={pending || savedReference !== null}
             id="phone"
@@ -389,37 +490,44 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
           />
           {fieldError("email")}
         </Field>
-        <Field tone="public" id="vehicleMake" label="Fahrzeugmarke (optional)">
-          <input
-            disabled={pending || savedReference !== null}
-            id="vehicleMake"
-            className={inputLine}
-            maxLength={80}
-            value={vehicleMake}
-            onChange={(e) => setVehicleMake(e.target.value)}
-          />
-        </Field>
-        <Field tone="public" id="vehicleModel" label="Fahrzeugmodell (optional)">
-          <input
-            disabled={pending || savedReference !== null}
-            id="vehicleModel"
-            className={inputLine}
-            maxLength={80}
-            value={vehicleModel}
-            onChange={(e) => setVehicleModel(e.target.value)}
-          />
-        </Field>
-        <Field tone="public" id="vehiclePlate" label="Kennzeichen (optional)">
-          <input
-            disabled={pending || savedReference !== null}
-            id="vehiclePlate"
-            className={inputLine}
-            maxLength={20}
-            autoComplete="off"
-            value={vehiclePlate}
-            onChange={(e) => setVehiclePlate(e.target.value)}
-          />
-        </Field>
+        <details>
+          <summary className="min-h-11 cursor-pointer py-3">
+            Weitere Fahrzeugangaben (optional)
+          </summary>
+          <div className="space-y-5">
+            <Field tone="public" id="vehicleMake" label="Fahrzeugmarke (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehicleMake"
+                className={inputLine}
+                maxLength={80}
+                value={vehicleMake}
+                onChange={(e) => setVehicleMake(e.target.value)}
+              />
+            </Field>
+            <Field tone="public" id="vehicleModel" label="Fahrzeugmodell (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehicleModel"
+                className={inputLine}
+                maxLength={80}
+                value={vehicleModel}
+                onChange={(e) => setVehicleModel(e.target.value)}
+              />
+            </Field>
+            <Field tone="public" id="vehiclePlate" label="Kennzeichen (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehiclePlate"
+                className={inputLine}
+                maxLength={20}
+                autoComplete="off"
+                value={vehiclePlate}
+                onChange={(e) => setVehiclePlate(e.target.value)}
+              />
+            </Field>
+          </div>
+        </details>
         <Field tone="public" id="date" label="Wunschtermin (optional)">
           <input
             disabled={pending || savedReference !== null}
@@ -501,6 +609,42 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             Anfrage {savedReference} gespeichert. Noch keine Terminzusage.
           </p>
         ) : null}
+        <section aria-label="Zusammenfassung Ihrer Anfrage" className="border-y border-line py-5">
+          <h4 className="text-lg font-medium">Ihre Anfrage im Überblick</h4>
+          <dl className="booking-summary mt-3 text-sm">
+            <dt>Paket · {quote.klass.label}</dt>
+            <dd>
+              {quote.pack.name} · {eur(quote.pack.price * quote.klass.factor)}
+            </dd>
+            {extras
+              .filter((ex) => extraIds.includes(ex.id) && !extraIncluded(packageId, ex.id))
+              .map((ex) => (
+                <div key={ex.id}>
+                  <dt>{ex.name}</dt>
+                  <dd>{eur(ex.price * quote.klass.factor)}</dd>
+                </div>
+              ))}
+            <dt>Abholung · {quote.city?.name}</dt>
+            <dd>{quote.pickupOnRequest ? "Preis nach Absprache" : eur(quote.pickup ?? 0)}</dd>
+            <dt>Gesamtpreis (voraussichtlich)</dt>
+            <dd>
+              {eur(quote.total)}
+              {quote.pickupOnRequest ? " zzgl. Abholung" : ""}
+            </dd>
+            <dt>Kontakt</dt>
+            <dd>
+              {name || "Bitte Namen ergänzen"} · {phone || "Bitte Telefon ergänzen"}
+              {email ? ` · ${email}` : ""}
+            </dd>
+            <dt>Wunschtermin</dt>
+            <dd>
+              {date || "Nach Absprache"}
+              {slot ? ` · ${slot} Uhr` : ""}
+            </dd>
+            <dt>Aufnahmen</dt>
+            <dd>{media.length} ausgewählt</dd>
+          </dl>
+        </section>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input
             disabled={pending || savedReference !== null}
@@ -517,7 +661,7 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
             <Link to="/datenschutz" className="underline hover:text-fg">
               Datenschutzerklärung
             </Link>{" "}
-            zur Kenntnis genommen. Die Anfrage ist unverbindlich.{" "}
+            zur Kenntnis genommen (Pflichtfeld). Die Anfrage ist unverbindlich.{" "}
             <Link to="/agb" className="underline hover:text-fg">
               AGB
             </Link>{" "}
@@ -573,6 +717,26 @@ export function Configurator({ initialPackage = "premium" }: { initialPackage?: 
         >
           Oder per WhatsApp schreiben
         </a>
+      </div>
+      <div className="flex flex-wrap justify-between gap-3">
+        {step > 1 && !savedReference ? (
+          <Button
+            tone="public"
+            variant="line"
+            type="button"
+            disabled={pending}
+            onClick={() => changeStep(step - 1)}
+          >
+            Zurück
+          </Button>
+        ) : (
+          <span />
+        )}
+        {step < 3 ? (
+          <Button tone="public" type="button" onClick={() => changeStep(step + 1)}>
+            Weiter zu {step === 1 ? "Extras & Abholung" : "Kontakt & Anfrage"}
+          </Button>
+        ) : null}
       </div>
     </form>
   );

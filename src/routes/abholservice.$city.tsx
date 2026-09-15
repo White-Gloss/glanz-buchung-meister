@@ -12,8 +12,8 @@ export const Route = createFileRoute("/abholservice/$city")({
   },
   head: ({ loaderData }) =>
     pageHead({
-      title: `Fahrzeugaufbereitung ${loaderData?.name ?? ""} | ${site.name}`,
-      description: `Fahrzeugaufbereitung in ${loaderData?.name ?? ""}: Innenraum, Lack und Keramik. Abholung an Ihrer Adresse, Arbeit in Horb am Neckar. ${loaderData?.blurb ?? ""}`.slice(0, 160),
+      title: `Hol- und Bringservice ${loaderData?.name ?? ""} | ${site.name}`,
+      description: `Hol- und Bringservice aus ${loaderData?.name ?? ""}: Wir holen Ihr Fahrzeug zur Aufbereitung in unserer Werkstatt in Horb am Neckar ab. Preise und Ablauf.`,
       path: `/abholservice/${loaderData?.slug ?? ""}`,
       preloadHero: true,
     }),

@@ -107,12 +107,7 @@
    Link-Unterstriche. Als Text-Verlauf höchstens eine Zahl oder ein Wort je
    Sektion, nie ganze Headlines und nie Fließtext. */
 :root {
-  --chrome-gradient: linear-gradient(
-    135deg,
-    #ffffff 0%,
-    #e8e8e8 42%,
-    #c0c0c0 100%
-  );
+  --chrome-gradient: linear-gradient(135deg, #ffffff 0%, #e8e8e8 42%, #c0c0c0 100%);
   --chrome-solid: #ffffff;
 
   --chrome-line: linear-gradient(
@@ -1990,8 +1985,145 @@
 }
 
 /* German service names must wrap inside narrow cards and navigation columns. */
-[data-shell="public"] :is(h1, h2, h3, .heading-page, .heading-2, .heading-3, .ga-pack-copy, .ga-fields label, .ga-quote, nav a) {
+[data-shell="public"]
+  :is(
+    h1,
+    h2,
+    h3,
+    .heading-page,
+    .heading-2,
+    .heading-3,
+    .ga-pack-copy,
+    .ga-fields label,
+    .ga-quote,
+    nav a
+  ) {
   overflow-wrap: anywhere;
   hyphens: auto;
 }
-[data-shell="public"] .ga-fields label > span { min-width: 0; }
+[data-shell="public"] .ga-fields label > span {
+  min-width: 0;
+}
+
+/* Focused homepage entry and request flow. The price stays in document flow so
+   the mobile keyboard and controls never have to compete with a bottom bar. */
+.hero-intro {
+  min-height: auto;
+}
+.hero-intro .hero-stage-copy {
+  min-height: min(42rem, 85svh);
+  z-index: 4;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+main > .hero-intro + .hero-follow {
+  margin-top: 0;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+.hero-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.hero-intro .hero-stage-veil {
+  background: linear-gradient(#0009, #0008 55%, #000);
+}
+.booking-flow {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 56rem;
+  margin-inline: auto;
+}
+.booking-flow [hidden] {
+  display: none !important;
+}
+.booking-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.booking-steps button {
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 2px solid var(--color-subtle);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-align: left;
+}
+.booking-steps button[aria-current="step"] {
+  border-color: var(--color-fg);
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.booking-price {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-subtle);
+}
+.booking-price span {
+  max-width: 25rem;
+  font-size: 0.875rem;
+}
+.booking-price small {
+  display: block;
+}
+.booking-price strong {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+}
+.booking-extras summary {
+  cursor: pointer;
+  min-height: 3rem;
+  padding: 1rem;
+  border: 1px solid var(--color-subtle);
+}
+.booking-flow input:not([type="checkbox"]):not([type="radio"]),
+.booking-flow select,
+.booking-flow textarea {
+  font-size: 1rem;
+  max-width: 100%;
+}
+.booking-flow :is(input, select, textarea) {
+  accent-color: var(--color-fg);
+}
+.booking-flow :focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 4px;
+}
+.booking-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 0.75rem 1rem;
+}
+.booking-summary > div {
+  display: contents;
+}
+.booking-summary dt {
+  color: var(--color-muted);
+}
+.booking-summary dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 639px) {
+  .hero-intro .hero-stage-copy {
+    min-height: auto;
+    padding-top: 7rem;
+    padding-bottom: 5rem;
+  }
+  .booking-steps button {
+    font-size: 0.8rem;
+  }
+  .booking-steps button span {
+    display: block;
+  }
+}

@@ -107,7 +107,7 @@ export const packages: Package[] = [
     kicker: "Handwäsche und Innenraumreinigung",
     name: "Basisreinigung",
     searchLabel: "Reinigung innen und außen",
-    seoName: "Fahrzeugaufbereitung Pur – Innenraumreinigung in Horb am Neckar",
+    seoName: "Basisreinigung – Innenraum- und Außenreinigung in Horb am Neckar",
     body: "Das Paket Basisreinigung umfasst eine Handwäsche sowie die Reinigung von Innenraum, Felgen, Reifen und Scheiben. Eine Sprühversiegelung ergänzt die Pflege. Eine Lackpolitur ist nicht enthalten. Ab 149 € inkl. MwSt., Dauer ca. 3 Std.",
     price: 149,
     duration: "ca. 3 Std.",
@@ -124,7 +124,7 @@ export const packages: Package[] = [
     kicker: "Innenraum-Tiefenreinigung und einstufige Lackpolitur",
     name: "Reinigung & Politur",
     searchLabel: "Reinigung und Lackpflege",
-    seoName: "Fahrzeugaufbereitung Signature – Lackpolitur und Innenraumreinigung Horb",
+    seoName: "Reinigung & Politur – Lackpolitur und Innenraumreinigung Horb",
     body: "Das Paket Reinigung & Politur ergänzt die Basisreinigung um eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend schützt Wachs den Lack. Ab 349 € inkl. MwSt., Dauer ca. 6 Std.",
     price: 349,
     duration: "ca. 6 Std.",
@@ -142,7 +142,7 @@ export const packages: Package[] = [
     kicker: "Mehrstufige Lackkorrektur und Keramikversiegelung",
     name: "Keramikschutz",
     searchLabel: "Lackkorrektur und Versiegelung",
-    seoName: "Keramikversiegelung Auto Horb – Paket Keramik inkl. Lackkorrektur",
+    seoName: "Keramikschutz – Keramikversiegelung inkl. Lackkorrektur in Horb",
     body: "Das Paket Keramikschutz umfasst zusätzlich eine mehrstufige Lackkorrektur und Keramikversiegelung. Glas- und Felgenversiegelung, Lederpflege sowie der Hol- und Bringservice bis 60 km sind enthalten. Die Haltbarkeit der Beschichtung richtet sich nach dem Produkt. Ab 899 € inkl. MwSt., Dauer ca. 2 Tage.",
     price: 899,
     duration: "ca. 2 Tage",
@@ -178,7 +178,7 @@ export function parsePackageSearch(raw: unknown): PackageId | undefined {
   const key = String(raw ?? "")
     .trim()
     .toLowerCase();
-  return packageSearchAlias[key];
+  return Object.hasOwn(packageSearchAlias, key) ? packageSearchAlias[key] : undefined;
 }
 
 export const packageServiceSlug: Record<PackageId, string> = {
@@ -454,6 +454,10 @@ export function pickupKeramikNote(): string {
   return `Im Paket Keramikschutz ist die Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
 }
 
+export function extraIncluded(packageId: PackageId, extraId: string) {
+  return packageId === "keramik" && (extraId === "glas" || extraId === "leder");
+}
+
 export function quoteTotal(opts: {
   packageId: PackageId;
   classId: VehicleClass["id"];
@@ -463,7 +467,7 @@ export function quoteTotal(opts: {
   const pack = packages.find((p) => p.id === opts.packageId)!;
   const klass = vehicleClasses.find((c) => c.id === opts.classId)!;
   const extrasSum = extras
-    .filter((e) => opts.extraIds.includes(e.id))
+    .filter((e) => opts.extraIds.includes(e.id) && !extraIncluded(opts.packageId, e.id))
     .reduce((s, e) => s + e.price, 0);
   const city = opts.citySlug ? cities.find((c) => c.slug === opts.citySlug) : undefined;
   const pickup = city ? pickupFee(city.km, opts.packageId) : opts.citySlug ? null : 0;
@@ -482,7 +486,7 @@ export function quoteTotal(opts: {
 }
 
 export type ServicePage = {
-  /** Existing search title label; kept stable while visible labels are edited. */
+  /** Descriptive service label used consistently in local landing pages. */
   seoNav: string;
   slug: string;
   title: string;
@@ -504,10 +508,10 @@ export type ServicePage = {
 export const services: ServicePage[] = [
   {
     slug: "fahrzeugaufbereitung",
-    seoNav: "Signature Finish",
+    seoNav: "Fahrzeugaufbereitung",
     title: "Fahrzeugaufbereitung in Horb am Neckar",
     nav: "Fahrzeugaufbereitung",
-    metaTitle: "Fahrzeugaufbereitung Horb am Neckar | White Gloss",
+    metaTitle: "Fahrzeugaufbereitung: Leistungen in Horb | White Gloss",
     description:
       "Fahrzeugaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Wir richten uns nach dem Zustand, nicht nach einem Waschstraßenprogramm.",
     teaser: "Handwäsche, Innenraumreinigung und Lackpflege passend zu Ihrem Fahrzeug.",
@@ -546,7 +550,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "innenraumreinigung",
-    seoNav: "Interior Gloss",
+    seoNav: "Innenraumreinigung",
     title: "Innenraumreinigung",
     nav: "Innenraumreinigung",
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
@@ -588,7 +592,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "lackkorrektur",
-    seoNav: "Lackatelier",
+    seoNav: "Lackkorrektur",
     title: "Lackkorrektur",
     nav: "Lackkorrektur",
     metaTitle: "Lackkorrektur & Politur Horb | White Gloss",
@@ -630,7 +634,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "keramikversiegelung",
-    seoNav: "Ceramic Gloss",
+    seoNav: "Keramikversiegelung",
     title: "Keramikversiegelung",
     nav: "Keramikversiegelung",
     metaTitle: "Keramikversiegelung Auto Horb | White Gloss",
@@ -673,7 +677,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "lederpflege",
-    seoNav: "Lederatelier",
+    seoNav: "Lederpflege",
     title: "Lederpflege",
     nav: "Lederpflege",
     metaTitle: "Auto-Lederpflege Horb am Neckar | White Gloss",
@@ -697,7 +701,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "smart-repair",
-    seoNav: "Paintless Finish",
+    seoNav: "Dellenentfernung",
     title: "Dellenentfernung & Smart Repair",
     nav: "Dellenentfernung",
     metaTitle: "Dellenentfernung & Hagelschaden Horb | White Gloss",
@@ -720,7 +724,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "leasingrueckgabe",
-    seoNav: "Leasing Gloss",
+    seoNav: "Leasingaufbereitung",
     title: "Leasingrückläufer-Aufbereitung",
     nav: "Leasingaufbereitung",
     metaTitle: "Leasingrückgabe-Aufbereitung Horb | White Gloss",
@@ -745,7 +749,7 @@ export const services: ServicePage[] = [
   {
     // Inhaltlich zu klären: 119 € ist die Textilposition; Lederpositionen beginnen bei 139 €.
     slug: "lederreparatur",
-    seoNav: "Lederrestauration",
+    seoNav: "Lederreparatur",
     title: "Lederreparatur im Auto",
     nav: "Lederreparatur",
     metaTitle: "Lederreparatur Auto Horb – Brandloch, Riss, Loch | White Gloss",
@@ -794,7 +798,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "geruchsneutralisation",
-    seoNav: "Air Pure",
+    seoNav: "Geruchsbehandlung mit Ozon",
     title: "Geruchsneutralisation mit Ozon",
     nav: "Geruchsbehandlung mit Ozon",
     metaTitle: "Geruchsneutralisation Auto Ozon Horb | White Gloss",
@@ -818,7 +822,7 @@ export const services: ServicePage[] = [
   },
   {
     slug: "scheinwerferaufbereitung",
-    seoNav: "Lichtklar",
+    seoNav: "Scheinwerferaufbereitung",
     title: "Scheinwerferaufbereitung",
     nav: "Scheinwerferaufbereitung",
     metaTitle: "Scheinwerfer aufbereiten Horb am Neckar | White Gloss",

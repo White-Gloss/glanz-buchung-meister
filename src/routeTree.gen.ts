@@ -54,6 +54,7 @@ import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
 import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-cron'
 import { Route as ApiAvailabilityRouteImport } from './routes/api.availability'
 import { Route as ApiBitrixWorkshopRouteImport } from './routes/api/bitrix-workshop'
+import { Route as ApiGoogleReviewsRouteImport } from './routes/api.google-reviews'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
@@ -290,6 +291,11 @@ const ApiBitrixWorkshopRoute = ApiBitrixWorkshopRouteImport.update({
   path: '/api/bitrix-workshop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGoogleReviewsRoute = ApiGoogleReviewsRouteImport.update({
+  id: '/api/google-reviews',
+  path: '/api/google-reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
+  '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -438,6 +445,7 @@ export interface FileRoutesByTo {
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
+  '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -495,6 +503,7 @@ export interface FileRoutesById {
   '/api/automation-cron': typeof ApiAutomationCronRoute
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
+  '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/api/automation-cron'
     | '/api/availability'
     | '/api/bitrix-workshop'
+    | '/api/google-reviews'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/automation-cron'
     | '/api/availability'
     | '/api/bitrix-workshop'
+    | '/api/google-reviews'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -663,6 +674,7 @@ export interface FileRouteTypes {
     | '/api/automation-cron'
     | '/api/availability'
     | '/api/bitrix-workshop'
+    | '/api/google-reviews'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -704,6 +716,7 @@ export interface RootRouteChildren {
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiAvailabilityRoute: typeof ApiAvailabilityRoute
   ApiBitrixWorkshopRoute: typeof ApiBitrixWorkshopRoute
+  ApiGoogleReviewsRoute: typeof ApiGoogleReviewsRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
@@ -1027,6 +1040,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBitrixWorkshopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/google-reviews': {
+      id: '/api/google-reviews'
+      path: '/api/google-reviews'
+      fullPath: '/api/google-reviews'
+      preLoaderRoute: typeof ApiGoogleReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
@@ -1225,6 +1245,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiAvailabilityRoute: ApiAvailabilityRoute,
   ApiBitrixWorkshopRoute: ApiBitrixWorkshopRoute,
+  ApiGoogleReviewsRoute: ApiGoogleReviewsRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,

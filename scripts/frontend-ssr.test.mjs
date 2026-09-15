@@ -21,8 +21,8 @@ function canonicalLinks(html) {
 test("service index and city routes render distinct content with one canonical", async () => {
   for (const [path, heading] of [
     ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
-    ["/leistungen/keramikversiegelung/nagold", "Ceramic Gloss in Nagold"],
-    ["/leistungen/keramikversiegelung/horb-am-neckar", "Ceramic Gloss in Horb am Neckar"],
+    ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung in Nagold"],
+    ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung in Horb am Neckar"],
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);

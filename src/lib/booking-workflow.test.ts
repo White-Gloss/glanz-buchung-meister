@@ -56,6 +56,21 @@ async function create(sql: Sql, data = input()) {
     .booking;
 }
 
+test("included ceramic services are omitted from stored paid extras", async () => {
+  const { pg, sql } = await database();
+  try {
+    const booking = await create(
+      sql,
+      input({ packageId: "keramik", extraIds: ["glas", "leder", "felgen"] }),
+    );
+    assert.deepEqual(JSON.parse(booking.extra_ids), ["felgen"]);
+    assert.equal(booking.total_cents, 101800);
+    assert.equal(booking.status, "neu");
+  } finally {
+    await pg.close();
+  }
+});
+
 test("owner confirmation excludes general operators, unverified email and preview fallback", () => {
   const env = { OWNER_EMAIL: "owner@example.invalid" };
   assert.equal(isBookingOwner({ id: "u", email: env.OWNER_EMAIL, emailVerified: true }, env), true);

@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CompareSlider } from "@/components/compare-slider";
 import { HeroMedia, Shot } from "@/components/media";
 import { PageCrumbs } from "@/components/page-hero";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
@@ -73,14 +72,13 @@ export function CityLanding({ city }: { city: City }) {
             ]}
           />
           <p className="kicker mt-5">Fahrzeugaufbereitung</p>
-          <h1 className="heading-page mt-4 max-w-4xl">
-            Fahrzeugaufbereitung in {city.name}
-          </h1>
+          <h1 className="heading-page mt-4 max-w-4xl">Hol- und Bringservice in {city.name}</h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            Wir holen Ihr Fahrzeug in {city.name} ab und bereiten es in {site.city} auf. Abholung: {pickup}.
+            Wir holen Ihr Fahrzeug in {city.name} ab und bereiten es in {site.city} auf. Abholung:{" "}
+            {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ paket: "premium" }} className={ctaPrimary}>
+            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
               Termin anfragen
             </Link>
             <a href={wa} className={ctaGhost} target="_blank" rel="noopener noreferrer">
@@ -98,41 +96,40 @@ export function CityLanding({ city }: { city: City }) {
 
       <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6">
         <p className="kicker">Blick in die Arbeit</p>
-        <h2 className="heading-2 mt-4 max-w-2xl">
-          Einblicke in die Aufbereitung
-        </h2>
+        <h2 className="heading-2 mt-4 max-w-2xl">Einblicke in die Aufbereitung</h2>
         <p className="mt-4 max-w-xl text-muted">
-          Zwei Werkstattfotos zum Vergleichen. Das ist kein Kundenauto aus{" "}
-          {city.name} – sondern die Art der Arbeit, die bei uns in Horb passiert.
+          Lackpflege und Dellenbearbeitung: zwei getrennte Einblicke. Die Aufbereitung erfolgt in
+          unserer Werkstatt in Horb.
         </p>
-        <div className="mt-10 max-w-4xl">
-          <CompareSlider
-            city={city.name}
-            beforeAlt={`Lackschaden vor der Aufbereitung, Beispiel aus der Werkstatt – Seite für ${city.name}`}
-            afterAlt={`Lack nach Politur in der Werkstatt Horb, Beispiel für Kunden aus ${city.name}`}
-          />
+        <div className="mt-10 grid gap-6 sm:grid-cols-2">
+          <figure>
+            <Shot name="lack" alt="Poliermaschine auf dem Lack" className="aspect-[3/2]" />
+            <figcaption className="mt-3 text-sm text-muted">Lackpolitur</figcaption>
+          </figure>
+          <figure>
+            <Shot name="dellen" alt="Delle unter Streiflicht" className="aspect-[3/2]" />
+            <figcaption className="mt-3 text-sm text-muted">Dellen unter Prüflicht</figcaption>
+          </figure>
         </div>
       </section>
 
       <section className="cv-auto border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <p className="kicker">Leasing & Verkauf</p>
-          <h2 className="heading-2 mt-4 max-w-3xl">
-            Leasingrückgabe oder Verkauf in {city.name}
-          </h2>
+          <h2 className="heading-2 mt-4 max-w-3xl">Leasingrückgabe oder Verkauf in {city.name}</h2>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            Vor der Leasingrückgabe prüfen wir Innenraum, Felgen und Lack. Wir
-            besprechen, welche Gebrauchsspuren behandelt werden können und welche
-            bleiben. Umfang und Preis richten sich nach dem Fahrzeugzustand.
+            Vor der Leasingrückgabe prüfen wir Innenraum, Felgen und Lack. Wir besprechen, welche
+            Gebrauchsspuren behandelt werden können und welche bleiben. Umfang und Preis richten
+            sich nach dem Fahrzeugzustand.
           </p>
           <ul className="mt-8 max-w-2xl space-y-3 text-sm text-muted">
             <li className="border-l border-line pl-4">
-              Vor dem Verkauf: Reinigung und Lackpflege für ein gepflegtes
-              Erscheinungsbild. Ob eine Versiegelung sinnvoll ist, besprechen wir mit Ihnen.
+              Vor dem Verkauf: Reinigung und Lackpflege für ein gepflegtes Erscheinungsbild. Ob eine
+              Versiegelung sinnvoll ist, besprechen wir mit Ihnen.
             </li>
             <li className="border-l border-line pl-4">
-              Langfristige Pflege: Eine Keramikversiegelung ist vor allem bei weiterer
-              Nutzung des Fahrzeugs sinnvoll. Die Haltbarkeit richtet sich nach dem Produkt.
+              Langfristige Pflege: Eine Keramikversiegelung ist vor allem bei weiterer Nutzung des
+              Fahrzeugs sinnvoll. Die Haltbarkeit richtet sich nach dem Produkt.
             </li>
           </ul>
           <Link
@@ -183,10 +180,9 @@ export function CityLanding({ city }: { city: City }) {
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            Aus {city.name} sind es ca. {city.km} km / {city.minutes} Minuten.
-            Politur und Keramik brauchen gleichmäßiges Licht und sauberes Wasser –
-            das gibt es in der Werkstatt, nicht vor der Haustür. Deshalb holen wir
-            ab: {pickupTierSummary()}.
+            Aus {city.name} sind es ca. {city.km} km / {city.minutes} Minuten. Politur und Keramik
+            brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
+            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.
           </p>
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">
@@ -237,7 +233,7 @@ export function CityLanding({ city }: { city: City }) {
             ))}
           </ul>
           <div className="mt-12 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ paket: "premium" }} className={ctaPrimary}>
+            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
               Termin anfragen
             </Link>
             <Link to="/abholservice" className={ctaGhost}>
@@ -262,12 +258,8 @@ export function CityLanding({ city }: { city: City }) {
         rel="noopener noreferrer"
       >
         <span>
-          <span className="block text-sm font-medium text-fg">
-            Preisschätzung per WhatsApp
-          </span>
-          <span className="block text-xs text-subtle">
-            Fotos zur Ersteinschätzung senden
-          </span>
+          <span className="block text-sm font-medium text-fg">Preisschätzung per WhatsApp</span>
+          <span className="block text-xs text-subtle">Fotos zur Ersteinschätzung senden</span>
         </span>
         <IconMessage className="size-5 shrink-0" aria-hidden />
       </a>

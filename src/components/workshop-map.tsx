@@ -24,28 +24,12 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
             onClick={() => setLive(true)}
             aria-label="Google Maps laden – dabei werden Daten an Google übertragen"
           >
-            <picture>
-              <source
-                type="image/avif"
-                srcSet="/media/map-800.avif 800w, /media/map.avif 1280w"
-                sizes="100vw"
-              />
-              <source
-                type="image/webp"
-                srcSet="/media/map-800.webp 800w, /media/map.webp 1280w"
-                sizes="100vw"
-              />
-              <img
-                src="/media/map-800.webp"
-                alt={`Karte zum Standort ${site.street}, ${site.postalCode} ${site.city}`}
-                width={1280}
-                height={768}
-                className="h-full min-h-[18rem] w-full object-cover sm:min-h-[26rem]"
-                loading="lazy"
-                decoding="async"
-                sizes="100vw"
-              />
-            </picture>
+            <span className="flex min-h-[18rem] flex-col items-center justify-center gap-3 px-6 pb-28 pt-8 text-center sm:min-h-[26rem]">
+              <span className="text-2xl text-fg">Werkstatt in {site.city}</span>
+              <span className="text-sm text-muted">
+                {site.street} · {site.postalCode} {site.city}
+              </span>
+            </span>
             <span className="absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-bg via-bg/70 to-transparent pb-6 pt-16">
               <span className={`${ctaPrimary} mx-3 min-w-0 whitespace-normal text-center`}>
                 Google Maps laden – dabei werden Daten an Google übertragen

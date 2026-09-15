@@ -1,13 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary, PriceLine } from "@/components/ui";
-import {
-  cities,
-  packageServiceSlug,
-  packages,
-  services,
-  site,
-} from "@/data/site";
+import { cities, packageServiceSlug, packages, services, site } from "@/data/site";
+import { serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
 
@@ -28,6 +23,7 @@ export const Route = createFileRoute("/leistungen/$slug/")({
 
 function ServicePage() {
   const s = Route.useLoaderData();
+  const request = serviceBookingSelection(s.slug);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
 
   return (
@@ -44,7 +40,12 @@ function ServicePage() {
           { label: s.nav },
         ]}
         actions={
-          <Link to="/" hash="buchung" className={ctaPrimary}>
+          <Link
+            to={request.leistung ? "/fahrzeug-zustand" : "/"}
+            hash="buchung"
+            search={request}
+            className={ctaPrimary}
+          >
             Termin anfragen
           </Link>
         }
@@ -78,12 +79,7 @@ function ServicePage() {
         {s.priceRows ? (
           <ul className="mt-8 divide-y divide-line border-y border-line">
             {s.priceRows.map((row) => (
-              <PriceLine
-                key={row.name}
-                name={row.name}
-                price={row.price}
-                note={row.note}
-              />
+              <PriceLine key={row.name} name={row.name} price={row.price} note={row.note} />
             ))}
           </ul>
         ) : null}
@@ -91,9 +87,7 @@ function ServicePage() {
           <ol className="mt-12 space-y-8">
             {s.steps.map((st, i) => (
               <li key={st.title} className="border-t border-line pt-6">
-                <p className="font-display text-3xl tracking-tight text-subtle/80">
-                  0{i + 1}
-                </p>
+                <p className="font-display text-3xl tracking-tight text-subtle/80">0{i + 1}</p>
                 <h2 className="mt-2 font-display text-2xl tracking-tight">{st.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{st.text}</p>
               </li>
@@ -105,7 +99,9 @@ function ServicePage() {
             Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration}.
           </p>
         ) : null}
-        <h2 className="mt-16 font-display text-3xl tracking-tight">Hol- und Bringservice nach Stadt</h2>
+        <h2 className="mt-16 font-display text-3xl tracking-tight">
+          Hol- und Bringservice nach Stadt
+        </h2>
         <ul className="mt-6 grid grid-cols-2 gap-x-8 text-sm text-muted">
           {cities.map((c) => (
             <li key={c.slug}>

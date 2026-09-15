@@ -2,10 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PhotoInquiry } from "@/components/photo-inquiry";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { site } from "@/data/site";
+import { parseBookingSelection } from "@/lib/booking-selection";
+import { cities, services, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/fahrzeug-zustand")({
+  validateSearch: parseBookingSelection,
   component: ZustandPage,
   head: () =>
     pageHead({
@@ -18,6 +20,12 @@ export const Route = createFileRoute("/fahrzeug-zustand")({
 });
 
 function ZustandPage() {
+  const { leistung, ort } = Route.useSearch();
+  const service = services.find((s) => s.slug === leistung);
+  const city = cities.find((c) => c.slug === ort);
+  const context = [service?.nav, city ? `Abholung aus ${city.name}` : undefined]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <main id="main-content" tabIndex={-1}>
       <PageHero
@@ -26,10 +34,7 @@ function ZustandPage() {
         kicker="Ersteinschätzung"
         title="Zustand prüfen lassen."
         lead="Wir geben Ihnen eine kostenlose, unverbindliche Ersteinschätzung. Benötigte Fotos stimmen wir mit Ihnen ab."
-        crumbs={[
-          { label: "Startseite", to: "/" },
-          { label: "Zustand prüfen" },
-        ]}
+        crumbs={[{ label: "Startseite", to: "/" }, { label: "Zustand prüfen" }]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
             Termin anfragen
@@ -43,9 +48,9 @@ function ZustandPage() {
           <li>Innenraum: Sitze, Fußräume, Armaturenbrett</li>
           <li>Am besten bei Tageslicht</li>
         </ul>
-        <div className="mt-12">
+        <div id="buchung" className="mt-12">
           <PhotoInquiry
-            title="Ersteinschätzung anfragen"
+            title={context ? `${context} anfragen` : "Ersteinschätzung anfragen"}
             hint="Beschreiben Sie den Zustand Ihres Fahrzeugs oder wählen Sie Aufnahmen zur späteren Zuordnung aus."
           />
         </div>
