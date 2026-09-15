@@ -233,3 +233,29 @@ test("completion and the separate invoice email remain idempotent; cash is tied 
     await pg.close();
   }
 });
+
+test("the confirmed PDF remains readable after completion without creating another email", async () => {
+  const { pg, sql, request } = await fixture();
+  try {
+    const confirmed = await applyBridgeAction(sql, request);
+    const read = { ...request, action: "confirmation" as const, requestId: "read-confirmation-1" };
+    const before = await applyBridgeAction(sql, read);
+    await applyBridgeAction(sql, {
+      ...request,
+      action: "complete",
+      requestId: "complete-for-pdf-1",
+      version: Number(confirmed.version),
+      payment: "ueberweisung",
+    });
+    const after = await applyBridgeAction(sql, { ...read, requestId: "read-confirmation-2" });
+    assert.ok("pdf" in before && typeof before.pdf === "string");
+    assert.ok("pdf" in after);
+    assert.equal(after.pdf, before.pdf);
+    assert.equal(
+      (await sql`select * from outbound_queue where event_key like 'bitrix:confirmation:%'`).length,
+      1,
+    );
+  } finally {
+    await pg.close();
+  }
+});

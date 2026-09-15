@@ -196,8 +196,8 @@ export async function applyBridgeAction(sql: Sql, data: Input) {
     if (data.action === "confirmation") {
       const [mail] = await tx<{
         attachments: { content: string }[];
-      }>`select attachments from outbound_queue where shop_id='white-gloss' and booking_id=${booking.id} and booking_version=${booking.version} and event_type='booking.confirmed' and event_key like 'bitrix:confirmation:%' order by id desc limit 1`;
-      if (!mail?.attachments?.[0]?.content || booking.status !== "bestaetigt")
+      }>`select attachments from outbound_queue where shop_id='white-gloss' and booking_id=${booking.id} and booking_version<=${booking.version} and event_type='booking.confirmed' and event_key like 'bitrix:confirmation:%' order by id desc limit 1`;
+      if (!mail?.attachments?.[0]?.content || !["bestaetigt", "erledigt"].includes(booking.status))
         throw new Error("Keine aktuelle Buchungsbestätigung vorhanden.");
       return { ...result(booking), pdf: mail.attachments[0].content };
     }
