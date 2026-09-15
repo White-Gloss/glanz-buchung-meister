@@ -141,6 +141,41 @@ test("legacy queued and failed messages are quarantined with their original stat
   }
 });
 
+test("missing booking senders are captured before delivery, while general mail keeps its sender", async () => {
+  const { pg, sql } = await database();
+  try {
+    const [booking] = await sql<{
+      id: number;
+    }>`insert into bookings(customer_name,phone,email,package_id,class_id)
+      values('Sender test','+490000123456','customer@example.invalid','basis','kompakt') returning id`;
+    const booked = await enqueue(sql, "legacy-booking", "email", "notification.alert");
+    const general = await enqueue(sql, "general", "email", "notification.alert");
+    await sql`update outbound_queue set booking_id=${booking.id},from_addr=null where id=${booked}`;
+    await sql`update outbound_queue set from_addr=null where id=${general}`;
+    const senders: (string | undefined)[] = [];
+    await runNotificationWorker(sql, {
+      limit: 2,
+      sendEmail: async (input) => {
+        senders.push(input.from);
+        return { id: `fixture-${senders.length}` };
+      },
+    });
+    assert.deepEqual(
+      senders.sort(),
+      ["Fixture <sender@example.invalid>", "White Gloss Detailing <buchung@white-gloss.de>"].sort(),
+    );
+    const rows = await sql<{
+      from_addr: string;
+    }>`select from_addr from outbound_queue where id in (${booked},${general}) order by from_addr`;
+    assert.deepEqual(
+      rows.map((row) => row.from_addr),
+      senders.sort(),
+    );
+  } finally {
+    await pg.close();
+  }
+});
+
 test("overlapping workers claim each message once and record the provider id", async () => {
   const { pg, sql } = await database();
   try {

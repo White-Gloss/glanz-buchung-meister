@@ -10,6 +10,7 @@ import { OUTBOUND_QUEUED, flushOutboundEmailQueue } from "@/lib/ops";
 import { runNotificationWorker, scheduleDueBookingReminders } from "@/lib/notification-worker";
 import { validateWhatsAppConfiguration } from "@/lib/whatsapp-provider";
 import { mailConfigured } from "@/lib/resend-mail";
+import { notificationMailFrom } from "@/lib/booking-notifications";
 import { assertLegacyBillingDisabled, LEXWARE_ONLY } from "@/lib/billing-policy";
 import { lexwareCredentialsFromEnv } from "@/lib/lexware";
 import { requireOperator } from "@/lib/operator";
@@ -162,10 +163,11 @@ export const replyInbox = createServerFn({ method: "POST" })
       const outboundChannel = channel === "telegram" || channel === "whatsapp" ? channel : "email";
       if (outboundChannel !== "email" || isEmailAddress(toAddr)) {
         await sql`
-          insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status)
+          insert into outbound_queue (shop_id, channel, to_addr, subject, body, booking_id, status, from_addr)
           values (
             ${SHOP}, ${outboundChannel},
-            ${toAddr}, ${subject}, ${data.body}, ${original.booking_id}, ${OUTBOUND_QUEUED}
+            ${toAddr}, ${subject}, ${data.body}, ${original.booking_id}, ${OUTBOUND_QUEUED},
+            ${outboundChannel === "email" ? notificationMailFrom("inbox.reply", original.booking_id) : null}
           )
         `;
       }
@@ -434,9 +436,9 @@ export const runAgentCommand = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-    .handler(async ({ data, context }) => {
-      assertSameSiteRequest();
-      const sql = await getSql();
+  .handler(async ({ data, context }) => {
+    assertSameSiteRequest();
+    const sql = await getSql();
     if (data.useAi)
       throw new Error(
         "Bitte den VibeCode-KI-Agenten unter Bitrix24 oder Automatisierung verwenden.",

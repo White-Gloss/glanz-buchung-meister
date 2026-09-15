@@ -45,12 +45,17 @@ export function ownerNotifyTargets(): {
 }
 
 export function resolveOwnerNotifyRecipients(booking: BookingLite): QueueTarget[] {
-  const owner = ownerNotifyTargets();
+  const owner = bookingOwnerNotifyTargets();
   const targets: QueueTarget[] = [];
   if (owner.whatsapp) targets.push({ channel: "whatsapp", to: owner.whatsapp });
   if (owner.telegram) targets.push({ channel: "telegram", to: owner.telegram });
   if (owner.email) targets.push({ channel: "email", to: owner.email });
   return targets.filter((target) => target.to !== booking.phone);
+}
+
+/** Booking correspondence is independent of the operator's login email. */
+export function bookingOwnerNotifyTargets() {
+  return { ...ownerNotifyTargets(), email: site.bookingEmail };
 }
 
 export function resolveCustomerConfirmRecipients(booking: BookingLite): QueueTarget[] {

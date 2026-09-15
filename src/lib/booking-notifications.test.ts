@@ -7,11 +7,37 @@ import { createBookingRequestPdf } from "./booking-pdf.ts";
 import type { Sql } from "./db.ts";
 import {
   enqueueNotification,
+  notificationMailFrom,
   queueBookingEvent,
   queueBookingReminder,
   type BookingEvent,
   type NotificationBooking,
 } from "./booking-notifications.ts";
+
+test("booking and CRM mail use the booking sender independently of general mail", () => {
+  const old = process.env.MAIL_FROM;
+  process.env.MAIL_FROM = "General <info@white-gloss.de>";
+  try {
+    for (const event of [
+      "booking.created",
+      "booking.confirmed",
+      "booking.reminder",
+      "bitrix.invoice",
+      "zoho.confirmed",
+      "lexware.invoice",
+    ]) {
+      assert.equal(notificationMailFrom(event), "White Gloss Detailing <buchung@white-gloss.de>");
+    }
+    assert.equal(
+      notificationMailFrom("notification.alert", 42),
+      "White Gloss Detailing <buchung@white-gloss.de>",
+    );
+    assert.equal(notificationMailFrom("notification.alert"), "General <info@white-gloss.de>");
+  } finally {
+    if (old === undefined) delete process.env.MAIL_FROM;
+    else process.env.MAIL_FROM = old;
+  }
+});
 
 function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql {
   const sql = (async (strings: TemplateStringsArray, ...args: unknown[]) => {
@@ -86,6 +112,7 @@ async function event(
 }
 
 type Message = {
+  from_addr: string | null;
   attachments: { filename: string; content: string; content_type: string }[];
   id: number;
   channel: string;
@@ -126,7 +153,7 @@ test("booking notifications persist against all production migrations", async (t
     await t.test(
       "one event stays idempotent and leaves both equal-address recipient roles intact",
       async () => {
-        const row = await booking(sql, { email: environment.OWNER_EMAIL });
+        const row = await booking(sql, { email: "buchung@white-gloss.de" });
         const id = await event(sql, row, "booking.created");
         await sql.transaction(async (tx) => {
           await queueBookingEvent(tx, row, "booking.created", id, "notification-test-owner");
@@ -136,6 +163,15 @@ test("booking notifications persist against all production migrations", async (t
           await sql<Message>`select * from outbound_queue where booking_id=${row.id}`;
         assert.equal(messages.length, 3);
         assert.equal(messages.filter((m) => m.channel === "email").length, 2);
+        assert.ok(
+          messages
+            .filter((m) => m.channel === "email")
+            .every(
+              (m) =>
+                m.to_addr === "buchung@white-gloss.de" &&
+                m.from_addr === "White Gloss Detailing <buchung@white-gloss.de>",
+            ),
+        );
         assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 2);
         const customer = messages.find((m) => m.event_key.includes(":customer-v2:"));
         assert.ok(customer);

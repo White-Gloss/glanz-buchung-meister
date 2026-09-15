@@ -7,10 +7,11 @@ import {
 } from "./billing-policy.ts";
 import {
   enqueueNotification,
+  notificationMailFrom,
   queueBookingReminder,
   type NotificationBooking,
 } from "./booking-notifications.ts";
-import { ownerNotifyTargets } from "./ops.ts";
+import { bookingOwnerNotifyTargets, ownerNotifyTargets } from "./ops.ts";
 import { EmailDeliveryError, mailConfigured, sendResendEmail } from "./resend-mail.ts";
 import {
   sendWhatsAppNotification,
@@ -94,7 +95,7 @@ export async function recordNotificationAttention(
     values (${SHOP}, 'benachrichtigung', 'zustellung-pruefen', 'error', ${`Ausgang #${row.id}: ${code}`})
   `;
   if (row.event_type === "notification.alert") return;
-  const owner = ownerNotifyTargets();
+  const owner = row.booking_id ? bookingOwnerNotifyTargets() : ownerNotifyTargets();
   const channel = row.channel === "email" && owner.whatsapp ? "whatsapp" : "email";
   const to = channel === "whatsapp" ? owner.whatsapp : owner.email;
   if (!to) return;
@@ -186,7 +187,10 @@ export async function runNotificationWorker(
       update outbound_queue q set status = 'processing', lease_token = ${token},
         locked_until = now() + interval '60 seconds', attempt_count = attempt_count + 1,
         first_attempt_at = coalesce(first_attempt_at, now()),
-        from_addr = coalesce(from_addr, ${process.env.MAIL_FROM?.trim() || null}), updated_at = now()
+        from_addr = coalesce(from_addr, case
+          when booking_id is not null or event_type ~ '^(booking|bitrix|zoho|lexware)[.]'
+            then ${notificationMailFrom("booking.created")}
+          else ${process.env.MAIL_FROM?.trim() || null} end), updated_at = now()
       from candidate where q.id = candidate.id returning q.*
     `;
     if (!row) break;
