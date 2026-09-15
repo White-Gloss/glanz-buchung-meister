@@ -183,7 +183,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
   text(`${site.legalName} - ${site.owner}`, 63, 59, 6.5, false, true);
   text(site.street, 63, 49, 6.5, false, true);
   text(`${site.postalCode} ${site.city}, Deutschland`, 63, 39, 6.5, false, true);
-  text(site.email, 63, 29, 6.5, false, true);
+  text(site.bookingEmail, 63, 29, 6.5, false, true);
   text(site.phoneDisplay, 290, 59, 6.5, false, true);
   text("white-gloss.de", 290, 49, 6.5, false, true);
   right("Seite 1/1", 543, 79, 6.5);

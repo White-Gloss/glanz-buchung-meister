@@ -36,7 +36,8 @@ test("owner recipients use explicit owner configuration and never the customer p
     assert.equal(ownerNotifyTargets().whatsapp, "+490000111111");
     let targets = resolveOwnerNotifyRecipients(customer);
     assert.ok(targets.some((t) => t.channel === "whatsapp" && t.to === "+490000111111"));
-    assert.ok(targets.some((t) => t.channel === "email" && t.to === "owner@example.invalid"));
+    assert.ok(targets.some((t) => t.channel === "email" && t.to === "buchung@white-gloss.de"));
+    assert.equal(ownerNotifyTargets().email, "owner@example.invalid");
     assert.equal(
       targets.some((t) => t.to === customer.phone),
       false,

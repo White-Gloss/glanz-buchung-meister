@@ -70,7 +70,7 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
     logo: documentLogoBase64,
     company: `${site.legalName} · ${site.owner}`,
     address: `${site.street}, ${site.postalCode} ${site.city}`,
-    email: site.email,
+    email: site.bookingEmail,
     customer: [booking.customer_name, booking.phone, booking.email || ""],
     metadata: [
       `Buchungsreferenz: WG-${booking.id}`,
@@ -109,6 +109,7 @@ export function receiptEmailCopy(name: string, reference: string) {
     "White Gloss Detailing",
     `${site.street}, ${site.postalCode} ${site.city}`,
     site.phoneDisplay,
+    site.bookingEmail,
   ].join("\n");
 }
 
@@ -133,5 +134,6 @@ export function confirmationEmailCopy(
     "",
     "White Gloss Detailing",
     site.phoneDisplay,
+    site.bookingEmail,
   ].join("\n");
 }

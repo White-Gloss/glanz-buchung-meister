@@ -104,8 +104,8 @@ function ThanksPage() {
           <div>
             <dt className="text-xs uppercase tracking-[0.18em] text-subtle">E-Mail</dt>
             <dd className="mt-2">
-              <a href={`mailto:${site.email}`} className="text-fg hover:text-accent">
-                {site.email}
+              <a href={`mailto:${site.bookingEmail}`} className="text-fg hover:text-accent">
+                {site.bookingEmail}
               </a>
             </dd>
           </div>

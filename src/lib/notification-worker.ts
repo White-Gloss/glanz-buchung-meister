@@ -10,7 +10,7 @@ import {
   queueBookingReminder,
   type NotificationBooking,
 } from "./booking-notifications.ts";
-import { ownerNotifyTargets } from "./ops.ts";
+import { bookingOwnerNotifyTargets, ownerNotifyTargets } from "./ops.ts";
 import { EmailDeliveryError, mailConfigured, sendResendEmail } from "./resend-mail.ts";
 import {
   sendWhatsAppNotification,
@@ -94,7 +94,7 @@ export async function recordNotificationAttention(
     values (${SHOP}, 'benachrichtigung', 'zustellung-pruefen', 'error', ${`Ausgang #${row.id}: ${code}`})
   `;
   if (row.event_type === "notification.alert") return;
-  const owner = ownerNotifyTargets();
+  const owner = row.booking_id ? bookingOwnerNotifyTargets() : ownerNotifyTargets();
   const channel = row.channel === "email" && owner.whatsapp ? "whatsapp" : "email";
   const to = channel === "whatsapp" ? owner.whatsapp : owner.email;
   if (!to) return;

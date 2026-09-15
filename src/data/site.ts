@@ -14,6 +14,7 @@ export const site = {
   phoneDisplay: "0152 33540284",
   phoneHref: "tel:+4915233540284",
   email: "info@white-gloss.de",
+  bookingEmail: "buchung@white-gloss.de",
   instagram: "https://www.instagram.com/white_gloss.detailing/",
   instagramHandle: "white_gloss.detailing",
   whatsapp:
@@ -174,7 +175,9 @@ export const packageSearchAlias: Record<string, PackageId> = {
 };
 
 export function parsePackageSearch(raw: unknown): PackageId | undefined {
-  const key = String(raw ?? "").trim().toLowerCase();
+  const key = String(raw ?? "")
+    .trim()
+    .toLowerCase();
   return packageSearchAlias[key];
 }
 
@@ -318,8 +321,7 @@ export const cities: City[] = [
     name: "Nagold",
     km: 20,
     minutes: 25,
-    blurb:
-      "Aus Nagold holen wir über die B28 ab – rund 25 Minuten bis zur Werkstatt.",
+    blurb: "Aus Nagold holen wir über die B28 ab – rund 25 Minuten bis zur Werkstatt.",
   },
   {
     slug: "rottenburg-am-neckar",
@@ -366,8 +368,7 @@ export const cities: City[] = [
     name: "Calw",
     km: 40,
     minutes: 45,
-    blurb:
-      "Calw liegt rund 45 Minuten von der Werkstatt entfernt.",
+    blurb: "Calw liegt rund 45 Minuten von der Werkstatt entfernt.",
   },
   {
     slug: "balingen",
@@ -423,8 +424,7 @@ export const pickupPricing = {
 };
 
 export function pickupFee(km: number, packageId?: PackageId) {
-  if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm)
-    return 0;
+  if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm) return 0;
   const tiers = [...pickupPricing.tiers].sort((a, b) => a.maxKm - b.maxKm);
   for (const tier of tiers) {
     if (km <= tier.maxKm) return tier.amount;
@@ -837,9 +837,7 @@ export const services: ServicePage[] = [
     ],
     honestNote:
       "Rissige oder stark geschädigte Streuscheiben bereiten wir nicht auf. Wir prüfen vorab, ob das Material für eine Politur geeignet ist.",
-    priceRows: [
-      { name: "Scheinwerfer-Paar", price: 99, note: "Politur und UV-Schutz" },
-    ],
+    priceRows: [{ name: "Scheinwerfer-Paar", price: 99, note: "Politur und UV-Schutz" }],
     body: [
       "Vergilbte Scheinwerfer nehmen Licht und Wert. Oft reicht Aufbereitung statt neuer Streuscheiben. Der UV-Schutz ist der Teil, der die Haltbarkeit entscheidet.",
       "Passt gut zur Lackkorrektur oder zur Verkaufsvorbereitung. Hol- und Bringservice aus 13 Städten.",

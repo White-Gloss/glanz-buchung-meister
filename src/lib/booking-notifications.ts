@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { packages } from "../data/site.ts";
-import { ownerNotifyTargets, type BookingLite, type QueueTarget } from "./ops.ts";
+import { packages, site } from "../data/site.ts";
+import { bookingOwnerNotifyTargets, type BookingLite, type QueueTarget } from "./ops.ts";
 import { isEmailAddress } from "./utils.ts";
 import type { Sql } from "./db.ts";
 import { type BookingPdfData } from "./booking-pdf.ts";
@@ -29,6 +29,12 @@ export function recipientHash(to: string): string {
   return createHash("sha256").update(to.trim().toLowerCase()).digest("hex").slice(0, 24);
 }
 
+export function notificationMailFrom(eventType: string, bookingId?: number | null) {
+  return bookingId || /^(booking|bitrix|zoho|lexware)\./.test(eventType)
+    ? `${site.legalName} <${site.bookingEmail}>`
+    : process.env.MAIL_FROM?.trim() || null;
+}
+
 export async function enqueueNotification(
   sql: Sql,
   input: {
@@ -52,7 +58,7 @@ export async function enqueueNotification(
       ${"white-gloss"}, ${input.channel}, ${input.to}, ${input.subject}, ${input.body},
       ${input.bookingId ?? null}, ${"queued"}, ${input.key}, ${input.eventType},
       ${input.bookingVersion ?? null},
-      ${input.channel === "email" ? process.env.MAIL_FROM?.trim() || null : null},
+      ${input.channel === "email" ? notificationMailFrom(input.eventType, input.bookingId) : null},
       coalesce(${input.runAt ?? null}::timestamptz, now()), ${JSON.stringify(input.attachments ?? [])}::jsonb
     ) on conflict (shop_id, event_key) do nothing returning id
   `;
@@ -133,7 +139,7 @@ export async function queueBookingEvent(
       and status in ('queued', 'blocked')
       and (booking_version <> ${version} or ${booking.status ?? "neu"} <> 'bestaetigt')
   `;
-  const owner = ownerNotifyTargets();
+  const owner = bookingOwnerNotifyTargets();
   const subject = `${eventLabels[event]} · WG-${booking.id}`;
   const attachments: { filename: string; content: string; content_type: string }[] | undefined =
     undefined;
@@ -230,7 +236,7 @@ export async function queueBookingConflict(
   actor: string,
 ) {
   await sql.transaction(async (tx) => {
-    const owner = ownerNotifyTargets();
+    const owner = bookingOwnerNotifyTargets();
     const targets: QueueTarget[] = [];
     if (owner.whatsapp) targets.push({ channel: "whatsapp", to: owner.whatsapp });
     if (owner.email) targets.push({ channel: "email", to: owner.email });
