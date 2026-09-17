@@ -23,8 +23,8 @@ export const heroScrubPosterStart = "/media/hero-dirty.webp";
 export const heroScrubPosterEnd = "/media/hero-glossy.webp";
 
 /** Stiehle-style image-sequence film (desktop / mobile frame counts). */
-export const heroFilmDesktopFrames = 81;
-export const heroFilmMobileFrames = 81;
+export const heroFilmDesktopFrames = 96;
+export const heroFilmMobileFrames = 96;
 export const heroFilmBase = "/media/hero-film";
 
 function pickHeroLoop(mobile: boolean) {
