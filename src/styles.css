@@ -2040,7 +2040,7 @@
   height: 2px;
   width: 0;
   z-index: 3;
-  background: color-mix(in oklab, var(--accent, #c9a227) 80%, white);
+  background: linear-gradient(90deg, #fff, #c0c0c0);
   opacity: 0.85;
   transition: opacity 0.6s ease;
   pointer-events: none;
@@ -2110,7 +2110,11 @@
 }
 .hero-film-chapter .film-line em {
   font-style: normal;
-  color: color-mix(in oklab, var(--accent, #c9a227) 85%, white);
+  color: #fff;
+  background: var(--chrome-gradient, linear-gradient(135deg, #fff 0%, #e8e8e8 42%, #c0c0c0 100%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .hero-film-chapter .film-sub {
   margin: 0.9rem auto 0;
