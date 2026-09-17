@@ -1,5 +1,6 @@
 /* Fotos tauschen: Dateien in /public/media/ ersetzen, Dateinamen behalten.
-   hero.jpg / hero.webp / hero-*.avif = Startbild
+   hero.jpg / hero.webp / hero-*.avif = Startbild (Loop-Hero)
+   hero-scroll.mp4/.webm + hero-dirty/glossy = Scroll-Scrub-Homepage
    lack, keramik, felgen, leder, finish, dellen, atelier, private = Slots
    CSS-Klassen: .hero-image, .service-image-1 bis -4, .before-after-1,
    .workshop-image, .gallery-shot, .private-client-image, .b2b-image
