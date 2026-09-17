@@ -65,25 +65,25 @@ function Home() {
             >
               <p className="kicker">White Gloss · Horb am Neckar</p>
               <p className="film-line">
-                Dreck rein.
+                Garage.
                 <br />
-                <em>Glanz raus.</em>
+                <em>Impala.</em>
               </p>
-              <p className="film-sub">Scrollen – und sieh die Aufbereitung.</p>
+              <p className="film-sub">Scrollen – näher an den Lack.</p>
             </div>
             <div
               className="hero-film-chapter"
               data-film-von="0.30"
               data-film-bis="0.58"
             >
-              <p className="kicker">Politur &amp; Detail</p>
+              <p className="kicker">Näher</p>
               <p className="film-line">
-                Lack.
+                Tür.
                 <br />
-                <em>Präzision.</em>
+                <em>Rein.</em>
               </p>
               <p className="film-sub">
-                Innenraum, Politur und Keramikversiegelung – in unserer Werkstatt.
+                Zoom und Drehung – bis ins saubere Interieur.
               </p>
             </div>
             <div
@@ -92,10 +92,10 @@ function Home() {
               data-film-bis="1.15"
               data-film-stay
             >
-              <p className="kicker">White Gloss Detailing</p>
-              <h1 className="film-line">Fahrzeugaufbereitung in Horb</h1>
+              <p className="kicker">Innenraum · White Gloss</p>
+              <h1 className="film-line">Sauber bis ins Detail</h1>
               <p className="film-sub">
-                Termin anfragen oder Pakete ansehen – Hol- und Bringservice in 13 Städten.
+                Interieur-Aufbereitung in Horb – Termin anfragen oder Pakete ansehen.
               </p>
               <div className="hero-film-cta">
                 <Link to="/" hash="buchung" className={ctaPrimary}>
