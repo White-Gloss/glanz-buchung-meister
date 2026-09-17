@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PhotoInquiry } from "@/components/photo-inquiry";
 import { PageHero } from "@/components/page-hero";
-import { ctaPrimary } from "@/components/ui";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
+import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -32,9 +33,14 @@ function DellenPage() {
           { label: "Dellen" },
         ]}
         actions={
-          <Link to="/" hash="buchung" className={ctaPrimary}>
-            Termin anfragen
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/" hash="buchung" className={ctaPrimary}>
+              Termin anfragen
+            </Link>
+            <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+              Schaden per WhatsApp senden
+            </a>
+          </div>
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
@@ -56,6 +62,9 @@ function DellenPage() {
           </li>
         ))}
       </ul>
+      <div className="mt-12">
+        <WhatsAppPhotoCta />
+      </div>
       <div className="mt-12">
         <PhotoInquiry
           title="Begutachtung anfragen"

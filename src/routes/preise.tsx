@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LazyConfigurator } from "@/components/lazy-configurator";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { PageHero } from "@/components/page-hero";
 import {
   extras,
@@ -141,6 +142,7 @@ function PreisePage() {
         <h2 id="buchung-heading" className="mb-8 font-display text-3xl">
           Preis berechnen
         </h2>
+        <WhatsAppPhotoCta className="mb-10" />
         <LazyConfigurator eager />
       </div>
       <p className="mt-10 text-sm">

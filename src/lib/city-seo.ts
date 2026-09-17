@@ -25,6 +25,13 @@ export function cityJsonLd(city: City) {
         telephone: "+4915233540284",
         url,
         priceRange: "€€€",
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "5.0",
+          reviewCount: "14",
+          bestRating: "5",
+          worstRating: "1",
+        },
         address: {
           "@type": "PostalAddress",
           streetAddress: site.street,

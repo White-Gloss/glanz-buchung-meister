@@ -563,15 +563,18 @@ export function Configurator({
             onChange={(e) => setSlot(e.target.value)}
           >
             <option value="">Keine Angabe</option>
-            {timeSlots.map((s) => (
-              <option
-                key={s}
-                value={s}
-                disabled={blockedSlots.includes(s) || availabilityState !== "ready"}
-              >
-                {s} Uhr{blockedSlots.includes(s) ? " - belegt" : ""}
-              </option>
-            ))}
+            {timeSlots.map((s) => {
+              const isBlocked = Boolean(date && availabilityState === "ready" && blockedSlots.includes(s));
+              return (
+                <option
+                  key={s}
+                  value={s}
+                  disabled={isBlocked}
+                >
+                  {s} Uhr{isBlocked ? " - belegt" : ""}
+                </option>
+              );
+            })}
           </select>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">

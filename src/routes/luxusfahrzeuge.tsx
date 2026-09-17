@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PhotoNote, Shot } from "@/components/media";
 import { PageHero } from "@/components/page-hero";
-import { ctaPrimary } from "@/components/ui";
+import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { absUrl, pageHead } from "@/lib/seo";
 
@@ -54,17 +54,22 @@ function LuxuryPage() {
           { label: "Luxusfahrzeuge" },
         ]}
         actions={
-          <a href={site.phoneHref} className={ctaPrimary}>
-            Persönlich anrufen
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a href={site.phoneHref} className={ctaPrimary}>
+              Persönlich anrufen
+            </a>
+            <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+              Vertraulich per WhatsApp
+            </a>
+          </div>
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
         <ol className="space-y-12">
           {[
             [
-              "Anrufen",
-              "Am Telefon besprechen wir Ihr Fahrzeug, seine Nutzung und Ihre Wünsche. Die Aufbereitung von Luxusfahrzeugen können Sie ausschließlich persönlich anfragen.",
+              "Anrufen oder schreiben",
+              "Am Telefon oder per WhatsApp besprechen wir Ihr Fahrzeug, seine Nutzung und Ihre Wünsche. Die Aufbereitung von Luxus- und Sammlerfahrzeugen erfolgt ausschließlich nach persönlicher Abstimmung.",
             ],
             [
               "Fahrzeug begutachten",
@@ -89,10 +94,12 @@ function LuxuryPage() {
           ))}
         </ol>
         <ul className="mt-14 space-y-3 text-sm text-muted">
-          <li>Erstgespräch nur am Telefon</li>
-          <li>Begutachtung des Fahrzeugs in unserer Werkstatt in Horb</li>
-          <li>Leistungsumfang und Preis nach der Begutachtung</li>
-          <li>Keine Online-Buchung, kein Standardpaket</li>
+          <li>Erstgespräch persönlich am Telefon oder vertraulich via WhatsApp</li>
+          <li>Begutachtung des Fahrzeugs in unserer Werkstatt in Horb oder vor Ort</li>
+          <li>Vollkaskoversicherte Fahrzeugüberführung durch geschultes Fachpersonal</li>
+          <li>Absolute Diskretion – keine Veröffentlichung von Kundenfahrzeugen oder Kennzeichen</li>
+          <li>Leistungsumfang und Festpreis-Angebot erst nach individueller Begutachtung</li>
+          <li>Keine anonyme Online-Buchung, kein Standardpaket</li>
         </ul>
         <p className="mt-8 text-xs text-subtle">
           Swissvax nennen wir als mögliche Produktwahl, nicht als Partnerschaft.

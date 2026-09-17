@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconMessage, IconPhone } from "@/components/icons";
 import { PageHero } from "@/components/page-hero";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { WorkshopMap } from "@/components/workshop-map";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { openingHours, site } from "@/data/site";
@@ -80,6 +81,7 @@ function KontaktPage() {
           Geöffnet {openingHours.daysLabel}, {openingHours.opens}–{openingHours.closes} Uhr.
           Samstag und Sonntag geschlossen.
         </p>
+        <WhatsAppPhotoCta className="mt-12" />
         <WorkshopMap className="mt-12" />
       </section>
     </main>

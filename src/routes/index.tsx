@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import { GoogleReviews } from "@/components/google-reviews";
+import { BeforeAfterSlider } from "@/components/before-after-slider";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { LazyConfigurator } from "@/components/lazy-configurator";
 import { WorkshopMap } from "@/components/workshop-map";
 import { HeroMedia, PhotoNote, Shot } from "@/components/media";
@@ -274,6 +276,16 @@ function Home() {
             sizes="(min-width: 1024px) 66vw, 100vw"
           />
         </div>
+        <div className="mt-14 border border-line bg-surface p-6 sm:p-8 rounded-card">
+          <div className="max-w-2xl mb-6">
+            <p className="text-xs uppercase tracking-[0.16em] text-accent-fg font-medium">Interaktiver Lackvergleich</p>
+            <h3 className="heading-3 mt-2 text-2xl sm:text-3xl">Das Ergebnis einer professionellen Lackkorrektur.</h3>
+            <p className="mt-3 text-sm sm:text-base text-muted">
+              Ziehen Sie den Schieberegler, um den direkten Vorher-Nachher-Effekt unter Werkstatt-Prüflicht zu erleben: Feine Waschkratzer und Swirls weichen tiefem Glanz und klarer Spieglung.
+            </p>
+          </div>
+          <BeforeAfterSlider />
+        </div>
         <PhotoNote className="mt-4" />
         <Link
           to="/galerie"
@@ -456,11 +468,12 @@ function Home() {
         <h2 id="buchung-heading" className="heading-2 mt-4">
           Aufbereitung planen und Termin anfragen
         </h2>
-        <p className="mt-5 mb-12 max-w-xl text-muted">
+        <p className="mt-5 mb-8 max-w-xl text-muted">
           Wählen Sie Fahrzeugklasse, Paket und Zusatzleistungen. Der Preisrechner zeigt Ihnen den
           voraussichtlichen Preis. Die Anfrage ist unverbindlich, wir melden uns mit einem
           Terminvorschlag.
         </p>
+        <WhatsAppPhotoCta className="mb-10" />
         <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
       </section>
     </main>

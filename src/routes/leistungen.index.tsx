@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import { MediaTile, PageHero } from "@/components/page-hero";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { ctaPrimary } from "@/components/ui";
 import { cities, services, site } from "@/data/site";
 import { listPublishedCms } from "@/lib/cms.functions";
@@ -149,6 +150,10 @@ function LeistungenIndex() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 pb-8">
+        <WhatsAppPhotoCta />
       </section>
 
       <section className="section mx-auto max-w-7xl px-4 sm:px-6">

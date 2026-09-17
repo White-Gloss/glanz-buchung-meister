@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
+import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { ctaPrimary, PriceLine } from "@/components/ui";
 import { cities, packageServiceSlug, packages, services, site } from "@/data/site";
 import { serviceBookingSelection } from "@/lib/booking-selection";
@@ -99,6 +100,7 @@ function ServicePage() {
             Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration}.
           </p>
         ) : null}
+        <WhatsAppPhotoCta className="mt-12" />
         <h2 className="mt-16 font-display text-3xl tracking-tight">
           Hol- und Bringservice nach Stadt
         </h2>

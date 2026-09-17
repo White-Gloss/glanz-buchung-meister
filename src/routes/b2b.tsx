@@ -59,6 +59,21 @@ function B2bPage() {
           </section>
         ))}
       </div>
+      <div className="mt-12 rounded-card border border-line bg-surface p-6 sm:p-8">
+        <p className="text-xs uppercase tracking-[0.16em] text-accent-fg font-medium">B2B-Direktanfrage</p>
+        <h3 className="heading-3 mt-2 text-xl sm:text-2xl">Fuhrparkliste oder Ausschreibung senden</h3>
+        <p className="mt-3 text-sm text-muted leading-relaxed">
+          Senden Sie uns gerne Ihre Fahrzeugliste, Eckdaten oder Terminvorgaben direkt per E-Mail. Wir erstellen Ihnen ein transparentes, volumenbasiertes Angebot mit flexiblen Logistik- und Hol-/Bringkonditionen.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <a href={`mailto:${site.email}?subject=B2B-Anfrage%20Fahrzeugaufbereitung`} className={ctaPrimary}>
+            E-Mail mit Fuhrparkliste senden
+          </a>
+          <a href={site.phoneHref} className={ctaGhost}>
+            Direkter Ansprechpartner: {site.phoneDisplay}
+          </a>
+        </div>
+      </div>
       </div>
     </main>
   );
