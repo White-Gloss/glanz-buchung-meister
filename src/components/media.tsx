@@ -29,12 +29,6 @@ function pickHeroLoop(mobile: boolean) {
   return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
 }
 
-function pickHeroScroll() {
-  const probe = document.createElement("video");
-  const webm = probe.canPlayType('video/webm; codecs="vp9"') !== "";
-  return webm ? "/media/hero-scroll.webm" : "/media/hero-scroll.mp4";
-}
-
 function HeroScrollScrub({
   alt,
   className,
@@ -45,10 +39,7 @@ function HeroScrollScrub({
   priority?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [scrubSrc, setScrubSrc] = useState<string | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -60,59 +51,19 @@ function HeroScrollScrub({
 
   useEffect(() => {
     if (reduceMotion) return;
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (conn?.saveData) return;
-
-    let cancelled = false;
-    const arm = () => {
-      if (cancelled) return;
-      setScrubSrc(pickHeroScroll());
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(arm, { timeout: 1200 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback(id);
-      };
-    }
-    const id = window.setTimeout(arm, 200);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
-  }, [reduceMotion]);
-
-  useEffect(() => {
-    if (reduceMotion || !scrubSrc) return;
-    const video = videoRef.current;
     const mediaRoot = rootRef.current;
-    if (!video || !mediaRoot) return;
-
+    if (!mediaRoot) return;
     const stage = mediaRoot.closest(".hero-stage") as HTMLElement | null;
     if (!stage) return;
 
     let frame = 0;
-    let duration = 0;
-
-    const apply = (p: number) => {
-      stage.style.setProperty("--hero-scrub-p", p.toFixed(4));
-      if (!duration || !Number.isFinite(duration) || duration <= 0) return;
-      const t = Math.min(duration, Math.max(0, p * duration));
-      if (Math.abs(video.currentTime - t) > 0.016) {
-        try {
-          video.currentTime = t;
-        } catch {
-          /* ignore seek before ready */
-        }
-      }
-    };
 
     const measure = () => {
       const scrollable = Math.max(1, stage.offsetHeight - window.innerHeight);
       const top = stage.getBoundingClientRect().top;
       const raw = Math.min(1, Math.max(0, -top / scrollable));
       const p = raw * raw * (3 - 2 * raw);
-      apply(p);
+      stage.style.setProperty("--hero-scrub-p", p.toFixed(4));
     };
 
     const onScroll = () => {
@@ -123,66 +74,75 @@ function HeroScrollScrub({
       });
     };
 
-    const onMeta = () => {
-      duration = video.duration || 0;
-      video.pause();
-      measure();
-    };
-
-    video.pause();
-    if (video.readyState >= 1) onMeta();
-    video.addEventListener("loadedmetadata", onMeta);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     measure();
 
     return () => {
-      video.removeEventListener("loadedmetadata", onMeta);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
       stage.style.removeProperty("--hero-scrub-p");
     };
-  }, [reduceMotion, scrubSrc, videoReady]);
+  }, [reduceMotion]);
 
-  const posterSrc = reduceMotion ? heroScrubPosterEnd : heroScrubPosterStart;
-  const posterJpg = reduceMotion ? "/media/hero-glossy.jpg" : "/media/hero-dirty.jpg";
+  if (reduceMotion) {
+    return (
+      <div
+        ref={rootRef}
+        className={cn("hero-image relative isolate size-full overflow-hidden", className)}
+      >
+        <picture>
+          <source type="image/webp" srcSet={heroScrubPosterEnd} />
+          <img
+            src="/media/hero-glossy.jpg"
+            alt={alt}
+            width={1920}
+            height={1080}
+            className="absolute inset-0 size-full object-cover"
+            fetchPriority={priority ? "high" : "low"}
+            decoding={priority ? "sync" : "async"}
+            loading={priority ? "eager" : "lazy"}
+          />
+        </picture>
+      </div>
+    );
+  }
 
   return (
     <div
       ref={rootRef}
-      className={cn("hero-image relative isolate size-full overflow-hidden", className)}
+      className={cn(
+        "hero-image hero-scrub-stills relative isolate size-full overflow-hidden",
+        className,
+      )}
     >
-      <picture>
-        <source type="image/webp" srcSet={posterSrc} />
+      <picture className="hero-scrub-layer hero-scrub-layer--dirty">
+        <source type="image/webp" srcSet={heroScrubPosterStart} />
         <img
-          src={posterJpg}
-          alt={alt}
-          width={1600}
-          height={904}
+          src="/media/hero-dirty.jpg"
+          alt=""
+          width={1920}
+          height={1080}
           className="absolute inset-0 size-full object-cover"
           fetchPriority={priority ? "high" : "low"}
           decoding={priority ? "sync" : "async"}
           loading={priority ? "eager" : "lazy"}
         />
       </picture>
-      {!reduceMotion && scrubSrc ? (
-        <video
-          ref={videoRef}
-          aria-hidden="true"
-          muted
-          playsInline
-          preload="metadata"
-          src={scrubSrc}
-          poster={posterJpg}
-          className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-500 data-[ready]:opacity-100"
-          onLoadedData={(e) => {
-            e.currentTarget.setAttribute("data-ready", "");
-            e.currentTarget.pause();
-            setVideoReady(true);
-          }}
+      <picture className="hero-scrub-layer hero-scrub-layer--glossy">
+        <source type="image/webp" srcSet={heroScrubPosterEnd} />
+        <img
+          src="/media/hero-glossy.jpg"
+          alt={alt}
+          width={1920}
+          height={1080}
+          className="absolute inset-0 size-full object-cover"
+          fetchPriority={priority ? "high" : "low"}
+          decoding="async"
+          loading="eager"
         />
-      ) : null}
+      </picture>
     </div>
   );
 }
