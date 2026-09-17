@@ -2006,9 +2006,9 @@
 }
 
 
-/* Scroll-scrub homepage hero: tall track, sticky viewport, Dirty↔Glossy still crossfade. */
+/* Scroll-film homepage hero (Stiehle-style): tall track, sticky canvas image sequence. */
 .hero-stage--scrub {
-  min-height: 180svh;
+  min-height: 420svh;
   overflow: clip;
 }
 .hero-stage--scrub .hero-stage-pin {
@@ -2030,19 +2030,102 @@
 .hero-stage--scrub .hero-stage-media > .hero-image {
   animation: none;
 }
-.hero-scrub-stills .hero-scrub-layer {
+.hero-film-canvas {
+  z-index: 1;
+}
+.hero-film-load {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  z-index: 3;
+  background: color-mix(in oklab, var(--accent, #c9a227) 80%, white);
+  opacity: 0.85;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.hero-film-progress {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.hero-film-progress span {
+  display: block;
+  width: 3px;
+  height: 2.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.18);
+}
+.hero-film-progress span b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  background: rgb(255 255 255 / 0.85);
+  will-change: transform;
+}
+.hero-film-copy {
   position: absolute;
   inset: 0;
-  display: block;
-  margin: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  padding: 6rem 1.25rem 5rem;
+  text-align: center;
 }
-.hero-scrub-stills .hero-scrub-layer--dirty {
-  opacity: calc(1 - var(--hero-scrub-p, 0));
-  z-index: 0;
+.hero-film-chapter {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(36rem, 92vw);
+  transform: translate3d(-50%, calc(-50% + 2.5rem), 0);
+  opacity: 0;
+  color: #fff;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.45);
+  will-change: opacity, transform;
+  pointer-events: none;
 }
-.hero-scrub-stills .hero-scrub-layer--glossy {
-  opacity: var(--hero-scrub-p, 0);
-  z-index: 1;
+.hero-film-chapter.is-on .hero-film-cta {
+  pointer-events: auto;
+}
+.hero-film-chapter .kicker {
+  color: rgb(255 255 255 / 0.78);
+}
+.hero-film-chapter .film-line {
+  margin-top: 0.75rem;
+  font-family: var(--font-display, inherit);
+  font-size: clamp(2rem, 5.5vw, 3.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.hero-film-chapter .film-line em {
+  font-style: normal;
+  color: color-mix(in oklab, var(--accent, #c9a227) 85%, white);
+}
+.hero-film-chapter .film-sub {
+  margin: 0.9rem auto 0;
+  max-width: 28rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.82);
+}
+.hero-film-cta {
+  pointer-events: auto;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
 .hero-stage--scrub .hero-stage-copy {
   opacity: calc(1 - var(--hero-scrub-p, 0) * 1.15);
@@ -2057,7 +2140,7 @@
 }
 @media (max-width: 767px) {
   .hero-stage--scrub {
-    min-height: 160svh;
+    min-height: 320svh;
   }
   .hero-stage--scrub .hero-stage-media {
     filter: none;

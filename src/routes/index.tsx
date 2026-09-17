@@ -57,20 +57,69 @@ function Home() {
             />
           </div>
           <div className="hero-stage-veil" />
-          <div className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6">
-            <p className="kicker">White Gloss Detailing</p>
-            <h1 className="hero-title mt-5 max-w-4xl">Fahrzeugaufbereitung in Horb am Neckar</h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg">
-              Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
-            </p>
-            <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row">
-              <Link to="/" hash="buchung" className={ctaPrimary}>
-                Termin anfragen <IconArrowRight className="size-4" aria-hidden />
-              </Link>
-              <Link to="/preise" className={ctaGhost}>
-                Pakete & Preise
-              </Link>
+          <div className="hero-film-copy" aria-hidden={false}>
+            <div
+              className="hero-film-chapter"
+              data-film-von="-0.02"
+              data-film-bis="0.28"
+            >
+              <p className="kicker">White Gloss · Horb am Neckar</p>
+              <p className="film-line">
+                Dreck rein.
+                <br />
+                <em>Glanz raus.</em>
+              </p>
+              <p className="film-sub">Scrollen – und sieh die Aufbereitung.</p>
             </div>
+            <div
+              className="hero-film-chapter"
+              data-film-von="0.30"
+              data-film-bis="0.58"
+            >
+              <p className="kicker">Politur &amp; Detail</p>
+              <p className="film-line">
+                Lack.
+                <br />
+                <em>Präzision.</em>
+              </p>
+              <p className="film-sub">
+                Innenraum, Politur und Keramikversiegelung – in unserer Werkstatt.
+              </p>
+            </div>
+            <div
+              className="hero-film-chapter"
+              data-film-von="0.60"
+              data-film-bis="1.15"
+              data-film-stay
+            >
+              <p className="kicker">White Gloss Detailing</p>
+              <h1 className="film-line">Fahrzeugaufbereitung in Horb</h1>
+              <p className="film-sub">
+                Termin anfragen oder Pakete ansehen – Hol- und Bringservice in 13 Städten.
+              </p>
+              <div className="hero-film-cta">
+                <Link to="/" hash="buchung" className={ctaPrimary}>
+                  Termin anfragen <IconArrowRight className="size-4" aria-hidden />
+                </Link>
+                <Link to="/preise" className={ctaGhost}>
+                  Pakete &amp; Preise
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="hero-film-progress" aria-hidden>
+            <span>
+              <b />
+            </span>
+            <span>
+              <b />
+            </span>
+            <span>
+              <b />
+            </span>
+            <span>
+              <b />
+            </span>
           </div>
           <div className="scroll-hint" aria-hidden>
             <span />

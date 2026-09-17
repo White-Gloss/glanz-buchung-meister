@@ -1,6 +1,6 @@
 /* Fotos tauschen: Dateien in /public/media/ ersetzen, Dateinamen behalten.
    hero.jpg / hero.webp / hero-*.avif = Startbild (Loop-Hero)
-   hero-dirty/glossy = Still-Scrub Homepage (Dirty↔Glossy Crossfade)
+   hero-film/d|m/*.webp = Scroll-Film Homepage (Stiehle-style); hero-dirty/glossy = posters
    lack, keramik, felgen, leder, finish, dellen, atelier, private = Slots
    CSS-Klassen: .hero-image, .service-image-1 bis -4, .before-after-1,
    .workshop-image, .gallery-shot, .private-client-image, .b2b-image
