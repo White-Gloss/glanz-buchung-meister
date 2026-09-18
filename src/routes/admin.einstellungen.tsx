@@ -18,6 +18,7 @@ import { extras, packages, pickupPricing, site } from "@/data/site";
 import { eur } from "@/lib/utils";
 import { getOperatorSettings, setOperatorPin } from "@/lib/admin.functions";
 import { createSiteBackup, getSiteBackup, restoreSiteBackup } from "@/lib/backup.functions";
+import { hubSyncStatus, issueHubSyncToken } from "@/lib/hub-sync.functions";
 import { Button, Field, inputClass } from "@/components/ui";
 
 export const Route = createFileRoute("/admin/einstellungen")({
@@ -108,6 +109,10 @@ function AdminSettings() {
   );
   const [backupMsg, setBackupMsg] = useState("");
   const [backupBusy, setBackupBusy] = useState(false);
+  const [hubStatus, setHubStatus] = useState<Awaited<ReturnType<typeof hubSyncStatus>> | null>(null);
+  const [hubToken, setHubToken] = useState("");
+  const [hubMsg, setHubMsg] = useState("");
+  const [hubBusy, setHubBusy] = useState(false);
 
   useEffect(() => {
     void getOperatorSettings()
@@ -118,6 +123,9 @@ function AdminSettings() {
       .catch(() => undefined);
     void getSiteBackup()
       .then(setBackup)
+      .catch(() => undefined);
+    void hubSyncStatus()
+      .then(setHubStatus)
       .catch(() => undefined);
   }, []);
 
@@ -154,6 +162,68 @@ function AdminSettings() {
         {site.legalName} · {site.owner} · {site.street}, {site.postalCode} {site.city} ·{" "}
         {site.email}
       </p>
+
+      <section id="hub-sync" className="mt-10 rounded-md border border-line bg-surface p-5">
+        <h2 className="font-display text-2xl">Hub verbinden</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          Ein Klick erzeugt den Token auf der Website. Denselben Wert einmal unter Buchungen →
+          „Webseite verbinden“ im Hub eintragen. Der Token wird hier nicht wieder angezeigt.
+        </p>
+        <p className="mt-3 text-sm text-muted">
+          {hubStatus?.configured
+            ? hubStatus.source === "env"
+              ? "Verbunden über die Server-Datei. Das Panel ändert daran nichts."
+              : "Token ist gesetzt. Zum Austauschen neu erzeugen und im Hub erneut speichern."
+            : "Noch nicht verbunden."}
+        </p>
+        {hubToken ? (
+          <div className="mt-4">
+            <Field id="hub-sync-token" label="Neuer Token — jetzt ins Hub kopieren">
+              <input id="hub-sync-token" className={inputClass} value={hubToken} readOnly />
+            </Field>
+            <Button
+              type="button"
+              className="mt-3"
+              onClick={() => {
+                void navigator.clipboard.writeText(hubToken).then(
+                  () => setHubMsg("Kopiert. Jetzt im Hub unter Buchungen einfügen."),
+                  () => setHubMsg("Bitte den Token markieren und selbst kopieren."),
+                );
+              }}
+            >
+              Token kopieren
+            </Button>
+          </div>
+        ) : null}
+        {hubMsg ? <p className="mt-3 text-sm text-muted">{hubMsg}</p> : null}
+        <Button
+          type="button"
+          className="mt-4"
+          disabled={hubBusy || hubStatus?.source === "env"}
+          onClick={() => {
+            if (
+              hubStatus?.configured &&
+              !window.confirm("Neuen Token erzeugen? Die alte Hub-Verbindung muss danach neu gesetzt werden.")
+            ) {
+              return;
+            }
+            setHubBusy(true);
+            setHubMsg("");
+            void issueHubSyncToken()
+              .then((row) => {
+                setHubToken(row.token);
+                setHubStatus({ configured: true, source: row.source });
+                setHubMsg("Token erzeugt. Jetzt kopieren und im Hub speichern.");
+              })
+              .catch((err: unknown) => {
+                setHubMsg(err instanceof Error ? err.message : "Token nicht erzeugt.");
+              })
+              .finally(() => setHubBusy(false));
+          }}
+        >
+          Hub-Token erzeugen
+        </Button>
+      </section>
 
       <div className="mt-10 space-y-10">
         {groups.map((group) => (
