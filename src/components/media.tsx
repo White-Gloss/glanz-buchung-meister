@@ -79,6 +79,7 @@ export function HeroMedia({
     const canPlay = () =>
       !disposed &&
       visible &&
+      document.readyState === "complete" &&
       !document.hidden &&
       !pausedRef.current &&
       !reducedMotion.matches &&
@@ -88,7 +89,13 @@ export function HeroMedia({
       timeoutId = undefined;
       if (!canPlay()) return;
       // The media element owns the only request; no competing prefetch.
-      if (!video.getAttribute("src")) video.src = pickHeroLoop(mobile);
+      if (!video.getAttribute("src")) {
+        // Reuse the browser-selected, already loaded image. A fixed poster URL
+        // would fetch a second image at the wrong size on some viewports.
+        const image = container.querySelector("img");
+        if (image?.currentSrc) video.poster = image.currentSrc;
+        video.src = pickHeroLoop(mobile);
+      }
       void video.play().catch(() => {
         // Autoplay restrictions leave the still image and an explicit play button.
         if (!disposed && canPlay()) {
@@ -106,7 +113,8 @@ export function HeroMedia({
         if (!allowed) video.removeAttribute("data-ready");
         return;
       }
-      // Keep the still image first, then start visible media when the main thread is idle.
+      // Page load gates the decorative download; an idle main thread alone
+      // does not mean the critical images, fonts and styles have finished.
       if (video.getAttribute("src")) start();
       else if (typeof window.requestIdleCallback === "function") {
         idleId = window.requestIdleCallback(start, { timeout: 1000 });
@@ -120,6 +128,7 @@ export function HeroMedia({
       update();
     });
     observer.observe(container);
+    window.addEventListener("load", update, { once: true });
     document.addEventListener("visibilitychange", update);
     reducedMotion.addEventListener("change", update);
     connection?.addEventListener("change", update);
@@ -128,6 +137,7 @@ export function HeroMedia({
       disposed = true;
       cancelStart();
       observer.disconnect();
+      window.removeEventListener("load", update);
       document.removeEventListener("visibilitychange", update);
       reducedMotion.removeEventListener("change", update);
       connection?.removeEventListener("change", update);
