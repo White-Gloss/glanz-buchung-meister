@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import { LazyGoogleReviews } from "@/components/lazy-google-reviews";
-import { BeforeAfterSlider } from "@/components/before-after-slider";
+import { LazyBeforeAfterSlider } from "@/components/lazy-before-after-slider";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { LazyConfigurator } from "@/components/lazy-configurator";
-import { WorkshopMap } from "@/components/workshop-map";
+import { LazyWorkshopMap } from "@/components/lazy-workshop-map";
 import { HeroMedia, PhotoNote, Shot } from "@/components/media";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import {
@@ -284,7 +284,7 @@ function Home() {
               Ziehen Sie den Schieberegler, um den direkten Vorher-Nachher-Effekt unter Werkstatt-Prüflicht zu erleben: Feine Waschkratzer und Swirls weichen tiefem Glanz und klarer Spieglung.
             </p>
           </div>
-          <BeforeAfterSlider />
+          <LazyBeforeAfterSlider />
         </div>
         <PhotoNote className="mt-4" />
         <Link
@@ -430,7 +430,7 @@ function Home() {
             {site.street}, {site.postalCode} {site.city}. Hier bereiten wir Ihr Fahrzeug auf. Unser
             Hol- und Bringservice umfasst 13 Städte.
           </p>
-          <WorkshopMap className="mt-10" />
+          <LazyWorkshopMap className="mt-10" />
         </div>
       </section>
 

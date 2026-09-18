@@ -79,11 +79,15 @@ test("Node serves compressed build assets and revalidates mutable media", async 
   assert.equal(response.headers.get("content-encoding"), "gzip");
   assert.match(response.headers.get("cache-control") || "", /immutable/);
   assert.ok(stylesheet.length > 1000, "the compressed stylesheet must decode successfully");
-  for (const path of [
-    "/media/lack-1200.avif",
-    "/fonts/barlow-300.woff2",
-    "/__grok/manifest.webmanifest",
-  ]) {
+  for (const path of ["/media/lack-1200.avif", "/fonts/barlow-300.woff2"]) {
+    const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(15000) });
+    assert.equal(response.status, 200, path);
+    assert.doesNotMatch(response.headers.get("cache-control") || "", /immutable/, path);
+    assert.match(response.headers.get("cache-control") || "", /max-age=604800/, path);
+    await response.arrayBuffer();
+  }
+  {
+    const path = "/__grok/manifest.webmanifest";
     const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(15000) });
     assert.equal(response.status, 200, path);
     assert.doesNotMatch(response.headers.get("cache-control") || "", /immutable/, path);

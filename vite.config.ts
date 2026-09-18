@@ -193,6 +193,8 @@ export default defineConfig(({ command, isPreview }) => ({
           (dep) =>
             !dep.includes("lazy-configurator") &&
             !dep.includes("workshop-map") &&
+            !dep.includes("before-after") &&
+            !dep.includes("google-reviews") &&
             !dep.includes("operator-middleware"),
         ),
     },

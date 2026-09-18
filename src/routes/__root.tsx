@@ -4,6 +4,7 @@ import { NotFoundComponent } from "@/components/not-found";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
+import { CRITICAL_CSS } from "@/lib/critical-css";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
 import appCss from "../styles.css?url";
 
@@ -38,7 +39,8 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      { rel: "stylesheet", href: appCss },
+      // Discover early; actual stylesheet is non-blocking in <head> below.
+      { rel: "preload", as: "style", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
@@ -69,6 +71,21 @@ export const Route = createRootRoute({
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
           <HeadContent />
+          <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
+          {/*
+            Full app CSS is render-blocking (~600ms mobile on PSI). Load as
+            print media, then promote to all on load. Critical CSS above
+            covers FOUC / hero CLS until then.
+          */}
+          <link rel="stylesheet" href={appCss} media="print" data-app-css="" />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){var l=document.querySelector("link[data-app-css]");if(!l)return;var g=function(){l.media="all"};if(l.sheet)g();else l.addEventListener("load",g);l.onload=g;setTimeout(g,2000)})();`,
+            }}
+          />
+          <noscript>
+            <link rel="stylesheet" href={appCss} />
+          </noscript>
         </head>
         <body className="bg-bg text-fg">
         <PreviewHostBridge />
