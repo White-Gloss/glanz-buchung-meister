@@ -11,6 +11,7 @@ import {
   DISCOVERY_CACHE_CONTROL,
   IMMUTABLE_ASSET_CACHE_CONTROL,
   REVALIDATE_CACHE_CONTROL,
+  STATIC_MEDIA_CACHE_CONTROL,
 } from "./server/cache-policy.ts";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
@@ -192,6 +193,8 @@ export default defineConfig(({ command, isPreview }) => ({
           (dep) =>
             !dep.includes("lazy-configurator") &&
             !dep.includes("workshop-map") &&
+            !dep.includes("before-after") &&
+            !dep.includes("google-reviews") &&
             !dep.includes("operator-middleware"),
         ),
     },
@@ -215,10 +218,10 @@ export default defineConfig(({ command, isPreview }) => ({
             compressPublicAssets: true,
             routeRules: {
               "/media/**": {
-                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
+                headers: { "cache-control": STATIC_MEDIA_CACHE_CONTROL },
               },
               "/fonts/**": {
-                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
+                headers: { "cache-control": STATIC_MEDIA_CACHE_CONTROL },
               },
               "/assets/**": {
                 headers: { "cache-control": IMMUTABLE_ASSET_CACHE_CONTROL },

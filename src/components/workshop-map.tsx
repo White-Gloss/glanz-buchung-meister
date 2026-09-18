@@ -22,7 +22,7 @@ export function WorkshopMap({ className = "" }: { className?: string }) {
             type="button"
             className="relative block w-full cursor-pointer text-left"
             onClick={() => setLive(true)}
-            aria-label="Google Maps laden – dabei werden Daten an Google übertragen"
+            aria-label={`Werkstatt in ${site.city}. ${site.street} · ${site.postalCode} ${site.city}. Google Maps laden – dabei werden Daten an Google übertragen`}
           >
             <span className="flex min-h-[18rem] flex-col items-center justify-center gap-3 px-6 pb-28 pt-8 text-center sm:min-h-[26rem]">
               <span className="text-2xl text-fg">Werkstatt in {site.city}</span>

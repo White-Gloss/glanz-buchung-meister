@@ -1,5 +1,8 @@
 export const IMMUTABLE_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 export const REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+/** Static media/fonts under fixed paths: week-long cache + SWR; ETag still validates on change. */
+export const STATIC_MEDIA_CACHE_CONTROL =
+  "public, max-age=604800, stale-while-revalidate=86400";
 export const DISCOVERY_CACHE_CONTROL = "public, max-age=86400";
 
 /** Only Vite's content-hashed build output can safely outlive a deployment. */
@@ -31,7 +34,10 @@ export function responseCacheControl({
   ) {
     return IMMUTABLE_ASSET_CACHE_CONTROL;
   }
-  if (/\.(?:avif|webp|woff2?|png|jpe?g|svg|js|css|webm|mp4|ico|gif|webmanifest)$/i.test(pathname)) {
+  if (/\.(?:avif|webp|woff2?|png|jpe?g|svg|webm|mp4|ico|gif)$/i.test(pathname)) {
+    return STATIC_MEDIA_CACHE_CONTROL;
+  }
+  if (/\.(?:js|css|webmanifest)$/i.test(pathname)) {
     return REVALIDATE_CACHE_CONTROL;
   }
   if (/\.(?:xml|txt)$/i.test(pathname)) return DISCOVERY_CACHE_CONTROL;
