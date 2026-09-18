@@ -61,43 +61,38 @@ function Home() {
           <div className="hero-stage-veil" />
           <div className="hero-film-copy" aria-hidden={false}>
             <div
-              className="hero-film-chapter"
+              className="hero-film-chapter hero-film-chapter--brand"
               data-film-von="-0.02"
-              data-film-bis="0.28"
+              data-film-bis="0.42"
             >
-              <p className="kicker">White Gloss · Horb am Neckar</p>
-              <p className="film-line">
-                Garage.
-                <br />
-                <em>Impala.</em>
+              <p className="film-line film-line--brand">
+                White Gloss
               </p>
-              <p className="film-sub">Scrollen – näher an den Lack.</p>
+              <p className="film-sub">Fahrzeugaufbereitung · Horb am Neckar</p>
             </div>
             <div
               className="hero-film-chapter"
-              data-film-von="0.30"
-              data-film-bis="0.58"
+              data-film-von="0.38"
+              data-film-bis="0.68"
             >
-              <p className="kicker">Näher</p>
+              <p className="kicker">Detailing</p>
               <p className="film-line">
-                Tür.
+                Lack.
                 <br />
-                <em>Rein.</em>
+                <em>Interieur.</em>
               </p>
-              <p className="film-sub">
-                Zoom und Drehung – bis ins saubere Interieur.
-              </p>
+              <p className="film-sub">Scrollen – rein in die helle Garage.</p>
             </div>
             <div
               className="hero-film-chapter"
-              data-film-von="0.60"
+              data-film-von="0.64"
               data-film-bis="1.15"
               data-film-stay
             >
-              <p className="kicker">Innenraum · White Gloss</p>
-              <h1 className="film-line">Sauber bis ins Detail</h1>
+              <p className="kicker">Jetzt Termin</p>
+              <h1 className="film-line">Anfrage starten</h1>
               <p className="film-sub">
-                Interieur-Aufbereitung in Horb – Termin anfragen oder Pakete ansehen.
+                Unverbindlich anfragen – Hol- und Bringservice in der Region.
               </p>
               <div className="hero-film-cta">
                 <Link to="/" hash="buchung" className={ctaPrimary}>
