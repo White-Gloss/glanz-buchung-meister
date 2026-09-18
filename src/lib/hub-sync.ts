@@ -13,7 +13,7 @@ import { ensureQontoInvoiceForBooking, sendQontoInvoiceEmailForBooking } from ".
 import { qontoConfigured } from "./qonto-mail.ts";
 import { hubAuthorized, hubRequestSchema, hubSecretConfigured, type HubRequest } from "./hub-sync-auth.ts";
 
-export { hubAuthorized, hubRequestSchema, hubSecretConfigured } from "./hub-sync-auth.ts";
+export { hubAuthorized, hubRequestSchema, hubSecretConfigured, newHubSyncToken } from "./hub-sync-auth.ts";
 export type { HubRequest } from "./hub-sync-auth.ts";
 
 const SHOP = "white-gloss";
@@ -47,6 +47,22 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
+}
+
+export async function ensureHubSyncSchema(sql: Sql) {
+  await sql`alter table shop_settings add column if not exists hub_sync_token text`;
+}
+
+export async function resolveHubSecret(sql: Sql): Promise<{ secret: string; source: "env" | "panel" | "none" }> {
+  const fromEnv = process.env.HUB_SYNC_TOKEN?.trim() ?? "";
+  if (hubSecretConfigured(fromEnv)) return { secret: fromEnv, source: "env" };
+  await ensureHubSyncSchema(sql);
+  const [row] = await sql<{ hub_sync_token: string | null }>`
+    select hub_sync_token from shop_settings where shop_id = ${SHOP} limit 1
+  `;
+  const fromPanel = row?.hub_sync_token?.trim() ?? "";
+  if (hubSecretConfigured(fromPanel)) return { secret: fromPanel, source: "panel" };
+  return { secret: "", source: "none" };
 }
 
 async function hubActor(sql: Sql): Promise<string> {
@@ -209,10 +225,17 @@ async function dispatch(sql: Sql, request: HubRequest): Promise<{ bookings?: Hub
 }
 
 export async function handleHubRequest(request: Request): Promise<Response> {
-  if (!hubSecretConfigured()) {
+  let sql: Sql;
+  try {
+    sql = await getSql();
+  } catch {
     return json({ ok: false, error: "Hub-Sync nicht konfiguriert." }, 503);
   }
-  if (!hubAuthorized(request.headers.get("authorization"))) {
+  const resolved = await resolveHubSecret(sql);
+  if (!hubSecretConfigured(resolved.secret)) {
+    return json({ ok: false, error: "Hub-Sync nicht konfiguriert." }, 503);
+  }
+  if (!hubAuthorized(request.headers.get("authorization"), resolved.secret)) {
     return json({ ok: false, error: "Nicht berechtigt." }, 401);
   }
   if (request.method !== "POST" && request.method !== "GET") {
@@ -229,7 +252,6 @@ export async function handleHubRequest(request: Request): Promise<Response> {
   const parsed = hubRequestSchema.safeParse(raw);
   if (!parsed.success) return json({ ok: false, error: "Ungültige Anfrage." }, 400);
   try {
-    const sql = await getSql();
     const result = await dispatch(sql, parsed.data);
     kickBookingDelivery(sql);
     return json({

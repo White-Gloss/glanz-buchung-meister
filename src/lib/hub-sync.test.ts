@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { hubAuthorized, hubRequestSchema, hubSecretConfigured } from "./hub-sync-auth.ts";
+import { hubAuthorized, hubRequestSchema, hubSecretConfigured, newHubSyncToken } from "./hub-sync-auth.ts";
 
 describe("hubAuthorized", () => {
   it("requires a strong bearer secret", () => {
@@ -11,6 +11,15 @@ describe("hubAuthorized", () => {
     assert.equal(hubAuthorized(`Bearer ${"b".repeat(32)}`, secret), false);
     assert.equal(hubAuthorized(`Bearer ${secret}`, ""), false);
     assert.equal(hubSecretConfigured("short"), false);
+  });
+});
+
+describe("newHubSyncToken", () => {
+  it("issues a 64-character hex secret", () => {
+    const token = newHubSyncToken();
+    assert.equal(hubSecretConfigured(token), true);
+    assert.match(token, /^[a-f0-9]{64}$/);
+    assert.notEqual(token, newHubSyncToken());
   });
 });
 

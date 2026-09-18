@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 export function hubSecretConfigured(secret = process.env.HUB_SYNC_TOKEN): boolean {
@@ -11,6 +11,10 @@ export function hubAuthorized(header: string | null, secret = process.env.HUB_SY
   const expected = Buffer.from(secret!.trim());
   const received = Buffer.from(header.slice(7).trim());
   return received.length === expected.length && timingSafeEqual(received, expected);
+}
+
+export function newHubSyncToken(): string {
+  return randomBytes(32).toString("hex");
 }
 
 const details = {
