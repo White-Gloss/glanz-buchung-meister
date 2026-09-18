@@ -2008,7 +2008,7 @@
 
 /* Scroll-film homepage hero (Stiehle-style): tall track, sticky canvas image sequence. */
 .hero-stage--scrub {
-  min-height: 420svh;
+  min-height: 180svh;
   overflow: clip;
 }
 .hero-stage--scrub .hero-stage-pin {
@@ -2163,10 +2163,16 @@
 .hero-stage--scrub .hero-stage-veil {
   background: linear-gradient(
     180deg,
-    rgb(0 0 0 / 0.22) 0%,
-    rgb(0 0 0 / 0.08) 42%,
-    rgb(0 0 0 / 0.28) 100%
+    rgb(0 0 0 / 0.08) 0%,
+    rgb(0 0 0 / 0.02) 45%,
+    rgb(0 0 0 / 0.14) 100%
   );
+}
+.hero-film-chapter--cta-soft .hero-film-cta {
+  margin-top: 0;
+}
+.hero-film-progress {
+  display: none;
 }
 .hero-stage--scrub .hero-stage-copy {
   opacity: calc(1 - var(--hero-scrub-p, 0) * 1.15);
@@ -2177,11 +2183,11 @@
   opacity: calc(1 - var(--hero-scrub-p, 0) * 2.8);
 }
 .hero-stage--scrub .hero-stage-veil::after {
-  opacity: calc(var(--hero-scrub-p, 0) * 0.55);
+  opacity: calc(var(--hero-scrub-p, 0) * 0.25);
 }
 @media (max-width: 767px) {
   .hero-stage--scrub {
-    min-height: 320svh;
+    min-height: 150svh;
   }
   .hero-stage--scrub .hero-stage-media {
     filter: none;

@@ -23,8 +23,8 @@ export const heroScrubPosterStart = "/media/hero-dirty.webp";
 export const heroScrubPosterEnd = "/media/hero-glossy.webp";
 
 /** Stiehle-style image-sequence film (desktop / mobile frame counts). */
-export const heroFilmDesktopFrames = 96;
-export const heroFilmMobileFrames = 96;
+export const heroFilmDesktopFrames = 128;
+export const heroFilmMobileFrames = 128;
 export const heroFilmBase = "/media/hero-film";
 
 function pickHeroLoop(mobile: boolean) {
@@ -178,7 +178,7 @@ function HeroScrollScrub({
       if (stopped) return;
       if (visible) {
         const diff = soll - ist;
-        ist = Math.abs(diff) < 0.02 ? soll : ist + diff * 0.16;
+        ist = Math.abs(diff) < 0.02 ? soll : ist + diff * 0.28;
         draw(false);
       }
       raf = window.requestAnimationFrame(tick);
