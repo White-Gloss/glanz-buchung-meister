@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 
 interface BeforeAfterSliderProps {
   beforeImage?: string;
@@ -8,6 +8,42 @@ interface BeforeAfterSliderProps {
   beforeLabel?: string;
   afterLabel?: string;
   className?: string;
+}
+
+function ComparisonImage({ src, alt }: { src: string; alt: string }) {
+  // Only these bundled images have the known responsive variants. Leave
+  // caller-supplied URLs untouched rather than inventing missing files.
+  const name = src.match(/^\/media\/(lack|finish)-800\.webp$/)?.[1];
+  const sizes = "(min-width: 1280px) 1200px, 100vw";
+  return (
+    <picture>
+      {name ? (
+        <>
+          <source
+            type="image/avif"
+            srcSet={`/media/${name}-480.avif 480w, /media/${name}-800.avif 800w, /media/${name}-1200.avif 1200w`}
+            sizes={sizes}
+          />
+          <source
+            type="image/webp"
+            srcSet={`/media/${name}-480.webp 480w, /media/${name}-800.webp 800w, /media/${name}-1200.webp 1200w`}
+            sizes={sizes}
+          />
+        </>
+      ) : null}
+      <img
+        src={src}
+        alt={alt}
+        width={name ? 1200 : undefined}
+        height={name ? 800 : undefined}
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        draggable={false}
+      />
+    </picture>
+  );
 }
 
 export function BeforeAfterSlider({
@@ -26,12 +62,15 @@ export function BeforeAfterSlider({
   const updatePosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const percent = Math.round((x / rect.width) * 100);
     setSliderPos(percent);
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.focus({ preventScroll: true });
     setIsDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
     updatePosition(e.clientX);
@@ -52,10 +91,25 @@ export function BeforeAfterSlider({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowLeft") {
-      setSliderPos((prev) => Math.max(0, prev - 5));
-    } else if (e.key === "ArrowRight") {
-      setSliderPos((prev) => Math.min(100, prev + 5));
+    switch (e.key) {
+      case "ArrowLeft":
+      case "ArrowDown":
+        e.preventDefault();
+        setSliderPos((prev) => Math.max(0, prev - 5));
+        break;
+      case "ArrowRight":
+      case "ArrowUp":
+        e.preventDefault();
+        setSliderPos((prev) => Math.min(100, prev + 5));
+        break;
+      case "Home":
+        e.preventDefault();
+        setSliderPos(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setSliderPos(100);
+        break;
     }
   };
 
@@ -67,6 +121,7 @@ export function BeforeAfterSlider({
         tabIndex={0}
         aria-label="Vorher-Nachher-Vergleich der Lackaufbereitung"
         aria-valuenow={sliderPos}
+        aria-valuetext={`${sliderPos}% ${beforeLabel}, ${100 - sliderPos}% ${afterLabel}`}
         aria-valuemin={0}
         aria-valuemax={100}
         onKeyDown={handleKeyDown}
@@ -74,31 +129,18 @@ export function BeforeAfterSlider({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="group relative aspect-[16/10] sm:aspect-[16/9] w-full cursor-ew-resize select-none overflow-hidden rounded-card border border-line bg-surface touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        onLostPointerCapture={() => setIsDragging(false)}
+        className="group relative aspect-[16/10] sm:aspect-[16/9] w-full cursor-ew-resize select-none overflow-hidden rounded-card border border-line bg-surface touch-pan-y touch-pinch-zoom focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* After Image */}
-        <img
-          src={afterImage}
-          alt={afterAlt}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-        />
+        <ComparisonImage src={afterImage} alt={afterAlt} />
 
         {/* Before Image */}
         <div
           className="absolute inset-0 h-full w-full overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
         >
-          <img
-            src={beforeImage}
-            alt={beforeAlt}
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-          />
+          <ComparisonImage src={beforeImage} alt={beforeAlt} />
         </div>
 
         {/* Labels */}
