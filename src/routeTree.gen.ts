@@ -55,6 +55,7 @@ import { Route as ApiAutomationCronRouteImport } from './routes/api.automation-c
 import { Route as ApiAvailabilityRouteImport } from './routes/api.availability'
 import { Route as ApiBitrixWorkshopRouteImport } from './routes/api/bitrix-workshop'
 import { Route as ApiGoogleReviewsRouteImport } from './routes/api.google-reviews'
+import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
@@ -296,6 +297,11 @@ const ApiGoogleReviewsRoute = ApiGoogleReviewsRouteImport.update({
   path: '/api/google-reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHubRoute = ApiHubRouteImport.update({
+  id: '/api/hub',
+  path: '/api/hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOperatorRoute = ApiOperatorRouteImport.update({
   id: '/api/operator',
   path: '/api/operator',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
+  '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
+  '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/api/availability': typeof ApiAvailabilityRoute
   '/api/bitrix-workshop': typeof ApiBitrixWorkshopRoute
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
+  '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
     | '/api/availability'
     | '/api/bitrix-workshop'
     | '/api/google-reviews'
+    | '/api/hub'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/api/availability'
     | '/api/bitrix-workshop'
     | '/api/google-reviews'
+    | '/api/hub'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -675,6 +686,7 @@ export interface FileRouteTypes {
     | '/api/availability'
     | '/api/bitrix-workshop'
     | '/api/google-reviews'
+    | '/api/hub'
     | '/api/operator'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -717,6 +729,7 @@ export interface RootRouteChildren {
   ApiAvailabilityRoute: typeof ApiAvailabilityRoute
   ApiBitrixWorkshopRoute: typeof ApiBitrixWorkshopRoute
   ApiGoogleReviewsRoute: typeof ApiGoogleReviewsRoute
+  ApiHubRoute: typeof ApiHubRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
@@ -1047,6 +1060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/hub': {
+      id: '/api/hub'
+      path: '/api/hub'
+      fullPath: '/api/hub'
+      preLoaderRoute: typeof ApiHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/operator': {
       id: '/api/operator'
       path: '/api/operator'
@@ -1246,6 +1266,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAvailabilityRoute: ApiAvailabilityRoute,
   ApiBitrixWorkshopRoute: ApiBitrixWorkshopRoute,
   ApiGoogleReviewsRoute: ApiGoogleReviewsRoute,
+  ApiHubRoute: ApiHubRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,
