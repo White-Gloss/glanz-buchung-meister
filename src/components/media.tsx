@@ -17,6 +17,16 @@ export const heroPreload = {
   imageSizes: "100vw",
 };
 
+/** Start frame of the scroll-film hero (dirty car). */
+export const heroScrubPosterStart = "/media/hero-dirty.webp";
+/** End frame / reduced-motion still (high-gloss finish). */
+export const heroScrubPosterEnd = "/media/hero-glossy.webp";
+
+/** Stiehle-style image-sequence film (desktop / mobile frame counts). */
+export const heroFilmDesktopFrames = 96;
+export const heroFilmMobileFrames = 96;
+export const heroFilmBase = "/media/hero-film";
+
 function pickHeroLoop(mobile: boolean) {
   const probe = document.createElement("video");
   const webm = probe.canPlayType('video/webm; codecs="vp9"') !== "";
@@ -24,7 +34,267 @@ function pickHeroLoop(mobile: boolean) {
   return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
 }
 
-export function HeroMedia({
+function heroFilmPath(mobile: boolean, index: number) {
+  const folder = mobile ? "m" : "d";
+  const n = String(index + 1).padStart(4, "0");
+  return `${heroFilmBase}/${folder}/${n}.webp`;
+}
+
+function HeroScrollScrub({
+  alt,
+  className,
+  priority = false,
+}: {
+  alt: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const root = rootRef.current;
+    const canvas = canvasRef.current;
+    if (!root || !canvas) return;
+    const stage = root.closest(".hero-stage") as HTMLElement | null;
+    if (!stage) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+
+    const mobile = window.matchMedia("(max-width: 760px)").matches;
+    const count = mobile ? heroFilmMobileFrames : heroFilmDesktopFrames;
+    const frames: (HTMLImageElement | undefined)[] = new Array(count);
+    let loaded = 0;
+    let ist = 0;
+    let soll = 0;
+    let drawn = -1;
+    let visible = true;
+    let raf = 0;
+    let stopped = false;
+
+    const nearest = (i: number) => {
+      if (frames[i]) return frames[i]!;
+      for (let d = 1; d < count; d++) {
+        if (frames[i - d]) return frames[i - d]!;
+        if (frames[i + d]) return frames[i + d]!;
+      }
+      return null;
+    };
+
+    const sizeCanvas = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 2 : 1.5);
+      const w = root.clientWidth;
+      const h = root.clientHeight;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      drawn = -1;
+    };
+
+    const draw = (force = false) => {
+      const i = Math.max(0, Math.min(count - 1, Math.round(ist)));
+      const img = nearest(i);
+      if (!img) return;
+      if (!force && i === drawn) return;
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      const scale = Math.max(cw / iw, ch / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      drawn = i;
+    };
+
+    const chapters = Array.from(
+      stage.querySelectorAll<HTMLElement>("[data-film-von]"),
+    );
+    const bars = Array.from(
+      stage.querySelectorAll<HTMLElement>(".hero-film-progress b"),
+    );
+    const hint = stage.querySelector<HTMLElement>(".scroll-hint");
+    const updateChrome = (p: number) => {
+      for (const el of chapters) {
+        const von = Number(el.dataset.filmVon);
+        const bis = Number(el.dataset.filmBis);
+        const local = (p - von) / Math.max(0.0001, bis - von);
+        let opacity = 0;
+        let y = 70;
+        if (local > 0 && local < 1) {
+          if (local < 0.22) {
+            opacity = local / 0.22;
+            y = 70 * (1 - opacity);
+          } else if (local > 0.78) {
+            opacity = (1 - local) / 0.22;
+            y = -70 * (1 - opacity);
+          } else {
+            opacity = 1;
+            y = 0;
+          }
+        } else if (local >= 1 && el.hasAttribute("data-film-stay")) {
+          opacity = 1;
+          y = 0;
+        }
+        opacity = opacity * opacity * (3 - 2 * opacity);
+        el.style.opacity = opacity.toFixed(3);
+        el.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(1)}px), 0)`;
+        el.classList.toggle("is-on", opacity > 0.45);
+      }
+      if (bars.length) {
+        const share = 1 / bars.length;
+        bars.forEach((b, i) => {
+          const f = Math.max(0, Math.min(1, (p - i * share) / share));
+          b.style.transform = `scaleY(${f.toFixed(3)})`;
+        });
+      }
+      if (hint) hint.style.opacity = p > 0.03 ? "0" : "";
+    };
+
+    const measure = () => {
+      const scrollable = Math.max(1, stage.offsetHeight - window.innerHeight);
+      const top = stage.getBoundingClientRect().top;
+      const p = Math.min(1, Math.max(0, -top / scrollable));
+      soll = p * (count - 1);
+      stage.style.setProperty("--hero-scrub-p", p.toFixed(4));
+      updateChrome(p);
+      const r = stage.getBoundingClientRect();
+      visible = r.bottom > 0 && r.top < window.innerHeight;
+    };
+
+    const tick = () => {
+      if (stopped) return;
+      if (visible) {
+        const diff = soll - ist;
+        ist = Math.abs(diff) < 0.02 ? soll : ist + diff * 0.16;
+        draw(false);
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+
+    // Progressive load like Stiehle: coarse keyframes first
+    const order: number[] = [];
+    for (const step of [16, 8, 4, 2, 1]) {
+      for (let i = 0; i < count; i += step) {
+        if (!order.includes(i)) order.push(i);
+      }
+    }
+    if (!order.includes(count - 1)) order.splice(1, 0, count - 1);
+
+    let pos = 0;
+    let active = 0;
+    const maxConcurrent = 6;
+    const pump = () => {
+      while (active < maxConcurrent && pos < order.length) {
+        const idx = order[pos++];
+        active++;
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => {
+          frames[idx] = img;
+          loaded++;
+          active--;
+          if (idx === 0 || drawn < 0) draw(true);
+          const bar = stage.querySelector(".hero-film-load") as HTMLElement | null;
+          if (bar) {
+            bar.style.width = `${(loaded / count) * 100}%`;
+            if (loaded >= count) bar.style.opacity = "0";
+          }
+          pump();
+        };
+        img.onerror = () => {
+          active--;
+          pump();
+        };
+        img.src = heroFilmPath(mobile, idx);
+      }
+    };
+
+    sizeCanvas();
+    measure();
+    pump();
+    raf = window.requestAnimationFrame(tick);
+
+    const onScroll = () => measure();
+    const onResize = () => {
+      sizeCanvas();
+      measure();
+      draw(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+
+    return () => {
+      stopped = true;
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      stage.style.removeProperty("--hero-scrub-p");
+    };
+  }, [reduceMotion]);
+
+  if (reduceMotion) {
+    return (
+      <div
+        ref={rootRef}
+        className={cn("hero-image relative isolate size-full overflow-hidden", className)}
+      >
+        <picture>
+          <source type="image/webp" srcSet={heroScrubPosterEnd} />
+          <img
+            src="/media/hero-glossy.jpg"
+            alt={alt}
+            width={1920}
+            height={1080}
+            className="absolute inset-0 size-full object-cover"
+            fetchPriority={priority ? "high" : "low"}
+            decoding={priority ? "sync" : "async"}
+            loading={priority ? "eager" : "lazy"}
+          />
+        </picture>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={rootRef}
+      className={cn("hero-image hero-film relative isolate size-full overflow-hidden", className)}
+    >
+      <img
+        src={heroScrubPosterStart}
+        alt=""
+        aria-hidden
+        width={1280}
+        height={720}
+        className="absolute inset-0 size-full object-cover"
+        fetchPriority={priority ? "high" : "low"}
+        decoding="async"
+      />
+      <canvas
+        ref={canvasRef}
+        className="hero-film-canvas absolute inset-0 size-full"
+        role="img"
+        aria-label={alt}
+      />
+      <div className="hero-film-load" aria-hidden />
+    </div>
+  );
+}
+
+function HeroLoopMedia({
   alt,
   className,
   priority = false,
@@ -194,6 +464,24 @@ export function HeroMedia({
       {controlHost ? createPortal(control, controlHost) : control}
     </div>
   );
+}
+
+export function HeroMedia({
+  alt,
+  className,
+  priority = false,
+  scrub = false,
+}: {
+  alt: string;
+  className?: string;
+  priority?: boolean;
+  /** Homepage: tall sticky section; video currentTime follows scroll. */
+  scrub?: boolean;
+}) {
+  if (scrub) {
+    return <HeroScrollScrub alt={alt} className={className} priority={priority} />;
+  }
+  return <HeroLoopMedia alt={alt} className={className} priority={priority} />;
 }
 
 export type ShotName =
