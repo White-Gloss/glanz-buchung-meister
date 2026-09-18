@@ -1,4 +1,4 @@
-﻿import { site } from "@/data/site";
+import { site } from "@/data/site";
 
 interface WhatsAppPhotoCtaProps {
   className?: string;
@@ -38,7 +38,7 @@ export function WhatsAppPhotoCta({ className = "" }: WhatsAppPhotoCtaProps) {
             href={whatsappPhotoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-3.5 rounded-sm inline-flex items-center justify-center gap-2 shadow-lg transition-colors"
+            className="btn bg-emerald-700 hover:bg-emerald-600 text-white font-medium px-6 py-3.5 rounded-sm inline-flex items-center justify-center gap-2 shadow-lg transition-colors"
           >
             <svg
               viewBox="0 0 24 24"

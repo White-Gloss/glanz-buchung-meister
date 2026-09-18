@@ -6,7 +6,7 @@ const reviewsClient = new QueryClient();
 
 function RatingStars({ rating = 5 }: { rating?: number }) {
   return (
-    <div className="inline-flex items-center gap-1 text-amber-400" aria-label={`${rating} von 5 Sternen`}>
+    <div role="img" className="inline-flex items-center gap-1 text-amber-400" aria-label={`${rating} von 5 Sternen`}>
       {[...Array(5)].map((_, i) => (
         <svg
           key={i}

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   IMMUTABLE_ASSET_CACHE_CONTROL,
   REVALIDATE_CACHE_CONTROL,
+  STATIC_MEDIA_CACHE_CONTROL,
   responseCacheControl,
 } from "./cache-policy.ts";
 
@@ -13,12 +14,19 @@ describe("responseCacheControl", () => {
     }
   });
 
-  it("revalidates mutable media, fonts, icons, scripts and manifests", () => {
+  it("caches static media and fonts with a week-long TTL", () => {
     for (const pathname of [
       "/media/lack-1200.avif",
       "/media/hero-loop.webm",
       "/fonts/barlow-300.woff2",
       "/favicon.svg",
+    ]) {
+      assert.equal(responseCacheControl({ pathname }), STATIC_MEDIA_CACHE_CONTROL);
+    }
+  });
+
+  it("revalidates unhashed scripts and manifests", () => {
+    for (const pathname of [
       "/assets/app.js",
       "/site.webmanifest",
       "/__grok/manifest.webmanifest",
