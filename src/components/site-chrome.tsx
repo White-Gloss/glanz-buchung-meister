@@ -413,7 +413,10 @@ export function SiteFooter() {
             {site.phoneDisplay}
           </a>
           <br />
-          <a href={`mailto:${site.email}`} className="text-sm text-fg">
+          <a
+            href={`mailto:${site.email}`}
+            className="inline-flex min-h-11 min-w-11 items-center text-sm text-fg"
+          >
             {site.email}
           </a>
           <div className="mt-5 flex flex-wrap gap-2">
