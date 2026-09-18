@@ -5,7 +5,7 @@ import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { LazyConfigurator } from "@/components/lazy-configurator";
 import { WorkshopMap } from "@/components/workshop-map";
-import { HeroMedia, PhotoNote, Shot, heroScrubPosterStart } from "@/components/media";
+import { HeroMedia, PhotoNote, Shot } from "@/components/media";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import {
   packageServiceSlug,
@@ -32,9 +32,7 @@ export const Route = createFileRoute("/")({
       description:
         "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
       path: "/",
-      preloadHero: false,
-      preloadImage: heroScrubPosterStart,
-      preloadType: "image/webp",
+      preloadHero: true,
     }),
 });
 
@@ -48,37 +46,32 @@ function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="hero-stage hero-intro hero-stage--scrub" aria-label="Hero">
-        <div className="hero-stage-pin">
-          <div className="hero-stage-media">
-            <HeroMedia
-              scrub
-              priority
-              alt="Vom schmutzigen Auto zur High-Gloss-Aufbereitung bei White Gloss in Horb am Neckar"
-              className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
-            />
+      <section className="hero-stage hero-intro">
+        <div className="hero-stage-media" data-parallax>
+          <HeroMedia
+            priority
+            alt="Weißes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+            className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
+          />
+        </div>
+        <div className="hero-stage-veil" />
+        <div className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6">
+          <p className="kicker">White Gloss Detailing</p>
+          <h1 className="hero-title mt-5 max-w-4xl">Fahrzeugaufbereitung in Horb am Neckar</h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg">
+            Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
+          </p>
+          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/" hash="buchung" className={ctaPrimary}>
+              Termin anfragen <IconArrowRight className="size-4" aria-hidden />
+            </Link>
+            <Link to="/preise" className={ctaGhost}>
+              Pakete & Preise
+            </Link>
           </div>
-          <div className="hero-stage-veil" />
-          <div className="hero-film-copy" aria-hidden={false}>
-            <div
-              className="hero-film-chapter hero-film-chapter--cta-soft"
-              data-film-von="0.72"
-              data-film-bis="1.2"
-              data-film-stay
-            >
-              <div className="hero-film-cta">
-                <Link to="/" hash="buchung" className={ctaPrimary}>
-                  Termin anfragen <IconArrowRight className="size-4" aria-hidden />
-                </Link>
-                <Link to="/preise" className={ctaGhost}>
-                  Pakete &amp; Preise
-                </Link>
-              </div>
-            </div>
-          </div>
-          <div className="scroll-hint" aria-hidden>
-            <span />
-          </div>
+        </div>
+        <div className="scroll-hint" aria-hidden>
+          <span />
         </div>
       </section>
 
