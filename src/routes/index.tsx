@@ -61,35 +61,11 @@ function Home() {
           <div className="hero-stage-veil" />
           <div className="hero-film-copy" aria-hidden={false}>
             <div
-              className="hero-film-chapter hero-film-chapter--brand"
-              data-film-von="-0.02"
-              data-film-bis="0.36"
-            >
-              <p className="film-line film-line--brand">White Gloss</p>
-              <p className="film-sub film-sub--center">Detail · No compromise</p>
-            </div>
-            <div
-              className="hero-film-chapter hero-film-chapter--brand"
-              data-film-von="0.32"
-              data-film-bis="0.62"
-            >
-              <p className="film-line film-line--brand film-line--results">
-                only
-                <br />
-                <em>Results</em>
-              </p>
-            </div>
-            <div
-              className="hero-film-chapter"
-              data-film-von="0.58"
-              data-film-bis="1.15"
+              className="hero-film-chapter hero-film-chapter--cta-soft"
+              data-film-von="0.72"
+              data-film-bis="1.2"
               data-film-stay
             >
-              <p className="kicker">White Gloss · Horb</p>
-              <h1 className="film-line">Anfrage starten</h1>
-              <p className="film-sub">
-                Unverbindlich anfragen – Hol- und Bringservice in der Region.
-              </p>
               <div className="hero-film-cta">
                 <Link to="/" hash="buchung" className={ctaPrimary}>
                   Termin anfragen <IconArrowRight className="size-4" aria-hidden />
@@ -99,20 +75,6 @@ function Home() {
                 </Link>
               </div>
             </div>
-          </div>
-          <div className="hero-film-progress" aria-hidden>
-            <span>
-              <b />
-            </span>
-            <span>
-              <b />
-            </span>
-            <span>
-              <b />
-            </span>
-            <span>
-              <b />
-            </span>
           </div>
           <div className="scroll-hint" aria-hidden>
             <span />
