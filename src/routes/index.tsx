@@ -63,33 +63,29 @@ function Home() {
             <div
               className="hero-film-chapter hero-film-chapter--brand"
               data-film-von="-0.02"
-              data-film-bis="0.42"
+              data-film-bis="0.36"
             >
-              <p className="film-line film-line--brand">
-                White Gloss
-              </p>
-              <p className="film-sub">Fahrzeugaufbereitung · Horb am Neckar</p>
+              <p className="film-line film-line--brand">White Gloss</p>
+              <p className="film-sub film-sub--center">Detail · No compromise</p>
             </div>
             <div
-              className="hero-film-chapter"
-              data-film-von="0.38"
-              data-film-bis="0.68"
+              className="hero-film-chapter hero-film-chapter--brand"
+              data-film-von="0.32"
+              data-film-bis="0.62"
             >
-              <p className="kicker">Detailing</p>
-              <p className="film-line">
-                Lack.
+              <p className="film-line film-line--brand film-line--results">
+                only
                 <br />
-                <em>Interieur.</em>
+                <em>Results</em>
               </p>
-              <p className="film-sub">Scrollen – rein in die helle Garage.</p>
             </div>
             <div
               className="hero-film-chapter"
-              data-film-von="0.64"
+              data-film-von="0.58"
               data-film-bis="1.15"
               data-film-stay
             >
-              <p className="kicker">Jetzt Termin</p>
+              <p className="kicker">White Gloss · Horb</p>
               <h1 className="film-line">Anfrage starten</h1>
               <p className="film-sub">
                 Unverbindlich anfragen – Hol- und Bringservice in der Region.

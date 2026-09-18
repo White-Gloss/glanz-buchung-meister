@@ -2148,6 +2148,18 @@
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.88);
 }
+
+.hero-film-chapter .film-sub--center {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+}
+.hero-film-chapter .film-line--results {
+  font-size: clamp(2.75rem, 10vw, 6rem);
+}
+.hero-film-chapter .film-line--results em {
+  font-style: normal;
+}
 .hero-stage--scrub .hero-stage-veil {
   background: linear-gradient(
     180deg,
