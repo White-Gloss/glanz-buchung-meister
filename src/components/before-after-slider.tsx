@@ -11,9 +11,8 @@ interface BeforeAfterSliderProps {
 }
 
 function ComparisonImage({ src, alt }: { src: string; alt: string }) {
-  // Only these bundled images have the known responsive variants. Leave
-  // caller-supplied URLs untouched rather than inventing missing files.
-  const name = src.match(/^\/media\/(lack|finish)-800\.webp$/)?.[1];
+  // Bundled compare-* images have responsive variants. Leave other URLs alone.
+  const name = src.match(/^\/media\/(compare-before|compare-after)-800\.webp$/)?.[1];
   const sizes = "(min-width: 1280px) 1200px, 100vw";
   return (
     <picture>
@@ -47,10 +46,10 @@ function ComparisonImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export function BeforeAfterSlider({
-  beforeImage = "/media/lack-800.webp",
-  afterImage = "/media/finish-800.webp",
-  beforeAlt = "Lack vor der Lackkorrektur mit feinen Waschkratzern",
-  afterAlt = "Lack nach der mehrstufigen Politur unter Prüflicht",
+  beforeImage = "/media/compare-before-800.webp",
+  afterImage = "/media/compare-after-800.webp",
+  beforeAlt = "Schwarzer Lack vor der Lackkorrektur mit deutlichen Waschkratzern und Swirls unter Prüflicht",
+  afterAlt = "Schwarzer Lack nach der Lackkorrektur mit tiefer Spiegelung und klarem Glanz",
   beforeLabel = "Vorher",
   afterLabel = "Nach der Politur",
   className = "",
@@ -132,10 +131,8 @@ export function BeforeAfterSlider({
         onLostPointerCapture={() => setIsDragging(false)}
         className="group relative aspect-[16/10] sm:aspect-[16/9] w-full cursor-ew-resize select-none overflow-hidden rounded-card border border-line bg-surface touch-pan-y touch-pinch-zoom focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        {/* After Image */}
         <ComparisonImage src={afterImage} alt={afterAlt} />
 
-        {/* Before Image */}
         <div
           className="absolute inset-0 h-full w-full overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
@@ -143,7 +140,6 @@ export function BeforeAfterSlider({
           <ComparisonImage src={beforeImage} alt={beforeAlt} />
         </div>
 
-        {/* Labels */}
         <span className="absolute left-4 top-4 rounded bg-bg/80 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.14em] text-fg backdrop-blur-sm pointer-events-none border border-line">
           {beforeLabel}
         </span>
@@ -151,7 +147,6 @@ export function BeforeAfterSlider({
           {afterLabel}
         </span>
 
-        {/* Divider Line */}
         <div
           className="absolute inset-y-0 w-0.5 bg-accent-fg/80 pointer-events-none transition-shadow duration-200"
           style={{ left: `${sliderPos}%` }}

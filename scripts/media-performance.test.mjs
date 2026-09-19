@@ -222,7 +222,7 @@ function imageMarkup(src) {
 }
 
 test("comparison default photos expose AVIF/WebP sizes, dimensions and lazy loading", () => {
-  for (const name of ["lack", "finish"]) {
+  for (const name of ["compare-before", "compare-after"]) {
     const elements = imageMarkup(`/media/${name}-800.webp`);
     const sources = elements.filter((element) => element.type === "source");
     assert.equal(sources.length, 2);
