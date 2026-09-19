@@ -3,7 +3,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { createInterface } from "node:readline/promises";
 let key = process.env.ROAPP_API_KEY;
 if (process.argv.includes("--stdin-key")) {
-  const reader = createInterface({ input: process.stdin, output: process.stdout });
+  const reader = createInterface({ input: process.stdin, output: process.stdout, terminal: false });
   key = (await reader.question("RO credential input ready: ")).trim();
   reader.close();
 }
