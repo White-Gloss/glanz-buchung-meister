@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
 
@@ -129,8 +129,18 @@ export async function handleRoCallback(request: Request, sql: Sql) {
     return new Response(null, { status: 400, headers });
   }
   if (!body || typeof body !== "object") return new Response(null, { status: 400, headers });
-  if (!verifyRoSignature(body.id || "", request.headers.get("x-signature") || "", secret))
+  const signature = request.headers.get("x-signature") || "";
+  if (!verifyRoSignature(body.id || "", signature, secret)) {
+    // Operational metadata only; never log the secret, signature, event body or customer data.
+    const id = typeof body.id === "string" ? body.id : "";
+    console.warn("[roapp-webhook] signature_rejected", JSON.stringify({
+      signatureLength: signature.length,
+      idIsUuid: /^[a-f0-9-]{36}$/i.test(id),
+      hmacMatches: createHmac("sha256", secret).update(id).digest("hex") === signature,
+      secretFirstMatches: createHash("sha256").update(secret + id).digest("hex") === signature,
+    }));
     return new Response(null, { status: 401, headers });
+  }
   if (
     body.context?.object_type !== "order" ||
     !Number.isSafeInteger(body.context.object_id) ||
@@ -138,7 +148,8 @@ export async function handleRoCallback(request: Request, sql: Sql) {
   )
     return Response.json({ ok: true }, { headers });
   try {
-    await refreshRoOrder(sql, body.context.object_id!);
+    const refreshed = await refreshRoOrder(sql, body.context.object_id!);
+    console.info("[roapp-webhook] accepted", JSON.stringify({ refreshed }));
     return Response.json({ ok: true }, { headers });
   } catch {
     return Response.json({ error: "sync_failed" }, { status: 503, headers });
