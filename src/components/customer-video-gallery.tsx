@@ -10,13 +10,13 @@ export type CustomerVideo = {
   featured?: boolean;
 };
 
-export function CustomerVideoGallery({ videos, compact = false }: { videos: readonly CustomerVideo[]; compact?: boolean }) {
+export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = false }: { videos: readonly CustomerVideo[]; compact?: boolean; mobileSwipe?: boolean }) {
   const [active, setActive] = useState<CustomerVideo | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const titleId = useId();
   const swipeHintId = useId();
-  const swipeable = !compact && videos.length > 1;
+  const swipeable = mobileSwipe && !compact && videos.length > 1;
 
   useEffect(() => {
     const dialog = dialogRef.current;
