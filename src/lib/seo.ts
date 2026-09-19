@@ -170,13 +170,6 @@ export function localBusinessJsonLd() {
         paymentAccepted: "Cash, Bank Transfer",
         description:
           "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice.",
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "5.0",
-          reviewCount: "14",
-          bestRating: "5",
-          worstRating: "1",
-        },
         address: {
           "@type": "PostalAddress",
           streetAddress: site.street,

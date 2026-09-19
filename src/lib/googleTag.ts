@@ -214,3 +214,20 @@ export function trackGoogleAdsConversion(options?: {
 
   return true;
 }
+
+/** Navigation intent, never a booking conversion. No contact data or URLs are sent. */
+export function trackCtaInteraction(
+  channel: "phone" | "whatsapp" | "instagram" | "booking",
+  placement: "header" | "footer" | "content",
+  ga4Id = import.meta.env?.VITE_GA4_MEASUREMENT_ID,
+): boolean {
+  if (typeof window === "undefined" || getStoredConsent() !== "accepted") return false;
+  const measurementId = resolveGa4MeasurementId(ga4Id);
+  if (!measurementId || typeof window.gtag !== "function") return false;
+  try {
+    window.gtag("event", "cta_click", { send_to: measurementId, channel, placement });
+    return true;
+  } catch {
+    return false;
+  }
+}

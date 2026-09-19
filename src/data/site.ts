@@ -15,7 +15,7 @@ export const site = {
   phoneHref: "tel:+4915233540284",
   email: "info@white-gloss.de",
   bookingEmail: "buchung@white-gloss.de",
-  instagram: "https://www.instagram.com/white_gloss.detailing/",
+  instagram: "https://www.instagram.com/white_gloss.detailing",
   instagramHandle: "white_gloss.detailing",
   whatsapp:
     "https://wa.me/4915233540284?text=Hallo%20White%20Gloss%2C%20ich%20interessiere%20mich%20f%C3%BCr%20eine%20Fahrzeugaufbereitung.",
@@ -108,7 +108,7 @@ export const packages: Package[] = [
     name: "Basisreinigung",
     searchLabel: "Reinigung innen und außen",
     seoName: "Basisreinigung – Innenraum- und Außenreinigung in Horb am Neckar",
-    body: "Das Paket Basisreinigung umfasst eine Handwäsche sowie die Reinigung von Innenraum, Felgen, Reifen und Scheiben. Eine Sprühversiegelung ergänzt die Pflege. Eine Lackpolitur ist nicht enthalten. Ab 149 € inkl. MwSt., Dauer ca. 3 Std.",
+    body: "Für ein gepflegtes Auto im Alltag: Wir waschen Ihr Fahrzeug von Hand und reinigen Innenraum, Felgen, Reifen und Scheiben. Eine Sprühversiegelung rundet die Pflege ab. Ohne Lackpolitur; ab 149 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 3 Std.",
     price: 149,
     duration: "ca. 3 Std.",
     items: [
@@ -125,7 +125,7 @@ export const packages: Package[] = [
     name: "Reinigung & Politur",
     searchLabel: "Reinigung und Lackpflege",
     seoName: "Reinigung & Politur – Lackpolitur und Innenraumreinigung Horb",
-    body: "Das Paket Reinigung & Politur ergänzt die Basisreinigung um eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend schützt Wachs den Lack. Ab 349 € inkl. MwSt., Dauer ca. 6 Std.",
+    body: "Wenn Innenraum und Lack mehr Zuwendung brauchen: Zur Basisreinigung kommen eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend tragen wir Wachs auf. Ab 349 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 6 Std.",
     price: 349,
     duration: "ca. 6 Std.",
     featured: true,
@@ -143,14 +143,14 @@ export const packages: Package[] = [
     name: "Keramikschutz",
     searchLabel: "Lackkorrektur und Versiegelung",
     seoName: "Keramikschutz – 9H-Keramikversiegelung inkl. Lackkorrektur in Horb",
-    body: "Das Paket Keramikschutz umfasst eine mehrstufige Lackkorrektur und eine hochfeste 9H-Keramikversiegelung (Standzeit bis zu 36 Monate / ca. 45.000 km). Glas- und Felgenversiegelung, Lederpflege sowie der vollkaskoversicherte Hol- und Bringservice bis 60 km sind inklusive. Ab 899 € inkl. MwSt., Dauer ca. 2 Tage.",
+    body: "Das Paket Keramikschutz umfasst eine mehrstufige Lackkorrektur und eine hochfeste 9H-Keramikversiegelung (Standzeit bis zu 36 Monate / ca. 45.000 km). Glas- und Felgenversiegelung, Lederpflege sowie der vollkaskoversicherte Hol- und Bringservice bis 60 km sind inklusive. Ab 899 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 2 Tage.",
     price: 899,
     duration: "ca. 2 Tage",
     includesPickup: true,
     items: [
       "Alle Leistungen des Pakets Reinigung & Politur",
-      "Mehrstufige Lackkorrektur (Swirls, Hologramme & Waschkratzer entfernen)",
-      "9H-Keramikversiegelung (Standzeit bis zu 36 Monate / extremer Abperleffekt)",
+      "Mehrstufige Lackkorrektur zur Reduzierung feiner Waschkratzer und Hologramme, soweit der Lackzustand es zulässt",
+      "9H-Keramikversiegelung mit Abperleffekt, Standzeit bis zu 36 Monate bei empfohlener Pflege",
       "Glas- und Felgenversiegelung für Rundumschutz",
       "Lederpflege und Tiefenimprägnierung im Innenraum",
       "Vollkaskoversicherter Hol- und Bringservice bis 60 km inklusive",
@@ -344,7 +344,7 @@ export const cities: City[] = [
     km: 30,
     minutes: 35,
     blurb:
-      "Oberndorf am Neckar erreichen wir in etwa 35 Minuten. Übergabe an der vereinbarten Adresse, Rückgabe nach Kontrolle unter Werkstattlicht in Horb.",
+      "Oberndorf am Neckar erreichen wir in etwa 35 Minuten. Abholung und Rückgabe erfolgen an der vereinbarten Adresse. Zuvor kontrollieren wir das Ergebnis in unserer Werkstatt.",
   },
   {
     slug: "herrenberg",
@@ -554,7 +554,7 @@ export const services: ServicePage[] = [
     nav: "Innenraumreinigung",
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
     description:
-      "Innenraumreinigung in Horb: Sitze, Teppiche, Kunststoffe. Gegen Gerüche optional Ozon. Wir arbeiten am Material, nicht mit Duft.",
+      "Innenraumreinigung in Horb: Sitze, Teppiche, Kunststoffe. Gegen Gerüche optional Ozon. Materialgerechte Reinigung und Pflege.",
     teaser: "Gründliche Reinigung von Sitzen, Teppichen und Verkleidungen.",
     group: "atelier",
     fromPrice: 149,
@@ -564,7 +564,7 @@ export const services: ServicePage[] = [
       "Gründliche Reinigung von Sitzen, Teppichen und Fußräumen",
       "Kunststoff und Verkleidungen passend zum Material",
       "Gezielte Behandlung von Flecken und Gebrauchsspuren",
-      "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €",
+      "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €",
     ],
     body: [
       "Wir entfernen Verschmutzungen aus Sitzen, Teppichen und Verkleidungen. Die Reinigungsmethode stimmen wir auf das jeweilige Material ab.",
@@ -596,7 +596,7 @@ export const services: ServicePage[] = [
     nav: "Lackkorrektur",
     metaTitle: "Lackkorrektur & Politur Horb | White Gloss",
     description:
-      "Lackkorrektur in Horb: Swirls und Waschkratzer rausarbeiten, Farbe und Glanz zurückholen – ohne unnötig Lack abzutragen.",
+      "Lackkorrektur in Horb: Lackdickenmessung, materialschonende Politur und klare Beratung zu behandelbaren Waschkratzern.",
     teaser: "Lackpolitur zur Reduzierung feiner Kratzer und für gleichmäßigen Glanz.",
     group: "atelier",
     fromPrice: 349,
@@ -638,16 +638,16 @@ export const services: ServicePage[] = [
     nav: "Keramikversiegelung",
     metaTitle: "Keramikversiegelung Auto Horb | White Gloss",
     description:
-      "Keramikversiegelung in Horb am Neckar ab 899 €: erst Lackkorrektur, dann die Schicht. Standzeit laut Produkt, keine pauschalen Werbejahre.",
+      "Keramikversiegelung in Horb am Neckar ab 899 €: inkl. MwSt. für die Kompaktklasse, mit Lackkorrektur und Pflegeberatung.",
     teaser: "Lackkorrektur und anschließende Keramikversiegelung.",
     group: "atelier",
     fromPrice: 899,
     image: "/media/keramik.webp",
     imageAlt: "Spiegelnde Motorhaube eines Kundenfahrzeugs nach der Lackaufbereitung",
     bullets: [
-      "Extremer hydrophober Abperleffekt – Lack bleibt spürbar länger sauber",
-      "Tiefenglanz & Spiegeleffekt durch mehrstufige Lackvorbereitung",
-      "Harter 9H-Schutz vor Vogelkot, Baumharz, Insekten und Streusalz",
+      "Wasserabweisende Oberfläche für eine leichtere Fahrzeugwäsche",
+      "Gleichmäßiger Glanz durch sorgfältige Lackvorbereitung",
+      "9H-Keramikbeschichtung als zusätzlicher Oberflächenschutz; Verschmutzungen weiterhin zeitnah entfernen",
       "Standzeit bis zu 36 Monate / ca. 45.000 km bei empfohlener Pflege",
     ],
     body: [
@@ -695,7 +695,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Leder braucht die richtige Pflege, keine aggressive Chemie. Wir reinigen zuerst gründlich und lassen die Pflege danach einziehen.",
-      "Die Lederpflege ab 149 € umfasst Tiefenreinigung und Imprägnierung. Sie ist als Zusatzleistung erhältlich. Das Paket Keramikschutz enthält ebenfalls Lederpflege.",
+      "Die Lederpflege ab 149 € umfasst Tiefenreinigung und Imprägnierung. Sie ist als Zusatzleistung erhältlich. Das Paket Keramikschutz enthält ebenfalls Lederpflege.",
     ],
   },
   {
@@ -711,9 +711,9 @@ export const services: ServicePage[] = [
     image: "/media/dellen.webp",
     imageAlt: "Parkdelle unter Streiflicht, bevor wir ausbeulen",
     bullets: [
-      "Einzelne Stellen, nicht gleich die ganze Fläche lackieren",
-      "Erst anschauen, dann ehrlich sagen, was geht",
-      "Passt gut zu Lackkorrektur und Aufbereitung",
+      "Lackschadenfreie Dellenentfernung bei geeignetem Schadensbild",
+      "Begutachtung und verbindliches Angebot vor der Reparatur",
+      "Auf Wunsch mit Lackkorrektur und Aufbereitung kombinierbar",
       "Oft sinnvoll vor Verkauf oder Leasingrückgabe",
     ],
     body: [
@@ -735,9 +735,9 @@ export const services: ServicePage[] = [
     image: "/media/hero.webp",
     imageAlt: "Schwarzes Fahrzeug vor der Übergabe bei White Gloss in Horb",
     bullets: [
-      "Zuerst die Stellen, die bei der Rückgabe auffallen",
+      "Gemeinsame Prüfung relevanter Gebrauchsspuren vor der Rückgabe",
       "Innenraum, Lackpflege und punktuelle Nacharbeit",
-      "Wir sagen vorher, was bleibt",
+      "Klare Einschätzung, welche Spuren sich behandeln lassen",
       "Terminabstimmung passend zur geplanten Leasingrückgabe",
     ],
     body: [
@@ -746,17 +746,16 @@ export const services: ServicePage[] = [
     ],
   },
   {
-    // Inhaltlich zu klären: 119 € ist die Textilposition; Lederpositionen beginnen bei 139 €.
     slug: "lederreparatur",
     seoNav: "Lederreparatur",
     title: "Lederreparatur im Auto",
     nav: "Lederreparatur",
     metaTitle: "Lederreparatur Auto Horb – Brandloch, Riss, Loch | White Gloss",
     description:
-      "Lederreparatur in Horb am Neckar: Brandlöcher, Risse, kleine Löcher. Nur wenn es wirklich haltbar ist – sonst sagen wir ehrlich nein.",
+      "Lederreparatur in Horb am Neckar: Brandlöcher, Risse, kleine Löcher. Nach Materialprüfung, mit individueller Einschätzung und Angebot.",
     teaser: "Reparatur von Brandlöchern und Rissen nach Materialprüfung.",
     group: "finish",
-    fromPrice: 119,
+    fromPrice: 139,
     image: "/media/leder.webp",
     imageAlt: "Ledersitz nach der Pflege in der Werkstatt Horb",
     bullets: [
@@ -802,7 +801,7 @@ export const services: ServicePage[] = [
     nav: "Geruchsbehandlung mit Ozon",
     metaTitle: "Geruchsneutralisation Auto Ozon Horb | White Gloss",
     description:
-      "Ozonbehandlung gegen Nikotin, Tier- und Feuchtigkeitsgeruch in Horb am Neckar ab 99 €. Erst Ursache, dann Ozon – kein Duftspray.",
+      "Ozonbehandlung gegen Nikotin, Tier- und Feuchtigkeitsgeruch in Horb am Neckar ab 99 €. Erst Ursache, dann Ozon – kein Duftspray.",
     teaser: "Geruchsursache behandeln und bei Bedarf mit Ozon nacharbeiten.",
     group: "finish",
     fromPrice: 99,
@@ -812,7 +811,7 @@ export const services: ServicePage[] = [
       "Zuerst die Ursache: Schmutz, Nässe, Filter, Polster",
       "Ozon baut geruchsbildende Moleküle ab",
       "Behandlung von Nikotin-, Tier- und Feuchtigkeitsgerüchen, häufig ergänzend zur Innenraumreinigung",
-      "Ab 99 €, bei starker Belastung nach Absprache",
+      "Ab 99 €, bei starker Belastung nach Absprache",
     ],
     body: [
       "Ozon baut geruchsbildende Moleküle ab. Die Behandlung setzt einen sauberen, trockenen Innenraum voraus. Bleibt die Ursache bestehen, kann der Geruch zurückkehren.",
@@ -826,7 +825,7 @@ export const services: ServicePage[] = [
     nav: "Scheinwerferaufbereitung",
     metaTitle: "Scheinwerfer aufbereiten Horb am Neckar | White Gloss",
     description:
-      "Vergilbte Scheinwerfer aufbereiten in Horb: Politur und UV-Schutz, ab 99 € das Paar. Sicht und Optik, ohne gleich neue Streuscheiben.",
+      "Vergilbte Scheinwerfer aufbereiten in Horb: Politur und UV-Schutz, ab 99 € das Paar. Sicht und Optik, ohne gleich neue Streuscheiben.",
     teaser: "Aufbereitung vergilbter Scheinwerfer mit Politur und UV-Schutz.",
     group: "finish",
     fromPrice: 99,
@@ -835,7 +834,7 @@ export const services: ServicePage[] = [
     bullets: [
       "Matte, gelbe Streuscheiben wieder klar",
       "Anschließender UV-Schutz gegen erneute Vergilbung",
-      "Paarpreis ab 99 €, inkl. MwSt.",
+      "Paarpreis ab 99 €, inkl. MwSt.",
       "Bei stark geschädigtem Kunststoff ist ein Austausch nötig",
     ],
     honestNote:
@@ -852,7 +851,7 @@ export const faqs = [
   {
     group: "Kosten",
     q: "Was kostet eine Keramikversiegelung?",
-    a: "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Der endgültige Preis hängt von der Fahrzeugklasse und vom Zustand des Lacks ab. Den verbindlichen Preis nennen wir Ihnen, nachdem wir das Fahrzeug gesehen haben.",
+    a: "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Der endgültige Preis hängt von der Fahrzeugklasse und vom Zustand des Lacks ab. Den verbindlichen Preis nennen wir Ihnen, nachdem wir das Fahrzeug gesehen haben.",
   },
   {
     group: "Dauer",
@@ -897,12 +896,12 @@ export const faqs = [
   {
     group: "Innenraumreinigung",
     q: "Bekommen Sie Gerüche aus dem Innenraum wieder heraus?",
-    a: "In den meisten Fällen ja. Zuerst wird die Ursache beseitigt. Bleibt etwas zurück, hilft eine Ozonbehandlung für 99 € zusätzlich.",
+    a: "Wir prüfen zuerst die Geruchsursache und reinigen die betroffenen Materialien. Eine Ozonbehandlung kann ergänzend sinnvoll sein, ab 99 € inkl. MwSt. für die Kompaktklasse. Den Umfang stimmen wir vor Beginn mit Ihnen ab.",
   },
   {
     group: "Lederreparatur",
     q: "Reparieren Sie Brandlöcher und Risse im Leder?",
-    a: "Ja, sofern der Materialzustand eine dauerhafte Reparatur zulässt. Die Preise beginnen bei 139 € pro Stelle. Ist das Leder zu dünn, großflächig rissig oder das Loch zu groß, führen wir die Reparatur nicht aus. Für einen ungeeigneten Reparaturversuch entstehen Ihnen keine Kosten.",
+    a: "Ja, sofern der Materialzustand eine dauerhafte Reparatur zulässt. Die Preise beginnen bei 139 € pro Stelle. Ist das Leder zu dünn, großflächig rissig oder das Loch zu groß, führen wir die Reparatur nicht aus. Für einen ungeeigneten Reparaturversuch entstehen Ihnen keine Kosten.",
   },
   {
     group: "Lederreparatur",
@@ -935,7 +934,7 @@ export const processSteps = [
   {
     n: "01.",
     title: "Fahrzeug prüfen",
-    text: "Wir besprechen Ihre Wünsche und prüfen Lack und Innenraum. Anschließend empfehlen wir die Arbeiten, die zum Zustand Ihres Fahrzeugs passen.",
+    text: "Sie schildern uns Ihre Wünsche. Wir prüfen Lack und Innenraum und stimmen Leistungsumfang, Preis und Termin mit Ihnen ab. Vor einer Lackkorrektur messen wir die Lackdicke.",
   },
   {
     n: "02.",

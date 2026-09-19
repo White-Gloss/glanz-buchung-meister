@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { cities, pickupPriceText, site } from "@/data/site";
+import { cities, pickupPriceText, pickupTierSummary, pickupKeramikNote, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/abholservice/")({
@@ -24,7 +24,7 @@ function AbholIndex() {
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker="13 Städte"
         title="Hol- und Bringservice."
-        lead="Wir holen das Auto ab und bringen es wieder. Die Arbeit bleibt in Horb."
+        lead="Sparen Sie sich die Fahrt zur Werkstatt: Wir stimmen Abholung und Rückgabe mit Ihnen ab und bereiten Ihr Fahrzeug in Horb am Neckar auf."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Hol- und Bringservice" },
@@ -36,6 +36,12 @@ function AbholIndex() {
         }
       />
       <section className="section mx-auto max-w-7xl px-4 sm:px-6">
+        <h2 className="heading-2">Abholorte und Kosten</h2>
+        <p className="mt-5 mb-8 max-w-2xl text-muted">
+          {pickupTierSummary()}. Alle Beträge {site.vatNote} {pickupKeramikNote()}.
+          Entfernungen und Fahrzeiten sind Richtwerte ab Horb. Den genauen Abholort,
+          Preis und die Übergabezeiten bestätigen wir persönlich.
+        </p>
         <ul className="divide-y divide-line border-y border-line">
           {cities.map((c) => (
             <li key={c.slug}>

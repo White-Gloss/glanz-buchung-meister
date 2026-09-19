@@ -66,13 +66,13 @@ function LeistungenIndex() {
               className="block border-b border-line lg:odd:border-r"
             >
               <MediaTile src={s.image} alt={s.imageAlt}>
-                <h2 className="heading-2 max-w-md">{s.nav}</h2>
+                <h3 className="heading-2 max-w-md">{s.nav}</h3>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
                   {s.teaser}
                 </p>
                 {s.fromPrice ? (
                   <p className="mt-4 font-display text-2xl tracking-tight tabular-nums">
-                    ab {money(s.fromPrice)} €
+                    ab {money(s.fromPrice)}&nbsp;€<span className="mt-1 block font-sans text-xs text-muted">{site.vatNote}</span>
                   </p>
                 ) : null}
                 <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
@@ -100,7 +100,7 @@ function LeistungenIndex() {
             <MediaTile shot="private" alt="Freigegebenes Kundenfahrzeug nach der Aufbereitung bei White Gloss">
               <p className="kicker">Luxusfahrzeuge</p>
               <h2 className="heading-2 mt-3 max-w-md">
-                Luxusfahrzeuge ab ca. 80.000 €
+                Luxusfahrzeuge ab ca. 80.000&nbsp;€
               </h2>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
                 Telefonische Beratung und anschließende Begutachtung vor Ort.

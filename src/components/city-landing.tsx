@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/json-ld";
 import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { HeroMedia, Shot } from "@/components/media";
@@ -51,7 +52,7 @@ export function CityLanding({ city }: { city: City }) {
     <main id="main-content" className="pb-28 lg:pb-0" tabIndex={-1}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       <section className="film-chapter">
@@ -103,7 +104,7 @@ export function CityLanding({ city }: { city: City }) {
         </p>
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <figure>
-            <Shot name="lack" alt="Poliermaschine auf dem Lack" className="aspect-[3/2]" />
+            <Shot name="lack" alt="Frontpartie und Felge eines schwarzen BMW nach der Lackpflege" className="aspect-[3/2]" />
             <figcaption className="mt-3 text-sm text-muted">Lackpolitur</figcaption>
           </figure>
           <figure>
@@ -160,7 +161,7 @@ export function CityLanding({ city }: { city: City }) {
                   <p className="mt-2 max-w-lg text-sm text-muted">{p.kicker}</p>
                 </div>
                 <p className="ga-price">
-                  <span className="font-display text-3xl tabular-nums">ab {money(p.price)} €</span>
+                  <span className="font-display text-3xl tabular-nums">ab {money(p.price)}&nbsp;€</span>
                   <span className="mt-1 block text-xs text-subtle">{site.vatNote}</span>
                   <Link
                     to="/leistungen/$slug/$city"

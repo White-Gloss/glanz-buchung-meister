@@ -1,5 +1,5 @@
 import { QueryClient, useQuery } from "@tanstack/react-query";
-import { googleProfile, fallbackGoogleReviews, type GoogleReviewsData } from "@/data/google-profile";
+import { googleProfile, type GoogleReviewsData } from "@/data/google-profile";
 
 // Public review data only. Both placements share one browser request and cache.
 const reviewsClient = new QueryClient();
@@ -37,11 +37,11 @@ export function GoogleReviews({ compact = false }: { compact?: boolean }) {
     },
     reviewsClient,
   );
-  // Fall back gracefully to curated reviews if live API tokens are not present
+  // Only verified API data may be presented as a customer review.
   const current =
     data && Date.now() - Date.parse(data.fetchedAt) < 60 * 60 * 1000
       ? data
-      : fallbackGoogleReviews;
+      : null;
 
   const links = (
     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -65,6 +65,15 @@ export function GoogleReviews({ compact = false }: { compact?: boolean }) {
       ) : null}
     </div>
   );
+
+  if (!current) {
+    return (
+      <aside aria-label="Google-Kundenbewertungen" className="mt-8 border-y border-line py-5">
+        <p className="text-lg font-medium">Erfahrungen unserer Kunden</p>
+        <div className="mt-2">{links}</div>
+      </aside>
+    );
+  }
 
   if (compact)
     return (

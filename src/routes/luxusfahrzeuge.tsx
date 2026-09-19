@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute } from "@tanstack/react-router";
 import { PhotoNote, Shot } from "@/components/media";
 import { PageHero } from "@/components/page-hero";
@@ -6,13 +7,13 @@ import { site } from "@/data/site";
 import { absUrl, pageHead } from "@/lib/seo";
 
 const DESCRIPTION =
-  "Aufbereitung für Luxus-, Sport- und Sammlerfahrzeuge ab ca. 80.000 € in Horb am Neckar. Erst anrufen, dann anschauen – nicht über den Online-Konfigurator.";
+  "Aufbereitung für Luxus-, Sport- und Sammlerfahrzeuge ab ca. 80.000 € in Horb am Neckar. Erst anrufen, dann anschauen – nicht über den Online-Konfigurator.";
 
 export const Route = createFileRoute("/luxusfahrzeuge")({
   component: LuxuryPage,
   head: () =>
     pageHead({
-      title: `Luxusfahrzeug-Aufbereitung ab 80.000 € | ${site.name}`,
+      title: `Aufbereitung für Luxus- und Sammlerfahrzeuge | ${site.name}`,
       description: DESCRIPTION,
       path: "/luxusfahrzeuge",
       preloadHero: true,
@@ -41,13 +42,13 @@ function LuxuryPage() {
     <main id="main-content" tabIndex={-1}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <PageHero
         shot="hero"
         alt="Schwarzer Klassiker im White Gloss Atelier in Horb am Neckar"
         kicker="Luxusfahrzeuge"
-        title="Fahrzeuge ab etwa 80.000 €"
+        title="Fahrzeuge ab etwa 80.000 €"
         lead="Wir besprechen Ihre Wünsche am Telefon und erstellen nach der Begutachtung ein individuelles Angebot."
         crumbs={[
           { label: "Startseite", to: "/" },
