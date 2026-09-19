@@ -6,7 +6,7 @@ import { UPLOAD_MIME_TYPES, uploadSelectionError } from "@/lib/upload-policy";
 
 const ACCEPT = UPLOAD_MIME_TYPES.join(",");
 
-function readFileAsBase64(file: File): Promise<string> {
+export function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -80,10 +80,10 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
     >
       <h2 className="font-display text-2xl">Fahrzeugfotos nachreichen</h2>
       <p className="text-sm text-muted">
-        Optional bis zu 8 Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos
-        (MP4, WebM, MOV) sind möglich. Die Dateien werden ausschließlich im internen Archiv gespeichert und sind nicht
-        öffentlich. Höchstens 12 MB pro Aufnahme. Bitte innerhalb von 7 Tagen im Browser
-        Ihrer Anfrage nachreichen.
+        Optional bis zu 8 Aufnahmen zu {vorgang}. JPEG, PNG oder WebP bevorzugt — kurze Videos (MP4,
+        WebM, MOV) sind möglich. Die Dateien werden geschützt gespeichert und Ihrem Auftrag zur
+        Begutachtung zugeordnet. Höchstens 12 MB pro Aufnahme. Bitte innerhalb von 7 Tagen im
+        Browser Ihrer Anfrage nachreichen.
       </p>
       <Field tone="public" id="booking-photos" label="Fotos oder kurzes Video (max. 8)">
         <input
@@ -103,9 +103,13 @@ export function BookingPhotoUpload({ vorgang }: { vorgang: string }) {
         />
         {files.length ? (
           <ul className="space-y-1 text-xs text-subtle">
-            <li>{files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}</li>
+            <li>
+              {files.length} {files.length === 1 ? "Datei ausgewählt" : "Dateien ausgewählt"}
+            </li>
             {files.map((file) => (
-              <li className="break-all" key={`${file.name}-${file.size}-${file.lastModified}`}>{file.name}</li>
+              <li className="break-all" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                {file.name}
+              </li>
             ))}
           </ul>
         ) : null}

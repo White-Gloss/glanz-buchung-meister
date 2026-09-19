@@ -6,6 +6,8 @@ import { usePublicFormErrors } from "./public-form-feedback";
 import { SubmissionResult } from "./submission-result";
 import { Button, Field, inputLine } from "./ui";
 import { useBookingDraft, clearBookingDraft } from "./booking-draft";
+import { readFileAsBase64 } from "./booking-photo-upload";
+import { UPLOAD_MIME_TYPES, uploadSelectionError } from "@/lib/upload-policy";
 
 export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
   const [files, setFiles] = useBookingDraft<File[]>("photo.files", []);
@@ -14,6 +16,7 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
   const [phone, setPhone] = useBookingDraft("photo.phone", "");
   const [privacy, setPrivacy] = useBookingDraft("photo.privacy", false);
   const [website, setWebsite] = useState("");
+  const [requestId] = useState(() => crypto.randomUUID());
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
@@ -28,16 +31,30 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
       setError("Bitte prüfen Sie die markierten Felder.");
       return;
     }
+    if (files.length) {
+      const problem = uploadSelectionError(files);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+    }
     setPending(true);
     setError("");
     try {
       await createPublicPhotoInquiry({
         data: {
           title,
+          requestId,
           name: name.trim(),
           phone: phone.trim(),
           text,
-          files: files.map((f) => f.name),
+          files: await Promise.all(
+            files.map(async (f) => ({
+              name: f.name.slice(0, 180),
+              mime: f.type,
+              base64: await readFileAsBase64(f),
+            })),
+          ),
           privacy: true as const,
           website,
         },
@@ -71,20 +88,19 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
       <h2 className="font-display text-2xl">{title}</h2>
       <p className="text-sm text-muted">{hint}</p>
       <p className="text-xs text-subtle">
-        Dieses Formular übermittelt Ihre Kontaktdaten, Ihre Beschreibung und die Namen ausgewählter
-        Dateien. Die Fotos und Videos selbst bleiben auf Ihrem Gerät. Benötigen wir die Aufnahmen
-        zur Begutachtung, stimmen wir eine sichere Übermittlung mit Ihnen ab.
+        Ihre Kontaktdaten, Beschreibung und ausgewählten Aufnahmen werden geschützt übermittelt und
+        Ihrer Anfrage zugeordnet. Den Fixpreis erhalten Sie erst nach unserer Begutachtung.
       </p>
       <Field
         tone="public"
         id="media"
-        label="Aufnahmen auswählen (optional, max. 8 Dateien; nur Dateinamen werden übermittelt)"
+        label="Aufnahmen auswählen (optional, max. 8 Dateien, je höchstens 12 MB)"
       >
         <input
           id="media"
           {...fieldProps("media")}
           type="file"
-          accept="image/*,video/*"
+          accept={UPLOAD_MIME_TYPES.join(",")}
           multiple
           className="w-full min-w-0 max-w-full text-sm"
           onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 8))}

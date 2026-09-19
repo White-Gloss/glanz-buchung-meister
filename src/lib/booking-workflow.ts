@@ -21,6 +21,7 @@ import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
 import { enqueueZohoJob, ensureZohoSchema, zohoOpsEnabled } from "./zoho-ops.ts";
 import { queueBitrixBooking } from "./bitrix-sync.ts";
+import { roappOnlyEnabled } from "./booking-backend.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -98,6 +99,10 @@ async function event(
     returning id
   `;
   await enqueue(tx, row, name, saved.id, actor);
+  if (roappOnlyEnabled()) {
+    await queueRoappBooking(tx, row);
+    return;
+  }
   await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`);
   if (name === "booking.created") {
     await enqueueZohoJob(tx, row.id, "photos", `photos:${row.id}:created`);
@@ -187,7 +192,7 @@ async function persistBookingRequest(
   };
   const fingerprint = hash(JSON.stringify(content));
   const quote = quoteTotal(data);
-  await ensureZohoSchema(sql);
+  if (!roappOnlyEnabled()) await ensureZohoSchema(sql);
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);

@@ -20,6 +20,20 @@ export const Route = createFileRoute("/api/automation-cron")({
             () => "ok",
             () => "failed",
           );
+          const { roappOnlyEnabled } = await import("@/lib/booking-backend");
+          if (roappOnlyEnabled()) {
+            const { runRoappSync } = await import("@/lib/roapp-sync");
+            const [delivery, roapp] = await Promise.all([
+              runNotificationWorker(sql),
+              runRoappSync(sql),
+            ]);
+            const { reconcileRoOrders } = await import("@/lib/roapp-callback");
+            const incoming = await reconcileRoOrders(sql);
+            return Response.json(
+              { ok: true, ...delivery, roapp, incoming, photoCleanup },
+              { headers: { "cache-control": "no-store" } },
+            );
+          }
           const remindersChecked = await scheduleDueBookingReminders(sql);
           const { runOdooSync } = await import("@/lib/odoo-sync");
           const { runRoappSync } = await import("@/lib/roapp-sync");

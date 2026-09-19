@@ -5,6 +5,7 @@ import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { type BookingStatus } from "@/data/site";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
+import { roappOnlyEnabled } from "@/lib/booking-backend";
 import {
   saveBookingRequest,
   saveManualBookingRequest,
@@ -17,7 +18,8 @@ import { isCalendarDate } from "@/lib/calendar-date";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema, manualBookingSchema } from "@/lib/booking-schema";
-import { MAX_BASE64_UPLOAD_CHARS } from "@/lib/booking-photos";
+import { MAX_BASE64_UPLOAD_CHARS, validateUploadBatch } from "@/lib/booking-photos";
+import { createHash } from "node:crypto";
 import { saveBookingPhotos } from "@/lib/booking-photo-storage";
 import { createSignedPhotoUrl } from "@/lib/booking-photos";
 import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
@@ -119,10 +121,19 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     z
       .object({
         title: z.string().min(2).max(160),
+        requestId: z.string().uuid(),
         name: z.string().trim().min(2).max(120),
         phone: z.string().trim().min(6).max(40),
         text: z.string().max(2000),
-        files: z.array(z.string().max(180)).max(8),
+        files: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(180),
+              mime: z.string().min(3).max(80),
+              base64: z.string().min(1).max(MAX_BASE64_UPLOAD_CHARS),
+            }),
+          )
+          .max(8),
         privacy: z.literal(true),
         website: z.string().max(120).optional(),
       })
@@ -133,13 +144,54 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     assertPublicPostLimit("photo-inquiry", 6);
     rejectHoneypot(data.website);
     const sql = await getSql();
+    if (data.files.length) validateUploadBatch(data.files);
+    if (roappOnlyEnabled()) {
+      const key = createHash("sha256").update(`photo:${data.requestId}`).digest("hex");
+      const fingerprint = createHash("sha256")
+        .update(
+          JSON.stringify({
+            title: data.title,
+            name: data.name,
+            phone: data.phone,
+            text: data.text,
+          }),
+        )
+        .digest("hex");
+      const capability = createRequestUploadCapability(data.requestId);
+      const row = await sql.transaction(async (tx) => {
+        await tx`update booking_workflow_locks set revision=revision+1 where shop_id=${SHOP}`;
+        const [existing] = await tx<{
+          id: number;
+          version: number;
+          request_fingerprint: string;
+        }>`select id,version,request_fingerprint from bookings where shop_id=${SHOP} and request_key_hash=${key}`;
+        if (existing) {
+          if (existing.request_fingerprint !== fingerprint)
+            throw new Error("Bitte laden Sie das Formular für eine neue Anfrage neu.");
+          return existing;
+        }
+        const [created] = await tx<{
+          id: number;
+          version: number;
+        }>`insert into bookings(shop_id,customer_name,phone,package_id,class_id,extra_ids,total_cents,note,request_key_hash,request_fingerprint,upload_token_hash,upload_token_expires_at)
+          values(${SHOP},${data.name},${data.phone},'photo-inquiry','kompakt','[]',0,${data.title + "\n" + data.text},${key},${fingerprint},${capability.hash},${capability.expiresAt}::timestamptz) returning id,version`;
+        return created;
+      });
+      setBookingUploadCookie(row.id, capability);
+      // No remote processing until the selected files have been durably uploaded.
+      if (data.files.length) await saveBookingPhotos(sql, row.id, data.files);
+      const { queueRoappBooking } = await import("@/lib/roapp-sync");
+      await queueRoappBooking(sql, row);
+      kickBookingDelivery(sql);
+      return { ok: true as const };
+    }
     await upsertCustomer(sql, data.name, data.phone);
     const body = [
       `Name: ${data.name}`,
       `Telefon: ${data.phone}`,
       data.text,
       data.files.length
-        ? `Dateien (Namen): ${data.files.join(", ")}`
+        ? `Dateien (Namen): ${data.files.map((file) => file.name).join(", ")}`
         : "Keine Dateinamen übermittelt.",
     ].join("\n");
     const channel = /delle|hagel/i.test(data.title) ? "dellen" : "zustand";
@@ -212,8 +264,12 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     const [row] = await sql<{ id: number; version: number }>`
       select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
     if (row) {
-      const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
-      await queueBitrixPhotos(sql, row).catch(() => undefined);
+      const { queueRoappBooking } = await import("@/lib/roapp-sync");
+      await queueRoappBooking(sql, row);
+      if (!roappOnlyEnabled()) {
+        const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
+        await queueBitrixPhotos(sql, row).catch(() => undefined);
+      }
       kickBookingDelivery(sql);
     }
     return saved;

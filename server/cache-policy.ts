@@ -21,6 +21,7 @@ export function responseCacheControl({
   status?: number;
   hasSetCookie?: boolean;
 }): string | undefined {
+  if (pathname === "/auftragsstatus" || pathname === "/danke") return "private, no-store";
   if (/(?:^|,)\s*(?:private|no-store|no-cache)(?:\s|=|,|$)/i.test(existing)) {
     return undefined;
   }

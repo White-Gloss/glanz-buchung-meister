@@ -4,9 +4,13 @@ export const Route = createFileRoute("/api/zoho-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { zohoWebhookAuthorized, handleZohoInbound, resolveZohoWebhookSecret } = await import("@/lib/zoho-inbound");
+        const { roappOnlyEnabled } = await import("@/lib/booking-backend");
+        if (roappOnlyEnabled()) return new Response(null, { status: 410 });
+        const { zohoWebhookAuthorized, handleZohoInbound, resolveZohoWebhookSecret } =
+          await import("@/lib/zoho-inbound");
         const url = new URL(request.url);
-        const header = request.headers.get("authorization") || request.headers.get("x-zoho-webhook-token");
+        const header =
+          request.headers.get("authorization") || request.headers.get("x-zoho-webhook-token");
         const { getSql } = await import("@/lib/db");
         const sql = await getSql();
         const secret = await resolveZohoWebhookSecret(sql);
@@ -25,10 +29,7 @@ export const Route = createFileRoute("/api/zoho-webhook")({
           const result = await handleZohoInbound(sql, payload, actor);
           const { kickBookingDelivery } = await import("@/lib/booking-delivery");
           kickBookingDelivery(sql);
-          return Response.json(
-            { ok: true, result },
-            { headers: { "cache-control": "no-store" } },
-          );
+          return Response.json({ ok: true, result }, { headers: { "cache-control": "no-store" } });
         } catch (error) {
           const message = error instanceof Error ? error.message : "processing_failed";
           return Response.json(

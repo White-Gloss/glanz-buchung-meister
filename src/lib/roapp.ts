@@ -18,7 +18,12 @@ export class RoappError extends Error {
   review: boolean;
   constructor(
     code: string,
-    options: { status?: number | null; retryable?: boolean; review?: boolean; cause?: unknown } = {},
+    options: {
+      status?: number | null;
+      retryable?: boolean;
+      review?: boolean;
+      cause?: unknown;
+    } = {},
   ) {
     super(code);
     this.code = code;
@@ -36,7 +41,8 @@ function trimEnv(key: string): string {
 function parsePositiveInt(raw: string, label: string): number | null {
   if (!raw) return null;
   const n = Number(raw);
-  if (!Number.isSafeInteger(n) || n <= 0) throw new RoappError(`roapp_invalid_${label}`, { review: true });
+  if (!Number.isSafeInteger(n) || n <= 0)
+    throw new RoappError(`roapp_invalid_${label}`, { review: true });
   return n;
 }
 
@@ -100,8 +106,8 @@ export function extractRoappId(payload: unknown): number | null {
     const value = row[key];
     if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) return value;
   }
-  if (row.data && typeof row.data === "object") return extractRoappId(row.data);
   if (Array.isArray(row.data) && row.data[0]) return extractRoappId(row.data[0]);
+  if (row.data && typeof row.data === "object") return extractRoappId(row.data);
   return null;
 }
 
@@ -148,6 +154,7 @@ export function createRoappClient(
     fetchImpl?: typeof fetch;
     minIntervalMs?: number;
     maxRetries?: number;
+    timeoutMs?: number;
     now?: () => number;
     sleepImpl?: (ms: number) => Promise<void>;
   } = {},
@@ -165,6 +172,7 @@ export function createRoappClient(
     body: Record<string, unknown> | null = null,
     query?: Record<string, string | string[] | undefined>,
   ): Promise<T> => {
+    const readOnly = method === "GET" || method === "HEAD";
     const url = `${creds.apiBase}${path.startsWith("/") ? path : `/${path}`}${buildQuery(query)}`;
     let attempt = 0;
     while (true) {
@@ -181,11 +189,26 @@ export function createRoappClient(
             ...(body ? { "Content-Type": "application/json" } : {}),
           },
           body: body ? JSON.stringify(body) : undefined,
+          signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
         });
       } catch (cause) {
-        throw new RoappError("roapp_unreachable", { retryable: true, cause });
+        // A lost response can follow a successful write. Never blindly recreate it.
+        throw new RoappError("roapp_unreachable", {
+          retryable: readOnly,
+          review: !readOnly,
+          cause,
+        });
       }
-      const text = await response.text();
+      let text: string;
+      try {
+        text = await response.text();
+      } catch (cause) {
+        throw new RoappError("roapp_response_lost", {
+          retryable: readOnly,
+          review: !readOnly,
+          cause,
+        });
+      }
       let payload: unknown = null;
       if (text) {
         try {
@@ -206,7 +229,8 @@ export function createRoappClient(
       if (!response.ok)
         throw new RoappError("roapp_request_failed", {
           status: response.status,
-          retryable: response.status >= 500,
+          retryable: readOnly && response.status >= 500,
+          review: !readOnly || response.status < 500,
         });
       return payload as T;
     }
@@ -254,7 +278,7 @@ export async function createPerson(
       phone: input.phone,
       notify: true,
       has_viber: false,
-      has_whatsapp: true,
+      has_whatsapp: false,
     },
   ];
   const payload = await request<unknown>("POST", "/contacts/people", {
@@ -314,6 +338,7 @@ export async function createOrder(
     clientId: number;
     assigneeId?: number;
     managerNotes?: string;
+    malfunction?: string;
     estimatedPrice?: string;
     scheduledFor?: string;
     scheduledTo?: string;
@@ -325,6 +350,7 @@ export async function createOrder(
     client_id: input.clientId,
     ...(input.assigneeId ? { assignee_id: input.assigneeId } : {}),
     ...(input.managerNotes ? { manager_notes: input.managerNotes } : {}),
+    ...(input.malfunction ? { malfunction: input.malfunction } : {}),
     ...(input.estimatedPrice ? { estimated_price: input.estimatedPrice } : {}),
     ...(input.scheduledFor ? { scheduled_for: input.scheduledFor } : {}),
     ...(input.scheduledTo ? { scheduled_to: input.scheduledTo } : {}),
