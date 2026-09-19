@@ -326,36 +326,47 @@
   }
 
   /* Wortmarke im Hero, ohne Umbruch. Regular statt Light — auf dem Foto
-     bleibt 300 zu dünn, 500 wäre schon Plakat. */
+     bleibt 300 zu dünn, 500 wäre schon Plakat. Etwas ruhigeres vw, damit
+     die Marke auf Mobile nicht drängt. */
   .heading-brand {
     font-family: var(--font-display);
-    font-size: min(clamp(3rem, 8.4vw, 6.5rem), 14vw);
+    font-size: min(clamp(2.85rem, 7.2vw, 6.25rem), 13.5vw);
     font-weight: 400;
-    letter-spacing: 0.01em;
-    line-height: 0.9;
+    letter-spacing: -0.005em;
+    line-height: 0.88;
     white-space: nowrap;
     color: var(--color-fg);
   }
 
-  /* Produktzeile unter der Wortmarke: sichtbar, nicht klein wie die Kampagnenzeile. */
+  /* Produktzeile: Display, klar unter der Marke — weiteres Tracking, leichter. */
   .heading-product {
     font-family: var(--font-display);
-    font-size: clamp(1.55rem, 1rem + 2.6vw, 2.75rem);
-    font-weight: 400;
-    letter-spacing: 0.22em;
+    font-size: clamp(1.35rem, 0.9rem + 2vw, 2.35rem);
+    font-weight: 300;
+    letter-spacing: 0.28em;
     line-height: 1;
     text-transform: lowercase;
     color: var(--color-fg);
   }
 
-  /* Kampagnenzeile unter der Wortmarke: Satz, nicht Versalien. */
+  /* Kampagnenzeile: leiser, mehr Luft im Tracking. */
   .heading-tagline {
     font-family: var(--font-sans);
-    font-size: clamp(1.15rem, 0.8rem + 1.6vw, 1.65rem);
+    font-size: clamp(1rem, 0.75rem + 1.15vw, 1.4rem);
     font-weight: 400;
-    letter-spacing: 0.06em;
-    line-height: 1.28;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
     color: var(--color-muted);
+  }
+
+  /* Standort/Service: tertiär unter dem Marken-Cluster. */
+  .heading-location {
+    font-family: var(--font-sans);
+    font-size: clamp(0.9rem, 0.8rem + 0.55vw, 1.05rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    color: var(--color-subtle);
   }
 
   .heading-2 {

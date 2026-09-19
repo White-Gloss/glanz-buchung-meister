@@ -63,18 +63,18 @@ function Home() {
         >
           <h1 className="mt-2 flex max-w-4xl flex-col items-center">
             <span className="heading-brand hero-enter-item block">White Gloss</span>
-            <span className="heading-product mt-3 hero-enter-item block">Detailing</span>
+            <span className="heading-product mt-2 hero-enter-item block">Detailing</span>
             <span className="heading-tagline mt-4 hero-enter-item block">
               no compromise only results
             </span>
-            <span className="mt-5 block font-display text-xl tracking-tight text-fg sm:text-2xl hero-enter-item">
+            <span className="heading-location mt-8 block hero-enter-item">
               Fahrzeugaufbereitung in Horb am Neckar
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg hero-enter-item">
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-fg sm:text-lg hero-enter-item">
             Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
           </p>
-          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row hero-enter-item">
+          <div className="mt-8 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row hero-enter-item">
             <Link to="/" hash="buchung" className={ctaPrimary}>
               Termin anfragen <IconArrowRight className="size-4" aria-hidden />
             </Link>
