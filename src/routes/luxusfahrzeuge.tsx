@@ -138,8 +138,8 @@ function LuxuryPage() {
             </figure>
             <figure>
               <Shot
-                name="leder"
-                alt="Leder nach der Pflege"
+                name="interieur"
+                alt="Interieur nach der Pflege"
                 className="aspect-[4/3] w-full"
                 sizes="(min-width: 640px) 50vw, 100vw"
               />

@@ -213,7 +213,7 @@ export function HeroMedia({
 }
 
 export type ShotName =
-  "keramik" | "lack" | "leder" | "felgen" | "hero" | "dellen" | "atelier" | "private" | "finish";
+  "keramik" | "lack" | "leder" | "interieur" | "felgen" | "hero" | "dellen" | "atelier" | "private" | "finish";
 
 const SLOT_CLASS: Record<ShotName, string> = {
   hero: "hero-image",
@@ -221,6 +221,7 @@ const SLOT_CLASS: Record<ShotName, string> = {
   keramik: "service-image-2",
   felgen: "service-image-3",
   leder: "service-image-4",
+  interieur: "service-image-4",
   dellen: "before-after-1",
   atelier: "workshop-image",
   finish: "gallery-shot",
@@ -235,6 +236,7 @@ const SHOT_SIZE: Record<ShotName, { w: number; h: number }> = {
   keramik: { w: 1200, h: 800 },
   lack: { w: 1200, h: 800 },
   leder: { w: 1200, h: 800 },
+  interieur: { w: 1200, h: 800 },
   felgen: { w: 1200, h: 800 },
   dellen: { w: 1200, h: 800 },
 };

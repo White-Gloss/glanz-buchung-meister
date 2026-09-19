@@ -20,6 +20,7 @@ MASTERS = {
     "atelier": SRC / "atelier-master.jpg",
     "finish": SRC / "finish-master.jpg",
     "leder": SRC / "leder-master.jpg",
+    "interieur": SRC / "interieur-master.jpg",
     "keramik": SRC / "keramik-master.jpg",
 }
 
@@ -93,7 +94,7 @@ def main() -> None:
             },
         ),
     ]
-    for name in ("private", "lack", "felgen", "atelier", "finish", "leder", "keramik"):
+    for name in ("private", "lack", "felgen", "atelier", "finish", "leder", "interieur", "keramik"):
         tasks.append(
             (
                 name,
@@ -120,7 +121,7 @@ def main() -> None:
 
     (OUT / "hero.webp").write_bytes((OUT / "hero-1600.webp").read_bytes())
     (OUT / "hero.avif").write_bytes((OUT / "hero-1600.avif").read_bytes())
-    for name in ("private", "lack", "felgen", "atelier", "finish", "leder", "keramik"):
+    for name in ("private", "lack", "felgen", "atelier", "finish", "leder", "interieur", "keramik"):
         (OUT / f"{name}-1200.webp").write_bytes((OUT / f"{name}.webp").read_bytes())
         (OUT / f"{name}-1200.avif").write_bytes((OUT / f"{name}.avif").read_bytes())
 

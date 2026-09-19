@@ -9,7 +9,7 @@ const shots: { name: ShotName; alt: string; title: string }[] = [
   { name: "keramik", title: "Keramikversiegelung", alt: "Keramikversiegelung von Hand auf dem Lack" },
   { name: "atelier", title: "Werkstatt", alt: "Werkstatt von White Gloss in Horb am Neckar" },
   { name: "felgen", title: "Felgen", alt: "Felge nach der Keramikbeschichtung" },
-  { name: "leder", title: "Innenraum", alt: "Leder nach der Innenraumreinigung" },
+  { name: "interieur", title: "Interieur", alt: "Mittelkonsole und Interieur nach der Innenraumreinigung" },
   { name: "finish", title: "Prüflicht", alt: "Lack unter Prüflicht nach der Politur" },
   { name: "dellen", title: "Dellen", alt: "Parkdelle unter Streiflicht vor der Ausbeularbeit" },
   { name: "private", title: "Unser Fahrzeug", alt: "Eigenes Fahrzeug von White Gloss, Kennzeichen entfernt" },
