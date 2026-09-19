@@ -61,9 +61,15 @@ function Home() {
           className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6"
           data-hero-enter
         >
-          <p className="kicker hero-enter-item">White Gloss Detailing</p>
-          <h1 className="hero-title mt-5 max-w-4xl hero-enter-item">
-            Fahrzeugaufbereitung in Horb am Neckar
+          <h1 className="mt-2 flex max-w-4xl flex-col items-center">
+            <span className="heading-brand hero-enter-item block">White Gloss</span>
+            <span className="heading-product mt-3 hero-enter-item block">Detailing</span>
+            <span className="heading-tagline mt-4 hero-enter-item block">
+              no compromise only results
+            </span>
+            <span className="mt-5 block font-display text-xl tracking-tight text-fg sm:text-2xl hero-enter-item">
+              Fahrzeugaufbereitung in Horb am Neckar
+            </span>
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg hero-enter-item">
             Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
