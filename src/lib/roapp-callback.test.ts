@@ -14,7 +14,7 @@ import type { RoappRequest } from "./roapp.ts";
 import { bookingStatusToken, verifyBookingStatusToken } from "./booking-status-token.ts";
 
 test("callback rejects unauthenticated payloads and malformed amounts", async () => {
-  const secret = "s".repeat(40),
+  const secret = "s".repeat(20),
     id = "9cba80cc-93b5-459b-bfd3-445e724dafc5";
   const signature = createHash("sha256")
     .update(id + secret)
