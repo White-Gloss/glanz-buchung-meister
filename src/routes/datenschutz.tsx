@@ -171,14 +171,15 @@ function PrivacyPage() {
           <h2>7. Fahrzeugfotos und Zustandsmeldungen</h2>
           <p>
             Über die Seiten „Zustand prüfen lassen“ und „Dellen- und Hagelschäden“ können Sie uns
-            eine Beschreibung sowie Dateinamen ausgewählter Fotos oder kurzer Videos übermitteln.
-            Die Bild- und Videodateien selbst werden nicht hochgeladen und verbleiben auf Ihrem
-            Gerät. Wir verwenden Name, Telefonnummer, Beschreibung und Dateinamen zur Zuordnung,
+            eine Beschreibung sowie ausgewählte Fotos oder kurze Videos übermitteln.
+            Die Dateien werden über unseren Server in einem privaten Speicherbereich bei Supabase
+            gespeichert. Wir verwenden Name, Telefonnummer, Beschreibung und Aufnahmen zur Zuordnung,
             Prüfung und Terminabstimmung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
           </p>
           <p>
-            Für eine tatsächliche Begutachtung können wir die Dateien nach Rückmeldung über einen
-            separaten sicheren Kanal nachfordern.
+            Die Anfrage wird in RO App bearbeitet. Dafür übermitteln wir die Kontaktdaten,
+            Beschreibung und geschützte Links zu den Aufnahmen an RO App. Einen Fixpreis bestätigen
+            wir erst nach der Begutachtung und manuellen Freigabe.
           </p>
           <p>
             Nach einer Terminanfrage können Sie auf der Bestätigungsseite optional Fahrzeugfotos
