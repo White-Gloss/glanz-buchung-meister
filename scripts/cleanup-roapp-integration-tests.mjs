@@ -26,7 +26,7 @@ try {
     console.log(JSON.stringify({validatedInternalBookings:rows.length,photoLinks:photos.length,apply:process.argv.includes('--apply')}));
     if (process.argv.includes('--apply')) {
       const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-      const dir = `/var/backups/white-gloss/${stamp}-test-cleanup`;
+      const dir = `/var/backups/white-gloss/${stamp}`;
       // Release the read-only transaction before pg_dump acquires its own locks.
       await db.query('rollback');
       const backup = await backupProduction(`${dir}/database.dump`);
