@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   cities,
-  depositConfig,
+  paymentNote,
   extras,
   extraIncluded,
   packages,
@@ -439,7 +439,7 @@ export function Configurator({
         <p className="text-xs text-subtle">
           Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
           Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
-          {depositConfig.label}: {depositConfig.note}
+          {paymentNote}
         </p>
         <Field tone="public" id="name" label="Name (Pflichtfeld)">
           <input

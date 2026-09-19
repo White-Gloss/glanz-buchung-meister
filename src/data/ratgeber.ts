@@ -48,7 +48,7 @@ export const articles: Article[] = [
       {
         heading: "Pflege danach",
         paragraphs: [
-          "Die ersten sieben Tage nicht waschen. Regen in dieser Zeit ist kein Problem. Danach Handwäsche mit pH-neutralem Shampoo. Bürstenanlagen erzeugen neue feine Waschkratzer in der Keramik genauso wie im Klarlack.",
+          "Die erste Wäsche und der Kontakt mit Wasser richten sich nach den Produktvorgaben. Beachten Sie die Pflegehinweise, die Sie bei der Übergabe erhalten. Danach empfiehlt sich eine schonende Handwäsche mit geeignetem Shampoo. Bürstenanlagen erzeugen neue feine Waschkratzer in der Keramik genauso wie im Klarlack.",
           "Der Hol- und Bringservice bis 60 km ist im Paket Keramikschutz enthalten. Wir holen Ihr Fahrzeug in Horb, Nagold, Tübingen und den weiteren Abholorten ab. Die Aufbereitung erfolgt in unserer Werkstatt.",
         ],
       },
@@ -198,7 +198,7 @@ export const articles: Article[] = [
     slug: "keramikversiegelung-pflege",
     seoExcerpt:
       "Nicht waschen, nicht abreiben, pH-neutral bleiben. Was die Beschichtung hält – und was sie zerstört.",
-    title: "Keramikversiegelung pflegen: die ersten sieben Tage und danach",
+    title: "Keramikversiegelung pflegen: nach der Übergabe und im Alltag",
     excerpt:
       "Hinweise zur Aushärtung, zur Handwäsche mit pH-neutralem Shampoo und zum schonenden Umgang mit der Beschichtung.",
     date: "2026-05-18",
@@ -208,7 +208,7 @@ export const articles: Article[] = [
       {
         heading: "Die Aushärtung",
         paragraphs: [
-          "In den ersten etwa sieben Tagen sollte das Fahrzeug nicht gewaschen werden. Regen schadet in dieser Zeit nicht. Vermeiden Sie Autobahn-Insekten auf frischer Beschichtung, soweit planbar.",
+          "Die Aushärtezeit unterscheidet sich je nach Beschichtung. Halten Sie die produktbezogenen Vorgaben zu Wasser, erster Wäsche und Reinigungsmitteln ein. Die passenden Hinweise erhalten Sie bei der Übergabe.",
           "Kein Politurmittel, kein entfettender Felgenreiniger auf lackierten Flächen, kein Trocknen mit verschmutzten Tüchern.",
         ],
       },
@@ -359,10 +359,10 @@ export const articles: Article[] = [
   {
     slug: "keramikversiegelung-lackvorbereitung-pflege",
     seoExcerpt:
-      "Haftung entscheidet sich in der Vorbereitung. Sieben Tage nicht waschen, danach pH-neutral. Start ab 899 Euro in Horb.",
+      "Haftung entscheidet sich in der Vorbereitung. Aushärtezeit und Pflege nach Produktvorgaben. Start ab 899 Euro in Horb.",
     title: "Keramikversiegelung vorbereiten und pflegen",
     excerpt:
-      "Haftung entscheidet sich in der Vorbereitung. Sieben Tage nicht waschen, danach pH-neutral. Start ab 899 € in Horb.",
+      "Haftung entscheidet sich in der Vorbereitung. Aushärtezeit und Pflege nach Produktvorgaben. Start ab 899 € in Horb.",
     date: "2026-02-20",
     image: "/media/keramik.webp",
     minutes: 6,
@@ -375,9 +375,9 @@ export const articles: Article[] = [
         ],
       },
       {
-        heading: "Die ersten sieben Tage",
+        heading: "Die erste Zeit nach dem Auftrag",
         paragraphs: [
-          "Nicht waschen, nicht mit verschmutzten Tüchern abreiben. Regen schadet in dieser Zeit nicht. Kein Felgenreiniger auf lackierten Flächen.",
+          "Beachten Sie die Aushärtezeit und die Hinweise zum ersten Kontakt mit Wasser. Reiben Sie den Lack nicht mit verschmutzten Tüchern ab. Verwenden Sie nur Reinigungsmittel, die für die Beschichtung und die jeweilige Oberfläche geeignet sind.",
           "Danach Handwäsche mit pH-neutralem Shampoo. Bürstenanlagen erzeugen neue Kratzer in der Keramik. Die Beschichtung ist nicht kratzfest.",
         ],
       },

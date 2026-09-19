@@ -143,7 +143,7 @@ function Home() {
         <ResultsTeaser />
         <LazyGoogleReviews id="bewertungen" compact />
         <aside className="wg-trust-strip" aria-label="White Gloss auf einen Blick">
-          <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Vollkaskoversicherte Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149&nbsp;€ inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
+          <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149&nbsp;€ inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
         </aside>
       </div>
 

@@ -48,12 +48,7 @@ export const openingHours = {
   dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const,
 };
 
-// Inhaltlich zu klären: AGB formulieren die Anzahlung als optional, der Buchungshinweis als fällig.
-export const depositConfig = {
-  rate: 0.1,
-  label: "Anzahlung bei Erstbuchung (10 %)",
-  note: "Unverbindliche Terminanfrage: Nach Ihrer Bestätigung werden bei der ersten Buchung 10 % des Gesamtbetrags als Terminkaution fällig. Den Rest zahlen Sie erst nach vollständiger Abnahme vor Ort. Der Betrag wird nicht automatisch eingezogen.",
-};
+export const paymentNote = "Ihre Terminanfrage ist unverbindlich. Es ist keine Anzahlung erforderlich. Zahlung fällig nach erbrachter Dienstleistung. Es erfolgt kein automatischer Einzug.";
 
 export const timeSlots = ["09:00", "11:00", "13:00", "15:00"];
 
@@ -80,7 +75,7 @@ export const vehicleClasses: VehicleClass[] = [
   {
     id: "transporter",
     label: "Transporter",
-    hint: "Vans und Nutzfahrzeuge ab 5,00 m",
+    hint: "Vans und Nutzfahrzeuge über 5,00 m; Grenzfälle klären wir vor Auftragsannahme",
     factor: 1.55,
   },
 ];
@@ -139,21 +134,21 @@ export const packages: Package[] = [
   },
   {
     id: "keramik",
-    kicker: "Mehrstufige Lackkorrektur und 9H-Keramikversiegelung",
+    kicker: "Mehrstufige Lackkorrektur und Keramikversiegelung",
     name: "Keramikschutz",
     searchLabel: "Lackkorrektur und Versiegelung",
-    seoName: "Keramikschutz – 9H-Keramikversiegelung inkl. Lackkorrektur in Horb",
-    body: "Das Paket Keramikschutz umfasst eine mehrstufige Lackkorrektur und eine hochfeste 9H-Keramikversiegelung (Standzeit bis zu 36 Monate / ca. 45.000 km). Glas- und Felgenversiegelung, Lederpflege sowie der vollkaskoversicherte Hol- und Bringservice bis 60 km sind inklusive. Ab 899 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 2 Tage.",
+    seoName: "Keramikschutz – Keramikversiegelung inkl. Lackkorrektur in Horb",
+    body: "Sorgfältig vorbereiteter Lack, anschließend mit Keramik versiegelt: Das Paket umfasst eine mehrstufige Lackkorrektur, Glas- und Felgenversiegelung sowie Lederpflege. Der Hol- und Bringservice bis 60 km ist inklusive. Standzeit und Pflege richten sich nach der verwendeten Beschichtung und der Fahrzeugnutzung. Ab 899 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 2 Tage.",
     price: 899,
     duration: "ca. 2 Tage",
     includesPickup: true,
     items: [
-      "Alle Leistungen des Pakets Reinigung & Politur",
+      "Reinigung und Innenraumpflege wie im Paket Reinigung & Politur; Keramikversiegelung ersetzt den Wachsauftrag",
       "Mehrstufige Lackkorrektur zur Reduzierung feiner Waschkratzer und Hologramme, soweit der Lackzustand es zulässt",
-      "9H-Keramikversiegelung mit Abperleffekt, Standzeit bis zu 36 Monate bei empfohlener Pflege",
+      "Keramikversiegelung mit Abperleffekt und passenden Pflegehinweisen",
       "Glas- und Felgenversiegelung für Rundumschutz",
       "Lederpflege und Tiefenimprägnierung im Innenraum",
-      "Vollkaskoversicherter Hol- und Bringservice bis 60 km inklusive",
+      "Hol- und Bringservice bis 60 km inklusive",
     ],
   },
 ];
@@ -450,7 +445,7 @@ export function pickupTierSummary(): string {
 }
 
 export function pickupKeramikNote(): string {
-  return `Im Paket Keramikschutz ist die vollkaskoversicherte Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
+  return `Im Paket Keramikschutz ist die Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
 }
 
 export function extraIncluded(packageId: PackageId, extraId: string) {
@@ -647,13 +642,13 @@ export const services: ServicePage[] = [
     bullets: [
       "Wasserabweisende Oberfläche für eine leichtere Fahrzeugwäsche",
       "Gleichmäßiger Glanz durch sorgfältige Lackvorbereitung",
-      "9H-Keramikbeschichtung als zusätzlicher Oberflächenschutz; Verschmutzungen weiterhin zeitnah entfernen",
-      "Standzeit bis zu 36 Monate / ca. 45.000 km bei empfohlener Pflege",
+      "Keramikbeschichtung als zusätzlicher Oberflächenschutz; Verschmutzungen weiterhin zeitnah entfernen",
+      "Pflegehinweise passend zur verwendeten Beschichtung",
     ],
     body: [
-      "Für die Haftung der Keramikversiegelung ist eine kompromisslose Lackvorbereitung entscheidend. Wir reinigen den Lack porentief und korrigieren feine Waschkratzer und Swirls mehrstufig, bevor die 9H-Keramikbeschichtung in unserer temperierten Werkstatt aufgetragen wird.",
-      "Die Keramikversiegelung geht eine chemische Verbindung mit dem Klarlack ein. Sie schützt zuverlässig vor Umwelteinflüssen, UV-Strahlung und saurem Schmutz. In den ersten 7 Tagen sollte das Fahrzeug nicht gewaschen werden; Regen ist dank sofortiger Aushärtung kein Problem.",
-      "Planen Sie ca. 2 Tage ein. Glas- und Felgenversiegelung, Lederpflege sowie der vollkaskoversicherte Hol- und Bringservice bis 60 km sind im Paket vollständig enthalten.",
+      "Eine Keramikversiegelung braucht einen sorgfältig vorbereiteten Lack. Wir reinigen die Oberfläche, reduzieren behandelbare Waschkratzer durch mehrstufige Politur und entfetten den Lack vor dem Auftrag der Beschichtung.",
+      "Die Beschichtung ergänzt den Oberflächenschutz und erleichtert die Pflege. Aushärtezeit, erster Kontakt mit Wasser und erste Wäsche richten sich nach den Vorgaben des verwendeten Produkts. Bei der Übergabe erhalten Sie die passenden Pflegehinweise.",
+      "Planen Sie ca. 2 Tage ein. Glas- und Felgenversiegelung, Lederpflege sowie der Hol- und Bringservice bis 60 km sind im Paket enthalten.",
     ],
     steps: [
       {
@@ -871,7 +866,7 @@ export const faqs = [
   {
     group: "Keramikversiegelung",
     q: "Wie lange hält die Keramikversiegelung?",
-    a: "Im Paket Keramikschutz beträgt die Standzeit bis zu 36 Monate bzw. ca. 45.000 km bei empfohlener Pflege. Wir verwenden professionelle 9H-Keramikbeschichtungen, die eine feste chemische Verbindung mit dem Klarlack eingehen und extremen Schutz vor UV-Strahlung, Streusalz und Schmutz bieten.",
+    a: "Die Standzeit hängt von der verwendeten Beschichtung, der Fahrleistung, den Umwelteinflüssen und der Pflege ab. Wir besprechen mit Ihnen, welche Beschichtung zu Ihrem Fahrzeug passt und welche Haltbarkeit dafür zu erwarten ist. Eine pauschale Laufzeit für jedes Fahrzeug versprechen wir nicht.",
   },
   {
     group: "Keramikversiegelung",
@@ -881,7 +876,7 @@ export const faqs = [
   {
     group: "Keramikversiegelung",
     q: "Kann ich mein Auto nach der Versiegelung sofort waschen?",
-    a: "Nein. In den ersten etwa sieben Tagen sollte das Fahrzeug nicht gewaschen werden. Regen schadet in dieser Zeit nicht.",
+    a: "Warten Sie mit der ersten Wäsche, bis die verwendete Beschichtung dafür freigegeben ist. Wie lange Sie Wasser und Reinigungsmittel vermeiden sollten, erklären wir Ihnen bei der Übergabe anhand der Produktvorgaben.",
   },
   {
     group: "Keramikversiegelung",
@@ -916,12 +911,12 @@ export const faqs = [
   {
     group: "Abholservice",
     q: "Wie ist mein Fahrzeug während des Hol- und Bringservices versichert?",
-    a: "Ihr Fahrzeug ist während der gesamten Überführung und des Aufenthalts in unserer Werkstatt über unsere gewerbliche Vollkaskoversicherung vollständig abgesichert. Die Fahrt erfolgt ausschließlich durch geschultes Fachpersonal.",
+    a: "Bitte klären Sie den konkreten Versicherungsschutz vor der Beauftragung mit uns. Entscheidend sind die geltenden Versicherungsbedingungen, mögliche Ausschlüsse und Selbstbeteiligungen. Eine pauschale Zusage vollständiger Absicherung machen wir nicht.",
   },
   {
     group: "Allgemein",
-    q: "Wie läuft die Bezahlung und eventuelle Anzahlung ab?",
-    a: "Ihre Terminanfrage ist unverbindlich. Bei Neukunden bitten wir nach Ihrer Bestätigung um eine Anzahlung von 10 % zur Terminkaution. Den Restbetrag zahlen Sie erst nach vollständiger Fertigstellung und persönlicher Abnahme Ihres Fahrzeugs bei der Übergabe.",
+    q: "Wann und wie bezahle ich?",
+    a: paymentNote,
   },
   {
     group: "Allgemein",

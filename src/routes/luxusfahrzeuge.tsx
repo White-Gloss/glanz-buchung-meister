@@ -97,7 +97,7 @@ function LuxuryPage() {
         <ul className="mt-14 space-y-3 text-sm text-muted">
           <li>Erstgespräch persönlich am Telefon oder vertraulich via WhatsApp</li>
           <li>Begutachtung des Fahrzeugs in unserer Werkstatt in Horb oder vor Ort</li>
-          <li>Vollkaskoversicherte Fahrzeugüberführung durch geschultes Fachpersonal</li>
+          <li>Hol- und Bringservice nach persönlicher Abstimmung</li>
           <li>Absolute Diskretion – Veröffentlichung nur mit ausdrücklicher Zustimmung und ohne sichtbares Kennzeichen</li>
           <li>Leistungsumfang und Festpreis-Angebot erst nach individueller Begutachtung</li>
           <li>Keine anonyme Online-Buchung, kein Standardpaket</li>
