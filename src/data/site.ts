@@ -22,7 +22,7 @@ export const site = {
   whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
   vatNote: "inkl. 19 % MwSt.",
   vatRate: 0.19,
-  vatId: "",
+  vatId: "DE865798753",
   hoursLabel: "Mo–Fr 09:00–17:00 Uhr",
   lat: 48.445,
   lng: 8.691,
