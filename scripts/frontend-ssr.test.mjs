@@ -22,7 +22,7 @@ test("service index and city routes render distinct content with one canonical",
   for (const [path, heading] of [
     ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
     ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung in Nagold"],
-    ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung in Horb am Neckar"],
+    ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung mit Abholung in Horb am Neckar"],
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);
@@ -42,7 +42,11 @@ test("all published service/city combinations render their own route", async () 
       const { response, html } = await get(path);
       assert.equal(response.status, 200, path);
       const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
-      assert.equal(h1, `${service.seoNav} in ${city.name}`, path);
+      const expectedHeading =
+        city.slug === "horb-am-neckar"
+          ? `${service.seoNav} mit Abholung in ${city.name}`
+          : `${service.seoNav} in ${city.name}`;
+      assert.equal(h1, expectedHeading, path);
       assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     }
   }
