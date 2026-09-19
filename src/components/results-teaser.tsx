@@ -28,7 +28,7 @@ export function ResultsTeaser({ service }: { service?: string }) {
       </div>
       {service ? <CustomerVideoGallery videos={videos} compact /> : (
         <div className="wg-home-results-media">
-          <CustomerVideoGallery videos={videos} />
+          <CustomerVideoGallery videos={videos} mobileSwipe />
         </div>
       )}
       <p className="wg-results-note">Veröffentlicht mit Zustimmung. Keine sichtbaren Kennzeichen. Videos laden erst nach Klick auf Wiedergabe.</p>

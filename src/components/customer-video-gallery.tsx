@@ -10,11 +10,13 @@ export type CustomerVideo = {
   featured?: boolean;
 };
 
-export function CustomerVideoGallery({ videos, compact = false }: { videos: readonly CustomerVideo[]; compact?: boolean }) {
+export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = false }: { videos: readonly CustomerVideo[]; compact?: boolean; mobileSwipe?: boolean }) {
   const [active, setActive] = useState<CustomerVideo | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const titleId = useId();
+  const swipeHintId = useId();
+  const swipeable = mobileSwipe && !compact && videos.length > 1;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -37,7 +39,11 @@ export function CustomerVideoGallery({ videos, compact = false }: { videos: read
 
   return (
     <>
-      <ul className={compact ? "wg-video-grid wg-video-grid--compact" : "wg-video-grid"}>
+      <ul
+        className={`wg-video-grid${compact ? " wg-video-grid--compact" : ""}${swipeable ? " wg-video-grid--swipe" : ""}`}
+        aria-label="Kundenvideos"
+        aria-describedby={swipeable ? swipeHintId : undefined}
+      >
         {videos.map((video) => (
           <li key={video.src} className={video.featured && !compact ? "wg-video-card wg-video-card--featured" : "wg-video-card"}>
             <button type="button" className="wg-video-trigger" onClick={(event) => { triggerRef.current = event.currentTarget; setActive(video); }} aria-label={`${video.title} ansehen, ${video.duration}`}>
@@ -52,6 +58,7 @@ export function CustomerVideoGallery({ videos, compact = false }: { videos: read
           </li>
         ))}
       </ul>
+      {swipeable ? <p id={swipeHintId} className="wg-video-swipe-hint">Nach links oder rechts wischen für weitere Videos <span aria-hidden="true">↔</span></p> : null}
       <dialog
         ref={dialogRef}
         className="wg-video-dialog"

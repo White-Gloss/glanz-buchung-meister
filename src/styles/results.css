@@ -237,7 +237,42 @@
   background: var(--color-accent);
 }
 
+.wg-video-swipe-hint {
+  display: none;
+}
+
 @media (max-width: 639px) {
+  .wg-video-grid--swipe {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 88%;
+    align-items: start;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 4px;
+    padding: 4px 4px 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  .wg-video-grid--swipe > .wg-video-card {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .wg-video-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+  }
+
   .wg-results-teaser-head,
   .wg-video-modal-top {
     align-items: flex-start;
