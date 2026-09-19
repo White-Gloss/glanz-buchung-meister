@@ -319,8 +319,8 @@ function Home() {
             className="ga-felg aspect-[4/3] w-full"
           />
           <Shot
-            name="leder"
-            alt="Leder nach der Innenraumreinigung"
+            name="interieur"
+            alt="Mittelkonsole und Interieur nach der Innenraumreinigung"
             className="ga-lede aspect-[4/3] w-full"
           />
           <Shot
