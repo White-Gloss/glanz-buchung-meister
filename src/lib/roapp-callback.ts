@@ -3,7 +3,7 @@ import type { Sql } from "./db.ts";
 import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
 
 export function verifyRoSignature(id: string, signature: string, secret: string): boolean {
-  if (!/^[a-f0-9-]{36}$/i.test(id) || !/^[a-f0-9]{64}$/i.test(signature) || secret.length < 32)
+  if (!/^[a-f0-9-]{36}$/i.test(id) || !/^[a-f0-9]{64}$/i.test(signature) || secret.length < 20)
     return false;
   const expected = createHash("sha256")
     .update(id + secret)
@@ -112,7 +112,7 @@ export async function reconcileRoOrders(sql: Sql) {
 export async function handleRoCallback(request: Request, sql: Sql) {
   const headers = { "cache-control": "no-store" };
   const secret = process.env.ROAPP_WEBHOOK_SECRET || "";
-  if (secret.length < 32)
+  if (secret.length < 20)
     return Response.json({ error: "not_configured" }, { status: 503, headers });
   if (Number(request.headers.get("content-length")) > 65536)
     return new Response(null, { status: 413, headers });

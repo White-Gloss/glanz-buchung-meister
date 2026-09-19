@@ -6,7 +6,7 @@ if (process.getuid?.() !== 0) throw new Error('root_required');
 const input = createInterface({ input: process.stdin, terminal: false });
 const secret = await new Promise(resolve => input.once('line', resolve));
 input.close();
-if (!/^[a-f0-9]{64}$/.test(secret)) throw new Error('invalid_secret');
+if (!/^[A-Za-z0-9_-]{20,21}$/.test(secret)) throw new Error('invalid_secret');
 const file = '/etc/white-gloss/environment';
 const backup = `/var/backups/white-gloss/environment-before-webhook-${Date.now()}`;
 await copyFile(file, backup);
