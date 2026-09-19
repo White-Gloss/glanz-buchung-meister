@@ -39,8 +39,10 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      // Discover early; actual stylesheet is non-blocking in <head> below.
-      { rel: "preload", as: "style", href: appCss },
+      // Blocking stylesheet again: deferred print→all caused ~0.50 CLS on
+      // .hero-follow when critical CSS mismatched full utilities (post-#214).
+      // Pre-#214 PSI had CLS ~0.01 with this pattern.
+      { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
@@ -71,21 +73,11 @@ export const Route = createRootRoute({
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
           <HeadContent />
-          <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
           {/*
-            Full app CSS is render-blocking (~600ms mobile on PSI). Load as
-            print media, then promote to all on load. Critical CSS above
-            covers FOUC / hero CLS until then.
+            Optional ATF insurance while the blocking stylesheet parses.
+            Harmless once full CSS applies; kept for stable dark ATF paint.
           */}
-          <link rel="stylesheet" href={appCss} media="print" data-app-css="" />
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `(function(){var l=document.querySelector("link[data-app-css]");if(!l)return;var g=function(){l.media="all"};if(l.sheet)g();else l.addEventListener("load",g);l.onload=g;setTimeout(g,2000)})();`,
-            }}
-          />
-          <noscript>
-            <link rel="stylesheet" href={appCss} />
-          </noscript>
+          <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         </head>
         <body className="bg-bg text-fg">
         <PreviewHostBridge />
