@@ -14,7 +14,7 @@ The live website uses TanStack Start, existing IONOS PostgreSQL and private Supa
 - Internal invoice 001 (533163), explicitly labelled as a technical test with no payment claim, was created from A002: 178 EUR gross including 28.42 EUR VAT. RO confirmed email sending with the invoice document selected as attachment. The test invoice was then cancelled; the cancelled status persisted after reload.
 - On user continuation, A002 was accepted with a visibly drawn TEST signature at 18:03 UTC. RO showed accepted/signed timestamps and its order history recorded customer acceptance. The website database subsequently held status Akzeptiert, 17800 cents and fixed_price=true.
 - PR 236 deployed as release 91ef2dace073f7336e84b1c3cc2e7b3b64f7799e: main CI, deployment 35460135085 and live smoke passed. The public imprint returned HTTP 200 and the supplied VAT ID.
-- Internal RO orders A001/A002/A003 were deleted after testing. Website test bookings WG-48/WG-49 and their photo-link metadata were removed after identity checks and a verified private backup at /var/backups/white-gloss/20260919T181152Z/database.dump. No payment was booked. Cancelled test invoice 001 remains as an audit record; storage files remain private in the backup/retention scope.
+- Internal RO orders A001/A002/A003 were deleted after testing. Website test bookings WG-48/WG-49 and their photo-link metadata were removed after identity checks and a verified private backup at /var/backups/white-gloss/20260919T181424Z/database.dump. No payment was booked. Cancelled test invoice 001 remains as an audit record; storage files remain private in the backup/retention scope.
 
 ## Not yet complete
 
