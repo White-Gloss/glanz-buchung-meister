@@ -21,7 +21,13 @@ function CompactSkeleton() {
  * Defers the reviews chunk (and @tanstack/react-query) until near viewport.
  * Keeps the homepage main bundle free of unused review UI JS.
  */
-export function LazyGoogleReviews({ compact = false }: { compact?: boolean }) {
+export function LazyGoogleReviews({
+  compact = false,
+  id,
+}: {
+  compact?: boolean;
+  id?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -42,7 +48,7 @@ export function LazyGoogleReviews({ compact = false }: { compact?: boolean }) {
   }, [ready]);
 
   return (
-    <div ref={ref}>
+    <div id={id} ref={ref} className={id ? "scroll-mt-24" : undefined}>
       {ready ? (
         <Suspense fallback={compact ? <CompactSkeleton /> : null}>
           <GoogleReviews compact={compact} />

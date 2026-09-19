@@ -135,7 +135,7 @@ function Home() {
       </section>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <ResultsTeaser />
-        <LazyGoogleReviews compact />
+        <LazyGoogleReviews id="bewertungen" compact />
         <aside className="wg-trust-strip" aria-label="White Gloss auf einen Blick">
           <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Vollkaskoversicherte Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149 € inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
         </aside>
@@ -513,7 +513,6 @@ function Home() {
         </div>
       </section>
 
-      <LazyGoogleReviews />
       <section
         id="buchung"
         className="section mx-auto max-w-7xl px-4 sm:px-6"

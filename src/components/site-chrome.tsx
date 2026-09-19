@@ -37,6 +37,7 @@ const NAV_SHOT: Record<string, ShotName> = {
   "Preise & Pakete": "finish",
   Arbeitsweise: "atelier",
   "Hol- und Bringservice": "felgen",
+  "Google-Bewertungen": "atelier",
   "Individuelles Angebot": "keramik",
   Ratgeber: "dellen",
   "Häufige Fragen": "atelier",

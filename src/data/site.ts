@@ -960,6 +960,7 @@ export const nav = [
   { to: "/preise", label: "Preise & Pakete" },
   { to: "/qualitaet", label: "Arbeitsweise" },
   { to: "/abholservice", label: "Hol- und Bringservice" },
+  { to: "/", label: "Google-Bewertungen", hash: "bewertungen" },
   { to: "/", label: "Individuelles Angebot", hash: "buchung" },
   { to: "/ratgeber", label: "Ratgeber" },
   { to: "/faq", label: "Häufige Fragen" },
