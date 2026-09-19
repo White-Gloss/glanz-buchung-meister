@@ -202,11 +202,12 @@ assert.equal(state.tables.booking_photos.filter((row) => row.upload_state === "f
 await control({ failStorageNth: 0 });
 results.push("Retry deduplicates earlier files and preserves a recoverable failed reservation");
 const photo = await rpc("createPublicPhotoInquiry", {
+  requestId: randomUUID(),
   title: "Begutachtung Dellen",
   name: "QA Fotoanfrage",
   phone: "+490000000011",
   text: "Delle links",
-  files: ["fahrzeug.webp"],
+  files: [file],
   privacy: true,
   website: "",
 });

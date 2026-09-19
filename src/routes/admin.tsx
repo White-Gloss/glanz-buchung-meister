@@ -1,4 +1,5 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
+import { roappOperationsEnabled } from "@/lib/booking-status.functions";
 import { useEffect, useState } from "react";
 import {
   BookOpenText,
@@ -33,6 +34,9 @@ const icons: Record<string, typeof CalendarDays> = {
 };
 
 export const Route = createFileRoute("/admin")({
+  beforeLoad: async () => {
+    if (await roappOperationsEnabled()) throw redirect({ href: "https://web.roapp.io/orders" });
+  },
   component: AdminShell,
   head: () => ({
     meta: [{ title: `Betrieb | ${site.name}` }, { name: "robots", content: "noindex,nofollow" }],

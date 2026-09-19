@@ -6,6 +6,8 @@ import type { Sql } from "./db.ts";
 import { type BookingPdfData } from "./booking-pdf.ts";
 import { LEXWARE_ONLY } from "./billing-policy.ts";
 import { receiptEmailCopy } from "./zoho-documents.ts";
+import { roappOnlyEnabled } from "./booking-backend.ts";
+import { bookingStatusUrl } from "./booking-status-token.ts";
 
 export type BookingEvent =
   | "booking.created"
@@ -183,7 +185,9 @@ export async function queueBookingEvent(
         event === "booking.created"
           ? `Anfrage eingegangen · White Gloss WG-${booking.id}`
           : subject,
-      body,
+      body: roappOnlyEnabled()
+        ? `${body}\n\nIhr persönlicher Auftragsstatus:\n${bookingStatusUrl(booking.id)}`
+        : body,
       attachments,
       bookingId: booking.id,
       bookingVersion: version,

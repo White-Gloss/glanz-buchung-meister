@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
-import { packages, vehicleClasses, extras } from "../data/site.ts";
+import { packages, vehicleClasses, extras, pickupPricing } from "../data/site.ts";
+import { roappOnlyEnabled } from "./booking-backend.ts";
+import { isCalendarDate } from "./calendar-date.ts";
+import { journalRoappWrites } from "./roapp-write-journal.ts";
+import { syncRoappPhotos } from "./roapp-photo-links.ts";
 import {
   addBookingItem,
   addOrderItem,
@@ -26,10 +30,19 @@ export async function queueRoappBooking(
   sql: Sql,
   booking: Pick<WorkflowBooking, "id" | "version">,
 ) {
+  if (!roappOnlyEnabled()) {
+    await sql`insert into roapp_sync_queue(booking_id,shop_id,requested_version)
+      values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
+      set requested_version=greatest(roapp_sync_queue.requested_version,excluded.requested_version),
+      status=case when roapp_sync_queue.status='review' then 'review' else 'pending' end,
+      next_attempt_at=now(),updated_at=now()`;
+    return;
+  }
   await sql`insert into roapp_sync_queue(booking_id,shop_id,requested_version)
     values(${booking.id},${SHOP},${booking.version}) on conflict(booking_id) do update
     set requested_version=greatest(roapp_sync_queue.requested_version,excluded.requested_version),
-    status='pending',next_attempt_at=now(),updated_at=now()`;
+    status=case when roapp_sync_queue.status='review' then 'review' else 'pending' end,
+    next_attempt_at=now(),requested_at=clock_timestamp(),updated_at=now()`;
 }
 
 export function normalizePhone(phone: string): string {
@@ -49,16 +62,31 @@ export function bookingSchedule(
   const date = (booking.preferred_date || "").trim();
   const slot = (booking.preferred_slot || "").trim();
   if (!date || !slot) throw new RoappError("roapp_missing_slot", { review: true });
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(slot))
+  if (!isCalendarDate(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(slot))
     throw new RoappError("roapp_invalid_slot", { review: true });
-  const start = new Date(`${date}T${slot}:00+02:00`);
-  if (Number.isNaN(start.getTime())) throw new RoappError("roapp_invalid_slot", { review: true });
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const candidates = ["+01:00", "+02:00"]
+    .map((offset) => new Date(`${date}T${slot}:00${offset}`))
+    .filter((value) => formatter.format(value) === `${date} ${slot}`);
+  // Reject missing or ambiguous times at daylight-saving transitions.
+  if (candidates.length !== 1) throw new RoappError("roapp_invalid_slot", { review: true });
+  const start = candidates[0];
   const end = new Date(start.getTime() + SLOT_DURATION_MS);
   return { scheduledFor: start.toISOString(), scheduledTo: end.toISOString() };
 }
 
 export function bookingComment(booking: WorkflowBooking): string {
-  const pack = packages.find((p) => p.id === booking.package_id)?.name || booking.package_id;
+  const pack =
+    packages.find((p) => p.id === booking.package_id)?.name ||
+    (booking.package_id === "photo-inquiry" ? "Individuelle Fotoanfrage" : booking.package_id);
   const vehicleClass =
     vehicleClasses.find((v) => v.id === booking.class_id)?.label || booking.class_id;
   let extraIds: unknown = [];
@@ -71,11 +99,14 @@ export function bookingComment(booking: WorkflowBooking): string {
     ? extraIds.map((id) => extras.find((e) => e.id === id)?.name || String(id))
     : [];
   return [
-    `Website-Buchung WG-${booking.id}`,
+    `Website-Anfrage WG-${booking.id} – Preise prüfen`,
     `Paket: ${pack}`,
     `Fahrzeugklasse: ${vehicleClass}`,
     `Extras: ${extraNames.join(", ") || "keine"}`,
-    `Betrag laut Anfrage: ${(booking.total_cents / 100).toFixed(2)} EUR`,
+    booking.package_id === "photo-inquiry"
+      ? "Preis nach Fotobegutachtung festlegen."
+      : `Betrag laut Anfrage: ${(booking.total_cents / 100).toFixed(2)} EUR`,
+    "Unverbindlicher Einstiegspreis. Fixpreis erst nach Fotobegutachtung und manueller Freigabe.",
     booking.city_slug ? `Abholort: ${booking.city_slug}` : "",
     booking.note || "",
   ]
@@ -90,10 +121,14 @@ export function bookingLineItems(
   entityMap: Record<string, number>,
 ): LineItem[] {
   const items: LineItem[] = [];
+  if (booking.package_id === "photo-inquiry") return items;
   const pack = packages.find((p) => p.id === booking.package_id);
   const klass = vehicleClasses.find((v) => v.id === booking.class_id);
   const factor = klass?.factor ?? 1;
-  const packageEntity = entityMap[booking.package_id];
+  const packageEntity =
+    entityMap[`${booking.package_id}:${booking.class_id}`] ?? entityMap[booking.package_id];
+  if (roappOnlyEnabled() && (!packageEntity || !pack))
+    throw new RoappError("roapp_catalog_mapping_missing", { review: true });
   if (packageEntity && pack) {
     items.push({
       catalogId: booking.package_id,
@@ -111,9 +146,13 @@ export function bookingLineItems(
   if (Array.isArray(extraIds)) {
     for (const raw of extraIds) {
       const id = String(raw);
-      const entityId = entityMap[id];
+      const entityId = entityMap[`${id}:${booking.class_id}`] ?? entityMap[id];
       const extra = extras.find((e) => e.id === id);
-      if (!entityId || !extra) continue;
+      if (!entityId || !extra) {
+        if (roappOnlyEnabled())
+          throw new RoappError("roapp_catalog_mapping_missing", { review: true });
+        continue;
+      }
       items.push({
         catalogId: id,
         entityId,
@@ -121,6 +160,21 @@ export function bookingLineItems(
         label: extra.name,
       });
     }
+  }
+  if (booking.pickup_cents > 0) {
+    const tier = pickupPricing.tiers.find(
+      (tier) => Math.round(tier.amount * 100) === booking.pickup_cents,
+    );
+    const entityId = tier ? entityMap[`pickup:${tier.id}`] : undefined;
+    if (!entityId && roappOnlyEnabled())
+      throw new RoappError("roapp_pickup_mapping_missing", { review: true });
+    if (entityId && tier)
+      items.push({
+        catalogId: `pickup:${tier.id}`,
+        entityId,
+        price: booking.pickup_cents / 100,
+        label: tier.label,
+      });
   }
   return items;
 }
@@ -151,7 +205,11 @@ export async function syncOneRoappBooking(
   creds: Pick<RoappCredentials, "branchId" | "assigneeId" | "orderTypeId" | "entityMap">,
   progress: QueueProgress,
 ) {
-  const schedule = bookingSchedule(booking);
+  const schedule =
+    roappOnlyEnabled() && (!booking.preferred_date || !booking.preferred_slot)
+      ? undefined
+      : bookingSchedule(booking);
+  const items = bookingLineItems(booking, creds.entityMap);
   const comment = bookingComment(booking);
   const phone = normalizePhone(booking.phone);
   if (!phone) throw new RoappError("roapp_missing_phone", { review: true });
@@ -173,20 +231,20 @@ export async function syncOneRoappBooking(
   }
 
   let bookingId = progress.ro_booking_id;
-  if (!bookingId) {
+  if (!bookingId && !roappOnlyEnabled()) {
     bookingId = await createBooking(request, {
       branchId: creds.branchId,
       assigneeId: creds.assigneeId,
       clientId: contactId,
-      scheduledFor: schedule.scheduledFor,
-      scheduledTo: schedule.scheduledTo,
+      scheduledFor: schedule!.scheduledFor,
+      scheduledTo: schedule!.scheduledTo,
       comment,
     });
     await saveProgress(sql, booking.id, { ro_booking_id: bookingId });
   }
 
-  if (!progress.booking_items_done) {
-    for (const item of bookingLineItems(booking, creds.entityMap)) {
+  if (bookingId && !progress.booking_items_done) {
+    for (const item of items) {
       await addBookingItem(request, bookingId, {
         entityId: item.entityId,
         quantity: 1,
@@ -205,16 +263,20 @@ export async function syncOneRoappBooking(
       clientId: contactId,
       assigneeId: creds.assigneeId,
       managerNotes: comment,
-      estimatedPrice: `${(booking.total_cents / 100).toFixed(2)} EUR`,
-      scheduledFor: schedule.scheduledFor,
-      scheduledTo: schedule.scheduledTo,
+      malfunction: comment,
+      estimatedPrice:
+        booking.package_id === "photo-inquiry"
+          ? "Nach Fotobegutachtung"
+          : `${(booking.total_cents / 100).toFixed(2)} EUR`,
+      scheduledFor: schedule?.scheduledFor,
+      scheduledTo: schedule?.scheduledTo,
     });
     await saveProgress(sql, booking.id, { ro_order_id: orderId });
     await createOrderComment(request, orderId, `WG-${booking.id}`);
   }
 
   if (!progress.order_items_done) {
-    for (const item of bookingLineItems(booking, creds.entityMap)) {
+    for (const item of items) {
       await addOrderItem(request, orderId, {
         entityId: item.entityId,
         assigneeId: creds.assigneeId,
@@ -226,6 +288,7 @@ export async function syncOneRoappBooking(
     await saveProgress(sql, booking.id, { order_items_done: true });
   }
 
+  await syncRoappPhotos(sql, booking.id, orderId, request);
   return { contactId, bookingId, orderId };
 }
 
@@ -273,19 +336,22 @@ export async function runRoappSync(
     } as RoappCredentials);
   try {
     for (let i = 0; i < (options.limit ?? 3) && Date.now() < deadline; i++) {
-      const [row] =
-        await sql<WorkflowBooking>`select b.* from roapp_sync_queue q join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
+      const [row] = await sql<
+        WorkflowBooking & { request_revision: string }
+      >`select b.*,q.requested_at::text as request_revision from roapp_sync_queue q join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
         where q.shop_id=${SHOP} and q.status='pending' and q.next_attempt_at<=now() and (${options.bookingId ?? null}::integer is null or b.id=${options.bookingId ?? null})
         order by q.next_attempt_at,q.booking_id limit 1`;
       if (!row) break;
-      const [progress] = await sql<QueueProgress>`select ro_contact_id,ro_booking_id,ro_order_id,booking_items_done,order_items_done
+      const [progress] =
+        await sql<QueueProgress>`select ro_contact_id,ro_booking_id,ro_order_id,booking_items_done,order_items_done
         from roapp_sync_queue where booking_id=${row.id}`;
       try {
-        if (!options.request && !creds) throw new RoappError("roapp_not_configured", { review: true });
+        if (!options.request && !creds)
+          throw new RoappError("roapp_not_configured", { review: true });
         const ids = await syncOneRoappBooking(
           sql,
           row,
-          request,
+          journalRoappWrites(sql, row.id, request),
           options.creds || creds || activeCreds,
           progress || {
             ro_contact_id: null,
@@ -298,7 +364,7 @@ export async function runRoappSync(
         await sql`update roapp_sync_queue set synced_version=${row.version},
           ro_contact_id=${ids.contactId},ro_booking_id=${ids.bookingId},ro_order_id=${ids.orderId},
           booking_items_done=true,order_items_done=true,
-          status=case when requested_version>${row.version} then 'pending' else 'synced' end,attempts=0,last_error=null,updated_at=now()
+          status=case when requested_version>${row.version} or requested_at<>${row.request_revision}::timestamptz then 'pending' else 'synced' end,attempts=0,last_error=null,updated_at=now()
           where booking_id=${row.id}`;
         result.synced++;
       } catch (error) {

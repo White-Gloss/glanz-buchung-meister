@@ -4,6 +4,7 @@ import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { BookingPhotoUpload } from "@/components/booking-photo-upload";
+import { BookingStatus } from "@/components/booking-status";
 
 type ThanksSearch = {
   vorgang?: string;
@@ -79,6 +80,7 @@ function ThanksPage() {
               <span className="mt-2 block font-display text-3xl tracking-tight">{vorgang}</span>
             </p>
             <BookingPhotoUpload vorgang={vorgang} />
+            <BookingStatus id={Number(vorgang.slice(3))} />
           </>
         ) : null}
 

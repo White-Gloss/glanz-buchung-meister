@@ -4,18 +4,8 @@ import { test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
-import {
-  bookingSchedule,
-  queueRoappBooking,
-  runRoappSync,
-  type RoappCall,
-} from "./roapp-sync.ts";
-import {
-  createRoappClient,
-  extractRoappId,
-  RoappError,
-  type RoappCredentials,
-} from "./roapp.ts";
+import { bookingSchedule, queueRoappBooking, runRoappSync, type RoappCall } from "./roapp-sync.ts";
+import { createRoappClient, extractRoappId, RoappError, type RoappCredentials } from "./roapp.ts";
 
 function wrap(pg: Pick<PGlite, "query">): Sql {
   const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
@@ -40,6 +30,7 @@ const creds: RoappCredentials = {
   entityMap: { premium: 100, felgen: 200 },
 };
 
+let nextOrderId = 1000;
 function mockApi() {
   const people: { id: number; phone?: string; email?: string }[] = [];
   const bookings: { id: number; comment?: string; client_id: number }[] = [];
@@ -62,7 +53,7 @@ function mockApi() {
     }
     if (failNext === `${method} ${path}`) {
       failNext = null;
-      throw new RoappError("roapp_request_failed", { status: 500, retryable: true });
+      throw new RoappError("roapp_rate_limited", { status: 429, retryable: true });
     }
     if (method === "GET" && path === "/contacts/people") {
       return { data: people };
@@ -88,7 +79,7 @@ function mockApi() {
       return { id: bookingItems.length };
     }
     if (method === "POST" && path === "/orders") {
-      const id = orders.length + 1;
+      const id = nextOrderId++;
       orders.push({
         id,
         manager_notes: body?.manager_notes as string | undefined,
@@ -160,6 +151,44 @@ test("RO App client backs off on HTTP 429", async () => {
 test("extractRoappId reads nested payloads", () => {
   assert.equal(extractRoappId({ data: { id: 42 } }), 42);
   assert.equal(extractRoappId({ id: 3 }), 3);
+  assert.equal(extractRoappId({ data: [{ id: 43 }] }), 43);
+});
+
+test("lost write responses and server errors require reconciliation", async () => {
+  for (const fetchImpl of [
+    async () => {
+      throw new Error("connection lost after server accepted request");
+    },
+    async () => new Response("{}", { status: 502 }),
+  ]) {
+    const client = createRoappClient(creds, { fetchImpl, minIntervalMs: 0 });
+    await assert.rejects(
+      client("POST", "/orders", {}),
+      (error: unknown) => error instanceof RoappError && error.review && !error.retryable,
+    );
+  }
+});
+
+test("Berlin scheduling handles seasons and rejects invalid or ambiguous wall times", () => {
+  assert.equal(
+    bookingSchedule({ preferred_date: "2026-01-15", preferred_slot: "09:00" }).scheduledFor,
+    "2026-01-15T08:00:00.000Z",
+  );
+  assert.equal(
+    bookingSchedule({ preferred_date: "2026-07-15", preferred_slot: "09:00" }).scheduledFor,
+    "2026-07-15T07:00:00.000Z",
+  );
+  for (const [date, slot] of [
+    ["2026-02-31", "09:00"],
+    ["2026-03-29", "02:30"],
+    ["2026-10-25", "02:30"],
+    ["2026-09-19", "25:00"],
+  ]) {
+    assert.throws(
+      () => bookingSchedule({ preferred_date: date, preferred_slot: slot }),
+      RoappError,
+    );
+  }
 });
 
 test("bookingSchedule rejects missing slot", () => {
@@ -181,9 +210,10 @@ test("RO App synchronization creates contact, booking, order and retries partial
     on conflict(shop_id) do update set roapp_sync_enabled=true`;
 
   let sequence = 0;
-  async function fixture(opts: { date?: string | null; slot?: string | null; phone?: string } = {}) {
-    const [row] =
-      await sql<WorkflowBooking>`insert into bookings(
+  async function fixture(
+    opts: { date?: string | null; slot?: string | null; phone?: string } = {},
+  ) {
+    const [row] = await sql<WorkflowBooking>`insert into bookings(
         shop_id,customer_name,phone,email,package_id,class_id,extra_ids,total_cents,preferred_date,preferred_slot,note
       ) values(
         'white-gloss','Integration Test',${opts.phone || `+49000000${++sequence}`},'test@example.invalid',
@@ -195,41 +225,38 @@ test("RO App synchronization creates contact, booking, order and retries partial
   }
 
   try {
-    await t.test("finds existing contact or creates person, booking and order with WG id", async () => {
-      const api = mockApi();
-      const existing = api.seedPerson("+4900000099", "test@example.invalid");
-      const row = await fixture({ phone: "+4900000099" });
-      // Force email-only miss then phone hit via seeded list returned for any GET.
-      assert.equal(
-        (await runRoappSync(sql, { request: api.request, creds, bookingId: row.id, limit: 1 }))
-          .synced,
-        1,
-      );
-      assert.equal(api.people.length, 1);
-      assert.equal(api.people[0].id, existing);
-      assert.equal(api.bookings.length, 1);
-      assert.equal(api.orders.length, 1);
-      assert.match(api.bookings[0].comment || "", /WG-\d+/);
-      assert.match(api.orders[0].manager_notes || "", /WG-\d+/);
-      assert.deepEqual(
-        api.bookingItems.map((i) => i.entity_id).sort(),
-        [100, 200],
-      );
-      assert.deepEqual(
-        api.orderItems.map((i) => i.entity_id).sort(),
-        [100, 200],
-      );
-      const [queue] = await sql<{
-        status: string;
-        ro_contact_id: number;
-        ro_booking_id: number;
-        ro_order_id: number;
-      }>`select status,ro_contact_id,ro_booking_id,ro_order_id from roapp_sync_queue where booking_id=${row.id}`;
-      assert.equal(queue.status, "synced");
-      assert.equal(queue.ro_contact_id, existing);
-      assert.ok(queue.ro_booking_id);
-      assert.ok(queue.ro_order_id);
-    });
+    await t.test(
+      "finds existing contact or creates person, booking and order with WG id",
+      async () => {
+        const api = mockApi();
+        const existing = api.seedPerson("+4900000099", "test@example.invalid");
+        const row = await fixture({ phone: "+4900000099" });
+        // Force email-only miss then phone hit via seeded list returned for any GET.
+        assert.equal(
+          (await runRoappSync(sql, { request: api.request, creds, bookingId: row.id, limit: 1 }))
+            .synced,
+          1,
+        );
+        assert.equal(api.people.length, 1);
+        assert.equal(api.people[0].id, existing);
+        assert.equal(api.bookings.length, 1);
+        assert.equal(api.orders.length, 1);
+        assert.match(api.bookings[0].comment || "", /WG-\d+/);
+        assert.match(api.orders[0].manager_notes || "", /WG-\d+/);
+        assert.deepEqual(api.bookingItems.map((i) => i.entity_id).sort(), [100, 200]);
+        assert.deepEqual(api.orderItems.map((i) => i.entity_id).sort(), [100, 200]);
+        const [queue] = await sql<{
+          status: string;
+          ro_contact_id: number;
+          ro_booking_id: number;
+          ro_order_id: number;
+        }>`select status,ro_contact_id,ro_booking_id,ro_order_id from roapp_sync_queue where booking_id=${row.id}`;
+        assert.equal(queue.status, "synced");
+        assert.equal(queue.ro_contact_id, existing);
+        assert.ok(queue.ro_booking_id);
+        assert.ok(queue.ro_order_id);
+      },
+    );
 
     await t.test("creates a new person when lookup finds nothing", async () => {
       const api = mockApi();
@@ -272,6 +299,49 @@ test("RO App synchronization creates contact, booking, order and retries partial
       assert.equal(api.bookings.length, 1);
       assert.equal(api.orders.length, 1);
     });
+
+    await t.test(
+      "RO-only creates one order without duplicate booking and preserves uploads queued during transfer",
+      async () => {
+        process.env.BOOKING_OPERATIONS = "roapp";
+        try {
+          const api = mockApi();
+          const row = await fixture({ date: null, slot: null });
+          let queued = false;
+          const request: RoappCall = async <T>(
+            method: string,
+            path: string,
+            body?: Record<string, unknown> | null,
+            query?: Record<string, string | string[] | undefined>,
+          ) => {
+            const response = await api.request<T>(method, path, body, query);
+            if (method === "POST" && path === "/orders" && !queued) {
+              queued = true;
+              await queueRoappBooking(sql, row);
+            }
+            return response;
+          };
+          assert.equal(
+            (await runRoappSync(sql, { request, creds, bookingId: row.id, limit: 1 })).synced,
+            1,
+          );
+          assert.equal(
+            (await sql`select status from roapp_sync_queue where booking_id=${row.id}`)[0].status,
+            "pending",
+          );
+          await runRoappSync(sql, { request, creds, bookingId: row.id, limit: 1 });
+          assert.equal(api.bookings.length, 0);
+          assert.equal(api.orders.length, 1);
+          assert.equal(api.orderItems.length, 2);
+          assert.equal(
+            (await sql`select status from roapp_sync_queue where booking_id=${row.id}`)[0].status,
+            "synced",
+          );
+        } finally {
+          delete process.env.BOOKING_OPERATIONS;
+        }
+      },
+    );
 
     await t.test("missing slot marks review and keeps local booking", async () => {
       const api = mockApi();

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AbholserviceRouteImport } from './routes/abholservice'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgbRouteImport } from './routes/agb'
+import { Route as AuftragsstatusRouteImport } from './routes/auftragsstatus'
 import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as BarrierefreiheitRouteImport } from './routes/barrierefreiheit'
 import { Route as DankeRouteImport } from './routes/danke'
@@ -57,6 +58,8 @@ import { Route as ApiBitrixWorkshopRouteImport } from './routes/api/bitrix-works
 import { Route as ApiGoogleReviewsRouteImport } from './routes/api.google-reviews'
 import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
+import { Route as ApiRoCallbackRouteImport } from './routes/api.ro-callback'
+import { Route as ApiRoPhotoRouteImport } from './routes/api.ro-photo'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
@@ -85,6 +88,11 @@ const AdminRoute = AdminRouteImport.update({
 const AgbRoute = AgbRouteImport.update({
   id: '/agb',
   path: '/agb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuftragsstatusRoute = AuftragsstatusRouteImport.update({
+  id: '/auftragsstatus',
+  path: '/auftragsstatus',
   getParentRoute: () => rootRouteImport,
 } as any)
 const B2bRoute = B2bRouteImport.update({
@@ -307,6 +315,16 @@ const ApiOperatorRoute = ApiOperatorRouteImport.update({
   path: '/api/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRoCallbackRoute = ApiRoCallbackRouteImport.update({
+  id: '/api/ro-callback',
+  path: '/api/ro-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoPhotoRoute = ApiRoPhotoRouteImport.update({
+  id: '/api/ro-photo',
+  path: '/api/ro-photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
   id: '/api/whatsapp-webhook',
   path: '/api/whatsapp-webhook',
@@ -358,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/abholservice': typeof AbholserviceRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
+  '/auftragsstatus': typeof AuftragsstatusRoute
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
@@ -400,6 +419,8 @@ export interface FileRoutesByFullPath {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
@@ -415,6 +436,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agb': typeof AgbRoute
+  '/auftragsstatus': typeof AuftragsstatusRoute
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
@@ -455,6 +477,8 @@ export interface FileRoutesByTo {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
@@ -472,6 +496,7 @@ export interface FileRoutesById {
   '/abholservice': typeof AbholserviceRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/agb': typeof AgbRoute
+  '/auftragsstatus': typeof AuftragsstatusRoute
   '/b2b': typeof B2bRoute
   '/barrierefreiheit': typeof BarrierefreiheitRoute
   '/danke': typeof DankeRoute
@@ -514,6 +539,8 @@ export interface FileRoutesById {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
@@ -533,6 +560,7 @@ export interface FileRouteTypes {
     | '/abholservice'
     | '/admin'
     | '/agb'
+    | '/auftragsstatus'
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
@@ -575,6 +603,8 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/ro-callback'
+    | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/leistungen/$slug'
@@ -590,6 +620,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agb'
+    | '/auftragsstatus'
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
@@ -630,6 +661,8 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/ro-callback'
+    | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/ratgeber/$slug'
@@ -646,6 +679,7 @@ export interface FileRouteTypes {
     | '/abholservice'
     | '/admin'
     | '/agb'
+    | '/auftragsstatus'
     | '/b2b'
     | '/barrierefreiheit'
     | '/danke'
@@ -688,6 +722,8 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/ro-callback'
+    | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/leistungen/$slug'
@@ -706,6 +742,7 @@ export interface RootRouteChildren {
   AbholserviceRoute: typeof AbholserviceRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AgbRoute: typeof AgbRoute
+  AuftragsstatusRoute: typeof AuftragsstatusRoute
   B2bRoute: typeof B2bRoute
   BarrierefreiheitRoute: typeof BarrierefreiheitRoute
   DankeRoute: typeof DankeRoute
@@ -731,6 +768,8 @@ export interface RootRouteChildren {
   ApiGoogleReviewsRoute: typeof ApiGoogleReviewsRoute
   ApiHubRoute: typeof ApiHubRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
+  ApiRoCallbackRoute: typeof ApiRoCallbackRoute
+  ApiRoPhotoRoute: typeof ApiRoPhotoRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -764,6 +803,13 @@ declare module '@tanstack/react-router' {
       path: '/agb'
       fullPath: '/agb'
       preLoaderRoute: typeof AgbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auftragsstatus': {
+      id: '/auftragsstatus'
+      path: '/auftragsstatus'
+      fullPath: '/auftragsstatus'
+      preLoaderRoute: typeof AuftragsstatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/b2b': {
@@ -1074,6 +1120,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOperatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ro-callback': {
+      id: '/api/ro-callback'
+      path: '/api/ro-callback'
+      fullPath: '/api/ro-callback'
+      preLoaderRoute: typeof ApiRoCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ro-photo': {
+      id: '/api/ro-photo'
+      path: '/api/ro-photo'
+      fullPath: '/api/ro-photo'
+      preLoaderRoute: typeof ApiRoPhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/whatsapp-webhook': {
       id: '/api/whatsapp-webhook'
       path: '/api/whatsapp-webhook'
@@ -1243,6 +1303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AbholserviceRoute: AbholserviceRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AgbRoute: AgbRoute,
+  AuftragsstatusRoute: AuftragsstatusRoute,
   B2bRoute: B2bRoute,
   BarrierefreiheitRoute: BarrierefreiheitRoute,
   DankeRoute: DankeRoute,
@@ -1268,6 +1329,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGoogleReviewsRoute: ApiGoogleReviewsRoute,
   ApiHubRoute: ApiHubRoute,
   ApiOperatorRoute: ApiOperatorRoute,
+  ApiRoCallbackRoute: ApiRoCallbackRoute,
+  ApiRoPhotoRoute: ApiRoPhotoRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
