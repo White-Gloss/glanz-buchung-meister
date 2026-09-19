@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import { LazyGoogleReviews } from "@/components/lazy-google-reviews";
@@ -24,6 +25,7 @@ import { parseBookingSelection } from "@/lib/booking-selection";
 import { money } from "@/lib/utils";
 import { HomePolish } from "@/components/home-polish";
 import { ResultsTeaser } from "@/components/results-teaser";
+import { InstagramBadge } from "@/components/instagram-badge";
 
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/")({
     pageHead({
       title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
       description:
-        "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
+        "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
       path: "/",
       preloadHero: true,
     }),
@@ -47,7 +49,7 @@ function Home() {
       <HomePolish />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <section className="hero-stage hero-intro campaign-hero">
         <div className="hero-stage-media" data-parallax>
@@ -60,15 +62,19 @@ function Home() {
         <div className="hero-stage-veil" />
         <div className="hero-stage-copy campaign-hero-copy" data-hero-enter>
           <h1 className="campaign-hero-title hero-enter-item">
-            Fahrzeugpflege
+            Ihr Fahrzeug.
             <br />
-            für kompromisslose
+            Unser Handwerk.
             <br />
-            Ergebnisse.
+            Bis ins Detail.
           </h1>
           <div className="campaign-hero-meta hero-enter-item">
             <p className="campaign-hero-brand">White Gloss Detailing.</p>
             <p className="campaign-hero-location">Fahrzeugaufbereitung in Horb am Neckar</p>
+            <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted sm:text-base">
+              Für den täglichen Weg zur Arbeit, Ihren Liebhaberwagen oder die Leasingrückgabe:
+              Wir prüfen Ihr Fahrzeug persönlich und stimmen Pflege, Preis und Termin mit Ihnen ab.
+            </p>
           </div>
           <div className="campaign-hero-actions hero-enter-item">
             <Link to="/" hash="buchung" className={ctaPrimary}>
@@ -118,9 +124,9 @@ function Home() {
               className="font-display text-xl tracking-tight sm:text-2xl"
               data-count="149"
               data-count-prefix="ab "
-              data-count-suffix=" €"
+              data-count-suffix={"\u00a0€"}
             >
-              ab 149 €
+              ab 149&nbsp;€
             </p>
             <p className="mt-1 text-xs text-subtle">Kompaktklasse inkl. MwSt.</p>
           </li>
@@ -128,8 +134,8 @@ function Home() {
             className="ga-s4 border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8"
             data-stagger-item
           >
-            <p className="font-display text-xl tracking-tight sm:text-2xl">je nach Produkt</p>
-            <p className="mt-1 text-xs text-subtle">Keramikschutz</p>
+            <p className="font-display text-xl tracking-tight sm:text-2xl">Lackprüfung</p>
+            <p className="mt-1 text-xs text-subtle">Mit Lackdickenmessung</p>
           </li>
         </ul>
       </section>
@@ -137,7 +143,7 @@ function Home() {
         <ResultsTeaser />
         <LazyGoogleReviews id="bewertungen" compact />
         <aside className="wg-trust-strip" aria-label="White Gloss auf einen Blick">
-          <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Vollkaskoversicherte Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149 € inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
+          <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149&nbsp;€ inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
         </aside>
       </div>
 
@@ -296,8 +302,8 @@ function Home() {
         <p className="kicker">Aus der Werkstatt</p>
         <h2 className="heading-2 mt-4 max-w-2xl">So sieht die Arbeit aus.</h2>
         <p className="mt-5 max-w-xl text-muted">
-          Politur, Keramik, Leder und Felgen – ein paar Einblicke aus der Werkstatt, ohne
-          Kundenfahrzeuge und ohne Kennzeichen.
+          Lackglanz, gepflegte Oberflächen und Details aus unserer Werkstatt.
+          Kundenfahrzeuge zeigen wir nur mit Zustimmung und ohne sichtbare Kennzeichen.
         </p>
         <div className="gd-gallery mt-12">
           <Shot
@@ -342,6 +348,7 @@ function Home() {
           <LazyBeforeAfterSlider />
         </div>
         <PhotoNote className="mt-4" />
+        <div className="mt-6"><InstagramBadge /></div>
         <Link
           to="/galerie"
           className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-fg"
@@ -366,7 +373,7 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
             <p className="kicker">Luxusfahrzeuge</p>
-            <h2 className="heading-2 mt-4 max-w-md">Fahrzeuge ab 80.000 €</h2>
+            <h2 className="heading-2 mt-4 max-w-md">Fahrzeuge ab 80.000&nbsp;€</h2>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted sm:text-base">
               Nach einem telefonischen Erstgespräch prüfen wir Ihr Fahrzeug vor Ort und erstellen
               ein individuelles Angebot.
@@ -442,7 +449,7 @@ function Home() {
             </div>
             <div className="ga-media">
               <p className="kicker">Hol- und Bringservice · 13 Städte</p>
-              <h3 className="heading-3 mt-4">Abholung mit klarer Staffel</h3>
+              <h3 className="heading-3 mt-4">Wir holen Ihr Fahrzeug ab und bringen es zurück.</h3>
               <p className="mt-4 text-sm leading-relaxed text-muted">
                 {pickupTierSummary()}. {pickupKeramikNote()}. Geöffnet {openingHours.daysLabel},{" "}
                 {openingHours.opens}–{openingHours.closes} Uhr.
@@ -451,12 +458,13 @@ function Home() {
                 {pickupPricing.tiers.map((t) => (
                   <li key={t.id} className="border border-line px-4 py-4">
                     <p className="font-display text-2xl tracking-wide">
-                      {t.amount === 0 ? "0 €" : `${t.amount} €`}
+                      {t.amount === 0 ? "0 €" : `${t.amount}\u00a0€`}
                     </p>
                     <p className="mt-1 text-xs text-subtle">{t.label}</p>
                   </li>
                 ))}
               </ul>
+              <p className="mt-3 text-xs text-subtle">Alle Beträge {site.vatNote} Abholort und Übergabezeiten stimmen wir persönlich ab.</p>
               <ul className="mt-6 columns-2 gap-x-8 text-sm">
                 {cities.map((c) => (
                   <li key={c.slug} className="break-inside-avoid">
@@ -527,7 +535,7 @@ function Home() {
           voraussichtlichen Preis. Die Anfrage ist unverbindlich, wir melden uns mit einem
           Terminvorschlag.
         </p>
-        <WhatsAppPhotoCta className="mb-10" />
+        <WhatsAppPhotoCta className="mb-10" headingLevel={3} />
         <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
       </section>
     </main>

@@ -34,8 +34,8 @@ function DellenPage() {
         ]}
         actions={
           <div className="flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" className={ctaPrimary}>
-              Termin anfragen
+            <Link to="/dellen-hagelschaden" hash="buchung" className={ctaPrimary}>
+              Begutachtung anfragen
             </Link>
             <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
               Schaden per WhatsApp senden
@@ -65,7 +65,7 @@ function DellenPage() {
       <div className="mt-12">
         <WhatsAppPhotoCta />
       </div>
-      <div className="mt-12">
+      <div id="buchung" className="mt-12">
         <PhotoInquiry
           title="Begutachtung anfragen"
           hint="Hilfreich sind eine Gesamtansicht, eine Nahaufnahme und ein Foto bei schrägem Lichteinfall. Beschreiben Sie zunächst den Schaden; die Übermittlung benötigter Fotos stimmen wir mit Ihnen ab."

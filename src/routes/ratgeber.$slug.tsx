@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/ratgeber/$slug")({
   head: ({ loaderData }) =>
     pageHead({
       title: `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
-      description: loaderData?.seoExcerpt ?? loaderData?.excerpt ?? "",
+      description: loaderData?.excerpt ?? "",
       path: `/ratgeber/${loaderData?.slug ?? ""}`,
     }),
   component: ArticlePage,
@@ -52,14 +53,14 @@ function ArticlePage() {
     author: { "@type": "Organization", name: site.legalName },
     publisher: { "@type": "Organization", name: site.legalName },
     image: `${site.origin}${a.image}`,
-    description: a.seoExcerpt ?? a.excerpt,
+    description: a.excerpt,
   };
 
   return (
     <main id="main-content">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <PageHero
         src={a.image}
@@ -79,6 +80,7 @@ function ArticlePage() {
         }
       />
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <p className="text-sm text-muted">Alle genannten Einstiegspreise gelten für die Kompaktklasse und verstehen sich {site.vatNote} Fahrzeuggröße und Zustand bestimmen den Aufwand; den verbindlichen Preis stimmen wir vor Beginn mit Ihnen ab.</p>
         {a.sections.map((s) => (
           <section key={s.heading} className="mt-10">
             <h2 className="font-display text-2xl">{s.heading}</h2>

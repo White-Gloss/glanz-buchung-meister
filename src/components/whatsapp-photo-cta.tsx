@@ -2,9 +2,11 @@ import { site } from "@/data/site";
 
 interface WhatsAppPhotoCtaProps {
   className?: string;
+  headingLevel?: 2 | 3;
 }
 
-export function WhatsAppPhotoCta({ className = "" }: WhatsAppPhotoCtaProps) {
+export function WhatsAppPhotoCta({ className = "", headingLevel = 2 }: WhatsAppPhotoCtaProps) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
   const whatsappPhotoUrl =
     "https://wa.me/4915233540284?text=Hallo%20White%20Gloss%2C%20ich%20h%C3%A4tte%20gerne%20eine%20kurze%20Foto-Einsch%C3%A4tzung%20f%C3%BCr%20mein%20Fahrzeug.";
 
@@ -15,21 +17,20 @@ export function WhatsAppPhotoCta({ className = "" }: WhatsAppPhotoCtaProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
-            <span className="inline-block size-2 rounded-full bg-emerald-400 animate-pulse" />
-            Schnell-Check per Foto
+            Erste Einschätzung per Foto
           </div>
-          <h3 className="heading-3 mt-3 text-xl sm:text-2xl">
+          <Heading className="heading-3 mt-3 text-xl sm:text-2xl">
             Unsicher, welches Paket Ihr Fahrzeug benötigt?
-          </h3>
+          </Heading>
           <p className="mt-3 text-sm sm:text-base text-muted leading-relaxed">
             Sparen Sie Zeit: Senden Sie uns einfach 2–3 Fotos von Lack oder Innenraum per WhatsApp.
-            Herr Hägele prüft den Zustand und gibt Ihnen eine ehrliche, unverbindliche Empfehlung
-            für das optimale Paket.
+            Lars Hägele sieht sich die Aufnahmen an und empfiehlt Ihnen die passenden Arbeiten.
+            Den verbindlichen Preis stimmen wir nach der Fahrzeugprüfung mit Ihnen ab.
           </p>
           <div className="mt-4 flex flex-wrap gap-y-2 gap-x-6 text-xs text-subtle">
-            <span>✓ Schnelle Rückmeldung</span>
-            <span>✓ 100 % unverbindlich & kostenlos</span>
-            <span>✓ Kein Verkaufsdruck</span>
+            <span>✓ Persönlicher Ansprechpartner</span>
+            <span>✓ Unverbindlich und kostenlos</span>
+            <span>✓ Empfehlung passend zum Fahrzeug</span>
           </div>
         </div>
 

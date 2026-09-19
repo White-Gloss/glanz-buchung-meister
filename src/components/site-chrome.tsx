@@ -8,6 +8,8 @@ import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
 import { WhatsAppFloat } from "./whatsapp-float";
 import { RouteFocus } from "./route-focus";
+import { InstagramBadge } from "./instagram-badge";
+import { trackCtaInteraction } from "@/lib/googleTag";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -321,6 +323,8 @@ function FilmScroll() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
+    // The homepage owns its reveals after its lazy route has hydrated.
+    if (pathname === "/") return;
     const root = document.documentElement;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -440,6 +444,7 @@ export function SiteFooter() {
               WhatsApp
             </a>
           </div>
+          <div className="mt-5"><InstagramBadge /></div>
         </div>
         <nav aria-label="Leistungen" className="ga-leistungen">
           <p className="kicker">Leistungen</p>
@@ -558,17 +563,6 @@ export function SiteFooter() {
                 Barrierefreiheit
               </Link>
             </li>
-            <li>
-              <a
-                href={site.instagram}
-                className="link-draw inline-flex min-h-11 items-center hover:text-fg"
-                rel="noopener noreferrer"
-                target="_blank"
-                aria-label="White Gloss auf Instagram, öffnet in neuem Tab"
-              >
-                Instagram
-              </a>
-            </li>
           </ul>
         </nav>
       </div>
@@ -583,6 +577,21 @@ export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isApp = pathname.startsWith("/admin") || pathname.startsWith("/login");
 
+  function trackLink(event: MouseEvent<HTMLDivElement>) {
+    const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    if (!(link instanceof HTMLAnchorElement)) return;
+    const url = new URL(link.href);
+    const channel = url.protocol === "tel:" ? "phone"
+      : ["wa.me", "api.whatsapp.com"].includes(url.hostname) ? "whatsapp"
+      : url.hostname === "www.instagram.com" ? "instagram"
+      : url.origin === window.location.origin && url.hash === "#buchung" ? "booking"
+      : null;
+    if (channel) {
+      const placement = link.closest("header") ? "header" : link.closest("footer") ? "footer" : "content";
+      trackCtaInteraction(channel, placement);
+    }
+  }
+
   if (isApp) {
     return (
       <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="app">
@@ -594,7 +603,7 @@ export function Shell() {
   }
 
   return (
-    <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public">
+    <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public" onClickCapture={trackLink}>
       <RouteFocus />
       <SkipLink />
       <SiteHeader />

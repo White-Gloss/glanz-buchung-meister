@@ -14,7 +14,7 @@ export function money(value: number) {
 }
 
 export function eur(value: number) {
-  return `${money(value)} €`;
+  return `${money(value)}\u00a0€`;
 }
 
 export function isEmailAddress(value: string | null | undefined): value is string {

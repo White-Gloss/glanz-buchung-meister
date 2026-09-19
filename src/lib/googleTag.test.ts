@@ -9,6 +9,7 @@ import {
   resolveGa4MeasurementId,
   resolveGoogleAdsId,
   trackGoogleAdsConversion,
+  trackCtaInteraction,
 } from "./googleTag.ts";
 
 /**
@@ -54,6 +55,37 @@ function uninstallFakeBrowser() {
   delete (globalThis as { document?: unknown }).document;
   __resetGoogleTagStateForTests();
 }
+
+describe("CTA intent tracking", () => {
+  afterEach(uninstallFakeBrowser);
+
+  it("does not track without consent or a configured GA4 destination", () => {
+    const { fakeWindow, storage } = installFakeBrowser();
+    fakeWindow.gtag = () => assert.fail("No event expected");
+    storage.delete("wg-consent");
+    assert.equal(trackCtaInteraction("phone", "header", "G-TEST123"), false);
+    storage.set("wg-consent", "rejected");
+    assert.equal(trackCtaInteraction("booking", "content", "G-TEST123"), false);
+    storage.set("wg-consent", "accepted");
+    assert.equal(trackCtaInteraction("instagram", "footer", ""), false);
+  });
+
+  it("records intent without a conversion or personal data", () => {
+    const { fakeWindow } = installFakeBrowser();
+    const events: unknown[][] = [];
+    fakeWindow.gtag = (...args) => { events.push(args); };
+    assert.equal(trackCtaInteraction("whatsapp", "content", "G-TEST123"), true);
+    assert.deepEqual(events, [["event", "cta_click", {
+      send_to: "G-TEST123", channel: "whatsapp", placement: "content",
+    }]]);
+  });
+
+  it("never interrupts navigation when the tracker throws", () => {
+    const { fakeWindow } = installFakeBrowser();
+    fakeWindow.gtag = () => { throw new Error("tracking unavailable"); };
+    assert.equal(trackCtaInteraction("booking", "content", "G-TEST123"), false);
+  });
+});
 
 describe("resolveGoogleAdsId", () => {
   it("liefert ohne Wert oder bei leerem String die Standard-ID", () => {
