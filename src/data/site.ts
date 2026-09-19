@@ -36,7 +36,7 @@ export const site = {
 
 export const atelierPhotos = {
   caption:
-    "Die Bilder zeigen unser eigenes Fahrzeug in Horb am Neckar. Das Kennzeichen wurde entfernt.",
+    "Die Bilder zeigen ein freigegebenes Kundenfahrzeug nach der Aufbereitung in Horb am Neckar. Das Kennzeichen ist in den veröffentlichten Motiven nicht sichtbar.",
   invite:
     "Bilder von Kundenfahrzeugen veröffentlichen wir nur mit Zustimmung und ohne sichtbare Kennzeichen.",
 };
@@ -601,7 +601,7 @@ export const services: ServicePage[] = [
     group: "atelier",
     fromPrice: 349,
     image: "/media/lack.webp",
-    imageAlt: "Poliermaschine auf dem Lack",
+    imageAlt: "Frontpartie und Felge eines schwarzen BMW nach der Lackpflege",
     bullets: [
       "Reduzierung feiner Waschkratzer, soweit die Klarlackschicht es zulässt",
       "Mehr Tiefe, gleichmäßigere Spiegelung",
@@ -643,7 +643,7 @@ export const services: ServicePage[] = [
     group: "atelier",
     fromPrice: 899,
     image: "/media/keramik.webp",
-    imageAlt: "Keramikversiegelung wird von Hand auf den Lack aufgetragen",
+    imageAlt: "Spiegelnde Motorhaube eines Kundenfahrzeugs nach der Lackaufbereitung",
     bullets: [
       "Extremer hydrophober Abperleffekt – Lack bleibt spürbar länger sauber",
       "Tiefenglanz & Spiegeleffekt durch mehrstufige Lackvorbereitung",
@@ -733,7 +733,7 @@ export const services: ServicePage[] = [
     group: "finish",
     fromPrice: 349,
     image: "/media/hero.webp",
-    imageAlt: "Eigenes Fahrzeug von White Gloss in Horb, vor der Übergabe",
+    imageAlt: "Schwarzes Fahrzeug vor der Übergabe bei White Gloss in Horb",
     bullets: [
       "Zuerst die Stellen, die bei der Rückgabe auffallen",
       "Innenraum, Lackpflege und punktuelle Nacharbeit",
@@ -963,7 +963,7 @@ export const nav = [
   { to: "/", label: "Individuelles Angebot", hash: "buchung" },
   { to: "/ratgeber", label: "Ratgeber" },
   { to: "/faq", label: "Häufige Fragen" },
-  { to: "/galerie", label: "Werkstatt" },
+  { to: "/galerie", label: "Ergebnisse" },
   { to: "/kontakt", label: "Kontakt" },
   { to: "/b2b", label: "Geschäftskunden" },
 ] as const;
@@ -977,7 +977,7 @@ export const sheetPrimary = [
 export const sheetSecondary = [
   { to: "/ratgeber", label: "Ratgeber" },
   { to: "/faq", label: "Häufige Fragen" },
-  { to: "/galerie", label: "Werkstatt" },
+  { to: "/galerie", label: "Ergebnisse" },
   { to: "/kontakt", label: "Kontakt" },
   { to: "/b2b", label: "Geschäftskunden" },
 ] as const;
@@ -985,7 +985,7 @@ export const sheetSecondary = [
 export const footerExplore = [
   { to: "/abholservice", label: "Hol- und Bringservice" },
   { to: "/ratgeber", label: "Ratgeber" },
-  { to: "/galerie", label: "Werkstatt" },
+  { to: "/galerie", label: "Ergebnisse" },
   { to: "/kontakt", label: "Kontakt" },
   { to: "/faq", label: "Häufige Fragen" },
 ] as const;

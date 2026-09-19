@@ -170,7 +170,7 @@ export function BeforeAfterSlider({
       </div>
 
       <div className="flex items-center justify-between text-xs text-subtle px-1">
-        <span>◀ Schieberegler nach links/rechts ziehen</span>
+        <span>Schieberegler nach links/rechts ziehen</span>
         <span>Direkter Lackvergleich unter Prüflicht</span>
       </div>
     </div>

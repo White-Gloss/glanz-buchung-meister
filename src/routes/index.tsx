@@ -23,6 +23,7 @@ import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { money } from "@/lib/utils";
 import { HomePolish } from "@/components/home-polish";
+import { ResultsTeaser } from "@/components/results-teaser";
 
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
@@ -48,33 +49,28 @@ function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="hero-stage hero-intro">
+      <section className="hero-stage hero-intro campaign-hero">
         <div className="hero-stage-media" data-parallax>
           <HeroMedia
             priority
-            alt="Weißes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+            alt="Schwarzer Klassiker im White Gloss Atelier in Horb am Neckar, Kennzeichen entfernt"
             className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
           />
         </div>
         <div className="hero-stage-veil" />
-        <div
-          className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6"
-          data-hero-enter
-        >
-          <h1 className="mt-2 flex max-w-4xl flex-col items-center">
-            <span className="heading-brand hero-enter-item block">White Gloss</span>
-            <span className="heading-product mt-2 hero-enter-item block">Detailing</span>
-            <span className="heading-tagline mt-4 hero-enter-item block">
-              no compromise only results
-            </span>
-            <span className="heading-location mt-8 block hero-enter-item">
-              Fahrzeugaufbereitung in Horb am Neckar
-            </span>
+        <div className="hero-stage-copy campaign-hero-copy" data-hero-enter>
+          <h1 className="campaign-hero-title hero-enter-item">
+            Fahrzeugpflege
+            <br />
+            für kompromisslose
+            <br />
+            Ergebnisse.
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-fg sm:text-lg hero-enter-item">
-            Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
-          </p>
-          <div className="mt-8 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row hero-enter-item">
+          <div className="campaign-hero-meta hero-enter-item">
+            <p className="campaign-hero-brand">White Gloss Detailing.</p>
+            <p className="campaign-hero-location">Fahrzeugaufbereitung in Horb am Neckar</p>
+          </div>
+          <div className="campaign-hero-actions hero-enter-item">
             <Link to="/" hash="buchung" className={ctaPrimary}>
               Termin anfragen <IconArrowRight className="size-4" aria-hidden />
             </Link>
@@ -82,9 +78,6 @@ function Home() {
               Pakete & Preise
             </Link>
           </div>
-        </div>
-        <div className="scroll-hint" aria-hidden>
-          <span />
         </div>
       </section>
 
@@ -140,6 +133,13 @@ function Home() {
           </li>
         </ul>
       </section>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <ResultsTeaser />
+        <LazyGoogleReviews compact />
+        <aside className="wg-trust-strip" aria-label="White Gloss auf einen Blick">
+          <span>Eigene Werkstatt in Horb</span><span>Persönliche Zustandsprüfung</span><span>Vollkaskoversicherte Abholung im Keramikschutz bis 60 km</span><span>Startpreise ab 149 € inkl. MwSt.</span><span>Veröffentlichung nur mit Zustimmung</span>
+        </aside>
+      </div>
 
       <section className="film-chapter">
         <div className="film-chapter-media" data-parallax>
@@ -165,7 +165,6 @@ function Home() {
           </p>
         </div>
       </section>
-
       <section className="border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6" data-reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -178,7 +177,6 @@ function Home() {
               <IconArrowRight className="link-arrow size-4" aria-hidden />
             </Link>
           </div>
-          <LazyGoogleReviews compact />
           <ol
             className="mt-14 divide-y divide-line border-y border-line"
             data-stagger
@@ -260,7 +258,7 @@ function Home() {
           </div>
           <Shot
             name="finish"
-            alt="Lack unter Prüflicht nach der Politur"
+            alt="Glänzender schwarzer BMW nach der Fahrzeugaufbereitung"
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="ga-media aspect-[4/5] w-full lg:aspect-[4/5]"
           />
@@ -304,13 +302,13 @@ function Home() {
         <div className="gd-gallery mt-12">
           <Shot
             name="lack"
-            alt="Poliermaschine auf dem Lack"
+            alt="Frontpartie und Felge eines schwarzen BMW nach der Lackpflege"
             className="ga-hero aspect-[16/9] w-full min-h-[16rem] lg:min-h-[28rem]"
             sizes="(min-width: 1024px) 66vw, 100vw"
           />
           <Shot
             name="keramik"
-            alt="Keramikversiegelung von Hand auf dem Lack"
+            alt="Spiegelnde Motorhaube eines Kundenfahrzeugs nach der Aufbereitung"
             className="ga-cera aspect-[4/3] w-full"
           />
           <Shot
@@ -319,13 +317,13 @@ function Home() {
             className="ga-felg aspect-[4/3] w-full"
           />
           <Shot
-            name="interieur"
-            alt="Mittelkonsole und Interieur nach der Innenraumreinigung"
+            name="leder"
+            alt="Leder nach der Innenraumreinigung"
             className="ga-lede aspect-[4/3] w-full"
           />
           <Shot
             name="finish"
-            alt="Lack unter Prüflicht"
+            alt="Schwarzer BMW mit tiefem Lackglanz nach der Fahrzeugaufbereitung"
             className="ga-fini aspect-[4/3] w-full lg:min-h-[14rem]"
             sizes="(min-width: 1024px) 66vw, 100vw"
           />
@@ -335,10 +333,10 @@ function Home() {
           data-polish-ba
         >
           <div className="max-w-2xl mb-6">
-            <p className="text-xs uppercase tracking-[0.16em] text-subtle font-medium">Interaktiver Lackvergleich</p>
-            <h3 className="heading-3 mt-2 text-2xl sm:text-3xl">Das Ergebnis einer professionellen Lackkorrektur.</h3>
+            <p className="text-xs uppercase tracking-[0.16em] text-subtle font-medium">Illustrative Darstellung</p>
+            <h3 className="heading-3 mt-2 text-2xl sm:text-3xl">Wie eine Lackkorrektur wirken kann.</h3>
             <p className="mt-3 text-sm sm:text-base text-muted">
-              Ziehen Sie den Schieberegler, um den direkten Vorher-Nachher-Effekt unter Werkstatt-Prüflicht zu erleben: Feine Waschkratzer und Swirls weichen tiefem Glanz und klarer Spieglung.
+               Der Schieberegler veranschaulicht typische Unterschiede unter Werkstatt-Prüflicht. Er zeigt kein dokumentiertes Vorher-Nachher eines Kundenfahrzeugs; Möglichkeiten und Grenzen prüfen wir individuell am Lack.
             </p>
           </div>
           <LazyBeforeAfterSlider />
@@ -348,7 +346,7 @@ function Home() {
           to="/galerie"
           className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-fg"
         >
-          Mehr aus der Werkstatt
+          Mehr Ergebnisse ansehen
           <IconArrowRight className="link-arrow size-4" aria-hidden />
         </Link>
       </section>
@@ -360,7 +358,7 @@ function Home() {
         >
           <Shot
             name="private"
-            alt="Eigenes Fahrzeug von White Gloss – für Fahrzeuge ab 80.000 € extra Zeit"
+            alt="Freigegebenes Kundenfahrzeug nach der Aufbereitung bei White Gloss"
             className="absolute inset-0 h-full w-full"
             sizes="(min-width: 1024px) 50vw, 100vw"
             framed={false}
@@ -495,7 +493,7 @@ function Home() {
         <div className="film-chapter-media" data-parallax>
           <Shot
             name="finish"
-            alt={`Fahrzeugaufbereitung in ${site.city} – Lack nach der Politur in der Werkstatt, Kennzeichen entfernt`}
+            alt={`Fahrzeugaufbereitung in ${site.city} – schwarzer BMW mit tiefem Lackglanz nach der Aufbereitung`}
             className="size-full"
             sizes="100vw"
             framed={false}

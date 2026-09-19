@@ -6,6 +6,7 @@ import { cities, packageServiceSlug, packages, services, site } from "@/data/sit
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
+import { ResultsTeaser } from "@/components/results-teaser";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
@@ -26,6 +27,14 @@ function ServicePage() {
   const s = Route.useLoaderData();
   const request = serviceBookingSelection(s.slug);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
+  const resultService =
+    s.slug === "keramikversiegelung"
+      ? "Keramikschutz"
+      : s.slug === "innenraumreinigung" || s.slug === "lederpflege"
+        ? "Innenraum"
+        : s.slug === "lackkorrektur"
+          ? "Lackkorrektur"
+          : null;
 
   return (
     <main id="main-content" tabIndex={-1}>
@@ -100,6 +109,7 @@ function ServicePage() {
             Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration}.
           </p>
         ) : null}
+        {resultService ? <ResultsTeaser service={resultService} /> : null}
         <WhatsAppPhotoCta className="mt-12" />
         <h2 className="mt-16 font-display text-3xl tracking-tight">
           Hol- und Bringservice nach Stadt

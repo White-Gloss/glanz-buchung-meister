@@ -4,24 +4,26 @@ import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
+import { CustomerVideoGallery } from "@/components/customer-video-gallery";
+import { customerVideos } from "@/components/results-teaser";
 
 const shots: { name: ShotName; alt: string; title: string }[] = [
-  { name: "keramik", title: "Keramikversiegelung", alt: "Keramikversiegelung von Hand auf dem Lack" },
-  { name: "atelier", title: "Werkstatt", alt: "Werkstatt von White Gloss in Horb am Neckar" },
+  { name: "keramik", title: "Lackfinish", alt: "Spiegelnde Motorhaube nach der Aufbereitung" },
+  { name: "atelier", title: "Kundenfahrzeug", alt: "Schwarzer BMW nach der Aufbereitung bei White Gloss" },
   { name: "felgen", title: "Felgen", alt: "Felge nach der Keramikbeschichtung" },
-  { name: "interieur", title: "Interieur", alt: "Mittelkonsole und Interieur nach der Innenraumreinigung" },
-  { name: "finish", title: "Prüflicht", alt: "Lack unter Prüflicht nach der Politur" },
+  { name: "leder", title: "Innenraum", alt: "Gepflegter BMW-Innenraum mit Leder und Mittelkonsole" },
+  { name: "finish", title: "Finish", alt: "Schwarzer BMW mit tiefem Lackglanz nach der Aufbereitung" },
   { name: "dellen", title: "Dellen", alt: "Parkdelle unter Streiflicht vor der Ausbeularbeit" },
-  { name: "private", title: "Unser Fahrzeug", alt: "Eigenes Fahrzeug von White Gloss, Kennzeichen entfernt" },
+  { name: "private", title: "Kundenfahrzeug", alt: "Freigegebenes Kundenfahrzeug nach der Aufbereitung" },
 ];
 
 export const Route = createFileRoute("/galerie")({
   component: GaleriePage,
   head: () =>
     pageHead({
-      title: `Werkstattgalerie | ${site.name}`,
+      title: `Echte Ergebnisse | ${site.name}`,
       description:
-        "Einblicke in die Werkstatt von White Gloss in Horb am Neckar: Politur, Keramik, Leder und Felgen – ohne Kundenfahrzeuge, ohne Kennzeichen.",
+        "Einblicke in die Werkstatt von White Gloss in Horb am Neckar: Politur, Lackfinish, Innenraum- und Felgenpflege an einem freigegebenen Kundenfahrzeug.",
       path: "/galerie",
       preloadShot: "lack",
     }),
@@ -33,12 +35,12 @@ function GaleriePage() {
       <PageHero
         shot="lack"
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
-        kicker="Aus der Werkstatt"
-        title="So sieht die Arbeit aus."
-        lead="Einblicke in Politur, Keramikversiegelung, Leder- und Felgenpflege an unserem eigenen Fahrzeug. Die Kennzeichen wurden entfernt."
+        kicker="Echte Kundenbeispiele"
+        title="Echte Ergebnisse."
+        lead="Einblicke in Lackfinish, Innenraum- und Felgenpflege an einem freigegebenen Kundenfahrzeug. Das Kennzeichen ist in den veröffentlichten Motiven nicht sichtbar."
         crumbs={[
           { label: "Startseite", to: "/" },
-          { label: "Werkstatt" },
+          { label: "Ergebnisse" },
         ]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
@@ -61,6 +63,17 @@ function GaleriePage() {
           ))}
         </ul>
         <PhotoNote className="mt-6" />
+      </section>
+      <section id="kundenbeispiele" className="border-t border-line bg-surface">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+          <p className="kicker">Kundenbeispiele in Bewegung</p>
+          <h2 className="heading-2 mt-4 max-w-2xl">Details, die auf Fotos kaum sichtbar werden.</h2>
+          <p className="mt-5 max-w-xl leading-relaxed text-muted">
+            Vier kurze, freigegebene Einblicke in das Ergebnis der Aufbereitung. Die Videos sind
+            ohne Ton und zeigen keine sichtbaren Kennzeichen.
+          </p>
+          <div className="mt-12"><CustomerVideoGallery videos={customerVideos} /></div>
+        </div>
       </section>
     </main>
   );

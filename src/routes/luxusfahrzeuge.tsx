@@ -45,7 +45,7 @@ function LuxuryPage() {
       />
       <PageHero
         shot="hero"
-        alt="Eigenes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+        alt="Schwarzer Klassiker im White Gloss Atelier in Horb am Neckar"
         kicker="Luxusfahrzeuge"
         title="Fahrzeuge ab etwa 80.000 €"
         lead="Wir besprechen Ihre Wünsche am Telefon und erstellen nach der Begutachtung ein individuelles Angebot."
@@ -97,7 +97,7 @@ function LuxuryPage() {
           <li>Erstgespräch persönlich am Telefon oder vertraulich via WhatsApp</li>
           <li>Begutachtung des Fahrzeugs in unserer Werkstatt in Horb oder vor Ort</li>
           <li>Vollkaskoversicherte Fahrzeugüberführung durch geschultes Fachpersonal</li>
-          <li>Absolute Diskretion – keine Veröffentlichung von Kundenfahrzeugen oder Kennzeichen</li>
+          <li>Absolute Diskretion – Veröffentlichung nur mit ausdrücklicher Zustimmung und ohne sichtbares Kennzeichen</li>
           <li>Leistungsumfang und Festpreis-Angebot erst nach individueller Begutachtung</li>
           <li>Keine anonyme Online-Buchung, kein Standardpaket</li>
         </ul>
@@ -116,13 +116,13 @@ function LuxuryPage() {
             So sieht die Arbeit aus.
           </h2>
           <p className="mt-5 max-w-xl text-muted">
-            Das ist unser eigenes Auto aus der Werkstatt – keine Kundenreferenz,
-            Kennzeichen entfernt. So bleibt nachvollziehbar, was Sie sehen.
+            Das gezeigte Kundenfahrzeug veröffentlichen wir mit ausdrücklicher Freigabe.
+            Das Kennzeichen ist in den verwendeten Motiven nicht sichtbar.
           </p>
           <figure className="mt-12">
             <Shot
-              name="hero"
-              alt="Eigenes Fahrzeug von White Gloss in Horb am Neckar, Kennzeichen entfernt"
+              name="private"
+              alt="Freigegebenes Kundenfahrzeug nach der Aufbereitung bei White Gloss"
               className="aspect-[2/1] w-full"
               sizes="100vw"
             />
@@ -131,15 +131,15 @@ function LuxuryPage() {
             <figure>
               <Shot
                 name="lack"
-                alt="Poliermaschine auf dem Lack"
+                alt="Frontpartie und Felge eines schwarzen BMW nach der Lackpflege"
                 className="aspect-[4/3] w-full"
                 sizes="(min-width: 640px) 50vw, 100vw"
               />
             </figure>
             <figure>
               <Shot
-                name="interieur"
-                alt="Interieur nach der Pflege"
+                name="leder"
+                alt="Leder nach der Pflege"
                 className="aspect-[4/3] w-full"
                 sizes="(min-width: 640px) 50vw, 100vw"
               />

@@ -123,7 +123,7 @@ export const articles: Article[] = [
     excerpt:
       "Wie wir Geruchsursachen behandeln und Sitze und Kunststoffe reinigen. Eine Ozonbehandlung kann die Reinigung ergänzen.",
     date: "2026-07-09",
-    image: "/media/interieur.webp",
+    image: "/media/leder.webp",
     minutes: 5,
     sections: [
       {

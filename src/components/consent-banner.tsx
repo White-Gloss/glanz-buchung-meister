@@ -89,9 +89,9 @@ export function ConsentBanner() {
           reject();
         }
       }}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-fg/10 bg-bg p-4 text-fg shadow-[0_-4px_20px_rgba(0,0,0,0.15)] sm:p-6"
+      className="consent-banner fixed inset-x-0 bottom-0 z-50 border-t border-fg/10 bg-bg text-fg"
     >
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
           <p id="consent-title" className="sr-only">
             Cookie-Einwilligung

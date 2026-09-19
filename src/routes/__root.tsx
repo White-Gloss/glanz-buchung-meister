@@ -4,7 +4,6 @@ import { NotFoundComponent } from "@/components/not-found";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
-import { CRITICAL_CSS } from "@/lib/critical-css";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
 import appCss from "../styles.css?url";
 
@@ -73,11 +72,6 @@ export const Route = createRootRoute({
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
           <HeadContent />
-          {/*
-            Optional ATF insurance while the blocking stylesheet parses.
-            Harmless once full CSS applies; kept for stable dark ATF paint.
-          */}
-          <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         </head>
         <body className="bg-bg text-fg">
         <PreviewHostBridge />

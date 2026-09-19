@@ -97,7 +97,7 @@ function LeistungenIndex() {
             to="/luxusfahrzeuge"
             className="block border-b border-line lg:odd:border-r"
           >
-            <MediaTile shot="private" alt="Eigenes Fahrzeug von White Gloss, Kennzeichen entfernt">
+            <MediaTile shot="private" alt="Freigegebenes Kundenfahrzeug nach der Aufbereitung bei White Gloss">
               <p className="kicker">Luxusfahrzeuge</p>
               <h2 className="heading-2 mt-3 max-w-md">
                 Luxusfahrzeuge ab ca. 80.000 €

@@ -20,8 +20,8 @@ export const heroPreload = {
 function pickHeroLoop(mobile: boolean) {
   const probe = document.createElement("video");
   const webm = probe.canPlayType('video/webm; codecs="vp9"') !== "";
-  if (mobile) return webm ? "/media/hero-loop-gloss-720.webm" : "/media/hero-loop-gloss-720.mp4";
-  return webm ? "/media/hero-loop-gloss.webm" : "/media/hero-loop-gloss.mp4";
+  if (mobile) return webm ? "/media/hero-loop-720.webm" : "/media/hero-loop-720.mp4";
+  return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
 }
 
 export function HeroMedia({
@@ -176,7 +176,7 @@ export function HeroMedia({
         <source type="image/avif" srcSet={heroAvifSrcSet} sizes="100vw" />
         <source type="image/webp" srcSet={heroWebpSrcSet} sizes="100vw" />
         <img
-          src="/media/hero-gloss-720.webp"
+          src="/media/hero-720.webp"
           alt={alt}
           width={1600}
           height={907}
@@ -213,7 +213,7 @@ export function HeroMedia({
 }
 
 export type ShotName =
-  "keramik" | "lack" | "leder" | "interieur" | "felgen" | "hero" | "dellen" | "atelier" | "private" | "finish";
+  "keramik" | "lack" | "leder" | "felgen" | "hero" | "dellen" | "atelier" | "private" | "finish";
 
 const SLOT_CLASS: Record<ShotName, string> = {
   hero: "hero-image",
@@ -221,7 +221,6 @@ const SLOT_CLASS: Record<ShotName, string> = {
   keramik: "service-image-2",
   felgen: "service-image-3",
   leder: "service-image-4",
-  interieur: "service-image-4",
   dellen: "before-after-1",
   atelier: "workshop-image",
   finish: "gallery-shot",
@@ -236,7 +235,6 @@ const SHOT_SIZE: Record<ShotName, { w: number; h: number }> = {
   keramik: { w: 1200, h: 800 },
   lack: { w: 1200, h: 800 },
   leder: { w: 1200, h: 800 },
-  interieur: { w: 1200, h: 800 },
   felgen: { w: 1200, h: 800 },
   dellen: { w: 1200, h: 800 },
 };
