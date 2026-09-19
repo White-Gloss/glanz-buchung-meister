@@ -72,7 +72,7 @@ export async function refreshRoOrder(sql: Sql, orderId: number, request?: RoappR
           url.protocol !== "https:" ||
           url.username ||
           url.password ||
-          !/(^|\.)(roapp\.io|remonline\.app|remonline\.eu)$/.test(url.hostname)
+          !/(^|\.)(roapp\.io|roapp\.page|remonline\.app|remonline\.eu)$/.test(url.hostname)
         )
           throw new Error("ro_public_url_invalid");
         publicUrl = url.href;
