@@ -22,6 +22,7 @@ import {
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { money } from "@/lib/utils";
+import { HomePolish } from "@/components/home-polish";
 
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
@@ -41,7 +42,8 @@ function Home() {
   const { paket, ort } = Route.useSearch();
 
   return (
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} data-home="polish">
+      <HomePolish />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -55,13 +57,18 @@ function Home() {
           />
         </div>
         <div className="hero-stage-veil" />
-        <div className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6">
-          <p className="kicker">White Gloss Detailing</p>
-          <h1 className="hero-title mt-5 max-w-4xl">Fahrzeugaufbereitung in Horb am Neckar</h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg">
+        <div
+          className="hero-stage-copy flex flex-col items-center justify-center px-4 pb-20 pt-28 text-center sm:px-6"
+          data-hero-enter
+        >
+          <p className="kicker hero-enter-item">White Gloss Detailing</p>
+          <h1 className="hero-title mt-5 max-w-4xl hero-enter-item">
+            Fahrzeugaufbereitung in Horb am Neckar
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-fg sm:text-lg hero-enter-item">
             Innenraumreinigung, Politur und Keramikversiegelung – in unserer Werkstatt in Horb.
           </p>
-          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row hero-enter-item">
             <Link to="/" hash="buchung" className={ctaPrimary}>
               Termin anfragen <IconArrowRight className="size-4" aria-hidden />
             </Link>
@@ -75,22 +82,56 @@ function Home() {
         </div>
       </section>
 
-      <section aria-label="Auf einen Blick" className="hero-follow border-b border-line">
+      <section
+        aria-label="Auf einen Blick"
+        className="hero-follow border-b border-line"
+        data-stagger
+      >
         <ul className="gd-stats mx-auto max-w-7xl">
-          {[
-            ["13 Städte", "Hol- und Bringservice"],
-            [site.hoursLabel.replace(" Uhr", ""), "Werkstatt geöffnet"],
-            ["ab 149 €", "Kompaktklasse inkl. MwSt."],
-            ["je nach Produkt", "Keramikschutz"],
-          ].map(([n, l], i) => (
-            <li
-              key={n}
-              className={`ga-s${i + 1} border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8`}
+          <li
+            className="ga-s1 border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8"
+            data-stagger-item
+          >
+            <p
+              className="font-display text-xl tracking-tight sm:text-2xl"
+              data-count="13"
+              data-count-prefix=""
+              data-count-suffix=" Städte"
             >
-              <p className="font-display text-xl tracking-tight sm:text-2xl">{n}</p>
-              <p className="mt-1 text-xs text-subtle">{l}</p>
-            </li>
-          ))}
+              13 Städte
+            </p>
+            <p className="mt-1 text-xs text-subtle">Hol- und Bringservice</p>
+          </li>
+          <li
+            className="ga-s2 border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8"
+            data-stagger-item
+          >
+            <p className="font-display text-xl tracking-tight sm:text-2xl">
+              {site.hoursLabel.replace(" Uhr", "")}
+            </p>
+            <p className="mt-1 text-xs text-subtle">Werkstatt geöffnet</p>
+          </li>
+          <li
+            className="ga-s3 border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8"
+            data-stagger-item
+          >
+            <p
+              className="font-display text-xl tracking-tight sm:text-2xl"
+              data-count="149"
+              data-count-prefix="ab "
+              data-count-suffix=" €"
+            >
+              ab 149 €
+            </p>
+            <p className="mt-1 text-xs text-subtle">Kompaktklasse inkl. MwSt.</p>
+          </li>
+          <li
+            className="ga-s4 border-b border-r border-line px-4 py-7 sm:px-6 sm:py-8"
+            data-stagger-item
+          >
+            <p className="font-display text-xl tracking-tight sm:text-2xl">je nach Produkt</p>
+            <p className="mt-1 text-xs text-subtle">Keramikschutz</p>
+          </li>
         </ul>
       </section>
 
@@ -132,9 +173,12 @@ function Home() {
             </Link>
           </div>
           <LazyGoogleReviews compact />
-          <ol className="mt-14 divide-y divide-line border-y border-line">
+          <ol
+            className="mt-14 divide-y divide-line border-y border-line"
+            data-stagger
+          >
             {packages.map((p, i) => (
-              <li key={p.id}>
+              <li key={p.id} data-stagger-item>
                 <Link
                   to="/leistungen/$slug"
                   params={{ slug: packageServiceSlug[p.id] }}
@@ -187,9 +231,13 @@ function Home() {
               Wir prüfen Ihr Fahrzeug vor Beginn und besprechen mit Ihnen die nötigen Arbeiten. Der
               Ablauf richtet sich nach Zustand und vereinbartem Umfang.
             </p>
-            <ol className="gd-tiles mt-12">
+            <ol className="gd-tiles mt-12" data-process-track>
               {processSteps.map((s) => (
-                <li key={s.n} className="border-t border-line pt-5">
+                <li
+                  key={s.n}
+                  className="process-step border-t border-line pt-5"
+                  data-process-step
+                >
                   <p className="font-display text-3xl tracking-tight text-subtle/80">{s.n}</p>
                   <h3 className="heading-3 mt-3">{s.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
@@ -276,7 +324,10 @@ function Home() {
             sizes="(min-width: 1024px) 66vw, 100vw"
           />
         </div>
-        <div className="mt-14 border border-line bg-surface p-6 sm:p-8 rounded-card">
+        <div
+          className="mt-14 border border-line bg-surface p-6 sm:p-8 rounded-card polish-ba"
+          data-polish-ba
+        >
           <div className="max-w-2xl mb-6">
             <p className="text-xs uppercase tracking-[0.16em] text-subtle font-medium">Interaktiver Lackvergleich</p>
             <h3 className="heading-3 mt-2 text-2xl sm:text-3xl">Das Ergebnis einer professionellen Lackkorrektur.</h3>
