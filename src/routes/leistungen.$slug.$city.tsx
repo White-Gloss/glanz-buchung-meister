@@ -3,6 +3,7 @@ import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, packages, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
 import { serviceBookingSelection } from "@/lib/booking-selection";
+import { serviceCityHeading, serviceCityTitle } from "@/lib/city-seo";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
     const city = loaderData?.city;
     if (!service || !city) return {};
     return pageHead({
-      title: `${service.seoNav} ${city.name} | White Gloss`,
+      title: serviceCityTitle(service.seoNav, city),
       description: `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
       path: `/leistungen/${service.slug}/${city.slug}`,
     });
@@ -37,9 +38,12 @@ function ServiceCityPage() {
     "@graph": [
       {
         "@type": "Service",
+        "@id": `${site.origin}/leistungen/${service.slug}/${city.slug}#service`,
         name: `${service.seoNav} ${city.name}`,
+        url: `${site.origin}/leistungen/${service.slug}/${city.slug}`,
         provider: {
           "@type": "AutoRepair",
+          "@id": `${site.origin}/#betrieb`,
           name: site.legalName,
           address: {
             "@type": "PostalAddress",
@@ -49,7 +53,7 @@ function ServiceCityPage() {
             addressCountry: "DE",
           },
         },
-        areaServed: city.name,
+        areaServed: { "@type": "City", name: city.name },
         description: service.description,
       },
       {
@@ -89,7 +93,7 @@ function ServiceCityPage() {
         src={service.image}
         alt={service.imageAlt}
         kicker={`${city.name} · ${city.km} km`}
-        title={`${service.seoNav} in ${city.name}`}
+        title={serviceCityHeading(service.seoNav, city)}
         lead={service.teaser}
         crumbs={[
           { label: "Startseite", to: "/" },

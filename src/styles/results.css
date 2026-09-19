@@ -1,0 +1,280 @@
+/*
+ * Customer-result modules are kept together so their layout cannot disappear
+ * when the main public-site stylesheet is regenerated.
+ */
+.consent-banner {
+  background: color-mix(in srgb, var(--color-bg) 94%, var(--color-surface));
+  box-shadow: 0 -12px 36px rgb(0 0 0 / 0.24);
+}
+
+.consent-banner .cta-primary,
+.consent-banner .cta-ghost {
+  min-width: 7.75rem;
+  justify-content: center;
+}
+
+.wg-results-teaser {
+  margin: clamp(3rem, 7vw, 6.5rem) 0;
+  padding: clamp(1.5rem, 3.5vw, 3rem);
+  border: 1px solid var(--color-line-strong);
+  background:
+    linear-gradient(115deg, rgb(191 206 224 / 0.075), transparent 48%),
+    var(--color-surface);
+}
+
+.wg-results-teaser-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.wg-results-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--color-fg);
+}
+
+.wg-results-note {
+  margin-top: 1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--color-subtle);
+}
+
+.wg-video-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.wg-video-grid--compact {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 1.5rem;
+}
+
+.wg-home-results-media {
+  margin-top: 2rem;
+}
+
+.wg-home-results-media .wg-video-grid {
+  margin-top: 0;
+}
+
+.wg-video-card {
+  min-width: 0;
+}
+
+.wg-video-card--featured {
+  grid-column: auto;
+}
+
+.wg-video-trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  text-align: left;
+}
+
+/* Customer clips are filmed vertically; only the featured glass clip is wide. */
+.wg-video-poster {
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  filter: saturate(0.76) contrast(1.06);
+  transition:
+    transform 500ms var(--ease-out-quart),
+    filter 400ms var(--ease-out-quart);
+}
+
+.wg-video-card--featured .wg-video-poster {
+  aspect-ratio: 16 / 9;
+}
+
+.wg-video-trigger:hover .wg-video-poster,
+.wg-video-trigger:focus-visible .wg-video-poster {
+  transform: scale(1.035);
+  filter: saturate(1) contrast(1.04);
+}
+
+.wg-video-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  border: 1px solid rgb(244 243 237 / 0.8);
+  border-radius: 999px;
+  background: rgb(12 17 16 / 0.56);
+  transform: translate(-50%, -50%);
+}
+
+.wg-video-play span {
+  display: block;
+  margin-left: 0.22rem;
+  width: 0;
+  height: 0;
+  border-top: 0.48rem solid transparent;
+  border-bottom: 0.48rem solid transparent;
+  border-left: 0.72rem solid var(--color-fg);
+}
+
+.wg-video-meta {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 1.25rem 1rem 0.75rem;
+  background: linear-gradient(transparent, rgb(12 17 16 / 0.84));
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-fg);
+}
+
+.wg-video-copy {
+  padding-top: 0.9rem;
+}
+
+.wg-video-copy p {
+  max-width: 42ch;
+  margin-top: 0.4rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.wg-video-dialog {
+  width: min(92vw, 72rem);
+  max-width: none;
+  padding: 0;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+
+.wg-video-dialog::backdrop {
+  background: rgb(5 10 9 / 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.wg-video-modal {
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.wg-video-modal-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.wg-video-modal-top > :first-child {
+  min-width: 0;
+}
+
+.wg-video-close {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-fg);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.wg-video-player {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  background: var(--color-bg);
+}
+
+.wg-video-description {
+  margin-top: 1rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.wg-trust-strip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem 1.5rem;
+  margin: 1.5rem 0 clamp(3rem, 7vw, 6.5rem);
+  padding: 1rem 0;
+  border-block: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.wg-trust-strip span {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.wg-trust-strip span::before {
+  content: "";
+  flex: 0 0 0.36rem;
+  height: 0.36rem;
+  margin-top: 0.32rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+@media (max-width: 639px) {
+  .wg-results-teaser-head,
+  .wg-video-modal-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 640px) {
+  .wg-video-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .wg-video-grid--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wg-video-card--featured {
+    grid-column: span 2;
+  }
+
+  .wg-home-results-media .wg-video-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wg-trust-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wg-video-poster {
+    transition: none;
+  }
+
+  .wg-video-trigger:hover .wg-video-poster,
+  .wg-video-trigger:focus-visible .wg-video-poster {
+    transform: none;
+  }
+}

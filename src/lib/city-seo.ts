@@ -1,5 +1,5 @@
 import type { City } from "@/data/site";
-import { openingHours, site } from "@/data/site";
+import { site } from "@/data/site";
 import { absUrl } from "@/lib/seo";
 
 export function cityPath(city: City) {
@@ -11,48 +11,49 @@ export function whatsappForCity(cityName: string) {
   return `https://wa.me/4915233540284?text=${encodeURIComponent(text)}`;
 }
 
+export function serviceCityTitle(serviceName: string, city: City) {
+  if (city.slug === "horb-am-neckar") {
+    return `${serviceName} mit Abholung in Horb | ${site.name}`;
+  }
+  return `${serviceName} ${city.name} | ${site.name}`;
+}
+
+export function serviceCityHeading(serviceName: string, city: City) {
+  return city.slug === "horb-am-neckar"
+    ? `${serviceName} mit Abholung in ${city.name}`
+    : `${serviceName} in ${city.name}`;
+}
+
 export function cityJsonLd(city: City) {
   const url = absUrl(cityPath(city));
-  const businessId = `${url}#betrieb`;
+  const businessId = `${site.origin}/#betrieb`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["AutoRepair", "AutomotiveBusiness"],
-        "@id": businessId,
-        name: `${site.legalName} Fahrzeugaufbereitung ${city.name}`,
+        "@type": "Service",
+        "@id": `${url}#service`,
+        name: `Hol- und Bringservice für Fahrzeugaufbereitung in ${city.name}`,
+        serviceType: "Fahrzeugabholung und -rückgabe zur Fahrzeugaufbereitung",
         image: absUrl("/media/hero-1080.webp"),
-        telephone: "+4915233540284",
         url,
-        priceRange: "€€€",
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "5.0",
-          reviewCount: "14",
-          bestRating: "5",
-          worstRating: "1",
-        },
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: site.street,
-          postalCode: site.postalCode,
-          addressLocality: site.city,
-          addressRegion: site.region,
-          addressCountry: "DE",
-        },
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: site.lat,
-          longitude: site.lng,
-        },
-        openingHoursSpecification: {
-          "@type": "OpeningHoursSpecification",
-          dayOfWeek: [...openingHours.dayOfWeek],
-          opens: openingHours.opens,
-          closes: openingHours.closes,
+        provider: {
+          "@type": ["AutoRepair", "AutomotiveBusiness"],
+          "@id": businessId,
+          name: site.legalName,
+          url: site.origin,
+          telephone: "+4915233540284",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: site.street,
+            postalCode: site.postalCode,
+            addressLocality: site.city,
+            addressRegion: site.region,
+            addressCountry: "DE",
+          },
         },
         areaServed: {
-          "@type": "AdministrativeArea",
+          "@type": "City",
           name: city.name,
         },
       },
