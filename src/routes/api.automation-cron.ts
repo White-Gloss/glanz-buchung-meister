@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/automation-cron")({
             const { reconcileRoOrders } = await import("@/lib/roapp-callback");
             const incoming = await reconcileRoOrders(sql);
             return Response.json(
-              { ok: true, ...delivery, roapp, incoming, photoCleanup },
+              { ok: true, remindersChecked: 0, ...delivery, roapp, incoming, photoCleanup },
               { headers: { "cache-control": "no-store" } },
             );
           }
