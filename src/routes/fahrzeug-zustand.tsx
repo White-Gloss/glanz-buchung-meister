@@ -33,7 +33,7 @@ function ZustandPage() {
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Ersteinschätzung"
         title="Zustand prüfen lassen."
-        lead="Wir geben Ihnen eine kostenlose, unverbindliche Ersteinschätzung. Benötigte Fotos stimmen wir mit Ihnen ab."
+        lead="Wir geben Ihnen eine kostenlose, unverbindliche Ersteinschätzung. Senden Sie uns eine Beschreibung und passende Fotos Ihres Fahrzeugs."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Zustand prüfen" }]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
@@ -51,7 +51,7 @@ function ZustandPage() {
         <div id="buchung" className="mt-12">
           <PhotoInquiry
             title={context ? `${context} anfragen` : "Ersteinschätzung anfragen"}
-            hint="Beschreiben Sie den Zustand Ihres Fahrzeugs oder wählen Sie Aufnahmen zur späteren Zuordnung aus."
+            hint="Beschreiben Sie den Zustand Ihres Fahrzeugs und fügen Sie passende Aufnahmen bei."
           />
         </div>
       </div>

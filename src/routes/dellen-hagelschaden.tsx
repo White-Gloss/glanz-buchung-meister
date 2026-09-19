@@ -68,7 +68,7 @@ function DellenPage() {
       <div id="buchung" className="mt-12">
         <PhotoInquiry
           title="Begutachtung anfragen"
-          hint="Hilfreich sind eine Gesamtansicht, eine Nahaufnahme und ein Foto bei schrägem Lichteinfall. Beschreiben Sie zunächst den Schaden; die Übermittlung benötigter Fotos stimmen wir mit Ihnen ab."
+          hint="Hilfreich sind eine Gesamtansicht, eine Nahaufnahme und ein Foto bei schrägem Lichteinfall. Beschreiben Sie den Schaden und fügen Sie passende Aufnahmen bei."
         />
       </div>
       </div>

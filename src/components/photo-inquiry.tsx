@@ -177,11 +177,12 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
           required
         />
         <span className="min-w-0">
-          Name, Telefon, Beschreibung und Dateinamen werden zur Bearbeitung übermittelt. Siehe{" "}
+          Name, Telefon, Beschreibung und ausgewählte Aufnahmen werden zur Bearbeitung Ihrer Anfrage
+          geschützt übermittelt. Siehe{" "}
           <Link to="/datenschutz" className="underline hover:text-fg">
             Datenschutzerklärung
           </Link>
-          . Die Dateien selbst werden nicht hochgeladen und bleiben auf diesem Gerät.
+          .
         </span>
       </label>
       {fieldError("privacy")}
