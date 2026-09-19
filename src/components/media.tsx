@@ -169,6 +169,7 @@ export function HeroMedia({
     <div
       ref={containerRef}
       className={cn("hero-image relative isolate size-full overflow-hidden", className)}
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", contain: "layout" }}
       data-motion-paused={paused || undefined}
     >
       <picture>
@@ -179,6 +180,7 @@ export function HeroMedia({
           alt={alt}
           width={1600}
           height={907}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           className="absolute inset-0 size-full object-cover"
           fetchPriority={priority ? "high" : "low"}
           decoding={priority ? "sync" : "async"}
@@ -190,6 +192,7 @@ export function HeroMedia({
           onLoad={() => setImageReady(true)}
         />
       </picture>
+      {/* Explicit size + absolute fill before full CSS; no opacity transition (CLS). */}
       <video
         ref={videoRef}
         id={videoId}
@@ -198,7 +201,10 @@ export function HeroMedia({
         loop
         playsInline
         preload="none"
-        className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-700 data-[ready]:opacity-100"
+        width={1600}
+        height={907}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        className="absolute inset-0 size-full object-cover opacity-0 data-[ready]:opacity-100"
         onPlaying={(e) => e.currentTarget.setAttribute("data-ready", "")}
       />
       {controlHost ? createPortal(control, controlHost) : control}

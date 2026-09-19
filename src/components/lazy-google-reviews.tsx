@@ -6,14 +6,14 @@ const GoogleReviews = lazy(() =>
 
 function CompactSkeleton() {
   return (
-    <aside
+    <div
+      role="status"
       aria-label="Google-Kundenbewertungen werden geladen"
       className="mt-8 border-y border-line py-5"
-      role="status"
     >
       <div className="h-6 w-64 max-w-full animate-pulse rounded-sm bg-line" />
       <div className="mt-2 h-4 w-48 max-w-full animate-pulse rounded-sm bg-line" />
-    </aside>
+    </div>
   );
 }
 
