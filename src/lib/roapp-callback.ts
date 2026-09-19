@@ -1,13 +1,11 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
 
 export function verifyRoSignature(id: string, signature: string, secret: string): boolean {
   if (!/^[a-f0-9-]{36}$/i.test(id) || !/^[a-f0-9]{64}$/i.test(signature) || secret.length < 20)
     return false;
-  const expected = createHash("sha256")
-    .update(id + secret)
-    .digest();
+  const expected = createHmac("sha256", secret).update(id).digest();
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
 
@@ -133,12 +131,13 @@ export async function handleRoCallback(request: Request, sql: Sql) {
   if (!verifyRoSignature(body.id || "", signature, secret)) {
     // Operational metadata only; never log the secret, signature, event body or customer data.
     const id = typeof body.id === "string" ? body.id : "";
-    console.warn("[roapp-webhook] signature_rejected", JSON.stringify({
-      signatureLength: signature.length,
-      idIsUuid: /^[a-f0-9-]{36}$/i.test(id),
-      hmacMatches: createHmac("sha256", secret).update(id).digest("hex") === signature,
-      secretFirstMatches: createHash("sha256").update(secret + id).digest("hex") === signature,
-    }));
+    console.warn(
+      "[roapp-webhook] signature_rejected",
+      JSON.stringify({
+        signatureLength: signature.length,
+        idIsUuid: /^[a-f0-9-]{36}$/i.test(id),
+      }),
+    );
     return new Response(null, { status: 401, headers });
   }
   if (

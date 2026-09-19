@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFile, readdir } from "node:fs/promises";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import {
@@ -16,11 +16,20 @@ import { bookingStatusToken, verifyBookingStatusToken } from "./booking-status-t
 test("callback rejects unauthenticated payloads and malformed amounts", async () => {
   const secret = "s".repeat(20),
     id = "9cba80cc-93b5-459b-bfd3-445e724dafc5";
-  const signature = createHash("sha256")
-    .update(id + secret)
-    .digest("hex");
+  const signature = createHmac("sha256", secret).update(id).digest("hex");
   assert.ok(verifyRoSignature(id, signature, secret));
   assert.equal(verifyRoSignature(id, signature, "x".repeat(40)), false);
+  assert.equal(
+    verifyRoSignature(
+      id,
+      createHash("sha256")
+        .update(id + secret)
+        .digest("hex"),
+      secret,
+    ),
+    false,
+  );
+  assert.equal(verifyRoSignature(id, signature.slice(1), secret), false);
   for (const value of [null, undefined, "", -1, "1.001", "NaN", Infinity])
     assert.throws(() => euroCents(value));
   assert.equal(euroCents("149.99"), 14999);

@@ -1,6 +1,6 @@
 // Root-only operational diagnostics. Prints no customer data or credentials.
 import { createRequire } from 'node:module';
-import { createHash,randomUUID } from 'node:crypto';
+import { createHash,createHmac,randomUUID } from 'node:crypto';
 if(process.getuid?.()!==0) throw new Error('root_required');
 const id=Number(process.argv[2]);
 if(!Number.isSafeInteger(id)||id<=0)throw new Error('booking_id_required');
@@ -18,7 +18,7 @@ try {
     console.log('remote_state',JSON.stringify({http:response.status,id:order.id,status:order.status,total:order.total,modified_at:order.modified_at,scheduled_for:order.scheduled_for}));
     if(process.argv.includes('--test-callback')){
       const eventId=randomUUID();
-      const signature=createHash('sha256').update(eventId+process.env.ROAPP_WEBHOOK_SECRET).digest('hex');
+      const signature=createHmac('sha256',process.env.ROAPP_WEBHOOK_SECRET).update(eventId).digest('hex');
       const callback=await fetch('https://white-gloss.de/api/ro-callback',{method:'POST',headers:{'content-type':'application/json','x-signature':signature},body:JSON.stringify({id:eventId,event_name:'Order.Status.Changed',context:{object_id:orderId,object_type:'order'}})});
       console.log('callback_response',callback.status,(await callback.text()).slice(0,100));
     }
