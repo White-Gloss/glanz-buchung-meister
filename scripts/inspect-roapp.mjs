@@ -1,6 +1,12 @@
 // Run with the existing server environment. Never prints credentials or customers.
 import { setTimeout as delay } from "node:timers/promises";
-const key = process.env.ROAPP_API_KEY;
+import { createInterface } from "node:readline/promises";
+let key = process.env.ROAPP_API_KEY;
+if (process.argv.includes("--stdin-key")) {
+  const reader = createInterface({ input: process.stdin, output: process.stdout });
+  key = (await reader.question("RO credential input ready: ")).trim();
+  reader.close();
+}
 if (!key) throw new Error("ROAPP_API_KEY missing");
 const get = async (path) => {
   await delay(350);
@@ -8,7 +14,10 @@ const get = async (path) => {
     headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
     signal: AbortSignal.timeout(15000),
   });
-  if (!response.ok) throw new Error(`RO ${path}: HTTP ${response.status}`);
+  if (!response.ok) {
+    const detail = (await response.text()).replaceAll(key, "[redacted]").replace(/[a-f0-9]{32,}/gi, "[redacted]");
+    throw new Error(`RO ${path}: HTTP ${response.status}: ${detail.slice(0,400)}`);
+  }
   return response.json();
 };
 const list = (data) => Array.isArray(data) ? data : data.data || data.items || [];
