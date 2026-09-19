@@ -40,7 +40,7 @@ const NAV_SHOT: Record<string, ShotName> = {
   "Individuelles Angebot": "keramik",
   Ratgeber: "dellen",
   "Häufige Fragen": "atelier",
-  Ergebnisse: "atelier",
+  Werkstatt: "atelier",
   Kontakt: "finish",
   Geschäftskunden: "private",
 };
@@ -118,16 +118,16 @@ export function SiteHeader() {
         <Link
           to="/"
           className="ga-logo group inline-flex min-h-11 items-center"
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
           aria-label={`${site.name} Startseite`}
         >
           <BrandMark variant="header" decorative />
         </Link>
+        <nav className="header-quick-nav" aria-label="Direktnavigation">
+          <Link to="/leistungen">Leistungen</Link>
+          <Link to="/preise">Preise</Link>
+          <Link to="/galerie">Ergebnisse</Link>
+          <Link to="/" hash="buchung">Termin</Link>
+        </nav>
         <div className="ga-tools flex items-center">
           <button
             ref={toggleRef}
@@ -139,22 +139,13 @@ export function SiteHeader() {
             aria-label={open ? "Menü schließen" : "Menü öffnen"}
             onClick={() => setOpen((v) => !v)}
           >
+            <span className="menu-toggle-label">{open ? "Schließen" : "Menü"}</span>
             <span className="burger" aria-hidden>
               <span className="burger-line" />
               <span className="burger-line" />
               <span className="burger-line" />
             </span>
           </button>
-        </div>
-        <nav className="desktop-nav" aria-label="Direktnavigation">
-          <Link to="/leistungen">Leistungen</Link>
-          <Link to="/preise">Preise</Link>
-          <Link to="/galerie">Ergebnisse</Link>
-          <Link to="/" hash="buchung" className="desktop-nav-cta">Termin anfragen</Link>
-        </nav>
-        <div className="ga-spacer hidden items-center justify-self-end gap-3 text-[0.62rem] uppercase tracking-[0.24em] text-subtle sm:flex">
-          <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
-          <span>Atelier Horb · Mo–Fr 09–17</span>
         </div>
       </div>
       {layer ? <FilmMenu closing={!open} onClose={closeMenu} returnFocusRef={toggleRef} /> : null}
@@ -236,12 +227,6 @@ function FilmMenu({
             to="/"
             onClick={onClose}
             className="ga-logo group inline-flex min-h-11 items-center"
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
             aria-label={`${site.name} Startseite`}
           >
             <BrandMark variant="header" decorative />
@@ -254,6 +239,7 @@ function FilmMenu({
               aria-label="Menü schließen"
               onClick={onClose}
             >
+              <span className="menu-toggle-label">Schließen</span>
               <span className="burger" aria-hidden>
                 <span className="burger-line" />
                 <span className="burger-line" />
