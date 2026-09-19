@@ -12,13 +12,14 @@ The live website uses TanStack Start, existing IONOS PostgreSQL and private Supa
 - Reconciliation timer restarted and verified active. /admin redirects 307 to RO orders. POSTs to legacy operator and Zoho callback return 410.
 - RO permits invoice creation without a legal entity. The German invoice template now contains the supplied issuer, bank and tax details, verified again after reload. A dedicated German invoice email template is saved. No registration number was invented.
 - Internal invoice 001 (533163), explicitly labelled as a technical test with no payment claim, was created from A002: 178 EUR gross including 28.42 EUR VAT. RO confirmed email sending with the invoice document selected as attachment. The test invoice was then cancelled; the cancelled status persisted after reload.
+- On user continuation, A002 was accepted with a visibly drawn TEST signature at 18:03 UTC. RO showed accepted/signed timestamps and its order history recorded customer acceptance. The website database subsequently held status Akzeptiert, 17800 cents and fixed_price=true.
+- PR 236 deployed as release 91ef2dace073f7336e84b1c3cc2e7b3b64f7799e: main CI, deployment 35460135085 and live smoke passed. The public imprint returned HTTP 200 and the supplied VAT ID.
+- Internal RO orders A001/A002/A003 were deleted after testing. Website test bookings WG-48/WG-49 and their photo-link metadata were removed after identity checks and a verified private backup at /var/backups/white-gloss/20260919T181152Z/database.dump. No payment was booked. Cancelled test invoice 001 remains as an audit record; storage files remain private in the backup/retention scope.
 
 ## Not yet complete
 
 - The generated invoice PDF could not be visually inspected because browser security blocked RO's blob print preview. Issuing/sending regular invoices is manual after service completion; select the invoice attachment, verify customer billing details, and enter the service period in the invoice comment. No automatic invoice issuance is configured. The optional legal-entity draft is not saved.
-- The VAT website change is pending PR 236. npm's audit endpoint repeatedly returned HTTP 503 maintenance, including at 17:24 UTC. The announced maintenance window ends at 19:00 UTC. No security check was disabled.
-- No signed customer acceptance completed. RO still shows its account-email verification prompt.
-- Internal test orders A001/A002/A003 remain for completion of testing and must be cleaned up before final handover.
+- RO still shows its account-email verification prompt. No real customer's signature was submitted.
 - Calendar capacity synchronization from manual RO schedule changes is not implemented or verified. Website requests remain provisional.
 
 Do not describe the whole workflow as 100% complete until outstanding steps are independently verified. Never commit bank details, private tax identifiers, keys or personal order/photo tokens.
