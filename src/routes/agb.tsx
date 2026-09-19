@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
-import { depositConfig, pickupKeramikNote, pickupTierSummary, site } from "@/data/site";
+import { paymentNote, pickupKeramikNote, pickupTierSummary, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/agb")({
@@ -94,14 +94,11 @@ function TermsPage() {
         </section>
 
         <section>
-          <h2>5. Anzahlungen und Zahlung</h2>
+          <h2>5. Zahlung</h2>
           <p>
-            Bei Neukunden kann nach Annahme des Auftrags eine Anzahlung von{" "}
-            {Math.round(depositConfig.rate * 100)} % des verbindlich vereinbarten Gesamtbetrags
-            verlangt werden. Die Anzahlung wird auf den Gesamtbetrag angerechnet. Es erfolgt kein
-            automatischer Einzug. Ohne abweichende Vereinbarung ist der Restbetrag vor Ort in bar
-            oder spätestens innerhalb von sieben Tagen nach Leistungserbringung per Überweisung
-            fällig.
+            {paymentNote} Ohne abweichende Vereinbarung ist der Gesamtbetrag nach
+            Leistungserbringung vor Ort in bar oder spätestens innerhalb von sieben Tagen
+            nach Leistungserbringung per Überweisung fällig.
           </p>
         </section>
 

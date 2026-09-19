@@ -1,6 +1,28 @@
 @import "tailwindcss";
 @import "./styles/results.css";
 
+.instagram-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.25rem;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  text-decoration: none;
+}
+.instagram-badge:hover {
+  border-color: var(--color-subtle);
+  background: var(--color-elevated);
+}
+.instagram-badge:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 4px;
+}
+
 /* The animation control pauses the decorative CSS motion along with the video. */
 [data-motion-paused]::after,
 [data-motion-paused] .hero-image,

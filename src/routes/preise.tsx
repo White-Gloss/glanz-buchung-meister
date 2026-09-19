@@ -21,7 +21,7 @@ export const Route = createFileRoute("/preise")({
     pageHead({
       title: `Preise für Fahrzeugaufbereitung in Horb | ${site.name}`,
       description:
-        "Preise Fahrzeugaufbereitung Horb: Basis Pflege ab 149 €, Premium Glanz ab 349 €, High-End Keramik ab 899 € inkl. MwSt.",
+        `Fahrzeugaufbereitung in Horb: ${packages.map((p) => `${p.name} ab ${money(p.price)}\u00a0€`).join(", ")} inkl. MwSt. für die Kompaktklasse.`,
       path: "/preise",
       preloadShot: "keramik",
     }),
@@ -32,7 +32,7 @@ function PreisePage() {
     <main id="main-content" tabIndex={-1}>
       <PageHero
         shot="keramik"
-        alt="Keramikversiegelung von Hand auf dem Lack"
+        alt="Spiegelnde Motorhaube eines Kundenfahrzeugs nach der Aufbereitung"
         kicker="Pakete & Preise"
         title="Preise für die Aufbereitung."
         lead="Vergleichen Sie unsere drei Pakete. Der Preisrechner berücksichtigt Fahrzeugklasse und Zusatzleistungen."
@@ -110,8 +110,9 @@ function PreisePage() {
       </div>
       <h2 className="heading-2 mt-20">Zusatzleistungen</h2>
       <p className="mt-4 max-w-2xl text-sm text-muted">
-        Alle Beträge {site.vatNote} Vor einer Reparatur prüfen wir, ob das
-        Material geeignet ist.
+        Alle Einstiegspreise gelten für die Kompaktklasse und verstehen sich {site.vatNote}
+        {" "}Der Fahrzeuggrößenfaktor gilt für Paket und Zusatzleistungen, nicht für die Abholung.
+        Vor einer Reparatur prüfen wir, ob das Material geeignet ist.
       </p>
       {(["pflege", "reparatur"] as const).map((group) => (
         <div key={group}>
@@ -142,7 +143,7 @@ function PreisePage() {
         <h2 id="buchung-heading" className="mb-8 font-display text-3xl">
           Preis berechnen
         </h2>
-        <WhatsAppPhotoCta className="mb-10" />
+        <WhatsAppPhotoCta className="mb-10" headingLevel={3} />
         <LazyConfigurator eager />
       </div>
       <p className="mt-10 text-sm">

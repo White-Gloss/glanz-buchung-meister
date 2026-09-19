@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   cities,
-  depositConfig,
+  paymentNote,
   extras,
   extraIncluded,
   packages,
@@ -304,7 +304,7 @@ export function Configurator({
                     {p.searchLabel}
                   </span>
                   <span className="block text-sm text-muted">
-                    ab {eur(p.price)} · {p.duration}
+                    ab {eur(p.price * quote.klass.factor)} · {p.duration}
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-subtle">{p.kicker}</span>
                 </span>
@@ -361,7 +361,7 @@ export function Configurator({
                     .map((ex) => (
                       <label
                         key={ex.id}
-                        className="flex items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3"
+                        className="flex flex-col items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 sm:flex-row"
                       >
                         <span className="flex min-w-0 items-start">
                           <input
@@ -391,7 +391,7 @@ export function Configurator({
                         <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
                           {extraIncluded(packageId, ex.id)
                             ? "Im Paket enthalten"
-                            : `ab ${eur(ex.price)}`}
+                            : `ab ${eur(ex.price * quote.klass.factor)}`}
                         </span>
                       </label>
                     ))}
@@ -439,7 +439,7 @@ export function Configurator({
         <p className="text-xs text-subtle">
           Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
           Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
-          {depositConfig.label}: {depositConfig.note}
+          {paymentNote}
         </p>
         <Field tone="public" id="name" label="Name (Pflichtfeld)">
           <input

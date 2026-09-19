@@ -63,7 +63,7 @@ function ServicePage() {
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         {s.fromPrice ? (
           <p className="font-display text-4xl tracking-tight tabular-nums">
-            ab {money(s.fromPrice)} €
+            ab {money(s.fromPrice)}&nbsp;€
             <span className="ml-3 text-sm font-sans text-subtle">{site.vatNote}</span>
           </p>
         ) : (

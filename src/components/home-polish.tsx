@@ -50,6 +50,11 @@ export function HomePolish() {
     };
 
     onceIn(
+      [...main.querySelectorAll<HTMLElement>("[data-reveal]")],
+      (el) => el.classList.add("is-in"),
+    );
+
+    onceIn(
       [...main.querySelectorAll<HTMLElement>("[data-stagger]")],
       (el) => el.classList.add("is-in"),
     );
