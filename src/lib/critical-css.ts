@@ -1,8 +1,9 @@
 /**
- * Above-the-fold CSS inlined in `__root` so the full Tailwind stylesheet can
- * load non-blocking (media=print → all) without a white FOUC or hero CLS.
- * Must match final ATF layout (esp. `.hero-intro`) — mismatches here caused
- * post-#214 CLS when full utilities applied.
+ * Above-the-fold CSS inlined in `__root` as ATF insurance while the blocking
+ * stylesheet parses (dark body, hero/header/stats boxes). Full `styles.css`
+ * is render-blocking again — deferred print→all caused ~0.50 CLS when this
+ * mismatched final utilities on `.hero-follow` (post-#214). Harmless once
+ * full CSS applies; prefer stable layout over micro render-blocking savings.
  */
 export const CRITICAL_CSS = `html{color-scheme:dark;background:#000;-webkit-font-smoothing:antialiased;touch-action:manipulation;scroll-padding-top:5.75rem}
 body{margin:0;background:#000;color:#fff;font-family:Barlow,"Barlow Fallback",Arial,"Helvetica Neue",Helvetica,ui-sans-serif,system-ui,sans-serif;line-height:1.55}
