@@ -20,8 +20,8 @@ export const heroPreload = {
 function pickHeroLoop(mobile: boolean) {
   const probe = document.createElement("video");
   const webm = probe.canPlayType('video/webm; codecs="vp9"') !== "";
-  if (mobile) return webm ? "/media/hero-loop-720.webm" : "/media/hero-loop-720.mp4";
-  return webm ? "/media/hero-loop.webm" : "/media/hero-loop.mp4";
+  if (mobile) return webm ? "/media/hero-loop-gloss-720.webm" : "/media/hero-loop-gloss-720.mp4";
+  return webm ? "/media/hero-loop-gloss.webm" : "/media/hero-loop-gloss.mp4";
 }
 
 export function HeroMedia({
@@ -176,7 +176,7 @@ export function HeroMedia({
         <source type="image/avif" srcSet={heroAvifSrcSet} sizes="100vw" />
         <source type="image/webp" srcSet={heroWebpSrcSet} sizes="100vw" />
         <img
-          src="/media/hero-720.webp"
+          src="/media/hero-gloss-720.webp"
           alt={alt}
           width={1600}
           height={907}
