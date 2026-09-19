@@ -29,9 +29,25 @@ if (!state.order) {
 }
 console.log("test_ids",JSON.stringify(state));
 if (!state.order) throw new Error("Missing order id");
+if (process.argv.includes("--item") && !state.item) {
+  if (state.itemStarted) throw new Error("Reconcile internal test item first");
+  state.itemStarted=true;
+  await writeFile(file,JSON.stringify(state),{mode:0o600});
+  const item = await api(`/orders/${state.order}/items`,{
+    entity_id:66904352,assignee_id:Number(process.env.ROAPP_ASSIGNEE_ID),quantity:1,price:149,cost:0,
+    discount:{type:"percentage",percentage:0,amount:0,sponsor:"staff"},
+    warranty:{period:"0",periodUnits:"days"},comment:"Interner Preistest, kein Kundenauftrag",
+  });
+  state.item=item.id || item.data?.id || true;
+  await writeFile(file,JSON.stringify(state),{mode:0o600});
+}
 const response = await api(`/orders/${state.order}`);
 const order = response.data || response;
 console.log("order_keys",Object.keys(order));
 for (const [name,value] of Object.entries(order)) {
   if (/status|total|price|amount|sum|approval|scheduled|branch|type|modified/i.test(name)) console.log("order_field",name,JSON.stringify(value));
 }
+const link=await api(`/orders/${state.order}/public-url`);
+console.log("public_link_shape", typeof link === "string" ? "string" : Object.keys(link));
+const raw=typeof link === "string" ? link : link.url || link.data?.url;
+if(raw) console.log("public_link_host",new URL(raw).hostname);
