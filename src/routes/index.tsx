@@ -213,7 +213,7 @@ function Home() {
                   </span>
                   <span className="ga-price">
                     <span className="flex items-baseline gap-2 sm:justify-end">
-                      <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">
+                      <span className="text-xs uppercase tracking-[0.2em] text-subtle">
                         ab{" "}
                       </span>
                       <span className="font-display text-3xl leading-none tracking-wide tabular-nums">

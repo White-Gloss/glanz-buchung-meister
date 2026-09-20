@@ -11,7 +11,7 @@ export function PageCrumbs({
   return (
     <nav
       aria-label="Brotkrumen"
-      className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle"
+      className="text-xs uppercase tracking-[0.18em] text-subtle"
     >
       {items.map((item, i) => (
         <span key={item.label}>

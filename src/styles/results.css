@@ -41,9 +41,9 @@
 
 .wg-results-note {
   margin-top: 1rem;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
-  color: var(--color-subtle);
+  color: var(--color-muted);
 }
 
 .wg-video-grid {
@@ -138,8 +138,8 @@
   justify-content: space-between;
   padding: 1.25rem 1rem 0.75rem;
   background: linear-gradient(transparent, rgb(12 17 16 / 0.84));
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-fg);
 }
@@ -152,7 +152,7 @@
   max-width: 42ch;
   margin-top: 0.4rem;
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.55;
 }
 
@@ -192,7 +192,7 @@
   padding: 0 0.75rem;
   border: 1px solid var(--color-line-strong);
   color: var(--color-fg);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -207,7 +207,7 @@
 .wg-video-description {
   margin-top: 1rem;
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .wg-trust-strip {
@@ -218,7 +218,7 @@
   padding: 1rem 0;
   border-block: 1px solid var(--color-line);
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -239,6 +239,10 @@
 
 .wg-video-swipe-hint {
   display: none;
+}
+
+.consent-banner .btn {
+  padding: 0.75rem 1rem;
 }
 
 @media (max-width: 639px) {
@@ -270,7 +274,7 @@
     gap: 0.75rem;
     margin-top: 0.5rem;
     color: var(--color-muted);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .wg-results-teaser-head,

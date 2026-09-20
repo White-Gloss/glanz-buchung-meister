@@ -369,7 +369,7 @@ export function Configurator({
             <legend className="sr-only">Zusatzleistungen</legend>
             {(["pflege", "reparatur"] as const).map((group) => (
               <div key={group} className="mt-4">
-                <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">
+                <p className="text-xs uppercase tracking-[0.18em] text-subtle">
                   {group === "pflege" ? "Pflege" : "Reparatur"}
                 </p>
                 <div className="mt-2 grid gap-2">

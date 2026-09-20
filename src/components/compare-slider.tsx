@@ -47,10 +47,10 @@ export function CompareSlider({
           onChange={(e) => setPos(Number(e.target.value))}
           className="compare-slider-range"
         />
-        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-bg/80 px-3 py-1 text-[0.65rem] uppercase tracking-[0.16em] text-subtle">
+        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-bg/80 px-3 py-1 text-xs uppercase tracking-[0.16em] text-subtle">
           Vorher
         </span>
-        <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-bg/80 px-3 py-1 text-[0.65rem] uppercase tracking-[0.16em] text-subtle">
+        <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-bg/80 px-3 py-1 text-xs uppercase tracking-[0.16em] text-subtle">
           Nachher
         </span>
       </div>

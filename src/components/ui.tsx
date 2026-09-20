@@ -97,7 +97,7 @@ export function Field({
         htmlFor={id}
         className={
           tone === "public"
-            ? "text-[0.6875rem] font-medium uppercase tracking-[0.24em] text-muted"
+            ? "text-sm font-medium uppercase tracking-[0.08em] text-muted"
             : "text-sm font-medium text-fg"
         }
       >
