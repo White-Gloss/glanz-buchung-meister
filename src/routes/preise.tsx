@@ -77,7 +77,7 @@ function PreisePage() {
             </div>
             <p className="ga-price min-w-[8.5rem]">
               <span className="flex items-baseline gap-2 lg:justify-end">
-                <span className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">ab </span>
+                <span className="text-xs uppercase tracking-[0.2em] text-subtle">ab </span>
                 <span className="font-display text-4xl leading-none tracking-wide tabular-nums">
                   {money(p.price)}
                 </span>

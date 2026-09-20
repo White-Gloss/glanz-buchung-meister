@@ -175,13 +175,13 @@
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 16px;
+    font-size: 100%;
     touch-action: manipulation;
     scroll-behavior: smooth;
     scroll-padding-top: 5.75rem;
   }
 
-  /* Fliesstext: 1.55, kompakter als vorher, naeher an der Kampagne. */
+  /* Standard line-height; public pages use the more spacious scale below. */
   body {
     line-height: 1.55;
   }
@@ -197,10 +197,24 @@
     text-wrap: balance;
   }
 
+  /* Readable public typography, including the navigation portal. Admin keeps its scale. */
+  [data-shell="public"],
+  .film-menu {
+    --text-xs: 0.875rem;
+    --text-xs--line-height: 1.5;
+    --text-sm: 1rem;
+    --text-sm--line-height: 1.65;
+    --text-base--line-height: 1.65;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
   [data-shell="public"] h1,
   [data-shell="public"] h2,
   [data-shell="public"] h3 {
-    font-weight: 300;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   p {
@@ -331,9 +345,9 @@
      Grossbuchstaben traegt. Farbe laut Vorgabe --color-muted. */
   .kicker {
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.875rem;
     font-weight: 400;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--color-subtle);
   }
@@ -395,17 +409,17 @@
   .heading-2 {
     font-family: var(--font-display);
     font-size: clamp(1.9rem, 3.8vw, 3.35rem);
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: -0.02em;
-    line-height: 1.06;
+    line-height: 1.2;
   }
 
   .heading-page {
     font-family: var(--font-display);
     font-size: clamp(2.2rem, 5.4vw, 4.5rem);
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: -0.025em;
-    line-height: 0.98;
+    line-height: 1.12;
   }
 
   .heading-3 {
@@ -459,7 +473,7 @@
 
   .prose-legal {
     color: var(--color-muted);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.65;
   }
 
@@ -1036,7 +1050,7 @@
   }
 
   .menu-toggle-label {
-    font-size: 0.625rem;
+    font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -1168,12 +1182,12 @@
     padding: 0.22rem 0;
     color: #fff;
     font-size: clamp(1.25rem, 2.5vw, 2.2rem);
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0.06em;
-    line-height: 1.05;
+    line-height: 1.25;
     text-align: left;
     text-transform: uppercase;
-    opacity: 0.5;
+    opacity: 0.85;
     transition:
       opacity 400ms cubic-bezier(0.23, 1, 0.32, 1),
       letter-spacing 400ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -1344,7 +1358,7 @@
   .campaign-hero-location {
     margin-top: 0.5rem;
     color: rgb(255 255 255 / 0.76);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     font-weight: 400;
   }
 
@@ -1826,7 +1840,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
-    font-size: 0.6875rem;
+    font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -1876,7 +1890,7 @@
 
   .sheet-head p {
     margin: 0;
-    font-size: 0.65rem;
+    font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.28em;
     text-transform: uppercase;
@@ -1977,7 +1991,7 @@
 
   .nav-bubble-badge {
     flex-shrink: 0;
-    font-size: 0.58rem;
+    font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -2114,10 +2128,10 @@
     padding: 1rem 2rem;
     border-radius: 4px;
     border: 1px solid transparent;
-    font-size: 0.75rem;
-    font-weight: 400;
-    letter-spacing: 0.16em;
-    line-height: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
     text-align: center;
     text-transform: uppercase;
     transition:
@@ -2170,7 +2184,7 @@
     border-radius: 0;
     background-color: transparent;
     color: var(--color-fg);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     transition: border-color 240ms var(--ease-out-quart);
   }
 
@@ -2321,7 +2335,7 @@
   position: relative;
   padding: 0.75rem 0;
   color: var(--color-muted);
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2544,7 +2558,7 @@ main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
     padding-bottom: 5rem;
   }
   .booking-steps button {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
   .booking-steps button span {
     display: block;
