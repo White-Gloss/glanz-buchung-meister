@@ -6,7 +6,7 @@ import { LazyBeforeAfterSlider } from "@/components/lazy-before-after-slider";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { LazyConfigurator } from "@/components/lazy-configurator";
 import { LazyWorkshopMap } from "@/components/lazy-workshop-map";
-import { HeroMedia, PhotoNote, Shot } from "@/components/media";
+import { PhotoNote, Shot } from "@/components/media";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import {
   packageServiceSlug,
@@ -23,6 +23,8 @@ import {
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { money } from "@/lib/utils";
+import { scrollFilmPreloads } from "@/data/scroll-film";
+import { ScrollFilmHero } from "@/components/scroll-film-hero";
 import { HomePolish } from "@/components/home-polish";
 import { ResultsTeaser } from "@/components/results-teaser";
 import { InstagramBadge } from "@/components/instagram-badge";
@@ -30,14 +32,15 @@ import { InstagramBadge } from "@/components/instagram-badge";
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
   component: Home,
-  head: () =>
-    pageHead({
+  head: () => {
+    const head = pageHead({
       title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
       description:
         "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
       path: "/",
-      preloadHero: true,
-    }),
+    });
+    return { ...head, links: [...head.links, ...scrollFilmPreloads] };
+  },
 });
 
 function Home() {
@@ -51,43 +54,10 @@ function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
-      <section className="hero-stage hero-intro campaign-hero">
-        <div className="hero-stage-media" data-parallax>
-          <HeroMedia
-            priority
-            alt="Schwarzer Klassiker im White Gloss Atelier in Horb am Neckar, Kennzeichen entfernt"
-            className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-[62%_center]"
-          />
-        </div>
-        <div className="hero-stage-veil" />
-        <div className="hero-stage-copy campaign-hero-copy" data-hero-enter>
-          <h1 className="campaign-hero-title hero-enter-item">
-            Ihr Fahrzeug.
-            <br />
-            Unser Handwerk.
-            <br />
-            Bis ins Detail.
-          </h1>
-          <div className="campaign-hero-meta hero-enter-item">
-            <p className="campaign-hero-brand">White Gloss Detailing.</p>
-            <p className="campaign-hero-location">Fahrzeugaufbereitung in Horb am Neckar</p>
-            <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted sm:text-base">
-              Für den täglichen Weg zur Arbeit, Ihren Liebhaberwagen oder die Leasingrückgabe:
-              Wir prüfen Ihr Fahrzeug persönlich und stimmen Pflege, Preis und Termin mit Ihnen ab.
-            </p>
-          </div>
-          <div className="campaign-hero-actions hero-enter-item">
-            <Link to="/" hash="buchung" className={ctaPrimary}>
-              Termin anfragen <IconArrowRight className="size-4" aria-hidden />
-            </Link>
-            <Link to="/preise" className={ctaGhost}>
-              Pakete & Preise
-            </Link>
-          </div>
-        </div>
-      </section>
+      <ScrollFilmHero />
 
       <section
+        id="nach-dem-film"
         aria-label="Auf einen Blick"
         className="hero-follow border-b border-line"
         data-stagger
@@ -140,6 +110,10 @@ function Home() {
         </ul>
       </section>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <p className="mx-auto max-w-2xl py-12 text-center text-sm leading-relaxed text-muted sm:text-base">
+          Für den täglichen Weg zur Arbeit, Ihren Liebhaberwagen oder die Leasingrückgabe:
+          Wir prüfen Ihr Fahrzeug persönlich und stimmen Pflege, Preis und Termin mit Ihnen ab.
+        </p>
         <ResultsTeaser />
         <LazyGoogleReviews id="bewertungen" compact />
         <aside className="wg-trust-strip" aria-label="White Gloss auf einen Blick">
