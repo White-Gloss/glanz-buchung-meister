@@ -44,7 +44,7 @@
   pointer-events: none;
   opacity: max(0.16, calc(1 - var(--film-progress) * 3.8));
   background:
-    linear-gradient(90deg, #020303e6 0%, #02030370 30%, transparent 65%),
+    linear-gradient(90deg, #020303f2 0%, #0203038a 31%, transparent 66%),
     linear-gradient(0deg, #020303 0%, transparent 14%, transparent 88%, #020303c9 100%);
 }
 .scroll-film-copy {
@@ -55,13 +55,26 @@
   max-width: 48%;
   will-change: opacity, transform;
 }
-.scroll-film-eyebrow {
+.scroll-film-brand {
   margin: 0 0 24px;
-  color: #c0c3c4;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  text-shadow: 0 2px 18px #000;
+}
+.scroll-film-brand p {
+  margin: 0;
+}
+.scroll-film-brand-name {
+  color: #f2f1ed;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+.scroll-film-tagline {
+  margin-top: 7px !important;
+  color: #c8cccd;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.025em;
 }
 .scroll-film-copy h1 {
   margin: 0;
@@ -69,7 +82,8 @@
   font-size: clamp(38px, 4.5vw, 76px);
   line-height: 1.09;
   font-weight: 400;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.035em;
+  text-shadow: 0 3px 24px #000c;
 }
 .scroll-film-copy h1 span {
   color: #aeb5b8;
@@ -83,7 +97,8 @@
   padding: 0 20px;
   border: 1px solid #aab0b36b;
   background: #080a0bcc;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   transition:
     border-color 180ms,
     background 180ms;
@@ -95,8 +110,11 @@
 .scroll-film-prices {
   display: inline-block;
   padding: 14px 18px;
-  font-size: 12px;
-  color: #c0c3c4;
+  font-size: 13px;
+  color: #d3d6d7;
+  text-decoration: underline;
+  text-decoration-color: #ffffff52;
+  text-underline-offset: 5px;
 }
 .scroll-film-bottom {
   position: absolute;
@@ -112,7 +130,7 @@
   align-items: center;
   gap: 20px;
   min-height: 44px;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
@@ -134,8 +152,8 @@
 }
 .scroll-film-pause {
   min-height: 44px;
-  color: #bfc3c5;
-  font-size: 10px;
+  color: #d3d6d7;
+  font-size: 11px;
   cursor: pointer;
 }
 .scroll-film a:focus-visible,
@@ -150,9 +168,12 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 14px;
-  font-size: 11px;
-  border: 1px solid #ffffff45;
+  padding: 0 15px;
+  background: #0a0c0dde;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid #ffffff66;
   color: #f2f1ed;
   white-space: nowrap;
 }
@@ -170,16 +191,17 @@
     min-height: 560px;
   }
   .scroll-film-media {
-    inset: 52px 0 52px;
+    inset: 64px 0 64px;
   }
   .scroll-film-shade {
     background: linear-gradient(
       0deg,
       #020303 0%,
-      #020303ee 13%,
-      transparent 55%,
+      #020303f5 16%,
+      #0203035c 42%,
+      transparent 61%,
       transparent 78%,
-      #0203039c 100%
+      #020303c2 100%
     );
   }
   .scroll-film-copy {
@@ -189,14 +211,20 @@
     margin: 0;
     max-width: 88%;
   }
-  .scroll-film-eyebrow {
-    font-size: 8px;
+  .scroll-film-brand {
+    margin-bottom: 15px;
+  }
+  .scroll-film-brand-name {
+    font-size: 11px;
     letter-spacing: 0.13em;
-    margin-bottom: 14px;
+  }
+  .scroll-film-tagline {
+    margin-top: 5px !important;
+    font-size: 13px;
   }
   .scroll-film-copy h1 {
-    font-size: clamp(31px, 8.3vw, 48px);
-    line-height: 1.06;
+    font-size: clamp(33px, 8.6vw, 48px);
+    line-height: 1.08;
   }
   .scroll-film-cta {
     margin-top: 19px;
@@ -205,7 +233,7 @@
   }
   .scroll-film-prices {
     padding-inline: 14px;
-    font-size: 11px;
+    font-size: 13px;
   }
   .scroll-film-bottom {
     left: 7%;
@@ -215,18 +243,44 @@
     flex-wrap: wrap;
   }
   .scroll-film-skip {
-    font-size: 8px;
+    font-size: 10px;
     gap: 13px;
   }
   .scroll-film-track {
     max-width: 60px;
   }
   .scroll-film-pause {
-    font-size: 9px;
+    font-size: 10px;
     margin-left: auto;
   }
   .site-header .ga-tools {
-    gap: 8px;
+    gap: 7px;
+  }
+}
+@media (max-width: 899px) {
+  .site-header[data-film-home="true"][data-nav-open="false"] {
+    background: rgb(2 3 3 / 0.94);
+    border-bottom-color: #ffffff2b;
+    box-shadow: 0 10px 30px #00000052;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .site-header[data-film-home="true"][data-nav-open="false"]::after {
+    opacity: 1;
+  }
+  .site-header[data-film-home="true"] .gd-header {
+    min-height: 4.25rem;
+  }
+  .site-header[data-film-home="true"] .ga-logo {
+    width: clamp(6.5rem, 29vw, 7.25rem);
+  }
+  .site-header[data-film-home="true"] .menu-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-color: #ffffff66;
+    background: #0a0c0dde;
   }
 }
 @media (max-height: 600px) and (orientation: landscape) {
@@ -241,7 +295,7 @@
   .scroll-film-copy h1 {
     font-size: 31px;
   }
-  .scroll-film-eyebrow {
+  .scroll-film-brand {
     margin-bottom: 10px;
   }
   .scroll-film-cta {

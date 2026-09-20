@@ -116,6 +116,7 @@ export function SiteHeader() {
       className={`site-header ${layer ? "z-[110]" : "z-40"}`}
       data-scrolled={scrolled ? "true" : "false"}
       data-nav-open={layer ? "true" : "false"}
+      data-film-home={pathname === "/" ? "true" : undefined}
     >
       <div className="gd-header mx-auto max-w-7xl px-4 sm:px-6 xl:max-w-[90rem] xl:px-10">
         <Link
@@ -132,7 +133,16 @@ export function SiteHeader() {
           <Link to="/" hash="buchung">Termin</Link>
         </nav>
         <div className="ga-tools flex items-center">
-          {pathname === "/" && <Link to="/" hash="buchung" className="header-film-booking">Termin anfragen</Link>}
+          {pathname === "/" && (
+            <Link
+              to="/"
+              hash="buchung"
+              className="header-film-booking"
+              aria-label="Termin anfragen"
+            >
+              Termin
+            </Link>
+          )}
           <button
             ref={toggleRef}
             type="button"

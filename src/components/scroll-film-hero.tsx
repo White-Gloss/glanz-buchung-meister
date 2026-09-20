@@ -246,7 +246,10 @@ export function ScrollFilmHero() {
         </div>
         <div className="scroll-film-shade" aria-hidden="true" />
         <div ref={copyRef} className="scroll-film-copy">
-          <p className="scroll-film-eyebrow">White Gloss Detailing · Horb am Neckar</p>
+          <div className="scroll-film-brand">
+            <p className="scroll-film-brand-name">White Gloss Detailing</p>
+            <p className="scroll-film-tagline">No compromises. Only results.</p>
+          </div>
           <h1>
             Ihr Fahrzeug.
             <br />
