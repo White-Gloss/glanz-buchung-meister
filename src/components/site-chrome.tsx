@@ -132,6 +132,7 @@ export function SiteHeader() {
           <Link to="/" hash="buchung">Termin</Link>
         </nav>
         <div className="ga-tools flex items-center">
+          {pathname === "/" && <Link to="/" hash="buchung" className="header-film-booking">Termin anfragen</Link>}
           <button
             ref={toggleRef}
             type="button"
