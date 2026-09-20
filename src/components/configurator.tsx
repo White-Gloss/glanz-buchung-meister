@@ -114,20 +114,36 @@ export function Configurator({
     until.setUTCDate(until.getUTCDate() + 60);
     const to = until.toISOString().slice(0, 10);
     setAvailabilityState("loading");
-    void fetch(`/api/availability?from=${from}&to=${to}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("unavailable");
-        return response.json();
-      })
-      .then((payload: { ok: boolean; windows?: { start: string; end: string }[] }) => {
-        if (!payload.ok || !Array.isArray(payload.windows)) throw new Error("unavailable");
-        setBusyWindows(payload.windows);
-        setAvailabilityState("ready");
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setAvailabilityState("error");
-      });
-    return () => controller.abort();
+    let refreshing = false;
+    const refresh = () => {
+      if (refreshing || controller.signal.aborted) return;
+      refreshing = true;
+      void fetch(`/api/availability?from=${from}&to=${to}`, { signal: controller.signal })
+        .then(async (response) => {
+          if (!response.ok) throw new Error("unavailable");
+          return response.json();
+        })
+        .then((payload: { ok: boolean; windows?: { start: string; end: string }[] }) => {
+          if (controller.signal.aborted) return;
+          if (!payload.ok || !Array.isArray(payload.windows)) throw new Error("unavailable");
+          setBusyWindows(payload.windows);
+          setAvailabilityState("ready");
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setAvailabilityState("error");
+        })
+        .finally(() => {
+          refreshing = false;
+        });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
   }, [date]);
   const blockedSlots = useMemo(() => {
     if (!date) return [];
