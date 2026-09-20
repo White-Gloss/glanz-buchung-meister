@@ -1,3 +1,11 @@
+# Aktueller Betrieb mit RO App
+
+Bei `BOOKING_OPERATIONS=roapp` gilt die [Arbeitsanleitung für RO](roapp-booking-flow.md).
+Die folgenden Beschreibungen dokumentieren den früheren Admin-/Qonto-Ablauf und
+sind keine Bedienungsanleitung für den aktuellen RO-Betrieb.
+
+---
+
 # Buchungen, Benachrichtigungen und Betrieb
 
 Stand dieser Umsetzung: Der neue Code ist lokal geprüft. Die neuen

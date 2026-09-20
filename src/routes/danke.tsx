@@ -37,17 +37,22 @@ function ThanksPage() {
     [
       "01",
       "Anfrage eingegangen",
-      "Deine Buchungsanfrage ist bei uns eingegangen. Der Wunschtermin ist noch nicht verbindlich bestätigt.",
+      "Ihre Angaben und ausgewählten Fotos sind bei uns eingegangen. Preis und Wunschtermin sind noch nicht verbindlich bestätigt.",
     ],
     [
       "02",
-      "Prüfung von Aufwand und Fotos",
-      "Wir prüfen Angaben und Fahrzeugfotos, legen den Aufwand, den endgültigen Preis und die benötigte Zeit fest.",
+      "Fotos, Fixpreis und Termin prüfen",
+      "Wir begutachten Ihre Fotos und klären die Leistungen, den vollständigen Endpreis und den Termin. Bei Rückfragen melden wir uns bei Ihnen.",
     ],
     [
       "03",
-      "Separate Terminbestätigung",
-      "Nach der Prüfung erhältst du eine Buchungsbestätigung. Das ist keine Rechnung. Die Rechnung folgt erst nach erbrachter Leistung.",
+      "Auftrag prüfen und unterschreiben",
+      "Nach unserer Freigabe erhalten Sie die Bestätigung mit dem Link zur Auftragsannahme. Prüfen Sie Leistungen, Fixpreis und Termin und unterschreiben Sie selbst über den Link.",
+    ],
+    [
+      "04",
+      "Aufbereitung und Rechnung",
+      "Wir führen die vereinbarten Arbeiten aus. Die Rechnung erhalten Sie nach erbrachter Leistung; dann wird die Zahlung fällig.",
     ],
   ];
 
@@ -58,7 +63,7 @@ function ThanksPage() {
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Anfrage eingegangen"
         title="Danke. Anfrage erhalten."
-        lead="Deine Buchungsanfrage ist eingegangen. Wir prüfen jetzt Angaben und Fotos. Dein Wunschtermin ist noch nicht verbindlich bestätigt."
+        lead="Ihre Anfrage ist eingegangen. Wir prüfen jetzt Ihre Angaben und Fotos. Den Fixpreis und den Termin bestätigen wir nach der Begutachtung."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Danke" }]}
         actions={
           <>
@@ -114,7 +119,7 @@ function ThanksPage() {
         </dl>
 
         <p className="mt-14 border-t border-line pt-8 text-sm text-muted">
-          Noch kein Vertrag. Sobald wir zusagen, gilt die{" "}
+          Hinweise zu Ihrem Widerrufsrecht finden Sie in der{" "}
           <Link to="/widerruf" className="underline hover:text-fg">
             Widerrufsbelehrung
           </Link>

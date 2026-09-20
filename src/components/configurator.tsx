@@ -564,13 +564,11 @@ export function Configurator({
           >
             <option value="">Keine Angabe</option>
             {timeSlots.map((s) => {
-              const isBlocked = Boolean(date && availabilityState === "ready" && blockedSlots.includes(s));
+              const isBlocked = Boolean(
+                date && availabilityState === "ready" && blockedSlots.includes(s),
+              );
               return (
-                <option
-                  key={s}
-                  value={s}
-                  disabled={isBlocked}
-                >
+                <option key={s} value={s} disabled={isBlocked}>
                   {s} Uhr{isBlocked ? " - belegt" : ""}
                 </option>
               );
@@ -648,6 +646,11 @@ export function Configurator({
             <dd>{media.length} ausgewählt</dd>
           </dl>
         </section>
+        <p className="text-sm text-muted">
+          So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
+          unserer Freigabe erhalten Sie den Fixpreis und den Link zur Auftragsannahme mit
+          Unterschrift. Die Rechnung folgt nach erbrachter Leistung.
+        </p>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input
             disabled={pending || savedReference !== null}

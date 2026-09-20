@@ -72,7 +72,9 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
   if (sent) {
     return (
       <SubmissionResult className="rounded-card border border-line bg-elevated p-5 text-sm text-muted">
-        Vielen Dank für Ihre Anfrage. Wir melden uns unter der angegebenen Telefonnummer.
+        Ihre Anfrage ist eingegangen. Wir prüfen Ihre Beschreibung und die ausgewählten Fotos und
+        melden uns unter der angegebenen Telefonnummer. Den Fixpreis und einen Termin vereinbaren
+        wir nach der Begutachtung.
       </SubmissionResult>
     );
   }
