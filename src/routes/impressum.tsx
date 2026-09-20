@@ -53,14 +53,12 @@ function ImpressumPage() {
             Öffnungszeiten: {site.hoursLabel}
           </p>
         </section>
-        <section>
+        {site.vatId && <section>
           <h2 className="font-display text-2xl">Umsatzsteuer</h2>
           <p className="mt-3 text-muted">
-            {site.vatId
-              ? `Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: ${site.vatId}`
-              : "Preise werden mit gesetzlicher Umsatzsteuer ausgewiesen. Eine Umsatzsteuer-Identifikationsnummer wird im Impressum ergänzt, sobald sie erteilt ist."}
+            Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: {site.vatId}
           </p>
-        </section>
+        </section>}
         <section>
           <h2 className="font-display text-2xl">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
           <address className="mt-3 not-italic text-muted">
