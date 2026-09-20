@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
-import { packages, vehicleClasses, extras, pickupPricing } from "../data/site.ts";
+import { packages, vehicleClasses, extras, pickupPricing, cities } from "../data/site.ts";
 import { roappOnlyEnabled } from "./booking-backend.ts";
 import { isCalendarDate } from "./calendar-date.ts";
 import { journalRoappWrites } from "./roapp-write-journal.ts";
@@ -99,19 +99,35 @@ export function bookingComment(booking: WorkflowBooking): string {
     ? extraIds.map((id) => extras.find((e) => e.id === id)?.name || String(id))
     : [];
   return [
-    `Website-Anfrage WG-${booking.id} – Preise prüfen`,
+    `Website-Anfrage WG-${booking.id}`,
     `Paket: ${pack}`,
     `Fahrzeugklasse: ${vehicleClass}`,
     `Extras: ${extraNames.join(", ") || "keine"}`,
     booking.package_id === "photo-inquiry"
       ? "Preis nach Fotobegutachtung festlegen."
-      : `Betrag laut Anfrage: ${(booking.total_cents / 100).toFixed(2)} EUR`,
-    "Unverbindlicher Einstiegspreis. Fixpreis erst nach Fotobegutachtung und manueller Freigabe.",
-    booking.city_slug ? `Abholort: ${booking.city_slug}` : "",
-    booking.note || "",
+      : `Vorläufiger Gesamtpreis bei Eingang: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(booking.total_cents / 100)}`,
+    "Noch kein Fixpreis und keine verbindliche Terminzusage.",
+    `Wunschtermin: ${booking.preferred_date || "nach Absprache"}${booking.preferred_slot ? `, ${booking.preferred_slot} Uhr` : ""}`,
+    booking.city_slug
+      ? `Abholort: ${cities.find((city) => city.slug === booking.city_slug)?.name || booking.city_slug}`
+      : "",
+    booking.note ? `Angaben des Kunden: ${booking.note}` : "",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+export function bookingManagerNotes(bookingId: number): string {
+  return [
+    `Bearbeitung der Website-Anfrage WG-${bookingId}`,
+    "1. Fotos im Auftragsverlauf öffnen. Fehlende Angaben beim Kunden erfragen.",
+    "2. Leistungen, Endpreis einschließlich Abholung und Termin prüfen bzw. ergänzen.",
+    "3. Erst danach „Fixpreis bestätigt“ wählen. RO versendet die Bestätigung mit dem Unterschriftslink, sofern eine E-Mail-Adresse hinterlegt ist.",
+    "4. Der Kunde nimmt selbst über den Link an. „Akzeptiert“ nicht stellvertretend setzen.",
+    "5. Bei Arbeitsbeginn „In Arbeit“, nach Abschluss „Erledigt“ wählen.",
+    "6. Rechnung nach der Leistung manuell erstellen und senden: Vorlage „Rechnungsversand White Gloss“, Anhang „Rechnung“. Anschrift, Leistungszeitraum und Fälligkeit prüfen.",
+    "Terminverfügbarkeit zusätzlich prüfen: RO-Terminänderungen werden derzeit nicht in den Website-Kalender übernommen.",
+  ].join("\n");
 }
 
 type LineItem = { catalogId: string; entityId: number; price: number; label: string };
@@ -262,7 +278,7 @@ export async function syncOneRoappBooking(
       orderTypeId: creds.orderTypeId,
       clientId: contactId,
       assigneeId: creds.assigneeId,
-      managerNotes: comment,
+      managerNotes: roappOnlyEnabled() ? bookingManagerNotes(booking.id) : comment,
       malfunction: comment,
       estimatedPrice:
         booking.package_id === "photo-inquiry"

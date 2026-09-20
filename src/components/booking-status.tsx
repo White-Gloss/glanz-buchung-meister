@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBookingStatus } from "@/lib/booking-status.functions";
+import { roappCustomerStep } from "@/lib/roapp-customer-step";
 const money = (cents: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
 export function BookingStatus({ id, token }: { id: number; token?: string }) {
@@ -34,6 +35,7 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
     ) : (
       <p className="my-6 text-sm text-muted">Status wird geladen …</p>
     );
+  const nextStep = roappCustomerStep(data.status, data.fixed);
   return (
     <section
       aria-label="Auftragsstatus"
@@ -45,17 +47,19 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
           {data.fixed ? "Bestätigter Fixpreis" : "Unverbindlicher Preis laut Anfrage"}
         </span>
         <br />
-        <strong className="text-2xl">{money(data.amount)}</strong>
+        <strong className="text-2xl">
+          {!data.fixed && data.amount === 0 ? "Preis wird ermittelt" : money(data.amount)}
+        </strong>
       </p>
-      {!data.fixed && (
-        <p className="text-sm text-muted">
-          Wir prüfen Ihre Fahrzeugfotos. Den Fixpreis erhalten Sie erst nach unserer persönlichen
-          Freigabe.
+      <p className="text-sm text-muted">{nextStep.text}</p>
+      {failed && (
+        <p role="status" className="text-sm text-muted">
+          Die Aktualisierung ist gerade nicht möglich. Angezeigt wird der zuletzt geladene Stand.
         </p>
       )}
       {data.scheduledFor && (
         <p>
-          Termin:{" "}
+          {data.fixed ? "Termin laut Auftrag" : "Wunschtermin (noch unbestätigt)"}:{" "}
           {new Date(data.scheduledFor).toLocaleString("de-DE", {
             timeZone: "Europe/Berlin",
             dateStyle: "medium",
@@ -63,13 +67,13 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
           })}
         </p>
       )}
-      {data.approvalUrl && (
+      {data.approvalUrl && nextStep.linkLabel && (
         <a
           className="inline-flex min-h-11 items-center underline"
           href={data.approvalUrl}
           rel="noreferrer"
         >
-          Bestätigung ansehen und unterschreiben
+          {nextStep.linkLabel}
         </a>
       )}
       <p className="text-sm">
