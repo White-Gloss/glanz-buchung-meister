@@ -17,6 +17,7 @@ import {
 import { attachBookingPhotos, createPublicBooking } from "@/lib/bookings.functions";
 import { eur } from "@/lib/utils";
 import { bookingFormErrors } from "@/lib/public-form-validation";
+import { isCalendarDate } from "@/lib/calendar-date";
 import { queueBookingConversion } from "@/lib/googleTag";
 import { bookingRequestId } from "@/lib/booking-request-id";
 import { applyBookingSelection } from "@/lib/booking-selection";
@@ -107,7 +108,7 @@ export function Configurator({
 
   useEffect(() => {
     const controller = new AbortController();
-    const from = /^\d{4}-\d{2}-\d{2}$/.test(date)
+    const from = isCalendarDate(date)
       ? date
       : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const until = new Date(`${from}T12:00:00Z`);
@@ -146,7 +147,7 @@ export function Configurator({
     };
   }, [date]);
   const blockedSlots = useMemo(() => {
-    if (!date) return [];
+    if (!isCalendarDate(date)) return [];
     return timeSlots.filter((time) => {
       const start = berlinWallToUtc(date, time),
         end = defaultWorkEnd(packageId, start);
