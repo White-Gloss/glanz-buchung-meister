@@ -126,7 +126,7 @@ export function bookingManagerNotes(bookingId: number): string {
     "4. Der Kunde nimmt selbst über den Link an. „Akzeptiert“ nicht stellvertretend setzen.",
     "5. Bei Arbeitsbeginn „In Arbeit“, nach Abschluss „Erledigt“ wählen.",
     "6. Rechnung nach der Leistung manuell erstellen und senden: Vorlage „Rechnungsversand White Gloss“, Anhang „Rechnung“. Anschrift, Leistungszeitraum und Fälligkeit prüfen.",
-    "Terminverfügbarkeit zusätzlich prüfen: RO-Terminänderungen werden derzeit nicht in den Website-Kalender übernommen.",
+    "Termin und tatsächliche Arbeitsdauer im RO-Auftrag pflegen. Die Website übernimmt belegte Zeiträume aus offenen RO-Aufträgen automatisch; vor der Zusage den gesamten Kalender prüfen.",
   ].join("\n");
 }
 

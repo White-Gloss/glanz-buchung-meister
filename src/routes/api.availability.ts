@@ -19,14 +19,18 @@ export const Route = createFileRoute("/api/availability")({
           return Response.json({ ok: false, error: "invalid_range" }, { status: 400 });
         }
         try {
-          const { getSql } = await import("@/lib/db");
-          const { listBusyWindows } = await import("@/lib/zoho-ops");
-          const sql = await getSql();
-          const windows = await listBusyWindows(
-            sql,
-            berlinWallToUtc(from, "00:00").toISOString(),
-            berlinWallToUtc(to, "23:59").toISOString(),
-          );
+          const { roappOnlyEnabled } = await import("@/lib/booking-backend");
+          const fromIso = berlinWallToUtc(from, "00:00").toISOString();
+          const toIso = berlinWallToUtc(to, "23:59").toISOString();
+          let windows;
+          if (roappOnlyEnabled()) {
+            const { roappBusyWindows } = await import("@/lib/roapp-calendar");
+            windows = await roappBusyWindows(fromIso, toIso);
+          } else {
+            const { getSql } = await import("@/lib/db");
+            const { listBusyWindows } = await import("@/lib/zoho-ops");
+            windows = await listBusyWindows(await getSql(), fromIso, toIso);
+          }
           return Response.json({ ok: true, windows }, { headers: { "cache-control": "no-store" } });
         } catch {
           return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

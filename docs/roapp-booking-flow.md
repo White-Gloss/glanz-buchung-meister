@@ -47,6 +47,12 @@ eingerichtete RO-E-Mails beim Wechsel auf den jeweiligen Status.
 Manuell: Fotobegutachtung, Endpreis, Terminprüfung, Freigabe, Rechnungserstellung,
 Rechnungsversand und Prüfung des Zahlungseingangs.
 
-RO-Terminänderungen werden derzeit **nicht** in die Kapazitätsanzeige der Website
-übernommen. Vor einer Zusage muss die Verfügbarkeit deshalb in RO geprüft werden.
+Die Website übernimmt belegte Zeiträume offener RO-Aufträge automatisch. Der
+Server hält erfolgreiche Kalenderabfragen höchstens 30 Sekunden vor. Änderungen
+an Beginn und Ende werden beim nächsten Abruf berücksichtigt. Erledigte,
+geschlossene und abgelehnte Aufträge geben ihre Zeiträume wieder frei. Die
+separaten RO-Bereiche „Buchungen“, Mitarbeiterschichten und Abwesenheiten sind
+nicht Teil dieses Abgleichs. Vor der endgültigen Zusage den gesamten Kalender
+in RO prüfen. Bei einem RO-Ausfall meldet die Website fehlende Verfügbarkeit,
+statt einen unvollständigen Kalender als frei anzuzeigen.
 Die endgültige PDF-Druckdarstellung der Rechnung ist noch nicht visuell abgenommen.
