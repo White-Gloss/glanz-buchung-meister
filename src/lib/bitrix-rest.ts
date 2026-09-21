@@ -126,6 +126,39 @@ export async function probeBitrixRest(
   }
 }
 
+// Universal CRM methods wrap smart invoices (entityTypeId 31) in result.item.
+// A successful HTTP response alone does not prove that the intended invoice
+// or requested stage was returned. Ambiguous responses require review.
+function verifiedInvoiceItem(result: unknown, id: number, stageId?: string) {
+  const item =
+    result && typeof result === "object" && !Array.isArray(result)
+      ? (result as Record<string, unknown>).item
+      : null;
+  const invoice =
+    item && typeof item === "object" && !Array.isArray(item)
+      ? (item as Record<string, unknown>)
+      : null;
+  const returnedId = invoice?.id;
+  if (
+    !invoice ||
+    !(typeof returnedId === "number" ||
+      (typeof returnedId === "string" && /^[1-9]\d*$/.test(returnedId))) ||
+    Number(returnedId) !== id ||
+    (invoice.entityTypeId !== undefined && invoice.entityTypeId !== 31) ||
+    typeof invoice.stageId !== "string" ||
+    !invoice.stageId.trim() ||
+    (stageId !== undefined && invoice.stageId !== stageId)
+  ) {
+    throw new BitrixError(
+      "Bitrix hat den angeforderten Rechnungsstatus nicht eindeutig bestätigt. Rechnung vor Wiederholung prüfen.",
+      "bitrix_invoice_unverified",
+      0,
+      { review: true },
+    );
+  }
+  return invoice;
+}
+
 export function createBitrixRestClient(
   webhook: string,
   fetchImpl: typeof fetch = fetch,
@@ -135,6 +168,39 @@ export function createBitrixRestClient(
 
   return async <T>(method: string, path: string, body?: unknown) => {
     const payload = (body || {}) as Record<string, unknown>;
+    // Deliberately limited to existing-invoice reads and stage updates.
+    // No creation, renumbering, document replacement or payment booking here.
+    const invoiceMatch = /^\/invoices\/([1-9]\d*)$/.exec(path);
+    if (invoiceMatch && (method === "GET" || method === "PATCH")) {
+      const id = Number(invoiceMatch[1]);
+      if (!Number.isSafeInteger(id)) {
+        throw new BitrixError("Ungültige Rechnungs-ID.", "bitrix_invalid_id", 0, {
+          review: true,
+        });
+      }
+      if (method === "GET") {
+        return verifiedInvoiceItem(await call("crm.item.get", { entityTypeId: 31, id }), id) as T;
+      }
+      if (
+        !body || typeof body !== "object" || Array.isArray(body) ||
+        Object.keys(payload).some((key) => key !== "stageId") ||
+        typeof payload.stageId !== "string" || !payload.stageId.trim() ||
+        payload.stageId !== payload.stageId.trim()
+      ) {
+        throw new BitrixError(
+          "Der Rechnungsabgleich erlaubt ausschließlich einen eindeutigen Statuswechsel.",
+          "bitrix_invoice_invalid_update",
+          0,
+          { review: true },
+        );
+      }
+      const result = await call("crm.item.update", {
+        entityTypeId: 31,
+        id,
+        fields: { stageId: payload.stageId },
+      });
+      return verifiedInvoiceItem(result, id, payload.stageId) as T;
+    }
     if (method === "GET" && path.startsWith("/deals")) {
       return (await call("crm.deal.list", { start: 0, select: ["ID"] })) as T;
     }
