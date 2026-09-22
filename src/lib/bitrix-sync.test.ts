@@ -388,8 +388,9 @@ test("Bitrix calendar preserves agreed overnight interval, updates and cancels",
   const booking = {
     id: 1,
     status: "bestaetigt",
-    preferred_date: "2026-11-02",
-    preferred_slot: "09:00",
+    // Manual scheduling is sufficient; an original website wish is optional.
+    preferred_date: null,
+    preferred_slot: null,
     package_id: "basis",
     customer_name: "QA",
     phone: "123456",
@@ -409,6 +410,81 @@ test("Bitrix calendar preserves agreed overnight interval, updates and cancels",
     calls.map((c) => c.method),
     ["DELETE"],
   );
+});
+
+test("Bitrix never reserves an estimated package duration in place of manual scheduling", async () => {
+  let calls = 0;
+  const request = async <T>(): Promise<T> => {
+    calls++;
+    return { id: 77 } as T;
+  };
+  const booking = {
+    status: "bestaetigt",
+    preferred_date: "2026-11-02",
+    preferred_slot: "09:00",
+    package_id: "premium",
+  } as any;
+  await assert.rejects(ensureCalendar(request, booking, 8, null), /manuell festgelegt/);
+  await assert.rejects(
+    ensureCalendar(request, { ...booking, work_start_at: "2026-11-02T08:00:00Z" }, 8, null),
+    /manuell festgelegt/,
+  );
+  await assert.rejects(
+    ensureCalendar(
+      request,
+      { ...booking, work_start_at: "invalid", work_end_at: "2026-11-03T08:00:00Z" },
+      8,
+      null,
+    ),
+    /Ungültiger Arbeitszeitraum/,
+  );
+  assert.equal(calls, 0);
+});
+
+test("Bitrix exposes agreed price, pending consent and actual cash data consistently over REST", () => {
+  const booking = {
+    id: 17,
+    version: 4,
+    status: "neu",
+    ops_stage: "kundenrueckmeldung",
+    package_id: "premium",
+    class_id: "kompakt",
+    extra_ids: "[]",
+    total_cents: 34900,
+    agreed_price_cents: 54321,
+    work_start_at: "2026-11-02T08:00:00Z",
+    work_end_at: "2026-11-03T14:00:00Z",
+    resource_id: 2,
+  } as any;
+  const body = bookingDealBody(booking, 9);
+  const fields = toRestDealFields(body);
+  assert.equal(body.stageId, "PREPAYMENT_INVOICE");
+  assert.equal(body.amount, 543.21);
+  assert.equal(fields.OPPORTUNITY, fields.UF_CRM_WG_AGREED_PRICE);
+  assert.equal(fields.UF_CRM_WG_BOOKING_REF, "WG-17");
+  assert.equal(fields.UF_CRM_WG_BOOKING_VERSION, 4);
+  assert.equal(fields.UF_CRM_WG_RESOURCE_ID, 2);
+  assert.equal(fields.UF_CRM_WG_DURATION_MINUTES, 1800);
+  assert.equal(fields.UF_CRM_WG_WORK_END, "2026-11-03T14:00:00.000Z");
+  assert.equal(fields.UF_CRM_WG_ACCEPTED_AT, null);
+  assert.equal(fields.UF_CRM_WG_CASH_AMOUNT, null);
+  const paid = toRestDealFields(
+    bookingDealBody(
+      {
+        ...booking,
+        status: "erledigt",
+        payment_method: "bar",
+        payment_recorded_cents: 20000,
+        payment_recorded_on: "2026-11-03",
+      },
+      9,
+    ),
+  );
+  assert.equal(paid.UF_CRM_WG_CASH_AMOUNT, 200);
+  assert.equal(paid.UF_CRM_WG_PAYMENT_DATE, "2026-11-03");
+  assert.equal(paid.STAGE_ID, "FINAL_INVOICE");
+  assert.equal(stageForStatus("storniert", "bestaetigt"), "APOLOGY");
+  assert.equal(stageForStatus("neu", "in_pruefung"), "PREPARATION");
 });
 
 test("agreed prices and Bitrix product rows have identical totals", () => {

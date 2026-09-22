@@ -554,7 +554,11 @@ export function Configurator({
             className={inputLine}
             min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setSlot("");
+              setAvailability("loading");
+            }}
           />
           {fieldError("date")}
           {date && blockedSlots.length > 0 ? (
@@ -573,7 +577,7 @@ export function Configurator({
         ) : null}
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
-            disabled={pending || savedReference !== null}
+            disabled={pending || savedReference !== null || availabilityState !== "ready"}
             id="slot"
             className={inputLine}
             value={slot}
@@ -591,6 +595,11 @@ export function Configurator({
               );
             })}
           </select>
+          <p className="text-xs text-muted">
+            {availabilityState === "loading"
+              ? "Freie Zeiträume werden geprüft …"
+              : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+          </p>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">
           <textarea

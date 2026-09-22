@@ -1,5 +1,5 @@
 import { ensureBitrixWorkshopSchema } from "./bitrix-workshop-schema.ts";
-import { berlinWallToUtc, formatBerlinRange } from "./zoho-time.ts";
+import { formatBerlinRange } from "./zoho-time.ts";
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
@@ -25,6 +25,17 @@ const UF = {
   appointment: "ufCrmWgAppointment",
   prefDates: "ufCrmWgPrefDates",
   class: "ufCrmWgClass",
+  bookingRef: "ufCrmWgBookingRef",
+  bookingVersion: "ufCrmWgBookingVersion",
+  workEnd: "ufCrmWgWorkEnd",
+  durationMinutes: "ufCrmWgDurationMinutes",
+  resourceId: "ufCrmWgResourceId",
+  agreedPrice: "ufCrmWgAgreedPrice",
+  serviceLines: "ufCrmWgServiceLines",
+  acceptedAt: "ufCrmWgAcceptedAt",
+  paymentMethod: "ufCrmWgPaymentMethod",
+  cashAmount: "ufCrmWgCashAmount",
+  paymentDate: "ufCrmWgPaymentDate",
 } as const;
 
 const STAGE = {
@@ -32,6 +43,9 @@ const STAGE = {
   bestaetigt: "EXECUTING",
   erledigt: "FINAL_INVOICE",
   abgelehnt: "LOSE",
+  storniert: "APOLOGY",
+  inPruefung: "PREPARATION",
+  kundenrueckmeldung: "PREPAYMENT_INVOICE",
 } as const;
 
 export type BitrixBooking = WorkflowBooking & {
@@ -50,6 +64,11 @@ export type BitrixBooking = WorkflowBooking & {
   ops_stage?: string;
   invoice_status?: string;
   payment_status?: string;
+  resource_id?: number;
+  customer_accepted_at?: string | Date | null;
+  payment_method?: string | null;
+  payment_recorded_cents?: number | null;
+  payment_recorded_on?: string | null;
 };
 
 type QueueProgress = {
@@ -131,12 +150,15 @@ export function bookingVehicle(booking: BitrixBooking): string {
     .join(" ");
 }
 
-export function stageForStatus(status: WorkflowBooking["status"]): string {
+export function stageForStatus(status: WorkflowBooking["status"], opsStage?: string): string {
   if (status === "bestaetigt") return STAGE.bestaetigt;
   if (status === "erledigt") return STAGE.erledigt;
-  if (status === "abgelehnt" || status === "storniert" || status === "nicht_erschienen") {
+  if (status === "storniert") return STAGE.storniert;
+  if (status === "abgelehnt" || status === "nicht_erschienen") {
     return STAGE.abgelehnt;
   }
+  if (opsStage === "kundenrueckmeldung") return STAGE.kundenrueckmeldung;
+  if (opsStage === "in_pruefung") return STAGE.inPruefung;
   return STAGE.neu;
 }
 
@@ -214,14 +236,17 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
   const wish = [booking.preferred_date, booking.preferred_slot].filter(Boolean).join(" ");
   const pickupKm = city?.km;
   const pickup = pickupKm == null ? null : pickupFee(pickupKm, booking.package_id as PackageId);
+  const start = booking.work_start_at ? new Date(booking.work_start_at) : null;
+  const end = booking.work_end_at ? new Date(booking.work_end_at) : null;
+  const hasInterval = start && end && Number.isFinite(start.getTime()) && end > start;
   return {
     title: `WG-${booking.id} · ${vehicle} · ${pack?.name || booking.package_id}`,
     contactId,
-    stageId: stageForStatus(booking.status),
+    stageId: stageForStatus(booking.status, booking.ops_stage),
     typeId: "SERVICES",
     sourceId: "WEB",
     currency: "EUR",
-    amount: booking.total_cents / 100,
+    amount: (booking.agreed_price_cents ?? booking.total_cents) / 100,
     isManualOpportunity: true,
     opened: booking.status === "neu" || booking.status === "bestaetigt",
     comments: [
@@ -253,6 +278,26 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
     [UF.city]: city?.name || booking.city_slug || "",
     [UF.class]: klass?.label || booking.class_id,
     [UF.prefDates]: wish,
+    [UF.bookingRef]: `WG-${booking.id}`,
+    [UF.bookingVersion]: booking.version,
+    [UF.appointment]: hasInterval ? start.toISOString() : null,
+    [UF.workEnd]: hasInterval ? end.toISOString() : null,
+    [UF.durationMinutes]: hasInterval
+      ? Math.round((end.getTime() - start.getTime()) / 60_000)
+      : null,
+    [UF.resourceId]: booking.resource_id ?? null,
+    [UF.agreedPrice]: booking.agreed_price_cents == null ? null : booking.agreed_price_cents / 100,
+    [UF.serviceLines]: [pack?.name || booking.package_id, ...extraNames].join("\n"),
+    // Never infer consent, payment or service completion from a calendar timestamp.
+    [UF.acceptedAt]: booking.customer_accepted_at
+      ? new Date(booking.customer_accepted_at).toISOString()
+      : null,
+    [UF.paymentMethod]: booking.payment_method ?? "",
+    [UF.cashAmount]:
+      booking.payment_method === "bar" && booking.payment_recorded_cents != null
+        ? booking.payment_recorded_cents / 100
+        : null,
+    [UF.paymentDate]: booking.payment_recorded_on ?? null,
   };
 }
 
@@ -383,12 +428,6 @@ async function loadReadyPhotos(sql: Sql, bookingId: number): Promise<PhotoInput[
   return photos;
 }
 
-function durationHours(packageId: string) {
-  if (packageId === "keramik") return 16;
-  if (packageId === "premium") return 6;
-  return 3;
-}
-
 export async function ensureCalendar(
   request: BitrixCall,
   booking: BitrixBooking,
@@ -409,17 +448,16 @@ export async function ensureCalendar(
     return null;
   }
   if (booking.status !== "bestaetigt" && booking.status !== "erledigt") return existingEventId;
-  const date = (booking.preferred_date || "").trim();
-  const slot = (booking.preferred_slot || "").trim();
-  if (!date || !slot) return existingEventId;
-  const start = booking.work_start_at
-    ? new Date(booking.work_start_at)
-    : berlinWallToUtc(date, slot);
-  if (Number.isNaN(start.getTime())) return existingEventId;
-  const end = booking.work_end_at
-    ? new Date(booking.work_end_at)
-    : new Date(start.getTime() + durationHours(booking.package_id) * 3600 * 1000);
-  if (!Number.isFinite(end.getTime()) || end <= start)
+  if (!booking.work_start_at || !booking.work_end_at)
+    throw new BitrixError(
+      "Start und Ende der Arbeit müssen vor der Kalenderübertragung manuell festgelegt werden.",
+      "bitrix_schedule_required",
+      0,
+      { review: true },
+    );
+  const start = new Date(booking.work_start_at);
+  const end = new Date(booking.work_end_at);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start)
     throw new BitrixError("Ungültiger Arbeitszeitraum.", "bitrix_invalid_interval", 0, {
       review: true,
     });
@@ -447,6 +485,8 @@ export async function ensureCalendar(
   );
   await request("PATCH", `/deals/${dealId}`, {
     [UF.appointment]: start.toISOString(),
+    [UF.workEnd]: end.toISOString(),
+    [UF.durationMinutes]: Math.round((end.getTime() - start.getTime()) / 60_000),
     closedAt: end.toISOString(),
     begindate: start.toISOString(),
   });
@@ -555,13 +595,22 @@ export async function syncOneBitrixBooking(
     if (photosDone) await saveProgress(sql, booking.id, { photos_done: true });
   }
 
-  if (
-    !progress.bitrix_event_id &&
-    ["bestaetigt", "erledigt"].includes(booking.status) &&
-    booking.preferred_date &&
-    booking.preferred_slot
-  )
+  if (!progress.bitrix_event_id && ["bestaetigt", "erledigt"].includes(booking.status)) {
+    if (!booking.work_start_at || !booking.work_end_at)
+      throw new BitrixError(
+        "Start und Ende der Arbeit müssen vor der Kalenderübertragung manuell festgelegt werden.",
+        "bitrix_schedule_required",
+        0,
+        { review: true },
+      );
+    const start = new Date(booking.work_start_at);
+    const end = new Date(booking.work_end_at);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start)
+      throw new BitrixError("Ungültiger Arbeitszeitraum.", "bitrix_invalid_interval", 0, {
+        review: true,
+      });
     await markWrite("calendar");
+  }
   const eventId = await ensureCalendar(request, booking, dealId, progress.bitrix_event_id);
   if (eventId && eventId !== progress.bitrix_event_id) {
     await saveProgress(sql, booking.id, { bitrix_event_id: eventId });
