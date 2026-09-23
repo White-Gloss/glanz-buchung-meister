@@ -554,11 +554,7 @@ export function Configurator({
             className={inputLine}
             min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
             value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              setSlot("");
-              setAvailability("loading");
-            }}
+            onChange={(e) => setDate(e.target.value)}
           />
           {fieldError("date")}
           {date && blockedSlots.length > 0 ? (
