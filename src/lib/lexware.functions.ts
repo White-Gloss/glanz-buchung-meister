@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
@@ -77,7 +77,7 @@ export const lexwareSyncOverview = createServerFn({ method: "GET" })
   });
 
 export const saveLexwareApiKey = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ apiKey: z.string().trim().min(20).max(512) }).parse(input),
   )
@@ -97,7 +97,7 @@ export const saveLexwareApiKey = createServerFn({ method: "POST" })
   });
 
 export const setLexwareSyncEnabled = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
@@ -112,7 +112,7 @@ export const setLexwareSyncEnabled = createServerFn({ method: "POST" })
   });
 
 export const retryLexwareSync = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
@@ -126,7 +126,7 @@ export const retryLexwareSync = createServerFn({ method: "POST" })
   });
 
 export const setLexwareAutomaticInvoices = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ enabled: z.boolean(), understood: z.literal(true) }).parse(input),
   )
@@ -146,7 +146,7 @@ export const setLexwareAutomaticInvoices = createServerFn({ method: "POST" })
   });
 
 export const saveLexwareBillingData = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -188,7 +188,7 @@ export const saveLexwareBillingData = createServerFn({ method: "POST" })
 
 /** Read the actual voucher; never infer invoice status from queue success. */
 export const refreshLexwareInvoice = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     assertSameSiteRequest();

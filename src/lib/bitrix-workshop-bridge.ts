@@ -207,8 +207,11 @@ export async function applyBridgeAction(sql: Sql, data: Input) {
     if (data.version !== booking.version)
       throw new Error("Der Auftrag wurde inzwischen geändert. Bitte neu laden.");
     if (["confirm", "complete"].includes(data.action)) checkRows(data);
-    if (!isEmailAddress(booking.email))
-      throw new Error("Bitte eine gültige Kunden-E-Mail hinterlegen.");
+    // Rejecting or cancelling sends no document, so phone-only photo inquiries can be closed.
+    if (data.action !== "cancel" && !isEmailAddress(booking.email))
+      throw new Error(
+        "Für diesen Vorgang ist keine Kunden-E-Mail gespeichert. Anfrage ablehnen und den Kunden um eine Buchung über das Website-Formular bitten.",
+      );
     await tx`update bookings set bitrix_workshop_managed=true,bitrix_deal_id=${data.dealId} where id=${booking.id} and shop_id='white-gloss'`;
     if (data.rows)
       await tx`update bookings set bitrix_final_rows=${JSON.stringify(data.rows)}::jsonb where id=${booking.id} and shop_id='white-gloss'`;

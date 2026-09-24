@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { type BookingStatus } from "@/data/site";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
-import { roappOnlyEnabled } from "@/lib/booking-backend";
+import { bitrixOnlyEnabled, roappOnlyEnabled } from "@/lib/booking-backend";
 import {
   saveBookingRequest,
   saveManualBookingRequest,
@@ -107,7 +107,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   });
 
 export const createManualBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => manualBookingSchema.parse(input))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
@@ -145,7 +145,7 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     rejectHoneypot(data.website);
     const sql = await getSql();
     if (data.files.length) validateUploadBatch(data.files);
-    if (roappOnlyEnabled()) {
+    if (roappOnlyEnabled() || bitrixOnlyEnabled()) {
       const key = createHash("sha256").update(`photo:${data.requestId}`).digest("hex");
       const fingerprint = createHash("sha256")
         .update(
@@ -180,8 +180,13 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       setBookingUploadCookie(row.id, capability);
       // No remote processing until the selected files have been durably uploaded.
       if (data.files.length) await saveBookingPhotos(sql, row.id, data.files);
-      const { queueRoappBooking } = await import("@/lib/roapp-sync");
-      await queueRoappBooking(sql, row);
+      if (bitrixOnlyEnabled()) {
+        const { queueBitrixBooking } = await import("@/lib/bitrix-sync");
+        await queueBitrixBooking(sql, row);
+      } else {
+        const { queueRoappBooking } = await import("@/lib/roapp-sync");
+        await queueRoappBooking(sql, row);
+      }
       kickBookingDelivery(sql);
       return { ok: true as const };
     }
@@ -264,11 +269,16 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     const [row] = await sql<{ id: number; version: number }>`
       select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
     if (row) {
-      const { queueRoappBooking } = await import("@/lib/roapp-sync");
-      await queueRoappBooking(sql, row);
+      if (!bitrixOnlyEnabled()) {
+        const { queueRoappBooking } = await import("@/lib/roapp-sync");
+        await queueRoappBooking(sql, row);
+      }
       if (!roappOnlyEnabled()) {
         const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
-        await queueBitrixPhotos(sql, row).catch(() => undefined);
+        const queued = queueBitrixPhotos(sql, row);
+        // As the sole backend Bitrix must not lose new photos silently.
+        if (bitrixOnlyEnabled()) await queued;
+        else await queued.catch(() => undefined);
       }
       kickBookingDelivery(sql);
     }
@@ -332,7 +342,7 @@ export const getBookingPermissions = createServerFn({ method: "GET" })
   }));
 
 export const confirmBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => bookingMutation.parse(input))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
@@ -345,7 +355,7 @@ export const confirmBooking = createServerFn({ method: "POST" })
   });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     bookingMutation
       .extend({
@@ -368,7 +378,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   });
 
 export const updateBookingDetails = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     publicBookingSchema
       .pick({

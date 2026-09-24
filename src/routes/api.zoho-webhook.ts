@@ -4,8 +4,8 @@ export const Route = createFileRoute("/api/zoho-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { roappOnlyEnabled } = await import("@/lib/booking-backend");
-        if (roappOnlyEnabled()) return new Response(null, { status: 410 });
+        const { bitrixOnlyEnabled, roappOnlyEnabled } = await import("@/lib/booking-backend");
+        if (roappOnlyEnabled() || bitrixOnlyEnabled()) return new Response(null, { status: 410 });
         const { zohoWebhookAuthorized, handleZohoInbound, resolveZohoWebhookSecret } =
           await import("@/lib/zoho-inbound");
         const url = new URL(request.url);

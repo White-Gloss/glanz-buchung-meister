@@ -291,6 +291,34 @@ test("website booking queues Bitrix without numbered 0015/0016 already applied",
   }
 });
 
+test("Bitrix-only operation queues Bitrix exclusively for new and confirmed bookings", async () => {
+  const { pg, sql } = await database();
+  process.env.BOOKING_OPERATIONS = "bitrix";
+  try {
+    const rows = async (table: string, id: number) => {
+      const [exists] = await sql<{ name: string | null }>`select to_regclass(${table})::text as name`;
+      if (!exists?.name) return 0;
+      return (await sql.query(`select 1 from ${table} where booking_id=$1`, [id])).length;
+    };
+    const created = await create(sql);
+    await confirmBookingManually(sql, created.id, 1, "owner");
+    assert.equal(await rows("bitrix_sync_queue", created.id), 1);
+    for (const table of [
+      "zoho_job_queue",
+      "zoho_sync_queue",
+      "roapp_sync_queue",
+      "odoo_sync_queue",
+      "lexware_sync_queue",
+    ])
+      assert.equal(await rows(table, created.id), 0, table);
+    // Customer notifications stay in the durable website queue.
+    assert.ok((await rows("outbound_queue", created.id)) >= 1);
+  } finally {
+    delete process.env.BOOKING_OPERATIONS;
+    await pg.close();
+  }
+});
+
 test("migration preserves historical confirmations and refuses conflicting legacy data atomically", async () => {
   for (const collision of [false, true]) {
     const pg = new PGlite();

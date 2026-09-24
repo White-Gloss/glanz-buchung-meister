@@ -225,8 +225,14 @@ export function bookingLineItems(booking: BitrixBooking, productMap: Record<stri
   return items;
 }
 
-export function bookingDealBody(booking: BitrixBooking, contactId: number) {
+function packageLabel(booking: BitrixBooking) {
   const pack = packages.find((p) => p.id === booking.package_id);
+  if (pack) return pack.name;
+  return booking.package_id === "photo-inquiry" ? "Individuelle Fotoanfrage" : booking.package_id;
+}
+
+export function bookingDealBody(booking: BitrixBooking, contactId: number) {
+  const packName = packageLabel(booking);
   const klass = vehicleClasses.find((v) => v.id === booking.class_id);
   const city = cities.find((c) => c.slug === booking.city_slug);
   const extraNames = parseExtraIds(booking.extra_ids).map(
@@ -240,7 +246,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
   const end = booking.work_end_at ? new Date(booking.work_end_at) : null;
   const hasInterval = start && end && Number.isFinite(start.getTime()) && end > start;
   return {
-    title: `WG-${booking.id} · ${vehicle} · ${pack?.name || booking.package_id}`,
+    title: `WG-${booking.id} · ${vehicle} · ${packName}`,
     contactId,
     stageId: stageForStatus(booking.status, booking.ops_stage),
     typeId: "SERVICES",
@@ -254,7 +260,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
       `Vorgang WG-${booking.id}`,
       `Fahrzeug: ${vehicle}`,
       `Klasse: ${klass?.label || booking.class_id}`,
-      `Paket: ${pack?.name || booking.package_id}`,
+      `Paket: ${packName}`,
       extraNames.length ? `Zusatz: ${extraNames.join(", ")}` : null,
       city ? `Ort: ${city.name}` : booking.city_slug ? `Ort: ${booking.city_slug}` : null,
       pickup === null ? "Abholung auf Anfrage – nicht im Richtpreis." : null,
@@ -273,7 +279,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
       .filter(Boolean)
       .join("\n"),
     [UF.vehicle]: vehicle,
-    [UF.package]: pack?.name || booking.package_id,
+    [UF.package]: packName,
     [UF.extras]: extraNames.join(", "),
     [UF.city]: city?.name || booking.city_slug || "",
     [UF.class]: klass?.label || booking.class_id,
@@ -287,7 +293,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
       : null,
     [UF.resourceId]: booking.resource_id ?? null,
     [UF.agreedPrice]: booking.agreed_price_cents == null ? null : booking.agreed_price_cents / 100,
-    [UF.serviceLines]: [pack?.name || booking.package_id, ...extraNames].join("\n"),
+    [UF.serviceLines]: [packName, ...extraNames].join("\n"),
     // Never infer consent, payment or service completion from a calendar timestamp.
     [UF.acceptedAt]: booking.customer_accepted_at
       ? new Date(booking.customer_accepted_at).toISOString()

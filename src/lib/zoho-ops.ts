@@ -10,8 +10,14 @@ import { queueRoappBooking } from "./roapp-sync.ts";
 import { queueLexwareBooking } from "./lexware-sync.ts";
 import { packages, extras as extraCatalog, vehicleClasses } from "../data/site.ts";
 import { assertBitrixCalendarAvailable, bitrixBusyWindows } from "./bitrix-calendar.ts";
+import { bitrixOnlyEnabled } from "./booking-backend.ts";
 
 const SHOP = "white-gloss";
+
+/** Bitrix24 leads this booking: no Zoho, RO, Odoo or Lexware follow-up jobs. */
+function bitrixLed(booking: { bitrix_workshop_managed?: boolean | null }) {
+  return Boolean(booking.bitrix_workshop_managed) || bitrixOnlyEnabled();
+}
 
 export { zohoOpsEnabledFromSettings as zohoOpsEnabled };
 
@@ -255,7 +261,7 @@ async function recordEvent(
   `;
   await queueBookingEvent(tx, row, name, saved.id, actor);
   await queueBitrixBooking(tx, row);
-  if (row.bitrix_workshop_managed) return;
+  if (bitrixLed(row)) return;
   await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`, {
     version: row.version,
   });
@@ -407,14 +413,14 @@ export async function confirmBookingWithSchedule(
         returning *
       `;
       await recordEvent(tx, booking, before, "booking.confirmed", actor);
-      if (!booking.bitrix_workshop_managed)
+      if (!bitrixLed(booking))
         await enqueueZohoJob(
           tx,
           booking.id,
           "calendar",
           `calendar:${booking.id}:${booking.version}`,
         );
-      if (!booking.bitrix_workshop_managed)
+      if (!bitrixLed(booking))
         await enqueueZohoJob(
           tx,
           booking.id,
@@ -469,7 +475,7 @@ export async function rejectOrCancelBooking(
       status === "abgelehnt" ? "booking.rejected" : "booking.cancelled",
       actor,
     );
-    if (!booking.bitrix_workshop_managed)
+    if (!bitrixLed(booking))
       await enqueueZohoJob(
         tx,
         booking.id,
@@ -535,7 +541,7 @@ export async function completeServiceWithPayment(
       returning *
     `;
     await recordEvent(tx, booking, before, "booking.completed", actor);
-    if (!booking.bitrix_workshop_managed)
+    if (!bitrixLed(booking))
       await enqueueZohoJob(tx, booking.id, "invoice", `invoice:${booking.id}`, {
         payment: input.payment,
         cashCents: input.cashCents ?? null,
