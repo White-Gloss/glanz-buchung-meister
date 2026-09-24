@@ -204,7 +204,7 @@ export const listCustomers = createServerFn({ method: "GET" })
   });
 
 export const updateCustomerNotes = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ id: z.number().int().positive(), notes: z.string().max(4000) }).parse(input),
   )
@@ -629,7 +629,7 @@ export const getOperatorSettings = createServerFn({ method: "GET" })
   });
 
 export const setOperatorPin = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ pin: z.string().trim().min(6).max(40) }).parse(input))
   .handler(async ({ data }) => {
     if (data.pin === DEFAULT_OPERATOR_PIN) {
@@ -646,7 +646,7 @@ export const setOperatorPin = createServerFn({ method: "POST" })
   });
 
 export const inboundOperatorMessage = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
