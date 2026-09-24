@@ -61,4 +61,13 @@ test("apply is blocked unless production is roapp with a working Bitrix key", ()
     "vibe_api_key_missing_in_environment_file",
   ]);
   assert.deepEqual(blockersFor({ ...ready, bitrixProbe: { ok: false } }), ["bitrix_probe_failed"]);
+  assert.deepEqual(blockersFor({ ...ready, vibeKey: { present: true, kind: "rest_webhook" } }), [
+    "vibecode_key_required",
+  ]);
+  assert.deepEqual(blockersFor({ ...ready, database: { roQueueUnfinished: 2 } }), [
+    "roapp_queue_unfinished",
+  ]);
+  assert.deepEqual(blockersFor({ ...ready, database: { error: "ECONNREFUSED" } }), [
+    "database_unreachable",
+  ]);
 });

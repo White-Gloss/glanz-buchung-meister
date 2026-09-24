@@ -4,11 +4,13 @@
 //   node cutover-bitrix-production.mjs --list-open        open RO orders, read-only
 //   node cutover-bitrix-production.mjs                    dry run, read-only
 //   node cutover-bitrix-production.mjs --apply --open-ro=<n>
-// --apply stops the services, writes a verified database backup plus a copy of the
-// environment file, sets BOOKING_OPERATIONS=bitrix and starts the services again.
+// --apply stops the services, rechecks the confirmed count, the RO queue and the
+// unchanged environment file, writes a verified database backup plus a copy of the
+// environment file, sets BOOKING_OPERATIONS=bitrix, starts the services and reports
+// success only after the local healthcheck; otherwise the old file is restored.
 // No database rows are changed. Output never contains secret values.
 import { createRequire } from "node:module";
-import { readFile, writeFile, rename, copyFile, chmod } from "node:fs/promises";
+import { readFile, writeFile, rename, chmod } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,8 +102,13 @@ export function blockersFor(report) {
   else if (report.mode !== "roapp") blockers.push("unexpected_current_mode");
   if (!report.databaseUrl) blockers.push("database_url_missing");
   if (!report.vibeKey.present) blockers.push("vibe_api_key_missing_in_environment_file");
-  if (report.vibeKey.present && !report.bitrixProbe?.ok) blockers.push("bitrix_probe_failed");
+  // Bitrix-only availability and the shared calendar need the personal VibeCode key;
+  // a REST webhook can list deals but is rejected by the calendar reader.
+  else if (report.vibeKey.kind === "rest_webhook") blockers.push("vibecode_key_required");
+  else if (!report.bitrixProbe?.ok) blockers.push("bitrix_probe_failed");
   if (report.database?.error) blockers.push("database_unreachable");
+  // The Bitrix-only cron never drains RO rows again; they must be settled first.
+  if (report.database?.roQueueUnfinished > 0) blockers.push("roapp_queue_unfinished");
   return blockers;
 }
 
@@ -125,7 +132,7 @@ async function openOrders(db) {
   ).rows;
 }
 
-async function inspect(env, db) {
+async function inspect(env, db, connectError) {
   const report = {
     root: process.getuid?.() === 0,
     mode: env.BOOKING_OPERATIONS || null,
@@ -135,6 +142,7 @@ async function inspect(env, db) {
   if (report.vibeKey.present)
     report.bitrixProbe = await probeBitrix(env.VIBE_API_KEY, env.VIBE_API_BASE);
   try {
+    if (!db) throw Object.assign(new Error("connect_failed"), { code: connectError });
     const settings = (
       await db
         .query(
@@ -171,71 +179,115 @@ async function inspect(env, db) {
   return report;
 }
 
-async function main(args) {
-  const envText = await readFile(ENV_FILE, "utf8");
-  const env = parseEnvironment(envText);
+async function connect(env) {
   const { Pool } = loadPg();
   const pool = new Pool({ connectionString: env.DATABASE_URL, max: 1 });
-  const db = await pool.connect();
-  let stopped = false;
   try {
-    if (args.includes("--list-open")) {
-      console.log(JSON.stringify({ openRoOrders: await openOrders(db) }, null, 2));
-      return;
-    }
-    const report = await inspect(env, db);
-    if (!args.includes("--apply")) {
-      console.log(JSON.stringify({ dryRun: true, ...report }, null, 2));
-      return;
-    }
-    const confirmed = Number(args.find((arg) => arg.startsWith("--open-ro="))?.slice(10));
-    if (report.blockers.length) throw new Error(`blocked:${report.blockers.join(",")}`);
-    if (confirmed !== report.database.openBookings) throw new Error("open_ro_count_not_confirmed");
-    const { backupProduction } = await import(new URL("./backup-production.mjs", import.meta.url));
-    const stamp = new Date()
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}/, "");
-    const dir = `/var/backups/white-gloss/${stamp}`;
-    db.release();
-    await pool.end();
-    stopped = true;
+    return { pool, db: await pool.connect() };
+  } catch (error) {
+    await pool.end().catch(() => {});
+    return { error: error.code || "connect_failed" };
+  }
+}
+
+async function inspectFresh(env) {
+  const { pool, db, error } = await connect(env);
+  try {
+    return await inspect(env, db, error);
+  } finally {
+    db?.release();
+    await pool?.end();
+  }
+}
+
+const SERVICES = ["white-gloss.service", "white-gloss-reminder.timer"];
+
+async function startAndCheck(healthUrl) {
+  execFileSync("systemctl", ["start", ...SERVICES]);
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const ok = await fetch(healthUrl, { signal: AbortSignal.timeout(3_000) })
+      .then((response) => response.ok)
+      .catch(() => false);
+    if (ok) return true;
+    await new Promise((done) => setTimeout(done, 1_000));
+  }
+  return false;
+}
+
+async function apply(args, envText, env) {
+  const confirmed = Number(args.find((arg) => arg.startsWith("--open-ro="))?.slice(10));
+  const before = await inspectFresh(env);
+  if (before.blockers.length) throw new Error(`blocked:${before.blockers.join(",")}`);
+  if (confirmed !== before.database.openBookings) throw new Error("open_ro_count_not_confirmed");
+  const { backupProduction } = await import(new URL("./backup-production.mjs", import.meta.url));
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+  const dir = `/var/backups/white-gloss/${stamp}`;
+  const healthUrl = env.CUTOVER_HEALTHCHECK_URL || "http://127.0.0.1:3000/";
+  let switched = false;
+  try {
     execFileSync("systemctl", [
       "stop",
       "white-gloss-reminder.timer",
       "white-gloss-reminder.service",
       "white-gloss.service",
     ]);
+    // Writers are stopped: recheck counts and the environment file on a stable state.
+    const stable = await inspectFresh(env);
+    if (stable.blockers.length) throw new Error(`blocked:${stable.blockers.join(",")}`);
+    if (confirmed !== stable.database.openBookings) throw new Error("open_ro_count_changed");
+    if ((await readFile(ENV_FILE, "utf8")) !== envText) throw new Error("environment_changed");
     const backup = await backupProduction(`${dir}/database.dump`, { env });
     if (!backup.ok || !backup.archiveListValid) throw new Error("backup_not_verified");
-    await copyFile(ENV_FILE, `${dir}/environment`);
+    await writeFile(`${dir}/environment`, envText, { mode: 0o600, flag: "wx" });
     await chmod(`${dir}/environment`, 0o600);
     await writeFile(`${ENV_FILE}.bitrix`, withBookingOperations(envText, "bitrix"), {
       mode: 0o600,
     });
     await rename(`${ENV_FILE}.bitrix`, ENV_FILE);
-    console.log(
-      JSON.stringify(
-        {
-          mode: "bitrix",
-          backup: dir,
-          backupBytes: backup.bytes,
-          backupSha256: backup.sha256,
-          rollback: `install -m 600 ${dir}/environment ${ENV_FILE} && systemctl restart white-gloss.service white-gloss-reminder.timer`,
-        },
-        null,
-        2,
-      ),
-    );
+    switched = true;
+    if (!(await startAndCheck(healthUrl))) {
+      await writeFile(`${ENV_FILE}.roapp`, envText, { mode: 0o600 });
+      await rename(`${ENV_FILE}.roapp`, ENV_FILE);
+      execFileSync("systemctl", ["restart", ...SERVICES]);
+      throw new Error("healthcheck_failed_environment_restored");
+    }
+    return {
+      mode: "bitrix",
+      healthcheck: "ok",
+      backup: dir,
+      backupBytes: backup.bytes,
+      backupSha256: backup.sha256,
+      rollback: `install -m 600 ${dir}/environment ${ENV_FILE} && systemctl restart ${SERVICES.join(" ")}`,
+    };
+  } finally {
+    if (!switched) execFileSync("systemctl", ["start", ...SERVICES]);
+  }
+}
+
+async function main(args) {
+  try {
+    const envText = await readFile(ENV_FILE, "utf8");
+    const env = parseEnvironment(envText);
+    if (args.includes("--list-open")) {
+      const { pool, db, error } = await connect(env);
+      if (!db) throw new Error(`database_unreachable:${error}`);
+      try {
+        console.log(JSON.stringify({ openRoOrders: await openOrders(db) }, null, 2));
+      } finally {
+        db.release();
+        await pool.end();
+      }
+    } else if (args.includes("--apply")) {
+      console.log(JSON.stringify(await apply(args, envText, env), null, 2));
+    } else {
+      console.log(JSON.stringify({ dryRun: true, ...(await inspectFresh(env)) }, null, 2));
+    }
   } catch (error) {
     console.error("cutover_failed", { code: error.code || error.message });
     process.exitCode = 1;
-  } finally {
-    if (!stopped) {
-      db.release();
-      await pool.end();
-    } else
-      execFileSync("systemctl", ["start", "white-gloss.service", "white-gloss-reminder.timer"]);
   }
 }
 
