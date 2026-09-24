@@ -122,9 +122,11 @@ In dieser Betriebsart gilt:
 - Keine Aufträge mehr für Zoho, RO, Odoo oder Lexware, auch nicht bei Freigabe, Storno oder Abschluss (`bitrixLed` in `zoho-ops.ts`). Übrig gebliebene RO-/Zoho-Warteschlangeneinträge aus früheren Betriebsarten werden weder beim Sofortversand noch im minütlichen Job weiterverarbeitet.
 - Der minütliche Job führt nur Kundenbenachrichtigungen, Terminerinnerungen und den Bitrix-Abgleich aus.
 - `/api/ro-callback`, `/api/hub` und `/api/zoho-webhook` antworten mit 410, damit kein zweites System Buchungen ändert. `/api/bitrix-workshop` (signierter Rückkanal der Bitrix-App) bleibt aktiv. `/api/ro-photo` bleibt lesend für vorhandene RO-Fotolinks erreichbar.
-- Freigabe, Bestätigungs-PDF, Abschluss und Rechnung laufen ausschließlich über die Bitrix-Werkstatt-App. Eine Bestätigung über das alte Website-Adminpanel erzeugt in dieser Betriebsart keine Bestätigungs-PDF. Der Adminbereich dient nur noch Einstellungen (Schlüssel, Kalenderfreigabe).
+- Freigabe, Bestätigungs-PDF, Abschluss und Rechnung laufen ausschließlich über die Bitrix-Werkstatt-App. Schreibaktionen der Altsysteme im Adminbereich (Website-Leitstand, Zoho inkl. manuellem Sync, Lexware, Odoo, RO, ERPNext, Hub-Token, Dokumente/Qonto, Agentenbefehle) werden serverseitig abgewiesen (`legacyOperatorMiddleware`). Bitrix-Einstellungen, Website-Inhalte und Lesezugriffe bleiben nutzbar.
+- Fotoanfragen enthalten nur eine Telefonnummer. In der Bitrix-App lassen sie sich ablehnen; eine Freigabe mit Bestätigungs-PDF oder Rechnung erfordert eine Kunden-E-Mail, also eine anschließende Buchung über das Website-Formular.
+- Scheitert im Bitrix-Betrieb das Einreihen nachgereichter Fotos, erhält der Kunde eine Fehlermeldung statt einer scheinbar erfolgreichen Übertragung.
 
-**In dieser Sitzung ausgeführt:** neuer Test „Bitrix-only operation queues Bitrix exclusively…“ ohne die Änderung fehlgeschlagen, mit ihr bestanden. `npm test` 524/524 bestanden, `npm run typecheck` fehlerfrei, ESLint auf allen geänderten Dateien ohne Warnungen, `npm run build` erfolgreich. Nicht ausgeführt: `check:migrations`/`check:rls` (keine Migrationsänderung), `test:release`.
+**In dieser Sitzung ausgeführt:** neue Tests „Bitrix-only operation queues Bitrix exclusively…“ und „phone-only inquiries can be rejected…“ ohne die jeweilige Änderung fehlgeschlagen, mit ihr bestanden. `npm test` 525/525 bestanden, `npm run typecheck` fehlerfrei, ESLint auf allen geänderten Dateien ohne Warnungen, `npm run build` erfolgreich. Nicht ausgeführt: `check:migrations`/`check:rls` (keine Migrationsänderung), `test:release`.
 
 **Kontozugang:** keiner in dieser Sitzung. Portal-Angaben weiter oben bleiben „dokumentiert damals“.
 

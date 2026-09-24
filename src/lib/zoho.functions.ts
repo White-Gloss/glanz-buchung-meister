@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings, requireBookingOwner } from "@/lib/booking-owner";
 import { createSignedPhotoUrl } from "@/lib/booking-photos";
@@ -99,7 +99,7 @@ export const zohoWorkplace = createServerFn({ method: "GET" })
   });
 
 export const zohoConfirm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     bookingRef
       .extend({
@@ -142,7 +142,7 @@ export const zohoConfirm = createServerFn({ method: "POST" })
   });
 
 export const zohoReject = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     bookingRef.extend({ status: z.enum(["abgelehnt", "storniert"]) }).parse(input),
   )
@@ -154,7 +154,7 @@ export const zohoReject = createServerFn({ method: "POST" })
   });
 
 export const zohoComplete = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     bookingRef
       .extend({
@@ -176,14 +176,14 @@ export const zohoComplete = createServerFn({ method: "POST" })
   });
 
 export const zohoRunSync = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .handler(async () => {
     const sql = await getSql();
     return runZohoSync(sql);
   });
 
 export const setZohoOpsSwitch = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
@@ -197,7 +197,7 @@ export const setZohoOpsSwitch = createServerFn({ method: "POST" })
   });
 
 export const zohoSaveSetup = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -216,7 +216,7 @@ export const zohoSaveSetup = createServerFn({ method: "POST" })
   });
 
 export const zohoProbeSetup = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
     await requireBookingOwner(sql, context.userId);

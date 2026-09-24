@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { type BookingStatus } from "@/data/site";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
@@ -107,7 +107,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   });
 
 export const createManualBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => manualBookingSchema.parse(input))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
@@ -275,7 +275,10 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
       }
       if (!roappOnlyEnabled()) {
         const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
-        await queueBitrixPhotos(sql, row).catch(() => undefined);
+        const queued = queueBitrixPhotos(sql, row);
+        // As the sole backend Bitrix must not lose new photos silently.
+        if (bitrixOnlyEnabled()) await queued;
+        else await queued.catch(() => undefined);
       }
       kickBookingDelivery(sql);
     }
@@ -339,7 +342,7 @@ export const getBookingPermissions = createServerFn({ method: "GET" })
   }));
 
 export const confirmBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => bookingMutation.parse(input))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
@@ -352,7 +355,7 @@ export const confirmBooking = createServerFn({ method: "POST" })
   });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     bookingMutation
       .extend({
@@ -375,7 +378,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   });
 
 export const updateBookingDetails = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     publicBookingSchema
       .pick({

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
@@ -231,7 +231,7 @@ export const listDocuments = createServerFn({ method: "GET" })
   });
 
 export const createDocumentFromBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -284,7 +284,7 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
   });
 
 export const updateDocumentStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -426,7 +426,7 @@ async function executeParsed(
 }
 
 export const runAgentCommand = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -557,7 +557,7 @@ export const flushOutboundMail = createServerFn({ method: "POST" })
   });
 
 export const sendQontoInvoice = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async (): Promise<{ ok: boolean; error: string }> => {
     return assertLegacyBillingDisabled();

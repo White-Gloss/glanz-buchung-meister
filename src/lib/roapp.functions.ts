@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
@@ -50,7 +50,7 @@ export const roappSyncOverview = createServerFn({ method: "GET" })
   });
 
 export const setRoappSyncEnabled = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
@@ -66,7 +66,7 @@ export const setRoappSyncEnabled = createServerFn({ method: "POST" })
   });
 
 export const retryRoappSync = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
