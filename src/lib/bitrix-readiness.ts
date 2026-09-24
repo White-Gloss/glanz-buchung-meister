@@ -1,22 +1,35 @@
 import type { Sql } from "./db.ts";
 import { isBookingOwner } from "./booking-owner.ts";
-import { bitrixCalendarEnabled } from "./bitrix-calendar.ts";
 
 const SHOP = "white-gloss";
 
 export type ReadinessStatus = "ok" | "warn" | "fail";
 export type ReadinessCheck = { id: string; label: string; status: ReadinessStatus; detail: string };
 
+type Probe = (key: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 type Options = {
   env?: NodeJS.ProcessEnv;
   apiKey: string;
-  probe: (key: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  probe: Probe;
+  /** Reads the workshop calendar with the current key; throws when that is not possible. */
+  calendarProbe: (key: string) => Promise<unknown>;
 };
 
+async function tableExists(sql: Sql, name: string) {
+  const [row] = await sql<{ name: string | null }>`select to_regclass(${name})::text as name`;
+  return Boolean(row?.name);
+}
+
+async function columnExists(sql: Sql, table: string, column: string) {
+  const rows = await sql`select 1 from information_schema.columns
+    where table_schema=current_schema() and table_name=${table} and column_name=${column}`;
+  return rows.length > 0;
+}
+
 /**
- * Read-only prerequisites for BOOKING_OPERATIONS=bitrix. Never writes to the
- * database or to Bitrix24; the probe only lists one deal. Expects the Bitrix
- * schema (ensureBitrixSchema) to exist.
+ * Read-only prerequisites for BOOKING_OPERATIONS=bitrix. Issues only SELECTs
+ * (no DDL, no inserts) and read-only Bitrix24 requests: one deal and the
+ * workshop calendar of the next days.
  */
 export async function bitrixCutoverReadiness(
   sql: Sql,
@@ -35,6 +48,7 @@ export async function bitrixCutoverReadiness(
         : `Aktuell „${mode}“. Umschaltung per BOOKING_OPERATIONS=bitrix auf dem Server.`,
   });
 
+  let accessOk = false;
   if (!options.apiKey) {
     checks.push({
       id: "access",
@@ -47,6 +61,7 @@ export async function bitrixCutoverReadiness(
       ok: false as const,
       error: "Bitrix24 ist gerade nicht erreichbar.",
     }));
+    accessOk = probe.ok;
     checks.push({
       id: "access",
       label: "Bitrix-Zugang",
@@ -55,16 +70,42 @@ export async function bitrixCutoverReadiness(
     });
   }
 
-  checks.push(
-    (await bitrixCalendarEnabled(sql))
-      ? { id: "calendar", label: "Kalenderabgleich", status: "ok", detail: "Aktiviert." }
-      : {
-          id: "calendar",
-          label: "Kalenderabgleich",
-          status: "warn",
-          detail: "Nicht aktiviert. Manuelle Bitrix-Termine sperren sonst keine Zeiten.",
-        },
-  );
+  const calendarFlag =
+    (await columnExists(sql, "shop_settings", "bitrix_calendar_enabled")) &&
+    (
+      await sql<{ enabled: boolean }>`select bitrix_calendar_enabled as enabled
+        from shop_settings where shop_id=${SHOP}`
+    )[0]?.enabled === true;
+  if (!calendarFlag) {
+    checks.push({
+      id: "calendar",
+      label: "Kalenderabgleich",
+      status: "warn",
+      detail: "Nicht aktiviert. Manuelle Bitrix-Termine sperren sonst keine Zeiten.",
+    });
+  } else if (!accessOk) {
+    checks.push({
+      id: "calendar",
+      label: "Kalenderabgleich",
+      status: "fail",
+      detail: "Aktiviert, aber ohne funktionierenden Bitrix-Zugang nicht lesbar.",
+    });
+  } else {
+    const error = await options
+      .calendarProbe(options.apiKey)
+      .then(() => null)
+      .catch((cause: unknown) =>
+        cause instanceof Error ? cause.message : "Kalender nicht lesbar.",
+      );
+    checks.push({
+      id: "calendar",
+      label: "Kalenderabgleich",
+      status: error ? "fail" : "ok",
+      detail: error
+        ? `Aktiviert, aber mit dem aktuellen Zugang nicht lesbar: ${error}`
+        : "Aktiviert und mit dem aktuellen Zugang lesbar.",
+    });
+  }
 
   const users = await sql<{ id: string; email: string | null; emailVerified: boolean }>`
     select id,email,"emailVerified" from "user"`;
@@ -78,34 +119,57 @@ export async function bitrixCutoverReadiness(
       : "Kein verifiziertes Inhaberkonto gefunden. Freigaben aus der Bitrix-App würden abgewiesen.",
   });
 
+  // Presence only: delivery itself is proven by the first test order (protocol A/C).
   const mail = Boolean(env.RESEND_API_KEY?.trim() && env.MAIL_FROM?.trim());
   checks.push({
     id: "mail",
     label: "E-Mail-Versand",
-    status: mail ? "ok" : "fail",
+    status: mail ? "warn" : "fail",
     detail: mail
-      ? "Versand für Bestätigungen und Rechnungen konfiguriert."
+      ? "Zugangsdaten vorhanden, Zustellung aber nicht geprüft. Mit dem ersten Testauftrag nachweisen."
       : "RESEND_API_KEY oder MAIL_FROM fehlt. Bestätigungen und Rechnungen blieben liegen.",
   });
 
-  const [queue] = await sql<{ count: number }>`select count(*)::integer as count
-    from bitrix_sync_queue where shop_id=${SHOP} and status in ('failed','review')`;
-  checks.push({
-    id: "queue",
-    label: "Bitrix-Übertragungen",
-    status: queue.count ? "warn" : "ok",
-    detail: queue.count
-      ? `${queue.count} Übertragung(en) fehlgeschlagen oder prüfpflichtig. Bitte unten prüfen.`
-      : "Keine offenen Fehler.",
-  });
+  const queueExists = await tableExists(sql, "bitrix_sync_queue");
+  if (!queueExists) {
+    checks.push({
+      id: "queue",
+      label: "Bitrix-Übertragungen",
+      status: "warn",
+      detail: "Noch keine Übertragung gelaufen. Nach dem Speichern des Schlüssels erneut prüfen.",
+    });
+  } else {
+    const [queue] = await sql<{ blocked: number; retrying: number; waiting: number }>`
+      select count(*) filter (where status in ('failed','review'))::integer as blocked,
+        count(*) filter (where status='pending' and last_error is not null)::integer as retrying,
+        count(*) filter (where status='pending' and last_error is null)::integer as waiting
+      from bitrix_sync_queue where shop_id=${SHOP}`;
+    const problems = [
+      queue.blocked ? `${queue.blocked} fehlgeschlagen oder prüfpflichtig` : "",
+      queue.retrying ? `${queue.retrying} mit Fehler in Wiederholung` : "",
+    ].filter(Boolean);
+    checks.push({
+      id: "queue",
+      label: "Bitrix-Übertragungen",
+      status: problems.length ? "warn" : "ok",
+      detail: problems.length
+        ? `${problems.join(", ")}. Bitte unten prüfen.`
+        : queue.waiting
+          ? `Keine Fehler, ${queue.waiting} wartet auf Übertragung.`
+          : "Keine offenen Fehler.",
+    });
+  }
 
-  const [open] = await sql<{ count: number }>`
-    select count(*)::integer as count from bookings b
-    where b.shop_id=${SHOP} and b.status in ('neu','bestaetigt')
-      and not exists (
-        select 1 from bitrix_sync_queue q
-        where q.booking_id=b.id and q.bitrix_deal_id is not null
-      )`;
+  const [open] = queueExists
+    ? await sql<{ count: number }>`
+        select count(*)::integer as count from bookings b
+        where b.shop_id=${SHOP} and b.status in ('neu','bestaetigt')
+          and not exists (
+            select 1 from bitrix_sync_queue q
+            where q.booking_id=b.id and q.bitrix_deal_id is not null
+          )`
+    : await sql<{ count: number }>`select count(*)::integer as count from bookings
+        where shop_id=${SHOP} and status in ('neu','bestaetigt')`;
   checks.push({
     id: "open",
     label: "Offene Aufträge ohne Bitrix",
