@@ -138,3 +138,27 @@ In dieser Betriebsart gilt:
 5. A–I mit gekennzeichneten Testaufträgen nachweisen.
 
 **Offen (A–I):** unverändert gegenüber den Abschnitten oben. Neu erfüllt ist nur die technische Voraussetzung, dass im Bitrix-Betrieb kein zweites System Aufträge anlegt oder ändert (Teil von D, G, I).
+
+## Fortsetzung 24.09.2026 (2): Umschalt-Prüfung und Abnahmeprotokoll
+
+**Stand `main`:** #249–#252 sind enthalten (über #252, bestätigt durch das identische Ergebnis von #253). GitHub Actions startet derzeit keine Runner (Kontolimit bzw. Abrechnung). Deshalb liefen weder CI noch der IONOS-Deploy, und die Live-Website hat diesen Stand noch nicht.
+
+**Neu:** Unter `/admin/bitrix` gibt es die Schaltfläche „Bereitschaft prüfen“ (`bitrixCutoverReadiness`, nur lesend). Sie prüft Betriebsart, Bitrix-Zugang (Abruf genau eines Auftrags), Kalenderabgleich, verifiziertes Inhaberkonto, E-Mail-Versand (`RESEND_API_KEY`, `MAIL_FROM`), fehlerhafte Bitrix-Übertragungen und offene Buchungen ohne Bitrix-Auftrag. Sie schreibt weder in die Datenbank noch nach Bitrix24.
+
+### Abnahmeprotokoll nach der Umschaltung
+
+Voraussetzung: Die Umschalt-Prüfung zeigt keine ✗. Alle Testaufträge tragen im Namen „TEST“ und verwenden eine eigene E-Mail-Adresse des Inhabers. Rechnungen werden nur als Entwurf angelegt oder sofort storniert, damit keine produktiven Rechnungsnummern verloren gehen.
+
+| Punkt | Vorgehen | Erwartet |
+| --- | --- | --- |
+| A | Buchung mit Paket, Extra und zwei Fotos über `/#buchung`, danach Seite neu laden und erneut absenden | Genau ein Bitrix-Auftrag WG-…, beide Fotos am Auftrag, kein Duplikat |
+| B | Auftrag in Bitrix nur in eine andere Phase ziehen, ohne App-Freigabe | Keine Bestätigungs-PDF, keine Rechnung, keine Reservierung |
+| C | Freigabe in der Werkstatt-App mit geändertem Preis und „Kunde hat zugestimmt“ | Bestätigungs-E-Mail mit PDF der richtigen Version. Die Unterschrift über die native Bitrix-Signatur ist gesondert zu prüfen (SMS-/E-Mail-Kanal) |
+| D | Zweite Freigabe im selben Zeitraum und ein manueller Termin im Bitrix-Kalender | Konflikt wird abgewiesen, die Website bietet die belegte Zeit nicht an |
+| E | Termin in zwei Tagen freigeben, dann umbuchen und stornieren | Erinnerungen an Kunde und Inhaber zwei Tage vorher; nach Umbuchung nur die neue, nach Storno keine |
+| F | Abschluss einmal mit Barzahlung, einmal mit Überweisung | Genau eine Rechnung je Auftrag; bar = bezahlt, Überweisung = sieben Tage Zahlungsziel |
+| G | Abschluss bzw. Rechnungsversand in der App ein zweites Mal auslösen | Keine zweite Rechnung, keine zweite E-Mail |
+| H | Allgemeine E-Mail an `info@` bzw. `buchung@` senden | Kein neuer Auftrag in Bitrix |
+| I | Während einer Buchung den Bitrix-Schlüssel kurz entfernen, dann wieder speichern | Buchung bleibt gespeichert, wird danach genau einmal übertragen |
+
+Ergebnisse je Punkt mit Datum, Auftragsnummer und Befund hier nachtragen. Erst wenn A–I bestanden sind, gilt die Anbindung als vollständig.

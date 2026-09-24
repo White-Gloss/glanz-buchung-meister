@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import {
+  bitrixReadiness,
   bitrixStatus,
   bitrixSyncOverview,
   retryBitrixSync,
@@ -29,6 +30,10 @@ function AdminBitrix() {
   const [apiKey, setApiKey] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [readiness, setReadiness] = useState<Awaited<ReturnType<typeof bitrixReadiness>> | null>(
+    null,
+  );
+  const [checking, setChecking] = useState(false);
 
   async function refresh() {
     const [next, transfers] = await Promise.all([
@@ -151,6 +156,56 @@ function AdminBitrix() {
         >
           Bitrix24-Portal öffnen
         </a>
+      </section>
+
+      <section className="mt-8 rounded-md border border-line bg-surface p-5">
+        <h2 className="font-display text-2xl">Umschalt-Prüfung</h2>
+        <p className="mt-2 text-sm text-muted">
+          Prüft nur lesend, ob alles für den Betrieb ausschließlich über Bitrix24 bereit ist. Es
+          wird nichts geändert und nichts versendet.
+        </p>
+        <Button
+          type="button"
+          className="mt-4"
+          disabled={checking}
+          onClick={async () => {
+            setChecking(true);
+            try {
+              setReadiness(await bitrixReadiness());
+            } catch {
+              setReadiness(null);
+              setMessage("Umschalt-Prüfung konnte nicht ausgeführt werden.");
+            } finally {
+              setChecking(false);
+            }
+          }}
+        >
+          {checking ? "Prüfe …" : "Bereitschaft prüfen"}
+        </Button>
+        {readiness ? (
+          <ul className="mt-4 divide-y divide-line" aria-label="Ergebnis der Umschalt-Prüfung">
+            {readiness.map((check) => (
+              <li key={check.id} className="flex gap-3 py-3 text-sm">
+                <span aria-hidden="true" className="w-5 shrink-0 font-semibold">
+                  {check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗"}
+                </span>
+                <span className="min-w-0">
+                  <span className="font-medium">
+                    {check.label}
+                    <span className="sr-only">
+                      {check.status === "ok"
+                        ? ": in Ordnung"
+                        : check.status === "warn"
+                          ? ": Hinweis"
+                          : ": fehlt"}
+                    </span>
+                  </span>
+                  <span className="block text-muted">{check.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <BitrixAgentPanel />
