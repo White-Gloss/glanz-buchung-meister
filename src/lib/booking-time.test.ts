@@ -7,7 +7,7 @@ import {
   rangesOverlap,
   defaultWorkEnd,
   defaultDurationMinutes,
-} from "./zoho-time.ts";
+} from "./booking-time.ts";
 
 test("Berlin winter and summer wall clocks keep DST", () => {
   const winter = berlinWallToUtc("2026-01-15", "09:00");

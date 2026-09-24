@@ -32,6 +32,7 @@ export const expectedMigrations = [
   "0018_bitrix_workshop_bridge.sql",
   "0019_roapp_write_journal.sql",
   "0020_roapp_customer_status.sql",
+  "0021_bitrix_native_transfer.sql",
 ];
 const tables = [
   "_migrations",
@@ -201,6 +202,7 @@ export function inspectConfiguration(env) {
     "QONTO_IBAN",
     "LEXWARE_API_KEY",
     "VIBE_API_KEY",
+    "BITRIX_WEBHOOK_URL",
   ])
     field(key);
   const storageConfigured =

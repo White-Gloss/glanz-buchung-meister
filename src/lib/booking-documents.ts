@@ -1,8 +1,8 @@
 import { createBusinessDocumentPdf } from "./document-pdf.ts";
 import { packages, extras, vehicleClasses, site } from "../data/site.ts";
 import { documentLogoBase64 } from "./document-logo.generated.ts";
-import { formatBerlinRange } from "./zoho-time.ts";
-import type { ZohoBooking } from "./zoho-ops.ts";
+import { formatBerlinRange } from "./booking-time.ts";
+import type { OperationsBooking } from "./booking-operations.ts";
 
 function extraNames(raw: string | null | undefined) {
   try {
@@ -18,7 +18,7 @@ function extraNames(raw: string | null | undefined) {
 }
 
 export type ConfirmationPdfInput = Pick<
-  ZohoBooking,
+  OperationsBooking,
   | "id"
   | "customer_name"
   | "phone"

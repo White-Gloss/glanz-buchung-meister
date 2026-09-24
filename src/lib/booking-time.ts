@@ -2,10 +2,7 @@
 
 const TZ = "Europe/Berlin";
 
-function part(
-  parts: Intl.DateTimeFormatPart[],
-  type: Intl.DateTimeFormatPartTypes,
-): number {
+function part(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): number {
   return Number(parts.find((entry) => entry.type === type)?.value);
 }
 
@@ -69,12 +66,7 @@ export function isoOffset(value: Date): string {
   return `${wall.date}T${wall.time}:00${sign}${hh}:${mm}`;
 }
 
-export function rangesOverlap(
-  aStart: Date,
-  aEnd: Date,
-  bStart: Date,
-  bEnd: Date,
-): boolean {
+export function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
 }
 

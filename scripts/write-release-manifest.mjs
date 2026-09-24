@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Numbered SQL stays in migrations/ for `db:migrate`, but these integrations
- * already apply the same DDL at runtime (ensureZohoSchema / ensureBitrixSchema),
+ * already apply the same DDL at runtime (ensureBookingOperationsSchema / ensureBitrixSchema),
  * the Lexware pattern. Including them in the GET / gate 503s every IONOS
  * activate until a root shell can migrate — GitHub CI cannot.
  */

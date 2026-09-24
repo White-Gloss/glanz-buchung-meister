@@ -2,24 +2,12 @@ import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
 import { requireBookingOwner } from "./booking-owner.ts";
 import { queueBookingEvent, type BookingEvent } from "./booking-notifications.ts";
-import { berlinWallToUtc, defaultWorkEnd, utcToBerlinWall } from "./zoho-time.ts";
-import { zohoOpsEnabled as zohoOpsEnabledFromSettings } from "./zoho-credentials.server.ts";
+import { berlinWallToUtc, defaultWorkEnd, utcToBerlinWall } from "./booking-time.ts";
 import { queueBitrixBooking } from "./bitrix-sync.ts";
-import { queueOdooBooking } from "./odoo-sync.ts";
-import { queueRoappBooking } from "./roapp-sync.ts";
-import { queueLexwareBooking } from "./lexware-sync.ts";
 import { packages, extras as extraCatalog, vehicleClasses } from "../data/site.ts";
 import { assertBitrixCalendarAvailable, bitrixBusyWindows } from "./bitrix-calendar.ts";
-import { bitrixOnlyEnabled } from "./booking-backend.ts";
 
 const SHOP = "white-gloss";
-
-/** Bitrix24 leads this booking: no Zoho, RO, Odoo or Lexware follow-up jobs. */
-function bitrixLed(booking: { bitrix_workshop_managed?: boolean | null }) {
-  return Boolean(booking.bitrix_workshop_managed) || bitrixOnlyEnabled();
-}
-
-export { zohoOpsEnabledFromSettings as zohoOpsEnabled };
 
 export const OPS_STAGES = [
   "anfrage_eingegangen",
@@ -35,7 +23,7 @@ export type OpsStage = (typeof OPS_STAGES)[number];
 
 export type PaymentVariant = "bar" | "ueberweisung";
 
-export type ZohoBooking = WorkflowBooking & {
+export type OperationsBooking = WorkflowBooking & {
   bitrix_workshop_managed?: boolean;
   estimated_price_cents: number | null;
   agreed_price_cents: number | null;
@@ -55,16 +43,9 @@ export type ZohoBooking = WorkflowBooking & {
   vehicle_model: string | null;
   vehicle_plate: string | null;
   confirmation_pdf_version: number;
-  zoho_contact_id: string | null;
-  zoho_deal_id: string | null;
-  zoho_event_id: string | null;
-  zoho_invoice_id: string | null;
-  zoho_payment_id: string | null;
-  zoho_invoice_number: string | null;
-  zoho_last_error: string | null;
 };
 
-export async function ensureZohoSchema(sql: Sql) {
+export async function ensureBookingOperationsSchema(sql: Sql) {
   await sql`alter table bookings add column if not exists estimated_price_cents integer`;
   await sql`alter table bookings add column if not exists agreed_price_cents integer`;
   await sql`alter table bookings add column if not exists work_start_at timestamptz`;
@@ -83,13 +64,6 @@ export async function ensureZohoSchema(sql: Sql) {
   await sql`alter table bookings add column if not exists vehicle_model text`;
   await sql`alter table bookings add column if not exists vehicle_plate text`;
   await sql`alter table bookings add column if not exists confirmation_pdf_version integer not null default 0`;
-  await sql`alter table bookings add column if not exists zoho_contact_id text`;
-  await sql`alter table bookings add column if not exists zoho_deal_id text`;
-  await sql`alter table bookings add column if not exists zoho_event_id text`;
-  await sql`alter table bookings add column if not exists zoho_invoice_id text`;
-  await sql`alter table bookings add column if not exists zoho_payment_id text`;
-  await sql`alter table bookings add column if not exists zoho_invoice_number text`;
-  await sql`alter table bookings add column if not exists zoho_last_error text`;
   await sql.query(`
     create table if not exists booking_time_blocks (
       id serial primary key,
@@ -102,60 +76,9 @@ export async function ensureZohoSchema(sql: Sql) {
       unique (shop_id, booking_id)
     )
   `);
-  await sql.query(`
-    create table if not exists zoho_job_queue (
-      id serial primary key,
-      shop_id text not null default 'white-gloss',
-      booking_id integer not null references bookings(id),
-      job text not null,
-      idempotency_key text not null,
-      payload jsonb not null default '{}'::jsonb,
-      status text not null default 'pending',
-      attempts integer not null default 0,
-      next_attempt_at timestamptz not null default now(),
-      last_error text,
-      result jsonb,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      unique (shop_id, idempotency_key)
-    )
-  `);
-  await sql.query(`
-    create table if not exists zoho_sync_queue (
-      booking_id integer primary key references bookings(id),
-      shop_id text not null default 'white-gloss',
-      requested_version integer not null,
-      synced_version integer not null default 0,
-      status text not null default 'pending',
-      job text not null default 'record',
-      attempts integer not null default 0,
-      next_attempt_at timestamptz not null default now(),
-      last_error text,
-      write_pending text,
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await sql.query(`
-    create table if not exists zoho_sync_runner (
-      shop_id text primary key,
-      lease_token text,
-      locked_until timestamptz
-    )
-  `);
-  await sql`insert into zoho_sync_runner (shop_id) values ('white-gloss') on conflict do nothing`;
-  await sql`alter table shop_settings add column if not exists zoho_ops_enabled boolean not null default false`;
-  await sql`alter table shop_settings add column if not exists zoho_dc text`;
-  await sql`alter table shop_settings add column if not exists zoho_client_id text`;
-  await sql`alter table shop_settings add column if not exists zoho_client_secret text`;
-  await sql`alter table shop_settings add column if not exists zoho_refresh_token text`;
-  await sql`alter table shop_settings add column if not exists zoho_access_token text`;
-  await sql`alter table shop_settings add column if not exists zoho_access_expires_at timestamptz`;
-  await sql`alter table shop_settings add column if not exists zoho_books_org_id text`;
-  await sql`alter table shop_settings add column if not exists zoho_webhook_secret text`;
-  await sql`alter table shop_settings add column if not exists zoho_tax_id text`;
 }
 
-function snapshot(row: ZohoBooking) {
+function snapshot(row: OperationsBooking) {
   return {
     status: row.status,
     opsStage: row.ops_stage,
@@ -175,14 +98,14 @@ async function lockShop(tx: Sql) {
 }
 
 async function findBooking(tx: Sql, id: number) {
-  const [row] = await tx<ZohoBooking>`
+  const [row] = await tx<OperationsBooking>`
     select * from bookings where shop_id = ${SHOP} and id = ${id} for update
   `;
   if (!row) throw new Error("Buchung nicht gefunden.");
   return row;
 }
 
-function checkVersion(row: ZohoBooking, expected: number) {
+function checkVersion(row: OperationsBooking, expected: number) {
   if (row.version !== expected) {
     throw new Error("Die Buchung wurde inzwischen geändert. Bitte neu laden und erneut prüfen.");
   }
@@ -218,7 +141,7 @@ export function parseWorkInterval(input: {
 }
 
 export function needsCustomerAcceptance(
-  before: ZohoBooking,
+  before: OperationsBooking,
   next: {
     agreedCents: number;
     start: Date;
@@ -245,8 +168,8 @@ function slotFromStart(time: string): string {
 
 async function recordEvent(
   tx: Sql,
-  row: ZohoBooking,
-  before: ZohoBooking | null,
+  row: OperationsBooking,
+  before: OperationsBooking | null,
   name: BookingEvent,
   actor: string,
 ) {
@@ -261,50 +184,6 @@ async function recordEvent(
   `;
   await queueBookingEvent(tx, row, name, saved.id, actor);
   await queueBitrixBooking(tx, row);
-  if (bitrixLed(row)) return;
-  await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`, {
-    version: row.version,
-  });
-  if (!(await zohoOpsEnabledFromSettings(tx))) {
-    await queueOdooBooking(tx, row);
-    await queueRoappBooking(tx, row);
-    await queueLexwareBooking(tx, row);
-  }
-}
-
-export async function enqueueZohoJob(
-  sql: Sql,
-  bookingId: number,
-  job: string,
-  key: string,
-  payload: Record<string, unknown> = {},
-) {
-  await ensureZohoSchema(sql);
-  await sql`
-    insert into zoho_job_queue (shop_id, booking_id, job, idempotency_key, payload)
-    values (${SHOP}, ${bookingId}, ${job}, ${key}, ${JSON.stringify(payload)}::jsonb)
-    on conflict (shop_id, idempotency_key) do nothing
-  `;
-  await sql`
-    insert into zoho_sync_queue (booking_id, shop_id, requested_version, job)
-    values (${bookingId}, ${SHOP}, 1, ${job})
-    on conflict (booking_id) do update
-      set requested_version = zoho_sync_queue.requested_version + 1,
-          status = case when zoho_sync_queue.status = 'review' then 'review' else 'pending' end,
-          job = excluded.job,
-          next_attempt_at = now(),
-          updated_at = now()
-  `;
-}
-
-export async function markInquiryReceived(sql: Sql, bookingId: number) {
-  await sql`
-    update bookings
-    set estimated_price_cents = coalesce(estimated_price_cents, total_cents)
-    where id = ${bookingId} and shop_id = ${SHOP}
-  `;
-  await enqueueZohoJob(sql, bookingId, "record", `record:${bookingId}:created`);
-  await enqueueZohoJob(sql, bookingId, "photos", `photos:${bookingId}:created`);
 }
 
 export type ConfirmScheduleInput = {
@@ -364,7 +243,7 @@ export async function confirmBookingWithSchedule(
         end: interval.end,
       });
       if (acceptance.required && !input.customerAccepted) {
-        const [booking] = await tx<ZohoBooking>`
+        const [booking] = await tx<OperationsBooking>`
           update bookings set
             ops_stage = 'kundenrueckmeldung',
             customer_acceptance_required = true,
@@ -386,7 +265,7 @@ export async function confirmBookingWithSchedule(
       const wall = utcToBerlinWall(interval.start);
       await assertBitrixCalendarAvailable(tx, interval.start, interval.end, input.resourceId ?? 1);
       await tx`select set_config('white_gloss.confirm_actor', ${actor}, true)`;
-      const [booking] = await tx<ZohoBooking>`
+      const [booking] = await tx<OperationsBooking>`
         update bookings set
           status = 'bestaetigt',
           ops_stage = 'bestaetigt',
@@ -413,20 +292,6 @@ export async function confirmBookingWithSchedule(
         returning *
       `;
       await recordEvent(tx, booking, before, "booking.confirmed", actor);
-      if (!bitrixLed(booking))
-        await enqueueZohoJob(
-          tx,
-          booking.id,
-          "calendar",
-          `calendar:${booking.id}:${booking.version}`,
-        );
-      if (!bitrixLed(booking))
-        await enqueueZohoJob(
-          tx,
-          booking.id,
-          "confirmation",
-          `confirmation:${booking.id}:${booking.version}`,
-        );
       return { booking, changed: true, acceptance, awaitingCustomer: false as const };
     });
   } catch (error) {
@@ -457,7 +322,7 @@ export async function rejectOrCancelBooking(
     await lockShop(tx);
     const before = await findBooking(tx, id);
     checkVersion(before, expectedVersion);
-    const [booking] = await tx<ZohoBooking>`
+    const [booking] = await tx<OperationsBooking>`
       update bookings set
         status = ${status},
         ops_stage = ${status},
@@ -475,13 +340,6 @@ export async function rejectOrCancelBooking(
       status === "abgelehnt" ? "booking.rejected" : "booking.cancelled",
       actor,
     );
-    if (!bitrixLed(booking))
-      await enqueueZohoJob(
-        tx,
-        booking.id,
-        "calendar",
-        `calendar-release:${booking.id}:${booking.version}`,
-      );
     return { booking, changed: true };
   });
 }
@@ -523,7 +381,7 @@ export async function completeServiceWithPayment(
     if (!agreed || agreed <= 0) {
       throw new Error("Ohne vereinbarten Betrag kann keine Rechnung entstehen.");
     }
-    const [booking] = await tx<ZohoBooking>`
+    const [booking] = await tx<OperationsBooking>`
       update bookings set
         status = 'erledigt',
         ops_stage = 'abgeschlossen',
@@ -541,12 +399,6 @@ export async function completeServiceWithPayment(
       returning *
     `;
     await recordEvent(tx, booking, before, "booking.completed", actor);
-    if (!bitrixLed(booking))
-      await enqueueZohoJob(tx, booking.id, "invoice", `invoice:${booking.id}`, {
-        payment: input.payment,
-        cashCents: input.cashCents ?? null,
-        cashDate: input.cashDate ?? null,
-      });
     return { booking, changed: true };
   });
 }
@@ -556,7 +408,7 @@ export async function listBusyWindows(
   fromIso: string,
   toIso: string,
 ): Promise<{ start: string; end: string; resourceId: number }[]> {
-  await ensureZohoSchema(sql);
+  await ensureBookingOperationsSchema(sql);
   const blocks = await sql<{ start_at: string; end_at: string; resource_id: number }>`
     select start_at::text, end_at::text, resource_id
     from booking_time_blocks
@@ -573,9 +425,6 @@ export async function listBusyWindows(
       and resource <= 2
   `;
   return [
-    ...(await (
-      await import("./bitrix-workshop-calendar.ts")
-    ).externalBitrixBusyWindows(sql, fromIso, toIso)),
     ...blocks.map((row) => ({
       start: new Date(row.start_at).toISOString(),
       end: new Date(row.end_at).toISOString(),
@@ -590,7 +439,7 @@ export async function listBusyWindows(
   ];
 }
 
-export function bookingSummary(row: ZohoBooking) {
+export function bookingSummary(row: OperationsBooking) {
   const pack = packages.find((item) => item.id === row.package_id)?.name || row.package_id;
   let extraIds: string[] = [];
   try {

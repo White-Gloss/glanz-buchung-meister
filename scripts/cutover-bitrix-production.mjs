@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Owner-approved switch of production from BOOKING_OPERATIONS=roapp to =bitrix.
-// Run as root from the release directory (same as cutover-roapp-production.mjs):
+// Run as root from the release directory while the prior RO-capable release is active:
 //   node cutover-bitrix-production.mjs --list-open        open RO orders, read-only
 //   node cutover-bitrix-production.mjs                    dry run, read-only
 //   node cutover-bitrix-production.mjs --apply --open-ro=<n>
@@ -9,6 +9,8 @@
 // environment file, sets BOOKING_OPERATIONS=bitrix, starts the services and reports
 // success only after the local healthcheck; otherwise the old file is restored.
 // No database rows are changed. Output never contains secret values.
+// After deploying the Bitrix-only release, rollback also requires restoring the
+// prior release: changing the environment alone cannot restore retired adapters.
 import { createRequire } from "node:module";
 import { readFile, writeFile, rename, chmod } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
@@ -19,7 +21,7 @@ export const ENV_FILE = "/etc/white-gloss/environment";
 const SHOP = "white-gloss";
 const FINAL_STATUSES = ["abgelehnt", "storniert", "erledigt", "nicht_erschienen"];
 const WEBHOOK_RE =
-  /^https:\/\/([a-z0-9-]+)\.bitrix24\.([a-z.]{2,10})\/rest\/(\d+)\/([A-Za-z0-9]+)\/?$/i;
+  /^https:\/\/([a-z0-9-]+)\.bitrix24\.(de|com|eu|ru)\/rest\/(\d+)\/([A-Za-z0-9]+)\/?$/i;
 
 /** systemd EnvironmentFile subset: KEY=VALUE, optional quotes, # comments. */
 export function parseEnvironment(text) {
@@ -57,42 +59,42 @@ export function describeKey(value) {
   };
 }
 
-/** Read-only request: one deal ID. Returns a code, never the response body. */
-export async function probeBitrix(value, base, fetchImpl = fetch) {
-  const key = (value || "").trim();
-  const webhook = WEBHOOK_RE.test(key) ? key.replace(/\/?$/, "/") : null;
+/** Read-only native REST probes; no proxy or app credentials are accepted. */
+async function probeRest(key, method, params, fetchImpl) {
+  if (!WEBHOOK_RE.test((key || "").trim())) return { ok: false, code: "rest_webhook_required" };
   try {
-    const response = webhook
-      ? await fetchImpl(`${webhook}crm.deal.list.json`, {
-          method: "POST",
-          headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({ start: 0, select: ["ID"] }),
-          signal: AbortSignal.timeout(15_000),
-        })
-      : await fetchImpl(
-          `${(base || "https://vibecode.bitrix24.com/v1").replace(/\/$/, "")}/deals?limit=1`,
-          {
-            headers: { "X-Api-Key": key, Accept: "application/json" },
-            signal: AbortSignal.timeout(15_000),
-          },
-        );
-    let json = null;
-    try {
-      json = await response.json();
-    } catch {
-      json = null;
-    }
-    const code = json?.error?.code || (typeof json?.error === "string" ? json.error : "");
-    if (!response.ok || json?.success === false || code)
-      return {
-        ok: false,
-        httpStatus: response.status,
-        code: String(code || "http_error").slice(0, 40),
-      };
+    const response = await fetchImpl(key.trim().replace(/\/?$/, "/") + method + ".json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(params),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || json?.error != null || json?.error_description)
+      return { ok: false, httpStatus: response.status, code: "access_failed" };
+    if (!Array.isArray(json?.result) || (json.next != null && method === "calendar.event.get"))
+      return { ok: false, httpStatus: response.status, code: "invalid_response" };
     return { ok: true, httpStatus: response.status };
   } catch {
     return { ok: false, code: "unreachable" };
   }
+}
+export async function probeBitrix(key, _base, fetchImpl = fetch) {
+  return probeRest(key, "crm.deal.list", { start: 0, select: ["ID"] }, fetchImpl);
+}
+export async function probeCalendar(key, _base, fetchImpl = fetch) {
+  return probeRest(
+    key,
+    "calendar.event.get",
+    {
+      type: "user",
+      ownerId: 1,
+      section: [2],
+      from: new Date().toISOString().slice(0, 10),
+      to: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    },
+    fetchImpl,
+  );
 }
 
 export function blockersFor(report) {
@@ -101,12 +103,17 @@ export function blockersFor(report) {
   if (report.mode === "bitrix") blockers.push("already_bitrix");
   else if (report.mode !== "roapp") blockers.push("unexpected_current_mode");
   if (!report.databaseUrl) blockers.push("database_url_missing");
-  if (!report.vibeKey.present) blockers.push("vibe_api_key_missing_in_environment_file");
-  // Bitrix-only availability and the shared calendar need the personal VibeCode key;
-  // a REST webhook can list deals but is rejected by the calendar reader.
-  else if (report.vibeKey.kind === "rest_webhook") blockers.push("vibecode_key_required");
+  if (!report.vibeKey.present) blockers.push("bitrix_webhook_missing_in_environment_file");
+  else if (report.vibeKey.kind !== "rest_webhook") blockers.push("rest_webhook_required");
   else if (!report.bitrixProbe?.ok) blockers.push("bitrix_probe_failed");
-  if (report.database?.error) blockers.push("database_unreachable");
+  if (!report.calendarProbe?.ok) blockers.push("bitrix_calendar_probe_failed");
+  if (!report.database || report.database.error) blockers.push("database_unreachable");
+  else {
+    if (report.database.bitrixCalendarEnabled !== true) blockers.push("bitrix_calendar_disabled");
+    if (report.database.openBookingsWithoutBitrix !== 0)
+      blockers.push("open_bookings_without_bitrix");
+    if (report.database.bitrixQueueUnfinished !== 0) blockers.push("bitrix_queue_unfinished");
+  }
   // The Bitrix-only cron never drains RO rows again; they must be settled first.
   if (report.database?.roQueueUnfinished > 0) blockers.push("roapp_queue_unfinished");
   return blockers;
@@ -137,10 +144,15 @@ async function inspect(env, db, connectError) {
     root: process.getuid?.() === 0,
     mode: env.BOOKING_OPERATIONS || null,
     databaseUrl: Boolean(env.DATABASE_URL),
-    vibeKey: describeKey(env.VIBE_API_KEY),
+    vibeKey: describeKey(env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY),
   };
   if (report.vibeKey.present)
-    report.bitrixProbe = await probeBitrix(env.VIBE_API_KEY, env.VIBE_API_BASE);
+    report.bitrixProbe = await probeBitrix(env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY, undefined);
+  if (report.bitrixProbe?.ok && report.vibeKey.kind !== "rest_webhook")
+    report.calendarProbe = await probeCalendar(
+      env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY,
+      undefined,
+    );
   try {
     if (!db) throw Object.assign(new Error("connect_failed"), { code: connectError });
     const settings = (
@@ -165,6 +177,19 @@ async function inspect(env, db, connectError) {
         : null;
     report.database = {
       openBookings: (await openOrders(db)).length,
+      openBookingsWithoutBitrix: (await db.query("select to_regclass('bitrix_sync_queue') as r"))
+        .rows[0].r
+        ? Number(
+            (
+              await db.query(
+                `select count(*) from bookings b where b.shop_id=$1 and b.status <> all($2::text[])
+             and not exists (select 1 from bitrix_sync_queue q where q.shop_id=b.shop_id
+               and q.booking_id=b.id and q.bitrix_deal_id > 0 and q.status='synced')`,
+                [SHOP, FINAL_STATUSES],
+              )
+            ).rows[0].count,
+          )
+        : (await openOrders(db)).length,
       roQueueUnfinished: await count("roapp_sync_queue", "status<>'synced'"),
       bitrixQueue: await count("bitrix_sync_queue"),
       bitrixQueueUnfinished: await count("bitrix_sync_queue", "status<>'synced'"),

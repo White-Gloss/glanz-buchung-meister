@@ -11,7 +11,6 @@ import {
   enableBitrixCalendar,
 } from "@/lib/bitrix.functions";
 import { Button, Field, inputClass } from "@/components/ui";
-import { BitrixAgentPanel } from "@/components/bitrix-agent-panel";
 
 export const Route = createFileRoute("/admin/bitrix")({
   component: AdminBitrix,
@@ -74,9 +73,9 @@ function AdminBitrix() {
       <h1 className="mt-2 font-display text-4xl">Bitrix24</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
         Das öffentliche Buchungspanel bleibt auf der Website. Jede gespeicherte Anfrage wird als
-        Auftrag WG-… nach Bitrix24 übertragen. Der KI-Agent hilft bei der Prüfung. Den
-        Übertragungsstatus siehst du unten; der vollständige Rechnungsablauf benötigt noch
-        Einrichtung.
+        Kontakt mit verknüpftem Auftrag WG-… direkt nach Bitrix24 übertragen. Kunden, Leistungen,
+        Preise, Wunschtermin, Fotos und Videos gehören dort zusammen. Die weitere Bearbeitung erfolgt in
+        Bitrix24.
       </p>
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
@@ -86,7 +85,7 @@ function AdminBitrix() {
             ? status.source === "env"
               ? "Schlüssel liegt in der Serverumgebung."
               : "Schlüssel ist im Betriebspanel hinterlegt."
-            : "Noch kein Schlüssel — unten deinen persönlichen VibeCode-API-Schlüssel einfügen. Ohne Verbindung bleibt die Website-Buchung gespeichert, Bitrix wartet."}
+            : "Noch kein Zugang — unten die REST-Webhook-URL aus deinem Bitrix24-Portal einfügen. Ohne Verbindung bleibt die Website-Buchung gespeichert, Bitrix wartet."}
         </p>
         <p className="mt-2 text-sm text-muted">
           REST-API in Bitrix24: Anwendungen → Entwicklerressourcen → Anderes → Eingehender Webhook.
@@ -94,7 +93,7 @@ function AdminBitrix() {
         </p>
         {sync?.canManage ? (
           <form className="mt-4 max-w-xl space-y-3" onSubmit={onSave}>
-            <Field id="bitrix-key" label="REST-Webhook-URL oder API-Schlüssel">
+            <Field id="bitrix-key" label="REST-Webhook-URL">
               <input
                 id="bitrix-key"
                 type="password"
@@ -208,19 +207,16 @@ function AdminBitrix() {
         ) : null}
       </section>
 
-      <BitrixAgentPanel />
-
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
         <h2 className="font-display text-2xl">Kalenderabgleich</h2>
         <p className="mt-2 text-sm text-muted">
           {status?.calendarEnabled
-            ? "Aktiv: Bitrix-Sperrzeiten werden auf der Website berücksichtigt und vor jeder Freigabe erneut geprüft."
+            ? "Aktiv: Bitrix-Sperrzeiten werden bei der Terminauswahl auf der Website geprüft."
             : "Der Kalenderabgleich ist noch nicht aktiviert."}
         </p>
         <p className="mt-2 text-sm text-muted">
-          Manuelle Termine im gemeinsamen Werkstattkalender sperren beide Kapazitäten. Buchungen mit
-          eigenem Zeitraum behalten ihre zugewiesene Kapazität. Die Website zeigt Sperrzeiten mit
-          höchstens 30 Sekunden Verzögerung.
+          Termine im gemeinsamen Werkstattkalender sperren beide Kapazitäten. Die Website fragt
+          die Verfügbarkeit direkt aus diesem Kalender ab.
         </p>
         {sync?.canManage && !status?.calendarEnabled ? (
           <Button
@@ -245,8 +241,8 @@ function AdminBitrix() {
           </Button>
         ) : null}
         <p className="mt-2 text-sm text-muted">
-          Bei einem Kalenderfehler bleibt die Freigabe gesperrt. Änderungen direkt im
-          Bitrix-Kalender verschieben eine bestätigte Website-Buchung noch nicht automatisch.
+          Bei einem Kalenderfehler bleibt die Terminauswahl gesperrt. Termine und bestätigte
+          Auftragsdaten werden direkt in Bitrix24 gepflegt.
         </p>
       </section>
 

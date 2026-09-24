@@ -20,64 +20,14 @@ export const Route = createFileRoute("/api/automation-cron")({
             () => "ok",
             () => "failed",
           );
-          const { bitrixOnlyEnabled, roappOnlyEnabled } = await import("@/lib/booking-backend");
-          if (bitrixOnlyEnabled()) {
-            // Bitrix24 is the sole operating system: no RO, Zoho, Odoo or Lexware runs.
-            const remindersChecked = await scheduleDueBookingReminders(sql);
-            const { runBitrixSync } = await import("@/lib/bitrix-sync");
-            const [delivery, bitrix] = await Promise.all([
-              runNotificationWorker(sql),
-              runBitrixSync(sql),
-            ]);
-            return Response.json(
-              { ok: true, remindersChecked, ...delivery, bitrix, photoCleanup },
-              { headers: { "cache-control": "no-store" } },
-            );
-          }
-          if (roappOnlyEnabled()) {
-            const { runRoappSync } = await import("@/lib/roapp-sync");
-            const [delivery, roapp] = await Promise.all([
-              runNotificationWorker(sql),
-              runRoappSync(sql),
-            ]);
-            const { reconcileRoOrders } = await import("@/lib/roapp-callback");
-            const incoming = await reconcileRoOrders(sql);
-            return Response.json(
-              { ok: true, remindersChecked: 0, ...delivery, roapp, incoming, photoCleanup },
-              { headers: { "cache-control": "no-store" } },
-            );
-          }
           const remindersChecked = await scheduleDueBookingReminders(sql);
-          const { runOdooSync } = await import("@/lib/odoo-sync");
-          const { runRoappSync } = await import("@/lib/roapp-sync");
-          const { runLexwareSync } = await import("@/lib/lexware-sync");
-          const { runZohoSync } = await import("@/lib/zoho-sync");
           const { runBitrixSync } = await import("@/lib/bitrix-sync");
-          const [delivery, odoo, roapp, lexware, zoho, bitrix] = await Promise.all([
+          const [delivery, bitrix] = await Promise.all([
             runNotificationWorker(sql),
-            runOdooSync(sql),
-            runRoappSync(sql),
-            runLexwareSync(sql),
-            runZohoSync(sql),
             runBitrixSync(sql),
           ]);
-          const { scheduleLexwareMail } = await import("@/lib/lexware-mail");
-          const lexwareMail = await scheduleLexwareMail(sql).catch(() => ({
-            error: "lexware_mail_check_failed",
-          }));
           return Response.json(
-            {
-              ok: true,
-              remindersChecked,
-              ...delivery,
-              odoo,
-              roapp,
-              lexware,
-              zoho,
-              bitrix,
-              photoCleanup,
-              lexwareMail,
-            },
+            { ok: true, remindersChecked, ...delivery, bitrix, photoCleanup },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {

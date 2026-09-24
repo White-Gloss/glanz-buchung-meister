@@ -2,7 +2,7 @@
 
 ## Warum
 
-Seit dem 24.09.2026 starten die GitHub-Runner keine Jobs mehr: `verify` und `schema` enden nach einer Sekunde, ohne dass ein Schritt läuft. Damit laufen weder CI noch der IONOS-Deploy. Ein eigener Runner auf einem separaten VPS führt dieselben Workflows aus, ohne GitHub-Minuten zu verbrauchen.
+Seit dem 24.09.2026 starten die GitHub-Runner keine Jobs mehr: `verify` und `schema` enden nach einer Sekunde, ohne dass ein Schritt läuft. Damit laufen weder CI noch der IONOS-Deploy. Ein eigener Runner auf einem separaten VPS kann die CI-Prüfungen ausführen. Der Produktions-Deploy und die Serverinspektion bleiben auf frischen GitHub-Runnern; die Ursache der dortigen Startblockade muss weiterhin behoben werden.
 
 **Vorher prüfen:** Das Repository ist öffentlich. Für öffentliche Repositories sind die GitHub-Runner kostenlos. Wenn sie trotzdem nicht starten, ist meist das Konto gesperrt (z. B. offene Zahlung). Unter GitHub → Settings → Billing and plans nachsehen. Eine Kontosperre kann auch eigene Runner betreffen. Dann hilft nur, die Sperre aufzuheben.
 
@@ -12,7 +12,7 @@ Seit dem 24.09.2026 starten die GitHub-Runner keine Jobs mehr: `verify` und `sch
 - **Keine Fork-PRs.** Die Workflows schicken Pull Requests aus Forks immer zu den GitHub-Runnern, nie auf den eigenen. Auf dem eigenen Runner läuft nur Code aus Branches dieses Repositorys, also von Personen mit Schreibrecht.
 - **Zusätzlich** unter Settings → Actions → General → „Approval for running fork pull request workflows“ die Einstellung „Require approval for all external contributors“ wählen.
 - Der Benutzer `gh-runner` hat kein `sudo`. Er ist in der Gruppe `docker` (für den PostgreSQL-Testcontainer). Das entspricht auf diesem Server root-Rechten; deshalb gehört auf den VPS nichts anderes.
-- Der Deploy-Job hinterlegt den SSH-Schlüssel für `white-gloss-ci` während des Laufs im Home-Verzeichnis von `gh-runner`. Dieser Schlüssel darf auf dem Produktionsserver nur hochladen und `activate`/`rollback` auslösen (siehe `ionos-vps-bootstrap.md`).
+- **Keine Produktionsschlüssel auf dem CI-Runner.** `deploy-ionos.yml` verwendet `CI_RUNS_ON` ausdrücklich nicht. Inspektion und Deployment laufen auf jeweils frischen GitHub-Runnern. Ein gemeinsamer dauerhafter Runner würde den in `~/.ssh` gespeicherten Produktionsschlüssel nachfolgenden Branch-Tests zugänglich machen. Auch getrennte Labels auf derselben Maschine wären keine Isolation. Siehe [GitHub: sichere Verwendung von Actions](https://docs.github.com/en/actions/reference/security/secure-use).
 
 ## Einrichtung
 

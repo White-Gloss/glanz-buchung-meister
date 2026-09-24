@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -11,8 +12,8 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputRoot = resolve(projectRoot, ".qa-output");
-const base = "http://127.0.0.1:8082";
-const identityUrl = "http://127.0.0.1:8099/identity";
+const base = qaBase;
+const identityUrl = controlBase + "/identity";
 const runId = randomUUID();
 const abort = new AbortController();
 const children = [];
@@ -45,7 +46,13 @@ function log(message) {
 async function reservePort(port) {
   const server = createServer();
   await new Promise((accept, reject) => {
-    server.once("error", (error) => reject(new Error(`Port ${port} is unavailable; refusing to reuse an existing server (${error.code}).`)));
+    server.once("error", (error) =>
+      reject(
+        new Error(
+          `Port ${port} is unavailable; refusing to reuse an existing server (${error.code}).`,
+        ),
+      ),
+    );
     server.listen({ port, host: "127.0.0.1", exclusive: true }, accept);
   });
   reservations.push(server);
@@ -54,7 +61,9 @@ async function reservePort(port) {
 async function releasePorts() {
   while (reservations.length) {
     const server = reservations.pop();
-    await new Promise((accept, reject) => server.close((error) => error ? reject(error) : accept()));
+    await new Promise((accept, reject) =>
+      server.close((error) => (error ? reject(error) : accept())),
+    );
   }
 }
 
@@ -74,7 +83,9 @@ function startNode(name, args) {
   }
   const record = { name, child, closed: false, error: null };
   record.done = new Promise((accept) => {
-    child.once("error", (error) => { record.error = error; });
+    child.once("error", (error) => {
+      record.error = error;
+    });
     child.once("close", (code, signal) => {
       record.closed = true;
       accept({ code, signal, error: record.error });
@@ -85,7 +96,12 @@ function startNode(name, args) {
 }
 
 function requireRunning(record) {
-  if (record.closed || record.error || record.child.exitCode !== null || record.child.signalCode !== null) {
+  if (
+    record.closed ||
+    record.error ||
+    record.child.exitCode !== null ||
+    record.child.signalCode !== null
+  ) {
     throw new Error(`${record.name} exited unexpectedly; see .qa-output/${record.name}.log.`);
   }
 }
@@ -106,10 +122,16 @@ async function waitForReady(server) {
       continue;
     }
     // A matching JSON body alone could belong to an older isolated process.
-    assert.equal(identity.headers.get("x-qa-run-id"), runId, "The identity endpoint does not belong to this QA run.");
+    assert.equal(
+      identity.headers.get("x-qa-run-id"),
+      runId,
+      "The identity endpoint does not belong to this QA run.",
+    );
     assert.equal(identity.status, 200, "The isolated identity endpoint is not healthy.");
     assert.deepEqual(await identity.json(), {
-      isolated: true, database: "in-memory-pglite", externalFetch: "blocked",
+      isolated: true,
+      database: "in-memory-pglite",
+      externalFetch: "blocked",
     });
     try {
       const response = await fetch(base, {
@@ -117,7 +139,11 @@ async function waitForReady(server) {
         signal: AbortSignal.any([abort.signal, AbortSignal.timeout(2_000)]),
       });
       const html = await response.text();
-      if (response.ok && response.headers.get("content-type")?.includes("text/html") && html.includes("<main")) {
+      if (
+        response.ok &&
+        response.headers.get("content-type")?.includes("text/html") &&
+        html.includes("<main")
+      ) {
         requireRunning(server);
         return;
       }
@@ -126,7 +152,9 @@ async function waitForReady(server) {
     }
     await delay(200, undefined, { signal: abort.signal });
   }
-  throw new Error("The isolated server was not ready within 60 seconds; see .qa-output/isolated-server.log.");
+  throw new Error(
+    "The isolated server was not ready within 60 seconds; see .qa-output/isolated-server.log.",
+  );
 }
 
 async function runCheck(server, name, args) {
@@ -137,13 +165,19 @@ async function runCheck(server, name, args) {
   try {
     const result = await Promise.race([
       check.done,
-      server.done.then(() => { throw new Error("The isolated server stopped during a check."); }),
+      server.done.then(() => {
+        throw new Error("The isolated server stopped during a check.");
+      }),
       delay(120_000, undefined, {
         signal: AbortSignal.any([abort.signal, stageAbort.signal]),
-      }).then(() => { throw new Error(`${name} exceeded its 120-second deadline.`); }),
+      }).then(() => {
+        throw new Error(`${name} exceeded its 120-second deadline.`);
+      }),
     ]);
     if (result.error || result.code !== 0) {
-      throw new Error(`${name} failed (${result.error?.message ?? result.signal ?? result.code}); see .qa-output/${name}.log.`);
+      throw new Error(
+        `${name} failed (${result.error?.message ?? result.signal ?? result.code}); see .qa-output/${name}.log.`,
+      );
     }
     summary.checks.push({ name, passed: true });
     log(`QA: ${name} passed`);
@@ -160,14 +194,15 @@ async function stopChild(record) {
     record.child.kill("SIGKILL");
     await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
   }
-  if (!record.closed) throw new Error(`Could not stop owned child ${record.name} (PID ${record.child.pid}).`);
+  if (!record.closed)
+    throw new Error(`Could not stop owned child ${record.name} (PID ${record.child.pid}).`);
 }
 
 await mkdir(outputRoot, { recursive: true });
 await writeFile(resolve(outputRoot, "runner.log"), "");
 try {
   await access(resolve(projectRoot, ".output/server/index.mjs"));
-  for (const port of [8082, 8099]) await reservePort(port);
+  for (const port of [qaPort, controlPort]) await reservePort(port);
   await releasePorts();
   log("QA: starting a fresh isolated production server");
   const server = startNode("isolated-server", ["scripts/qa/isolated-server.mjs"]);

@@ -1,18 +1,19 @@
+import { qaBase, controlBase } from "./ports.mjs";
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
-const base = "http://127.0.0.1:8082";
-assert.deepEqual(await fetch("http://127.0.0.1:8099/identity").then((r) => r.json()), {
+const base = qaBase;
+assert.deepEqual(await fetch(controlBase + "/identity").then((r) => r.json()), {
   isolated: true,
   database: "in-memory-pglite",
   externalFetch: "blocked",
 });
 const fixture = (published) =>
-  fetch("http://127.0.0.1:8099/cms-fixture", {
+  fetch(controlBase + "/cms-fixture", {
     method: "POST",
     body: JSON.stringify({ published }),
   });
 const control = (flags) =>
-  fetch("http://127.0.0.1:8099/control", { method: "POST", body: JSON.stringify(flags) });
+  fetch(controlBase + "/control", { method: "POST", body: JSON.stringify(flags) });
 const get = async () => {
   const res = await fetch(base + "/sitemap.xml");
   return {

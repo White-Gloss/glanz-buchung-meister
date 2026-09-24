@@ -94,6 +94,40 @@ const fakeEmail = async () => ({ id: "email-fixture" });
 const fakeWhatsApp = async () => ({ id: "wamid.fixture" });
 const providers = { sendEmail: fakeEmail, sendWhatsApp: fakeWhatsApp };
 
+test("retired CRM mail is preserved and blocked even with an owner notification key", async () => {
+  const { pg, sql } = await database();
+  try {
+    for (const event of [
+      "lexware.invoice",
+      "lexware.reminder",
+      "zoho.confirmation",
+      "roapp.updated",
+    ])
+      await enqueue(sql, event, "email", event);
+    let sent = 0;
+    const result = await runNotificationWorker(sql, {
+      sendEmail: async () => {
+        sent++;
+        return { id: "unexpected" };
+      },
+    });
+    assert.equal(sent, 0);
+    assert.equal(result.skipped, 4);
+    const rows = await sql`select status,last_error_code,body from outbound_queue`;
+    assert.equal(rows.length, 4);
+    assert.ok(
+      rows.every(
+        (row) =>
+          row.status === "blocked" &&
+          row.last_error_code === "retired_crm" &&
+          row.body === "Isolated test",
+      ),
+    );
+  } finally {
+    await pg.close();
+  }
+});
+
 test("cron authorization requires an exact strong bearer secret", () => {
   const secret = "a".repeat(32);
   assert.equal(cronAuthorized(`Bearer ${secret}`, secret), true);

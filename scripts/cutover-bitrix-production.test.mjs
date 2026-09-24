@@ -5,6 +5,7 @@ import {
   describeKey,
   parseEnvironment,
   probeBitrix,
+  probeCalendar,
   withBookingOperations,
 } from "./cutover-bitrix-production.mjs";
 
@@ -37,13 +38,19 @@ test("probe reports inactive keys without echoing the response", async () => {
         status: 401,
       },
     );
-  assert.deepEqual(await probeBitrix("vibe_api_x", undefined, fetchImpl), {
-    ok: false,
-    httpStatus: 401,
-    code: "KEY_INACTIVE",
-  });
-  const ok = async () => new Response(JSON.stringify({ success: true, data: [] }), { status: 200 });
-  assert.deepEqual(await probeBitrix("vibe_api_x", undefined, ok), { ok: true, httpStatus: 200 });
+  assert.deepEqual(
+    await probeBitrix("https://example.bitrix24.de/rest/1/testcode123/", undefined, fetchImpl),
+    {
+      ok: false,
+      httpStatus: 401,
+      code: "access_failed",
+    },
+  );
+  const ok = async () => new Response(JSON.stringify({ result: [] }), { status: 200 });
+  assert.deepEqual(
+    await probeBitrix("https://example.bitrix24.de/rest/1/testcode123/", undefined, ok),
+    { ok: true, httpStatus: 200 },
+  );
 });
 
 test("apply is blocked unless production is roapp with a working Bitrix key", () => {
@@ -51,23 +58,99 @@ test("apply is blocked unless production is roapp with a working Bitrix key", ()
     root: true,
     mode: "roapp",
     databaseUrl: true,
-    vibeKey: { present: true },
+    vibeKey: { present: true, kind: "rest_webhook" },
     bitrixProbe: { ok: true },
-    database: {},
+    calendarProbe: { ok: true },
+    database: {
+      bitrixCalendarEnabled: true,
+      openBookingsWithoutBitrix: 0,
+      bitrixQueueUnfinished: 0,
+    },
   };
   assert.deepEqual(blockersFor(ready), []);
   assert.deepEqual(blockersFor({ ...ready, mode: "bitrix" }), ["already_bitrix"]);
   assert.deepEqual(blockersFor({ ...ready, vibeKey: { present: false } }), [
-    "vibe_api_key_missing_in_environment_file",
+    "bitrix_webhook_missing_in_environment_file",
   ]);
   assert.deepEqual(blockersFor({ ...ready, bitrixProbe: { ok: false } }), ["bitrix_probe_failed"]);
-  assert.deepEqual(blockersFor({ ...ready, vibeKey: { present: true, kind: "rest_webhook" } }), [
-    "vibecode_key_required",
+  assert.deepEqual(blockersFor({ ...ready, vibeKey: { present: true, kind: "vibecode" } }), [
+    "rest_webhook_required",
   ]);
-  assert.deepEqual(blockersFor({ ...ready, database: { roQueueUnfinished: 2 } }), [
-    "roapp_queue_unfinished",
-  ]);
+  assert.deepEqual(
+    blockersFor({ ...ready, database: { ...ready.database, roQueueUnfinished: 2 } }),
+    ["roapp_queue_unfinished"],
+  );
   assert.deepEqual(blockersFor({ ...ready, database: { error: "ECONNREFUSED" } }), [
     "database_unreachable",
   ]);
+});
+
+test("HTTP success without a valid CRM payload is never readiness", async () => {
+  for (const body of ["<html>login</html>", "null", "{}", '{"success":true}']) {
+    const result = await probeBitrix(
+      "https://example.bitrix24.de/rest/1/testcode123/",
+      undefined,
+      async () => new Response(body),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "invalid_response");
+  }
+});
+
+test("calendar probe uses native REST and rejects incomplete responses", async () => {
+  for (const [body, ok] of [
+    [{ result: [] }, true],
+    [{ result: [], next: 50 }, false],
+    [{ result: true }, false],
+    [null, false],
+  ]) {
+    const result = await probeCalendar(
+      "https://example.bitrix24.de/rest/1/testcode123/",
+      undefined,
+      async (url, init) => {
+        assert.match(url, /calendar.event.get.json$/);
+        assert.deepEqual(JSON.parse(init.body).section, [2]);
+        return Response.json(body);
+      },
+    );
+    assert.equal(result.ok, ok);
+  }
+  let called = false;
+  assert.equal(
+    (
+      await probeBitrix("vibe_api_retired", undefined, async () => {
+        called = true;
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(called, false);
+});
+
+test("cutover requires verified calendar, migrated open orders and drained Bitrix queue", () => {
+  const ready = {
+    root: true,
+    mode: "roapp",
+    databaseUrl: true,
+    vibeKey: { present: true, kind: "rest_webhook" },
+    bitrixProbe: { ok: true },
+    calendarProbe: { ok: true },
+    database: {
+      bitrixCalendarEnabled: true,
+      openBookingsWithoutBitrix: 0,
+      bitrixQueueUnfinished: 0,
+    },
+  };
+  assert.deepEqual(blockersFor({ ...ready, calendarProbe: { ok: false } }), [
+    "bitrix_calendar_probe_failed",
+  ]);
+  for (const [field, value, code] of [
+    ["bitrixCalendarEnabled", false, "bitrix_calendar_disabled"],
+    ["openBookingsWithoutBitrix", 1, "open_bookings_without_bitrix"],
+    ["bitrixQueueUnfinished", 1, "bitrix_queue_unfinished"],
+  ])
+    assert.deepEqual(blockersFor({ ...ready, database: { ...ready.database, [field]: value } }), [
+      code,
+    ]);
+  assert.deepEqual(blockersFor({ ...ready, database: null }), ["database_unreachable"]);
 });
