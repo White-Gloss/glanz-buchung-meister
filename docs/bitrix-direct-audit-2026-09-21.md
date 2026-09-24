@@ -143,7 +143,16 @@ In dieser Betriebsart gilt:
 
 **Stand `main`:** #249–#252 sind enthalten (über #252, bestätigt durch das identische Ergebnis von #253). GitHub Actions startet derzeit keine Runner (Kontolimit bzw. Abrechnung). Deshalb liefen weder CI noch der IONOS-Deploy, und die Live-Website hat diesen Stand noch nicht.
 
-**Neu:** Unter `/admin/bitrix` gibt es die Schaltfläche „Bereitschaft prüfen“ (`bitrixCutoverReadiness`, nur lesend). Sie prüft Betriebsart, Bitrix-Zugang (Abruf genau eines Auftrags), Kalenderabgleich, verifiziertes Inhaberkonto, E-Mail-Versand (`RESEND_API_KEY`, `MAIL_FROM`), fehlerhafte Bitrix-Übertragungen und offene Buchungen ohne Bitrix-Auftrag. Sie schreibt weder in die Datenbank noch nach Bitrix24.
+**Neu:** Unter `/admin/bitrix` gibt es die Schaltfläche „Bereitschaft prüfen“ (`bitrixCutoverReadiness`, nur lesend). Sie prüft:
+- Betriebsart
+- Bitrix-Zugang (Abruf genau eines Auftrags)
+- Kalenderabgleich: Ist er aktiviert, wird der Werkstattkalender der nächsten sieben Tage mit dem aktuellen Zugang gelesen.
+- verifiziertes Inhaberkonto
+- E-Mail-Versand: Nur das Vorhandensein von `RESEND_API_KEY` und `MAIL_FROM`. Das bleibt deshalb ein Hinweis, bis der erste Testauftrag die Zustellung nachweist.
+- fehlgeschlagene, prüfpflichtige oder mit Fehler wiederholte Bitrix-Übertragungen
+- offene Buchungen ohne Bitrix-Auftrag
+
+Die Prüfung führt nur SELECT-Abfragen aus (keine Schemaanlage, keine Einträge) und nur lesende Bitrix-Abfragen.
 
 ### Abnahmeprotokoll nach der Umschaltung
 
