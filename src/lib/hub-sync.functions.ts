@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
@@ -21,7 +21,7 @@ export const hubSyncStatus = createServerFn({ method: "GET" })
   });
 
 export const issueHubSyncToken = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .handler(async ({ context }) => {
     assertSameSiteRequest();
     const sql = await getSql();

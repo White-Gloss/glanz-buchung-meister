@@ -259,3 +259,25 @@ test("the confirmed PDF remains readable after completion without creating anoth
     await pg.close();
   }
 });
+
+test("phone-only inquiries can be rejected but not confirmed without a customer email", async () => {
+  const { pg, sql, booking, request } = await fixture();
+  try {
+    await sql`update bookings set email=null where id=${booking.id}`;
+    await assert.rejects(applyBridgeAction(sql, request), /keine Kunden-E-Mail/);
+    await applyBridgeAction(sql, { ...request, action: "cancel", requestId: "cancel-phone-only" });
+    const [saved] = await sql<{
+      status: string;
+    }>`select status from bookings where id=${booking.id}`;
+    assert.equal(saved.status, "abgelehnt");
+    // No customer document can be addressed to a missing email.
+    assert.equal(
+      (
+        await sql`select * from outbound_queue where booking_id=${booking.id} and (event_key like 'bitrix:%' or to_addr='qa@example.invalid') and event_type<>'booking.created'`
+      ).length,
+      0,
+    );
+  } finally {
+    await pg.close();
+  }
+});

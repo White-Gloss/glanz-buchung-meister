@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { parseAgentCommand } from "@/lib/agent";
 import { packages } from "@/data/site";
@@ -204,7 +204,7 @@ export const listCustomers = createServerFn({ method: "GET" })
   });
 
 export const updateCustomerNotes = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ id: z.number().int().positive(), notes: z.string().max(4000) }).parse(input),
   )
@@ -231,7 +231,7 @@ export const listDocuments = createServerFn({ method: "GET" })
   });
 
 export const createDocumentFromBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -284,7 +284,7 @@ export const createDocumentFromBooking = createServerFn({ method: "POST" })
   });
 
 export const updateDocumentStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -426,7 +426,7 @@ async function executeParsed(
 }
 
 export const runAgentCommand = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -557,7 +557,7 @@ export const flushOutboundMail = createServerFn({ method: "POST" })
   });
 
 export const sendQontoInvoice = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async (): Promise<{ ok: boolean; error: string }> => {
     return assertLegacyBillingDisabled();
@@ -629,7 +629,7 @@ export const getOperatorSettings = createServerFn({ method: "GET" })
   });
 
 export const setOperatorPin = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ pin: z.string().trim().min(6).max(40) }).parse(input))
   .handler(async ({ data }) => {
     if (data.pin === DEFAULT_OPERATOR_PIN) {
@@ -646,7 +646,7 @@ export const setOperatorPin = createServerFn({ method: "POST" })
   });
 
 export const inboundOperatorMessage = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({

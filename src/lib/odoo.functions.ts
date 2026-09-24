@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import {
@@ -133,7 +133,7 @@ export const odooSyncOverview = createServerFn({ method: "GET" })
   });
 
 export const setOdooSyncEnabled = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
@@ -180,7 +180,7 @@ export const setOdooSyncEnabled = createServerFn({ method: "POST" })
   });
 
 export const retryOdooSync = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
     assertSameSiteRequest();
@@ -193,7 +193,7 @@ export const retryOdooSync = createServerFn({ method: "POST" })
   });
 
 export const saveOdooApiKey = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ apiKey: z.string().trim().min(20).max(512) }).parse(input),
   )

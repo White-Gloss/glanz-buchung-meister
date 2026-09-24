@@ -1,7 +1,7 @@
 import type { Sql } from "./db.ts";
 import { runNotificationWorker } from "./notification-worker.ts";
 import { runZohoSync } from "./zoho-sync.ts";
-import { roappOnlyEnabled } from "./booking-backend.ts";
+import { bitrixOnlyEnabled, roappOnlyEnabled } from "./booking-backend.ts";
 
 /** IONOS runs a persistent Node process. Start delivery after the durable commit,
  * without making the customer wait on providers. The timer recovers work after
@@ -38,6 +38,11 @@ export function kickBookingDelivery(sql: Sql): void {
     () => console.error("[bitrix:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
   );
   state.__bookingDeliveryKick();
+  if (bitrixOnlyEnabled()) {
+    // Leftover RO/Zoho queue rows from an earlier mode must not be pushed after cutover.
+    state.__bitrixSyncKick();
+    return;
+  }
   state.__roappSyncKick ??= createDeliveryKick(
     async () => {
       const { runRoappSync } = await import("./roapp-sync.ts");

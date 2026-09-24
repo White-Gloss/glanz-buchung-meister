@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { operatorMiddleware } from "@/lib/operator-middleware";
+import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
@@ -35,7 +35,7 @@ export const customerMailOverview = createServerFn({ method: "GET" })
   });
 
 export const setAutomaticCustomerMail = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z.object({ enabled: z.boolean(), approved: z.literal(true) }).parse(input),
   )
@@ -55,7 +55,7 @@ export const setAutomaticCustomerMail = createServerFn({ method: "POST" })
   });
 
 export const sendLexwareCustomerMail = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, operatorMiddleware])
+  .middleware([authMiddleware, legacyOperatorMiddleware])
   .validator((input: unknown) =>
     z
       .object({
