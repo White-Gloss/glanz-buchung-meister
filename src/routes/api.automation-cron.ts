@@ -20,7 +20,20 @@ export const Route = createFileRoute("/api/automation-cron")({
             () => "ok",
             () => "failed",
           );
-          const { roappOnlyEnabled } = await import("@/lib/booking-backend");
+          const { bitrixOnlyEnabled, roappOnlyEnabled } = await import("@/lib/booking-backend");
+          if (bitrixOnlyEnabled()) {
+            // Bitrix24 is the sole operating system: no RO, Zoho, Odoo or Lexware runs.
+            const remindersChecked = await scheduleDueBookingReminders(sql);
+            const { runBitrixSync } = await import("@/lib/bitrix-sync");
+            const [delivery, bitrix] = await Promise.all([
+              runNotificationWorker(sql),
+              runBitrixSync(sql),
+            ]);
+            return Response.json(
+              { ok: true, remindersChecked, ...delivery, bitrix, photoCleanup },
+              { headers: { "cache-control": "no-store" } },
+            );
+          }
           if (roappOnlyEnabled()) {
             const { runRoappSync } = await import("@/lib/roapp-sync");
             const [delivery, roapp] = await Promise.all([

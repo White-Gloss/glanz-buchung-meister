@@ -110,3 +110,29 @@ Neue Session, neue Umgebung (lokaler Windows-Rechner statt Cloud-Sandbox). Git u
 **Nicht verändert durch diese Sitzung:** `main`, Produktion, Bitrix-Kontoeinstellungen, Automatisierungsregeln, Postfachzuordnungen, Rechnungsnummernkreise. Die Aktivierungsschritte aus PR #195 (`enableBitrixCalendar`, IONOS-Mailversand) bleiben Server-Funktionen ohne UI-Verdrahtung bzw. hinter einem Standardmäßig-aus-Flag – nichts davon wurde in dieser Sitzung aktiviert.
 
 **Offen (A–I unverändert gegenüber obiger Tabelle):** Die Tabelle "Offene Abnahme nach dem Kundenauftrag" oben bleibt in ihrem Kernaussagen gültig. Zusätzlich neu durch PR #195 vorbereitet, aber weiterhin nicht aktiviert/verifiziert: nativer Kalenderabgleich (Punkt D), native Dokumentvorlagen für Bestätigung/Rechnung (Punkt C/F), IONOS-Mailversand (Punkt C/H). Vor jeder Aktivierung: Portal-Zugang erneut lesend verifizieren (Stand 13.09.2026 ist zehn Tage alt), `enableBitrixCalendar` nur durch den Inhaber auslösen lassen, IONOS-SMTP-Anbindung an den Notification-Worker fertigstellen (siehe Lücken in `docs/bitrix-portal-setup.md`, Abschnitt zu `ionos-mail.server.ts`).
+
+## Fortsetzung 24.09.2026: Betriebsart „nur Bitrix24“
+
+**Entscheidung des Inhabers (im Chat, 24.09.2026):** Bitrix24 soll das alleinige Betriebssystem werden und RO App ersetzen.
+
+**Umgesetzt (Branch `claude/elegant-dijkstra-jdeqv9`, aufbauend auf `integration/bitrix-continuation-20260922` / Entwurf #248):** Neue Betriebsart `BOOKING_OPERATIONS=bitrix`, standardmäßig **aus**. Produktion bleibt unverändert auf `roapp`, bis der Inhaber die Umschaltung ausdrücklich freigibt.
+
+In dieser Betriebsart gilt:
+- Website-Buchungen und Fotoanfragen werden ausschließlich in die Bitrix-Warteschlange gestellt. Fotoanfragen werden wie im RO-Betrieb als Vorgang gespeichert und in Bitrix als „Individuelle Fotoanfrage“ angelegt statt nur im Website-Posteingang zu landen.
+- Keine Aufträge mehr für Zoho, RO, Odoo oder Lexware, auch nicht bei Freigabe, Storno oder Abschluss (`bitrixLed` in `zoho-ops.ts`). Übrig gebliebene RO-/Zoho-Warteschlangeneinträge aus früheren Betriebsarten werden weder beim Sofortversand noch im minütlichen Job weiterverarbeitet.
+- Der minütliche Job führt nur Kundenbenachrichtigungen, Terminerinnerungen und den Bitrix-Abgleich aus.
+- `/api/ro-callback`, `/api/hub` und `/api/zoho-webhook` antworten mit 410, damit kein zweites System Buchungen ändert. `/api/bitrix-workshop` (signierter Rückkanal der Bitrix-App) bleibt aktiv. `/api/ro-photo` bleibt lesend für vorhandene RO-Fotolinks erreichbar.
+- Freigabe, Bestätigungs-PDF, Abschluss und Rechnung laufen ausschließlich über die Bitrix-Werkstatt-App. Eine Bestätigung über das alte Website-Adminpanel erzeugt in dieser Betriebsart keine Bestätigungs-PDF. Der Adminbereich dient nur noch Einstellungen (Schlüssel, Kalenderfreigabe).
+
+**In dieser Sitzung ausgeführt:** neuer Test „Bitrix-only operation queues Bitrix exclusively…“ ohne die Änderung fehlgeschlagen, mit ihr bestanden. `npm test` 524/524 bestanden, `npm run typecheck` fehlerfrei, ESLint auf allen geänderten Dateien ohne Warnungen, `npm run build` erfolgreich. Nicht ausgeführt: `check:migrations`/`check:rls` (keine Migrationsänderung), `test:release`.
+
+**Kontozugang:** keiner in dieser Sitzung. Portal-Angaben weiter oben bleiben „dokumentiert damals“.
+
+**Umschaltung (nur mit ausdrücklicher Freigabe des Inhabers, nicht in dieser Arbeit ausgeführt):**
+1. #248 und diese Änderung prüfen und zusammenführen.
+2. Offene RO-Aufträge in RO abschließen oder manuell nach Bitrix übertragen. Es gibt keine automatische Übernahme von RO-Altaufträgen.
+3. Gültigen Bitrix-Zugang unter `/admin/bitrix` hinterlegen (ein im Chat geteilter Schlüssel ist vorher zu widerrufen). Bitrix-Kalenderprüfung dort aktivieren.
+4. Datensicherung, dann in `/etc/white-gloss/environment` `BOOKING_OPERATIONS=bitrix` setzen und den Dienst neu starten. Rückweg: Wert wieder auf `roapp` setzen.
+5. A–I mit gekennzeichneten Testaufträgen nachweisen.
+
+**Offen (A–I):** unverändert gegenüber den Abschnitten oben. Neu erfüllt ist nur die technische Voraussetzung, dass im Bitrix-Betrieb kein zweites System Aufträge anlegt oder ändert (Teil von D, G, I).

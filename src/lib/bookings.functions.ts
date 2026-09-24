@@ -5,7 +5,7 @@ import { operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
 import { type BookingStatus } from "@/data/site";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
-import { roappOnlyEnabled } from "@/lib/booking-backend";
+import { bitrixOnlyEnabled, roappOnlyEnabled } from "@/lib/booking-backend";
 import {
   saveBookingRequest,
   saveManualBookingRequest,
@@ -145,7 +145,7 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     rejectHoneypot(data.website);
     const sql = await getSql();
     if (data.files.length) validateUploadBatch(data.files);
-    if (roappOnlyEnabled()) {
+    if (roappOnlyEnabled() || bitrixOnlyEnabled()) {
       const key = createHash("sha256").update(`photo:${data.requestId}`).digest("hex");
       const fingerprint = createHash("sha256")
         .update(
@@ -180,8 +180,13 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       setBookingUploadCookie(row.id, capability);
       // No remote processing until the selected files have been durably uploaded.
       if (data.files.length) await saveBookingPhotos(sql, row.id, data.files);
-      const { queueRoappBooking } = await import("@/lib/roapp-sync");
-      await queueRoappBooking(sql, row);
+      if (bitrixOnlyEnabled()) {
+        const { queueBitrixBooking } = await import("@/lib/bitrix-sync");
+        await queueBitrixBooking(sql, row);
+      } else {
+        const { queueRoappBooking } = await import("@/lib/roapp-sync");
+        await queueRoappBooking(sql, row);
+      }
       kickBookingDelivery(sql);
       return { ok: true as const };
     }
@@ -264,8 +269,10 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     const [row] = await sql<{ id: number; version: number }>`
       select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
     if (row) {
-      const { queueRoappBooking } = await import("@/lib/roapp-sync");
-      await queueRoappBooking(sql, row);
+      if (!bitrixOnlyEnabled()) {
+        const { queueRoappBooking } = await import("@/lib/roapp-sync");
+        await queueRoappBooking(sql, row);
+      }
       if (!roappOnlyEnabled()) {
         const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
         await queueBitrixPhotos(sql, row).catch(() => undefined);
