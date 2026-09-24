@@ -573,7 +573,7 @@ export function Configurator({
         ) : null}
         <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
           <select
-            disabled={pending || savedReference !== null}
+            disabled={pending || savedReference !== null || availabilityState !== "ready"}
             id="slot"
             className={inputLine}
             value={slot}
@@ -591,6 +591,11 @@ export function Configurator({
               );
             })}
           </select>
+          <p className="text-xs text-muted">
+            {availabilityState === "loading"
+              ? "Freie Zeiträume werden geprüft …"
+              : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+          </p>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">
           <textarea

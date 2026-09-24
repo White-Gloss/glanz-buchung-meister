@@ -79,3 +79,34 @@ Bis dahin bleiben `main`, Produktion, Altaufträge, Rechnungen, Datenbanken und 
 - https://helpdesk.bitrix24.de/open/24309644/
 
 Wichtig: `crm.item.update` kann gespeicherte Automatisierungsregeln auslösen. Deshalb sind Kontoregeln vor einem echten Statuswechsel zu prüfen. Diese Arbeit führt keinen solchen Live-Aufruf aus.
+
+## Fortsetzung 22.09.2026
+
+Neue Session, neue Umgebung (lokaler Windows-Rechner statt Cloud-Sandbox). Git und Node.js waren hier nicht vorinstalliert und wurden für diese Arbeit installiert (Git 2.55, Node 22.16.0 portable zur Testsuite-Kompatibilität, Node 24.9.0 portable zur CI-Parität für `test:release`).
+
+**Bestandsaufnahme:** `main` lag zu Beginn bei `605c9bc` (enthält die oben beschriebene begrenzte Rechnungsstatus-Korrektur, bereits gemergt). Einzige offene PR laut GitHub-API: **#195** (`codex/bitrix-complete-setup`, Draft, Basis `5e593b6f`). Der in einem früheren Handoff erwähnte Branch/Commit `codex/bitrix-direct-integration-complete` (`0c5da73`) existiert weder als Branch noch als Commit-Objekt auf GitHub – er wurde nie gepusht und war in dieser Session nicht verfügbar.
+
+**Merge:** Branch `integration/bitrix-continuation-20260922` von `main` erstellt, PR #195 hinein gemergt (Commit `c176fc0`). Fünf Konflikte, konservativ aufgelöst:
+- `package.json`: Test-Skript-Liste vereinigt (main hatte seither neue Tests wie `roapp-*`, `hub-sync`, `booking-selection`; PR #195 brachte `ionos-mail.server.test.ts`, `bitrix-calendar.test.ts`, `bitrix-documents.test.ts` neu).
+- `src/components/configurator.tsx`: `main`s Buchungsentwurf-Persistenz (`useBookingDraft`) und Slot-Sperrlogik beibehalten statt PR #195s paralleler Neufassung – letztere nahm eine andere, unbestätigte Kapazitätsannahme an (blockiert nur wenn *beide* Ressourcen belegt, statt bei jeder Überschneidung). Diese Annahme wurde nicht stillschweigend übernommen. `booking-slot-availability.ts` bleibt als unverdrahtete Zusatzdatei erhalten. Ein zusätzlicher, nicht in Konfliktmarkierungen sichtbarer Fehler (`setAvailability` statt `setAvailabilityState`, verwaist aus PR #195s entfernter State-Variable) wurde beim Typecheck gefunden und auf `main`s ursprüngliches `onChange` zurückgesetzt.
+- `src/lib/bitrix-sync.ts`: `main`s Import von `ensureBitrixWorkshopSchema` behalten; `berlinWallToUtc`-Import entfernt, da PR #195 die bisherige `ensureCalendar`-Rückfalllogik auf Basis von `preferred_date`/`preferred_slot` durch eine strikte Pflicht auf explizit gesetzte `work_start_at`/`work_end_at` ersetzt hat (verifiziert: `main` hat diese Funktion seit dem gemeinsamen Basis-Commit nicht verändert, PR #195 ist alleiniger Urheber der Änderung).
+- `src/lib/bitrix.functions.ts`: beide unabhängigen Server-Funktionen kombiniert (`repairBitrixContact` aus `main`, `enableBitrixCalendar` aus PR #195).
+- `src/routes/api.availability.ts`: `main`s `roappOnlyEnabled`-Verzweigung beibehalten (seit Basis-Commit neu in `main`, in PR #195 nicht vorhanden).
+
+**In dieser Sitzung tatsächlich ausgeführt und verifiziert** (nicht nur aus Dokumenten übernommen):
+- `npm ci`: 450 Pakete, 0 Schwachstellen.
+- Gezielte Bitrix-/IONOS-Tests (`bitrix-rest`, `bitrix-sync`, `bitrix-calendar`, `bitrix-documents`, `ionos-mail.server`, `bitrix-workshop-bridge`, `bitrix-agent`): 57/57 bestanden.
+- `npx tsc --noEmit`: fehlerfrei (nach obiger Korrektur).
+- `npx eslint` auf allen gemergten/geänderten Dateien: fehlerfrei, keine Warnungen.
+- `npm test` (volle Suite, Node 22.16.0 mit `--experimental-strip-types`): **523/523 bestanden, 0 Fehler**.
+- `npm run build`: erfolgreich (nach lokaler Installation des fehlenden `lightningcss-win32-x64-msvc`-Pakets; reines Umgebungsproblem dieses ARM64-Windows-Rechners mit x64-Node, keine Codeänderung nötig).
+- `npm run test:release` (isolierter QA-Server: SSR, End-to-End-Flows, Sitemap): bestanden – allerdings erst unter Node 24.9.0. Unter Node 22.16.0 schlug `frontend-ssr` mit `ERR_UNKNOWN_FILE_EXTENSION ".ts"` fehl, weil `scripts/qa/run-checks.mjs` ohne `--experimental-strip-types` startet und sich auf natives TS-Stripping verlässt, das erst ab neueren Node-Versionen standardmäßig aktiv ist. CI (`.github/workflows/ci.yml`) nutzt Node 24 – das ist also eine reine Node-Versionsfrage dieser lokalen Umgebung, kein Fund an diesem Code.
+- **Nicht ausgeführt:** `check:migrations`, `check:rls` (beide benötigen einen erreichbaren PostgreSQL-Server; PR #195 ändert keine Migrationsdateien, daher als nicht anwendbar für diesen Merge eingestuft statt eine vollständige lokale Postgres-Einrichtung nur dafür aufzusetzen). `lighthouse:*` nicht ausgeführt (nicht Teil der Kernverifikation, keine Layoutänderung durch diesen Merge).
+
+**Kontozugang:** In dieser Sitzung war kein authentifizierter Bitrix24-Kontozugriff verfügbar (kein Connector, kein Browser-Login geprüft). Alle Aussagen zu Portal-Feldern, Vorlagen-IDs, Postfach-Konfiguration weiter oben in diesem Dokument stammen aus einer früheren Sitzung (Stand 13.09.2026) und wurden hier **nicht erneut verifiziert** – sie bleiben als "dokumentiert damals", nicht "geprüft jetzt" zu behandeln.
+
+**Schreibzugriff/Push:** Dieser lokale Windows-Rechner hat über den Git Credential Manager funktionierenden GitHub-Schreibzugriff (verifiziert per `git push --dry-run`, Exit-Code 0) – anders als die in einem früheren Handoff beschriebene Cloud-Sandbox, deren Git-Proxy keine Schreib-Credentials für dieses Repository hatte. Der Branch `integration/bitrix-continuation-20260922` wurde nach `origin` gepusht, **nicht** nach `main` gemergt.
+
+**Nicht verändert durch diese Sitzung:** `main`, Produktion, Bitrix-Kontoeinstellungen, Automatisierungsregeln, Postfachzuordnungen, Rechnungsnummernkreise. Die Aktivierungsschritte aus PR #195 (`enableBitrixCalendar`, IONOS-Mailversand) bleiben Server-Funktionen ohne UI-Verdrahtung bzw. hinter einem Standardmäßig-aus-Flag – nichts davon wurde in dieser Sitzung aktiviert.
+
+**Offen (A–I unverändert gegenüber obiger Tabelle):** Die Tabelle "Offene Abnahme nach dem Kundenauftrag" oben bleibt in ihrem Kernaussagen gültig. Zusätzlich neu durch PR #195 vorbereitet, aber weiterhin nicht aktiviert/verifiziert: nativer Kalenderabgleich (Punkt D), native Dokumentvorlagen für Bestätigung/Rechnung (Punkt C/F), IONOS-Mailversand (Punkt C/H). Vor jeder Aktivierung: Portal-Zugang erneut lesend verifizieren (Stand 13.09.2026 ist zehn Tage alt), `enableBitrixCalendar` nur durch den Inhaber auslösen lassen, IONOS-SMTP-Anbindung an den Notification-Worker fertigstellen (siehe Lücken in `docs/bitrix-portal-setup.md`, Abschnitt zu `ionos-mail.server.ts`).

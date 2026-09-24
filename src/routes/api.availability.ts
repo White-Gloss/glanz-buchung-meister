@@ -5,6 +5,12 @@ export const Route = createFileRoute("/api/availability")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { assertRateLimit, clientIp } = await import("@/lib/rate-limit");
+        try {
+          assertRateLimit("availability", clientIp(request), 8, 60_000);
+        } catch {
+          return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
+        }
         const url = new URL(request.url);
         const from = url.searchParams.get("from") || "";
         const to = url.searchParams.get("to") || "";

@@ -20,6 +20,7 @@ import {
 import { runZohoSync } from "@/lib/zoho-sync";
 import { applyZohoSetup, probeZohoSetup } from "@/lib/zoho-setup";
 import { formatBerlinRange } from "@/lib/zoho-time";
+import { calendarDateRange } from "@/lib/bitrix-calendar";
 
 const SHOP = "white-gloss";
 
@@ -104,8 +105,14 @@ export const zohoConfirm = createServerFn({ method: "POST" })
       .extend({
         startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         startTime: z.string().regex(/^\d{2}:\d{2}$/),
-        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        endDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        endTime: z
+          .string()
+          .regex(/^\d{2}:\d{2}$/)
+          .optional(),
         durationMinutes: z.number().int().positive().max(20_160).optional(),
         agreedCents: z.number().int().positive(),
         resourceId: z.number().int().min(1).max(2).optional(),
@@ -153,7 +160,10 @@ export const zohoComplete = createServerFn({ method: "POST" })
       .extend({
         payment: z.enum(["bar", "ueberweisung"]),
         cashCents: z.number().int().positive().optional(),
-        cashDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        cashDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
         agreedCents: z.number().int().positive().optional(),
       })
       .parse(input),
@@ -224,10 +234,7 @@ export const publicBusyWindows = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const sql = await getSql();
-    const windows = await listBusyWindows(
-      sql,
-      `${data.from}T00:00:00+01:00`,
-      `${data.to}T23:59:59+02:00`,
-    );
+    const range = calendarDateRange(data.from, data.to);
+    const windows = await listBusyWindows(sql, range.from, range.to);
     return { windows };
   });
