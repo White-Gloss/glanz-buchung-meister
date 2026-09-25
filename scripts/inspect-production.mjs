@@ -492,7 +492,7 @@ export function inspectionSummary(report) {
     `Providers: storage=${config?.storageConfigured === true}; mail=${fields.RESEND_API_KEY?.present && fields.MAIL_FROM?.valid ? "configured" : "incomplete"}; WhatsApp fields=${config?.whatsappConfigurationPresent === true}`,
     `Qonto presence: login=${fields.QONTO_LOGIN?.present === true}; secret=${fields.QONTO_SECRET_KEY?.present === true}; IBAN=${fields.QONTO_IBAN?.present === true}`,
     `Lexware presence: key=${fields.LEXWARE_API_KEY?.present === true}`,
-    `Bitrix presence: key=${fields.VIBE_API_KEY?.present === true}`,
+    `Bitrix presence: native-webhook=${fields.BITRIX_WEBHOOK_URL?.present === true}; legacy-key=${fields.VIBE_API_KEY?.present === true}`,
     `Worker: last successful run=${report.notificationWorker?.lastSuccessfulRun ?? "not recorded"}`,
   ];
   if (report.failure)
