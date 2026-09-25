@@ -14,6 +14,7 @@ import {
   queueBitrixPhotos,
   loadReadyPhotos,
   runBitrixSync,
+  syncOneBitrixBooking,
   splitCustomerName,
   stageForStatus,
 } from "./bitrix-sync.ts";
@@ -24,6 +25,49 @@ import {
   toRestDealFields,
 } from "./bitrix-rest.ts";
 import { readBitrixWebhook } from "./bitrix-credentials.server.ts";
+
+test("reviewed legacy product snapshots preserve zero tax and reject invalid tax rates", async () => {
+  const calls: unknown[] = [];
+  const request = async <T>(_method: string, _path: string, body?: unknown) => {
+    calls.push(body);
+    return { ok: true } as T;
+  };
+  const sql = (async () => []) as unknown as Sql;
+  const booking = {
+    id: 50,
+    total_cents: 26800,
+    package_id: "basis",
+    customer_name: "Test Person",
+  } as WorkflowBooking;
+  const progress = {
+    bitrix_contact_id: 1,
+    bitrix_deal_id: 2,
+    bitrix_event_id: null,
+    photos_done: true,
+    details_done: false,
+    initial_products: [
+      { catalogId: "legacy-1", productId: 0, name: "Basisreinigung", price: 149, taxRate: 0 },
+      { catalogId: "legacy-2", productId: 0, name: "Felgen", price: 119, taxRate: 0 },
+    ],
+  };
+  await syncOneBitrixBooking(sql, booking, request, {}, progress);
+  assert.deepEqual(calls, [
+    {
+      items: progress.initial_products.map((item) => ({
+        productId: 0,
+        productName: item.name,
+        price: item.price,
+        quantity: 1,
+        taxRate: 0,
+        taxIncluded: true,
+      })),
+    },
+  ]);
+  calls.length = 0;
+  progress.initial_products[0].taxRate = -1;
+  await assert.rejects(syncOneBitrixBooking(sql, booking, request, {}, progress), /Steuersatz/);
+  assert.equal(calls.length, 0);
+});
 
 test("media transfer includes every allowed image and video format", async () => {
   const rows = [

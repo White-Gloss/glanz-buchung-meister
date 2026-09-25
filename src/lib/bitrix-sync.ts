@@ -187,11 +187,23 @@ export function splitCustomerName(name: string): { name: string; lastName: strin
   return { name: parts[0], lastName: parts.slice(1).join(" ") };
 }
 
-export function bookingLineItems(booking: BitrixBooking, productMap: Record<string, number>) {
+export type BitrixLineItem = {
+  catalogId: string;
+  productId: number;
+  name: string;
+  price: number;
+  /** A reviewed legacy snapshot can retain a different recorded tax rate. */
+  taxRate?: number;
+};
+
+export function bookingLineItems(
+  booking: BitrixBooking,
+  productMap: Record<string, number>,
+): BitrixLineItem[] {
   const pack = packages.find((p) => p.id === booking.package_id);
   const klass = vehicleClasses.find((v) => v.id === booking.class_id);
   const factor = klass?.factor ?? 1;
-  const items: Array<{ catalogId: string; productId: number; name: string; price: number }> = [];
+  const items: BitrixLineItem[] = [];
   const packId = productMap[booking.package_id];
   if (pack && packId) {
     items.push({
@@ -433,6 +445,16 @@ async function attachProducts(
   snapshot?: ReturnType<typeof bookingLineItems> | null,
 ) {
   const items = snapshot ?? bookingLineItems(booking, productMap);
+  if (
+    items.some(
+      (item) =>
+        item.taxRate !== undefined &&
+        (!Number.isFinite(item.taxRate) || item.taxRate < 0 || item.taxRate > 100),
+    )
+  )
+    throw new BitrixError("Gespeicherter Steuersatz muss geprüft werden.", "bitrix_tax_review", 0, {
+      review: true,
+    });
   const expected = booking.agreed_price_cents ?? booking.total_cents;
   const actual = items.reduce((sum, item) => sum + Math.round(item.price * 100), 0);
   if (booking.package_id !== "photo-inquiry" && Math.abs(actual - expected) > items.length)
@@ -449,7 +471,7 @@ async function attachProducts(
     productName: item.name,
     price: item.price,
     quantity: 1,
-    taxRate: 19,
+    taxRate: item.taxRate ?? 19,
     taxIncluded: true,
   }));
   if (!products.length) return;

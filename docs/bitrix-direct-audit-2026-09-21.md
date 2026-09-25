@@ -245,3 +245,78 @@ Der abschließende vollständige lokale Prüflauf (verify-gates.KGu6UZ) hat lint
 Nach erneuter Aufforderung zum vollständigen Abschluss ist die Remote-Konsole mit erneuerter Tab-Bindung, Options → Toggle inputs und einzelnen Tastendrücken bedienbar. Der laufende Release-Pfad ist /srv/white-gloss-releases/7a6407c3947bea7b585d58edad483982ef5093f1 (PR #248 vom 24.09.). white-gloss.service ist active, arbeitet unter deploy und verwendet /srv/white-gloss-current. Bisher keine App-/Datenbankänderung und kein Dienstneustart; lediglich eine gesicherte temporäre Änderung der Konsolenschrift sowie ein temporäres Diagnoseskript.
 
 Im Cutover-Prüflauf wurde ein bislang nicht abgedeckter Orchestrierungsfehler korrigiert: inspect() übersprang den Kalender ausgerechnet für gültige native Webhooks. Die neue Regression prüft die tatsächliche Folge crm.deal.list → calendar.event.get; alle neun Cutover-Tests und anschließend sämtliche 458 Tests sowie Lint, TypeScript, Deno, Syntax, Build und isoliertes Release-QA sind bestanden. Der alte laufende Stand liest nur VIBE_API_KEY, nicht BITRIX_WEBHOOK_URL. Deshalb darf ein gemeinsamer Code-/Konfigurationswechsel nicht über den bloßen Konfigurationsschalter mit zwischenzeitlichem Altcode-Neustart erfolgen. Der konkrete Datenbestand und die gemeinsame Aktivierung/Rücknahme werden vor der Veröffentlichung geprüft.
+
+## Fortsetzung 25.09.2026: Produktionsinventur und sichere Vorbereitung
+
+PR #259 wurde um 00:27 UTC als `82f4f8641298991cc63aab130093f55b12736c10` zusammengeführt. Der Baum ist identisch mit dem geprüften Stand `4f3d9d0`. Die laufende IONOS-Version bleibt `7a6407c3947bea7b585d58edad483982ef5093f1`; es gab keine Aktivierung, Migration oder CRM-Schreibaktion.
+
+Die rein lesende Produktionsprüfung weist drei Buchungen, neun Kunden und drei Medien nach. Alle drei Buchungen sind lokal noch offen und mit RO App synchronisiert; es gibt keine Bitrix-Queuezuordnung. Native Webhook-Konfiguration fehlt im aktiven Environment, der gespeicherte alte Panel-Schlüssel ist kein nativer Webhook, der Bitrix-Kalender ist deaktiviert. Migrationen 0015, 0016, 0017, 0018 und 0021 fehlen im Register; Tabellen können bereits durch frühere Laufzeitinitialisierung vorhanden sein. Kein erkannter Kapazitätskonflikt.
+
+Ein vollständiger PostgreSQL-Dump (202744 Bytes) wurde mit `archiveListValid=true` geprüft. Geschützte Sicherungen der Umgebung und des bisherigen Releasepfads liegen daneben; private Medien im vorhandenen Bucket bleiben erhalten. Der Server-Build und das isolierte Release-QA im separaten Opsverzeichnis sind erfolgreich; kein Produktionsdienst wurde dafür verändert.
+
+`stage-bitrix-environment.mjs` erstellt ausschließlich eine separate Datei mit Modus 0600, ersetzt nur Betriebsmodus und nativen Webhook und verweigert Überschreiben sowie ungültige Schlüssel. Drei gezielte Prüfungen und der vollständige Verifikationslauf mit 461 Tests, Lint, Typecheck, Funktionen, Syntax, Build und isolierter QA bestanden. `inspect-bitrix-legacy-handoff.mjs` liest alte Aufträge und Positionen sowie native Referenz-/Titelkandidaten; sein detaillierter Übergabenachweis enthält private Daten und wird ausschließlich geschützt auf dem Server gespeichert. Keine Import- oder Aktivierungsfunktion ist darin enthalten.
+
+Zusätzlicher Live-Blocker: GOOGLE_CLIENT_ID und GOOGLE_CLIENT_SECRET sind beide nicht im aktiven Environment gesetzt. Vor Aktivierung eines Builds ohne eingebettete CI-Werte muss die bestehende Google-Anmeldung gesichert übernommen werden. Es wurde kein neuer Schlüssel erstellt und kein Kontozugang erweitert. Der vorhandene Bitrix-Webhook wurde verdeckt in einer separaten privaten Datei auf dem Website-Server bereitgestellt, noch nicht aktiviert.
+
+Native Automatisierung erneut nur lesend geprüft: Signaturregel vorhanden, Vorlagenauswahl zeigt frühere Auftragsdokumente; der ungespeicherte Regelentwurf wurde vollständig verworfen. Laut offizieller Dokumentation sendet diese Regel vorrangig SMS, was keine nachgewiesene E-Mail-Signaturlösung ist: https://helpdesk.bitrix24.de/open/24309644/. Native Kundenkommunikation, Rechnung und Altbestandsübernahme bleiben vor einer vollständigen Abnahme offen.
+
+### Kombinierter Code-/Umgebungswechsel vorbereitet, 25.09.2026
+
+**Plattform-Nachtrag:** Die Gegenprüfung fand zunächst aus der Windows-CRLF-Arbeitskopie abgeleitete SQL-Hashes. Die fünf Konstanten entsprechen jetzt nach separat ausgeführtem `git show 4f3d9d0:migrations/<Datei>`-Bytevergleich den unveränderten LF-Git-Blobs des geprüften Ausgangsstands. Keine SQL-Inhaltsänderung und keine Normalisierung während der Anwendung. Ein zusätzlicher Regressionstest verlangt LF und lehnt dieselbe Datei mit CRLF strikt ab; 47/47 gezielte Tests bestanden. Der integrierende Hauptauftrag setzt entsprechend `migrations/*.sql text eol=lf` in `.gitattributes`, damit frische Windows-Checkouts dieselben Bytes verwenden.
+
+**Diagnose-Nachtrag:** Bei verändertem Bestand nennt der Helfer jetzt das betroffene Prüffeld und gegebenenfalls die geänderten Tabellennamen, ohne Zeilen, Werte oder Hashes auszugeben. Lease-/Heartbeat-Tabellen werden weiterhin vollständig verglichen; keine Ausnahme für scheinbar harmlose Schreibvorgänge. Nach diesem Zusatz bestehen 46/46 gezielte Tests und die separate Skript-Lintprüfung. Die unten genannten 501 Volltests und Build-/QA-Nachweise stammen aus der vorausgehenden Prüfung. Eine nachträgliche Übernahme fehlender Google-OAuth-Konfiguration ist eine gesonderte Änderung; die Umgebungs-Whitelist wurde dafür nicht erweitert.
+
+`scripts/cutover-bitrix-release.mjs` und `cutover-bitrix-runtime.mjs` sind ein gesonderter Helfer für den ersten Wechsel von RO App auf das geprüfte native Release. Ohne `--apply` erfolgen ausschließlich lesende Prüfungen. Er ruft weder den alten Konfigurationsschalter noch `deploy-ionos-release.sh activate` auf. Keine Geschäftsdatenübernahme und keine native Automatisierung werden damit eingerichtet.
+
+Voraussetzungen: vollständiger geprüfter Operations-Checkout samt `pg`, rootgeschützte Dateien/Verzeichnisse (auch ein root-eigener privater Unterordner unter sticky `/var/tmp` ist möglich); beide Releases unter `/srv/white-gloss-releases/<40-stellige SHA>` unveränderlich für den Laufzeitbenutzer; root-eigene vorbereitete Umgebung unter `/etc/white-gloss/`, Modus 0600. Nur `BOOKING_OPERATIONS` und `BITRIX_WEBHOOK_URL` dürfen sich von der bisherigen Umgebung unterscheiden. Native CRM-/Kalenderproben müssen gelingen, sämtliche offenen RO-/Bitrix-Zuordnungen und Übertragungsqueues müssen geklärt sein. Die offenen nativen Aufträge werden zusätzlich mit `crm.deal.get` auf passende Auftrags-ID, Kontakt-ID und `UF_CRM_WG_BOOKING_REF` geprüft. Der Helfer erzeugt fehlende Zuordnungen nicht selbst.
+
+Aus dem bereits geprüften Build im Operations-Checkout den portablen Inhaltsdigest bestimmen; diesen Wert beim separaten Staging unverändert als Erwartungswert behalten. Ein erst aus einem unbekannten Zielrelease berechneter Digest ist kein Herkunftsnachweis:
+
+```bash
+node --input-type=module -e "import {outputDigest} from './scripts/cutover-bitrix-runtime.mjs'; console.log(await outputDigest('.output'));"
+```
+
+Lesende Prüfung mit der tatsächlichen veröffentlichten Quell-SHA und dem Digest dieses Builds (Platzhalter vor Ausführung ersetzen):
+
+```bash
+node scripts/cutover-bitrix-release.mjs \
+  --target-release=<40-stellige-SHA> \
+  --target-output-sha256=<64-stelliger-Builddigest> \
+  --prepared-env=/etc/white-gloss/bitrix-20260925.environment
+```
+
+Nur nach konkreter Freigabe denselben Aufruf um `--apply --open-ro=<bestätigte-Anzahl>` ergänzen. Weitere bekannte `white-gloss-*.service`/`.timer` jeweils über `--writer-unit=<Name>` angeben. Unbekannte Website-Units oder passende Cron-Aufrufe blockieren den Wechsel; globale Cron-Dienste werden nicht angehalten. Alle anderen Veröffentlicher müssen denselben Kernel-Lock `/run/white-gloss-deploy.lock` beachten; ältere Helfer ohne diesen Lock dürfen währenddessen nicht laufen.
+
+Die Anwendung hält zuerst sämtliche erfassten Website-Writer an. Vorher/nachher werden Umgebungen, Releaseinhalte, Migrationsdateien, Cron-/Unitbestand, offene Anzahl, native Identitäten und ein Fingerprint aller öffentlichen Datenbanktabellen verglichen. Erst danach: geprüftes `pg_dump`-Archiv samt SHA256 und `pg_restore --list`, verifizierte private Sicherung beider Umgebungen sowie alter/neuer Release-ID und ursprünglicher Dienstzustände. Nur noch fehlende, unverändert geprüfte kompatible SQL-Dateien 0015–0018 und 0021 sind erlaubt. Die Migrationen können additive Journal-/Metadatenänderungen durchführen; Kundendaten werden nicht automatisch zurückgesetzt. Die PostgreSQL-Sicherung enthält keine extern in Supabase gespeicherten Fotodateien.
+
+Während alle Writer stehen, werden Umgebung und Releaseverweis ersetzt. Konfigurations-/Schemaprüfung, Inhaltsprüfung, lokaler HTTP-Healthcheck und tatsächliches Arbeitsverzeichnis des laufenden Prozesses prüfen das Ziel. Nur `white-gloss.service` startet; Hintergrunddienste bleiben bis zur getrennten Abnahme angehalten. Sie werden nicht dauerhaft deaktiviert, ein Neustart des Servers ist deshalb vor dieser Abnahme ausgeschlossen.
+
+Bei einem abfangbaren Fehler: Writer stoppen, Kompatibilität des bisherigen Schemas prüfen, ursprüngliche Umgebung **und** vorheriges kompatibles Release wiederherstellen und prüfen, dann nur zuvor aktive Dienste starten. Keine automatische Datenbankrücknahme. Falls die Wiederherstellung nicht vollständig gelingt, bleiben die Writer angehalten und `requiresOperator=true` wird ausgegeben. Zwei Dateiumbenennungen sind keine gemeinsame Dateisystemtransaktion: SIGKILL/Stromausfall erfordern manuelle Wiederherstellung anhand der privaten Sicherung und `cutover-state.json`, bevor Dienste wieder anlaufen. Unveränderte öffentliche Ausgabe enthält keine Verbindungsdaten, Schlüssel, Kundendaten oder rohen Providerfehler.
+
+**Lokal geprüft, nicht auf dem Produktivserver ausgeführt:** vollständiger Lauf 501/501 Tests, anschließend 45/45 gezielte Cutover-Tests einschließlich ergänzter nativer Identitätsprüfung; TypeScript und ESLint erfolgreich (fünf bestehende Warnungen), neue Skripte separat mit ESLint geprüft, Produktionsbuild erfolgreich, isoliertes Release-QA mit SSR/Abläufen/Sitemap erfolgreich. Die Betriebssystemaufrufe werden in den Fehlerprüfungen ersetzt; ein echter Linux-/systemd-Cutover ist damit noch nicht nachgewiesen. Die bereits separat belegten PostgreSQL-Migrations-/RLS-Prüfungen bleiben unverändert. Gezielte Tests decken Sicherungsfehler, Veränderungen nach Stoppen, Migrationsfehler, Fehler vor/nach Umbenennen, Healthcheckfehler, unterbrochene Rücknahme und fehlende Geheimnisausgabe ab.
+
+## Fortsetzung 25.09.2026: Gesicherter Altbestand und wiederaufnehmbare Übernahme
+
+Der Produktionsbestand wurde über die Root-Konsole und ausschließlich lesende API-Aufrufe abgeglichen. Das private PostgreSQL-Archiv unter `/var/backups/white-gloss/20260925T003703Z/database.dump` ist 202744 Bytes groß und mit `pg_restore --list` geprüft; die ursprüngliche Umgebung und Release-ID sind daneben gesichert. Der vollständige RO-/Website-/Fotoreferenzabgleich liegt nur auf dem Server als private `legacy-handoff.json`. Es wurden keine Kundenstammdaten in dieses öffentliche Audit übernommen.
+
+| Website-Vorgang | Originalstatus RO | Gesamtbetrag | Positionen | Fotos |
+| --- | --- | ---: | ---: | ---: |
+| WG-50 | Akzeptiert | 1503,75 EUR | 4 | 2 |
+| WG-51 | Erledigt | 1272,50 EUR | 2 | 0 |
+| WG-52 | In Rechnung gestellt | 268,00 EUR | 2 | 1 |
+
+Die Website-Gesamtpreise stimmen jeweils überein. Bei Suche nach exakter WG-Referenz und Titelpräfix wurde für keinen dieser drei Vorgänge ein nativer Bitrix-Auftrag gefunden. WG-51 enthält bereits in RO einen widersprüchlichen Verlauf: Abschluss und vollständige Zahlung sind erfasst, während der gespeicherte Termin am 13.11.2026 liegt. Dieser Quellstand wird nicht stillschweigend umdatiert. WG-52 enthält keine Steuerzeilen in den RO-Positionen; bei der Übernahme wird deshalb kein Steuersatz ergänzt. Das ist die unveränderte Übernahme der gespeicherten Werte, keine neue steuerliche Bewertung oder Rechnungserstellung.
+
+`import-bitrix-legacy.mjs` ist standardmäßig rein lesend. Es verlangt den geschützten Snapshot und die separate vorbereitete Bitrix-Umgebung, liest RO-Auftrag und Positionen erneut, prüft Kunden-/Auftragszuordnung, private Fotos und Kalenderkonflikte und liefert einen Fingerprint des konkreten Übernahmeplans. Erst `--apply --approve=<Fingerprint> --journal=<neue-private-Datei> --database-backup=<geprüftes-Archiv>` erlaubt den Schreibweg. Er verwendet das vorhandene Transferjournal der Website und übernimmt Originalleistungen, Betrag, Zeitraum, Fotos und den RO-Bearbeitungsstand in native Kontakte, Aufträge und Kalendertermine. Keine Rechnung, Zahlungsbuchung, Unterschriftsanforderung oder Kundenmail wird erzeugt. Ursprüngliche lokale Status-/Preisfelder und bisherige Belege bleiben erhalten. Bei unklarer Kalenderanlage, abweichendem nativen Readback oder einer zwischenzeitlichen Quelländerung bleibt die Übertragung in `review`; eine erneute Ausführung erstellt keine zweite Karte oder keinen zweiten Termin.
+
+Die native Kalenderfreigabe gehört zum gemeinsamen Cutover. Sie wird nicht vorab bei laufendem Altcode aktiviert: Der Cutover sichert den ursprünglichen booleschen Wert, schaltet ihn erst nach Writer-Stopp und Backup zusammen mit Code/Umgebung um und stellt ihn bei Rücknahme wieder her. Kalender-API-Fehler bleiben weiterhin Blocker. `.gitattributes` fixiert zusätzlich die systemd-Service-Dateien auf LF; die Live-Unit selbst wurde nicht verändert.
+
+**Verifikation:** vollständiger lokaler Prüflauf `verify-gates.us6qRd` mit 536/536 Tests, Lint, TypeScript, Deno, Syntax, Build und isoliertem SSR-/Flow-/Sitemap-QA bestanden. Nach ergänzter Kalender-Readback-Prüfung nochmals 49/49 gezielte Cutover-Tests bestanden. Die Übernahmeprüfungen verwenden isolierte PGlite-Datenbanken und ersetzte CRM-Aufrufe; produktive CRM-Übernahme und Bitrix-Cutover sind damit noch nicht ausgeführt oder live abgenommen.
+
+Der direkte IONOS-Updatezugang wurde in der getrennten Deployment-Aufgabe ausdrücklich freigegeben. Bestehende SSH-Schlüssel blieben erhalten; der neue Schlüssel ist eingeschränkt. Der geprüfte Deployment-Helfer ist installiert (SHA256 `ff4fc53fa332da9c0888c4d627bf136a81c0a3a82b655b328190bd61e8d4c50a`, root:root 755), der vorherige Helfer privat gesichert. Stale-Guard, Übertragungsprüfsummen und Linux-Syntaxprüfung wurden unabhängig bestätigt. Diese Einrichtung allein hat den Website-Prozess nicht neu gestartet. Der dort zusätzlich beauftragte erste Live-Release bleibt separat koordiniert; sein Ziel darf den vorbereiteten nativen CRM-Stand nicht vorzeitig aktivieren.
+
+**Korrektur zum zuvor offenen Google-Check:** Bereits die unveränderte Live-Version meldet `PROVIDER_NOT_FOUND`; weder Laufzeitumgebung noch Live-Build enthalten Google-OAuth-Konfiguration. Das ist ein bereits bestehender Zustand, keine durch diese Bitrix-Änderung erzeugte Regression. Keine OAuth-Zugangsdaten wurden geändert oder kopiert.
+
+Weiterhin offen sind die reale native Bestandsübernahme, der gemeinsame Cutover einschließlich Worker-Abnahme sowie die im Konto noch nicht vollständig eingerichteten Signatur-, Rechnungs- und Erinnerungsabläufe. Für diese Abläufe ist keine reale Kundenkommunikation ausgelöst worden. Die letzte produktive Root-Prüfung und Aktivierung werden nach der erneuerten IONOS-Sitzung fortgesetzt.
+
+Der abschließende vollständige Lauf nach allen Codeänderungen (verify-gates.fsN4lz) besteht ebenfalls mit 536/536 Tests sowie sämtlichen sieben Gates. Keine Prüfung übersprungen.
