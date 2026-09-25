@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   blockersFor,
   describeKey,
+  inspect,
   parseEnvironment,
   probeBitrix,
   probeCalendar,
@@ -153,4 +154,21 @@ test("cutover requires verified calendar, migrated open orders and drained Bitri
       code,
     ]);
   assert.deepEqual(blockersFor({ ...ready, database: null }), ["database_unreachable"]);
+});
+
+test("dry-run inspection actually probes the native calendar after CRM access succeeds", async () => {
+  const methods = [];
+  const report = await inspect(
+    { BOOKING_OPERATIONS: "roapp", BITRIX_WEBHOOK_URL: "https://example.bitrix24.de/rest/1/testcode123/" },
+    undefined,
+    "test_database_unavailable",
+    async (url) => {
+      methods.push(new URL(url).pathname.split("/").at(-1));
+      return Response.json({ result: [] });
+    },
+  );
+  assert.deepEqual(methods, ["crm.deal.list.json", "calendar.event.get.json"]);
+  assert.deepEqual(report.calendarProbe, { ok: true, httpStatus: 200 });
+  assert.equal(report.blockers.includes("bitrix_calendar_probe_failed"), false);
+  assert.equal(report.blockers.includes("database_unreachable"), true);
 });

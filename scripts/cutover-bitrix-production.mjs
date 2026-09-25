@@ -139,7 +139,7 @@ async function openOrders(db) {
   ).rows;
 }
 
-async function inspect(env, db, connectError) {
+export async function inspect(env, db, connectError, fetchImpl = fetch) {
   const report = {
     root: process.getuid?.() === 0,
     mode: env.BOOKING_OPERATIONS || null,
@@ -147,11 +147,12 @@ async function inspect(env, db, connectError) {
     vibeKey: describeKey(env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY),
   };
   if (report.vibeKey.present)
-    report.bitrixProbe = await probeBitrix(env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY, undefined);
-  if (report.bitrixProbe?.ok && report.vibeKey.kind !== "rest_webhook")
+    report.bitrixProbe = await probeBitrix(env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY, undefined, fetchImpl);
+  if (report.bitrixProbe?.ok && report.vibeKey.kind === "rest_webhook")
     report.calendarProbe = await probeCalendar(
       env.BITRIX_WEBHOOK_URL || env.VIBE_API_KEY,
       undefined,
+      fetchImpl,
     );
   try {
     if (!db) throw Object.assign(new Error("connect_failed"), { code: connectError });
