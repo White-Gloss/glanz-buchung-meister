@@ -4,6 +4,7 @@ import { IconArrowRight } from "@/components/icons";
 import "./scroll-film-hero.css";
 
 import { scrollFilm } from "@/data/scroll-film";
+import { loadSeekableVideo } from "@/lib/seekable-video";
 type Connection = EventTarget & { saveData?: boolean; effectiveType?: string };
 type DeviceNavigator = Navigator & { connection?: Connection; deviceMemory?: number };
 
@@ -43,6 +44,10 @@ export function ScrollFilmHero() {
     const directBooking = window.location.hash === "#buchung";
     let started = false;
     let firstFrame = false;
+    let releaseVideo: (() => void) | undefined;
+    let lastSeek = -1;
+    // The poster is sufficient until the visitor actually enters the film.
+    let engaged = window.scrollY > 0 && !directBooking;
 
     const allowed = () =>
       !directBooking &&
@@ -63,7 +68,11 @@ export function ScrollFilmHero() {
       if (!enabled || pausedRef.current || !started || video.seeking || video.readyState < 2)
         return;
       const next = position * endTime();
-      if (Math.abs(video.currentTime - next) >= 1 / 48) video.currentTime = next;
+      // A failed seek must not trigger an endless seeked -> seek loop.
+      if (Math.abs(video.currentTime - next) >= 1 / 48 && Math.abs(lastSeek - next) >= 1 / 48) {
+        lastSeek = next;
+        video.currentTime = next;
+      }
     };
     const paint = () => {
       frame = 0;
@@ -81,6 +90,10 @@ export function ScrollFilmHero() {
       if (position !== target) frame = window.requestAnimationFrame(paint);
     };
     const schedule = () => {
+      if (window.scrollY > top && !engaged) {
+        engaged = true;
+        start();
+      }
       if (!frame && enabled) frame = window.requestAnimationFrame(paint);
     };
     const measure = () => {
@@ -103,20 +116,24 @@ export function ScrollFilmHero() {
         });
       }
       // Present a decoded frame without autoplay, also on touch devices.
-      video.currentTime = Math.max(0.001, position * endTime());
+      if (firstFrame) return;
+      lastSeek = Math.max(0.001, position * endTime());
+      video.currentTime = lastSeek;
       schedule();
     };
     const start = () => {
-      if (disposed || !enabled || started || !inView || document.hidden || !poster.complete) return;
+      if (disposed || !enabled || !engaged || started || !inView || document.hidden || !poster.complete) return;
       started = true;
       video.poster = poster.currentSrc || poster.src;
-      video.src = mobile.matches ? scrollFilm.mobileVideo : scrollFilm.desktopVideo;
-      video.load();
+      video.preload = "auto";
+      releaseVideo = loadSeekableVideo(video, mobile.matches ? scrollFilm.mobileVideo : scrollFilm.desktopVideo, failed);
     };
     const resizeMedia = () => {
       if (!started) return;
       started = false;
       firstFrame = false;
+      lastSeek = -1;
+      releaseVideo?.();
       if (videoFrame) video.cancelVideoFrameCallback(videoFrame);
       videoFrame = 0;
       delete video.dataset.visible;
@@ -140,6 +157,8 @@ export function ScrollFilmHero() {
         delete video.dataset.visible;
         started = false;
         firstFrame = false;
+        lastSeek = -1;
+        releaseVideo?.();
         copy.style.opacity = "1";
         copy.style.transform = "none";
         copy.inert = false;
@@ -208,6 +227,7 @@ export function ScrollFilmHero() {
       video.pause();
       video.removeAttribute("src");
       video.load();
+      releaseVideo?.();
     };
   }, []);
 
@@ -238,7 +258,7 @@ export function ScrollFilmHero() {
             ref={videoRef}
             muted
             playsInline
-            preload="auto"
+            preload="none"
             aria-hidden="true"
             tabIndex={-1}
             disablePictureInPicture

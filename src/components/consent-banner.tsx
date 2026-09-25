@@ -1,8 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { getStoredConsent, setStoredConsent } from "@/lib/consent";
-import { clearPendingBookingConversions, loadGoogleTag } from "@/lib/googleTag";
+import { CONSENT_SETTINGS_EVENT, getStoredConsent, onConsentChange, setStoredConsent } from "@/lib/consent";
+import { loadGoogleTag, stopGoogleTag } from "@/lib/googleTag";
 import { ctaGhost, ctaPrimary } from "./ui";
+
+export function CookieSettingsButton() {
+  return <button type="button" className="link-draw inline-flex min-h-11 items-center text-left hover:text-fg" onClick={() => window.dispatchEvent(new Event(CONSENT_SETTINGS_EVENT))}>Cookie-Einstellungen</button>;
+}
 
 /**
  * Cookie-Einwilligung (§ 25 TDDDG). Erscheint nur, solange noch keine
@@ -12,17 +16,30 @@ import { ctaGhost, ctaPrimary } from "./ui";
  */
 export function ConsentBanner() {
   const [visible, setVisible] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const rejectRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const existing = getStoredConsent();
+    setAccepted(existing === "accepted");
     if (existing === "accepted") {
       loadGoogleTag();
     } else if (existing === null) {
       setVisible(true);
     }
+    const openSettings = () => setVisible(true);
+    window.addEventListener(CONSENT_SETTINGS_EVENT, openSettings);
+    const unsubscribe = onConsentChange((choice) => {
+      setAccepted(choice === "accepted");
+      if (choice === "accepted") loadGoogleTag();
+      else if (stopGoogleTag()) window.location.reload();
+    });
+    return () => {
+      window.removeEventListener(CONSENT_SETTINGS_EVENT, openSettings);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -65,12 +82,10 @@ export function ConsentBanner() {
 
   function accept() {
     setStoredConsent("accepted");
-    loadGoogleTag();
     dismiss();
   }
 
   function reject() {
-    clearPendingBookingConversions();
     setStoredConsent("rejected");
     dismiss();
   }
@@ -93,8 +108,8 @@ export function ConsentBanner() {
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p id="consent-title" className="sr-only">
-            Cookie-Einwilligung
+          <p id="consent-title" className="font-medium">
+            Cookie-Einstellungen
           </p>
           <p id="consent-text" className="text-sm text-fg/80">
             Mit Ihrer Zustimmung nutzen wir Google Ads und Analytics zur Werbe- und Besucherauswertung. Die Dienste werden erst nach einem Klick auf „Akzeptieren“ geladen. Details finden Sie in der{" "}
@@ -106,7 +121,7 @@ export function ConsentBanner() {
         </div>
         <div className="flex shrink-0 gap-2">
           <button ref={rejectRef} type="button" onClick={reject} className={ctaGhost}>
-            Ablehnen
+            {accepted ? "Einwilligung widerrufen" : "Ablehnen"}
           </button>
           <button type="button" onClick={accept} className={ctaPrimary}>
             Akzeptieren

@@ -90,4 +90,23 @@ describe("getStoredConsent / setStoredConsent", () => {
 
     assert.deepEqual(seen, ["accepted", "rejected"]);
   });
+
+  it("keeps a withdrawal effective when localStorage can be read but no longer written", () => {
+    const fakeWindow = installFakeWindow();
+    setStoredConsent("accepted");
+    fakeWindow.localStorage.setItem = () => { throw new Error("storage unavailable"); };
+    setStoredConsent("rejected");
+    assert.equal(getStoredConsent(), "rejected");
+    assert.equal(fakeWindow.localStorage.getItem(CONSENT_STORAGE_KEY), null);
+  });
+
+  it("propagates withdrawals and cleared storage from another tab", () => {
+    const fakeWindow = installFakeWindow();
+    const choices: string[] = [];
+    const unsubscribe = onConsentChange((choice) => choices.push(choice));
+    fakeWindow.dispatchEvent(Object.assign(new Event("storage"), { key: CONSENT_STORAGE_KEY, newValue: "rejected" }));
+    fakeWindow.dispatchEvent(Object.assign(new Event("storage"), { key: null, newValue: null }));
+    assert.deepEqual(choices, ["rejected", "rejected"]);
+    unsubscribe();
+  });
 });

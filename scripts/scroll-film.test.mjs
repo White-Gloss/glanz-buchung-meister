@@ -35,8 +35,9 @@ function harness({
   mobile = false,
   posterReady = true,
   hash = "",
+  engaged = true,
 } = {}) {
-  const window = Object.assign(new EventTarget(), { scrollY: 0, location: { hash } });
+  const window = Object.assign(new EventTarget(), { scrollY: engaged ? 1 : 0, location: { hash } });
   const document = Object.assign(new EventTarget(), { hidden: false });
   const mobileMedia = Object.assign(new EventTarget(), { matches: mobile });
   const motion = Object.assign(new EventTarget(), { matches: reduced });
@@ -109,6 +110,11 @@ function harness({
     document,
     navigator: { connection, deviceMemory: memory, hardwareConcurrency: cores },
     scrollFilm,
+    loadSeekableVideo(video, url) {
+      video.src = url;
+      video.load();
+      return () => {};
+    },
     sectionRef: { current: section },
     stageRef: { current: stage },
     imageRef: { current: poster },
@@ -186,6 +192,15 @@ test("poster is displayed before any video download; small screens choose the sm
   assert.deepEqual(h.downloads, ["/media/scroll-film/classic-mobile-540.mp4"]);
   h.load();
   assert.equal(h.video.dataset.visible, "true");
+  h.cleanup();
+});
+test("initial view downloads no video until the visitor scrolls", () => {
+  const h = harness({ engaged: false });
+  assert.equal(h.downloads.length, 0);
+  h.scroll(300);
+  assert.equal(h.downloads.length, 1);
+  h.load();
+  assert.ok(h.video.currentTime > 0);
   h.cleanup();
 });
 for (const options of [

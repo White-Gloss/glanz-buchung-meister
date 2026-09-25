@@ -10,6 +10,7 @@ import {
   resolveGoogleAdsId,
   trackGoogleAdsConversion,
   trackCtaInteraction,
+  stopGoogleTag,
 } from "./googleTag.ts";
 
 /**
@@ -22,6 +23,7 @@ function installFakeBrowser() {
   const appendedScripts: { src: string; async: boolean }[] = [];
 
   const fakeDocument = {
+    cookie: "",
     createElement: (tag: string) => {
       assert.equal(tag, "script");
       const el = {
@@ -39,6 +41,7 @@ function installFakeBrowser() {
 
   const storage = new Map<string, string>([["wg-consent", "accepted"]]);
   const fakeWindow = {
+    location: { hostname: "white-gloss.de" },
     localStorage: { getItem: (key: string) => storage.get(key) ?? null },
     dataLayer: undefined as unknown[] | undefined,
     gtag: undefined as ((...args: unknown[]) => void) | undefined,
@@ -153,6 +156,31 @@ describe("resolveGa4MeasurementId", () => {
 describe("loadGoogleTag", () => {
   afterEach(() => {
     uninstallFakeBrowser();
+  });
+
+  it("refuses to load before consent and after rejection, including repeated calls", () => {
+    const { storage, appendedScripts } = installFakeBrowser();
+    storage.clear();
+    assert.equal(loadGoogleTag(), false);
+    storage.set("wg-consent", "rejected");
+    assert.equal(loadGoogleTag(), false);
+    assert.equal(appendedScripts.length, 0);
+    storage.set("wg-consent", "accepted");
+    assert.equal(loadGoogleTag(), true);
+    storage.set("wg-consent", "rejected");
+    assert.equal(loadGoogleTag(), false);
+  });
+
+  it("withdrawal stops events even when the loaded tag throws", () => {
+    const { fakeWindow, storage, appendedScripts } = installFakeBrowser();
+    loadGoogleTag();
+    fakeWindow.gtag = () => { throw new Error("tag failed"); };
+    storage.set("wg-consent", "rejected");
+    assert.equal(stopGoogleTag(), true);
+    assert.equal(trackGoogleAdsConversion(), false);
+    assert.equal(loadGoogleTag(), false);
+    assert.equal(appendedScripts.length, 1);
+    assert.deepEqual(fakeWindow.dataLayer, []);
   });
 
   it("lädt ohne window kein Skript", () => {
