@@ -1,0 +1,2 @@
+# Reviewed SQL digests must be identical in Windows checkouts and Linux releases.
+migrations/*.sql text eol=lf

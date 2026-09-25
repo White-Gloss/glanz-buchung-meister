@@ -259,3 +259,38 @@ Ein vollständiger PostgreSQL-Dump (202744 Bytes) wurde mit `archiveListValid=tr
 Zusätzlicher Live-Blocker: GOOGLE_CLIENT_ID und GOOGLE_CLIENT_SECRET sind beide nicht im aktiven Environment gesetzt. Vor Aktivierung eines Builds ohne eingebettete CI-Werte muss die bestehende Google-Anmeldung gesichert übernommen werden. Es wurde kein neuer Schlüssel erstellt und kein Kontozugang erweitert. Der vorhandene Bitrix-Webhook wurde verdeckt in einer separaten privaten Datei auf dem Website-Server bereitgestellt, noch nicht aktiviert.
 
 Native Automatisierung erneut nur lesend geprüft: Signaturregel vorhanden, Vorlagenauswahl zeigt frühere Auftragsdokumente; der ungespeicherte Regelentwurf wurde vollständig verworfen. Laut offizieller Dokumentation sendet diese Regel vorrangig SMS, was keine nachgewiesene E-Mail-Signaturlösung ist: https://helpdesk.bitrix24.de/open/24309644/. Native Kundenkommunikation, Rechnung und Altbestandsübernahme bleiben vor einer vollständigen Abnahme offen.
+
+### Kombinierter Code-/Umgebungswechsel vorbereitet, 25.09.2026
+
+**Plattform-Nachtrag:** Die Gegenprüfung fand zunächst aus der Windows-CRLF-Arbeitskopie abgeleitete SQL-Hashes. Die fünf Konstanten entsprechen jetzt nach separat ausgeführtem `git show 4f3d9d0:migrations/<Datei>`-Bytevergleich den unveränderten LF-Git-Blobs des geprüften Ausgangsstands. Keine SQL-Inhaltsänderung und keine Normalisierung während der Anwendung. Ein zusätzlicher Regressionstest verlangt LF und lehnt dieselbe Datei mit CRLF strikt ab; 47/47 gezielte Tests bestanden. Der integrierende Hauptauftrag setzt entsprechend `migrations/*.sql text eol=lf` in `.gitattributes`, damit frische Windows-Checkouts dieselben Bytes verwenden.
+
+**Diagnose-Nachtrag:** Bei verändertem Bestand nennt der Helfer jetzt das betroffene Prüffeld und gegebenenfalls die geänderten Tabellennamen, ohne Zeilen, Werte oder Hashes auszugeben. Lease-/Heartbeat-Tabellen werden weiterhin vollständig verglichen; keine Ausnahme für scheinbar harmlose Schreibvorgänge. Nach diesem Zusatz bestehen 46/46 gezielte Tests und die separate Skript-Lintprüfung. Die unten genannten 501 Volltests und Build-/QA-Nachweise stammen aus der vorausgehenden Prüfung. Eine nachträgliche Übernahme fehlender Google-OAuth-Konfiguration ist eine gesonderte Änderung; die Umgebungs-Whitelist wurde dafür nicht erweitert.
+
+`scripts/cutover-bitrix-release.mjs` und `cutover-bitrix-runtime.mjs` sind ein gesonderter Helfer für den ersten Wechsel von RO App auf das geprüfte native Release. Ohne `--apply` erfolgen ausschließlich lesende Prüfungen. Er ruft weder den alten Konfigurationsschalter noch `deploy-ionos-release.sh activate` auf. Keine Geschäftsdatenübernahme und keine native Automatisierung werden damit eingerichtet.
+
+Voraussetzungen: vollständiger geprüfter Operations-Checkout samt `pg`, rootgeschützte Dateien/Verzeichnisse (auch ein root-eigener privater Unterordner unter sticky `/var/tmp` ist möglich); beide Releases unter `/srv/white-gloss-releases/<40-stellige SHA>` unveränderlich für den Laufzeitbenutzer; root-eigene vorbereitete Umgebung unter `/etc/white-gloss/`, Modus 0600. Nur `BOOKING_OPERATIONS` und `BITRIX_WEBHOOK_URL` dürfen sich von der bisherigen Umgebung unterscheiden. Native CRM-/Kalenderproben müssen gelingen, sämtliche offenen RO-/Bitrix-Zuordnungen und Übertragungsqueues müssen geklärt sein. Die offenen nativen Aufträge werden zusätzlich mit `crm.deal.get` auf passende Auftrags-ID, Kontakt-ID und `UF_CRM_WG_BOOKING_REF` geprüft. Der Helfer erzeugt fehlende Zuordnungen nicht selbst.
+
+Aus dem bereits geprüften Build im Operations-Checkout den portablen Inhaltsdigest bestimmen; diesen Wert beim separaten Staging unverändert als Erwartungswert behalten. Ein erst aus einem unbekannten Zielrelease berechneter Digest ist kein Herkunftsnachweis:
+
+```bash
+node --input-type=module -e "import {outputDigest} from './scripts/cutover-bitrix-runtime.mjs'; console.log(await outputDigest('.output'));"
+```
+
+Lesende Prüfung mit der tatsächlichen veröffentlichten Quell-SHA und dem Digest dieses Builds (Platzhalter vor Ausführung ersetzen):
+
+```bash
+node scripts/cutover-bitrix-release.mjs \
+  --target-release=<40-stellige-SHA> \
+  --target-output-sha256=<64-stelliger-Builddigest> \
+  --prepared-env=/etc/white-gloss/bitrix-20260925.environment
+```
+
+Nur nach konkreter Freigabe denselben Aufruf um `--apply --open-ro=<bestätigte-Anzahl>` ergänzen. Weitere bekannte `white-gloss-*.service`/`.timer` jeweils über `--writer-unit=<Name>` angeben. Unbekannte Website-Units oder passende Cron-Aufrufe blockieren den Wechsel; globale Cron-Dienste werden nicht angehalten. Alle anderen Veröffentlicher müssen denselben Kernel-Lock `/run/white-gloss-deploy.lock` beachten; ältere Helfer ohne diesen Lock dürfen währenddessen nicht laufen.
+
+Die Anwendung hält zuerst sämtliche erfassten Website-Writer an. Vorher/nachher werden Umgebungen, Releaseinhalte, Migrationsdateien, Cron-/Unitbestand, offene Anzahl, native Identitäten und ein Fingerprint aller öffentlichen Datenbanktabellen verglichen. Erst danach: geprüftes `pg_dump`-Archiv samt SHA256 und `pg_restore --list`, verifizierte private Sicherung beider Umgebungen sowie alter/neuer Release-ID und ursprünglicher Dienstzustände. Nur noch fehlende, unverändert geprüfte kompatible SQL-Dateien 0015–0018 und 0021 sind erlaubt. Die Migrationen können additive Journal-/Metadatenänderungen durchführen; Kundendaten werden nicht automatisch zurückgesetzt. Die PostgreSQL-Sicherung enthält keine extern in Supabase gespeicherten Fotodateien.
+
+Während alle Writer stehen, werden Umgebung und Releaseverweis ersetzt. Konfigurations-/Schemaprüfung, Inhaltsprüfung, lokaler HTTP-Healthcheck und tatsächliches Arbeitsverzeichnis des laufenden Prozesses prüfen das Ziel. Nur `white-gloss.service` startet; Hintergrunddienste bleiben bis zur getrennten Abnahme angehalten. Sie werden nicht dauerhaft deaktiviert, ein Neustart des Servers ist deshalb vor dieser Abnahme ausgeschlossen.
+
+Bei einem abfangbaren Fehler: Writer stoppen, Kompatibilität des bisherigen Schemas prüfen, ursprüngliche Umgebung **und** vorheriges kompatibles Release wiederherstellen und prüfen, dann nur zuvor aktive Dienste starten. Keine automatische Datenbankrücknahme. Falls die Wiederherstellung nicht vollständig gelingt, bleiben die Writer angehalten und `requiresOperator=true` wird ausgegeben. Zwei Dateiumbenennungen sind keine gemeinsame Dateisystemtransaktion: SIGKILL/Stromausfall erfordern manuelle Wiederherstellung anhand der privaten Sicherung und `cutover-state.json`, bevor Dienste wieder anlaufen. Unveränderte öffentliche Ausgabe enthält keine Verbindungsdaten, Schlüssel, Kundendaten oder rohen Providerfehler.
+
+**Lokal geprüft, nicht auf dem Produktivserver ausgeführt:** vollständiger Lauf 501/501 Tests, anschließend 45/45 gezielte Cutover-Tests einschließlich ergänzter nativer Identitätsprüfung; TypeScript und ESLint erfolgreich (fünf bestehende Warnungen), neue Skripte separat mit ESLint geprüft, Produktionsbuild erfolgreich, isoliertes Release-QA mit SSR/Abläufen/Sitemap erfolgreich. Die Betriebssystemaufrufe werden in den Fehlerprüfungen ersetzt; ein echter Linux-/systemd-Cutover ist damit noch nicht nachgewiesen. Die bereits separat belegten PostgreSQL-Migrations-/RLS-Prüfungen bleiben unverändert. Gezielte Tests decken Sicherungsfehler, Veränderungen nach Stoppen, Migrationsfehler, Fehler vor/nach Umbenennen, Healthcheckfehler, unterbrochene Rücknahme und fehlende Geheimnisausgabe ab.
