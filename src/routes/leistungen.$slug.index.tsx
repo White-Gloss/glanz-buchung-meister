@@ -7,6 +7,8 @@ import { serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
 import { ResultsTeaser } from "@/components/results-teaser";
+import { serializeJsonLd } from "@/lib/json-ld";
+import { ServicePriceNote } from "@/components/service-price-note";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
@@ -38,6 +40,24 @@ function ServicePage() {
 
   return (
     <main id="main-content" tabIndex={-1}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": s.pendingApproval ? "WebPage" : "Service",
+            "@id": `${site.origin}/leistungen/${s.slug}#service`,
+            name: s.title,
+            url: `${site.origin}/leistungen/${s.slug}`,
+            description: s.description,
+            ...(!s.pendingApproval ? { provider: { "@type": "AutoRepair", "@id": `${site.origin}/#betrieb`, name: site.legalName }, areaServed: cities.map((city) => ({ "@type": "City", name: city.name })) } : {}),
+          },
+          { "@type": "BreadcrumbList", itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+            { "@type": "ListItem", position: 2, name: "Leistungen", item: `${site.origin}/leistungen` },
+            { "@type": "ListItem", position: 3, name: s.nav, item: `${site.origin}/leistungen/${s.slug}` },
+          ] },
+        ],
+      }) }} />
       <PageHero
         src={s.image}
         alt={s.imageAlt}
@@ -49,7 +69,7 @@ function ServicePage() {
           { label: "Leistungen", to: "/leistungen" },
           { label: s.nav },
         ]}
-        actions={
+        actions={s.pendingApproval ? <Link to="/kontakt" className={ctaPrimary}>Rückfrage zur Zulässigkeit</Link> :
           <Link
             to={request.leistung ? "/fahrzeug-zustand" : "/"}
             hash="buchung"
@@ -67,8 +87,9 @@ function ServicePage() {
             <span className="ml-3 text-sm font-sans text-subtle">{site.vatNote}</span>
           </p>
         ) : (
-          <p className="text-sm uppercase tracking-[0.16em] text-subtle">Preis nach Prüfung</p>
+          <p className="text-sm uppercase tracking-[0.16em] text-subtle">{s.pendingApproval ? "Derzeit nicht buchbar" : "Preis nach Prüfung"}</p>
         )}
+        <ServicePriceNote service={s} />
         <ul className="mt-10 space-y-3">
           {s.bullets.map((b) => (
             <li key={b} className="border-l border-line pl-4 text-sm text-fg">
@@ -106,7 +127,7 @@ function ServicePage() {
         ) : null}
         {pack ? (
           <p className="mt-10 border border-line bg-surface p-5 text-sm leading-relaxed">
-            Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration}.
+            Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration.replace(/\.$/, "")}.
           </p>
         ) : null}
         {resultService ? <ResultsTeaser service={resultService} /> : null}

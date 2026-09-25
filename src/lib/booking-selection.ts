@@ -13,7 +13,7 @@ export function parseBookingSelection(raw: Record<string, unknown>): BookingSele
   const ort =
     typeof raw.ort === "string" && cities.some((c) => c.slug === raw.ort) ? raw.ort : undefined;
   const leistung =
-    typeof raw.leistung === "string" && services.some((s) => s.slug === raw.leistung)
+    typeof raw.leistung === "string" && services.some((s) => s.slug === raw.leistung && !s.pendingApproval)
       ? raw.leistung
       : undefined;
   return {
@@ -25,6 +25,7 @@ export function parseBookingSelection(raw: Record<string, unknown>): BookingSele
 
 /** Only the three documented package services select a priced package. */
 export function serviceBookingSelection(slug: string, city?: string): BookingSelection {
+  if (services.find((service) => service.slug === slug)?.pendingApproval) return {};
   const paket = (Object.keys(packageServiceSlug) as PackageId[]).find(
     (id) => packageServiceSlug[id] === slug,
   );
