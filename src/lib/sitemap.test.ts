@@ -16,15 +16,15 @@ const row = (slug: string | null): SitemapBlogRow => ({
 const locations = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
 describe("CMS sitemap XML", () => {
-  it("retains all 183 static URLs and their original metadata", () => {
-    assert.equal(locations(staticXml).length, 183);
-    assert.equal(new Set(locations(staticXml)).size, 183);
+  it("retains all 185 static URLs and their original metadata", () => {
+    assert.equal(locations(staticXml).length, 185);
+    assert.equal(new Set(locations(staticXml)).size, 185);
     assert.equal(appendBlogSitemap(staticXml, [], origin), staticXml);
     const output = appendBlogSitemap(staticXml, [row("neuer-beitrag")], origin);
     for (const entry of staticXml.matchAll(/<url>.*?<\/url>/g)) {
       assert.ok(output.includes(entry[0]), entry[0]);
     }
-    assert.equal(locations(output).length, 184);
+    assert.equal(locations(output).length, 186);
     assert.ok(output.includes(`<loc>${origin}/ratgeber/neuer-beitrag</loc>`));
   });
 
@@ -34,7 +34,7 @@ describe("CMS sitemap XML", () => {
     const collision = row("keramikversiegelung-kosten");
     assert.equal(appendBlogSitemap(staticXml, [collision], origin), staticXml);
     const output = appendBlogSitemap(staticXml, [first, second, collision], origin);
-    assert.equal(locations(output).length, 184);
+    assert.equal(locations(output).length, 186);
     assert.match(output, /neuer-beitrag<\/loc><lastmod>2026-09-02T10:00:00.000Z/);
     assert.doesNotMatch(output, /2026-09-03T10:00:00.000Z/);
   });
@@ -52,7 +52,7 @@ describe("CMS sitemap XML", () => {
     assert.equal(new URL(url).origin, origin);
     assert.equal(decodeURIComponent(new URL(url).pathname.slice("/ratgeber/".length)), slug);
     const output = appendBlogSitemap(staticXml, [row(slug)], origin);
-    assert.equal(locations(output).length, 184);
+    assert.equal(locations(output).length, 186);
     assert.ok(output.includes("&amp;"));
     assert.ok(output.includes("O&apos;Brien"));
     assert.doesNotMatch(output, /<Glanz>/);

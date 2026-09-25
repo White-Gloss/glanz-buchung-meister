@@ -67,8 +67,17 @@ function AccessibilityPage() {
             von fünf Werktagen.
           </p>
           <p>
-            Durchsetzungsstelle des Landes Baden-Württemberg: Landes-Zentrum Barrierefreiheit
-            (LZ-BARR). Die Schlichtung nach BGG bleibt unberührt.
+            Für Produkte und Dienstleistungen, die unter das Barrierefreiheitsstärkungsgesetz
+            (BFSG) fallen, ist die Marktüberwachungsstelle der Länder für die Barrierefreiheit
+            von Produkten und Dienstleistungen (MLBF) zuständig. Informationen und Meldewege
+            finden Sie auf <a href="https://mlbf-barrierefrei.de/">mlbf-barrierefrei.de</a>.
+          </p>
+          <p>
+            Ob die Dienstleistungspflichten des BFSG auf einen privaten Betrieb anwendbar sind,
+            hängt unter anderem von Art und Umfang des Angebots ab. Für Kleinstunternehmen,
+            die Dienstleistungen anbieten, sieht <a href="https://www.gesetze-im-internet.de/bfsg/__3.html">§ 3 Absatz 3 BFSG</a>
+            eine Ausnahme vor. Eine bestimmte rechtliche Einordnung von White Gloss oder eine
+            vollständige Konformität wird mit diesen Bedienungshinweisen nicht zugesagt.
           </p>
         </section>
         <p>
@@ -76,7 +85,7 @@ function AccessibilityPage() {
           {" · "}
           <Link to="/datenschutz">Datenschutz</Link>
         </p>
-        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 25. September 2026</p>
       </article>
     </main>
   );

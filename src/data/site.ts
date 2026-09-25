@@ -192,6 +192,7 @@ export type Extra = {
   price: number;
   group: "pflege" | "reparatur";
   inspect?: boolean;
+  requestable?: boolean;
 };
 
 export const extras: Extra[] = [
@@ -241,7 +242,8 @@ export const extras: Extra[] = [
   {
     id: "scheinwerfer",
     name: "Scheinwerferaufbereitung",
-    hint: "Politur vergilbter Scheinwerfer mit UV-Schutz; Preis pro Paar",
+    hint: "Derzeit nicht buchbar: Verfahren und Zulässigkeit müssen geklärt werden.",
+    requestable: false,
     price: 99,
     group: "pflege",
   },
@@ -497,6 +499,7 @@ export type ServicePage = {
   steps?: { title: string; text: string }[];
   priceRows?: { name: string; price: number; note?: string }[];
   honestNote?: string;
+  pendingApproval?: boolean;
 };
 
 export const services: ServicePage[] = [
@@ -550,19 +553,19 @@ export const services: ServicePage[] = [
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
     description:
       "Innenraumreinigung in Horb: Sitze, Teppiche, Kunststoffe. Gegen Gerüche optional Ozon. Materialgerechte Reinigung und Pflege.",
-    teaser: "Gründliche Reinigung von Sitzen, Teppichen und Verkleidungen.",
+    teaser: "Basisreinigung des Innenraums; textile Tiefenreinigung im Paket Reinigung & Politur.",
     group: "atelier",
     fromPrice: 149,
     image: "/media/leder.webp",
     imageAlt: "Ledersitze nach der Innenraumreinigung",
     bullets: [
-      "Gründliche Reinigung von Sitzen, Teppichen und Fußräumen",
+      "Basisreinigung: Innenraum saugen und Oberflächen abwischen",
       "Kunststoff und Verkleidungen passend zum Material",
-      "Gezielte Behandlung von Flecken und Gebrauchsspuren",
+      "Textile Tiefenreinigung im Paket Reinigung & Politur ab 349 €",
       "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €",
     ],
     body: [
-      "Wir entfernen Verschmutzungen aus Sitzen, Teppichen und Verkleidungen. Die Reinigungsmethode stimmen wir auf das jeweilige Material ab.",
+      "Die Basisreinigung ab 149 € umfasst das Saugen des Innenraums und Abwischen der Oberflächen. Die textile Tiefenreinigung von Sitzen und Teppichen gehört zum Paket Reinigung & Politur ab 349 €. Beide Einstiegspreise gelten für die Kompaktklasse inklusive Mehrwertsteuer.",
       "Bei Gerüchen behandeln wir zuerst die Ursache. Falls nötig, kann eine zusätzliche Ozonbehandlung geruchsbildende Moleküle abbauen.",
     ],
     steps: [
@@ -816,28 +819,24 @@ export const services: ServicePage[] = [
   {
     slug: "scheinwerferaufbereitung",
     seoNav: "Scheinwerferaufbereitung",
-    title: "Scheinwerferaufbereitung",
+    title: "Scheinwerferaufbereitung: Hinweise zur Zulässigkeit",
     nav: "Scheinwerferaufbereitung",
-    metaTitle: "Scheinwerfer aufbereiten Horb am Neckar | White Gloss",
-    description:
-      "Vergilbte Scheinwerfer aufbereiten in Horb: Politur und UV-Schutz, ab 99 € das Paar. Sicht und Optik, ohne gleich neue Streuscheiben.",
-    teaser: "Aufbereitung vergilbter Scheinwerfer mit Politur und UV-Schutz.",
+    metaTitle: "Scheinwerferaufbereitung: Zulässigkeit | White Gloss",
+    description: "Hinweise zu matten Scheinwerfern: Schleifen, Polieren und Versiegeln können die Bauartgenehmigung betreffen. Derzeit keine Buchung dieser Leistung.",
+    teaser: "Die Scheinwerferaufbereitung ist bis zur Klärung des Verfahrens und seiner Zulässigkeit nicht buchbar.",
     group: "finish",
-    fromPrice: 99,
+    pendingApproval: true,
     image: "/media/finish.webp",
     imageAlt: "Lack und Licht unter Prüflicht nach der Aufbereitung",
     bullets: [
-      "Matte, gelbe Streuscheiben wieder klar",
-      "Anschließender UV-Schutz gegen erneute Vergilbung",
-      "Paarpreis ab 99 €, inkl. MwSt.",
-      "Bei stark geschädigtem Kunststoff ist ein Austausch nötig",
+      "Scheinwerfer-Abdeckscheiben gehören zum bauartgenehmigten Bauteil",
+      "Schleifen, Polieren und Versiegeln können die Genehmigung und Betriebserlaubnis betreffen",
+      "Keine Zusage einer zulässigen Instandsetzung ohne fahrzeug- und verfahrensbezogenen Nachweis",
     ],
-    honestNote:
-      "Rissige oder stark geschädigte Streuscheiben bereiten wir nicht auf. Wir prüfen vorab, ob das Material für eine Politur geeignet ist.",
-    priceRows: [{ name: "Scheinwerfer-Paar", price: 99, note: "Politur und UV-Schutz" }],
+    honestNote: "Wir bieten diese Bearbeitung derzeit nicht als Standardleistung an. Bei matten oder beschädigten Scheinwerfern lassen Sie die zulässigen Möglichkeiten durch eine Fachwerkstatt oder Prüforganisation klären.",
     body: [
-      "Vergilbte Scheinwerfer nehmen Licht und Wert. Oft reicht Aufbereitung statt neuer Streuscheiben. Der UV-Schutz ist der Teil, der die Haltbarkeit entscheidet.",
-      "Passt gut zur Lackkorrektur oder zur Verkaufsvorbereitung. Hol- und Bringservice aus 13 Städten.",
+      "Eine optische Verbesserung allein belegt weder eine zulässige Reparatur noch die vorgeschriebene Lichtverteilung. Auch eine Materialprüfung ersetzt keinen Genehmigungsnachweis.",
+      "Bis Verfahren und gegebenenfalls erforderliche Genehmigung fachlich geklärt sind, ist die Scheinwerferaufbereitung aus der Preisauswahl und dem Anfragerechner ausgesetzt. Diese Informationsseite bleibt erreichbar.",
     ],
   },
 ];
