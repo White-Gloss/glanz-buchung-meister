@@ -2,7 +2,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { nav, footerExplore, openingHours, site } from "@/data/site";
-import { ConsentBanner } from "./consent-banner";
+import { ConsentBanner, CookieSettingsButton } from "./consent-banner";
 import { IconArrowRight, IconMessage } from "./icons";
 import { BrandMark, Shot, type ShotName } from "./media";
 import { ctaGhost, ctaPrimary } from "./ui";
@@ -527,6 +527,7 @@ export function SiteFooter() {
         <nav aria-label="Rechtliches" className="ga-recht">
           <p className="kicker">Rechtliches</p>
           <ul className="mt-3 space-y-2 text-sm text-muted">
+            <li><CookieSettingsButton /></li>
             <li>
               <Link
                 to="/impressum"

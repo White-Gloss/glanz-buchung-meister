@@ -171,7 +171,7 @@ export const articles: Article[] = [
     slug: "leasingrueckgabe-checkliste",
     seoExcerpt:
       "Innenraum, Felgen, Lackbilder – und was sich vor dem Termin noch lohnt. Kein Showroom-Ideal, sondern priorisierte Arbeit.",
-    title: "Leasingrückgabe: Welche Spuren Gutachter wirklich sehen",
+    title: "Leasingrückgabe: Checkliste zur Vorbereitung",
     excerpt:
       "Welche Gebrauchsspuren an Innenraum, Felgen und Lack vor der Rückgabe geprüft werden sollten und welche Arbeiten sinnvoll sein können.",
     date: "2026-06-04",
@@ -179,10 +179,10 @@ export const articles: Article[] = [
     minutes: 5,
     sections: [
       {
-        heading: "Nicht alles muss perfekt sein",
+        heading: "Unterlagen und Zustand prüfen",
         paragraphs: [
-          "Leasinggutachter bewerten Gebrauchsspuren anhand festgelegter Kriterien. Tiefe Kratzer an Türen, starke Innenraumverschmutzung und Felgenschäden fallen auf. Leichte Waschkratzer oft weniger.",
-          "Wir priorisieren die Stellen, die typischerweise zu Nachforderungen führen, und sagen offen, welche Spuren bleiben.",
+          "Prüfen Sie zuerst die Rückgabebedingungen Ihres Leasinggebers. Halten Sie den Rückgabetermin und die geforderten Unterlagen bereit. Die Bewertung von Gebrauchsspuren richtet sich nach Ihrem Vertrag und dem jeweiligen Rückgabekatalog.",
+          "Sehen Sie sich Innenraum, Lack und Felgen bei gutem Licht an und dokumentieren Sie auffällige Stellen. Prüfen Sie außerdem, welche Schlüssel und welches mitgelieferte Zubehör bei der Rückgabe vollständig vorliegen müssen. Eine Aufbereitung ersetzt keine technische Fahrzeugprüfung.",
         ],
       },
       {
@@ -243,7 +243,7 @@ export const articles: Article[] = [
         heading: "Vor der Arbeit",
         paragraphs: [
           "Wir prüfen das Lackbild unter Werkstattlicht. Ist die Lackschicht für eine Korrektur zu dünn, erklären wir Ihnen dies vor der Behandlung.",
-          "Parkdellen und Steinschläge gehören nicht in die Politur. Dafür gibt es Smart Repair nach Begutachtung – ohne Pauschalpreis, weil jeder Schaden anders liegt.",
+          "Eine Parkdelle verändert die Form des Blechs; hier kann eine lackschadenfreie Dellenentfernung nach Begutachtung infrage kommen. Steinschläge mit fehlendem Lack lassen sich durch Politur nicht schließen. Eine Lackreparatur ist im beschriebenen Aufbereitungspaket nicht enthalten.",
         ],
       },
     ],
@@ -262,7 +262,7 @@ export const articles: Article[] = [
       {
         heading: "Der Ablauf der Innenraumreinigung",
         paragraphs: [
-          "Zuerst grober Schmutz, dann Nassreinigung der textilen Flächen, dann Kunststoffe, dann Leder. Ohne diese Reihenfolge verschmieren Rückstände.",
+          "Die Basisreinigung umfasst Aussaugen und Entstauben. Eine textile Tiefenreinigung gehört zum Paket Reinigung & Politur; dafür werden die textilen Flächen nach der Entfernung des groben Schmutzes behandelt. Lederpflege und Geruchsbehandlung sind getrennt zu betrachten.",
           `Das Paket Basisreinigung enthält Aussaugen und Entstauben. Das Paket Reinigung & Politur ergänzt die Tiefenreinigung von Textilien. Lederpflege ist ab ${extraEuro("leder")} zusätzlich erhältlich, Geruchsbehandlung mit Ozon ab ${extraEuro("ozon")}. Die Einstiegspreise gelten für die Kompaktklasse und enthalten die Mehrwertsteuer.`,
         ],
       },
@@ -279,7 +279,7 @@ export const articles: Article[] = [
     slug: "smart-repair-oder-lackkorrektur",
     seoExcerpt:
       "Parkdellen, Steinschläge, Swirls: welche Methode zum Schaden passt – und warum Politur keine Delle schließt.",
-    title: "Smart Repair oder Lackkorrektur – wann was in Horb greift",
+    title: "Dellenentfernung oder Lackkorrektur: Was passt zum Schaden?",
     excerpt:
       "Welche Behandlung für einzelne Schäden oder feine Waschkratzer infrage kommt und wo die Grenzen einer Politur liegen.",
     date: "2026-04-05",
@@ -289,7 +289,7 @@ export const articles: Article[] = [
       {
         heading: "Zwei unterschiedliche Verfahren",
         paragraphs: [
-          "Smart Repair bearbeitet einzelne Stellen: Parkdellen ohne Lackbruch, kleine Steinschläge, begrenzte Kratzer. Lackkorrektur arbeitet flächig am Klarlack.",
+          "Bei White Gloss bezeichnet die hier beschriebene Smart-Repair-Leistung die lackschadenfreie Entfernung geeigneter Park-, Karosserie- und Hageldellen. Lackkorrektur behandelt dagegen oberflächliche Spuren im Klarlack. Eine Reparaturlackierung ist damit nicht zugesagt.",
           "Eine Politur kann tiefe Kratzer bis ins Blech nicht reparieren. Punktuelle Reparaturen ersetzen wiederum keine flächige Politur bei vielen feinen Waschkratzern.",
         ],
       },
@@ -360,7 +360,7 @@ export const articles: Article[] = [
     slug: "keramikversiegelung-lackvorbereitung-pflege",
     seoExcerpt:
       "Haftung entscheidet sich in der Vorbereitung. Aushärtezeit und Pflege nach Produktvorgaben. Start ab 899 Euro in Horb.",
-    title: "Keramikversiegelung vorbereiten und pflegen",
+    title: "Lackvorbereitung vor der Keramikversiegelung",
     excerpt:
       "Haftung entscheidet sich in der Vorbereitung. Aushärtezeit und Pflege nach Produktvorgaben. Start ab 899 € in Horb.",
     date: "2026-02-20",
@@ -375,10 +375,10 @@ export const articles: Article[] = [
         ],
       },
       {
-        heading: "Die erste Zeit nach dem Auftrag",
+        heading: "Vom gereinigten Lack zur Beschichtung",
         paragraphs: [
-          "Beachten Sie die Aushärtezeit und die Hinweise zum ersten Kontakt mit Wasser. Reiben Sie den Lack nicht mit verschmutzten Tüchern ab. Verwenden Sie nur Reinigungsmittel, die für die Beschichtung und die jeweilige Oberfläche geeignet sind.",
-          "Danach Handwäsche mit pH-neutralem Shampoo. Bürstenanlagen erzeugen neue Kratzer in der Keramik. Die Beschichtung ist nicht kratzfest.",
+          "Vor der Politur werden haftende Ablagerungen entfernt. Anschließend werden Lackzustand und Schichtstärke geprüft. Die Korrektur richtet sich danach, wie viel Material sicher bearbeitet werden kann; tiefe Schäden werden nicht durch zusätzlichen Abtrag erzwungen.",
+          "Nach der Korrektur wird die Oberfläche rückstandsfrei entfettet. Erst auf dem vorbereiteten Lack wird die Keramik nach Produktvorgaben aufgetragen und geschützt ausgehärtet. Die Pflege nach der Übergabe behandelt der separate Pflegeratgeber.",
         ],
       },
     ],

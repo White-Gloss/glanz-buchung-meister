@@ -109,6 +109,7 @@ function PreisePage() {
         ))}
       </div>
       <h2 className="heading-2 mt-20">Zusatzleistungen</h2>
+      <p className="mt-4 text-sm text-muted">Scheinwerferaufbereitung ist bis zur Klärung der Zulässigkeit nicht buchbar. <Link to="/leistungen/$slug" params={{ slug: "scheinwerferaufbereitung" }} className="underline">Hinweise zum Verfahren</Link></p>
       <p className="mt-4 max-w-2xl text-sm text-muted">
         Alle Einstiegspreise gelten für die Kompaktklasse und verstehen sich {site.vatNote}
         {" "}Der Fahrzeuggrößenfaktor gilt für Paket und Zusatzleistungen, nicht für die Abholung.
@@ -121,7 +122,7 @@ function PreisePage() {
           </h3>
           <ul className="mt-2 divide-y divide-line border-y border-line">
             {extras
-              .filter((e) => e.group === group)
+              .filter((e) => e.group === group && e.requestable !== false)
               .map((e) => (
                 <PriceLine
                   key={e.id}

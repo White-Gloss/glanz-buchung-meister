@@ -26,6 +26,7 @@ export function pageHead(opts: {
   title: string;
   description: string;
   path: string;
+  image?: string;
   robots?: string;
   preloadImage?: string;
   preloadType?: string;
@@ -43,7 +44,7 @@ export function pageHead(opts: {
     | "private";
 }) {
   const canonical = absUrl(opts.path);
-  const ogImage = absUrl(OG_IMAGE);
+  const ogImage = absUrl(opts.image ?? OG_IMAGE);
   const shotPreload = opts.preloadShot
     ? {
         rel: "preload" as const,
@@ -110,9 +111,11 @@ export function pageHead(opts: {
       { property: "og:description", content: opts.description },
       { property: "og:url", content: canonical },
       { property: "og:image", content: ogImage },
-      { property: "og:image:type", content: "image/jpeg" },
-      { property: "og:image:width", content: "1600" },
-      { property: "og:image:height", content: "907" },
+      { property: "og:image:type", content: opts.image?.endsWith(".webp") ? "image/webp" : "image/jpeg" },
+      ...(!opts.image ? [
+        { property: "og:image:width", content: "1600" },
+        { property: "og:image:height", content: "907" },
+      ] : []),
       { property: "og:image:alt", content: opts.title },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: opts.title },
@@ -138,7 +141,6 @@ export function localBusinessJsonLd() {
     "lederpflege",
     "lederreparatur",
     "geruchsneutralisation",
-    "scheinwerferaufbereitung",
   ];
   return {
     "@context": "https://schema.org",

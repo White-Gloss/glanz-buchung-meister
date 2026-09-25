@@ -2,7 +2,7 @@ import { z } from "zod";
 import { berlinCalendarDate } from "./calendar-date.ts";
 import { isEmailAddress } from "./utils.ts";
 import { isCalendarDate } from "./calendar-date.ts";
-import { timeSlots } from "../data/site.ts";
+import { extras, timeSlots } from "../data/site.ts";
 
 /**
  * Shared validation for the public booking form. Enforced on the server in
@@ -41,7 +41,10 @@ export const publicBookingSchema = z.object({
   note: z.string().max(2000).optional(),
   packageId: z.enum(["basis", "premium", "keramik"]),
   classId: z.enum(["kompakt", "suv", "transporter"]),
-  extraIds: z.array(z.string().max(40)).max(20),
+  extraIds: z.array(z.string().max(40)).max(20).refine(
+    (ids) => ids.every((id) => !extras.some((extra) => extra.id === id && extra.requestable === false)),
+    "Eine gewählte Zusatzleistung ist derzeit nicht buchbar. Bitte aktualisieren Sie Ihre Auswahl.",
+  ),
   citySlug: z.string().max(80),
   kind: z.enum(["booking", "dent", "condition"]).default("booking"),
   privacy: z.literal(true),

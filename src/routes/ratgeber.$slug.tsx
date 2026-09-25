@@ -7,6 +7,8 @@ import { listPublishedCms } from "@/lib/cms.functions";
 import { cmsPublishedDate } from "@/lib/cms-date";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
+import { articleBookingSelection, articleNavigation } from "@/lib/article-navigation";
+import { services } from "@/data/site";
 
 async function loadArticle(slug: string): Promise<Omit<Article, "date"> & { date?: string }> {
   const staticArticle = getArticle(slug);
@@ -35,16 +37,20 @@ export const Route = createFileRoute("/ratgeber/$slug")({
   loader: async ({ params }) => loadArticle(params.slug),
   head: ({ loaderData }) =>
     pageHead({
-      title: `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
+      title: articleNavigation[loaderData?.slug ?? ""]?.title ?? `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
       description: loaderData?.excerpt ?? "",
       path: `/ratgeber/${loaderData?.slug ?? ""}`,
+      image: loaderData?.image,
     }),
   component: ArticlePage,
 });
 
 function ArticlePage() {
   const a = Route.useLoaderData();
-  const others = articles.filter((x) => x.slug !== a.slug).slice(0, 3);
+  const guide = articleNavigation[a.slug];
+  const request = articleBookingSelection(a.slug);
+  const service = services.find((s) => s.slug === guide?.service);
+  const others = guide ? guide.related.flatMap((slug) => articles.filter((x) => x.slug === slug)) : articles.filter((x) => x.slug !== a.slug).slice(0, 3);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -57,7 +63,7 @@ function ArticlePage() {
   };
 
   return (
-    <main id="main-content">
+    <main id="main-content" tabIndex={-1}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -74,12 +80,13 @@ function ArticlePage() {
           { label: a.title },
         ]}
         actions={
-          <Link to="/" hash="buchung" className={ctaPrimary}>
+          <Link to={request.leistung ? "/fahrzeug-zustand" : "/"} search={request} hash="buchung" className={ctaPrimary}>
             Termin anfragen
           </Link>
         }
       />
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        {guide ? <p className="mb-6 text-lg text-fg">{guide.question}</p> : null}
         <p className="text-sm text-muted">Alle genannten Einstiegspreise gelten für die Kompaktklasse und verstehen sich {site.vatNote} Fahrzeuggröße und Zustand bestimmen den Aufwand; den verbindlichen Preis stimmen wir vor Beginn mit Ihnen ab.</p>
         {a.sections.map((s) => (
           <section key={s.heading} className="mt-10">
@@ -91,8 +98,13 @@ function ArticlePage() {
             ))}
           </section>
         ))}
+        {service ? <p className="mt-8 leading-relaxed text-muted">
+          Leistungsumfang und Grenzen finden Sie unter <Link to="/leistungen/$slug" params={{ slug: service.slug }} className="underline underline-offset-4">{service.nav}</Link>.
+          {" "}{request.paket || request.leistung ? "Die Anfrage übernimmt das zugehörige Paket oder Ihr Interesse an dieser individuellen Leistung." : "Wählen Sie in der Anfrage das passende Paket und Ihren Abholort aus."}
+        </p> : null}
         <Link
-          to="/"
+          to={request.leistung ? "/fahrzeug-zustand" : "/"}
+          search={request}
           hash="buchung"
           className="mt-12 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
         >
