@@ -126,6 +126,7 @@ function ensureDataLayer(): void {
  */
 export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string | null }): boolean {
   if (typeof window === "undefined" || typeof document === "undefined") return false;
+  if (getStoredConsent() !== "accepted") return false;
 
   const adsId =
     options && options.adsId !== undefined
@@ -170,6 +171,38 @@ export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string 
   googleTagLoaded = true;
   flushBookingConversions();
   return true;
+}
+
+/** Stop tracking immediately. The caller reloads to unload already executed third-party code. */
+export function stopGoogleTag(): boolean {
+  clearPendingBookingConversions();
+  if (typeof window === "undefined") return false;
+  const wasLoaded = googleTagLoaded;
+  if (wasLoaded) {
+    try {
+      window.gtag?.("consent", "update", {
+        ad_storage: "denied", ad_user_data: "denied",
+        ad_personalization: "denied", analytics_storage: "denied",
+      });
+    } catch { /* Revocation and reload must succeed even if a third-party tag throws. */ }
+    const ga4Id = resolveGa4MeasurementId(import.meta.env?.VITE_GA4_MEASUREMENT_ID);
+    if (ga4Id) Object.assign(window, { [`ga-disable-${ga4Id}`]: true });
+    window.gtag = () => {};
+    window.dataLayer = [];
+  }
+  googleTagLoaded = false;
+  if (typeof document !== "undefined") {
+    const host = window.location.hostname;
+    const domains = ["", ...host.split(".").map((_, i) => host.split(".").slice(i).join("."))];
+    for (const cookie of document.cookie.split(";")) {
+      const name = cookie.split("=")[0].trim();
+      if (!/^_(?:ga|gid|gat|gac|gcl)(?:_|$)/.test(name)) continue;
+      for (const domain of domains) {
+        document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${domain ? `; Domain=${domain}` : ""}`;
+      }
+    }
+  }
+  return wasLoaded;
 }
 
 /**

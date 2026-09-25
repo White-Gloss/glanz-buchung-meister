@@ -23,6 +23,10 @@ function bookingInput(date?: string) {
 }
 
 describe("createPublicBooking past-date validation", () => {
+  it("rejects suspended headlight work before any customer request can be written", () => {
+    assert.equal(publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["scheinwerfer"] }).success, false);
+    assert.equal(publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["leder-repair"] }).success, true);
+  });
   it("rejects malformed and impossible calendar days before database writes", () => {
     for (const date of ["tomorrow", "2999-02-31", "2999-13-01", "2999-00-01", "2999-02-29"]) {
       assert.equal(publicBookingSchema.safeParse(bookingInput(date)).success, false, date);

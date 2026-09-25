@@ -2,11 +2,12 @@ import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { cities, packages, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
+import { cities, packages, pickupFee, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { serviceCityHeading, serviceCityTitle } from "@/lib/city-seo";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
+import { ServicePriceNote } from "@/components/service-price-note";
 
 export const Route = createFileRoute("/leistungen/$slug/$city")({
   loader: ({ params }) => {
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
     if (!service || !city) return {};
     return pageHead({
       title: serviceCityTitle(service.seoNav, city),
-      description: `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
+      description: service.pendingApproval ? service.description : `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
       path: `/leistungen/${service.slug}/${city.slug}`,
     });
   },
@@ -38,11 +39,11 @@ function ServiceCityPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Service",
+        "@type": service.pendingApproval ? "WebPage" : "Service",
         "@id": `${site.origin}/leistungen/${service.slug}/${city.slug}#service`,
         name: `${service.seoNav} ${city.name}`,
         url: `${site.origin}/leistungen/${service.slug}/${city.slug}`,
-        provider: {
+        ...(!service.pendingApproval ? { provider: {
           "@type": "AutoRepair",
           "@id": `${site.origin}/#betrieb`,
           name: site.legalName,
@@ -54,7 +55,7 @@ function ServiceCityPage() {
             addressCountry: "DE",
           },
         },
-        areaServed: { "@type": "City", name: city.name },
+        areaServed: { "@type": "City", name: city.name } } : {}),
         description: service.description,
       },
       {
@@ -85,7 +86,7 @@ function ServiceCityPage() {
   };
 
   return (
-    <main id="main-content">
+    <main id="main-content" tabIndex={-1}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -102,7 +103,7 @@ function ServiceCityPage() {
           { label: service.nav, to: `/leistungen/${service.slug}` },
           { label: city.name },
         ]}
-        actions={
+        actions={service.pendingApproval ? <Link to="/kontakt" className={ctaPrimary}>Rückfrage zur Zulässigkeit</Link> :
           <Link
             to={request.leistung ? "/fahrzeug-zustand" : "/"}
             hash="buchung"
@@ -114,6 +115,17 @@ function ServiceCityPage() {
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <section aria-label={`Anfahrt und Abholung aus ${city.name}`} className="mb-8 space-y-4">
+          <h2 className="font-display text-2xl">{city.slug === "horb-am-neckar" ? "Direkt zur Werkstatt in Horb" : `Abholung aus ${city.name} planen`}</h2>
+          <p className="text-muted">{city.blurb} Entfernungen und Fahrzeiten sind Richtwerte; die genaue Übergabeadresse stimmen wir vorab ab.</p>
+          <p className="text-sm text-muted">{city.slug === "horb-am-neckar"
+            ? `Sie können das Fahrzeug nach Terminvereinbarung direkt zu ${site.street} bringen. Die Uhrzeit der Anfrage bezeichnet die Fahrzeugabgabe.`
+            : pickupFee(city.km, "basis") === null
+              ? `Für ${city.name} ist die Abholung bei Basisreinigung und Reinigung & Politur nur nach individueller Preisabsprache möglich. Der Rechner zeigt diese Zusatzkosten ausdrücklich als offen an.`
+              : `Bei Basisreinigung und Reinigung & Politur beträgt der Hol- und Bringservice aus ${city.name} ${pickupPriceText(city.km)}. Für Keramikschutz ist die Abholung bis 60 km enthalten.`}</p>
+          <p className="text-sm text-muted">Abholort, Übergabezeit und Rückgabe werden persönlich bestätigt. Es gibt keinen zusätzlichen Werkstattstandort in den Abholorten; die Arbeiten erfolgen in {site.city}.</p>
+          <Link to="/abholservice/$city" params={{ city: city.slug }} className="inline-flex min-h-11 items-center text-sm underline">Abholbedingungen für {city.name}</Link>
+        </section>
         <p className="rounded-card border border-line bg-surface p-4 text-sm">
           Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}. Die Aufbereitung
           erfolgt in unserer Werkstatt: {site.street}, {site.postalCode} {site.city}.
@@ -135,19 +147,21 @@ function ServiceCityPage() {
             Werkstattlicht.
           </p>
         </div>
+        {service.honestNote ? <p className="mt-6 border border-line p-4 text-sm">{service.honestNote}</p> : null}
+        <ServicePriceNote service={service} />
         {service.slug === "keramikversiegelung" ? (
           <p className="mt-8 text-sm">
-            Paket Keramikschutz ab {eur(packages[2].price)} {site.vatNote}, {pickupKeramikNote()}.
+            Paket Keramikschutz ab {eur(packages[2].price)} {site.vatNote} {pickupKeramikNote()}.
           </p>
         ) : null}
-        <Link
+        {service.pendingApproval ? null : <Link
           to={request.leistung ? "/fahrzeug-zustand" : "/"}
           search={request}
           hash="buchung"
           className="mt-10 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
         >
           Abholung aus {city.name} anfragen
-        </Link>
+        </Link>}
         <h2 className="mt-16 font-display text-2xl">Weitere Leistungen für {city.name}</h2>
         <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-muted">
           {otherServices.map((s) => (
