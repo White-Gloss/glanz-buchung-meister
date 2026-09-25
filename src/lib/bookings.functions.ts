@@ -1,27 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { authMiddleware } from "@/lib/auth/middleware";
-import { legacyOperatorMiddleware, operatorMiddleware } from "@/lib/operator-middleware";
 import { getSql } from "@/lib/db";
-import { type BookingStatus } from "@/data/site";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
-import { bitrixOnlyEnabled, roappOnlyEnabled } from "@/lib/booking-backend";
-import {
-  saveBookingRequest,
-  saveManualBookingRequest,
-  confirmBookingManually,
-  changeBookingStatus,
-  editBooking,
-} from "@/lib/booking-workflow";
-import { canConfirmBookings } from "@/lib/booking-owner";
-import { isCalendarDate } from "@/lib/calendar-date";
+import { saveBookingRequest } from "@/lib/booking-workflow";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
-import { publicBookingSchema, manualBookingSchema } from "@/lib/booking-schema";
+import { publicBookingSchema } from "@/lib/booking-schema";
 import { MAX_BASE64_UPLOAD_CHARS, validateUploadBatch } from "@/lib/booking-photos";
 import { createHash } from "node:crypto";
 import { saveBookingPhotos } from "@/lib/booking-photo-storage";
-import { createSignedPhotoUrl } from "@/lib/booking-photos";
 import { MAX_UPLOAD_FILES } from "@/lib/upload-policy";
 import {
   createRequestUploadCapability,
@@ -33,55 +20,10 @@ export { publicBookingSchema };
 export type { PublicBookingInput } from "@/lib/booking-schema";
 
 const SHOP = "white-gloss";
-export type BookingRow = {
-  id: number;
-  version: number;
-  confirmed_at: string | null;
-  confirmed_by: string | null;
-  cancelled_at: string | null;
-  status: BookingStatus;
-  customer_name: string;
-  phone: string;
-  email: string | null;
-  preferred_date: string | null;
-  preferred_slot: string | null;
-  package_id: string;
-  class_id: string;
-  extra_ids: string;
-  city_slug: string | null;
-  note: string | null;
-  total_cents: number;
-  pickup_cents: number;
-  created_at: string;
-  updated_at: string;
-  qonto_client_id: string | null;
-  qonto_invoice_id: string | null;
-  qonto_invoice_number: string | null;
-  qonto_invoice_status: string | null;
-  qonto_invoice_error: string | null;
-  qonto_sent_at: string | null;
-};
-
 function rejectHoneypot(website?: string) {
   if (website && website.trim().length > 0) {
     throw new Error("Anfrage abgelehnt.");
   }
-}
-
-async function upsertCustomer(
-  sql: Awaited<ReturnType<typeof getSql>>,
-  name: string,
-  phone: string,
-  email?: string,
-) {
-  const inserted = await sql<{ id: number }>`
-    insert into customers (shop_id, name, phone, email)
-    values (${SHOP}, ${name}, ${phone}, ${email || null})
-    on conflict (shop_id, phone) do update
-    set name = excluded.name, email = coalesce(excluded.email, customers.email)
-    returning id
-  `;
-  return inserted[0]?.id ?? null;
 }
 
 export const createPublicBooking = createServerFn({ method: "POST" })
@@ -104,16 +46,6 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       pickupOnRequest: result.quote.pickupOnRequest,
       confirmed: false,
     };
-  });
-
-export const createManualBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, legacyOperatorMiddleware])
-  .validator((input: unknown) => manualBookingSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    const result = await saveManualBookingRequest(sql, data, context.userId);
-    kickBookingDelivery(sql);
-    return { id: result.booking.id, confirmed: false as const };
   });
 
 export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
@@ -145,7 +77,7 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
     rejectHoneypot(data.website);
     const sql = await getSql();
     if (data.files.length) validateUploadBatch(data.files);
-    if (roappOnlyEnabled() || bitrixOnlyEnabled()) {
+    {
       const key = createHash("sha256").update(`photo:${data.requestId}`).digest("hex");
       const fingerprint = createHash("sha256")
         .update(
@@ -180,31 +112,11 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
       setBookingUploadCookie(row.id, capability);
       // No remote processing until the selected files have been durably uploaded.
       if (data.files.length) await saveBookingPhotos(sql, row.id, data.files);
-      if (bitrixOnlyEnabled()) {
-        const { queueBitrixBooking } = await import("@/lib/bitrix-sync");
-        await queueBitrixBooking(sql, row);
-      } else {
-        const { queueRoappBooking } = await import("@/lib/roapp-sync");
-        await queueRoappBooking(sql, row);
-      }
+      const { queueBitrixBooking } = await import("@/lib/bitrix-sync");
+      await queueBitrixBooking(sql, row);
       kickBookingDelivery(sql);
       return { ok: true as const };
     }
-    await upsertCustomer(sql, data.name, data.phone);
-    const body = [
-      `Name: ${data.name}`,
-      `Telefon: ${data.phone}`,
-      data.text,
-      data.files.length
-        ? `Dateien (Namen): ${data.files.map((file) => file.name).join(", ")}`
-        : "Keine Dateinamen übermittelt.",
-    ].join("\n");
-    const channel = /delle|hagel/i.test(data.title) ? "dellen" : "zustand";
-    await sql`
-      insert into inbox_messages (shop_id, channel, sender, subject, body)
-      values (${SHOP}, ${channel}, ${data.name}, ${data.title}, ${body})
-    `;
-    return { ok: true as const };
   });
 
 const attachBookingPhotosSchema = z.object({
@@ -269,161 +181,9 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     const [row] = await sql<{ id: number; version: number }>`
       select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
     if (row) {
-      if (!bitrixOnlyEnabled()) {
-        const { queueRoappBooking } = await import("@/lib/roapp-sync");
-        await queueRoappBooking(sql, row);
-      }
-      if (!roappOnlyEnabled()) {
-        const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
-        const queued = queueBitrixPhotos(sql, row);
-        // As the sole backend Bitrix must not lose new photos silently.
-        if (bitrixOnlyEnabled()) await queued;
-        else await queued.catch(() => undefined);
-      }
+      const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
+      await queueBitrixPhotos(sql, row);
       kickBookingDelivery(sql);
     }
     return saved;
-  });
-
-export const listBookings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware, operatorMiddleware])
-  .handler(async () => {
-    const sql = await getSql();
-    return sql<BookingRow>`
-      select id, status, version, confirmed_at, confirmed_by, cancelled_at, customer_name, phone, email, preferred_date, preferred_slot,
-             package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
-             created_at, updated_at,
-             qonto_client_id, qonto_invoice_id, qonto_invoice_number,
-             qonto_invoice_status, qonto_invoice_error, qonto_sent_at
-      from bookings
-      where shop_id = ${SHOP}
-      order by created_at desc
-      limit 200
-    `;
-  });
-
-export const listBookingPhotos = createServerFn({ method: "GET" })
-  .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
-    const sql = await getSql();
-    const rows = await sql<{
-      id: number;
-      original_name: string;
-      mime: string;
-      storage_path: string;
-      upload_state: string;
-    }>`
-      select id,original_name,mime,storage_path,upload_state from booking_photos
-      where shop_id=${SHOP} and booking_id=${data.bookingId} order by id limit 8`;
-    return Promise.all(
-      rows.map(async (row) => ({
-        id: row.id,
-        name: row.original_name,
-        mime: row.mime,
-        state: row.upload_state,
-        url:
-          row.upload_state === "ready"
-            ? await createSignedPhotoUrl(row.storage_path).catch(() => null)
-            : null,
-      })),
-    );
-  });
-
-const bookingMutation = z.object({
-  id: z.number().int().positive(),
-  expectedVersion: z.number().int().positive(),
-});
-
-export const getBookingPermissions = createServerFn({ method: "GET" })
-  .middleware([authMiddleware, operatorMiddleware])
-  .handler(async ({ context }) => ({
-    canConfirm: await canConfirmBookings(await getSql(), context.userId),
-  }));
-
-export const confirmBooking = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, legacyOperatorMiddleware])
-  .validator((input: unknown) => bookingMutation.parse(input))
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    try {
-      await confirmBookingManually(sql, data.id, data.expectedVersion, context.userId);
-    } finally {
-      kickBookingDelivery(sql);
-    }
-    return { ok: true as const };
-  });
-
-export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, legacyOperatorMiddleware])
-  .validator((input: unknown) =>
-    bookingMutation
-      .extend({
-        status: z.enum([
-          "neu",
-          "bestaetigt",
-          "abgelehnt",
-          "storniert",
-          "erledigt",
-          "nicht_erschienen",
-        ]),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    await changeBookingStatus(sql, data.id, data.expectedVersion, data.status, context.userId);
-    kickBookingDelivery(sql);
-    return { ok: true as const };
-  });
-
-export const updateBookingDetails = createServerFn({ method: "POST" })
-  .middleware([authMiddleware, legacyOperatorMiddleware])
-  .validator((input: unknown) =>
-    publicBookingSchema
-      .pick({
-        name: true,
-        phone: true,
-        email: true,
-        date: true,
-        slot: true,
-        packageId: true,
-        classId: true,
-        extraIds: true,
-        citySlug: true,
-        note: true,
-      })
-      .extend({
-        ...bookingMutation.shape,
-        date: z
-          .string()
-          .max(20)
-          .optional()
-          .refine((v) => !v || isCalendarDate(v), "Ungültiger Abgabetermin"),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    await editBooking(sql, data.id, data.expectedVersion, data, context.userId);
-    kickBookingDelivery(sql);
-    return { ok: true as const };
-  });
-
-export const getBookingHistory = createServerFn({ method: "GET" })
-  .middleware([authMiddleware, operatorMiddleware])
-  .validator((input: unknown) => z.object({ id: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
-    const sql = await getSql();
-    return sql<{
-      id: number;
-      event: string;
-      actor: string;
-      version: number;
-      before_data: Record<string, string | number | boolean | null> | null;
-      after_data: Record<string, string | number | boolean | null>;
-      created_at: string;
-    }>`
-      select id,event,actor,version,before_data,after_data,created_at from booking_events
-      where shop_id=${SHOP} and booking_id=${data.id} order by version desc limit 100`;
   });

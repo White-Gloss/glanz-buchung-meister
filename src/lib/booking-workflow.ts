@@ -17,12 +17,8 @@ import {
   type BookingEvent,
 } from "./booking-notifications.ts";
 import type { UploadCapability } from "./booking-upload-capability.ts";
-import { queueOdooBooking } from "./odoo-sync.ts";
-import { queueRoappBooking } from "./roapp-sync.ts";
-import { queueLexwareBooking } from "./lexware-sync.ts";
-import { enqueueZohoJob, ensureZohoSchema, zohoOpsEnabled } from "./zoho-ops.ts";
+import { ensureBookingOperationsSchema } from "./booking-operations.ts";
 import { queueBitrixBooking } from "./bitrix-sync.ts";
-import { bitrixOnlyEnabled, roappOnlyEnabled } from "./booking-backend.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -100,31 +96,7 @@ async function event(
     returning id
   `;
   await enqueue(tx, row, name, saved.id, actor);
-  if (roappOnlyEnabled()) {
-    await queueRoappBooking(tx, row);
-    return;
-  }
-  if (bitrixOnlyEnabled()) {
-    await queueBitrixBooking(tx, row);
-    return;
-  }
-  await enqueueZohoJob(tx, row.id, "record", `record:${row.id}:${row.version}`);
-  if (name === "booking.created") {
-    await enqueueZohoJob(tx, row.id, "photos", `photos:${row.id}:created`);
-  }
-  if (name === "booking.confirmed") {
-    await enqueueZohoJob(tx, row.id, "calendar", `calendar:${row.id}:${row.version}`);
-    await enqueueZohoJob(tx, row.id, "confirmation", `confirmation:${row.id}:${row.version}`);
-  }
-  if (name === "booking.cancelled" || name === "booking.rejected") {
-    await enqueueZohoJob(tx, row.id, "calendar", `calendar-release:${row.id}:${row.version}`);
-  }
   await queueBitrixBooking(tx, row);
-  if (!(await zohoOpsEnabled(tx))) {
-    await queueOdooBooking(tx, row);
-    await queueRoappBooking(tx, row);
-    await queueLexwareBooking(tx, row);
-  }
 }
 
 async function findBooking(tx: Sql, id: number) {
@@ -197,7 +169,7 @@ async function persistBookingRequest(
   };
   const fingerprint = hash(JSON.stringify(content));
   const quote = quoteTotal(data);
-  if (!roappOnlyEnabled()) await ensureZohoSchema(sql);
+  await ensureBookingOperationsSchema(sql);
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);
@@ -256,7 +228,7 @@ export async function confirmBookingManually(
   enqueue: Enqueue = queueBookingEvent,
 ) {
   await requireBookingOwner(sql, actor);
-  await ensureZohoSchema(sql);
+  await ensureBookingOperationsSchema(sql);
   try {
     return await sql.transaction(async (tx) => {
       await lockShop(tx);
@@ -313,10 +285,10 @@ export async function changeBookingStatus(
   if (!actor || actor === "auto" || actor.startsWith("operator:"))
     throw new Error("Eine angemeldete Benutzeraktion ist erforderlich.");
   if (status === "bestaetigt") throw new Error("Bitte die manuelle Terminbestätigung verwenden.");
-  await ensureZohoSchema(sql);
-  if (status === "erledigt" && (await zohoOpsEnabled(sql))) {
+  await ensureBookingOperationsSchema(sql);
+  if (status === "erledigt") {
     throw new Error(
-      "Bitte den Leistungsabschluss mit Zahlungsvariante im Zoho-Arbeitsplatz verwenden. Eine Rechnung entsteht nicht allein durch den Statuswechsel.",
+      "Bitte den Leistungsabschluss mit Zahlungsvariante in Bitrix24 verwenden. Eine Rechnung entsteht nicht allein durch den Statuswechsel.",
     );
   }
   try {

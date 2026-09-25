@@ -12,9 +12,8 @@ import {
   completeServiceWithPayment,
   confirmBookingWithSchedule,
   listBusyWindows,
-} from "./zoho-ops.ts";
-import { processZohoJob } from "./zoho-sync.ts";
-import { berlinWallToUtc } from "./zoho-time.ts";
+} from "./booking-operations.ts";
+import { berlinWallToUtc } from "./booking-time.ts";
 
 function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql {
   const sql = (async (strings: TemplateStringsArray, ...args: unknown[]) => {
@@ -39,7 +38,7 @@ async function database() {
 function input(overrides: Partial<PublicBookingInput> = {}): PublicBookingInput {
   return {
     idempotencyKey: randomUUID(),
-    name: "Zoho Test",
+    name: "Bitrix Test",
     phone: "+490000123456",
     email: "qa@example.invalid",
     date: "2026-11-02",
@@ -159,7 +158,7 @@ test("price increase or date change waits for customer acceptance and does not r
   }
 });
 
-test("confirmation queues a PDF mail and never an invoice; completion is the invoice gate", async () => {
+test("Bitrix owns confirmation and invoicing; legacy queues remain empty after completion", async () => {
   const { pg, sql } = await database();
   try {
     const row = await create(sql);
@@ -169,37 +168,10 @@ test("confirmation queues a PDF mail and never an invoice; completion is the inv
       durationMinutes: 180,
       agreedCents: 14900,
     });
-    const jobs = await sql<{ job: string }>`
-      select job from zoho_job_queue where booking_id=${confirmed.booking.id} order by id
-    `;
-    assert.ok(jobs.some((job) => job.job === "confirmation"));
-    assert.ok(jobs.some((job) => job.job === "calendar"));
-    assert.equal(
-      jobs.filter((job) => job.job === "invoice").length,
-      0,
-      "calendar confirmation must not create an invoice job",
-    );
     assert.equal(confirmed.booking.invoice_status, "nicht_erstellt");
-    await processZohoJob(sql, {
-      id: 1,
-      job: "confirmation",
-      booking_id: confirmed.booking.id,
-      payload: {},
-    });
-    const mail = await sql<{
-      event_key: string;
-      subject: string;
-      attachments: { filename: string }[];
-    }>`
-      select event_key, subject, attachments from outbound_queue
-      where booking_id=${confirmed.booking.id} and event_key like 'zoho:confirmation:%'
-    `;
-    assert.equal(mail.length, 1);
-    assert.match(mail[0].subject, /Terminbestätigung/);
-    assert.match(mail[0].attachments[0]?.filename || "", /Buchungsbestaetigung/);
-    await completeServiceWithPayment(
+    const completed = await completeServiceWithPayment(
       sql,
-      confirmed.booking.id,
+      row.id,
       confirmed.booking.version,
       "owner",
       {
@@ -208,18 +180,27 @@ test("confirmation queues a PDF mail and never an invoice; completion is the inv
         cashDate: "2026-11-02",
       },
     );
-    const billed = await sql<{
-      invoice_status: string;
-      zoho_invoice_id: string | null;
-      job: string;
-    }>`
-      select b.invoice_status, b.zoho_invoice_id, q.job
-      from bookings b
-      join zoho_job_queue q on q.booking_id = b.id
-      where b.id=${confirmed.booking.id} and q.job='invoice'
-    `;
-    assert.equal(billed[0].invoice_status, "ausstehend");
-    assert.equal(billed[0].zoho_invoice_id, null);
+    assert.equal(completed.booking.invoice_status, "ausstehend");
+    for (const table of [
+      "zoho_job_queue",
+      "zoho_sync_queue",
+      "odoo_sync_queue",
+      "roapp_sync_queue",
+      "lexware_sync_queue",
+    ]) {
+      const [exists] = await sql`select to_regclass(${table}) as name`;
+      if (exists.name)
+        assert.equal(
+          (await sql.query("select * from " + table + " where booking_id=$1", [row.id])).length,
+          0,
+          table,
+        );
+    }
+    const [queued] = await sql.query<{ requested_version: number }>(
+      "select requested_version from bitrix_sync_queue where booking_id=$1",
+      [row.id],
+    );
+    assert.equal(queued.requested_version, completed.booking.version);
   } finally {
     await pg.close();
   }

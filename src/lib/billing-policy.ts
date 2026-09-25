@@ -1,10 +1,8 @@
-/** Lexware owns accounting documents; approved customer messages use Resend. */
-export const LEXWARE_ONLY = true;
+/** Bitrix24 owns accounting documents; only approved messages may leave the queue. */
+export const CUSTOMER_MAIL_RESTRICTED = true;
 
 export function assertLegacyBillingDisabled(): never {
-  throw new Error(
-    "Neue Rechnungen werden in Lexware geführt. Bitte den Rechnungs- und Versandbereich im Admin verwenden.",
-  );
+  throw new Error("Aufträge und Rechnungen werden ausschließlich in Bitrix24 geführt.");
 }
 
 export function isApprovedCustomerNotification(
@@ -12,22 +10,9 @@ export function isApprovedCustomerNotification(
   event: string | null | undefined,
 ) {
   if (!key || !event) return false;
-  return (
-    (key.includes(":customer-v2:email:") &&
-      [
-        "booking.created",
-        "booking.confirmed",
-        "booking.rejected",
-        "booking.cancelled",
-        "booking.rescheduled",
-        "booking.updated",
-      ].includes(event)) ||
-    (/^lexware-mail:v1:[a-f0-9-]{36}:(invoice|reminder)$/.test(key) &&
-      ["lexware.invoice", "lexware.reminder"].includes(event)) ||
-    (key.startsWith("zoho:confirmation:") && event === "booking.confirmed") ||
-    (key.startsWith("bitrix:confirmation:") && event === "booking.confirmed") ||
-    (/^bitrix:invoice:\d+:[a-f0-9]{24}$/.test(key) && event === "bitrix.invoice")
-  );
+  // The website acknowledges receipt; native Bitrix owns later business decisions.
+  // Old app/CRM confirmations and invoices must not leave a stale local queue.
+  return key.includes(":customer-v2:email:") && event === "booking.created";
 }
 
 export function isOwnerNotification(

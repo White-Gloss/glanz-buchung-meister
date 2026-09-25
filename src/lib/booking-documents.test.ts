@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { PDFDocument } from "pdf-lib";
-import { createBookingConfirmationPdf, receiptEmailCopy } from "./zoho-documents.ts";
+import { createBookingConfirmationPdf, receiptEmailCopy } from "./booking-documents.ts";
 
 test("confirmation PDF is titled as booking confirmation and never as an invoice", async () => {
   const content = await createBookingConfirmationPdf({

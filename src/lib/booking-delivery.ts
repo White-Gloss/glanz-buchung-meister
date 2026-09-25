@@ -1,19 +1,15 @@
 import type { Sql } from "./db.ts";
 import { runNotificationWorker } from "./notification-worker.ts";
-import { runZohoSync } from "./zoho-sync.ts";
-import { bitrixOnlyEnabled, roappOnlyEnabled } from "./booking-backend.ts";
 
 /** IONOS runs a persistent Node process. Start delivery after the durable commit,
  * without making the customer wait on providers. The timer recovers work after
  * a restart; correctness never depends on this in-process optimisation.
- * Zoho sync must not share the notification lock: a hanging CRM call would
+ * CRM sync must not share the notification lock: a hanging CRM call would
  * leave customer mail queued. */
 export function kickBookingDelivery(sql: Sql): void {
   const state = globalThis as typeof globalThis & {
     __bookingDeliveryKick?: () => void;
-    __zohoSyncKick?: () => void;
     __bitrixSyncKick?: () => void;
-    __roappSyncKick?: () => void;
   };
   state.__bookingDeliveryKick ??= createDeliveryKick(
     async () => {
@@ -24,12 +20,6 @@ export function kickBookingDelivery(sql: Sql): void {
         "[booking:delivery] Versandjob unterbrochen; gespeicherte Warteschlange bleibt erhalten.",
       ),
   );
-  state.__zohoSyncKick ??= createDeliveryKick(
-    async () => {
-      await runZohoSync(sql);
-    },
-    () => console.error("[zoho:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
-  );
   state.__bitrixSyncKick ??= createDeliveryKick(
     async () => {
       const { runBitrixSync } = await import("./bitrix-sync.ts");
@@ -38,21 +28,6 @@ export function kickBookingDelivery(sql: Sql): void {
     () => console.error("[bitrix:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
   );
   state.__bookingDeliveryKick();
-  if (bitrixOnlyEnabled()) {
-    // Leftover RO/Zoho queue rows from an earlier mode must not be pushed after cutover.
-    state.__bitrixSyncKick();
-    return;
-  }
-  state.__roappSyncKick ??= createDeliveryKick(
-    async () => {
-      const { runRoappSync } = await import("./roapp-sync.ts");
-      await runRoappSync(sql);
-    },
-    () => console.error("[roapp:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
-  );
-  state.__roappSyncKick();
-  if (roappOnlyEnabled()) return;
-  state.__zohoSyncKick();
   state.__bitrixSyncKick();
 }
 

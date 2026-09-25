@@ -20,7 +20,8 @@ concurrency:
 jobs:
   inspect:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    # Never share the persistent PR runner with production SSH credentials.
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: production
 
@@ -277,7 +278,7 @@ jobs:
               probe_env_key ALLOW_LOCAL_PGLITE
               probe_env_key HOST
               probe_env_key VIBE_API_KEY
-              probe_env_key VIBE_API_BASE
+              probe_env_key BITRIX_WEBHOOK_URL
             else
               echo "environ_parse=unreadable"
             fi
@@ -297,7 +298,8 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       vars.IONOS_DEPLOY_ENABLED == 'true'
-    runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    # Never share the persistent PR runner with production SSH credentials.
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
 
@@ -393,27 +395,9 @@ jobs:
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          ERPNEXT_BASE_URL: ${{ secrets.ERPNEXT_BASE_URL }}
-          ERPNEXT_API_KEY: ${{ secrets.ERPNEXT_API_KEY }}
-          ERPNEXT_API_SECRET: ${{ secrets.ERPNEXT_API_SECRET }}
         run: |
           npm ci --ignore-scripts
           npm run build
-
-      - name: Bitrix-Schlüssel ins Release legen
-        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
-        env:
-          VIBE_API_KEY: ${{ secrets.VIBE_API_KEY }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          if [[ -z "${VIBE_API_KEY:-}" ]]; then
-            echo "Kein GitHub-Secret VIBE_API_KEY; Bitrix bleibt no-op, bis der VPS-Wert gesetzt ist."
-            exit 0
-          fi
-          umask 077
-          printf 'VIBE_API_KEY=%s\n' "$VIBE_API_KEY" > .output/runtime-vibe.env
-          echo "runtime-vibe.env geschrieben."
 
       - name: Release-Paket erstellen
         if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'

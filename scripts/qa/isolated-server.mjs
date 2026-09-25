@@ -1,3 +1,4 @@
+import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
 // Isolated local verification only; this file is not imported by the application.
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,12 +12,14 @@ process.env.DATABASE_URL = "";
 process.env.ALLOW_LOCAL_PGLITE = "1";
 process.env.NODE_ENV = "production";
 process.env.OPERATOR_ENFORCE = "1";
+process.env.BOOKING_OPERATIONS = "bitrix";
+process.env.REMINDER_CRON_SECRET = "isolated-qa-cron-secret-32-characters";
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
-process.env.BETTER_AUTH_URL = "http://127.0.0.1:8082";
+process.env.BETTER_AUTH_URL = qaBase;
 process.env.QA_RUN_ID ||= randomUUID();
-process.env.PORT = "8082";
+process.env.PORT = String(qaPort);
 process.env.HOST = "127.0.0.1";
-process.env.SUPABASE_URL = "http://127.0.0.1:8099";
+process.env.SUPABASE_URL = controlBase;
 process.env.SUPABASE_SERVICE_ROLE_KEY = "local-test-only";
 process.env.RESEND_API_KEY = "local-test-only";
 process.env.MAIL_FROM = "test@example.invalid";
@@ -87,7 +90,7 @@ globalThis.fetch = async (input, init) => {
 await mkdir(outputRoot, { recursive: true });
 createServer(async (req, res) => {
   try {
-    const url = new URL(req.url, "http://127.0.0.1:8099");
+    const url = new URL(req.url, controlBase);
     if (url.pathname === "/identity") {
       res.setHeader("content-type", "application/json");
       res.setHeader("x-qa-run-id", process.env.QA_RUN_ID || "");
@@ -242,5 +245,5 @@ createServer(async (req, res) => {
     res.writeHead(500);
     res.end(String(error));
   }
-}).listen(8099, "127.0.0.1");
+}).listen(controlPort, "127.0.0.1");
 await import("../../.output/server/index.mjs");

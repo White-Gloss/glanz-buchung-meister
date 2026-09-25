@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { berlinWallToUtc } from "@/lib/zoho-time";
+import { calendarDateRange, bitrixBusyWindows } from "@/lib/bitrix-calendar";
 
 export const Route = createFileRoute("/api/availability")({
   server: {
@@ -20,23 +20,17 @@ export const Route = createFileRoute("/api/availability")({
           !/^\d{4}-\d{2}-\d{2}$/.test(to) ||
           !Number.isFinite(span) ||
           span < 0 ||
-          span > 366 * 86400000
+          span > 92 * 86400000
         ) {
           return Response.json({ ok: false, error: "invalid_range" }, { status: 400 });
         }
         try {
-          const { roappOnlyEnabled } = await import("@/lib/booking-backend");
-          const fromIso = berlinWallToUtc(from, "00:00").toISOString();
-          const toIso = berlinWallToUtc(to, "23:59").toISOString();
-          let windows;
-          if (roappOnlyEnabled()) {
-            const { roappBusyWindows } = await import("@/lib/roapp-calendar");
-            windows = await roappBusyWindows(fromIso, toIso);
-          } else {
-            const { getSql } = await import("@/lib/db");
-            const { listBusyWindows } = await import("@/lib/zoho-ops");
-            windows = await listBusyWindows(await getSql(), fromIso, toIso);
-          }
+          const range = calendarDateRange(from, to);
+          const { getSql } = await import("@/lib/db");
+          const windows = await bitrixBusyWindows(await getSql(), range.from, range.to, {
+            force: true,
+            nativeOnly: true,
+          });
           return Response.json({ ok: true, windows }, { headers: { "cache-control": "no-store" } });
         } catch {
           return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

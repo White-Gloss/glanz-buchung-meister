@@ -82,7 +82,7 @@ test("owner confirmation excludes general operators, unverified email and previe
     assert.equal(isBookingOwner(u, env), false);
 });
 
-test("manual requests keep audit, Odoo queue and separate confirmation; customer email is opt-in and retries are safe", async () => {
+test("manual requests keep audit, Bitrix queue and separate confirmation; customer email is opt-in and retries are safe", async () => {
   const { pg, sql } = await database();
   try {
     const { privacy: _privacy, ...details } = input();
@@ -97,13 +97,10 @@ test("manual requests keep audit, Odoo queue and separate confirmation; customer
       "owner",
     );
     assert.equal(
-      (await sql`select * from odoo_sync_queue where booking_id=${first.booking.id}`).length,
+      (await sql`select * from bitrix_sync_queue where booking_id=${first.booking.id}`).length,
       1,
     );
-    assert.equal(
-      (await sql`select * from lexware_sync_queue where booking_id=${first.booking.id}`).length,
-      1,
-    );
+    assert.equal((await sql`select to_regclass('lexware_sync_queue') as name`)[0].name, null);
     assert.equal(
       (await sql`select * from bitrix_sync_queue where booking_id=${first.booking.id}`).length,
       1,
@@ -264,8 +261,7 @@ test("no date, past date and weekend cannot be manually confirmed; completion re
     );
     const c = await create(sql, input({ date: "2999-04-01" }));
     await confirmBookingManually(sql, c.id, 1, "owner");
-    await changeBookingStatus(sql, c.id, 2, "erledigt", "owner");
-    await assert.rejects(() => changeBookingStatus(sql, c.id, 3, "neu", "owner"), /Statuswechsel/);
+    await assert.rejects(() => changeBookingStatus(sql, c.id, 2, "erledigt", "owner"), /Bitrix24/);
   } finally {
     await pg.close();
   }
@@ -285,39 +281,44 @@ test("website booking queues Bitrix without numbered 0015/0016 already applied",
       (await sql`select * from bitrix_sync_queue where booking_id=${created.id}`).length,
       1,
     );
-    assert.ok((await sql`select * from zoho_job_queue where booking_id=${created.id}`).length >= 1);
+    assert.equal((await sql`select to_regclass('zoho_job_queue') as name`)[0].name, null);
   } finally {
     await pg.close();
   }
 });
 
-test("Bitrix-only operation queues Bitrix exclusively for new and confirmed bookings", async () => {
-  const { pg, sql } = await database();
-  process.env.BOOKING_OPERATIONS = "bitrix";
-  try {
-    const rows = async (table: string, id: number) => {
-      const [exists] = await sql<{ name: string | null }>`select to_regclass(${table})::text as name`;
-      if (!exists?.name) return 0;
-      return (await sql.query(`select 1 from ${table} where booking_id=$1`, [id])).length;
-    };
-    const created = await create(sql);
-    await confirmBookingManually(sql, created.id, 1, "owner");
-    assert.equal(await rows("bitrix_sync_queue", created.id), 1);
-    for (const table of [
-      "zoho_job_queue",
-      "zoho_sync_queue",
-      "roapp_sync_queue",
-      "odoo_sync_queue",
-      "lexware_sync_queue",
-    ])
-      assert.equal(await rows(table, created.id), 0, table);
-    // Customer notifications stay in the durable website queue.
-    assert.ok((await rows("outbound_queue", created.id)) >= 1);
-  } finally {
-    delete process.env.BOOKING_OPERATIONS;
-    await pg.close();
-  }
-});
+for (const mode of ["bitrix", "roapp", ""])
+  test(`Only Bitrix receives bookings even with legacy mode ${mode || "unset"}`, async () => {
+    const { pg, sql } = await database();
+    const previousMode = process.env.BOOKING_OPERATIONS;
+    process.env.BOOKING_OPERATIONS = mode;
+    try {
+      const rows = async (table: string, id: number) => {
+        const [exists] = await sql<{
+          name: string | null;
+        }>`select to_regclass(${table})::text as name`;
+        if (!exists?.name) return 0;
+        return (await sql.query(`select 1 from ${table} where booking_id=$1`, [id])).length;
+      };
+      const created = await create(sql);
+      await confirmBookingManually(sql, created.id, 1, "owner");
+      assert.equal(await rows("bitrix_sync_queue", created.id), 1);
+      for (const table of [
+        "zoho_job_queue",
+        "zoho_sync_queue",
+        "roapp_sync_queue",
+        "odoo_sync_queue",
+        "lexware_sync_queue",
+      ])
+        assert.equal(await rows(table, created.id), 0, table);
+      // Customer notifications stay in the durable website queue.
+      assert.ok((await rows("outbound_queue", created.id)) >= 1);
+    } finally {
+      if (previousMode === undefined) delete process.env.BOOKING_OPERATIONS;
+      else process.env.BOOKING_OPERATIONS = previousMode;
+      await pg.close();
+    }
+  });
 
 test("migration preserves historical confirmations and refuses conflicting legacy data atomically", async () => {
   for (const collision of [false, true]) {

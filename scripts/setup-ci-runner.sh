@@ -62,7 +62,7 @@ chown -R "$RUNNER_USER:$RUNNER_USER" "$RUNNER_HOME"
 "$RUNNER_HOME/bin/installdependencies.sh" >/dev/null
 
 echo "▸ Runner beim Repository anmelden"
-sudo -u "$RUNNER_USER" "$RUNNER_HOME/config.sh" --unattended --replace \
+runuser -u "$RUNNER_USER" -- "$RUNNER_HOME/config.sh" --unattended --replace \
   --url "$REPO_URL" --token "$RUNNER_TOKEN" \
   --name "$(hostname)-ci" --labels "$RUNNER_LABEL" --work _work
 

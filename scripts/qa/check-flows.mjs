@@ -1,11 +1,12 @@
+import { qaBase, controlBase } from "./ports.mjs";
 import assert from "node:assert/strict";
 import { createHmac, randomUUID } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { toJSONAsync, fromCrossJSON } from "seroval";
 import { defaultSerovalPlugins } from "@tanstack/router-core";
-const base = "http://127.0.0.1:8082";
-const identity = await fetch("http://127.0.0.1:8099/identity");
+const base = qaBase;
+const identity = await fetch(controlBase + "/identity");
 const qaRunId = identity.headers.get("x-qa-run-id");
 assert.ok(qaRunId, "The isolated server must identify this QA run.");
 assert.deepEqual(
@@ -53,7 +54,7 @@ async function evidence() {
   let pending = [];
   try {
     for (;;) {
-      const response = await fetch("http://127.0.0.1:8099/evidence", { signal });
+      const response = await fetch(controlBase + "/evidence", { signal });
       assert.equal(response.status, 200, "Local QA evidence is unavailable");
       const snapshot = await response.json();
       assert.equal(
@@ -80,7 +81,7 @@ async function evidence() {
   }
 }
 const control = (flags) =>
-  fetch("http://127.0.0.1:8099/control", {
+  fetch(controlBase + "/control", {
     method: "POST",
     headers: { "x-qa-run-id": qaRunId },
     body: JSON.stringify(flags),
@@ -213,13 +214,15 @@ const photo = await rpc("createPublicPhotoInquiry", {
 });
 assert.equal(photo.body.result?.ok, true);
 state = await evidence();
-assert.equal(state.objects.length, 1);
+assert.equal(state.objects.length, 2);
+const inquiry = state.tables.bookings.find((row) => row.package_id === "photo-inquiry");
+assert.ok(inquiry, "Photo inquiries must be durable orders for Bitrix24");
 assert.ok(
-  state.tables.inbox_messages.some(
-    (r) => r.channel === "dellen" && r.body.includes("fahrzeug.webp"),
+  state.tables.booking_photos.some(
+    (row) => row.booking_id === inquiry.id && row.upload_state === "ready",
   ),
 );
-results.push("Photo inquiry persists description/filenames without uploading bytes");
+results.push("Photo inquiry persists an order and usable photo for Bitrix24");
 await control({ failMail: true, failWhatsApp: true });
 const future = new Date();
 future.setUTCDate(future.getUTCDate() + 14);
@@ -256,7 +259,7 @@ const foreign = await rpc(
   booking.cookie,
 );
 assert.ok(foreign.body.error);
-assert.equal((await evidence()).objects.length, 1);
+assert.equal((await evidence()).objects.length, 2);
 results.push("Cookie for another booking cannot authorize upload");
 
 const secondRequest = {
@@ -279,39 +282,32 @@ results.push(
 
 const id2 = booking2.body.result.id;
 const id3 = booking3.body.result.id;
-const mutation = { id: id2, expectedVersion: 1 };
-assert.ok((await rpc("confirmBooking", mutation)).body.error, "Anonymous confirmation must fail");
-async function session(role) {
-  const fixture = await (await control({ createSession: role })).json();
-  const response = await fetch(`${base}/api/auth/get-session`, {
-    headers: { cookie: fixture.cookie, "x-forwarded-proto": "https" },
-  });
-  assert.equal(response.status, 200, "Better Auth session lookup failed");
-  const body = await response.json();
-  assert.ok(
-    body?.user?.id === fixture.userId,
-    `Better Auth must verify the ${role} fixture session`,
-  );
-  return fixture;
-}
-const owner = await session("owner");
-const operator = await session("operator");
-const outsider = await session("outsider");
-const operatorDenial = await rpc("confirmBooking", mutation, operator.cookie);
-assert.match(operatorDenial.body.error?.message ?? "", /Inhaber/);
-assert.ok((await rpc("confirmBooking", mutation, outsider.cookie)).body.error);
-assert.ok(
-  (await rpc("updateBookingStatus", { ...mutation, status: "bestaetigt" }, owner.cookie)).body
-    .error,
+// The former website CRM cannot be used to bypass Bitrix24 decisions.
+for (const name of [
+  "confirmBooking",
+  "updateBookingStatus",
+  "updateBookingDetails",
+  "createManualBooking",
+  "runAgentCommand",
+  "sendQontoInvoice",
+])
+  assert.equal(ids[name], undefined, name + " must not be published");
+for (const route of ["/api/ro-callback", "/api/zoho-webhook", "/api/hub", "/api/operator"])
+  assert.equal((await fetch(base + route, { method: "POST", body: "{}" })).status, 410, route);
+assert.equal(
+  (await fetch(base + "/api/bitrix-workshop", { method: "POST", body: "{}" })).status,
+  410,
 );
-assert.equal((await evidence()).tables.bookings.find((row) => row.id === id2).status, "neu");
 results.push(
-  "Real Better Auth sessions enforce owner-only confirmation; anonymous, other operator, outsider and generic-status bypass fail",
+  "Legacy CRM actions are absent, legacy callbacks return 410, the retired app bridge returns 410",
 );
 
 await control({ retryBookingId: id2 });
-const deliveryRetry = await rpc("flushOutboundMail", undefined, operator.cookie);
-assert.ok(deliveryRetry.body.result, JSON.stringify(deliveryRetry.body));
+const cron = await fetch(base + "/api/automation-cron", {
+  method: "POST",
+  headers: { authorization: "Bearer isolated-qa-cron-secret-32-characters" },
+});
+assert.equal(cron.status, 200);
 state = await evidence();
 assert.ok(
   state.tables.outbound_queue
@@ -319,134 +315,7 @@ assert.ok(
     .every((row) => row.status === "sent" && row.attempt_count === 2),
 );
 assert.equal(state.tables.bookings.find((row) => row.id === id2).status, "neu");
-results.push(
-  "Retry worker sends recovered provider messages exactly from the existing outbox and never confirms a booking",
-);
-
-const approved = await rpc("confirmBooking", mutation, owner.cookie);
-assert.equal(approved.body.result?.ok, true, JSON.stringify(approved.body));
-state = await evidence();
-let current = state.tables.bookings.find((row) => row.id === id2);
-assert.equal(current.status, "bestaetigt");
-assert.equal(current.version, 2);
-assert.equal(current.confirmed_by, owner.userId);
-assert.ok(current.confirmed_at);
-const sentAfterApproval = { mail: state.mails.length, whatsapp: state.whatsapp.length };
-assert.equal((await rpc("confirmBooking", mutation, owner.cookie)).body.result?.ok, true);
-state = await evidence();
-assert.equal(
-  state.tables.booking_events.filter(
-    (row) => row.booking_id === id2 && row.event === "booking.confirmed",
-  ).length,
-  1,
-);
-assert.equal(state.mails.length, sentAfterApproval.mail);
-assert.equal(state.whatsapp.length, sentAfterApproval.whatsapp);
-const conflicting = await rpc("confirmBooking", { id: id3, expectedVersion: 1 }, owner.cookie);
-assert.ok(conflicting.body.error, "A second booking at the occupied time must fail");
-assert.equal((await evidence()).tables.bookings.find((row) => row.id === id3).status, "neu");
-results.push(
-  "Owner confirmation records actor/time/version once; retry is idempotent and conflicting confirmation leaves the other request pending",
-);
-
-const movedDate = new Date(future);
-movedDate.setUTCDate(movedDate.getUTCDate() + 7);
-const edit = {
-  id: id2,
-  expectedVersion: 2,
-  name: "QA Umbuchung",
-  phone: "+490000000012",
-  email: input.email,
-  date: movedDate.toISOString().slice(0, 10),
-  slot: "11:00",
-  packageId: input.packageId,
-  classId: input.classId,
-  extraIds: [],
-  citySlug: input.citySlug,
-  note: "Persönlich abgestimmte Umbuchung",
-};
-const changed = await rpc("updateBookingDetails", edit, operator.cookie);
-assert.equal(changed.body.result?.ok, true, JSON.stringify(changed.body));
-state = await evidence();
-current = state.tables.bookings.find((row) => row.id === id2);
-assert.equal(current.status, "neu");
-assert.equal(current.version, 3);
-assert.equal(current.confirmed_at, null);
-assert.equal(current.confirmed_by, null);
-assert.ok(
-  !state.tables.outbound_queue.some(
-    (row) =>
-      row.booking_id === id2 && row.event_type === "booking.reminder" && ["queued", "processing"].includes(row.status),
-  ),
-);
-assert.ok(
-  (await rpc("updateBookingDetails", { ...edit, note: "Veralteter Versuch" }, operator.cookie)).body
-    .error,
-);
-assert.equal((await evidence()).tables.bookings.find((row) => row.id === id2).version, 3);
-assert.equal(
-  (await rpc("confirmBooking", { id: id2, expectedVersion: 3 }, owner.cookie)).body.result?.ok,
-  true,
-);
-results.push(
-  "Rescheduling invalidates confirmation/reminders, rejects stale edits and requires a fresh explicit owner confirmation",
-);
-
-assert.equal(
-  (
-    await rpc(
-      "updateBookingStatus",
-      { id: id3, expectedVersion: 1, status: "abgelehnt" },
-      operator.cookie,
-    )
-  ).body.result?.ok,
-  true,
-);
-assert.equal(
-  (
-    await rpc(
-      "updateBookingStatus",
-      { id: id3, expectedVersion: 1, status: "abgelehnt" },
-      operator.cookie,
-    )
-  ).body.result?.ok,
-  true,
-);
-assert.equal(
-  (
-    await rpc(
-      "updateBookingStatus",
-      { id: id2, expectedVersion: 4, status: "storniert" },
-      operator.cookie,
-    )
-  ).body.result?.ok,
-  true,
-);
-state = await evidence();
-current = state.tables.bookings.find((row) => row.id === id2);
-assert.equal(current.status, "storniert");
-assert.ok(current.cancelled_at);
-assert.equal(current.version, 5);
-assert.equal(state.tables.bookings.find((row) => row.id === id3).status, "abgelehnt");
-assert.equal(
-  state.tables.booking_events.filter(
-    (row) => row.booking_id === id3 && row.event === "booking.rejected",
-  ).length,
-  1,
-);
-assert.deepEqual(
-  state.tables.booking_events.filter((row) => row.booking_id === id2).map((row) => row.event),
-  [
-    "booking.created",
-    "booking.confirmed",
-    "booking.rescheduled",
-    "booking.confirmed",
-    "booking.cancelled",
-  ],
-);
-results.push(
-  "Authenticated rejection/cancellation keep their audit history; repeated rejection produces no duplicate event",
-);
+results.push("Authenticated cron recovers queued delivery once without confirming the booking");
 
 const deliveredMessage = state.tables.outbound_queue.find(
   (row) => row.channel === "whatsapp" && row.provider_message_id,
@@ -499,53 +368,9 @@ state = await evidence();
 assert.equal(state.webhookReceiptCount, 1);
 assert.equal(state.mails.length, afterWebhook.mails.length);
 assert.equal(state.whatsapp.length, afterWebhook.whatsapp.length);
-assert.equal(state.tables.bookings.find((row) => row.id === id3).status, "abgelehnt");
+assert.equal(state.tables.bookings.find((row) => row.id === id3).status, "neu");
 results.push(
   "Signed WhatsApp receipts are idempotent; missing signature fails and incoming chat text never confirms bookings",
-);
-const manual = {
-  ...input,
-  idempotencyKey: randomUUID(),
-  name: "QA Telefonbuchung",
-  notifyCustomer: false,
-};
-assert.ok((await rpc("createManualBooking", manual)).body.error, "Anonymous creation must fail");
-assert.ok(
-  (await rpc("createManualBooking", manual, outsider.cookie)).body.error,
-  "Non-operators cannot create manual bookings",
-);
-const added = await rpc("createManualBooking", manual, operator.cookie);
-assert.ok(added.body.result?.id, JSON.stringify(added.body));
-assert.equal(added.body.result.confirmed, false);
-const manualId = added.body.result.id;
-assert.equal((await rpc("createManualBooking", manual, operator.cookie)).body.result?.id, manualId);
-state = await evidence();
-assert.equal(state.tables.bookings.filter((row) => row.id === manualId).length, 1);
-assert.equal(state.tables.bookings.find((row) => row.id === manualId).status, "neu");
-assert.equal(
-  state.tables.booking_events.find((row) => row.booking_id === manualId).actor,
-  operator.userId,
-);
-assert.equal(
-  state.tables.outbound_queue.filter(
-    (row) => row.booking_id === manualId && row.to_addr === manual.email,
-  ).length,
-  0,
-);
-const withEmail = await rpc(
-  "createManualBooking",
-  { ...manual, idempotencyKey: randomUUID(), notifyCustomer: true },
-  owner.cookie,
-);
-assert.ok(withEmail.body.result?.id);
-state = await evidence();
-const manualMail = state.tables.outbound_queue.find(
-  (row) => row.booking_id === withEmail.body.result.id && row.to_addr === manual.email,
-);
-assert.ok(manualMail, "Explicit opt-in creates a customer notification through Resend");
-assert.deepEqual(manualMail.attachments, [], "No competing locally generated accounting PDF");
-results.push(
-  "Manual bookings require an operator, record the real actor, remain unconfirmed and notify the customer only on opt-in; retries do not duplicate bookings",
 );
 assert.equal(state.blocked.length, 0);
 await writeFile(

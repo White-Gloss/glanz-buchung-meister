@@ -1,4 +1,4 @@
-import { berlinWallToUtc, defaultDurationMinutes, rangesOverlap } from "./zoho-time.ts";
+import { berlinWallToUtc, defaultDurationMinutes, rangesOverlap } from "./booking-time.ts";
 
 export type SlotBusyWindow = { start: string; end: string; resourceId: number };
 
