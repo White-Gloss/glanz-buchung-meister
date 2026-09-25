@@ -174,6 +174,7 @@ export async function runCutover(options, runtime) {
   const unlock = await runtime.lock();
   let stopAttempted = false;
   let migrationAttempted = false;
+  let calendarAttempted = false;
   let backup;
   let phase = "before_stop";
   const checkpoint = () => runtime.checkInterrupted?.();
@@ -204,6 +205,8 @@ export async function runCutover(options, runtime) {
     phase = "switching_pair";
     await runtime.journal(backup, phase);
     await runtime.verifyOriginal(plan);
+    calendarAttempted = true;
+    await runtime.calendarMode(plan, true);
     await runtime.swapEnvironment(plan.targetText);
     await runtime.swapRelease(plan.targetRelease);
     await runtime.verifyPair(plan, true);
@@ -230,6 +233,7 @@ export async function runCutover(options, runtime) {
         await runtime.stop(plan.writers);
         if (migrationAttempted) await runtime.verifySchema(plan, false);
         await runtime.guardRecovery(plan);
+        if (calendarAttempted) await runtime.calendarMode(plan, false);
         await runtime.swapEnvironment(plan.oldText);
         await runtime.swapRelease(plan.currentRelease);
         await runtime.verifyPair(plan, false);

@@ -82,6 +82,7 @@ function fixture({ failures = {}, changedAt, changedField, unverifiedBackup = fa
     oldText,
     targetText,
     openCount: 3,
+    currentCalendarEnabled: false,
     pendingMigrations: ["0021_bitrix_native_transfer.sql"],
     dataFingerprint: "inventory",
     writerFingerprint: "units",
@@ -100,6 +101,7 @@ function fixture({ failures = {}, changedAt, changedField, unverifiedBackup = fa
   let release = previous;
   let running = true;
   let workers = true;
+  let calendarEnabled = false;
   function event(name) {
     events.push(name);
     calls[name] = (calls[name] || 0) + 1;
@@ -154,6 +156,11 @@ function fixture({ failures = {}, changedAt, changedField, unverifiedBackup = fa
       assert.equal(running || workers, false);
       environment = text;
     },
+    async calendarMode(_plan, newer) {
+      event(newer ? "calendar:target" : "calendar:previous");
+      assert.equal(running || workers, false);
+      calendarEnabled = newer ? true : plan.currentCalendarEnabled;
+    },
     async swapRelease(sha) {
       event(sha === previous ? "release:previous" : "release:target");
       assert.equal(running || workers, false);
@@ -163,6 +170,7 @@ function fixture({ failures = {}, changedAt, changedField, unverifiedBackup = fa
       event(newer ? "pair:target" : "pair:previous");
       assert.equal(environment, newer ? targetText : oldText);
       assert.equal(release, newer ? target : previous);
+      assert.equal(calendarEnabled, newer ? true : plan.currentCalendarEnabled);
     },
     async startMain() {
       event("start:target");
@@ -276,6 +284,7 @@ test("successful cutover verifies backup before SQL, swaps the full pair before 
     "backup",
     "migrate",
     "schema:target",
+    "calendar:target",
     "environment:target",
     "release:target",
     "pair:target",
@@ -356,6 +365,7 @@ for (const failure of [
   "migrate",
   "schema:target",
   "original",
+  "calendar:target",
   "environment:target",
   "release:target",
   "pair:target",
@@ -396,6 +406,7 @@ test("unverified archive prevents migration", async () => {
 for (const failure of [
   "schema:previous",
   "guard:recovery",
+  "calendar:previous",
   "environment:previous",
   "release:previous",
   "pair:previous",

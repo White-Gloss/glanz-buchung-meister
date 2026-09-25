@@ -413,9 +413,13 @@ export function createSystemRuntime(checkInterrupted = () => {}) {
           { ...environments.target, BOOKING_OPERATIONS: "roapp" },
           client,
         );
+        // The old live code must never see the native calendar flag before its
+        // native credentials and code are switched together with all writers stopped.
+        const blockers = readiness.blockers.filter((code) => code !== "bitrix_calendar_disabled");
+        requireCondition(blockers.length === 0, `readiness_${blockers[0] || "failed"}`);
         requireCondition(
-          readiness.blockers.length === 0,
-          `readiness_${readiness.blockers[0] || "failed"}`,
+          typeof readiness.database.bitrixCalendarEnabled === "boolean",
+          "calendar_setting_unknown",
         );
         const mismatches = await client.query(`SELECT count(*) AS count FROM bookings b
           JOIN bitrix_sync_queue q ON q.booking_id=b.id AND q.shop_id=b.shop_id
@@ -467,6 +471,7 @@ export function createSystemRuntime(checkInterrupted = () => {}) {
           appliedMigrations: applied,
           pendingMigrations: pending,
           nativeMappingFingerprint,
+          currentCalendarEnabled: readiness.database.bitrixCalendarEnabled,
         };
       });
       return {
@@ -532,6 +537,7 @@ export function createSystemRuntime(checkInterrupted = () => {}) {
         previousOutputHash: plan.currentOutputHash,
         targetOutputHash: plan.targetOutputHash,
         writerStates: plan.writerStates,
+        previousCalendarEnabled: plan.currentCalendarEnabled,
         pendingMigrations: plan.pendingMigrations,
         databaseSha256: result.sha256,
         databaseBytes: result.bytes,
@@ -571,6 +577,22 @@ export function createSystemRuntime(checkInterrupted = () => {}) {
         statement_timeout: 30000,
       });
       await runMigrations(pool, plan.pendingMigrations, false);
+    },
+    async calendarMode(plan, target) {
+      const expected = target ? true : plan.currentCalendarEnabled;
+      requireCondition(typeof expected === "boolean", "calendar_setting_unknown");
+      await database(plan.environments.previous, async (client) => {
+        const rows = (
+          await client.query(
+            "UPDATE shop_settings SET bitrix_calendar_enabled=$1 WHERE shop_id='white-gloss' RETURNING bitrix_calendar_enabled",
+            [expected],
+          )
+        ).rows;
+        requireCondition(
+          rows.length === 1 && rows[0].bitrix_calendar_enabled === expected,
+          "calendar_setting_not_verified",
+        );
+      });
     },
     async verifySchema(plan, target) {
       const names = target ? Object.keys(plan.migrationEntries) : plan.appliedMigrations;
@@ -651,6 +673,18 @@ export function createSystemRuntime(checkInterrupted = () => {}) {
     },
     async verifyPair(plan, target) {
       await securePath(ENVIRONMENT, { privateFile: true });
+      await database(plan.environments.previous, async (client) => {
+        const rows = (
+          await client.query(
+            "SELECT bitrix_calendar_enabled FROM shop_settings WHERE shop_id='white-gloss'",
+          )
+        ).rows;
+        requireCondition(
+          rows.length === 1 &&
+            rows[0].bitrix_calendar_enabled === (target ? true : plan.currentCalendarEnabled),
+          "calendar_setting_not_verified",
+        );
+      });
       const release = target ? plan.targetRelease : plan.currentRelease;
       requireCondition(
         (await fs.readFile(ENVIRONMENT, "utf8")) === (target ? plan.targetText : plan.oldText) &&
