@@ -3,7 +3,7 @@
 Diese Skripte sind ausschließlich lokale Prüfwerkzeuge. Sie werden von der Anwendung nicht importiert. Der Testserver nutzt eine frische PGlite-Datenbank im Arbeitsspeicher, setzt synthetische Zugangsdaten und Empfänger und fängt Resend/Storage lokal ab. Andere serverseitige Fetch-Ziele werden blockiert. Er bindet nur 127.0.0.1; es entstehen keine Produktionsbuchungen oder echten Nachrichten.
 
 1. Abhängigkeiten installieren und mit `npm run build` den Node-Produktionsbuild erstellen. Der Build führt keine Datenbankmigration aus. Ohne Vercel-Laufzeitflag ist Node der Standard; `NITRO_PRESET` kann das Ziel ausdrücklich überschreiben.
-2. `npm run qa:serve` starten. Ports 8082 und 8099 müssen frei sein.
+2. `npm run qa:serve` starten. Ports 8082 und 8099 müssen frei sein. Für parallele lokale Arbeiten lassen sich mit `WG_QA_APP_PORT` und `WG_QA_CONTROL_PORT` zwei andere freie Ports wählen; dieselben Werte bei allen QA-Befehlen setzen. Der Prüflauf übernimmt niemals einen bereits laufenden Server.
 3. In einem zweiten Terminal im Repository `npm run test:flows` ausführen. Die Tests prüfen zuerst die Identität des isolierten Servers und verändern ausschließlich dessen synthetische Daten.
 4. Den Testserver mit Strg+C beenden. Vor einer vollständigen Wiederholung frisch starten; die Datenbank wird zurückgesetzt.
 

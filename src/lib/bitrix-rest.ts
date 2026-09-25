@@ -37,9 +37,10 @@ type RestJson = {
   result?: unknown;
   error?: string;
   error_description?: string;
+  next?: unknown;
 };
 
-async function restCall(
+export async function restCall(
   webhook: string,
   method: string,
   params: Record<string, unknown> = {},
@@ -50,36 +51,37 @@ async function restCall(
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify(params),
     signal: AbortSignal.timeout(20_000),
-  }).catch((error: unknown) => {
-    throw new BitrixError(
-      error instanceof Error ? error.message : "Bitrix nicht erreichbar",
-      "bitrix_network",
-      0,
-      { retryable: true },
-    );
+  }).catch(() => {
+    throw new BitrixError("Bitrix nicht erreichbar", "bitrix_network", 0, { retryable: true });
   });
   const text = await response.text();
   let json: RestJson | null = null;
   try {
     json = text ? (JSON.parse(text) as RestJson) : null;
   } catch {
-    throw new BitrixError(
-      text.slice(0, 280) || "Ungültige Antwort",
-      "bitrix_invalid_json",
-      response.status,
-      {
-        retryable: response.status >= 500,
-      },
-    );
+    throw new BitrixError("Ungültige Bitrix-Antwort", "bitrix_invalid_json", response.status, {
+      retryable: response.status >= 500,
+    });
   }
-  if (!json || json.error || !response.ok) {
+  if (
+    !json ||
+    typeof json !== "object" ||
+    !("result" in json) ||
+    "error" in json ||
+    json.error_description ||
+    !response.ok
+  ) {
     throw new BitrixError(
-      json?.error_description || json?.error || `Bitrix24-Fehler (${response.status})`,
+      `Bitrix24-Fehler (${response.status})`,
       json?.error || "bitrix_error",
       response.status,
       { retryable: response.status >= 500 },
     );
   }
+  if (method === "calendar.event.get" && json.next != null)
+    throw new BitrixError("Unvollständige Kalenderantwort", "bitrix_incomplete", 0, {
+      review: true,
+    });
   return json.result;
 }
 
@@ -125,7 +127,13 @@ export async function probeBitrixRest(
   options: { fetchImpl?: typeof fetch } = {},
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    await restCall(webhook, "crm.deal.list", { start: 0, select: ["ID"] }, options.fetchImpl);
+    const rows = await restCall(
+      webhook,
+      "crm.deal.list",
+      { start: 0, select: ["ID"] },
+      options.fetchImpl,
+    );
+    if (!Array.isArray(rows)) throw new Error("Invalid deal list");
     return { ok: true };
   } catch (error) {
     if (
@@ -152,8 +160,10 @@ function verifiedInvoiceItem(result: unknown, id: number, stageId?: string) {
   const returnedId = invoice?.id;
   if (
     !invoice ||
-    !(typeof returnedId === "number" ||
-      (typeof returnedId === "string" && /^[1-9]\d*$/.test(returnedId))) ||
+    !(
+      typeof returnedId === "number" ||
+      (typeof returnedId === "string" && /^[1-9]\d*$/.test(returnedId))
+    ) ||
     Number(returnedId) !== id ||
     (invoice.entityTypeId !== undefined && invoice.entityTypeId !== 31) ||
     typeof invoice.stageId !== "string" ||
@@ -193,9 +203,12 @@ export function createBitrixRestClient(
         return verifiedInvoiceItem(await call("crm.item.get", { entityTypeId: 31, id }), id) as T;
       }
       if (
-        !body || typeof body !== "object" || Array.isArray(body) ||
+        !body ||
+        typeof body !== "object" ||
+        Array.isArray(body) ||
         Object.keys(payload).some((key) => key !== "stageId") ||
-        typeof payload.stageId !== "string" || !payload.stageId.trim() ||
+        typeof payload.stageId !== "string" ||
+        !payload.stageId.trim() ||
         payload.stageId !== payload.stageId.trim()
       ) {
         throw new BitrixError(
@@ -212,6 +225,59 @@ export function createBitrixRestClient(
       });
       return verifiedInvoiceItem(result, id, payload.stageId) as T;
     }
+    const dealMatch = /^\/deals\/([1-9]\d*)$/.exec(path);
+    if (method === "GET" && dealMatch) {
+      const id = Number(dealMatch[1]);
+      const deal = (await call("crm.deal.get", { id })) as Record<string, unknown>;
+      if (!deal || Number(deal.ID) !== id)
+        throw new BitrixError("Auftrag nicht eindeutig gelesen", "bitrix_invalid_deal", 0, {
+          review: true,
+        });
+      return deal as T;
+    }
+    const photoMatch = /^\/deals\/([1-9]\d*)\/photos$/.exec(path);
+    if (method === "POST" && photoMatch) {
+      const id = Number(photoMatch[1]);
+      const result = (await call("crm.item.get", {
+        entityTypeId: 2,
+        id,
+        useOriginalUfNames: "Y",
+      })) as { item?: Record<string, unknown> };
+      if (!result?.item || Number(result.item.id) !== id || !("UF_CRM_WG_PHOTOS" in result.item))
+        throw new BitrixError(
+          "Fotofeld konnte nicht geprüft werden",
+          "bitrix_photos_unverified",
+          0,
+          { review: true },
+        );
+      const existing = result.item.UF_CRM_WG_PHOTOS;
+      const rows = existing === null || existing === false || existing === "" ? [] : existing;
+      if (!Array.isArray(rows) || !Array.isArray(payload.files) || !payload.files.length)
+        throw new BitrixError("Ungültiges Fotofeld", "bitrix_photos_unverified", 0, {
+          review: true,
+        });
+      const retained = rows.map((file) => ({ id: asId(file?.id) }));
+      const updated = (await call("crm.item.update", {
+        entityTypeId: 2,
+        id,
+        useOriginalUfNames: "Y",
+        fields: { UF_CRM_WG_PHOTOS: [...retained, ...payload.files] },
+      })) as { item?: Record<string, unknown> };
+      const files = updated?.item?.UF_CRM_WG_PHOTOS;
+      if (
+        Number(updated?.item?.id) !== id ||
+        !Array.isArray(files) ||
+        files.length !== retained.length + payload.files.length ||
+        retained.some((old) => !files.some((file) => Number(file?.id) === old.id))
+      )
+        throw new BitrixError(
+          "Fotoübertragung nicht eindeutig bestätigt",
+          "bitrix_photos_unverified",
+          0,
+          { review: true },
+        );
+      return { ok: true } as T;
+    }
     if (method === "GET" && path.startsWith("/deals")) {
       return (await call("crm.deal.list", { start: 0, select: ["ID"] })) as T;
     }
@@ -224,7 +290,11 @@ export function createBitrixRestClient(
         filter: restFilter,
         select: ["ID"],
       })) as Array<{ ID?: string | number }>;
-      return (Array.isArray(rows) ? rows.map((row) => ({ id: asId(row.ID) })) : []) as T;
+      if (!Array.isArray(rows))
+        throw new BitrixError("Ungültige Kontaktliste", "bitrix_invalid_contacts", 0, {
+          retryable: true,
+        });
+      return rows.map((row) => ({ id: asId(row.ID) })) as T;
     }
     if (method === "POST" && path === "/contacts") {
       const id = await call("crm.contact.add", {
@@ -241,18 +311,33 @@ export function createBitrixRestClient(
       return { id: asId(id) } as T;
     }
     if (method === "POST" && path === "/deals") {
-      const id = await call("crm.deal.add", { fields: toRestDealFields(payload) });
+      const fields = toRestDealFields(payload);
+      const customNames = Object.keys(fields).filter((name) => name.startsWith("UF_CRM_"));
+      if (customNames.length) {
+        const schema = (await call("crm.deal.fields")) as Record<string, { isReadOnly?: boolean }>;
+        if (!schema || customNames.some((name) => !schema[name] || schema[name].isReadOnly))
+          throw new BitrixError(
+            "Erforderliche Bitrix-Buchungsfelder fehlen.",
+            "bitrix_fields_missing",
+            0,
+            { review: true },
+          );
+      }
+      const id = await call("crm.deal.add", { fields });
       return { id: asId(id) } as T;
     }
     if (method === "PATCH" && path.startsWith("/deals/")) {
       const id = Number(path.split("/")[2]);
-      await call("crm.deal.update", { id, fields: toRestDealFields(payload) });
+      if ((await call("crm.deal.update", { id, fields: toRestDealFields(payload) })) !== true)
+        throw new BitrixError("Änderung nicht bestätigt", "bitrix_update_unverified", 0, {
+          review: true,
+        });
       return { ok: true } as T;
     }
     if (method === "PUT" && /^\/deals\/\d+\/products$/.test(path)) {
       const id = Number(path.split("/")[2]);
       const products = (payload.items as Array<Record<string, unknown>>) || [];
-      await call("crm.deal.productrows.set", {
+      const confirmed = await call("crm.deal.productrows.set", {
         id,
         rows: products.map((item) => ({
           PRODUCT_ID: item.productId,
@@ -263,6 +348,10 @@ export function createBitrixRestClient(
           TAX_INCLUDED: item.taxIncluded ? "Y" : "N",
         })),
       });
+      if (confirmed !== true)
+        throw new BitrixError("Leistungen nicht bestätigt", "bitrix_products_unverified", 0, {
+          review: true,
+        });
       return { ok: true } as T;
     }
     if (method === "DELETE" && /^\/calendar-events\/\d+$/.test(path)) {

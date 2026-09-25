@@ -25,7 +25,7 @@ import { usePublicFormErrors } from "./public-form-feedback";
 import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
 import { useBookingDraft, clearBookingDraft, appliedBookingEntries } from "./booking-draft";
-import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/zoho-time";
+import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/booking-time";
 
 export function Configurator({
   initialPackage,
@@ -670,8 +670,8 @@ export function Configurator({
         </section>
         <p className="text-sm text-muted">
           So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
-          unserer Freigabe erhalten Sie den Fixpreis und den Link zur Auftragsannahme mit
-          Unterschrift. Die Rechnung folgt nach erbrachter Leistung.
+          unserer Prüfung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die Rechnung
+          folgt nach erbrachter Leistung.
         </p>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input

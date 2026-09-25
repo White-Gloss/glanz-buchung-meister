@@ -4,10 +4,8 @@ import { bookingOwnerNotifyTargets, type BookingLite, type QueueTarget } from ".
 import { isEmailAddress } from "./utils.ts";
 import type { Sql } from "./db.ts";
 import { type BookingPdfData } from "./booking-pdf.ts";
-import { LEXWARE_ONLY } from "./billing-policy.ts";
-import { receiptEmailCopy } from "./zoho-documents.ts";
-import { roappOnlyEnabled } from "./booking-backend.ts";
-import { bookingStatusUrl } from "./booking-status-token.ts";
+import { CUSTOMER_MAIL_RESTRICTED } from "./billing-policy.ts";
+import { receiptEmailCopy } from "./booking-documents.ts";
 
 export type BookingEvent =
   | "booking.created"
@@ -185,9 +183,7 @@ export async function queueBookingEvent(
         event === "booking.created"
           ? `Anfrage eingegangen · White Gloss WG-${booking.id}`
           : subject,
-      body: roappOnlyEnabled()
-        ? `${body}\n\nIhr persönlicher Auftragsstatus:\n${bookingStatusUrl(booking.id)}`
-        : body,
+      body,
       attachments,
       bookingId: booking.id,
       bookingVersion: version,
@@ -197,7 +193,7 @@ export async function queueBookingEvent(
 }
 
 export async function queueBookingReminder(sql: Sql, booking: NotificationBooking) {
-  if (LEXWARE_ONLY) return;
+  if (CUSTOMER_MAIL_RESTRICTED) return;
   const version = booking.version ?? 1;
   if (
     booking.status === "bestaetigt" &&

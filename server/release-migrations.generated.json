@@ -15,5 +15,6 @@
   "0013_roapp_sync.sql",
   "0014_booking_photo_recovery.sql",
   "0019_roapp_write_journal.sql",
-  "0020_roapp_customer_status.sql"
+  "0020_roapp_customer_status.sql",
+  "0021_bitrix_native_transfer.sql"
 ]

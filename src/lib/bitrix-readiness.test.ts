@@ -66,9 +66,9 @@ test("readiness reports missing prerequisites without calling Bitrix", async () 
     });
     assert.equal(calls, 0);
     assert.deepEqual(status(checks), {
-      mode: "warn",
+      mode: "fail",
       access: "fail",
-      calendar: "warn",
+      calendar: "fail",
       owner: "fail",
       mail: "fail",
       queue: "ok",
@@ -142,10 +142,10 @@ test("retrying transfers, a rejected key and open bookings without a deal are re
     const byId = Object.fromEntries(checks.map((check) => [check.id, check]));
     assert.equal(byId.access.status, "fail");
     assert.equal(byId.access.detail, "Zugang verweigert.");
-    assert.equal(byId.queue.status, "warn");
+    assert.equal(byId.queue.status, "fail");
     assert.match(byId.queue.detail, /1 mit Fehler in Wiederholung/);
-    assert.equal(byId.open.status, "warn");
-    assert.match(byId.open.detail, /^1 offene Buchung/);
+    assert.equal(byId.open.status, "fail");
+    assert.match(byId.open.detail, /^2 offene Buchung/);
   } finally {
     await pg.close();
   }
@@ -167,7 +167,7 @@ test("the check changes neither schema nor data", async () => {
       calendarProbe: async () => {},
     });
     assert.equal(await snapshot(), before);
-    assert.equal(status(checks).calendar, "warn");
+    assert.equal(status(checks).calendar, "fail");
   } finally {
     await pg.close();
   }

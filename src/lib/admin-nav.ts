@@ -1,12 +1,4 @@
 export const adminNav = [
-  { to: "/admin", label: "Buchungen", match: "exact" as const },
-  { to: "/admin/zoho", label: "Zoho Betrieb", match: "prefix" as const },
   { to: "/admin/bitrix", label: "Bitrix24", match: "prefix" as const },
-  { to: "/admin/posteingang", label: "Posteingang", match: "prefix" as const },
-  { to: "/admin/kalender", label: "Kalender", match: "prefix" as const },
-  { to: "/admin/automatisierung", label: "Leitstand", match: "prefix" as const },
-  { to: "/admin/kunden", label: "Kundenakten", match: "prefix" as const },
-  { to: "/admin/unterlagen", label: "Dokumente", match: "prefix" as const },
-  { to: "/admin/odoo", label: "Odoo & Qonto", match: "prefix" as const },
-  { to: "/admin/einstellungen", label: "Einstellungen", match: "prefix" as const },
+  { to: "/admin/einstellungen", label: "Website", match: "prefix" as const },
 ] as const;

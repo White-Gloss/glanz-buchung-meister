@@ -41,7 +41,7 @@ export async function bitrixCutoverReadiness(
   checks.push({
     id: "mode",
     label: "Betriebsart",
-    status: mode === "bitrix" ? "ok" : "warn",
+    status: mode === "bitrix" ? "ok" : "fail",
     detail:
       mode === "bitrix"
         ? "Bitrix24 ist das alleinige System."
@@ -80,7 +80,7 @@ export async function bitrixCutoverReadiness(
     checks.push({
       id: "calendar",
       label: "Kalenderabgleich",
-      status: "warn",
+      status: "fail",
       detail: "Nicht aktiviert. Manuelle Bitrix-Termine sperren sonst keine Zeiten.",
     });
   } else if (!accessOk) {
@@ -135,7 +135,7 @@ export async function bitrixCutoverReadiness(
     checks.push({
       id: "queue",
       label: "Bitrix-Übertragungen",
-      status: "warn",
+      status: "fail",
       detail: "Noch keine Übertragung gelaufen. Nach dem Speichern des Schlüssels erneut prüfen.",
     });
   } else {
@@ -151,7 +151,7 @@ export async function bitrixCutoverReadiness(
     checks.push({
       id: "queue",
       label: "Bitrix-Übertragungen",
-      status: problems.length ? "warn" : "ok",
+      status: problems.length || queue.waiting ? "fail" : "ok",
       detail: problems.length
         ? `${problems.join(", ")}. Bitte unten prüfen.`
         : queue.waiting
@@ -166,17 +166,17 @@ export async function bitrixCutoverReadiness(
         where b.shop_id=${SHOP} and b.status in ('neu','bestaetigt')
           and not exists (
             select 1 from bitrix_sync_queue q
-            where q.booking_id=b.id and q.bitrix_deal_id is not null
+            where q.booking_id=b.id and q.shop_id=b.shop_id and q.bitrix_deal_id > 0 and q.status='synced'
           )`
     : await sql<{ count: number }>`select count(*)::integer as count from bookings
         where shop_id=${SHOP} and status in ('neu','bestaetigt')`;
   checks.push({
     id: "open",
     label: "Offene Aufträge ohne Bitrix",
-    status: open.count ? "warn" : "ok",
+    status: open.count ? "fail" : "ok",
     detail: open.count
       ? `${open.count} offene Buchung(en) ohne Bitrix-Auftrag, etwa aus RO. Vor der Umschaltung abschließen oder übertragen.`
-      : "Alle offenen Buchungen haben einen Bitrix-Auftrag.",
+      : "Alle offenen Buchungen sind erfolgreich nach Bitrix übertragen.",
   });
 
   return checks;

@@ -11,6 +11,8 @@ import {
   bookingDealBody,
   bookingLineItems,
   queueBitrixBooking,
+  queueBitrixPhotos,
+  loadReadyPhotos,
   runBitrixSync,
   splitCustomerName,
   stageForStatus,
@@ -21,7 +23,33 @@ import {
   normalizeBitrixRestWebhook,
   toRestDealFields,
 } from "./bitrix-rest.ts";
-import { readVibeApiKey } from "./bitrix-credentials.server.ts";
+import { readBitrixWebhook } from "./bitrix-credentials.server.ts";
+
+test("media transfer includes every allowed image and video format", async () => {
+  const rows = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+  ].map((mime, index) => ({
+    storage_path: `media-${index}`,
+    original_name: `media-${index}`,
+    mime,
+  }));
+  const sql = (async () => rows) as unknown as Sql;
+  const media = await loadReadyPhotos(sql, 17, {
+    signUrl: async (path) => `https://uploads.invalid/${path}`,
+    fetchImpl: async () => new Response(new Uint8Array([1, 2, 3])),
+  });
+  assert.deepEqual(
+    media.map((file) => file.mime),
+    rows.map((row) => row.mime),
+  );
+  assert.equal(media.length, 6);
+  assert.equal(media[3].key, "media-3");
+});
 
 test("booking email must not fall back to a different email sharing the phone", async () => {
   const api = mockBitrix();
@@ -30,6 +58,12 @@ test("booking email must not fall back to a different email sharing the phone", 
   assert.deepEqual(api.contacts, [
     { id: 414, email: "office@example.invalid", phone: "+4900000011" },
   ]);
+});
+
+test("ambiguous email and phone matches require review", async () => {
+  const request = async <T>() => [{ id: 1 }, { id: 2 }] as T;
+  await assert.rejects(findContact(request, "qa@example.invalid", "123456"), /Mehrere Kontakte/);
+  await assert.rejects(findContact(request, null, "123456"), /Mehrere Kontakte/);
 });
 
 test("contact lookup preserves matching email and phone-only bookings", async () => {
@@ -106,7 +140,7 @@ function mockBitrix() {
     }
     if (method === "PUT" && path.endsWith("/products")) {
       const id = Number(path.split("/")[2]);
-      assert.ok(Array.isArray(payload.items), "VibeCode requires the items array");
+      assert.ok(Array.isArray(payload.items), "The native adapter requires product items");
       products[id] = payload.items as unknown[];
       return { ok: true } as T;
     }
@@ -166,7 +200,7 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
       shop_id,customer_name,phone,email,package_id,class_id,extra_ids,total_cents,pickup_cents,preferred_date,preferred_slot,note,city_slug
     ) values(
       'white-gloss','Integration Test','+4900000011','bitrix@example.invalid',
-      'premium','kompakt','["felgen"]',49900,5000,'2026-09-22','09:00','Hinweis','nagold'
+      'premium','kompakt','["felgen"]',51800,5000,'2026-09-22','09:00','Hinweis','nagold'
     ) returning *`;
   await queueBitrixBooking(sql, row);
   const api = mockBitrix();
@@ -186,6 +220,9 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
     select status, bitrix_deal_id from bitrix_sync_queue where booking_id=${row.id}`;
   assert.equal(queued[0].status, "synced");
   assert.equal(queued[0].bitrix_deal_id, api.deals[0].id);
+  api.deals[0].amount = 777;
+  api.deals[0].stageId = "EXECUTING";
+  api.products[api.deals[0].id] = [{ productName: "In Bitrix geändert", price: 777 }];
   const originalRows = structuredClone(api.products[api.deals[0].id]);
   await queueBitrixBooking(sql, row);
   const repeated = await runBitrixSync(sql, {
@@ -195,10 +232,13 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
     loadPhotos: async () => [],
   });
   assert.equal(repeated.synced, 1);
+  assert.equal(api.deals[0].amount, 777);
+  assert.equal(api.deals[0].stageId, "EXECUTING");
+  assert.equal(api.events.length, 0);
   assert.equal(api.deals.length, 1);
   assert.equal(api.contacts.length, 1);
   assert.deepEqual(api.products[api.deals[0].id], originalRows);
-  assert.equal(api.calls.filter((call) => call.endsWith("/products")).length, 2);
+  assert.equal(api.calls.filter((call) => call.endsWith("/products")).length, 1);
   assert.ok(
     api.calls.filter((call) => call.endsWith("/products")).every((call) => call.startsWith("PUT ")),
   );
@@ -303,10 +343,10 @@ test("stored Bitrix key is used when the environment is empty", async () => {
   const previous = process.env.VIBE_API_KEY;
   delete process.env.VIBE_API_KEY;
   try {
-    assert.equal(await readVibeApiKey(sql), "");
+    assert.equal(await readBitrixWebhook(sql), "");
     await sql`alter table shop_settings add column if not exists vibe_api_key text`;
-    await sql`update shop_settings set vibe_api_key=${"panel-stored-bitrix-key"} where shop_id='white-gloss'`;
-    assert.equal(await readVibeApiKey(sql), "panel-stored-bitrix-key");
+    await sql`update shop_settings set vibe_api_key=${"https://example.bitrix24.de/rest/1/testcode123/"} where shop_id='white-gloss'`;
+    assert.equal(await readBitrixWebhook(sql), "https://example.bitrix24.de/rest/1/testcode123/");
   } finally {
     if (previous !== undefined) process.env.VIBE_API_KEY = previous;
     else delete process.env.VIBE_API_KEY;
@@ -314,25 +354,38 @@ test("stored Bitrix key is used when the environment is empty", async () => {
   }
 });
 
-test("probeBitrix accepts a valid key and rejects 401 without storing details", async () => {
-  const ok = await probeBitrix("vibe_api_test_key_1234567890", {
-    fetchImpl: async () =>
-      new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
-  });
-  assert.equal(ok.ok, true);
-  const denied = await probeBitrix("vibe_api_test_key_1234567890", {
-    fetchImpl: async () => new Response(JSON.stringify({ success: false }), { status: 401 }),
-  });
-  assert.equal(denied.ok, false);
-  if (!denied.ok) assert.match(denied.error, /prüfen/);
-  const inactive = await probeBitrix("vibe_api_test_key_1234567890", {
-    fetchImpl: async () =>
-      new Response(JSON.stringify({ success: false, error: { code: "KEY_INACTIVE" } }), {
-        status: 401,
-      }),
-  });
-  assert.equal(inactive.ok, false);
-  if (!inactive.ok) assert.match(inactive.error, /gesperrt/);
+test("probeBitrix accepts only direct REST and validates successful responses", async () => {
+  let called = false;
+  assert.equal(
+    (
+      await probeBitrix("vibe_api_test_key_1234567890", {
+        fetchImpl: async () => {
+          called = true;
+          return Response.json({ result: [] });
+        },
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(called, false);
+  const key = "https://example.bitrix24.de/rest/1/testcode123/";
+  for (const body of [{}, { result: true }, { success: true, data: [] }])
+    assert.equal(
+      (await probeBitrix(key, { fetchImpl: async () => Response.json(body) })).ok,
+      false,
+    );
+  assert.equal(
+    (await probeBitrix(key, { fetchImpl: async () => Response.json({ result: [] }) })).ok,
+    true,
+  );
+  assert.equal(
+    (
+      await probeBitrix(key, {
+        fetchImpl: async () => Response.json({ error: "ACCESS_DENIED" }, { status: 401 }),
+      })
+    ).ok,
+    false,
+  );
 });
 
 test("Bitrix REST webhook URL is accepted and mapped to crm.deal.add", async () => {
@@ -538,6 +591,128 @@ test("uncertain external creation enters review and cannot duplicate on retry", 
     await sql`update bitrix_sync_queue set status='pending',next_attempt_at=now() where booking_id=${row.id}`;
     assert.equal((await runBitrixSync(sql, { request, limit: 1 })).review, 1);
     assert.equal(creates, 1);
+  } finally {
+    await pg.close();
+  }
+});
+
+test("late photos append once without replacing native CRM decisions; an uncertain upload stops retries", async () => {
+  const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } });
+  try {
+    const sql = wrap(pg);
+    for (const f of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
+      await pg.exec(await readFile(`migrations/${f}`, "utf8"));
+    const [row] =
+      await sql<WorkflowBooking>`insert into bookings(shop_id,customer_name,phone,email,package_id,class_id,extra_ids,total_cents,pickup_cents)
+      values('white-gloss','Photo Test','123456','photo@example.invalid','basis','kompakt','[]',14900,0) returning *`;
+    const photos: { key: string; name: string; mime: string; base64: string }[] = [];
+    const addPhoto = async (key: string) => {
+      await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
+        values('white-gloss',${row.id},${key},'image/jpeg',4,'car.jpg','ready')`;
+      photos.push({ key, name: "car.jpg", mime: "image/jpeg", base64: key });
+    };
+    await addPhoto("first");
+    await queueBitrixBooking(sql, row);
+    const api = mockBitrix();
+    const uploads: unknown[] = [];
+    let loseResponse = false;
+    const request: typeof api.request = async <T>(method: string, path: string, body?: unknown) => {
+      if (method === "POST" && path.endsWith("/photos")) {
+        uploads.push(body);
+        if (loseResponse) throw new Error("upload acknowledgement lost");
+        return { ok: true } as T;
+      }
+      return api.request<T>(method, path, body);
+    };
+    const run = () =>
+      runBitrixSync(sql, { request, bookingId: row.id, limit: 1, loadPhotos: async () => photos });
+    assert.equal((await run()).synced, 1);
+    api.deals[0].stageId = "EXECUTING";
+    api.deals[0].amount = 777;
+    api.products[api.deals[0].id] = [{ productName: "Native edit", price: 777 }];
+    await addPhoto("second");
+    await queueBitrixPhotos(sql, row);
+    assert.equal((await run()).synced, 1);
+    assert.deepEqual(uploads, [
+      { files: [["car.jpg", "first"]] },
+      { files: [["car.jpg", "second"]] },
+    ]);
+    assert.equal(api.deals[0].amount, 777);
+    assert.equal(api.deals[0].stageId, "EXECUTING");
+    assert.deepEqual(api.products[api.deals[0].id], [{ productName: "Native edit", price: 777 }]);
+    assert.equal(
+      api.calls.some((call) => /invoices|calendar-events/.test(call)),
+      false,
+    );
+    await addPhoto("third");
+    await queueBitrixPhotos(sql, row);
+    loseResponse = true;
+    assert.equal((await run()).review, 1);
+    await queueBitrixPhotos(sql, row);
+    assert.equal((await run()).synced, 0);
+    assert.equal(uploads.length, 3);
+  } finally {
+    await pg.close();
+  }
+});
+
+test("a photo arriving during sync completion remains pending and transfers on the next run", async () => {
+  const pg = new PGlite({ parsers: { 1082: (value) => value, 20: Number } });
+  try {
+    for (const file of (await readdir("migrations")).filter((file) => file.endsWith(".sql")).sort())
+      await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+    const base = wrap(pg);
+    let inject = false;
+    const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) => {
+      const result = await base(parts, ...values);
+      const query = parts.join("?");
+      if (inject && query.includes("select count(*)") && query.includes("upload_state='ready'")) {
+        inject = false;
+        await base`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
+          values('white-gloss',${row.id},'late-photo','video/mp4',4,'late.mp4','ready')`;
+        await queueBitrixPhotos(sql, row);
+      }
+      return result;
+    }) as Sql;
+    sql.query = base.query;
+    sql.transaction = (work) => work(sql);
+    const [row] =
+      await sql<WorkflowBooking>`insert into bookings(shop_id,customer_name,phone,email,package_id,class_id,extra_ids,total_cents,pickup_cents)
+      values('white-gloss','Race Test','123456','race@example.invalid','basis','kompakt','[]',14900,0) returning *`;
+    await queueBitrixBooking(sql, row);
+    const api = mockBitrix();
+    let uploads = 0;
+    const request: typeof api.request = async <T>(method: string, path: string, body?: unknown) => {
+      if (path.endsWith("/photos")) {
+        uploads++;
+        return { ok: true } as T;
+      }
+      return api.request<T>(method, path, body);
+    };
+    const loadPhotos = async () =>
+      (
+        await base<{
+          storage_path: string;
+        }>`select storage_path from booking_photos where booking_id=${row.id}`
+      ).map((photo) => ({
+        key: photo.storage_path,
+        name: "late.mp4",
+        mime: "video/mp4",
+        base64: "AAAA",
+      }));
+    inject = true;
+    await runBitrixSync(sql, { request, limit: 1, loadPhotos });
+    const [pending] =
+      await base`select status,photos_done from bitrix_sync_queue where booking_id=${row.id}`;
+    assert.equal(pending.status, "pending");
+    assert.equal(pending.photos_done, false);
+    assert.equal(uploads, 0);
+    await runBitrixSync(sql, { request, limit: 1, loadPhotos });
+    const [done] =
+      await base`select status,photos_done,photo_keys from bitrix_sync_queue where booking_id=${row.id}`;
+    assert.equal(done.status, "synced");
+    assert.deepEqual(done.photo_keys, ["late-photo"]);
+    assert.equal(uploads, 1);
   } finally {
     await pg.close();
   }
