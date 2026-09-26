@@ -101,7 +101,10 @@ export function ConsentBanner() {
         if (event.key === "Escape") {
           event.preventDefault();
           event.stopPropagation();
-          reject();
+          // Wiedergeöffnete Einstellungen: Escape schließt nur und lässt die
+          // gespeicherte Wahl unverändert. Widerruf nur über den Button.
+          if (getStoredConsent() === null) reject();
+          else dismiss();
         }
       }}
       className="consent-banner fixed inset-x-0 bottom-0 z-50 border-t border-fg/10 bg-bg text-fg"

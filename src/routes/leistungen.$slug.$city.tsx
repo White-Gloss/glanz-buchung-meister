@@ -115,6 +115,12 @@ function ServiceCityPage() {
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        {service.pendingApproval ? (
+          <p className="mb-8 rounded-card border border-line bg-surface p-4 text-sm">
+            Diese Leistung bieten wir derzeit nicht an, auch nicht mit Hol- und Bringservice aus {city.name}. Für Fragen nutzen Sie bitte das Kontaktformular.
+          </p>
+        ) : (
+          <>
         <section aria-label={`Anfahrt und Abholung aus ${city.name}`} className="mb-8 space-y-4">
           <h2 className="font-display text-2xl">{city.slug === "horb-am-neckar" ? "Direkt zur Werkstatt in Horb" : `Abholung aus ${city.name} planen`}</h2>
           <p className="text-muted">{city.blurb} Entfernungen und Fahrzeiten sind Richtwerte; die genaue Übergabeadresse stimmen wir vorab ab.</p>
@@ -130,6 +136,8 @@ function ServiceCityPage() {
           Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}. Die Aufbereitung
           erfolgt in unserer Werkstatt: {site.street}, {site.postalCode} {site.city}.
         </p>
+          </>
+        )}
         <ul className="mt-8 space-y-3">
           {service.bullets.map((b) => (
             <li key={b} className="border-l border-line pl-4 text-sm text-fg">
@@ -141,11 +149,13 @@ function ServiceCityPage() {
           {service.body.map((p) => (
             <p key={p}>{p}</p>
           ))}
-          <p>
-            Aus {city.name} beträgt die Fahrt rund {city.minutes} Minuten. Sie übergeben das
-            Fahrzeug an der vereinbarten Adresse; die Rückgabe erfolgt nach der Kontrolle unter
-            Werkstattlicht.
-          </p>
+          {service.pendingApproval ? null : (
+            <p>
+              Aus {city.name} beträgt die Fahrt rund {city.minutes} Minuten. Sie übergeben das
+              Fahrzeug an der vereinbarten Adresse; die Rückgabe erfolgt nach der Kontrolle unter
+              Werkstattlicht.
+            </p>
+          )}
         </div>
         {service.honestNote ? <p className="mt-6 border border-line p-4 text-sm">{service.honestNote}</p> : null}
         <ServicePriceNote service={service} />
