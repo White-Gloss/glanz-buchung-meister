@@ -3,7 +3,7 @@ import type { Sql } from "./db.ts";
 import {
   isOwnerNotification,
   isApprovedCustomerNotification,
-  CUSTOMER_MAIL_RESTRICTED,
+  LEXWARE_ONLY,
 } from "./billing-policy.ts";
 import {
   enqueueNotification,
@@ -195,20 +195,11 @@ export async function runNotificationWorker(
     `;
     if (!row) break;
     if (
-      /^(zoho|lexware|roapp|odoo|erpnext|qonto)[.:-]/.test(row.event_type || "") ||
-      /^(zoho|lexware|roapp|odoo|erpnext|qonto)[.:-]/.test(row.event_key || "")
-    ) {
-      await sql`update outbound_queue set status='blocked',last_error_code='retired_crm',lease_token=null,locked_until=null,updated_at=now()
-        where id=${row.id} and shop_id=${SHOP} and lease_token=${token}`;
-      result.skipped++;
-      continue;
-    }
-    if (
-      CUSTOMER_MAIL_RESTRICTED &&
+      LEXWARE_ONLY &&
       !isOwnerNotification(row.event_key, row.event_type) &&
       !isApprovedCustomerNotification(row.event_key, row.event_type)
     ) {
-      await sql`update outbound_queue set status='blocked',last_error_code='customer_mail_not_approved',lease_token=null,locked_until=null,updated_at=now()
+      await sql`update outbound_queue set status='blocked',last_error_code='lexware_only',lease_token=null,locked_until=null,updated_at=now()
         where id=${row.id} and shop_id=${SHOP} and lease_token=${token}`;
       result.skipped++;
       continue;
@@ -239,6 +230,16 @@ export async function runNotificationWorker(
         throw new EmailDeliveryError("email_idempotency_window_expired", false, true);
       }
       if (row.channel === "email") {
+        if (row.event_type?.startsWith("lexware.")) {
+          const { prepareLexwareMail } = await import("./lexware-mail.ts");
+          const prepared = await prepareLexwareMail(sql, row);
+          if (!prepared) {
+            await sql`update outbound_queue set status='cancelled',last_error_code='lexware_state_changed',lease_token=null,locked_until=null,updated_at=now() where id=${row.id} and lease_token=${token}`;
+            result.skipped++;
+            continue;
+          }
+          row.attachments = prepared;
+        }
         delivered = await (options.sendEmail ?? sendResendEmail)({
           to: row.to_addr || "",
           subject: row.subject || "White Gloss",

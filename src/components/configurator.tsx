@@ -25,7 +25,7 @@ import { usePublicFormErrors } from "./public-form-feedback";
 import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
 import { useBookingDraft, clearBookingDraft, appliedBookingEntries } from "./booking-draft";
-import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/booking-time";
+import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/zoho-time";
 
 export function Configurator({
   initialPackage,
@@ -101,7 +101,7 @@ export function Configurator({
 
   useEffect(() => {
     setExtraIds((current) => {
-      const remaining = current.filter((id) => !extraIncluded(packageId, id));
+      const remaining = current.filter((id) => extras.some((extra) => extra.id === id && extra.requestable !== false) && !extraIncluded(packageId, id));
       return remaining.length === current.length ? current : remaining;
     });
   }, [packageId, setExtraIds]);
@@ -374,7 +374,7 @@ export function Configurator({
                 </p>
                 <div className="mt-2 grid gap-2">
                   {extras
-                    .filter((ex) => ex.group === group)
+                    .filter((ex) => ex.group === group && ex.requestable !== false)
                     .map((ex) => (
                       <label
                         key={ex.id}
@@ -670,8 +670,8 @@ export function Configurator({
         </section>
         <p className="text-sm text-muted">
           So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
-          unserer Prüfung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die Rechnung
-          folgt nach erbrachter Leistung.
+          unserer Freigabe erhalten Sie den Fixpreis und den Link zur Auftragsannahme mit
+          Unterschrift. Die Rechnung folgt nach erbrachter Leistung.
         </p>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
           <input

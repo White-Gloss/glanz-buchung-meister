@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CookieSettingsButton } from "@/components/consent-banner";
 import { PageHero } from "@/components/page-hero";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
@@ -135,12 +136,13 @@ function PrivacyPage() {
             Das Skript wird technisch erst geladen, nachdem Sie im Cookie-Banner „Akzeptieren“
             gewählt haben (§ 25 Abs. 1 TDDDG). Rechtsgrundlage für den Einsatz ist Ihre
             Einwilligung, Art. 6 Abs. 1 lit. a DSGVO. Wählen Sie „Ablehnen“, wird der Google Tag
-            nicht geladen. Um eine erteilte Einwilligung zurückzunehmen, löschen Sie in Ihrem
-            Browser den localStorage-Eintrag „wg-consent“ dieser Website und laden Sie die Seite
-            anschließend vollständig neu. Wählen Sie im erneut angezeigten Banner „Ablehnen“. Nach
-            dem Neuladen bleibt der Google Tag ohne erneute Zustimmung ausgeschaltet. Das Löschen
-            des Speichereintrags allein beendet ein bereits geladenes Skript im noch geöffneten
-            Dokument nicht.
+            nicht geladen. Über „Cookie-Einstellungen“ im Fußbereich jeder öffentlichen Seite
+            können Sie Ihre Auswahl jederzeit ändern. Mit „Einwilligung widerrufen“ wird die
+            Einwilligung sofort auf abgelehnt gesetzt. Die Seite lädt anschließend neu, um
+            bereits geladene Tracking-Skripte zu beenden. Erreichbare Google-Analyse- und
+            Werbe-Cookies dieser Website werden dabei entfernt. Ohne erneute Zustimmung
+            wird kein Google Tag geladen. Die Rechtmäßigkeit der Verarbeitung vor dem
+            Widerruf bleibt unberührt.
           </p>
           <p>
             Nach Ihrer Einwilligung können Daten wie Ihre IP-Adresse und Gerätekennungen an Google
@@ -275,7 +277,8 @@ function PrivacyPage() {
           </p>
         </section>
 
-        <p className="text-xs text-subtle">Stand: 15. September 2026</p>
+        <p><CookieSettingsButton /></p>
+        <p className="text-xs text-subtle">Stand: 25. September 2026</p>
       </article>
     </main>
   );

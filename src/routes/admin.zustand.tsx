@@ -1,7 +1,13 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { ChannelInbox } from "@/components/channel-inbox";
 
 export const Route = createFileRoute("/admin/zustand")({
-  beforeLoad: () => {
-    throw redirect({ to: "/admin/bitrix" });
-  },
+  component: () => (
+    <ChannelInbox
+      channel="zustand"
+      heading="Zustandsmeldungen"
+      kicker="Kommunikation"
+      hint="Fotos und Beschreibungen aus dem Formular Fahrzeugzustand. Antworten landen im Posteingang als Ausgang."
+    />
+  ),
 });
