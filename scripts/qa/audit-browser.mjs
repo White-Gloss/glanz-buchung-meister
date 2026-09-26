@@ -8,7 +8,7 @@ const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:8080";
 if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base)) throw new Error("Local test server required");
 const out = resolve(process.env.AUDIT_OUTPUT || "../audit-browser-dev");
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ channel: "chrome", headless: true });
+const browser = await chromium.launch({ headless: true, ...(process.env.AUDIT_BROWSER_CHANNEL ? { channel: process.env.AUDIT_BROWSER_CHANNEL } : {}) });
 const results = { base, date: new Date().toISOString(), checks: [], errors: [], externalRequests: [], csp: [] };
 const context = await browser.newContext({ viewport: { width: 375, height: 812 }, locale: "de-DE", extraHTTPHeaders: { "X-Forwarded-Host": "white-gloss.de" } });
 await context.exposeBinding("recordAuditCsp", (_source, event) => results.csp.push(event));
