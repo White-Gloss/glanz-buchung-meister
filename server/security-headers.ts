@@ -11,6 +11,7 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://www.google.com https://www.google.de https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com https://*.google-analytics.com",
     "font-src 'self' data:",
+    "media-src 'self' blob:",
     "connect-src 'self' ws: wss: blob: https://grok.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
@@ -32,6 +33,15 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
     ],
     ["X-DNS-Prefetch-Control", "off"],
   ];
+  if (!mode.allowFraming) {
+    // Trial only: retain the existing enforced policy until production flows
+    // have been observed. SSR currently requires inline bootstrap scripts.
+    const trial = csp
+      .replace(" 'unsafe-eval' 'wasm-unsafe-eval' blob: https://grok.com", "")
+      .replace("connect-src 'self' ws: wss: blob: https://grok.com", "connect-src 'self'")
+      .replace("https://*.google.com https://*.doubleclick.net", "https://www.google.com https://www.google.de https://region1.google-analytics.com https://googleads.g.doubleclick.net");
+    headers.push(["Content-Security-Policy-Report-Only", trial]);
+  }
   if (!mode.allowFraming) {
     headers.push(["X-Frame-Options", "SAMEORIGIN"]);
   }

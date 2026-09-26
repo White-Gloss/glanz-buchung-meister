@@ -101,7 +101,7 @@ export function Configurator({
 
   useEffect(() => {
     setExtraIds((current) => {
-      const remaining = current.filter((id) => !extraIncluded(packageId, id));
+      const remaining = current.filter((id) => extras.some((extra) => extra.id === id && extra.requestable !== false) && !extraIncluded(packageId, id));
       return remaining.length === current.length ? current : remaining;
     });
   }, [packageId, setExtraIds]);
@@ -374,7 +374,7 @@ export function Configurator({
                 </p>
                 <div className="mt-2 grid gap-2">
                   {extras
-                    .filter((ex) => ex.group === group)
+                    .filter((ex) => ex.group === group && ex.requestable !== false)
                     .map((ex) => (
                       <label
                         key={ex.id}

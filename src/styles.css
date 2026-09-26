@@ -2373,8 +2373,15 @@
 }
 
 @media (max-width: 639px) {
+  .site-header .gd-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "logo tools";
+    gap: 0.5rem;
+  }
+
   .site-header .ga-logo {
-    width: 7.5rem;
+    width: min(7.5rem, 100%);
+    min-width: 0;
   }
 
   .menu-toggle {
