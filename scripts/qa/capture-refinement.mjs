@@ -28,14 +28,20 @@ const checks = [];
 async function settle() {
   await page.evaluate(async () => {
     await document.fonts.ready;
+    for (const img of document.images) img.loading = "eager";
     for (let top = 0; top < document.body.scrollHeight; top += innerHeight * 0.8) {
       window.scrollTo({ top, behavior: "instant" });
       await new Promise((done) => setTimeout(done, 60));
     }
-    await Promise.all(Array.from(document.images).map((img) => img.decode().catch(() => {})));
+    await Promise.race([
+      Promise.all(Array.from(document.images).map((img) => img.decode().catch(() => {}))),
+      new Promise((done) => setTimeout(done, 10000)),
+    ]);
     window.scrollTo({ top: 0, behavior: "instant" });
   });
   await page.waitForTimeout(250);
+  const broken = await page.locator("main img").evaluateAll((imgs) => imgs.filter((img) => !img.complete || !img.naturalWidth).map((img) => img.getAttribute("src")));
+  assert.deepEqual(broken, [], "All prototype images must load");
 }
 
 async function invariant() {
