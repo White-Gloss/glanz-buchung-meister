@@ -42,7 +42,14 @@ export const articles: Article[] = [
         heading: "Was die Schicht leistet",
         paragraphs: [
           "Eine gut vorbereitete Keramik lässt Wasser abperlen, hält den Glanz länger und erleichtert die Wäsche. Sie ist kein Kratzschutz. Steinschläge, Waschstraßenbürsten und grobe Verschmutzung gehen trotzdem ins Material.",
-          "Deshalb gehört mehrstufige Lackkorrektur ins Paket: Ohne gleichmäßigen Klarlack hält keine Beschichtung das, was sie verspricht. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
+          "Im Paket Keramikschutz gehört die mehrstufige Lackkorrektur zur Vorbereitung. Welche Korrektur am Fahrzeug sinnvoll und möglich ist, prüfen wir am Lack. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
+        ],
+      },
+      {
+        heading: "Welche Nachteile und Grenzen hat eine Keramikversiegelung?",
+        paragraphs: [
+          "Die Beschichtung ersetzt weder die laufende Wäsche noch eine Reparatur. Sie schützt nicht zuverlässig vor Steinschlägen oder mechanischen Kratzern. Wer einen pflegefreien Lack erwartet, wählt damit nicht die passende Lösung.",
+          "Hinzu kommen der Aufwand für die Lackvorbereitung, die Aushärtung nach Produktvorgabe und die weitere Pflege. Eine feste Zahl von Jahren ist deshalb ohne Angaben zum verwendeten Produkt, zum Lackzustand und zur Nutzung nicht belastbar.",
         ],
       },
       {

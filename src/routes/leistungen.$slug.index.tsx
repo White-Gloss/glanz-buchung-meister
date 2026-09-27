@@ -3,15 +3,20 @@ import { PageHero } from "@/components/page-hero";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { ctaPrimary, PriceLine } from "@/components/ui";
 import { cities, packageServiceSlug, packages, services, site } from "@/data/site";
-import { serviceBookingSelection } from "@/lib/booking-selection";
+import { parseBookingSelection, serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
 import { ResultsTeaser } from "@/components/results-teaser";
 import { serializeJsonLd } from "@/lib/json-ld";
 import { ServicePriceNote } from "@/components/service-price-note";
+import { pickupAreaLink } from "@/lib/seo-policy";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
+  validateSearch: (search: Record<string, unknown>): { ort?: string } => {
+    const { ort } = parseBookingSelection(search);
+    return ort ? { ort } : {};
+  },
   loader: ({ params }) => {
     const service = services.find((s) => s.slug === params.slug);
     if (!service) throw notFound();
@@ -27,7 +32,8 @@ export const Route = createFileRoute("/leistungen/$slug/")({
 
 function ServicePage() {
   const s = Route.useLoaderData();
-  const request = serviceBookingSelection(s.slug);
+  const { ort } = Route.useSearch();
+  const request = serviceBookingSelection(s.slug, ort);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
   const resultService =
     s.slug === "keramikversiegelung"
@@ -40,24 +46,51 @@ function ServicePage() {
 
   return (
     <main id="main-content" tabIndex={-1}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd({
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": s.pendingApproval ? "WebPage" : "Service",
-            "@id": `${site.origin}/leistungen/${s.slug}#service`,
-            name: s.title,
-            url: `${site.origin}/leistungen/${s.slug}`,
-            description: s.description,
-            ...(!s.pendingApproval ? { provider: { "@type": "AutoRepair", "@id": `${site.origin}/#betrieb`, name: site.legalName }, areaServed: cities.map((city) => ({ "@type": "City", name: city.name })) } : {}),
-          },
-          { "@type": "BreadcrumbList", itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
-            { "@type": "ListItem", position: 2, name: "Leistungen", item: `${site.origin}/leistungen` },
-            { "@type": "ListItem", position: 3, name: s.nav, item: `${site.origin}/leistungen/${s.slug}` },
-          ] },
-        ],
-      }) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": s.pendingApproval ? "WebPage" : "Service",
+                "@id": `${site.origin}/leistungen/${s.slug}#service`,
+                name: s.title,
+                url: `${site.origin}/leistungen/${s.slug}`,
+                description: s.description,
+                ...(!s.pendingApproval
+                  ? {
+                      provider: {
+                        "@type": "AutoRepair",
+                        "@id": `${site.origin}/#betrieb`,
+                        name: site.legalName,
+                      },
+                      areaServed: cities.map((city) => ({ "@type": "City", name: city.name })),
+                    }
+                  : {}),
+              },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Leistungen",
+                    item: `${site.origin}/leistungen`,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: s.nav,
+                    item: `${site.origin}/leistungen/${s.slug}`,
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
       <PageHero
         src={s.image}
         alt={s.imageAlt}
@@ -69,15 +102,21 @@ function ServicePage() {
           { label: "Leistungen", to: "/leistungen" },
           { label: s.nav },
         ]}
-        actions={s.pendingApproval ? <Link to="/kontakt" className={ctaPrimary}>Rückfrage zur Zulässigkeit</Link> :
-          <Link
-            to={request.leistung ? "/fahrzeug-zustand" : "/"}
-            hash="buchung"
-            search={request}
-            className={ctaPrimary}
-          >
-            Termin anfragen
-          </Link>
+        actions={
+          s.pendingApproval ? (
+            <Link to="/kontakt" className={ctaPrimary}>
+              Rückfrage zur Zulässigkeit
+            </Link>
+          ) : (
+            <Link
+              to={request.leistung ? "/fahrzeug-zustand" : "/"}
+              hash="buchung"
+              search={request}
+              className={ctaPrimary}
+            >
+              Termin anfragen
+            </Link>
+          )
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
@@ -87,7 +126,9 @@ function ServicePage() {
             <span className="ml-3 text-sm font-sans text-subtle">{site.vatNote}</span>
           </p>
         ) : (
-          <p className="text-sm uppercase tracking-[0.16em] text-subtle">{s.pendingApproval ? "Derzeit nicht buchbar" : "Preis nach Prüfung"}</p>
+          <p className="text-sm uppercase tracking-[0.16em] text-subtle">
+            {s.pendingApproval ? "Derzeit nicht buchbar" : "Preis nach Prüfung"}
+          </p>
         )}
         <ServicePriceNote service={s} />
         <ul className="mt-10 space-y-3">
@@ -127,7 +168,8 @@ function ServicePage() {
         ) : null}
         {pack ? (
           <p className="mt-10 border border-line bg-surface p-5 text-sm leading-relaxed">
-            Paket {pack.name} ab {eur(pack.price)} {site.vatNote} · {pack.duration.replace(/\.$/, "")}.
+            Paket {pack.name} ab {eur(pack.price)} {site.vatNote} ·{" "}
+            {pack.duration.replace(/\.$/, "")}.
           </p>
         ) : null}
         {resultService ? <ResultsTeaser service={resultService} /> : null}
@@ -135,15 +177,14 @@ function ServicePage() {
         <h2 className="mt-16 font-display text-3xl tracking-tight">
           Hol- und Bringservice nach Stadt
         </h2>
-        <ul className="mt-6 grid grid-cols-2 gap-x-8 text-sm text-muted">
+        <ul className="mt-6 grid grid-cols-1 gap-x-8 text-sm text-muted sm:grid-cols-2">
           {cities.map((c) => (
             <li key={c.slug}>
               <Link
-                to="/leistungen/$slug/$city"
-                params={{ slug: s.slug, city: c.slug }}
-                className="inline-flex min-h-11 items-center hover:text-fg"
+                {...pickupAreaLink(s.slug, c.slug)}
+                className="inline-flex min-h-11 max-w-full items-center hover:text-fg"
               >
-                {s.nav} {c.name}
+                {s.seoNav} für {c.name}
               </Link>
             </li>
           ))}

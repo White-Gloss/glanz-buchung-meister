@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { cities, services } from "../src/data/site.ts";
+import { serviceCitySeo } from "../src/lib/seo-policy.ts";
 
 // Run against the production preview, never submit forms or modify data.
 const base = process.env.FRONTEND_BASE_URL || "http://127.0.0.1:8081";
@@ -21,8 +22,11 @@ function canonicalLinks(html) {
 test("service index and city routes render distinct content with one canonical", async () => {
   for (const [path, heading] of [
     ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
-    ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung in Nagold"],
-    ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung mit Abholung in Horb am Neckar"],
+    ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung für Fahrzeuge aus Nagold"],
+    [
+      "/leistungen/keramikversiegelung/horb-am-neckar",
+      "Keramikversiegelung mit Abholung in Horb am Neckar",
+    ],
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);
@@ -40,12 +44,18 @@ test("all published service/city combinations render their own route", async () 
     for (const city of cities) {
       const path = `/leistungen/${service.slug}/${city.slug}`;
       const { response, html } = await get(path);
+      const seo = serviceCitySeo(service.slug, city.slug);
+      if (seo.status === "redirect") {
+        assert.equal(response.status, 301, path);
+        assert.equal(new URL(response.headers.get("location"), base).pathname, seo.target);
+        continue;
+      }
       assert.equal(response.status, 200, path);
       const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
       const expectedHeading =
         city.slug === "horb-am-neckar"
           ? `${service.seoNav} mit Abholung in ${city.name}`
-          : `${service.seoNav} in ${city.name}`;
+          : `${service.seoNav} für Fahrzeuge aus ${city.name}`;
       assert.equal(h1, expectedHeading, path);
       assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     }
@@ -59,6 +69,51 @@ test("unknown services and cities preserve real 404 responses", async () => {
   ]) {
     const { response } = await get(path);
     assert.equal(response.status, 404, path);
+  }
+});
+
+test("city context survives consolidated details and both booking destinations", async () => {
+  const { html: city } = await get("/abholservice/nagold");
+  assert.match(city, /href="\/leistungen\/keramikversiegelung\?ort=nagold"/);
+  for (const [slug, destination] of [
+    ["keramikversiegelung", "/"],
+    ["lederreparatur", "/fahrzeug-zustand"],
+  ]) {
+    const { response, html } = await get(`/leistungen/${slug}?ort=nagold`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de/leistungen/${slug}`]);
+    const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] || "";
+    const links = [...main.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
+    const cta = links.find(([, , text]) => text.includes("Termin anfragen"));
+    assert.ok(cta, slug);
+    const target = new URL(cta[1].replaceAll("&amp;", "&"), base);
+    assert.equal(target.pathname, destination);
+    assert.equal(target.searchParams.get("ort"), "nagold");
+    assert.equal(target.hash, "#buchung");
+  }
+  const { html } = await get("/leistungen/keramikversiegelung?ort=unknown-city");
+  assert.doesNotMatch(html, /href="[^"]*ort=unknown-city/);
+});
+
+test("selected service survives the indexable pickup hub before booking", async () => {
+  for (const [slug, destination, key, value] of [
+    ["keramikversiegelung", "/", "paket", "keramik"],
+    ["lederreparatur", "/fahrzeug-zustand", "leistung", "lederreparatur"],
+  ]) {
+    const { html: service } = await get(`/leistungen/${slug}`);
+    assert.ok(service.includes(`/abholservice/nagold?leistung=${slug}`));
+    const { response, html } = await get(`/abholservice/nagold?leistung=${slug}`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(canonicalLinks(html), ["https://white-gloss.de/abholservice/nagold"]);
+    const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] || "";
+    const cta = [...main.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].find(
+      ([, , text]) => text.includes("Termin anfragen"),
+    );
+    assert.ok(cta, slug);
+    const target = new URL(cta[1].replaceAll("&amp;", "&"), base);
+    assert.equal(target.pathname, destination);
+    assert.equal(target.searchParams.get("ort"), "nagold");
+    assert.equal(target.searchParams.get(key), value);
   }
 });
 

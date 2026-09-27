@@ -38,7 +38,7 @@ function LeistungenIndex() {
         shot="lack"
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
         kicker="Leistungsspektrum"
-        title="Was wir am Auto machen."
+        title="Leistungen der Fahrzeugaufbereitung."
         lead="Innenraumreinigung, Lackpflege, Keramikversiegelung und Reparaturen in unserer Werkstatt in Horb am Neckar."
         crumbs={[
           { label: "Startseite", to: "/" },
@@ -167,8 +167,8 @@ function LeistungenIndex() {
           {cities.map((c) => (
             <li key={c.slug}>
               <Link
-                to="/leistungen/$slug/$city"
-                params={{ slug: "fahrzeugaufbereitung", city: c.slug }}
+                to="/abholservice/$city"
+                params={{ city: c.slug }}
                 className="inline-flex min-h-11 items-center border border-line px-4 text-sm text-muted hover:text-fg"
               >
                 {c.name}

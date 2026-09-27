@@ -17,6 +17,9 @@ import {
 } from "@/data/site";
 import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
+import { serviceAreaLink } from "@/lib/seo-policy";
+import { citySeoCopy } from "@/lib/city-copy";
+import { serviceBookingSelection } from "@/lib/booking-selection";
 
 const steps = [
   {
@@ -36,10 +39,13 @@ const steps = [
   },
 ];
 
-export function CityLanding({ city }: { city: City }) {
+export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: string }) {
   const jsonLd = cityJsonLd(city);
   const wa = whatsappForCity(city.name);
   const pickup = pickupPriceText(city.km);
+  const copy = citySeoCopy(city);
+  const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
+  const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
 
   useEffect(() => {
     document.body.dataset.cityWa = "1";
@@ -72,14 +78,20 @@ export function CityLanding({ city }: { city: City }) {
               { label: city.name },
             ]}
           />
-          <p className="kicker mt-5">Fahrzeugaufbereitung</p>
-          <h1 className="heading-page mt-4 max-w-4xl">Hol- und Bringservice in {city.name}</h1>
+          <p className="kicker mt-5">Mit Hol- und Bringservice</p>
+          <h1 className="heading-page mt-4 max-w-4xl">{copy.heading}</h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            Wir holen Ihr Fahrzeug in {city.name} ab und bereiten es in {site.city} auf. Abholung:{" "}
-            {pickup}.
+            Sie suchen eine Autoaufbereitung für Ihr Fahrzeug aus {city.name}? Wir holen es bei
+            Ihnen ab und übernehmen Innenraumreinigung, Lackpflege oder Keramikversiegelung in
+            unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
+            <Link
+              to={request.leistung ? "/fahrzeug-zustand" : "/"}
+              hash="buchung"
+              search={request}
+              className={ctaPrimary}
+            >
               Termin anfragen
             </Link>
             <a href={wa} className={ctaGhost} target="_blank" rel="noopener noreferrer">
@@ -87,6 +99,11 @@ export function CityLanding({ city }: { city: City }) {
               Fotos per WhatsApp
             </a>
           </div>
+          {selectedService ? (
+            <p className="mt-4 text-sm text-muted">
+              Ihre Auswahl: {selectedService.nav}. Die Leistung ist für Ihre Anfrage vorgemerkt.
+            </p>
+          ) : null}
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-[0.14em] text-subtle">
             <li>Preise inkl. MwSt.</li>
             <li>Hol- und Bringservice {pickup}</li>
@@ -104,7 +121,11 @@ export function CityLanding({ city }: { city: City }) {
         </p>
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <figure>
-            <Shot name="lack" alt="Frontpartie und Felge eines schwarzen BMW nach der Lackpflege" className="aspect-[3/2]" />
+            <Shot
+              name="lack"
+              alt="Frontpartie und Felge eines schwarzen BMW nach der Lackpflege"
+              className="aspect-[3/2]"
+            />
             <figcaption className="mt-3 text-sm text-muted">Lackpolitur</figcaption>
           </figure>
           <figure>
@@ -134,8 +155,7 @@ export function CityLanding({ city }: { city: City }) {
             </li>
           </ul>
           <Link
-            to="/leistungen/$slug/$city"
-            params={{ slug: "leasingrueckgabe", city: city.slug }}
+            {...serviceAreaLink("leasingrueckgabe", city.slug)}
             className="mt-8 inline-flex min-h-11 items-center text-sm hover:underline"
           >
             Leasingrückgabe mit Abholung in {city.name}
@@ -161,11 +181,12 @@ export function CityLanding({ city }: { city: City }) {
                   <p className="mt-2 max-w-lg text-sm text-muted">{p.kicker}</p>
                 </div>
                 <p className="ga-price">
-                  <span className="font-display text-3xl tabular-nums">ab {money(p.price)}&nbsp;€</span>
+                  <span className="font-display text-3xl tabular-nums">
+                    ab {money(p.price)}&nbsp;€
+                  </span>
                   <span className="mt-1 block text-xs text-subtle">{site.vatNote}</span>
                   <Link
-                    to="/leistungen/$slug/$city"
-                    params={{ slug: packageServiceSlug[p.id], city: city.slug }}
+                    {...serviceAreaLink(packageServiceSlug[p.id], city.slug)}
                     className="mt-3 inline-flex min-h-11 items-center text-sm text-fg hover:underline"
                   >
                     Paketdetails für {city.name}
@@ -180,6 +201,16 @@ export function CityLanding({ city }: { city: City }) {
       <section className="cv-auto border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
+          <p className="mt-5 max-w-2xl text-muted leading-relaxed">
+            {city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den
+            Termin stimmen wir vorab ab.
+          </p>
+          <p className="mt-4 max-w-2xl text-muted">
+            Unser einziger Werkstattstandort ist {site.street}, {site.postalCode} {site.city}.{" "}
+            {city.slug === "horb-am-neckar"
+              ? "Die direkte Fahrzeugabgabe ist nach Terminvereinbarung möglich."
+              : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}
+          </p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
             Aus {city.name} sind es ca. {city.km} km / {city.minutes} Minuten. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
@@ -221,26 +252,65 @@ export function CityLanding({ city }: { city: City }) {
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Leistungen mit Abholung in {city.name}</h2>
           <ul className="mt-8 columns-1 gap-x-10 sm:columns-2">
-            {services.map((s) => (
-              <li key={s.slug} className="break-inside-avoid">
-                <Link
-                  to="/leistungen/$slug/$city"
-                  params={{ slug: s.slug, city: city.slug }}
-                  className="flex min-h-11 items-center text-sm text-muted hover:text-fg"
-                >
-                  {s.nav} in {city.name}
-                </Link>
-              </li>
-            ))}
+            {services
+              .filter((s) => !s.pendingApproval)
+              .map((s) => (
+                <li key={s.slug} className="break-inside-avoid">
+                  <Link
+                    {...serviceAreaLink(s.slug, city.slug)}
+                    className="flex min-h-11 items-center text-sm text-muted hover:text-fg"
+                  >
+                    {s.nav} – Leistungsumfang
+                  </Link>
+                </li>
+              ))}
           </ul>
           <div className="mt-12 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
+            <Link
+              to={request.leistung ? "/fahrzeug-zustand" : "/"}
+              hash="buchung"
+              search={request}
+              className={ctaPrimary}
+            >
               Termin anfragen
             </Link>
             <Link to="/abholservice" className={ctaGhost}>
               Alle Abholorte
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="cv-auto border-t border-line bg-surface">
+        <div className="section mx-auto max-w-7xl px-4 sm:px-6">
+          <h2 className="heading-2">Fragen zur Autoaufbereitung für {city.name}</h2>
+          <dl className="mt-8 max-w-3xl space-y-8">
+            <div>
+              <dt className="heading-3">Wo wird mein Fahrzeug aufbereitet?</dt>
+              <dd className="mt-3 text-muted">
+                In unserer Werkstatt am {site.street}, {site.postalCode} {site.city}.
+                {city.slug === "horb-am-neckar"
+                  ? " Sie können Ihr Fahrzeug nach Terminvereinbarung auch selbst bringen."
+                  : ` In ${city.name} bieten wir die Abholung und Rückgabe an, keine mobile Aufbereitung oder weitere Werkstatt.`}
+              </dd>
+            </div>
+            <div>
+              <dt className="heading-3">Was kostet die Aufbereitung mit Abholung?</dt>
+              <dd className="mt-3 text-muted">
+                Die Aufbereitungspakete beginnen bei {money(packages[0].price)} €. Umfang und
+                Endpreis richten sich nach Fahrzeug und Zustand. Für den Hol- und Bringservice aus{" "}
+                {city.name} gilt: {pickup}. {pickupKeramikNote()}. Alle Preise {site.vatNote}
+              </dd>
+            </div>
+            <div>
+              <dt className="heading-3">Wie vereinbare ich Abholung und Rückgabe?</dt>
+              <dd className="mt-3 text-muted">
+                Wählen Sie bei der Terminanfrage {city.name} als Abholort aus. Übergabeadresse,
+                Leistungsumfang, Preis und Rückgabezeit stimmen wir persönlich mit Ihnen ab. Fotos
+                helfen bei der ersten Einschätzung des Fahrzeugzustands.
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 

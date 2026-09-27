@@ -1,9 +1,12 @@
 // Targeted checks for the audited shared templates, against an isolated build.
+import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
+assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { cities, services, site } from "../../src/data/site.ts";
 import { articleNavigation } from "../../src/lib/article-navigation.ts";
+import { filterIndexableSitemap } from "../../src/lib/seo-policy.ts";
 
 const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:8082";
 if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base)) throw new Error("Local server required");
@@ -38,6 +41,7 @@ try {
   }
   // The known 10 x 13 templates are checked for the audited invariants, not crawled anew.
   for (const service of services) {
+    if (service.pendingApproval) continue; // Permanent consolidation is checked in check-seo.
     await Promise.all(cities.map(async (city) => {
       const { html } = await get(`/leistungen/${service.slug}/${city.slug}`);
       const content = text(html);
@@ -68,10 +72,11 @@ try {
     ok(`Guide ${slug}: title, relevant links, same approved OG/Article image`);
   }
   const sitemap = (await get("/sitemap.xml")).html;
-  assert.equal([...sitemap.matchAll(/<loc>/g)].length, 185);
+  const inventory = await readFile("src/data/sitemap-static.xml", "utf8");
+  assert.equal([...sitemap.matchAll(/<loc>/g)].length, [...filterIndexableSitemap(inventory).matchAll(/<loc>/g)].length);
   assert.ok(!sitemap.includes("<lastmod>"));
-  for (const path of ["barrierefreiheit", "datenloeschung"]) assert.ok(sitemap.includes(`${site.origin}/${path}</loc>`));
-  ok("Sitemap: 185 unique static URLs, no unreliable lastmod");
+  for (const path of ["barrierefreiheit", "datenloeschung"]) assert.ok(!sitemap.includes(`${site.origin}/${path}</loc>`));
+  ok("Sitemap: indexable URLs only, no unreliable lastmod");
   const privacy = text((await get("/datenschutz")).html);
   assert.match(privacy, /Cookie-Einstellungen/);
   assert.ok(!privacy.includes("localStorage-Eintrag"));
