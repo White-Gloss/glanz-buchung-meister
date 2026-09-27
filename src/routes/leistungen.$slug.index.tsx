@@ -172,12 +172,12 @@ function ServicePage() {
         <h2 className="mt-16 font-display text-3xl tracking-tight">
           Hol- und Bringservice nach Stadt
         </h2>
-        <ul className="mt-6 grid grid-cols-2 gap-x-8 text-sm text-muted">
+        <ul className="mt-6 grid grid-cols-1 gap-x-8 text-sm text-muted sm:grid-cols-2">
           {cities.map((c) => (
             <li key={c.slug}>
               <Link
                 {...pickupAreaLink(s.slug, c.slug)}
-                className="inline-flex min-h-11 items-center hover:text-fg"
+                className="inline-flex min-h-11 max-w-full items-center hover:text-fg"
               >
                 {s.seoNav} für {c.name}
               </Link>

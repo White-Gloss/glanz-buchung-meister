@@ -5,22 +5,29 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { qaBase } from "./ports.mjs";
+import { cities, services } from "../../src/data/site.ts";
 
 const browser = await chromium.launch({ headless: true });
 const results = [];
 const paths = [
-  "/",
-  "/preise",
-  "/leistungen",
-  "/leistungen/keramikversiegelung",
-  "/leistungen/keramikversiegelung/nagold",
-  "/abholservice",
-  "/abholservice/nagold",
-  "/abholservice/sindelfingen",
-  "/ratgeber/keramikversiegelung-langzeitschutz",
-  "/kontakt",
-  "/fahrzeug-zustand",
-  "/dellen-hagelschaden",
+  ...new Set([
+    "/",
+    "/preise",
+    "/leistungen",
+    "/leistungen/keramikversiegelung",
+    "/leistungen/keramikversiegelung/nagold",
+    "/abholservice",
+    "/abholservice/nagold",
+    "/abholservice/sindelfingen",
+    "/ratgeber/keramikversiegelung-langzeitschutz",
+    "/kontakt",
+    "/fahrzeug-zustand",
+    "/dellen-hagelschaden",
+    ...cities.map((city) => `/abholservice/${city.slug}`),
+    ...services
+      .filter((service) => !service.pendingApproval)
+      .map((service) => `/leistungen/${service.slug}`),
+  ]),
 ];
 try {
   const context = await browser.newContext({ reducedMotion: "reduce" });
