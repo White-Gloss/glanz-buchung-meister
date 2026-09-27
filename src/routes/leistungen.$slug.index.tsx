@@ -3,7 +3,7 @@ import { PageHero } from "@/components/page-hero";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { ctaPrimary, PriceLine } from "@/components/ui";
 import { cities, packageServiceSlug, packages, services, site } from "@/data/site";
-import { serviceBookingSelection } from "@/lib/booking-selection";
+import { parseBookingSelection, serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
 import { ResultsTeaser } from "@/components/results-teaser";
@@ -13,6 +13,10 @@ import { pickupAreaLink } from "@/lib/seo-policy";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
+  validateSearch: (search: Record<string, unknown>): { ort?: string } => {
+    const { ort } = parseBookingSelection(search);
+    return ort ? { ort } : {};
+  },
   loader: ({ params }) => {
     const service = services.find((s) => s.slug === params.slug);
     if (!service) throw notFound();
@@ -28,7 +32,8 @@ export const Route = createFileRoute("/leistungen/$slug/")({
 
 function ServicePage() {
   const s = Route.useLoaderData();
-  const request = serviceBookingSelection(s.slug);
+  const { ort } = Route.useSearch();
+  const request = serviceBookingSelection(s.slug, ort);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
   const resultService =
     s.slug === "keramikversiegelung"

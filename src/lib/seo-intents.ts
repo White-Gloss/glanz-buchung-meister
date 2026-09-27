@@ -8,6 +8,27 @@ export type SearchIntent = {
   purpose: string;
 };
 
+/** Optional reviewed overrides for articles published via the existing CMS. */
+export const cmsSeoIntents: Record<string, SearchIntent> = {};
+
+export function resolveSeoIntent(
+  path: string,
+  publishedPage?: { title: string; description: string },
+): SearchIntent | undefined {
+  if (seoIntents[path]) return seoIntents[path];
+  if (!/^\/ratgeber\/[^/]+$/.test(path)) return undefined;
+  if (cmsSeoIntents[path]) return cmsSeoIntents[path];
+  // The editor's published title provides a provisional informational intent.
+  // This is not a demand/ranking assertion; editorial semantic review remains required.
+  const subject = publishedPage?.title.replace(/\s*\|\s*White Gloss\s*$/i, "").trim();
+  if (!subject || !publishedPage?.description.trim()) return undefined;
+  return {
+    cluster: subject.toLowerCase(),
+    intent: "informational",
+    purpose: publishedPage.description,
+  };
+}
+
 /** One primary intent per indexable URL. This is editorial mapping, not a ranking claim. */
 export const seoIntents: Record<string, SearchIntent> = {
   "/": {

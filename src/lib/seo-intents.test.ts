@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { filterIndexableSitemap } from "./seo-policy.ts";
-import { seoIntents } from "./seo-intents.ts";
+import { cmsSeoIntents, resolveSeoIntent, seoIntents } from "./seo-intents.ts";
 import { cities } from "../data/site.ts";
 import { citySeoCopy } from "./city-copy.ts";
 import { publicSeo } from "./seo-policy.ts";
@@ -20,6 +20,35 @@ test("each static indexable URL has one distinct primary intent", () => {
     "Two URLs must not own the same primary cluster",
   );
   for (const path of paths) assert.ok(seoIntents[path].purpose.trim(), path);
+});
+
+test("published CMS articles require a nonempty provisional or reviewed intent", () => {
+  assert.equal(
+    resolveSeoIntent("/unknown", { title: "Example", description: "Example" }),
+    undefined,
+  );
+  assert.equal(resolveSeoIntent("/ratgeber/new-guide"), undefined);
+  assert.equal(
+    resolveSeoIntent("/ratgeber/new-guide", { title: " | White Gloss", description: "Test" }),
+    undefined,
+  );
+  assert.equal(
+    resolveSeoIntent("/ratgeber/new-guide", {
+      title: "Winterpflege | White Gloss",
+      description: "Tipps zur Pflege im Winter",
+    })?.cluster,
+    "winterpflege",
+  );
+  cmsSeoIntents["/ratgeber/test-override"] = {
+    cluster: "test reviewed cluster",
+    intent: "informational",
+    purpose: "Synthetic test",
+  };
+  try {
+    assert.equal(resolveSeoIntent("/ratgeber/test-override")?.cluster, "test reviewed cluster");
+  } finally {
+    delete cmsSeoIntents["/ratgeber/test-override"];
+  }
 });
 
 test("each pickup city has an indexable vehicle-detailing keyword destination", () => {

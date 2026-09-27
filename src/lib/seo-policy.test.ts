@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { cities, services } from "../data/site.ts";
+import { serviceBookingSelection } from "./booking-selection.ts";
 import {
   filterIndexableSitemap,
   hasLocalSeoEvidence,
@@ -81,6 +82,9 @@ test("sitemap, robots and links agree and cannot override noindex", () => {
   assert.equal(seoRobots("/", "noindex,nofollow"), "noindex,nofollow");
   assert.match(seoRobots("/preise"), /^index,follow/);
   assert.equal(serviceAreaLink("keramikversiegelung", "nagold").to, "/leistungen/$slug");
+  const details = serviceAreaLink("keramikversiegelung", "nagold");
+  assert.equal(details.search?.ort, "nagold");
+  assert.equal(serviceBookingSelection("keramikversiegelung", details.search?.ort).ort, "nagold");
   assert.equal(pickupAreaLink("keramikversiegelung", "nagold").to, "/abholservice/$city");
   for (const loc of [
     "https://other.example/",

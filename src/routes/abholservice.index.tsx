@@ -47,7 +47,7 @@ function AbholIndex() {
                 to="/abholservice/$city"
                 params={{ city: c.slug }}
                 aria-label={`${citySeoCopy(c).linkLabel}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
-                className="flex min-h-16 items-center justify-between gap-4 py-4"
+                className="flex min-h-16 flex-col items-start gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <span>
                   <span className="block font-display text-2xl tracking-tight">

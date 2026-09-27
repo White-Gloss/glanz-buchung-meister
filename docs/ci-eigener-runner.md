@@ -35,6 +35,13 @@ Die Variable `CI_RUNS_ON` löschen. Ohne sie laufen alle Workflows wie bisher au
 
 ## Wartung
 
+- Vor dem ersten responsiven SEO-Test (und nach einem Playwright-Versionswechsel)
+  installiert der VPS-Administrator die Chromium-Systembibliotheken aus dem
+  geprüften Checkout einmal privilegiert: `npx playwright install-deps chromium`.
+  Dafür müssen dessen per Lockfile installierte Projektabhängigkeiten verfügbar
+  sein. Der Workflow lädt als `gh-runner` ausschließlich den Browser mit
+  `npx playwright install chromium`, ohne `sudo` oder neue Runner-Rechte.
+  Dies gilt nur für den separaten Linux-CI-VPS, niemals für den Betreiber-PC.
 - Der Runner aktualisiert sich selbst.
 - Systemupdates: `apt-get update && apt-get upgrade` auf dem VPS, wie bei jedem Server.
 - Speicher: Docker-Abbilder gelegentlich mit `docker system prune -af` aufräumen.

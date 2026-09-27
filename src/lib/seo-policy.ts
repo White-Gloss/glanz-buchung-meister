@@ -127,7 +127,11 @@ export function filterIndexableSitemap(xml: string): string {
 export function serviceAreaLink(serviceSlug: string, citySlug: string) {
   return serviceCitySeo(serviceSlug, citySlug).status === "index"
     ? { to: "/leistungen/$slug/$city" as const, params: { slug: serviceSlug, city: citySlug } }
-    : { to: "/leistungen/$slug" as const, params: { slug: serviceSlug } };
+    : {
+        to: "/leistungen/$slug" as const,
+        params: { slug: serviceSlug },
+        search: { ort: citySlug },
+      };
 }
 
 export function pickupAreaLink(serviceSlug: string, citySlug: string) {

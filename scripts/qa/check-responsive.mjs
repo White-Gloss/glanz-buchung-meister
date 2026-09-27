@@ -9,6 +9,7 @@ import { cities, services } from "../../src/data/site.ts";
 
 const browser = await chromium.launch({ headless: true });
 const results = [];
+const failures = [];
 const paths = [
   ...new Set([
     "/",
@@ -57,7 +58,10 @@ try {
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
-        assert.ok(overflow <= 2, `${path} @${width}, scroll ${y}: horizontal overflow ${overflow}`);
+        if (overflow > 2) {
+          failures.push(`${path} @${width}, scroll ${y}: horizontal overflow ${overflow}`);
+          break;
+        }
       }
       await page.evaluate(() => window.scrollTo(0, 0));
       const state = await page.evaluate(() => ({
@@ -83,15 +87,15 @@ try {
           fullPage: false,
         });
       }
-      assert.equal(state.h1.length, 1, `${path} @${width}: one H1`);
-      assert.ok(
-        state.scroll <= state.viewport + 2,
-        `${path} @${width}: horizontal overflow ${JSON.stringify(state)}`,
-      );
+      if (state.h1.length !== 1) failures.push(`${path} @${width}: one H1 required`);
+      if (state.scroll > state.viewport + 2)
+        failures.push(`${path} @${width}: horizontal overflow ${JSON.stringify(state)}`);
     }
   }
 } finally {
   await writeFile(".qa-output/responsive-results.json", JSON.stringify(results, null, 2));
+  await writeFile(".qa-output/responsive-failures.json", JSON.stringify(failures, null, 2));
   await browser.close();
 }
+assert.equal(failures.length, 0, failures.join("\n"));
 console.log(`${results.length} responsive checks passed; no form or upload submitted.`);

@@ -64,7 +64,11 @@ Tests gemeinsam aktualisieren. Weitere Konsolidierungen benötigen Einzelbelege.
 `src/lib/seo-intents.ts` erfasst alle 48 indexierbaren statischen Seiten. Der Test
 verhindert fehlende Zuordnungen und identische Primärcluster. Er ersetzt keine
 GSC-Query/Seiten-Analyse: verschiedene Formulierungen können trotzdem denselben
-Intent haben. CMS-Neuveröffentlichungen zusätzlich redaktionell zuordnen.
+Intent haben. Der Crawl bezieht auch veröffentlichte CMS-Artikel ein: ein
+redaktionell freigegebener Override kann in `cmsSeoIntents` stehen; sonst dient
+der im CMS veröffentlichte Titel als vorläufiges Informations-Cluster. Leere
+Zuordnungen und identische Cluster werden abgelehnt. Das ist kein Suchvolumen-
+Nachweis: CMS-Neuveröffentlichungen zusätzlich semantisch/redaktionell prüfen.
 
 Homepage: Anbieter in Horb; Leistungsindex: Auswahl; einzelne Leistung: Umfang
 und Anfrage; Stadt-Hub: Fahrzeugaufbereitung + Stadt mit Abholung und Übergabe; Preise: Paketvergleich; Ratgeber:

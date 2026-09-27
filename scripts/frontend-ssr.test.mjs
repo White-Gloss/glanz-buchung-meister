@@ -23,7 +23,10 @@ test("service index and city routes render distinct content with one canonical",
   for (const [path, heading] of [
     ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
     ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung für Fahrzeuge aus Nagold"],
-    ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung mit Abholung in Horb am Neckar"],
+    [
+      "/leistungen/keramikversiegelung/horb-am-neckar",
+      "Keramikversiegelung mit Abholung in Horb am Neckar",
+    ],
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);
@@ -67,6 +70,29 @@ test("unknown services and cities preserve real 404 responses", async () => {
     const { response } = await get(path);
     assert.equal(response.status, 404, path);
   }
+});
+
+test("city context survives consolidated details and both booking destinations", async () => {
+  const { html: city } = await get("/abholservice/nagold");
+  assert.match(city, /href="\/leistungen\/keramikversiegelung\?ort=nagold"/);
+  for (const [slug, destination] of [
+    ["keramikversiegelung", "/"],
+    ["lederreparatur", "/fahrzeug-zustand"],
+  ]) {
+    const { response, html } = await get(`/leistungen/${slug}?ort=nagold`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de/leistungen/${slug}`]);
+    const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] || "";
+    const links = [...main.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
+    const cta = links.find(([, , text]) => text.includes("Termin anfragen"));
+    assert.ok(cta, slug);
+    const target = new URL(cta[1].replaceAll("&amp;", "&"), base);
+    assert.equal(target.pathname, destination);
+    assert.equal(target.searchParams.get("ort"), "nagold");
+    assert.equal(target.hash, "#buchung");
+  }
+  const { html } = await get("/leistungen/keramikversiegelung?ort=unknown-city");
+  assert.doesNotMatch(html, /href="[^"]*ort=unknown-city/);
 });
 
 test("public route metadata survives the PWA injector", async () => {

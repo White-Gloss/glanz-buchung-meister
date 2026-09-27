@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 import { publicSeo, filterIndexableSitemap } from "../../src/lib/seo-policy.ts";
-import { seoIntents } from "../../src/lib/seo-intents.ts";
+import { resolveSeoIntent } from "../../src/lib/seo-intents.ts";
 import { cities, site } from "../../src/data/site.ts";
 import { citySeoCopy } from "../../src/lib/city-copy.ts";
 import { qaBase } from "./ports.mjs";
@@ -187,7 +187,10 @@ await Promise.all(
           schemas: schemas.length,
           outgoing,
           text,
-          intent: seoIntents[path],
+          intent: resolveSeoIntent(path, {
+            title: titles[0] || "",
+            description: meta("description")[0] || "",
+          }),
         });
       } catch (error) {
         failures.push(`${path}: ${error.message}`);
@@ -196,6 +199,23 @@ await Promise.all(
   }),
 );
 const indexable = pages.filter((p) => p.seo === "index");
+const clusters = new Map();
+for (const page of indexable) {
+  const cluster = page.intent?.cluster.trim().toLowerCase();
+  check(!!cluster && !!page.intent?.purpose.trim(), `${page.path}: primary intent missing`);
+  check(
+    !clusters.has(cluster),
+    `${page.path}: primary cluster also owned by ${clusters.get(cluster)}`,
+  );
+  clusters.set(cluster, page.path);
+  for (const target of page.outgoing || []) {
+    if (/^\/leistungen\/[^/]+\/[^/]+$/.test(target))
+      check(
+        publicSeo(target).status === "index",
+        `${page.path}: navigation to excluded matrix ${target}`,
+      );
+  }
+}
 for (const key of ["title", "description"]) {
   const seen = new Map();
   for (const page of indexable) {
