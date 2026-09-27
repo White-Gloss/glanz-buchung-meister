@@ -1,3 +1,5 @@
 # Reviewed SQL digests must be identical in Windows checkouts and Linux releases.
 migrations/*.sql text eol=lf
 ops/*.service text eol=lf
+# The deployment workflow compares these exact bytes with the root-owned helper.
+scripts/deploy-ionos-release.sh text eol=lf

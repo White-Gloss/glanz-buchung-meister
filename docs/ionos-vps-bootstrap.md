@@ -1,5 +1,23 @@
 # IONOS-VPS für White Gloss
 
+## Abgleich des Deployment-Helfers am 27. September 2026
+
+Der bereits installierte root-eigene Helfer wurde über den vorhandenen
+eingeschränkten SSH-Zugang ausschließlich gelesen und mit dem Repository
+abgeglichen. Seine geprüfte Fassung ist jetzt auch versioniert:
+SHA-256 `ff4fc53fa332da9c0888c4d627bf136a81c0a3a82b655b328190bd61e8d4c50a`.
+Damit bleibt der verbindliche Prüfsummenvergleich im Deployment erhalten;
+der Serverhelfer muss für diese Korrektur nicht ersetzt werden.
+
+Diese Fassung hält denselben Kernel-Lock wie der Bitrix-Cutover und kann
+Aktivierung und Rücknahme an die erwartete aktive Release-ID binden. Der
+IONOS-Workflow übergibt diese ID und die verifizierte Archivprüfsumme jetzt
+ausdrücklich. Der Helfer prüft beides nochmals unter dem Lock bzw. nach dem
+Kopieren des Archivs in das rootgeschützte Staging. Bereits vorhandene
+Release-Verzeichnisse werden im geprüften Aktivierungspfad nicht stillschweigend
+wiederverwendet. Eine verspätete Rücknahme darf keinen neueren Stand ersetzen.
+Unit, Laufzeitumgebung, Datenbank und CRM-Konfiguration bleiben unverändert.
+
 ## Verifizierter Produktionsstand
 
 Am 10. August 2026 wurden Cloud Panel und Server geprüft:
