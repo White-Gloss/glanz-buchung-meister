@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "white-gloss": {
+      "source": {
+        "source": "github",
+        "repo": "White-Gloss/glanz-buchung-meister"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "verify@white-gloss": true
+  }
+}

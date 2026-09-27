@@ -6,10 +6,16 @@ import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
-import { createBitrixClient, probeBitrix, vibeApiKey } from "@/lib/bitrix";
-import { readVibeApiKey } from "@/lib/bitrix-credentials.server";
+import { createBitrixClient, probeBitrix, bitrixWebhook } from "@/lib/bitrix";
+import { readBitrixWebhook } from "@/lib/bitrix-credentials.server";
 import { ensureBitrixSchema, repairBookingContact, runBitrixSync } from "@/lib/bitrix-sync";
-import { bitrixCalendarEnabled, bitrixBusyWindows, calendarDateRange } from "@/lib/bitrix-calendar";
+import {
+  bitrixCalendarEnabled,
+  bitrixBusyWindows,
+  calendarDateRange,
+  readBitrixCalendar,
+} from "@/lib/bitrix-calendar";
+import { bitrixCutoverReadiness } from "@/lib/bitrix-readiness";
 
 const SHOP = "white-gloss";
 
@@ -22,7 +28,7 @@ export const repairBitrixContact = createServerFn({ method: "POST" })
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der Inhaber darf Kontakte abgleichen.");
     await ensureBitrixSchema(sql);
-    const key = await readVibeApiKey(sql);
+    const key = await readBitrixWebhook(sql);
     if (!key) throw new Error("Bitrix-Verbindung fehlt.");
     return repairBookingContact(sql, data.bookingId, createBitrixClient(key));
   });
@@ -48,8 +54,8 @@ export const bitrixStatus = createServerFn({ method: "GET" })
   .handler(async () => {
     const sql = await getSql();
     await ensureBitrixSchema(sql);
-    const fromEnv = Boolean(vibeApiKey());
-    const key = await readVibeApiKey(sql);
+    const fromEnv = Boolean(bitrixWebhook());
+    const key = await readBitrixWebhook(sql);
     return {
       configured: Boolean(key),
       calendarEnabled: await bitrixCalendarEnabled(sql),
@@ -121,7 +127,26 @@ export const runBitrixNow = createServerFn({ method: "POST" })
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
       throw new Error("Nur der angemeldete Inhaber darf Bitrix-Übertragungen anstoßen.");
-    if (!(await readVibeApiKey(sql)))
+    if (!(await readBitrixWebhook(sql)))
       throw new Error("Bitte zuerst den Bitrix-Schlüssel speichern.");
     return runBitrixSync(sql, { limit: 8 });
+  });
+
+export const bitrixReadiness = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async () => {
+    // Deliberately no ensureBitrixSchema: this check must not change the database.
+    const sql = await getSql();
+    return bitrixCutoverReadiness(sql, {
+      apiKey: await readBitrixWebhook(sql),
+      probe: (key) => probeBitrix(key),
+      calendarProbe: (key) => {
+        const today = new Date().toISOString().slice(0, 10);
+        const range = calendarDateRange(
+          today,
+          new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
+        );
+        return readBitrixCalendar(key, range.from, range.to);
+      },
+    });
   });

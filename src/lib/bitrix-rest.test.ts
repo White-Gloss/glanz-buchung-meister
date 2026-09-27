@@ -26,25 +26,86 @@ function needsReview(error: unknown) {
   return error instanceof BitrixError && error.review && !error.retryable;
 }
 
+test("native photo append preserves existing file IDs and checks the returned field", async () => {
+  const calls: RecordedCall[] = [];
+  const request = createBitrixRestClient(webhook, async (url, init) => {
+    calls.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+    return Response.json({
+      result: {
+        item: {
+          id: 42,
+          UF_CRM_WG_PHOTOS: calls.length === 1 ? [{ id: 100 }] : [{ id: 100 }, { id: 101 }],
+        },
+      },
+    });
+  });
+  await request("POST", "/deals/42/photos", { files: [["car.jpg", "BASE64"]] });
+  assert.equal(calls[0].url, webhook + "crm.item.get.json");
+  assert.equal(calls[1].url, webhook + "crm.item.update.json");
+  assert.deepEqual(calls[1].body, {
+    id: 42,
+    entityTypeId: 2,
+    useOriginalUfNames: "Y",
+    fields: { UF_CRM_WG_PHOTOS: [{ id: 100 }, ["car.jpg", "BASE64"]] },
+  });
+});
+
+test("missing photo fields or ambiguous acknowledgement require review", async () => {
+  for (const item of [
+    { id: 42 },
+    { id: 43, UF_CRM_WG_PHOTOS: [] },
+    { id: 42, UF_CRM_WG_PHOTOS: [] },
+  ]) {
+    const { request } = fixture({ item });
+    await assert.rejects(
+      request("POST", "/deals/42/photos", { files: [["car.jpg", "BASE64"]] }),
+      needsReview,
+    );
+  }
+});
+
+test("malformed contact search never causes a new contact to be inferred", async () => {
+  const { request } = fixture({ unknown: [] });
+  await assert.rejects(
+    request("POST", "/contacts/search", { filter: { email: "qa@example.invalid" } }),
+  );
+});
+
+test("deal creation refuses silently missing custom fields before writing", async () => {
+  const { request, calls } = fixture({ TITLE: { type: "string" } });
+  await assert.rejects(
+    request("POST", "/deals", { title: "WG-1", ufCrmWgVehicle: "Car" }),
+    needsReview,
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, webhook + "crm.deal.fields.json");
+});
+
 test("reads an existing smart invoice through crm.item.get and unwraps result.item", async () => {
   const item = { id: 42, entityTypeId: 31, stageId, title: "Test invoice" };
   const { request, calls } = fixture({ item });
   const invoice = await request("GET", "/invoices/42");
   assert.deepEqual(invoice, item);
-  assert.deepEqual(calls, [{
-    url: `${webhook}crm.item.get.json`, method: "POST",
-    body: { entityTypeId: 31, id: 42 },
-  }]);
+  assert.deepEqual(calls, [
+    {
+      url: `${webhook}crm.item.get.json`,
+      method: "POST",
+      body: { entityTypeId: 31, id: 42 },
+    },
+  ]);
 });
 
 test("updates only the stage of an existing smart invoice with crm.item.update", async () => {
   const item = { id: 42, entityTypeId: 31, stageId };
   const { request, calls } = fixture({ item });
   assert.deepEqual(await request("PATCH", "/invoices/42", { stageId }), item);
-  assert.deepEqual(calls, [{
-    url: `${webhook}crm.item.update.json`, method: "POST",
-    body: { entityTypeId: 31, id: 42, fields: { stageId } },
-  }]);
+  assert.deepEqual(calls, [
+    {
+      url: `${webhook}crm.item.update.json`,
+      method: "POST",
+      body: { entityTypeId: 31, id: 42, fields: { stageId } },
+    },
+  ]);
 });
 
 test("repeated status requests update the same invoice and never create another invoice", async () => {
@@ -66,9 +127,16 @@ test("accepts a numeric string invoice ID returned by the API", async () => {
 
 test("rejects missing, malformed or mismatched invoice results rather than reporting success", async () => {
   const invalidResults: unknown[] = [
-    null, true, {}, { item: null }, { item: [] }, { item: "invoice" },
-    { item: { id: 43, stageId } }, { item: { id: true, stageId } },
-    { item: { id: 42 } }, { item: { id: 42, stageId: " " } },
+    null,
+    true,
+    {},
+    { item: null },
+    { item: [] },
+    { item: "invoice" },
+    { item: { id: 43, stageId } },
+    { item: { id: true, stageId } },
+    { item: { id: 42 } },
+    { item: { id: 42, stageId: " " } },
     { item: { id: 42, stageId: 1 } },
     { item: { id: 42, entityTypeId: 2, stageId } },
   ];
@@ -80,11 +148,7 @@ test("rejects missing, malformed or mismatched invoice results rather than repor
 });
 
 test("requires the update response to confirm the requested stage and invoice ID", async () => {
-  for (const item of [
-    { id: 42, stageId: "TEST_INVOICE:OTHER" },
-    { id: 43, stageId },
-    { id: 42 },
-  ]) {
+  for (const item of [{ id: 42, stageId: "TEST_INVOICE:OTHER" }, { id: 43, stageId }, { id: 42 }]) {
     const { request, calls } = fixture({ item });
     await assert.rejects(request("PATCH", "/invoices/42", { stageId }), needsReview);
     assert.equal(calls.length, 1);
@@ -92,8 +156,18 @@ test("requires the update response to confirm the requested stage and invoice ID
 });
 
 test("rejects missing or invalid stage updates before sending any request", async () => {
-  const payloads: unknown[] = [undefined, null, true, [], "stage", {},
-    { stageId: 123 }, { stageId: "" }, { stageId: " " }, { stageId: ` ${stageId}` }];
+  const payloads: unknown[] = [
+    undefined,
+    null,
+    true,
+    [],
+    "stage",
+    {},
+    { stageId: 123 },
+    { stageId: "" },
+    { stageId: " " },
+    { stageId: ` ${stageId}` },
+  ];
   for (const body of payloads) {
     const { request, calls } = fixture({ item: { id: 42, stageId } });
     await assert.rejects(request("PATCH", "/invoices/42", body), needsReview);
@@ -103,8 +177,11 @@ test("rejects missing or invalid stage updates before sending any request", asyn
 
 test("rejects attempts to alter issued invoice contents through the status adapter", async () => {
   for (const extra of [
-    { opportunity: 1 }, { accountNumber: "replacement" }, { id: 99 },
-    { entityTypeId: 2 }, { fields: { opportunity: 1 } },
+    { opportunity: 1 },
+    { accountNumber: "replacement" },
+    { id: 99 },
+    { entityTypeId: 2 },
+    { fields: { opportunity: 1 } },
   ]) {
     const { request, calls } = fixture({ item: { id: 42, stageId } });
     await assert.rejects(request("PATCH", "/invoices/42", { stageId, ...extra }), needsReview);
@@ -114,10 +191,16 @@ test("rejects attempts to alter issued invoice contents through the status adapt
 
 test("rejects invalid invoice IDs and unsupported invoice operations without network access", async () => {
   for (const [method, path] of [
-    ["GET", "/invoices/0"], ["GET", "/invoices/-1"], ["GET", "/invoices/1.5"],
-    ["GET", "/invoices/9007199254740993"], ["GET", "/invoices/42/extra"],
-    ["GET", "/invoices/42?other=1"], ["GET", "/invoices/042"],
-    ["POST", "/invoices"], ["POST", "/invoices/42"], ["DELETE", "/invoices/42"],
+    ["GET", "/invoices/0"],
+    ["GET", "/invoices/-1"],
+    ["GET", "/invoices/1.5"],
+    ["GET", "/invoices/9007199254740993"],
+    ["GET", "/invoices/42/extra"],
+    ["GET", "/invoices/42?other=1"],
+    ["GET", "/invoices/042"],
+    ["POST", "/invoices"],
+    ["POST", "/invoices/42"],
+    ["DELETE", "/invoices/42"],
   ]) {
     const { request, calls } = fixture({ item: { id: 42, stageId } });
     await assert.rejects(request(method, path, { stageId }), needsReview);
@@ -129,34 +212,51 @@ test("propagates an API permission failure without claiming an invoice update su
   let calls = 0;
   const fetchImpl: typeof fetch = async () => {
     calls++;
-    return new Response(JSON.stringify({ error: "ACCESS_DENIED", error_description: "Denied" }), { status: 403 });
+    return new Response(JSON.stringify({ error: "ACCESS_DENIED", error_description: "Denied" }), {
+      status: 403,
+    });
   };
   const request = createBitrixRestClient(webhook, fetchImpl);
-  await assert.rejects(request("PATCH", "/invoices/42", { stageId }),
-    (error: unknown) => error instanceof BitrixError && error.code === "ACCESS_DENIED");
+  await assert.rejects(
+    request("PATCH", "/invoices/42", { stageId }),
+    (error: unknown) => error instanceof BitrixError && error.code === "ACCESS_DENIED",
+  );
   assert.equal(calls, 1);
 });
 
 test("does not blindly retry a status update after a network failure", async () => {
   let calls = 0;
-  const fetchImpl: typeof fetch = async () => { calls++; throw new Error("test network failure"); };
+  const fetchImpl: typeof fetch = async () => {
+    calls++;
+    throw new Error("test network failure");
+  };
   const request = createBitrixRestClient(webhook, fetchImpl);
-  await assert.rejects(request("PATCH", "/invoices/42", { stageId }),
-    (error: unknown) => error instanceof BitrixError && error.code === "bitrix_network");
+  await assert.rejects(
+    request("PATCH", "/invoices/42", { stageId }),
+    (error: unknown) => error instanceof BitrixError && error.code === "bitrix_network",
+  );
   assert.equal(calls, 1);
 });
 
 test("preserves the existing deal-update mapping", async () => {
   const { request, calls } = fixture(true);
-  assert.deepEqual(await request("PATCH", "/deals/7", { title: "Test", amount: 120 }), { ok: true });
-  assert.deepEqual(calls, [{
-    url: `${webhook}crm.deal.update.json`, method: "POST",
-    body: { id: 7, fields: { TITLE: "Test", OPPORTUNITY: 120 } },
-  }]);
+  assert.deepEqual(await request("PATCH", "/deals/7", { title: "Test", amount: 120 }), {
+    ok: true,
+  });
+  assert.deepEqual(calls, [
+    {
+      url: `${webhook}crm.deal.update.json`,
+      method: "POST",
+      body: { id: 7, fields: { TITLE: "Test", OPPORTUNITY: 120 } },
+    },
+  ]);
 });
 
 test("preserves the existing contact-search mapping", async () => {
   const { request, calls } = fixture([{ ID: "7" }]);
-  assert.deepEqual(await request("POST", "/contacts/search", { filter: { email: "test@example.invalid" } }), [{ id: 7 }]);
+  assert.deepEqual(
+    await request("POST", "/contacts/search", { filter: { email: "test@example.invalid" } }),
+    [{ id: 7 }],
+  );
   assert.deepEqual(calls[0].body, { filter: { EMAIL: "test@example.invalid" }, select: ["ID"] });
 });

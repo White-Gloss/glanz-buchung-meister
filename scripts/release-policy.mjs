@@ -4,6 +4,10 @@ export function releaseConfigurationProblems(env) {
   /** @param {string} key */
   const value = (key) => env[key]?.trim() || "";
   const problems = [];
+  if (value("BOOKING_OPERATIONS") !== "bitrix")
+    problems.push(
+      "BOOKING_OPERATIONS=bitrix ist für diese Version erforderlich; CRM-Umstellung zuerst freigeben und prüfen.",
+    );
   const database = value("DATABASE_URL");
   if (!database) problems.push("DATABASE_URL fehlt (kein produktiver PGlite-Fallback).");
   else {

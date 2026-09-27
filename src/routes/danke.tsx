@@ -46,8 +46,8 @@ function ThanksPage() {
     ],
     [
       "03",
-      "Auftrag prüfen und unterschreiben",
-      "Nach unserer Freigabe erhalten Sie die Bestätigung mit dem Link zur Auftragsannahme. Prüfen Sie Leistungen, Fixpreis und Termin und unterschreiben Sie selbst über den Link.",
+      "Auftrag abstimmen",
+      "Wir stimmen die Leistungen, den verbindlichen Preis und den Termin mit Ihnen ab. Erst nach Ihrer Zustimmung wird der Auftrag verbindlich bestätigt.",
     ],
     [
       "04",

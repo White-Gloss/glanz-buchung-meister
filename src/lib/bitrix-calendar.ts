@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import type { Sql } from "./db.ts";
-import { readVibeApiKey } from "./bitrix-credentials.server.ts";
-import { normalizeBitrixRestWebhook, vibeApiBase } from "./bitrix.ts";
-import { berlinWallToUtc, rangesOverlap } from "./zoho-time.ts";
+import { readBitrixWebhook } from "./bitrix-credentials.server.ts";
+import { normalizeBitrixRestWebhook, restCall } from "./bitrix-rest.ts";
+import { berlinWallToUtc, rangesOverlap } from "./booking-time.ts";
 
 export type BusyWindow = { start: string; end: string; resourceId: number };
 type EventWindow = BusyWindow & { eventId: number };
@@ -117,58 +117,114 @@ export function eventWindows(events: CalendarEvent[]): EventWindow[] {
   });
 }
 
+function nativeWallDate(value: unknown) {
+  if (typeof value !== "string") throw failure();
+  const german = /^(\d{2})\.(\d{2})\.(\d{4})(?: (\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value);
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value);
+  if (!german && !iso) throw failure();
+  const day = german
+    ? `${german[3]}-${german[2]}-${german[1]}`
+    : `${iso![1]}-${iso![2]}-${iso![3]}`;
+  const parts = german || iso!;
+  const time = `${parts[4] || "00"}:${parts[5] || "00"}:${parts[6] || "00"}`;
+  const wall = `${day} ${time}`;
+  const utc = new Date(`${day}T${time}Z`);
+  if (!Number.isFinite(utc.getTime()) || utc.toISOString().slice(0, 19).replace("T", " ") !== wall)
+    throw failure();
+  return { day, wall, utc };
+}
+
+function nativeInstant(value: unknown, offsetValue: unknown, zone: unknown) {
+  const { wall, utc } = nativeWallDate(value);
+  if (
+    offsetValue === null ||
+    offsetValue === undefined ||
+    offsetValue === "" ||
+    typeof zone !== "string" ||
+    !zone
+  )
+    throw failure();
+  const offset = Number(offsetValue);
+  if (!Number.isInteger(offset) || Math.abs(offset) > 50400) throw failure();
+  const date = new Date(utc.getTime() - offset * 1000);
+  try {
+    const rendered = date.toLocaleString("sv-SE", {
+      timeZone: zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    if (rendered !== wall) throw failure();
+  } catch {
+    throw failure();
+  }
+  return date.toISOString();
+}
+
 export async function readBitrixCalendar(
   key: string,
   from: string,
   to: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<EventWindow[]> {
-  if (!key || normalizeBitrixRestWebhook(key))
-    throw new Error(
-      "Für den Kalenderabgleich wird der persönliche VibeCode-Zugang mit Kalenderrecht benötigt.",
-    );
-  const events: CalendarEvent[] = [];
-  const seen = new Set<string>();
-  for (let page = 0; page < 10; page++) {
-    const response = await fetchImpl(`${vibeApiBase()}/calendar-events/search`, {
-      method: "POST",
-      headers: { "X-Api-Key": key, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filter: { type: "user", ownerId: 1, section: 2, from, to },
-        autoWindow: false,
-        withTotal: false,
-        limit: 500,
-        offset: events.length,
-      }),
-      signal: AbortSignal.timeout(15_000),
-    }).catch(() => {
-      throw failure();
-    });
-    if (!response.ok) throw failure();
-    const result = await response.json().catch(() => {
-      throw failure();
-    });
+  const webhook = normalizeBitrixRestWebhook(key);
+  if (!webhook) throw failure();
+  const day = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+  const rows = await restCall(
+    webhook,
+    "calendar.event.get",
+    {
+      type: "user",
+      ownerId: 1,
+      section: [2],
+      from: day(from),
+      to: day(to),
+    },
+    fetchImpl,
+  ).catch(() => {
+    throw failure();
+  });
+  if (!Array.isArray(rows)) throw failure();
+  const events: CalendarEvent[] = rows.map((row: Record<string, unknown>) => {
+    if (!row || typeof row !== "object") throw failure();
+    const sectionId = Number(row.SECTION_ID ?? row.SECT_ID);
+    const id = Number(row.ID);
+    const skipTime = row.DT_SKIP_TIME === "Y";
+    const ignored = row.DELETED === "Y" || row.ACCESSIBILITY === "free" || sectionId !== 2;
+    // Never advertise a free slot from an unexpanded recurrence rule.
     if (
-      result.success !== true ||
-      !Array.isArray(result.data) ||
-      typeof result.meta?.hasMore !== "boolean" ||
-      result.meta.truncated === true ||
-      result.meta.pageErrorSample != null ||
-      (result.meta.windowErrors ?? 0) !== 0
+      !ignored &&
+      row.RRULE &&
+      typeof row.RRULE === "object" &&
+      "FREQ" in row.RRULE &&
+      !row.RECURRENCE_ID
     )
       throw failure();
-    for (const event of result.data as CalendarEvent[]) {
-      const identity = `${event.id}:${event.occurrenceIndex ?? 0}:${event.from}`;
-      if (seen.has(identity)) throw failure();
-      seen.add(identity);
-      events.push(event);
-    }
-    if (!result.meta.hasMore) {
-      return eventWindows(events);
-    }
-    if (!result.data.length) throw failure();
-  }
-  throw failure();
+    // Live portal 25 Sep 2026: DATE_FROM=11:00 Europe/Berlin, offset=7200,
+    // but DATE_FROM_TS_UTC resolves to 06:00Z. Use the actual wall time and
+    // verify its explicit offset against the named timezone instead.
+    const start = ignored
+      ? ""
+      : skipTime
+        ? nativeWallDate(row.DATE_FROM).day
+        : nativeInstant(row.DATE_FROM, row.TZ_OFFSET_FROM, row.TZ_FROM);
+    const end = ignored || skipTime ? "" : nativeInstant(row.DATE_TO, row.TZ_OFFSET_TO, row.TZ_TO);
+    return {
+      id,
+      sectionId,
+      deleted: row.DELETED === "Y",
+      accessibility: String(row.ACCESSIBILITY || "busy"),
+      from: start,
+      to: end,
+      skipTime,
+      durationSeconds: skipTime ? Number(row.DT_LENGTH) : undefined,
+    };
+  });
+  return eventWindows(events);
 }
 
 const cache = new Map<string, { until: number; promise: Promise<EventWindow[]> }>();
@@ -177,10 +233,15 @@ export async function bitrixBusyWindows(
   sql: Sql,
   from: string,
   to: string,
-  options: { fresh?: boolean; force?: boolean; fetchImpl?: typeof fetch } = {},
+  options: {
+    fresh?: boolean;
+    force?: boolean;
+    nativeOnly?: boolean;
+    fetchImpl?: typeof fetch;
+  } = {},
 ): Promise<BusyWindow[]> {
   if (!options.force && !(await bitrixCalendarEnabled(sql))) return [];
-  const key = await readVibeApiKey(sql);
+  const key = await readBitrixWebhook(sql);
   const cacheKey = createHash("sha256").update(`${key}:${from}:${to}`).digest("hex");
   let entry = options.fresh ? undefined : cache.get(cacheKey);
   if (!entry || entry.until <= Date.now()) {
@@ -192,6 +253,8 @@ export async function bitrixBusyWindows(
     }
   }
   const events = await entry.promise;
+  if (options.nativeOnly)
+    return events.map(({ start, end, resourceId }) => ({ start, end, resourceId }));
   const exported = await sql<{
     bitrix_event_id: number;
     work_start_at: Date | string;

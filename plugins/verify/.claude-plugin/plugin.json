@@ -1,0 +1,10 @@
+{
+  "name": "verify",
+  "version": "0.1.0",
+  "description": "Runs the glanz-buchung-meister CI gates locally (lint, typecheck, tests, build, DB checks) and reports a compact pass/fail summary.",
+  "author": {
+    "name": "White-Gloss"
+  },
+  "repository": "https://github.com/White-Gloss/glanz-buchung-meister",
+  "keywords": ["ci", "verification", "typecheck", "tests", "build"]
+}
