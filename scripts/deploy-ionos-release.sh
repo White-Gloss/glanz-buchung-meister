@@ -11,6 +11,7 @@ readonly CI_USER="white-gloss-ci"
 readonly INCOMING_DIR="/home/white-gloss-ci/incoming"
 readonly STAGING_DIR="/var/lib/white-gloss-deploy"
 readonly HEALTHCHECK_URL="http://127.0.0.1:3000/"
+readonly DEPLOY_LOCK="/run/white-gloss-deploy.lock"
 # This helper is installed before migration 0007. Its minimum contract applies
 # even during the first cutover, when the currently linked release is older.
 readonly BOOKING_CONTRACT="white-gloss-booking-workflow=1"
@@ -66,6 +67,16 @@ current_release_id() {
   [[ "$current_path" == "$RELEASES_DIR/"* ]] ||
     die "current symlink leaves the release directory"
   basename "$current_path"
+}
+
+# Checked deployments/rollbacks compare inside the shared server lock, so a
+# delayed client cannot replace a newer release after its smoke check fails.
+assert_expected_release() {
+  local expected="${1:-}"
+  [[ -n "$expected" ]] || return 0
+  validate_release_id "$expected"
+  [[ "$(current_release_id)" == "$expected" ]] ||
+    die "current release changed; refusing to overwrite a newer deployment"
 }
 
 restart_and_wait() {
@@ -140,6 +151,14 @@ validate_archive_members() {
   done < <(tar --list --verbose --gzip --file "$archive_path")
 }
 
+assert_archive_digest() {
+  local expected="${2:-}"
+  [[ -n "$expected" ]] || return 0
+  [[ "$expected" =~ ^[0-9a-f]{64}$ ]] || die "invalid archive checksum"
+  [[ "$(sha256sum "$1" | cut -d ' ' -f 1)" == "$expected" ]] ||
+    die "staged archive checksum differs from the locally verified build"
+}
+
 extract_release() {
   local release_id archive_path target_release incomplete_release archive_owner
   local archive_mode staged_archive
@@ -160,6 +179,7 @@ extract_release() {
   install -d -o root -g root -m 700 "$STAGING_DIR"
   staged_archive="$STAGING_DIR/$release_id.$$.tgz"
   install -o root -g root -m 600 "$archive_path" "$staged_archive"
+  assert_archive_digest "$staged_archive" "${3:-}"
   validate_archive_members "$staged_archive"
 
   if [[ -e "$target_release" ]]; then
@@ -193,7 +213,13 @@ activate_release() {
   release_id="$1"
   archive_path="$2"
   validate_release_id "$release_id"
-  extract_release "$release_id" "$archive_path"
+  assert_expected_release "${3:-}"
+  if [[ -n "${3:-}" ]]; then
+    [[ ! -e "$(release_path "$release_id")" && ! -L "$(release_path "$release_id")" ]] ||
+      die "checked release already exists; use explicit rollback or a new commit, never silently reuse old build bytes"
+    [[ "${4:-}" =~ ^[0-9a-f]{64}$ ]] || die "checked activation requires the verified archive checksum"
+  fi
+  extract_release "$release_id" "$archive_path" "${4:-}"
   switch_release "$release_id"
 }
 
@@ -201,6 +227,7 @@ rollback_release() {
   local release_id
   release_id="$1"
   validate_release_id "$release_id"
+  assert_expected_release "${2:-}"
   # Invalid recovery targets must never mutate an otherwise healthy service.
   if ! release_is_compatible "$release_id"; then
     die "incompatible rollback refused; current release and service unchanged; deploy a compatible release"
@@ -210,15 +237,18 @@ rollback_release() {
 
 main() {
   require_root
+  # Shared with the paired Bitrix code/environment cutover. /run is root-owned.
+  exec 9>"$DEPLOY_LOCK"
+  flock -w 120 9 || die "another deployment holds the server lock"
   validate_server_contract
   case "${1:-}" in
     activate)
-      [[ "$#" -eq 3 ]] || die "activate expects release id and archive path"
-      activate_release "$2" "$3"
+      [[ "$#" -eq 3 || "$#" -eq 5 ]] || die "activate expects release id, archive path and optional expected current id plus archive checksum"
+      activate_release "$2" "$3" "${4:-}" "${5:-}"
       ;;
     rollback)
-      [[ "$#" -eq 2 ]] || die "rollback expects a release id"
-      rollback_release "$2"
+      [[ "$#" -eq 2 || "$#" -eq 3 ]] || die "rollback expects a release id and optional expected current id"
+      rollback_release "$2" "${3:-}"
       ;;
     *)
       die "expected activate or rollback"

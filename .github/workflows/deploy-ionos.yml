@@ -441,6 +441,7 @@ jobs:
         run: scp release.tgz "ionos-production:${REMOTE_ARCHIVE}"
 
       - name: Übertragung und privilegierten Helfer verifizieren
+        id: server_contract
         if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
         shell: bash
         run: |
@@ -474,15 +475,28 @@ jobs:
             exit 1
           }
 
+          expected_release="$(
+            ssh ionos-production "basename \"\$(readlink -f /srv/white-gloss-current)\""
+          )"
+          [[ "$expected_release" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Der aktive Serverstand hat keine gültige Release-ID; keine automatische Aktivierung." >&2
+            exit 1
+          }
+          echo "expected_release=$expected_release" >> "$GITHUB_OUTPUT"
+          echo "archive_sha=$local_archive_sha" >> "$GITHUB_OUTPUT"
+
       - name: Release atomar aktivieren
         id: activate
         if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
         shell: bash
+        env:
+          EXPECTED_CURRENT_RELEASE: ${{ steps.server_contract.outputs.expected_release }}
+          VERIFIED_ARCHIVE_SHA: ${{ steps.server_contract.outputs.archive_sha }}
         run: |
           set -Eeuo pipefail
           previous_release="$(
             ssh ionos-production \
-              "sudo -n /usr/local/sbin/white-gloss-deploy activate ${RELEASE_ID} ${REMOTE_ARCHIVE}"
+              "sudo -n /usr/local/sbin/white-gloss-deploy activate ${RELEASE_ID} ${REMOTE_ARCHIVE} ${EXPECTED_CURRENT_RELEASE} ${VERIFIED_ARCHIVE_SHA}"
           )"
           if [[ -n "$previous_release" && ! "$previous_release" =~ ^[0-9a-f]{40}$ ]]; then
             echo "Der Server lieferte eine ungültige vorherige Release-ID" >&2
@@ -505,7 +519,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           ssh ionos-production \
-            "sudo -n /usr/local/sbin/white-gloss-deploy rollback ${{ steps.activate.outputs.previous_release }}"
+            "sudo -n /usr/local/sbin/white-gloss-deploy rollback ${{ steps.activate.outputs.previous_release }} ${RELEASE_ID}"
 
           SMOKE_BASE_URL=https://white-gloss.de \
             SMOKE_TIMEOUT_MS=15000 \

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -64,10 +65,9 @@ async function shell(directory, body, previousId = OLD_ID) {
   // Linux checkout uses LF. Normalize only the isolated copy on Windows.
   await writeFile(
     helper,
-    (await readFile(new URL("./deploy-ionos-release.sh", import.meta.url), "utf8")).replace(
-      /\r\n/g,
-      "\n",
-    ),
+    (await readFile(new URL("./deploy-ionos-release.sh", import.meta.url), "utf8"))
+      .replace(/\r\n/g, "\n")
+      .replace('readonly DEPLOY_LOCK="/run/white-gloss-deploy.lock"', 'readonly DEPLOY_LOCK="$TEST_ROOT/deploy.lock"'),
   );
   const syntax = spawnSync(bash, ["-n", helper], { encoding: "utf8" });
   assert.equal(syntax.status, 0, syntax.stderr);
@@ -108,6 +108,86 @@ test("contract writer requires a completed server entry and the new migration ma
       await readFile(join(directory, "booking-workflow.contract"), "utf8"),
       BOOKING_CONTRACT,
     );
+  }));
+
+test("checked activation refuses a changed current release before extraction or switching", shellOptions, async () =>
+  fixture(async (directory) => {
+    const result = await shell(directory, `
+extract_release() { echo EXTRACT; }
+switch_release() { echo SWITCH; }
+activate_release "$NEW_ID" unused "$NEW_ID" "${"0".repeat(64)}"
+`);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /current release changed/);
+    assert.doesNotMatch(result.stdout, /EXTRACT|SWITCH|LINK|SERVICE/);
+  }));
+
+test("checked rollback never overwrites a newer deployment", shellOptions, async () =>
+  fixture(async (directory) => {
+    await release(directory, OLD_ID);
+    const result = await shell(directory, 'restart_and_wait() { return 0; }; rollback_release "$OLD_ID" "$NEW_ID"');
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /current release changed/);
+    assert.doesNotMatch(result.stdout, /LINK|SERVICE/);
+  }));
+
+test("checked activation forwards the verified checksum and refuses previously staged release bytes", shellOptions, async () =>
+  fixture(async (directory) => {
+    const digest = "c".repeat(64);
+    const body = `
+extract_release() { printf 'EXTRACT %s\\n' "$3"; }
+switch_release() { echo SWITCH; }
+activate_release "$NEW_ID" unused "$OLD_ID" "${digest}"
+`;
+    const accepted = await shell(directory, body);
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.match(accepted.stdout, new RegExp(`EXTRACT ${digest}`));
+    assert.match(accepted.stdout, /SWITCH/);
+    await release(directory, NEW_ID);
+    const refused = await shell(directory, body);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /checked release already exists/);
+    assert.doesNotMatch(refused.stdout, /EXTRACT|SWITCH/);
+  }));
+
+test("checked activation rejects a missing checksum before copying or changing the release", shellOptions, async () =>
+  fixture(async (directory) => {
+    const result = await shell(directory, `
+extract_release() { echo EXTRACT; }
+switch_release() { echo SWITCH; }
+activate_release "$NEW_ID" unused "$OLD_ID"
+`);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /requires the verified archive checksum/);
+    assert.doesNotMatch(result.stdout, /EXTRACT|SWITCH/);
+  }));
+
+test("archive verification rejects changed or malformed bytes and accepts the reviewed bytes", shellOptions, async () =>
+  fixture(async (directory) => {
+    const bytes = "isolated release archive bytes";
+    await writeFile(join(directory, "archive.tgz"), bytes);
+    const digest = createHash("sha256").update(bytes).digest("hex");
+    const accepted = await shell(directory, `assert_archive_digest "$TEST_ROOT/archive.tgz" "${digest}"`);
+    assert.equal(accepted.status, 0, accepted.stderr);
+    for (const invalid of ["0".repeat(64), "invalid"]) {
+      const refused = await shell(directory, `assert_archive_digest "$TEST_ROOT/archive.tgz" "${invalid}"`);
+      assert.equal(refused.status, 1);
+      assert.match(refused.stderr, /checksum/);
+    }
+  }));
+
+test("a held deployment lock prevents server checks and activation", shellOptions, async () =>
+  fixture(async (directory) => {
+    const result = await shell(directory, `
+require_root() { :; }
+flock() { return 1; }
+validate_server_contract() { echo SERVER_CHECK; }
+activate_release() { echo ACTIVATE; }
+main activate "$NEW_ID" unused
+`);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /another deployment holds the server lock/);
+    assert.doesNotMatch(result.stdout, /SERVER_CHECK|ACTIVATE|LINK|SERVICE/);
   }));
 
 test("production build writes the contract only after successful build and postprocessing", async () => {
