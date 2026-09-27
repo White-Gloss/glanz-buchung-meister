@@ -19,6 +19,7 @@ import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
 import { serviceAreaLink } from "@/lib/seo-policy";
 import { citySeoCopy } from "@/lib/city-copy";
+import { serviceBookingSelection } from "@/lib/booking-selection";
 
 const steps = [
   {
@@ -38,11 +39,13 @@ const steps = [
   },
 ];
 
-export function CityLanding({ city }: { city: City }) {
+export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: string }) {
   const jsonLd = cityJsonLd(city);
   const wa = whatsappForCity(city.name);
   const pickup = pickupPriceText(city.km);
   const copy = citySeoCopy(city);
+  const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
+  const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
 
   useEffect(() => {
     document.body.dataset.cityWa = "1";
@@ -83,7 +86,12 @@ export function CityLanding({ city }: { city: City }) {
             unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
+            <Link
+              to={request.leistung ? "/fahrzeug-zustand" : "/"}
+              hash="buchung"
+              search={request}
+              className={ctaPrimary}
+            >
               Termin anfragen
             </Link>
             <a href={wa} className={ctaGhost} target="_blank" rel="noopener noreferrer">
@@ -91,6 +99,11 @@ export function CityLanding({ city }: { city: City }) {
               Fotos per WhatsApp
             </a>
           </div>
+          {selectedService ? (
+            <p className="mt-4 text-sm text-muted">
+              Ihre Auswahl: {selectedService.nav}. Die Leistung ist für Ihre Anfrage vorgemerkt.
+            </p>
+          ) : null}
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-[0.14em] text-subtle">
             <li>Preise inkl. MwSt.</li>
             <li>Hol- und Bringservice {pickup}</li>
@@ -253,7 +266,12 @@ export function CityLanding({ city }: { city: City }) {
               ))}
           </ul>
           <div className="mt-12 flex flex-wrap gap-3">
-            <Link to="/" hash="buchung" search={{ ort: city.slug }} className={ctaPrimary}>
+            <Link
+              to={request.leistung ? "/fahrzeug-zustand" : "/"}
+              hash="buchung"
+              search={request}
+              className={ctaPrimary}
+            >
               Termin anfragen
             </Link>
             <Link to="/abholservice" className={ctaGhost}>

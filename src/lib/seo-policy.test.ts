@@ -86,6 +86,10 @@ test("sitemap, robots and links agree and cannot override noindex", () => {
   assert.equal(details.search?.ort, "nagold");
   assert.equal(serviceBookingSelection("keramikversiegelung", details.search?.ort).ort, "nagold");
   assert.equal(pickupAreaLink("keramikversiegelung", "nagold").to, "/abholservice/$city");
+  assert.equal(
+    pickupAreaLink("keramikversiegelung", "nagold").search?.leistung,
+    "keramikversiegelung",
+  );
   for (const loc of [
     "https://other.example/",
     "https://white-gloss.de/preise?test=1",

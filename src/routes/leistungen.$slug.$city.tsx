@@ -186,6 +186,7 @@ function ServiceCityPage() {
               <Link
                 to="/leistungen/$slug"
                 params={{ slug: s.slug }}
+                search={{ ort: city.slug }}
                 className="hover:text-fg"
               >
                 {s.nav}

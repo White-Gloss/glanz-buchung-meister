@@ -95,6 +95,28 @@ test("city context survives consolidated details and both booking destinations",
   assert.doesNotMatch(html, /href="[^"]*ort=unknown-city/);
 });
 
+test("selected service survives the indexable pickup hub before booking", async () => {
+  for (const [slug, destination, key, value] of [
+    ["keramikversiegelung", "/", "paket", "keramik"],
+    ["lederreparatur", "/fahrzeug-zustand", "leistung", "lederreparatur"],
+  ]) {
+    const { html: service } = await get(`/leistungen/${slug}`);
+    assert.ok(service.includes(`/abholservice/nagold?leistung=${slug}`));
+    const { response, html } = await get(`/abholservice/nagold?leistung=${slug}`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(canonicalLinks(html), ["https://white-gloss.de/abholservice/nagold"]);
+    const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] || "";
+    const cta = [...main.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].find(
+      ([, , text]) => text.includes("Termin anfragen"),
+    );
+    assert.ok(cta, slug);
+    const target = new URL(cta[1].replaceAll("&amp;", "&"), base);
+    assert.equal(target.pathname, destination);
+    assert.equal(target.searchParams.get("ort"), "nagold");
+    assert.equal(target.searchParams.get(key), value);
+  }
+});
+
 test("public route metadata survives the PWA injector", async () => {
   const { html } = await get("/preise");
   const title = html.match(/<title>([^<]+)<\/title>/)?.[1];
