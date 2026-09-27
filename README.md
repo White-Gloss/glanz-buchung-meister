@@ -2,9 +2,26 @@
 
 Website und Buchungssystem für White Gloss Detailing, gebaut mit TanStack Start,
 React, TypeScript, Tailwind CSS und Nitro. Die Produktionsarchitektur ist eine
-Node-/SSR-Anwendung; der vollständige Hostingbetrieb wird auf IONOS umgestellt.
+Node-/SSR-Anwendung auf IONOS.
 
-## Lokal installieren
+## Verbindlich: kein lokales Hosting
+
+Der Betreiber untersagt den Start der Website auf lokalen Rechnern, auch für
+Vorschauen oder Tests. Entwicklungs-, Preview- und QA-Startbefehle brechen ab.
+Vite blockiert auch direkte Dev-/Preview-Aufrufe. Der erzeugte Node-Build prüft
+vor dem Laden der Anwendung seinen Ausführungskontext: nur das aktive IONOS-
+Release oder der vorhandene isolierte Linux-GitHub-CI-Job darf starten.
+Es gibt keinen lokalen Freigabeschalter. Auch `CI=true` oder
+`NODE_ENV=production` allein heben die Sperre nicht auf.
+
+Dateibearbeitung, Installation, Builds, Lint und Typprüfung bleiben lokal
+erlaubt. Keine Docker-, Tunnel- oder statischen Ersatzserver verwenden.
+Die Projektsperre schützt die vorgesehenen Startwege; sie ist keine
+Betriebssystem-Sicherheitsgrenze gegen absichtlich veränderten Code oder
+beliebige andere Serverprogramme. Eine Aufhebung braucht eine neue
+ausdrückliche Betreiberanweisung.
+
+## Lokal bearbeiten, ohne Webserver
 
 Benötigt werden Git, npm und Node.js `24` (wie in CI).
 
@@ -12,10 +29,12 @@ Benötigt werden Git, npm und Node.js `24` (wie in CI).
 git clone https://github.com/White-Gloss/glanz-buchung-meister.git
 cd glanz-buchung-meister
 npm ci
-npm run dev
+npm run typecheck
+npm run build
 ```
 
-Die lokale Website ist anschließend unter `http://localhost:8080` erreichbar.
+Diese Schritte erstellen nur Dateien. Browserprüfungen verwenden
+`https://white-gloss.de` und dürfen keine echten Kundenanfragen auslösen.
 
 ## Umgebungsvariablen
 
@@ -33,8 +52,8 @@ Umgebungsvariablen:
 
 Der Release-Check prüft diese Betriebsfunktionen vor der Freigabe. Ohne
 vollständige Konfiguration oder mit unpassendem Datenbankschema antwortet ein
-Produktionsbuild mit 503. Eine ausdrücklich lokale, an Loopback gebundene
-QA-Vorschau wird über `npm run test:release` isoliert eingerichtet.
+Produktionsbuild mit 503. Die isolierten Flowtests laufen ausschließlich im
+vorhandenen Linux-GitHub-CI-Job, nicht auf Entwicklerrechnern.
 
 Für die Anzeigenmessung (jeweils optional — ohne die Variablen bleibt die
 betreffende Anbindung vollständig inaktiv):
@@ -48,8 +67,9 @@ Google-Tag und Meta-Pixel laden ausschließlich nach erteilter
 Cookie-Einwilligung. Ohne Zustimmung wird weder ein Skript geladen noch ein
 Ereignis gesendet — auch serverseitig nicht.
 
-Zugangsdaten gehören in die lokale `.env.local` beziehungsweise in die
-geschützten Umgebungsvariablen des Produktionshostings. Geheimnisse dürfen nicht
+Zugangsdaten gehören in die geschützten Umgebungsvariablen des
+Produktionshostings. Für lokale Builds sind keine Produktionsgeheimnisse nötig.
+Geheimnisse dürfen nicht
 in Git veröffentlicht werden. `META_CAPI_ACCESS_TOKEN` darf nicht mit
 `VITE_`-Präfix gesetzt werden, sonst landet das Token im öffentlichen
 Browser-Bundle.
@@ -61,7 +81,6 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
-npm run test:release
 ```
 
 Der Build greift auf keine Datenbank zu. Vor einem freigegebenen Produktionsstart
@@ -69,11 +88,9 @@ muss das tatsächliche Datenbankziel bestätigt, mit `npm run db:migrate` aktual
 und mit `npm run check:release` lesend geprüft sein. Beide Befehle laufen im
 geschützten Serverkontext; Secretwerte niemals in Befehlszeilen oder Chat kopieren.
 
-Der Produktionsstart erfolgt aus dem erzeugten Build:
-
-```sh
-node .output/server/index.mjs
-```
+Den Produktionsstart übernimmt ausschließlich die vorhandene systemd-Unit auf
+IONOS aus dem aktiven Release. Der direkte lokale Aufruf des Node-Builds ist
+gesperrt. `npm run test:release` bleibt dem Linux-GitHub-CI-Job vorbehalten.
 
 Zusätzliche Produktions- und SEO-Prüfungen:
 

@@ -18,6 +18,8 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+import { blockLocalHosting } from "./scripts/hosting-policy.mjs";
+import { guardProductionHosting } from "./scripts/guard-production-hosting.mjs";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -172,7 +174,9 @@ function authPopupPlugin(): Plugin {
 }
 
 // Replit webview workflows serve the frontend on `0.0.0.0:5000`.
-export default defineConfig(({ command, isPreview }) => ({
+export default defineConfig(({ command, isPreview }) => {
+  if (command === "serve" || isPreview) blockLocalHosting();
+  return {
   server: {
     host: "0.0.0.0",
     port: 5000,
@@ -216,6 +220,11 @@ export default defineConfig(({ command, isPreview }) => ({
             preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : "node-server"),
             serverDir: "./server",
             compressPublicAssets: true,
+            hooks: {
+              compiled: async (instance) => {
+                await guardProductionHosting(instance.options.output.serverDir);
+              },
+            },
             routeRules: {
               "/media/**": {
                 headers: { "cache-control": STATIC_MEDIA_CACHE_CONTROL },
@@ -262,4 +271,5 @@ export default defineConfig(({ command, isPreview }) => ({
       : []),
     viteReact(),
   ],
-}));
+  };
+});

@@ -24,6 +24,7 @@ import { readFileSync, realpathSync } from "node:fs";
 import { constants as osConstants } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { blockLocalHosting } from "./hosting-policy.mjs";
 
 export const APP_ENV_REL_PATH = ".grok/app-env.json";
 
@@ -109,6 +110,9 @@ function main(argv) {
   if (!command) {
     console.error("usage: node scripts/with-app-env.mjs <command> [args…]");
     process.exit(2);
+  }
+  if (/(?:^|[\\/])vite(?:\.cmd|\.exe)?$/.test(command) && args[0] !== "build") {
+    blockLocalHosting();
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
   const child = spawn(command, args, {

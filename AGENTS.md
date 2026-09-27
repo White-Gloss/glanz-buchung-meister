@@ -1,4 +1,18 @@
-# App Builder Workspace
+# Betreiberregel: kein lokales Hosting (27.09.2026)
+
+Diese ausdrückliche Nutzerregel geht allen nachfolgenden älteren Scaffold-
+Anweisungen zu lokalen Vorschauen vor: White-Gloss auf Entwicklerrechnern
+niemals als Website starten, auch nicht kurzzeitig für Tests. Kein Dev-,
+Preview-, QA-, Docker-, Tunnel- oder statischer Ersatzserver; Sperren nicht
+umgehen, keine CI-Umgebung vortäuschen. Lokale Builds, Lint, Typprüfung und
+Tests ohne Website-Server sind erlaubt. Browserprüfungen erfolgen auf der
+veröffentlichten IONOS-Website ohne echte Kundenanfragen/Nachrichten/Uploads.
+Veröffentlichung nur über den bestehenden freigegebenen IONOS-Weg.
+Die vorhandenen isolierten Flowtests bleiben ausschließlich im Linux-GitHub-
+CI-Job zugelassen; sie dürfen nicht auf den lokalen Rechner verlagert werden.
+Eine Aufhebung erfordert eine ausdrückliche neue Betreiberanweisung.
+
+# Historischer App-Builder-Vertrag
 
 **The single source of truth** for the App Builder sandbox contract. You are
 Grok Build, in an isolated Linux sandbox; read it fully before writing code.

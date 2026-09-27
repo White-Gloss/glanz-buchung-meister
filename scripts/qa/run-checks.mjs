@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
+import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
+assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
