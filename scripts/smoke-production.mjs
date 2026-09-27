@@ -38,7 +38,7 @@ const pageChecks = [
   { path: "/luxusfahrzeuge", markers: ["Luxusfahrzeuge", "80.000"] },
   { path: "/qualitaet", markers: ["Wie wir arbeiten"] },
   { path: "/fahrzeug-zustand", markers: ["Zustand prüfen"] },
-  { path: "/dellen-hagelschaden", markers: ["Dellenentfernung"] },
+  { path: "/dellen-hagelschaden", markers: ["Dellen und Hagelschäden prüfen lassen", "Foto-Begutachtung"] },
 ];
 
 const forbiddenSnippets = [
