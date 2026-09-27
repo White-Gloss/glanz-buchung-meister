@@ -230,7 +230,7 @@ html:not([data-wg-baseline]) [data-shell="public"] {
     max-width: 40ch;
   }
 
-  main > .film-chapter:first-child {
+  main > .film-chapter:first-of-type {
     padding-top: 5.75rem;
   }
 
@@ -302,7 +302,7 @@ html:not([data-wg-baseline]) [data-shell="public"] {
       height: 20rem;
     }
 
-    main > .film-chapter:first-child {
+    main > .film-chapter:first-of-type {
       padding-top: 4.75rem;
     }
 

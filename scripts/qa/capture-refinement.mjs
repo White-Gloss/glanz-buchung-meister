@@ -47,6 +47,13 @@ async function invariant() {
 }
 
 async function capture(name, state) {
+  if (state === "entwurf" && name !== "startseite") {
+    const clearance = await page.evaluate(() => ({
+      headerBottom: document.querySelector("header").getBoundingClientRect().bottom,
+      crumbsTop: document.querySelector('[aria-label="Brotkrumen"]').getBoundingClientRect().top,
+    }));
+    assert.ok(clearance.crumbsTop >= clearance.headerBottom, `${name}: header overlaps breadcrumbs ${JSON.stringify(clearance)}`);
+  }
   await page.screenshot({ path: resolve(out, `${name}-${device}-${state}.png`), fullPage: true });
   await page.screenshot({ path: resolve(out, `${name}-hero-${device}-${state}.png`) });
   const widths = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
