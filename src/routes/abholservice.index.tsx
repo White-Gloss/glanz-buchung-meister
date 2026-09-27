@@ -3,6 +3,7 @@ import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, pickupPriceText, pickupTierSummary, pickupKeramikNote, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
+import { citySeoCopy } from "@/lib/city-copy";
 
 export const Route = createFileRoute("/abholservice/")({
   component: AbholIndex,
@@ -25,10 +26,7 @@ function AbholIndex() {
         kicker="13 Städte"
         title="Hol- und Bringservice."
         lead="Sparen Sie sich die Fahrt zur Werkstatt: Wir stimmen Abholung und Rückgabe mit Ihnen ab und bereiten Ihr Fahrzeug in Horb am Neckar auf."
-        crumbs={[
-          { label: "Startseite", to: "/" },
-          { label: "Hol- und Bringservice" },
-        ]}
+        crumbs={[{ label: "Startseite", to: "/" }, { label: "Hol- und Bringservice" }]}
         actions={
           <Link to="/" hash="buchung" className={ctaPrimary}>
             Termin anfragen
@@ -38,9 +36,9 @@ function AbholIndex() {
       <section className="section mx-auto max-w-7xl px-4 sm:px-6">
         <h2 className="heading-2">Abholorte und Kosten</h2>
         <p className="mt-5 mb-8 max-w-2xl text-muted">
-          {pickupTierSummary()}. Alle Beträge {site.vatNote} {pickupKeramikNote()}.
-          Entfernungen und Fahrzeiten sind Richtwerte ab Horb. Den genauen Abholort,
-          Preis und die Übergabezeiten bestätigen wir persönlich.
+          {pickupTierSummary()}. Alle Beträge {site.vatNote} {pickupKeramikNote()}. Entfernungen und
+          Fahrzeiten sind Richtwerte ab Horb. Den genauen Abholort, Preis und die Übergabezeiten
+          bestätigen wir persönlich.
         </p>
         <ul className="divide-y divide-line border-y border-line">
           {cities.map((c) => (
@@ -48,11 +46,13 @@ function AbholIndex() {
               <Link
                 to="/abholservice/$city"
                 params={{ city: c.slug }}
-                aria-label={`${c.name}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
+                aria-label={`${citySeoCopy(c).linkLabel}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
                 className="flex min-h-16 items-center justify-between gap-4 py-4"
               >
                 <span>
-                  <span className="block font-display text-2xl tracking-tight">{c.name}</span>
+                  <span className="block font-display text-2xl tracking-tight">
+                    {citySeoCopy(c).linkLabel}
+                  </span>
                   <span className="mt-1 block text-sm text-muted">
                     ca. {c.km} km · ca. {c.minutes} Min.
                   </span>

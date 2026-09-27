@@ -1,5 +1,6 @@
 import { cities, services } from "../data/site.ts";
 import { articleNavigation } from "./article-navigation.ts";
+import { citySeoCopy } from "./city-copy.ts";
 
 export type SearchIntent = {
   cluster: string;
@@ -93,9 +94,9 @@ export const seoIntents: Record<string, SearchIntent> = {
     cities.map((c) => [
       `/abholservice/${c.slug}`,
       {
-        cluster: `autoaufbereitung abholung ${c.name.toLowerCase()}`,
+        cluster: citySeoCopy(c).cluster,
         intent: "local" as const,
-        purpose: `Abholung aus ${c.name}, Entfernung, Übergabe und Preisbedingungen; Werkstatt ausschließlich Horb`,
+        purpose: `Fahrzeugaufbereitung für ${c.name}: Leistungen, Preise, Abholung und Übergabe; Werkstatt ausschließlich Horb`,
       },
     ]),
   ),

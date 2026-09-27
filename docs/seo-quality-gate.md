@@ -67,10 +67,26 @@ GSC-Query/Seiten-Analyse: verschiedene Formulierungen können trotzdem denselben
 Intent haben. CMS-Neuveröffentlichungen zusätzlich redaktionell zuordnen.
 
 Homepage: Anbieter in Horb; Leistungsindex: Auswahl; einzelne Leistung: Umfang
-und Anfrage; Stadt-Hub: Abholung und Übergabe; Preise: Paketvergleich; Ratgeber:
+und Anfrage; Stadt-Hub: Fahrzeugaufbereitung + Stadt mit Abholung und Übergabe; Preise: Paketvergleich; Ratgeber:
 abgegrenzte Wissensfrage. Der Foto-Anfrageweg für Dellen wird bewusst von der
 Leistungsbeschreibung getrennt. Nichtindexierbare Matrixseiten sind keine
 seitenweiten Navigationsziele mehr. URLs und direkte Buchungswege bleiben nutzbar.
+
+Die zwölf auswärtigen Stadt-Hubs tragen „Fahrzeugaufbereitung + Stadt“ im Title
+und internen Linktext; H1, Beschreibung, Leistungsübersicht und echte Ablauf-/
+Preis-FAQs verbinden die Aufbereitung mit dem jeweiligen Abholgebiet. Beispiel:
+`/abholservice/nagold` ist das indexierbare Ziel für „Fahrzeugaufbereitung Nagold“.
+Der Horber Hub konzentriert sich auf Abholung; der allgemeine Horber Anbieter-
+Intent gehört der Homepage. Ein URL-Pfad mit „abholservice“ verhindert diese
+inhaltliche Ausrichtung nicht. Keine zusätzliche gleichgerichtete Matrix-URL
+freigeben, ohne den bestehenden Hub-Intent dabei zu berücksichtigen.
+
+Das echte Google-Unternehmensprofil wurde am 27.09.2026 geprüft: Der öffentliche
+Beitrag zum Hol-/Bringservice bestätigt die Abholgebiete. Die neun sichtbaren
+Bewertungen enthalten keinen konkreten Bezug zu einer auswärtigen Stadt und
+Leistung. Allgemeines Kundenlob wird keinem Abholort zugeschrieben. Das ist
+kein Grund, die Stadt-Hubs auszuschließen, aber kein vollständiger Nachweis für
+zusätzliche Matrixseiten nach dem oben vereinbarten Qualitäts-Gate.
 
 ## Prüfen und veröffentlichen
 

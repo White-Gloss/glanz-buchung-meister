@@ -5,7 +5,8 @@ import { resolve } from "node:path";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 import { publicSeo, filterIndexableSitemap } from "../../src/lib/seo-policy.ts";
 import { seoIntents } from "../../src/lib/seo-intents.ts";
-import { site } from "../../src/data/site.ts";
+import { cities, site } from "../../src/data/site.ts";
+import { citySeoCopy } from "../../src/lib/city-copy.ts";
 import { qaBase } from "./ports.mjs";
 
 const live = process.argv.includes("--live");
@@ -122,6 +123,26 @@ await Promise.all(
           `${path}: one description required`,
         );
         check(h1.length === 1 && !!h1[0], `${path}: one H1 required`);
+        const city = cities.find((item) => path === `/abholservice/${item.slug}`);
+        if (city) {
+          const copy = citySeoCopy(city);
+          check(titles[0] === copy.title, `${path}: local vehicle-detailing title missing`);
+          check(h1[0] === copy.heading, `${path}: local vehicle-detailing H1 missing`);
+          check(meta("description")[0] === copy.description, `${path}: city description mismatch`);
+        }
+        if (path === "/abholservice") {
+          const anchors = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+          for (const area of cities) {
+            check(
+              anchors.some(
+                (match) =>
+                  attr(match[1], "href") === `/abholservice/${area.slug}` &&
+                  plain(match[2]).includes(citySeoCopy(area).linkLabel),
+              ),
+              `${path}: missing vehicle-detailing keyword link for ${area.name}`,
+            );
+          }
+        }
         check(
           canonical.length === 1 && canonical[0] === site.origin + path,
           `${path}: self canonical required`,

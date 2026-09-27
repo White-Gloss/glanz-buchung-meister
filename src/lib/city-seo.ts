@@ -33,8 +33,8 @@ export function cityJsonLd(city: City) {
       {
         "@type": "Service",
         "@id": `${url}#service`,
-        name: `Hol- und Bringservice für Fahrzeugaufbereitung in ${city.name}`,
-        serviceType: "Fahrzeugabholung und -rückgabe zur Fahrzeugaufbereitung",
+        name: `Fahrzeugaufbereitung für ${city.name} mit Hol- und Bringservice`,
+        serviceType: "Fahrzeugaufbereitung mit Hol- und Bringservice",
         image: absUrl("/media/hero-1080.webp"),
         url,
         provider: {
