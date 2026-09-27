@@ -93,10 +93,12 @@ seitenweiten Navigationsziele mehr. URLs und direkte Buchungswege bleiben nutzba
 
 ## Messung und offene externe Nachweise
 
-GSC ist direkt im Eigentümerkonto erreichbar gewesen; ein Drittanbieter-Connector
-muss dafür nicht zusätzlich autorisiert werden. Den vollständigen Query-/Seiten-
-Export, Indexierungsreport und GSC-Query-Seiten-Paare gesondert sichern. Ein
-unvollständiger sichtbarer Tabellenausschnitt darf nicht als Export gelten.
+GSC ist direkt im Eigentümerkonto erreichbar; ein Drittanbieter-Connector
+muss dafür nicht zusätzlich autorisiert werden. Der vollständige verfügbare
+Query-/Seiten-Export, Nicht-Marken-Export, Indexierungsreport und die Liste der
+indexierten URLs wurden am 27.09.2026 lokal außerhalb des öffentlichen Repos
+gesichert. Query-Seiten-Paare bei der Einzelprüfung zusätzlich auswerten. Ein
+sichtbarer Tabellenausschnitt darf nicht als vollständiger Export gelten.
 Anonymisierte Suchanfragen verhindern eine vollständige Markenaufteilung.
 GSC liefert keine Buchungs-Conversions; hierfür bestehende, consent-konforme
 Analytics-Daten verwenden. Keine neuen Tracking-Systeme ohne gesonderten Auftrag.

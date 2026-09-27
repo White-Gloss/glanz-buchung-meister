@@ -36,6 +36,23 @@ try {
     await page.setViewportSize({ width, height: 844 });
     for (const path of paths) {
       await page.goto(qaBase + path, { waitUntil: "networkidle" });
+      // content-visibility:auto defers layout below the fold. Exercise the real
+      // scroll path before judging overflow; do not disable production styles.
+      for (
+        let y = 0;
+        y < (await page.evaluate(() => document.documentElement.scrollHeight));
+        y += 650
+      ) {
+        await page.evaluate(async (top) => {
+          window.scrollTo(0, top);
+          await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+        }, y);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        assert.ok(overflow <= 2, `${path} @${width}, scroll ${y}: horizontal overflow ${overflow}`);
+      }
+      await page.evaluate(() => window.scrollTo(0, 0));
       const state = await page.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
         scroll: document.documentElement.scrollWidth,
@@ -56,7 +73,7 @@ try {
       if (["/", "/abholservice/nagold", "/leistungen/keramikversiegelung/nagold"].includes(path)) {
         await page.screenshot({
           path: `.qa-output/mobile-${width}-${path.replace(/\W+/g, "-") || "home"}.png`,
-          fullPage: true,
+          fullPage: false,
         });
       }
       assert.equal(state.h1.length, 1, `${path} @${width}: one H1`);
