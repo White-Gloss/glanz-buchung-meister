@@ -1,13 +1,12 @@
 import type { Sql } from "./db.ts";
-import { vibeApiKey } from "./bitrix.ts";
+import { bitrixWebhook, normalizeBitrixRestWebhook } from "./bitrix.ts";
 
-const SHOP = "white-gloss";
-
-export async function readVibeApiKey(sql: Sql): Promise<string> {
-  const fromEnv = vibeApiKey();
+export async function readBitrixWebhook(sql: Sql): Promise<string> {
+  const fromEnv = bitrixWebhook();
   if (fromEnv) return fromEnv;
-  const [row] = await sql<{ vibe_api_key: string | null }>`
-    select vibe_api_key from shop_settings where shop_id=${SHOP}
-  `.catch(() => []);
-  return row?.vibe_api_key?.trim() || "";
+  // Keep the existing settings column; old proxy keys are deliberately rejected.
+  const [row] = await sql<{
+    vibe_api_key: string | null;
+  }>`select vibe_api_key from shop_settings where shop_id='white-gloss'`.catch(() => []);
+  return normalizeBitrixRestWebhook(row?.vibe_api_key || "") || "";
 }

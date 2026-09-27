@@ -11,6 +11,7 @@ import {
 
 test("missing or unsafe runtime settings are rejected without leaking their values", () => {
   const valid = {
+    BOOKING_OPERATIONS: "bitrix",
     DATABASE_URL: "postgres://user:private-password@localhost/app",
     BETTER_AUTH_SECRET: "a".repeat(32),
     SUPABASE_SERVICE_ROLE_KEY: "private-key",

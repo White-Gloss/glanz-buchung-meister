@@ -1,11 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
-import { site } from "../data/site.ts";
 import { createSignedPhotoUrl } from "./booking-photos.ts";
-import { createOrderComment, type RoappRequest } from "./roapp.ts";
 
 type Photo = { id: number; storage_path: string; original_name: string; created_at: string | Date };
-const LINK_SECONDS = 90 * 24 * 60 * 60;
 
 function linkSecret(): string {
   const secret = process.env.ROAPP_PHOTO_LINK_SECRET || process.env.BETTER_AUTH_SECRET || "";
@@ -64,25 +61,4 @@ export async function serveRoappPhoto(
     status: 302,
     headers: { ...headers, location: await sign(photo.storage_path) },
   });
-}
-
-export async function syncRoappPhotos(
-  sql: Sql,
-  bookingId: number,
-  orderId: number,
-  request: RoappRequest,
-) {
-  const photos =
-    await sql<Photo>`select id,storage_path,original_name,created_at from booking_photos
-    where shop_id='white-gloss' and booking_id=${bookingId} and upload_state='ready' order by id`;
-  for (const photo of photos) {
-    const expires = Math.floor(new Date(photo.created_at).getTime() / 1000) + LINK_SECONDS;
-    if (expires * 1000 <= Date.now()) continue;
-    const token = photoToken(photo, expires, linkSecret());
-    await createOrderComment(
-      request,
-      orderId,
-      `Zustandsaufnahme zur Anfrage WG-${bookingId}: ${photo.original_name}\n${site.origin}/api/ro-photo?token=${token}\nVertraulicher Fotolink, 90 Tage ab Upload gültig. Fixpreis erst nach Begutachtung und manueller Freigabe.`,
-    );
-  }
 }

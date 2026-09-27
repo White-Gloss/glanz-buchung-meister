@@ -4,11 +4,10 @@ import { getSql } from "./db";
 import { verifyBookingStatusToken, bookingStatusUrl } from "./booking-status-token";
 import { getBookingUploadCookie } from "./booking-upload-cookie.server";
 import { verifyUploadCapability } from "./booking-upload-capability";
-import { roappOnlyEnabled } from "./booking-backend";
 import { setResponseHeader } from "@tanstack/react-start/server";
-export const roappOperationsEnabled = createServerFn({ method: "GET" }).handler(() =>
-  roappOnlyEnabled(),
-);
+import { readBitrixWebhook } from "./bitrix-credentials.server";
+import { createBitrixClient } from "./bitrix";
+import { nativeCustomerStatus } from "./bitrix-customer-status";
 export const getBookingStatus = createServerFn({ method: "GET" })
   .validator((input: unknown) =>
     z
@@ -17,7 +16,6 @@ export const getBookingStatus = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
-    if (!roappOnlyEnabled()) return null;
     const sql = await getSql();
     const [booking] = await sql<{
       id: number;
@@ -37,32 +35,32 @@ export const getBookingStatus = createServerFn({ method: "GET" })
           ))
     )
       return null;
-    const [state] = await sql<{
-      status_name: string;
-      amount_cents: number;
-      inquiry_cents: number;
-      fixed_price: boolean;
-      public_url: string | null;
-      scheduled_for: string | null;
-      updated_at: string;
-    }>`select status_name,amount_cents,inquiry_cents,fixed_price,public_url,scheduled_for,updated_at from roapp_order_state where booking_id=${data.id}`;
-    const history = await sql<{
-      id: number;
-      status_name: string;
-      amount_cents: number;
-      fixed_price: boolean;
-      created_at: string;
-    }>`select id,status_name,amount_cents,fixed_price,created_at from roapp_order_history where booking_id=${data.id} order by id desc limit 30`;
+    const [state] = await sql<{ bitrix_deal_id: number | null }>`select bitrix_deal_id from bookings
+      where id=${data.id} and shop_id='white-gloss'`;
+    const current = state?.bitrix_deal_id
+      ? await Promise.resolve()
+          .then(async () =>
+            nativeCustomerStatus(
+              createBitrixClient(await readBitrixWebhook(sql)),
+              data.id,
+              state.bitrix_deal_id!,
+            ),
+          )
+          .catch(() => ({
+            status: "Aktueller Auftragsstand vorübergehend nicht verfügbar",
+            amount: booking.total_cents,
+            fixed: false,
+            scheduledFor: null,
+          }))
+      : {
+          status: "Anfrage eingegangen",
+          amount: booking.total_cents,
+          fixed: false,
+          scheduledFor: null,
+        };
     return {
       id: booking.id,
-      status: state?.status_name || "Anfrage eingegangen – Preise prüfen",
-      amount: state?.fixed_price
-        ? state.amount_cents
-        : (state?.inquiry_cents ?? booking.total_cents),
-      fixed: state?.fixed_price || false,
-      approvalUrl: state?.fixed_price ? state.public_url : null,
-      scheduledFor: state?.scheduled_for || null,
-      history,
+      ...current,
       statusUrl: bookingStatusUrl(data.id),
     };
   });

@@ -20,7 +20,7 @@ concurrency:
 jobs:
   smoke:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 5
 
     steps:

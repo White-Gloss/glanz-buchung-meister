@@ -1,18 +1,6 @@
-import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
-import { roappOperationsEnabled } from "@/lib/booking-status.functions";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  BookOpenText,
-  CalendarClock,
-  CalendarDays,
-  ClipboardList,
-  Database,
-  Inbox,
-  Settings,
-  Share2,
-  Users,
-  Workflow,
-} from "lucide-react";
+import { Settings, Share2 } from "lucide-react";
 import { BrandMark } from "@/components/media";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -20,23 +8,9 @@ import { getOperatorAccess } from "@/lib/admin.functions";
 import { adminNav } from "@/lib/admin-nav";
 import { site } from "@/data/site";
 
-const icons: Record<string, typeof CalendarDays> = {
-  Buchungen: ClipboardList,
-  "Zoho Betrieb": CalendarClock,
-  Bitrix24: Share2,
-  Posteingang: Inbox,
-  Kalender: CalendarDays,
-  Leitstand: Workflow,
-  Kundenakten: Users,
-  Dokumente: BookOpenText,
-  "Odoo & Qonto": Database,
-  Einstellungen: Settings,
-};
+const icons: Record<string, typeof Settings> = { Bitrix24: Share2, Website: Settings };
 
 export const Route = createFileRoute("/admin")({
-  beforeLoad: async () => {
-    if (await roappOperationsEnabled()) throw redirect({ href: "https://web.roapp.io/orders" });
-  },
   component: AdminShell,
   head: () => ({
     meta: [{ title: `Betrieb | ${site.name}` }, { name: "robots", content: "noindex,nofollow" }],
@@ -94,7 +68,7 @@ function AdminShell() {
   return (
     <div id="main-content" className="min-h-dvh bg-bg" tabIndex={-1}>
       <header className="border-b border-line">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-h-11 items-center gap-3">
             <BrandMark variant="header" decorative />
             <p className="text-xs uppercase tracking-[0.16em] text-subtle">Betrieb</p>
@@ -115,11 +89,8 @@ function AdminShell() {
       >
         <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
           {adminNav.map((item) => {
-            const Icon = icons[item.label] ?? ClipboardList;
-            const active =
-              item.match === "exact"
-                ? pathname === "/admin" || pathname === "/admin/"
-                : pathname.startsWith(item.to);
+            const Icon = icons[item.label] ?? Settings;
+            const active = pathname.startsWith(item.to);
             return (
               <Link
                 key={item.to}

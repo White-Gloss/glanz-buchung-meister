@@ -11,7 +11,7 @@ import {
   bitrixBusyWindows,
 } from "./bitrix-calendar.ts";
 import { requestedSlotBusy } from "./booking-slot-availability.ts";
-import { confirmBookingWithSchedule } from "./zoho-ops.ts";
+import { confirmBookingWithSchedule } from "./booking-operations.ts";
 import { confirmBookingManually } from "./booking-workflow.ts";
 import { site } from "../data/site.ts";
 
@@ -22,8 +22,20 @@ const event = {
   to: "2026-11-02T14:00:00Z",
   accessibility: "busy",
 };
-const envelope = (data: unknown[], total = data.length, hasMore = false) =>
-  Response.json({ success: true, data, meta: { total, hasMore } });
+const webhook = "https://example.bitrix24.de/rest/1/testcode123/";
+const native = (e: typeof event) => ({
+  ID: String(e.id),
+  SECTION_ID: String(e.sectionId),
+  DATE_FROM: e.from.replace(/Z$/, ""),
+  DATE_TO: e.to.replace(/Z$/, ""),
+  TZ_OFFSET_FROM: "0",
+  TZ_OFFSET_TO: "0",
+  TZ_FROM: "UTC",
+  TZ_TO: "UTC",
+  ACCESSIBILITY: e.accessibility,
+  DT_SKIP_TIME: "N",
+});
+const envelope = (data: (typeof event)[]) => Response.json({ result: data.map(native) });
 
 test("all-day Bitrix blocks follow Berlin DST and overnight blocks keep their whole range", () => {
   const [block] = eventWindows([
@@ -64,38 +76,74 @@ test("public availability stays inside the supported booking horizon", () => {
   assert.throws(() => publicAvailabilityDateRange("2026-03-01", "2026-06-03", "2026-03-01"));
 });
 
-test("calendar search follows metadata, preserves recurring occurrences and refuses incomplete pages", async () => {
-  let count = 0;
-  const rows = await readBitrixCalendar("test-key", event.from, event.to, async (_url, init) => {
-    const request = JSON.parse(String(init?.body));
-    assert.equal(request.offset, count);
-    assert.equal(request.autoWindow, false);
-    count++;
-    return envelope([{ ...event, occurrenceIndex: count }], 2, count === 1);
+test("native calendar reads the portal directly and fails closed on malformed or incomplete data", async () => {
+  const rows = await readBitrixCalendar(webhook, event.from, event.to, async (url, init) => {
+    assert.equal(String(url), webhook + "calendar.event.get.json");
+    assert.deepEqual(JSON.parse(String(init?.body)), {
+      type: "user",
+      ownerId: 1,
+      section: [2],
+      from: "2026-11-02",
+      to: "2026-11-02",
+    });
+    return envelope([event]);
   });
-  assert.equal(count, 2);
-  assert.equal(rows.length, 4);
-  assert.equal((await readBitrixCalendar("test-key", event.from, event.to, async () =>
-    Response.json({ success: true, data: [event], meta: { hasMore: false } }),
-  )).length, 2);
-  for (const extra of [{ truncated: true }, { windowErrors: 1 }]) {
-    await assert.rejects(readBitrixCalendar("test-key", event.from, event.to, async () =>
-      Response.json({ success: true, data: [event], meta: { hasMore: false, ...extra } }),
-    ), /vollständig/);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].start, "2026-11-02T08:00:00.000Z");
+  for (const body of [
+    {},
+    { result: true },
+    { result: [], next: 50 },
+    { error: "ACCESS_DENIED" },
+    { result: [{ ...native(event), DATE_FROM: null }] },
+    { result: [{ ...native(event), RRULE: { FREQ: "WEEKLY" } }] },
+  ]) {
+    await assert.rejects(
+      readBitrixCalendar(webhook, event.from, event.to, async () => Response.json(body)),
+      /vollständig/,
+    );
   }
+  let contacted = false;
+  await assert.rejects(
+    readBitrixCalendar("vibe_api_old", event.from, event.to, async () => {
+      contacted = true;
+      return envelope([]);
+    }),
+  );
+  assert.equal(contacted, false);
+});
 
-  await assert.rejects(
-    readBitrixCalendar("test-key", event.from, event.to, async () => Response.json({ success: true, data: [event], meta: { hasMore: false, pageErrorSample: { code: "PAGE2_COUNT_FAILED" } } })),
-    /vollständig/,
+test("native calendar matches the live German wall time despite inconsistent UTC helper fields", async () => {
+  const body = {
+    result: [
+      {
+        ID: "1108",
+        SECTION_ID: "2",
+        DATE_FROM: "25.09.2026 11:00:00",
+        DATE_TO: "25.09.2026 17:00:00",
+        TZ_FROM: "Europe/Berlin",
+        TZ_TO: "Europe/Berlin",
+        TZ_OFFSET_FROM: "7200",
+        TZ_OFFSET_TO: "7200",
+        DATE_FROM_TS_UTC: "1790316000",
+        DATE_TO_TS_UTC: "1790337600",
+        DT_SKIP_TIME: "N",
+        ACCESSIBILITY: "busy",
+        RRULE: "",
+      },
+    ],
+  };
+  const windows = await readBitrixCalendar(
+    webhook,
+    "2026-09-25T00:00:00Z",
+    "2026-09-26T00:00:00Z",
+    async () => Response.json(body),
   );
+  assert.equal(windows[0].start, "2026-09-25T09:00:00.000Z");
+  assert.equal(windows[0].end, "2026-09-25T15:00:00.000Z");
+  body.result[0].TZ_OFFSET_FROM = "3600";
   await assert.rejects(
-    readBitrixCalendar("test-key", event.from, event.to, async () =>
-      Response.json({ success: true, data: [] }),
-    ),
-    /vollständig/,
-  );
-  await assert.rejects(
-    readBitrixCalendar("test-key", event.from, event.to, async () => envelope([], 1, true)),
+    readBitrixCalendar(webhook, event.from, event.to, async () => Response.json(body)),
     /vollständig/,
   );
 });
@@ -132,7 +180,7 @@ function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql 
 test("manual approval fails closed on Bitrix conflicts and outages; matching exports do not block twice", async () => {
   const pg = new PGlite({ parsers: { 1082: (v) => v, 20: Number } });
   const oldFetch = globalThis.fetch;
-  const oldKey = process.env.VIBE_API_KEY;
+  const oldKey = process.env.BITRIX_WEBHOOK_URL;
   try {
     for (const path of (await readdir("migrations")).filter((p) => p.endsWith(".sql")).sort())
       await pg.exec(await readFile(`migrations/${path}`, "utf8"));
@@ -140,7 +188,7 @@ test("manual approval fails closed on Bitrix conflicts and outages; matching exp
     await sql`insert into "user"(id,name,email,"emailVerified") values('owner','Owner',${process.env.OWNER_EMAIL || site.email},true)`;
     await sql`alter table shop_settings add column if not exists bitrix_calendar_enabled boolean not null default false`;
     await sql`update shop_settings set bitrix_calendar_enabled=true where shop_id='white-gloss'`;
-    process.env.VIBE_API_KEY = "vibe_api_isolated_calendar_test";
+    process.env.BITRIX_WEBHOOK_URL = webhook;
     const [booking] = await sql<{
       id: number;
       version: number;
@@ -186,8 +234,8 @@ test("manual approval fails closed on Bitrix conflicts and outages; matching exp
     assert.equal((await bitrixBusyWindows(sql, event.from, event.to, { fresh: true })).length, 2);
   } finally {
     globalThis.fetch = oldFetch;
-    if (oldKey === undefined) delete process.env.VIBE_API_KEY;
-    else process.env.VIBE_API_KEY = oldKey;
+    if (oldKey === undefined) delete process.env.BITRIX_WEBHOOK_URL;
+    else process.env.BITRIX_WEBHOOK_URL = oldKey;
     await pg.close();
   }
 });

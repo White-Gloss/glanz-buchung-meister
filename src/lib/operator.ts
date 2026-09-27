@@ -1,5 +1,4 @@
 import { site } from "../data/site.ts";
-import { roappOnlyEnabled } from "./booking-backend.ts";
 
 function csv(value: string | undefined): string[] {
   return (value || "")
@@ -56,8 +55,6 @@ export function operatorEnforcementEnabled(): boolean {
 }
 
 export async function requireOperator(userId: string) {
-  if (roappOnlyEnabled())
-    throw new Error("Die Auftragsverwaltung erfolgt ausschließlich in RO App.");
   if (!userId) throw new Error("Kein Betriebszugang.");
   // A configured owner is also an operator, including an external login email.
   // userId comes exclusively from the authenticated session middleware.
