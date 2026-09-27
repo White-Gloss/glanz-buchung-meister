@@ -1,0 +1,346 @@
+/* Review-only refinement. The CI baseline attribute disables this entire layer
+   to capture the incumbent layout with exactly the same content and assets. */
+html:not([data-wg-baseline]) [data-shell="public"] {
+  --color-bg: #101419;
+  --color-surface: #171d24;
+  --color-elevated: #222b35;
+  --color-fg: #f4f3ed;
+  --color-muted: #bec6cf;
+  --color-subtle: #9ca8b5;
+  --color-line: rgb(191 209 229 / 0.14);
+  --color-line-strong: rgb(191 209 229 / 0.28);
+  --color-accent: #c8d4e1;
+  --color-accent-fg: #101419;
+
+  .section {
+    padding-block: clamp(4rem, 7vw, 6.5rem);
+  }
+
+  .max-w-7xl {
+    max-width: 78rem;
+    padding-inline: clamp(1.25rem, 4vw, 3.5rem);
+  }
+
+  .heading-2 {
+    font-size: clamp(2rem, 3.5vw, 3.25rem);
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .heading-page {
+    font-size: clamp(2.6rem, 4.8vw, 4.75rem);
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+
+  .kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    font-weight: 500;
+    color: var(--color-subtle);
+  }
+
+  .site-header {
+    border-bottom: 1px solid var(--color-line);
+    background: rgb(16 20 25 / 0.93);
+  }
+
+  .site-header .gd-header {
+    min-height: 5.75rem;
+  }
+
+  .header-quick-nav {
+    gap: 2.25rem;
+  }
+
+  .header-quick-nav a {
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  .btn,
+  .scroll-film-cta {
+    min-height: 3rem;
+    padding: 0.85rem 1.35rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    letter-spacing: 0.07em;
+    font-weight: 500;
+    box-shadow: none;
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  }
+
+  .btn-primary,
+  .scroll-film-cta {
+    border: 1px solid var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--color-line-strong);
+    background: transparent;
+    color: var(--color-fg);
+  }
+
+  .cta-shine::before,
+  .cta-shine::after {
+    content: none;
+  }
+
+  .btn-primary:hover,
+  .scroll-film-cta:hover {
+    background: var(--color-fg);
+    border-color: var(--color-fg);
+  }
+
+  .scroll-film-copy {
+    left: max(5vw, calc((100vw - 1248px) / 2 + 56px));
+  }
+
+  .scroll-film-copy h1 {
+    font-size: clamp(2.65rem, 5.2vw, 5.25rem);
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+  }
+
+  .scroll-film-copy h1 span {
+    color: #bdcad8;
+  }
+
+  .scroll-film-prices {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    text-underline-offset: 0.4em;
+  }
+
+  .hero-follow {
+    background: var(--color-bg);
+  }
+
+  .hero-follow .gd-stats > li {
+    border: 0;
+    padding-block: 2rem;
+  }
+
+  .hero-follow .gd-stats > li + li {
+    border-left: 1px solid var(--color-line);
+  }
+
+  .wg-results-teaser {
+    margin-block: 4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .wg-video-grid {
+    gap: 1.5rem;
+  }
+
+  .wg-video-trigger {
+    border-color: var(--color-line);
+    border-radius: 4px;
+  }
+
+  .wg-trust-strip {
+    gap: 1rem 2rem;
+    padding-block: 1.75rem;
+  }
+
+  .gd-pack {
+    padding-block: 2.5rem;
+    gap: 1rem 2rem;
+    border-radius: 0;
+    transition: background-color 180ms ease;
+  }
+
+  .gd-pack:hover {
+    padding-inline: 0;
+    transform: none;
+    background: rgb(191 209 229 / 0.035);
+  }
+
+  .gd-pack .ga-num {
+    color: var(--color-subtle);
+    font-size: 0.875rem;
+  }
+
+  .gd-pack .ga-pack-copy .font-display {
+    letter-spacing: -0.025em;
+  }
+
+  .gd-pack .ga-price {
+    padding-top: 0.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gd-split {
+    column-gap: clamp(2rem, 6vw, 6rem);
+  }
+
+  .gd-split--duo {
+    column-gap: 0;
+  }
+
+  /* Give existing chapter photography its own space instead of obscuring it
+     with full-screen overlays. All media and copy remain in the DOM. */
+  .film-chapter {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    min-height: 40rem;
+    background: var(--color-surface);
+    border-block: 1px solid var(--color-line);
+    isolation: isolate;
+  }
+
+  .film-chapter::before,
+  .film-chapter::after,
+  .film-chapter-veil {
+    display: none;
+  }
+
+  .film-chapter-media {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    inset: auto;
+    height: 100%;
+    width: 100%;
+    min-height: 28rem;
+    transform: none;
+    animation: none;
+    will-change: auto;
+    filter: none;
+  }
+
+  .film-chapter-copy {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    max-width: 40rem;
+    margin-inline: auto 0;
+    padding: clamp(3rem, 5vw, 5.5rem) clamp(1.5rem, 4vw, 4rem);
+  }
+
+  .film-chapter-copy > p {
+    max-width: 40ch;
+  }
+
+  main > .film-chapter:first-child {
+    padding-top: 5.75rem;
+  }
+
+  main > .film-chapter + * {
+    margin-top: 0;
+  }
+
+  .input-line {
+    border-bottom-color: var(--color-line-strong);
+    padding-block: 0.875rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--color-line-strong);
+  }
+
+  @media (min-width: 1024px) {
+    .wg-trust-strip {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .site-header .gd-header {
+      min-height: 4.75rem;
+      padding-inline: 1rem;
+    }
+
+    .scroll-film-copy {
+      left: 1.5rem;
+      max-width: calc(100% - 3rem);
+    }
+
+    .scroll-film-copy h1 {
+      font-size: clamp(2.4rem, 10vw, 3.5rem);
+    }
+
+    .scroll-film-prices {
+      margin-left: 0;
+      padding-inline: 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    .hero-follow .gd-stats > li {
+      padding: 1.5rem 0.75rem;
+    }
+
+    .hero-follow .gd-stats > li:nth-child(3) {
+      border-left: 0;
+    }
+
+    .film-chapter {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .film-chapter-copy {
+      grid-column: 1;
+      grid-row: 1;
+      margin: 0;
+      max-width: none;
+      padding: 3rem 1.5rem;
+    }
+
+    .film-chapter-media {
+      grid-column: 1;
+      grid-row: 2;
+      min-height: 0;
+      height: 20rem;
+    }
+
+    main > .film-chapter:first-child {
+      padding-top: 4.75rem;
+    }
+
+    .gd-pack {
+      grid-template-columns: 1.25rem minmax(0, 1fr);
+      grid-template-areas: "num copy" ". price";
+      column-gap: 0.875rem;
+      padding-block: 2rem;
+    }
+
+    .gd-pack .ga-price {
+      padding-top: 0.75rem;
+    }
+
+    .wg-results-teaser {
+      margin-block: 3rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn,
+    .scroll-film-cta,
+    .gd-pack {
+      transition: none;
+    }
+  }
+}
+
+/* Native menu is portalled outside the public shell. */
+html:not([data-wg-baseline]):has([data-shell="public"]) .film-menu-link {
+  font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.4;
+  min-height: 2.75rem;
+  padding-block: 0.375rem;
+}
+
+html:not([data-wg-baseline]):has([data-shell="public"]) .film-menu-link:hover {
+  letter-spacing: 0;
+}

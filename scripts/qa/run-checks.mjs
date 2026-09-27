@@ -212,6 +212,8 @@ try {
   await runCheck(server, "frontend-ssr", ["--test", "scripts/frontend-ssr.test.mjs"]);
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
+  await runCheck(server, "prototype-desktop", ["scripts/qa/capture-refinement.mjs", "desktop"]);
+  await runCheck(server, "prototype-mobile", ["scripts/qa/capture-refinement.mjs", "mobile"]);
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";

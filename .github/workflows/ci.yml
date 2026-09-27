@@ -141,7 +141,11 @@ jobs:
       - name: Produktions-Build erstellen
         run: npm run build
 
+      - name: Chromium für isolierte Designansichten bereitstellen
+        run: npx playwright install --with-deps chromium
+
       - name: Isolierte SSR-, Buchungs- und Sitemapabläufe prüfen
+        # The prototype is rendered only in the existing isolated Linux CI job.
         timeout-minutes: 8
         run: node scripts/qa/run-checks.mjs
 

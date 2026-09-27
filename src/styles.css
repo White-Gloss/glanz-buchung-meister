@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/results.css";
+@import "./styles/refinement-prototype.css";
 
 .instagram-badge {
   display: inline-flex;
