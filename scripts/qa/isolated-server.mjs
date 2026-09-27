@@ -1,4 +1,6 @@
 import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
+import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
+assertIsolatedGithubCi();
 // Isolated local verification only; this file is not imported by the application.
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
