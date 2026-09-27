@@ -1,5 +1,5 @@
 import { serializeJsonLd } from "@/lib/json-ld";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, packages, pickupFee, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
@@ -8,12 +8,15 @@ import { serviceCityHeading, serviceCityTitle } from "@/lib/city-seo";
 import { pageHead } from "@/lib/seo";
 import { eur } from "@/lib/utils";
 import { ServicePriceNote } from "@/components/service-price-note";
+import { localSeoEvidence, serviceCitySeo } from "@/lib/seo-policy";
 
 export const Route = createFileRoute("/leistungen/$slug/$city")({
   loader: ({ params }) => {
     const service = services.find((s) => s.slug === params.slug);
     const city = cities.find((c) => c.slug === params.city);
     if (!service || !city) throw notFound();
+    const seo = serviceCitySeo(service.slug, city.slug);
+    if (seo.status === "redirect") throw redirect({ href: seo.target, statusCode: 301 });
     return { service, city };
   },
   head: ({ loaderData }) => {
@@ -32,8 +35,8 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
 function ServiceCityPage() {
   const { service, city } = Route.useLoaderData();
   const request = serviceBookingSelection(service.slug, city.slug);
-  const otherCities = cities.filter((c) => c.slug !== city.slug);
-  const otherServices = services.filter((s) => s.slug !== service.slug);
+  const otherServices = services.filter((s) => s.slug !== service.slug && !s.pendingApproval);
+  const evidence = localSeoEvidence[`${service.slug}/${city.slug}`];
   const pickup = pickupPriceText(city.km);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -131,6 +134,10 @@ function ServiceCityPage() {
               : `Bei Basisreinigung und Reinigung & Politur beträgt der Hol- und Bringservice aus ${city.name} ${pickupPriceText(city.km)}. Für Keramikschutz ist die Abholung bis 60 km enthalten.`}</p>
           <p className="text-sm text-muted">Abholort, Übergabezeit und Rückgabe werden persönlich bestätigt. Es gibt keinen zusätzlichen Werkstattstandort in den Abholorten; die Arbeiten erfolgen in {site.city}.</p>
           <Link to="/abholservice/$city" params={{ city: city.slug }} className="inline-flex min-h-11 items-center text-sm underline">Abholbedingungen für {city.name}</Link>
+          {evidence && serviceCitySeo(service.slug, city.slug).status === "index" ? <div className="space-y-3">
+            {evidence.facts.map((fact) => <p key={fact.text} className="text-muted">{fact.text}</p>)}
+            <a href={evidence.proof.url} className="underline">{evidence.proof.label}</a>
+          </div> : null}
         </section>
         <p className="rounded-card border border-line bg-surface p-4 text-sm">
           Hol- und Bringservice aus {city.name}: {pickup}. {pickupKeramikNote()}. Die Aufbereitung
@@ -177,8 +184,8 @@ function ServiceCityPage() {
           {otherServices.map((s) => (
             <li key={s.slug}>
               <Link
-                to="/leistungen/$slug/$city"
-                params={{ slug: s.slug, city: city.slug }}
+                to="/leistungen/$slug"
+                params={{ slug: s.slug }}
                 className="hover:text-fg"
               >
                 {s.nav}
@@ -186,20 +193,7 @@ function ServiceCityPage() {
             </li>
           ))}
         </ul>
-        <h2 className="mt-12 font-display text-2xl">{service.nav} in der Region</h2>
-        <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-muted">
-          {otherCities.map((c) => (
-            <li key={c.slug}>
-              <Link
-                to="/leistungen/$slug/$city"
-                params={{ slug: service.slug, city: c.slug }}
-                className="hover:text-fg"
-              >
-                {c.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <p className="mt-12 text-sm text-muted"><Link to="/abholservice" className="underline">Abholgebiete und Entfernungsstaffeln</Link> · <Link to="/preise" className="underline">Pakete und Preise</Link></p>
       </div>
     </main>
   );

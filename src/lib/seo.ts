@@ -13,13 +13,13 @@ import {
   services,
   site,
 } from "@/data/site";
+import { seoRobots } from "@/lib/seo-policy";
 
 export function absUrl(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${site.origin}${p}`;
 }
 
-const DEFAULT_ROBOTS = "index,follow,max-image-preview:large";
 const OG_IMAGE = "/media/hero.jpg";
 
 export function pageHead(opts: {
@@ -98,7 +98,7 @@ export function pageHead(opts: {
     meta: [
       { title: opts.title },
       { name: "description", content: opts.description },
-      { name: "robots", content: opts.robots ?? DEFAULT_ROBOTS },
+      { name: "robots", content: seoRobots(opts.path, opts.robots) },
       { name: "geo.region", content: "DE-BW" },
       { name: "geo.placename", content: site.city },
       { name: "geo.position", content: `${site.lat};${site.lng}` },
@@ -227,7 +227,7 @@ export function localBusinessJsonLd() {
                 description: p.body,
                 url: absUrl(`/leistungen/${packageServiceSlug[p.id]}`),
                 areaServed: site.city,
-                provider: { "@type": "AutomotiveBusiness", name: site.legalName },
+                provider: { "@id": businessId },
               },
               priceSpecification: {
                 "@type": "UnitPriceSpecification",

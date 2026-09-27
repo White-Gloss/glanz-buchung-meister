@@ -125,6 +125,9 @@ jobs:
       - name: Automatisierte Tests ausführen
         run: npm test
 
+      - name: SEO-Qualitätsgate ohne Server prüfen
+        run: node --test src/lib/seo-policy.test.ts src/lib/seo-intents.test.ts
+
       - name: Qualitätsskripte syntaktisch prüfen
         run: |
           bash -n scripts/deploy-ionos-release.sh
@@ -141,7 +144,12 @@ jobs:
       - name: Produktions-Build erstellen
         run: npm run build
 
-      - name: Isolierte SSR-, Buchungs- und Sitemapabläufe prüfen
+      - name: Chromium für isolierte Mobilprüfung bereitstellen
+        # Chromium wird ausschließlich auf diesem Linux-CI-Runner gestartet.
+        # Keine lokale Vorschau und keine echten Anfrage-/Uploadaktionen.
+        run: npx playwright install --with-deps chromium
+
+      - name: Isolierte SSR-, Buchungs-, SEO- und Mobilabläufe prüfen
         timeout-minutes: 8
         run: node scripts/qa/run-checks.mjs
 

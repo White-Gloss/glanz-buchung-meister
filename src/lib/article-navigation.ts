@@ -80,7 +80,7 @@ export const articleNavigation: Record<string, {
     related: ["lackkorrektur-swirls-kratzer-politur", "leasingrueckgabe-aufbereitung-vermeiden-mehrkosten"],
   },
   "fahrzeugaufbereitung-horb-am-neckar": {
-    title: "Fahrzeugaufbereitung in Horb am Neckar | White Gloss",
+    title: "Autoaufbereitung wählen: Pakete und Ablauf | White Gloss",
     question: "Wo findet die Aufbereitung statt und welche Pakete stehen zur Wahl?",
     service: "fahrzeugaufbereitung",
     related: ["hol-und-bringservice", "innenraumreinigung-komplettguide-auto", "keramikversiegelung-kosten"],

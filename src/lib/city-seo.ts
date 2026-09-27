@@ -21,7 +21,7 @@ export function serviceCityTitle(serviceName: string, city: City) {
 export function serviceCityHeading(serviceName: string, city: City) {
   return city.slug === "horb-am-neckar"
     ? `${serviceName} mit Abholung in ${city.name}`
-    : `${serviceName} in ${city.name}`;
+    : `${serviceName} für Fahrzeuge aus ${city.name}`;
 }
 
 export function cityJsonLd(city: City) {

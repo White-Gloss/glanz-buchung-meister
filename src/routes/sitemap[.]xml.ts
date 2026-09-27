@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import staticXml from "@/data/sitemap-static.xml?raw";
 import { site } from "@/data/site";
+import { filterIndexableSitemap } from "@/lib/seo-policy";
 import { createSitemapResponder, loadPublishedSitemapBlogs } from "@/lib/sitemap.server";
 
 const respond = createSitemapResponder({
-  staticXml,
+  staticXml: filterIndexableSitemap(staticXml),
   origin: site.origin,
   loadPublished: async () => {
     const { getSql } = await import("@/lib/db");

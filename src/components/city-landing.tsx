@@ -17,6 +17,7 @@ import {
 } from "@/data/site";
 import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
+import { serviceAreaLink } from "@/lib/seo-policy";
 
 const steps = [
   {
@@ -134,8 +135,7 @@ export function CityLanding({ city }: { city: City }) {
             </li>
           </ul>
           <Link
-            to="/leistungen/$slug/$city"
-            params={{ slug: "leasingrueckgabe", city: city.slug }}
+            {...serviceAreaLink("leasingrueckgabe", city.slug)}
             className="mt-8 inline-flex min-h-11 items-center text-sm hover:underline"
           >
             Leasingrückgabe mit Abholung in {city.name}
@@ -164,8 +164,7 @@ export function CityLanding({ city }: { city: City }) {
                   <span className="font-display text-3xl tabular-nums">ab {money(p.price)}&nbsp;€</span>
                   <span className="mt-1 block text-xs text-subtle">{site.vatNote}</span>
                   <Link
-                    to="/leistungen/$slug/$city"
-                    params={{ slug: packageServiceSlug[p.id], city: city.slug }}
+                    {...serviceAreaLink(packageServiceSlug[p.id], city.slug)}
                     className="mt-3 inline-flex min-h-11 items-center text-sm text-fg hover:underline"
                   >
                     Paketdetails für {city.name}
@@ -180,6 +179,8 @@ export function CityLanding({ city }: { city: City }) {
       <section className="cv-auto border-t border-line">
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
+          <p className="mt-5 max-w-2xl text-muted leading-relaxed">{city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den Termin stimmen wir vorab ab.</p>
+          <p className="mt-4 max-w-2xl text-muted">Unser einziger Werkstattstandort ist {site.street}, {site.postalCode} {site.city}. {city.slug === "horb-am-neckar" ? "Die direkte Fahrzeugabgabe ist nach Terminvereinbarung möglich." : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}</p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
             Aus {city.name} sind es ca. {city.km} km / {city.minutes} Minuten. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
@@ -221,14 +222,13 @@ export function CityLanding({ city }: { city: City }) {
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Leistungen mit Abholung in {city.name}</h2>
           <ul className="mt-8 columns-1 gap-x-10 sm:columns-2">
-            {services.map((s) => (
+            {services.filter((s) => !s.pendingApproval).map((s) => (
               <li key={s.slug} className="break-inside-avoid">
                 <Link
-                  to="/leistungen/$slug/$city"
-                  params={{ slug: s.slug, city: city.slug }}
+                  {...serviceAreaLink(s.slug, city.slug)}
                   className="flex min-h-11 items-center text-sm text-muted hover:text-fg"
                 >
-                  {s.nav} in {city.name}
+                  {s.nav} – Leistungsumfang
                 </Link>
               </li>
             ))}

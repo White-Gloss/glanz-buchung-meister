@@ -10,7 +10,7 @@ export const Route = createFileRoute("/dellen-hagelschaden")({
   component: DellenPage,
   head: () =>
     pageHead({
-      title: `Dellenentfernung & Hagelschaden-Reparatur | ${site.name}`,
+      title: `Dellen & Hagelschaden: Foto-Begutachtung | ${site.name}`,
       description:
         "Parkdellen, Karosseriedellen und Hagelschäden lackschadenfrei ausbeulen, sofern technisch möglich. Foto-Begutachtung, Preis nach Prüfung.",
       path: "/dellen-hagelschaden",
@@ -25,7 +25,7 @@ function DellenPage() {
         shot="dellen"
         alt="Parkdelle unter Streiflicht, bevor wir ausbeulen"
         kicker="Smart Repair"
-        title="Dellenentfernung und Hagelschaden."
+        title="Dellen und Hagelschäden prüfen lassen."
         lead="Wir entfernen Dellen ohne Neulackierung, sofern der Schaden und der Lackzustand es zulassen."
         crumbs={[
           { label: "Startseite", to: "/" },

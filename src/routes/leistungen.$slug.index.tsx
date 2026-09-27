@@ -9,6 +9,7 @@ import { eur, money } from "@/lib/utils";
 import { ResultsTeaser } from "@/components/results-teaser";
 import { serializeJsonLd } from "@/lib/json-ld";
 import { ServicePriceNote } from "@/components/service-price-note";
+import { pickupAreaLink } from "@/lib/seo-policy";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
@@ -139,11 +140,10 @@ function ServicePage() {
           {cities.map((c) => (
             <li key={c.slug}>
               <Link
-                to="/leistungen/$slug/$city"
-                params={{ slug: s.slug, city: c.slug }}
+                {...pickupAreaLink(s.slug, c.slug)}
                 className="inline-flex min-h-11 items-center hover:text-fg"
               >
-                {s.nav} {c.name}
+                Abholung aus {c.name}
               </Link>
             </li>
           ))}

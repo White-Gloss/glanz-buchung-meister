@@ -53,13 +53,22 @@ function ArticlePage() {
   const others = guide ? guide.related.flatMap((slug) => articles.filter((x) => x.slug === slug)) : articles.filter((x) => x.slug !== a.slug).slice(0, 3);
   const jsonLd = {
     "@context": "https://schema.org",
+    "@graph": [{
     "@type": "Article",
+    "@id": `${site.origin}/ratgeber/${a.slug}#article`,
+    mainEntityOfPage: `${site.origin}/ratgeber/${a.slug}`,
+    inLanguage: "de-DE",
     headline: a.title,
     datePublished: a.date,
-    author: { "@type": "Organization", name: site.legalName },
-    publisher: { "@type": "Organization", name: site.legalName },
+    author: { "@type": "Organization", "@id": `${site.origin}/#betrieb`, name: site.legalName, url: site.origin },
+    publisher: { "@type": "Organization", "@id": `${site.origin}/#betrieb`, name: site.legalName, url: site.origin },
     image: `${site.origin}${a.image}`,
     description: a.excerpt,
+    }, { "@type": "BreadcrumbList", itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+      { "@type": "ListItem", position: 2, name: "Ratgeber", item: `${site.origin}/ratgeber` },
+      { "@type": "ListItem", position: 3, name: a.title, item: `${site.origin}/ratgeber/${a.slug}` },
+    ] }],
   };
 
   return (

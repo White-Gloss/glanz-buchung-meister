@@ -38,7 +38,7 @@ function LeistungenIndex() {
         shot="lack"
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
         kicker="Leistungsspektrum"
-        title="Was wir am Auto machen."
+        title="Leistungen der Fahrzeugaufbereitung."
         lead="Innenraumreinigung, Lackpflege, Keramikversiegelung und Reparaturen in unserer Werkstatt in Horb am Neckar."
         crumbs={[
           { label: "Startseite", to: "/" },

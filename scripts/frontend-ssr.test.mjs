@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { cities, services } from "../src/data/site.ts";
+import { serviceCitySeo } from "../src/lib/seo-policy.ts";
 
 // Run against the production preview, never submit forms or modify data.
 const base = process.env.FRONTEND_BASE_URL || "http://127.0.0.1:8081";
@@ -21,7 +22,7 @@ function canonicalLinks(html) {
 test("service index and city routes render distinct content with one canonical", async () => {
   for (const [path, heading] of [
     ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
-    ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung in Nagold"],
+    ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung für Fahrzeuge aus Nagold"],
     ["/leistungen/keramikversiegelung/horb-am-neckar", "Keramikversiegelung mit Abholung in Horb am Neckar"],
   ]) {
     const { response, html } = await get(path);
@@ -40,12 +41,18 @@ test("all published service/city combinations render their own route", async () 
     for (const city of cities) {
       const path = `/leistungen/${service.slug}/${city.slug}`;
       const { response, html } = await get(path);
+      const seo = serviceCitySeo(service.slug, city.slug);
+      if (seo.status === "redirect") {
+        assert.equal(response.status, 301, path);
+        assert.equal(new URL(response.headers.get("location"), base).pathname, seo.target);
+        continue;
+      }
       assert.equal(response.status, 200, path);
       const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
       const expectedHeading =
         city.slug === "horb-am-neckar"
           ? `${service.seoNav} mit Abholung in ${city.name}`
-          : `${service.seoNav} in ${city.name}`;
+          : `${service.seoNav} für Fahrzeuge aus ${city.name}`;
       assert.equal(h1, expectedHeading, path);
       assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     }
