@@ -212,11 +212,19 @@ try {
     await page.goto(`${qaBase}/galerie`, { waitUntil: "networkidle" });
     await dismissConsent(page);
     assert.equal(await page.locator(".customer-photo-grid > li").count(), 6);
+    const dialog = page.locator("dialog.customer-photo-dialog");
+    const curatedTitles = await page.locator(".customer-photo-grid h3").allTextContents();
+    await page.locator(".customer-photo-trigger").first().click();
+    await dialog.waitFor({ state: "visible" });
+    await expectText(page, "dialog.customer-photo-dialog .kicker", "Bild 1 von 6", "Curated start");
+    await page.keyboard.press("ArrowRight");
+    await expectText(page, "dialog.customer-photo-dialog h2", curatedTitles[1], "Curated next");
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "hidden" });
     await page.locator(".customer-photo-all").click();
     assert.equal(await page.locator(".customer-photo-grid > li").count(), 19);
     const trigger = page.locator(".customer-photo-trigger").first();
     await trigger.click();
-    const dialog = page.locator("dialog.customer-photo-dialog");
     await dialog.waitFor({ state: "visible" });
     assert.equal(
       await dialog

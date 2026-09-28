@@ -12,7 +12,8 @@ export function CustomerPhotoGallery() {
   const visible = category === "Auswahl"
     ? featuredPhotoIds.map((id) => customerPhotos.find((item) => item.id === id)!)
     : customerPhotos.filter((photo) => category === "Alle" || photo.category === category);
-  const photo = active === null ? null : customerPhotos[active];
+  // The viewer pages through the photos currently shown, in their displayed order.
+  const photo = active === null ? null : (visible[active] ?? null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -34,7 +35,7 @@ export function CustomerPhotoGallery() {
   }, [isOpen]);
 
   function move(direction: number) {
-    setActive((current) => current === null ? null : (current + direction + customerPhotos.length) % customerPhotos.length);
+    setActive((current) => current === null ? null : (current + direction + visible.length) % visible.length);
   }
 
   return (
@@ -48,7 +49,7 @@ export function CustomerPhotoGallery() {
       </div>
       <p className="customer-photo-count" role="status">{category === "Auswahl" ? `${visible.length} ausgewählte Motive` : `${visible.length} Kundenbilder`} · Zum Vergrößern auswählen</p>
       <ul className="customer-photo-grid" data-curated={category === "Auswahl"}>
-        {visible.map((item) => (
+        {visible.map((item, index) => (
           <li key={item.id}>
             <button
               type="button"
@@ -57,7 +58,7 @@ export function CustomerPhotoGallery() {
               aria-haspopup="dialog"
               onClick={(event) => {
                 triggerRef.current = event.currentTarget;
-                setActive(customerPhotos.indexOf(item));
+                setActive(index);
               }}
             >
               <img src={item.src} srcSet={item.srcSet} style={{ objectPosition: item.position }} sizes="(min-width: 1024px) 60vw, (min-width: 640px) 45vw, 90vw" width={item.width} height={item.height} alt={item.alt} loading="lazy" decoding="async" />
@@ -85,7 +86,7 @@ export function CustomerPhotoGallery() {
           <div className="customer-photo-viewer">
             <div className="customer-photo-viewer-head">
               <div>
-                <p className="kicker" aria-live="polite">Bild {active + 1} von {customerPhotos.length}</p>
+                <p className="kicker" aria-live="polite">Bild {active + 1} von {visible.length}</p>
                 <h2 id={headingId} className="heading-3">{photo.title}</h2>
               </div>
               <button type="button" onClick={() => setActive(null)} autoFocus aria-label="Bild schließen">Schließen ×</button>
