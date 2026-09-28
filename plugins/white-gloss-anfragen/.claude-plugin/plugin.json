@@ -1,0 +1,10 @@
+{
+  "name": "white-gloss-anfragen",
+  "version": "0.1.0",
+  "description": "Kundenanfragen und Angebote für White Gloss Detailing: Antwortentwürfe als Gmail-Entwurf oder WhatsApp-Text und Richtpreise exakt nach dem Online-Rechner der Website. Erstellt nur Entwürfe – sendet nichts, bestätigt keine Termine und keine verbindlichen Preise.",
+  "author": {
+    "name": "White-Gloss"
+  },
+  "repository": "https://github.com/White-Gloss/glanz-buchung-meister",
+  "keywords": ["cowork", "kundenanfragen", "angebot", "richtpreis", "fahrzeugaufbereitung"]
+}

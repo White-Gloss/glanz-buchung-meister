@@ -6,3 +6,4 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+plugins/white-gloss-anfragen/skills/angebot-kalkulieren/references/website-daten.json
