@@ -4,7 +4,7 @@
     "name": "White-Gloss"
   },
   "metadata": {
-    "description": "Claude Code plugins for the White-Gloss booking app (glanz-buchung-meister)."
+    "description": "Claude plugins for White-Gloss: development tooling for the booking app (glanz-buchung-meister) and Cowork skills for day-to-day operations."
   },
   "plugins": [
     {
@@ -13,6 +13,13 @@
       "description": "Runs this repository's CI gates locally (lint, typecheck, tests, build, DB checks) and reports a compact pass/fail summary.",
       "version": "0.1.0",
       "category": "development"
+    },
+    {
+      "name": "white-gloss-anfragen",
+      "source": "./plugins/white-gloss-anfragen",
+      "description": "Kundenanfragen und Angebote: Antwortentwürfe (Gmail oder WhatsApp) und Richtpreise exakt nach dem Online-Rechner der Website. Nur Entwürfe, kein Versand.",
+      "version": "0.1.0",
+      "category": "productivity"
     }
   ]
 }

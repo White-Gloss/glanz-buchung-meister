@@ -1,0 +1,600 @@
+{
+  "_hinweis": "Automatisch aus src/data/site.ts erzeugt – nicht von Hand ändern. Neu erzeugen: npm run cowork:data",
+  "company": {
+    "legalName": "White Gloss Detailing",
+    "owner": "Lars Hägele",
+    "street": "Arnistal 27",
+    "postalCode": "72160",
+    "city": "Horb am Neckar",
+    "phoneDisplay": "0152 33540284",
+    "email": "info@white-gloss.de",
+    "bookingEmail": "buchung@white-gloss.de",
+    "website": "https://white-gloss.de",
+    "bookingUrl": "https://white-gloss.de/#buchung"
+  },
+  "vatRate": 0.19,
+  "vatNote": "inkl. 19 % MwSt.",
+  "openingHours": {
+    "daysLabel": "Montag bis Freitag",
+    "opens": "09:00",
+    "closes": "17:00"
+  },
+  "dropOffTimes": [
+    "09:00",
+    "11:00",
+    "13:00",
+    "15:00"
+  ],
+  "paymentNote": "Ihre Terminanfrage ist unverbindlich. Es ist keine Anzahlung erforderlich. Zahlung fällig nach erbrachter Dienstleistung. Es erfolgt kein automatischer Einzug.",
+  "vehicleClasses": [
+    {
+      "id": "kompakt",
+      "label": "Kompaktklasse",
+      "hint": "Kleinwagen und Kompaktwagen bis 4,30 m",
+      "factor": 1
+    },
+    {
+      "id": "suv",
+      "label": "SUV / Limousine",
+      "hint": "Mittelklasse, Kombi, SUV bis 5,00 m",
+      "factor": 1.25
+    },
+    {
+      "id": "transporter",
+      "label": "Transporter",
+      "hint": "Vans und Nutzfahrzeuge über 5,00 m; Grenzfälle klären wir vor Auftragsannahme",
+      "factor": 1.55
+    }
+  ],
+  "packages": [
+    {
+      "id": "basis",
+      "name": "Basisreinigung",
+      "kicker": "Handwäsche und Innenraumreinigung",
+      "body": "Für ein gepflegtes Auto im Alltag: Wir waschen Ihr Fahrzeug von Hand und reinigen Innenraum, Felgen, Reifen und Scheiben. Eine Sprühversiegelung rundet die Pflege ab. Ohne Lackpolitur; ab 149 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 3 Std.",
+      "price": 149,
+      "duration": "ca. 3 Std.",
+      "items": [
+        "Handwäsche mit pH-neutralem Shampoo",
+        "Felgen- und Reifenreinigung",
+        "Innenraum: saugen, entstauben, materialgerecht reinigen",
+        "Scheiben innen und außen",
+        "Sprühversiegelung, Haltbarkeit ca. 3 Monate"
+      ],
+      "includesPickup": false
+    },
+    {
+      "id": "premium",
+      "name": "Reinigung & Politur",
+      "kicker": "Innenraum-Tiefenreinigung und einstufige Lackpolitur",
+      "body": "Wenn Innenraum und Lack mehr Zuwendung brauchen: Zur Basisreinigung kommen eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend tragen wir Wachs auf. Ab 349 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 6 Std.",
+      "price": 349,
+      "duration": "ca. 6 Std.",
+      "items": [
+        "Alle Leistungen des Pakets Basisreinigung",
+        "Entfernung von Lackablagerungen mit Reinigungsknete und Eisenentferner",
+        "Einstufige Lackpolitur für gleichmäßigen Glanz",
+        "Tiefenreinigung von Innenraum und Textilien",
+        "Wachs, Haltbarkeit ca. 6 Monate"
+      ],
+      "includesPickup": false
+    },
+    {
+      "id": "keramik",
+      "name": "Keramikschutz",
+      "kicker": "Mehrstufige Lackkorrektur und Keramikversiegelung",
+      "body": "Sorgfältig vorbereiteter Lack, anschließend mit Keramik versiegelt: Das Paket umfasst eine mehrstufige Lackkorrektur, Glas- und Felgenversiegelung sowie Lederpflege. Der Hol- und Bringservice bis 60 km ist inklusive. Standzeit und Pflege richten sich nach der verwendeten Beschichtung und der Fahrzeugnutzung. Ab 899 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 2 Tage.",
+      "price": 899,
+      "duration": "ca. 2 Tage",
+      "items": [
+        "Reinigung und Innenraumpflege wie im Paket Reinigung & Politur; Keramikversiegelung ersetzt den Wachsauftrag",
+        "Mehrstufige Lackkorrektur zur Reduzierung feiner Waschkratzer und Hologramme, soweit der Lackzustand es zulässt",
+        "Keramikversiegelung mit Abperleffekt und passenden Pflegehinweisen",
+        "Glas- und Felgenversiegelung für Rundumschutz",
+        "Lederpflege und Tiefenimprägnierung im Innenraum",
+        "Hol- und Bringservice bis 60 km inklusive"
+      ],
+      "includesPickup": true
+    }
+  ],
+  "packageAliases": {
+    "basis": "basis",
+    "pur": "basis",
+    "basisreinigung": "basis",
+    "premium": "premium",
+    "signature": "premium",
+    "reinigung & politur": "premium",
+    "reinigung-politur": "premium",
+    "glanz": "premium",
+    "keramik": "keramik",
+    "keramikschutz": "keramik",
+    "high-end": "keramik",
+    "highend": "keramik"
+  },
+  "extras": [
+    {
+      "id": "felgen",
+      "name": "Felgenreinigung und Versiegelung",
+      "hint": "Felgen demontiert, tiefengereinigt und versiegelt",
+      "price": 119,
+      "group": "pflege"
+    },
+    {
+      "id": "ozon",
+      "name": "Geruchsbehandlung mit Ozon",
+      "hint": "Ozonbehandlung gegen Nikotin-, Tier- und Feuchtigkeitsgerüche",
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "motor",
+      "name": "Motorraumreinigung",
+      "hint": "Schonende Nassreinigung des Motorraums mit anschließender Kunststoffpflege",
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "leder",
+      "name": "Lederpflege",
+      "hint": "Tiefenreinigung und Imprägnierung aller Lederflächen",
+      "price": 149,
+      "group": "pflege"
+    },
+    {
+      "id": "alcantara",
+      "name": "Alcantarareinigung",
+      "hint": "Faserschonende Reinigung von Sitzen, Lenkrad und Dachhimmel",
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "dachhimmel",
+      "name": "Dachhimmelreinigung",
+      "hint": "Entfernung von Flecken und Grauschleiern, soweit der Materialzustand es zulässt",
+      "price": 139,
+      "group": "pflege",
+      "inspect": true
+    },
+    {
+      "id": "scheinwerfer",
+      "name": "Scheinwerferaufbereitung",
+      "hint": "Derzeit nicht buchbar: Verfahren und Zulässigkeit müssen geklärt werden.",
+      "requestable": false,
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "glas",
+      "name": "Scheibenversiegelung",
+      "hint": "Versiegelung von Front- und Seitenscheiben für besseres Abperlen und weniger Wischergeräusche",
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "keramik-ultra",
+      "name": "Zusätzliche Keramikschichten",
+      "hint": "Zusätzlicher Schichtaufbau, nur nach Prüfung des Lacks",
+      "price": 699,
+      "group": "pflege",
+      "inspect": true
+    },
+    {
+      "id": "cabrio",
+      "name": "Cabrioverdeckpflege",
+      "hint": "Reinigung und Imprägnierung von Stoff- oder Vinylverdecken",
+      "price": 179,
+      "group": "pflege",
+      "inspect": true
+    },
+    {
+      "id": "tierhaar",
+      "name": "Tierhaarentfernung",
+      "hint": "Zusätzliche Entfernung von Tierhaaren aus Polstern, Teppichen und Kofferraum",
+      "price": 99,
+      "group": "pflege"
+    },
+    {
+      "id": "leder-repair",
+      "name": "Lederreparatur",
+      "hint": "Reparatur von Brandlöchern, Rissen und kleinen Löchern nach Materialprüfung",
+      "price": 139,
+      "group": "reparatur",
+      "inspect": true
+    },
+    {
+      "id": "stoff-loch",
+      "name": "Textilreparatur",
+      "hint": "Reparatur an Sitz, Teppich oder Dachhimmel, sofern das Gewebe geeignet ist",
+      "price": 119,
+      "group": "reparatur",
+      "inspect": true
+    }
+  ],
+  "includedExtras": {
+    "basis": [],
+    "premium": [],
+    "keramik": [
+      "leder",
+      "glas"
+    ]
+  },
+  "pickup": {
+    "tiers": [
+      {
+        "id": "tier_10",
+        "maxKm": 10,
+        "amount": 0,
+        "label": "Abholung bis 10 km"
+      },
+      {
+        "id": "tier_20",
+        "maxKm": 20,
+        "amount": 50,
+        "label": "Abholung bis 20 km"
+      },
+      {
+        "id": "tier_50",
+        "maxKm": 50,
+        "amount": 70,
+        "label": "Abholung bis 50 km"
+      }
+    ],
+    "maxKm": 50,
+    "freeWithPackageId": "keramik",
+    "freeUpToKm": 60
+  },
+  "cities": [
+    {
+      "slug": "horb-am-neckar",
+      "name": "Horb am Neckar",
+      "km": 0,
+      "minutes": 10
+    },
+    {
+      "slug": "nagold",
+      "name": "Nagold",
+      "km": 20,
+      "minutes": 25
+    },
+    {
+      "slug": "rottenburg-am-neckar",
+      "name": "Rottenburg am Neckar",
+      "km": 25,
+      "minutes": 30
+    },
+    {
+      "slug": "freudenstadt",
+      "name": "Freudenstadt",
+      "km": 30,
+      "minutes": 35
+    },
+    {
+      "slug": "oberndorf-am-neckar",
+      "name": "Oberndorf am Neckar",
+      "km": 30,
+      "minutes": 35
+    },
+    {
+      "slug": "herrenberg",
+      "name": "Herrenberg",
+      "km": 35,
+      "minutes": 40
+    },
+    {
+      "slug": "tuebingen",
+      "name": "Tübingen",
+      "km": 35,
+      "minutes": 40
+    },
+    {
+      "slug": "calw",
+      "name": "Calw",
+      "km": 40,
+      "minutes": 45
+    },
+    {
+      "slug": "balingen",
+      "name": "Balingen",
+      "km": 45,
+      "minutes": 50
+    },
+    {
+      "slug": "rottweil",
+      "name": "Rottweil",
+      "km": 45,
+      "minutes": 50
+    },
+    {
+      "slug": "boeblingen",
+      "name": "Böblingen",
+      "km": 50,
+      "minutes": 55
+    },
+    {
+      "slug": "reutlingen",
+      "name": "Reutlingen",
+      "km": 50,
+      "minutes": 55
+    },
+    {
+      "slug": "sindelfingen",
+      "name": "Sindelfingen",
+      "km": 52,
+      "minutes": 60
+    }
+  ],
+  "services": [
+    {
+      "slug": "fahrzeugaufbereitung",
+      "title": "Fahrzeugaufbereitung in Horb am Neckar",
+      "teaser": "Handwäsche, Innenraumreinigung und Lackpflege passend zu Ihrem Fahrzeug.",
+      "fromPrice": 149,
+      "bullets": [
+        "Handwäsche und Innenraumreinigung aus einer Hand",
+        "Prüfung von Lack, Materialien und Verschmutzung vor Beginn",
+        "Individuelle Aufbereitung unter Werkstattlicht",
+        "Abschließende Kontrolle vor der Fahrzeugübergabe"
+      ],
+      "body": [
+        "Wir prüfen Lack und Innenraum und besprechen Ihre Wünsche. So legen wir gemeinsam fest, welche Reinigung und Pflege Ihr Fahrzeug benötigt.",
+        "Die Arbeit bleibt in Horb. Aus 13 Städten holen wir das Auto ab und bringen es wieder."
+      ]
+    },
+    {
+      "slug": "innenraumreinigung",
+      "title": "Innenraumreinigung",
+      "teaser": "Basisreinigung des Innenraums; textile Tiefenreinigung im Paket Reinigung & Politur.",
+      "fromPrice": 149,
+      "bullets": [
+        "Basisreinigung: Innenraum saugen und Oberflächen abwischen",
+        "Kunststoff und Verkleidungen passend zum Material",
+        "Textile Tiefenreinigung im Paket Reinigung & Politur ab 349 €",
+        "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €"
+      ],
+      "body": [
+        "Die Basisreinigung ab 149 € umfasst das Saugen des Innenraums und Abwischen der Oberflächen. Die textile Tiefenreinigung von Sitzen und Teppichen gehört zum Paket Reinigung & Politur ab 349 €. Beide Einstiegspreise gelten für die Kompaktklasse inklusive Mehrwertsteuer.",
+        "Bei Gerüchen behandeln wir zuerst die Ursache. Falls nötig, kann eine zusätzliche Ozonbehandlung geruchsbildende Moleküle abbauen."
+      ]
+    },
+    {
+      "slug": "lackkorrektur",
+      "title": "Lackkorrektur",
+      "teaser": "Lackpolitur zur Reduzierung feiner Kratzer und für gleichmäßigen Glanz.",
+      "fromPrice": 349,
+      "bullets": [
+        "Reduzierung feiner Waschkratzer, soweit die Klarlackschicht es zulässt",
+        "Mehr Tiefe, gleichmäßigere Spiegelung",
+        "Politur abgestimmt auf Lackzustand und Schichtstärke",
+        "Vorbereitung des Lacks für Wachs oder Keramikversiegelung"
+      ],
+      "body": [
+        "Nicht jeder Kratzer lässt sich auspolieren. Wir prüfen den Lack vorab und erklären Ihnen die Möglichkeiten und Grenzen der Behandlung.",
+        "Das Paket Reinigung & Politur enthält eine einstufige Lackpolitur. Im Paket Keramikschutz ist eine mehrstufige Lackkorrektur enthalten, sofern die Lackschicht dafür geeignet ist."
+      ]
+    },
+    {
+      "slug": "keramikversiegelung",
+      "title": "Keramikversiegelung",
+      "teaser": "Lackkorrektur und anschließende Keramikversiegelung.",
+      "fromPrice": 899,
+      "bullets": [
+        "Wasserabweisende Oberfläche für eine leichtere Fahrzeugwäsche",
+        "Gleichmäßiger Glanz durch sorgfältige Lackvorbereitung",
+        "Keramikbeschichtung als zusätzlicher Oberflächenschutz; Verschmutzungen weiterhin zeitnah entfernen",
+        "Pflegehinweise passend zur verwendeten Beschichtung"
+      ],
+      "body": [
+        "Eine Keramikversiegelung braucht einen sorgfältig vorbereiteten Lack. Wir reinigen die Oberfläche, reduzieren behandelbare Waschkratzer durch mehrstufige Politur und entfetten den Lack vor dem Auftrag der Beschichtung.",
+        "Die Beschichtung ergänzt den Oberflächenschutz und erleichtert die Pflege. Aushärtezeit, erster Kontakt mit Wasser und erste Wäsche richten sich nach den Vorgaben des verwendeten Produkts. Bei der Übergabe erhalten Sie die passenden Pflegehinweise.",
+        "Planen Sie ca. 2 Tage ein. Glas- und Felgenversiegelung, Lederpflege sowie der Hol- und Bringservice bis 60 km sind im Paket enthalten."
+      ]
+    },
+    {
+      "slug": "lederpflege",
+      "title": "Lederpflege",
+      "teaser": "Gründliche Reinigung und materialgerechte Pflege für Autoleder.",
+      "fromPrice": 149,
+      "bullets": [
+        "Beanspruchtes Leder sauber bekommen, ohne es anzugreifen",
+        "Glanzstellen durch Schmutz reduzieren",
+        "Danach pflegen und schützen",
+        "Sitzwangen und Kontaktflächen extra im Blick"
+      ],
+      "body": [
+        "Leder braucht die richtige Pflege, keine aggressive Chemie. Wir reinigen zuerst gründlich und lassen die Pflege danach einziehen.",
+        "Die Lederpflege ab 149 € umfasst Tiefenreinigung und Imprägnierung. Sie ist als Zusatzleistung erhältlich. Das Paket Keramikschutz enthält ebenfalls Lederpflege."
+      ]
+    },
+    {
+      "slug": "smart-repair",
+      "title": "Dellenentfernung & Smart Repair",
+      "teaser": "Lackschadenfreie Dellenentfernung, sofern technisch möglich.",
+      "bullets": [
+        "Lackschadenfreie Dellenentfernung bei geeignetem Schadensbild",
+        "Begutachtung und verbindliches Angebot vor der Reparatur",
+        "Auf Wunsch mit Lackkorrektur und Aufbereitung kombinierbar",
+        "Oft sinnvoll vor Verkauf oder Leasingrückgabe"
+      ],
+      "body": [
+        "Wir entfernen Parkdellen, kleinere Karosseriedellen und Hagelschäden ohne Neulackierung, sofern der Schaden und der Lackzustand dies zulassen.",
+        "Einen Preis und eine Zusage gibt es erst, wenn wir den Schaden gesehen haben und Sie zustimmen. Bei kleinen Stellen reicht oft ein Foto zur ersten Einschätzung."
+      ]
+    },
+    {
+      "slug": "leasingrueckgabe",
+      "title": "Leasingrückläufer-Aufbereitung",
+      "teaser": "Gezielte Aufbereitung vor der Leasingrückgabe.",
+      "fromPrice": 349,
+      "bullets": [
+        "Gemeinsame Prüfung relevanter Gebrauchsspuren vor der Rückgabe",
+        "Innenraum, Lackpflege und punktuelle Nacharbeit",
+        "Klare Einschätzung, welche Spuren sich behandeln lassen",
+        "Terminabstimmung passend zur geplanten Leasingrückgabe"
+      ],
+      "body": [
+        "Vor der Leasingrückgabe konzentrieren wir uns auf relevante Gebrauchsspuren. Wir besprechen mit Ihnen, welche Arbeiten sinnvoll sind und welche Spuren bleiben.",
+        "Für Autohäuser und Flotten erstellen wir ein individuelles Angebot nach Fahrzeuganzahl und Zustand."
+      ]
+    },
+    {
+      "slug": "lederreparatur",
+      "title": "Lederreparatur im Auto",
+      "teaser": "Reparatur von Brandlöchern und Rissen nach Materialprüfung.",
+      "fromPrice": 139,
+      "bullets": [
+        "Brandlöcher, kleine Löcher, Risse und offene Nähte",
+        "Reparatur nur bei geeignetem Materialzustand",
+        "Farbanpassung an das vorhandene Leder; Unterschiede können sichtbar bleiben",
+        "Fotos zuerst, Preis erst nach Prüfung am Auto"
+      ],
+      "body": [
+        "Bei Brandlöchern und Rissen im Ledersitz kann eine punktuelle Reparatur möglich sein. Ob sie für Ihr Fahrzeug geeignet ist, prüfen wir vor der Beauftragung.",
+        "Wir prüfen Material, Dicke, Schadensränder und die Belastung der Stelle. Sitzwangen und Einstiegsbereiche sind besonders beansprucht. Ist keine dauerhafte Reparatur zu erwarten, führen wir sie nicht aus.",
+        "Wir passen die Farbe an das vorhandene Leder an. Bei älterem oder ausgebleichtem Leder kann ein Unterschied sichtbar bleiben. Für ein vollständig einheitliches Ergebnis ist unter Umständen ein Neubezug durch eine Sattlerei nötig.",
+        "Schicken Sie Fotos bei Tageslicht, ohne Blitz. Wenn es machbar wirkt, schauen wir das Auto in Horb an und nennen den Preis. Abholung aus 13 Städten ist möglich."
+      ],
+      "priceRows": [
+        {
+          "name": "Brandloch / kleines Loch",
+          "price": 139,
+          "note": "eine Stelle, nach Prüfung"
+        },
+        {
+          "name": "Riss oder offene Naht",
+          "price": 159,
+          "note": "eine Stelle, nach Prüfung"
+        },
+        {
+          "name": "Lenkrad-Leder",
+          "price": 179,
+          "note": "Abrieb, kleine Risse"
+        },
+        {
+          "name": "Farbauffrischung Sitzfläche",
+          "price": 189,
+          "note": "wenn das Leder noch fest ist"
+        },
+        {
+          "name": "Brandloch Textil / Himmel",
+          "price": 119,
+          "note": "nur bei tragfähigem Gewebe"
+        }
+      ],
+      "honestNote": "Wir reparieren nur, wenn das Material eine dauerhafte Reparatur zulässt. Ist das Leder zu dünn, großflächig rissig oder das Loch zu groß, erklären wir Ihnen das vorab. Für einen ungeeigneten Reparaturversuch entstehen Ihnen keine Kosten."
+    },
+    {
+      "slug": "geruchsneutralisation",
+      "title": "Geruchsneutralisation mit Ozon",
+      "teaser": "Geruchsursache behandeln und bei Bedarf mit Ozon nacharbeiten.",
+      "fromPrice": 99,
+      "bullets": [
+        "Zuerst die Ursache: Schmutz, Nässe, Filter, Polster",
+        "Ozon baut geruchsbildende Moleküle ab",
+        "Behandlung von Nikotin-, Tier- und Feuchtigkeitsgerüchen, häufig ergänzend zur Innenraumreinigung",
+        "Ab 99 €, bei starker Belastung nach Absprache"
+      ],
+      "body": [
+        "Ozon baut geruchsbildende Moleküle ab. Die Behandlung setzt einen sauberen, trockenen Innenraum voraus. Bleibt die Ursache bestehen, kann der Geruch zurückkehren.",
+        "Bei starkem Nikotin- oder Schimmelgeruch können eine Innenraumreinigung und mehrere Ozonbehandlungen nötig sein. Den voraussichtlichen Aufwand besprechen wir vor Beginn mit Ihnen."
+      ]
+    },
+    {
+      "slug": "scheinwerferaufbereitung",
+      "title": "Scheinwerferaufbereitung: Hinweise zur Zulässigkeit",
+      "teaser": "Die Scheinwerferaufbereitung ist bis zur Klärung des Verfahrens und seiner Zulässigkeit nicht buchbar.",
+      "pendingApproval": true,
+      "bullets": [
+        "Scheinwerfer-Abdeckscheiben gehören zum bauartgenehmigten Bauteil",
+        "Schleifen, Polieren und Versiegeln können die Genehmigung und Betriebserlaubnis betreffen",
+        "Keine Zusage einer zulässigen Instandsetzung ohne fahrzeug- und verfahrensbezogenen Nachweis"
+      ],
+      "body": [
+        "Eine optische Verbesserung allein belegt weder eine zulässige Reparatur noch die vorgeschriebene Lichtverteilung. Auch eine Materialprüfung ersetzt keinen Genehmigungsnachweis.",
+        "Bis Verfahren und gegebenenfalls erforderliche Genehmigung fachlich geklärt sind, ist die Scheinwerferaufbereitung aus der Preisauswahl und dem Anfragerechner ausgesetzt. Diese Informationsseite bleibt erreichbar."
+      ],
+      "honestNote": "Wir bieten diese Bearbeitung derzeit nicht als Standardleistung an. Bei matten oder beschädigten Scheinwerfern lassen Sie die zulässigen Möglichkeiten durch eine Fachwerkstatt oder Prüforganisation klären."
+    }
+  ],
+  "faqs": [
+    {
+      "group": "Kosten",
+      "q": "Was kostet eine Keramikversiegelung?",
+      "a": "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Der endgültige Preis hängt von der Fahrzeugklasse und vom Zustand des Lacks ab. Den verbindlichen Preis nennen wir Ihnen, nachdem wir das Fahrzeug gesehen haben."
+    },
+    {
+      "group": "Dauer",
+      "q": "Wie lange dauert eine Keramikversiegelung?",
+      "a": "Planen Sie ca. 2 Tage ein. Der größere Teil entfällt auf Reinigung, Entfernung von Ablagerungen und Lackkorrektur. Anschließend muss die Keramik geschützt aushärten."
+    },
+    {
+      "group": "Dauer",
+      "q": "Wie lange dauert eine komplette Fahrzeugaufbereitung?",
+      "a": "Basisreinigung: ca. 3 Std.; Reinigung & Politur: ca. 6 Std.; Keramikschutz: ca. 2 Tage. Bei starker Verschmutzung oder Gerüchen kann mehr Zeit nötig sein."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Was ist der Unterschied zwischen Wachs, Versiegelung und Keramik?",
+      "a": "Wachs hält je nach Nutzung einige Monate. Eine Sprühversiegelung ist dünner. Keramik verbindet sich mit dem Klarlack und hält länger – wenn der Lack vorbereitet ist und danach gepflegt wird."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Wie lange hält die Keramikversiegelung?",
+      "a": "Die Standzeit hängt von der verwendeten Beschichtung, der Fahrleistung, den Umwelteinflüssen und der Pflege ab. Wir besprechen mit Ihnen, welche Beschichtung zu Ihrem Fahrzeug passt und welche Haltbarkeit dafür zu erwarten ist. Eine pauschale Laufzeit für jedes Fahrzeug versprechen wir nicht."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Darf ich mit einer Keramikversiegelung in die Waschanlage?",
+      "a": "Grundsätzlich ist das möglich. Bürstenanlagen können jedoch feine Kratzer verursachen. Wir empfehlen eine Handwäsche mit pH-neutralem Shampoo oder eine berührungslose Waschanlage."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Kann ich mein Auto nach der Versiegelung sofort waschen?",
+      "a": "Warten Sie mit der ersten Wäsche, bis die verwendete Beschichtung dafür freigegeben ist. Wie lange Sie Wasser und Reinigungsmittel vermeiden sollten, erklären wir Ihnen bei der Übergabe anhand der Produktvorgaben."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Lohnt sich eine Keramikversiegelung auch bei einem Gebrauchtwagen?",
+      "a": "Ja, sofern der Lack für die nötige Vorbereitung geeignet ist. Bei Gebrauchtwagen kann der sichtbare Unterschied größer sein als bei Neuwagen. Wir prüfen die Lackstärke vorab."
+    },
+    {
+      "group": "Keramikversiegelung",
+      "q": "Ist eine Keramikversiegelung kratzfest?",
+      "a": "Nein. Sie erleichtert die Pflege und schützt vor vielen Umwelteinflüssen, macht den Lack aber nicht unempfindlich gegen mechanische Kratzer oder Steinschläge."
+    },
+    {
+      "group": "Innenraumreinigung",
+      "q": "Bekommen Sie Gerüche aus dem Innenraum wieder heraus?",
+      "a": "Wir prüfen zuerst die Geruchsursache und reinigen die betroffenen Materialien. Eine Ozonbehandlung kann ergänzend sinnvoll sein, ab 99 € inkl. MwSt. für die Kompaktklasse. Den Umfang stimmen wir vor Beginn mit Ihnen ab."
+    },
+    {
+      "group": "Lederreparatur",
+      "q": "Reparieren Sie Brandlöcher und Risse im Leder?",
+      "a": "Ja, sofern der Materialzustand eine dauerhafte Reparatur zulässt. Die Preise beginnen bei 139 € pro Stelle. Ist das Leder zu dünn, großflächig rissig oder das Loch zu groß, führen wir die Reparatur nicht aus. Für einen ungeeigneten Reparaturversuch entstehen Ihnen keine Kosten."
+    },
+    {
+      "group": "Lederreparatur",
+      "q": "Wird die Stelle hinterher unsichtbar?",
+      "a": "Wir passen die Farbe an das vorhandene Leder an. Besonders bei älterem oder ausgebleichtem Leder kann ein feiner Unterschied sichtbar bleiben. Für eine vollständig neue Sitzfläche ist eine Sattlerei der richtige Ansprechpartner."
+    },
+    {
+      "group": "Abholservice",
+      "q": "Holen Sie mein Fahrzeug ab?",
+      "a": "Ja. Die Aufbereitung erfolgt in unserer Werkstatt in Horb am Neckar. Bis 10 km kostenlos, bis 20 km 50 €, bis 50 km 70 €, darüber auf Anfrage. Im Paket Keramikschutz ist die Abholung bis 60 km enthalten."
+    },
+    {
+      "group": "Abholservice",
+      "q": "Wie ist mein Fahrzeug während des Hol- und Bringservices versichert?",
+      "a": "Bitte klären Sie den konkreten Versicherungsschutz vor der Beauftragung mit uns. Entscheidend sind die geltenden Versicherungsbedingungen, mögliche Ausschlüsse und Selbstbeteiligungen. Eine pauschale Zusage vollständiger Absicherung machen wir nicht."
+    },
+    {
+      "group": "Allgemein",
+      "q": "Wann und wie bezahle ich?",
+      "a": "Ihre Terminanfrage ist unverbindlich. Es ist keine Anzahlung erforderlich. Zahlung fällig nach erbrachter Dienstleistung. Es erfolgt kein automatischer Einzug."
+    },
+    {
+      "group": "Allgemein",
+      "q": "Wie oft sollte ich mein Auto aufbereiten lassen?",
+      "a": "Eine vollständige Aufbereitung ist meist einmal jährlich sinnvoll, ohne Garage eher häufiger. Mit Keramikversiegelung bleiben über Jahre regelmäßige Wäsche und gelegentliche Auffrischung entscheidend."
+    }
+  ]
+}
