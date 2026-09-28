@@ -1,3 +1,5 @@
+> Historical account only. Superseded for the new account created 2026-09-28; see [current workflow](roapp-booking-flow.md). The live claims below do not apply to the new integration.
+
 # RO integration: verified state on 19 September 2026
 
 The live website uses TanStack Start, existing IONOS PostgreSQL and private Supabase photo storage. RO App is the operating interface (BOOKING_OPERATIONS=roapp).

@@ -56,6 +56,8 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
         requestId: z.string().uuid(),
         name: z.string().trim().min(2).max(120),
         phone: z.string().trim().min(6).max(40),
+        email: publicBookingSchema.shape.email.optional(),
+        reviewEmailConsent: z.boolean().optional(),
         text: z.string().max(2000),
         files: z
           .array(
@@ -85,6 +87,8 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
             title: data.title,
             name: data.name,
             phone: data.phone,
+            email: data.email || "",
+            reviewEmailConsent: data.reviewEmailConsent === true,
             text: data.text,
           }),
         )
@@ -107,13 +111,15 @@ export const createPublicPhotoInquiry = createServerFn({ method: "POST" })
           version: number;
         }>`insert into bookings(shop_id,customer_name,phone,package_id,class_id,extra_ids,total_cents,note,request_key_hash,request_fingerprint,upload_token_hash,upload_token_expires_at)
           values(${SHOP},${data.name},${data.phone},'photo-inquiry','kompakt','[]',0,${data.title + "\n" + data.text},${key},${fingerprint},${capability.hash},${capability.expiresAt}::timestamptz) returning id,version`;
+        await tx`update bookings set email=${data.email || null},review_email_consent=${data.reviewEmailConsent === true}
+          where id=${created.id} and shop_id=${SHOP}`;
         return created;
       });
       setBookingUploadCookie(row.id, capability);
       // No remote processing until the selected files have been durably uploaded.
       if (data.files.length) await saveBookingPhotos(sql, row.id, data.files);
-      const { queueBitrixBooking } = await import("@/lib/bitrix-sync");
-      await queueBitrixBooking(sql, row);
+      const { queueCrmBooking } = await import("@/lib/booking-crm");
+      await queueCrmBooking(sql, row);
       kickBookingDelivery(sql);
       return { ok: true as const };
     }
@@ -181,8 +187,8 @@ export const attachBookingPhotos = createServerFn({ method: "POST" })
     const [row] = await sql<{ id: number; version: number }>`
       select id, version from bookings where id = ${bookingId} and shop_id = ${SHOP} limit 1`;
     if (row) {
-      const { queueBitrixPhotos } = await import("@/lib/bitrix-sync");
-      await queueBitrixPhotos(sql, row);
+      const { queueCrmPhotos } = await import("@/lib/booking-crm");
+      await queueCrmPhotos(sql, row);
       kickBookingDelivery(sql);
     }
     return saved;

@@ -1,5 +1,6 @@
+import { crmBusyWindows } from "@/lib/booking-crm";
 import { createFileRoute } from "@tanstack/react-router";
-import { calendarDateRange, bitrixBusyWindows } from "@/lib/bitrix-calendar";
+import { calendarDateRange } from "@/lib/bitrix-calendar";
 
 export const Route = createFileRoute("/api/availability")({
   server: {
@@ -27,10 +28,7 @@ export const Route = createFileRoute("/api/availability")({
         try {
           const range = calendarDateRange(from, to);
           const { getSql } = await import("@/lib/db");
-          const windows = await bitrixBusyWindows(await getSql(), range.from, range.to, {
-            force: true,
-            nativeOnly: true,
-          });
+          const windows = await crmBusyWindows(await getSql(), range.from, range.to, true);
           return Response.json({ ok: true, windows }, { headers: { "cache-control": "no-store" } });
         } catch {
           return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

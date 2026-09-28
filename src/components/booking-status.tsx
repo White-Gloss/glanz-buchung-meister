@@ -42,13 +42,27 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
       <h2 className="font-display text-2xl">{data.status}</h2>
       <p>
         <span className="text-sm text-muted">
-          {data.fixed ? "Bestätigter Fixpreis" : "Unverbindlicher Preis laut Anfrage"}
+          {data.fixed ? "Bestätigter Fixpreis" : "Ab-Preis laut Anfrage"}
         </span>
         <br />
         <strong className="text-2xl">
           {!data.fixed && data.amount === 0 ? "Preis wird ermittelt" : money(data.amount)}
         </strong>
       </p>
+      {data.customerStep && <p className="text-sm text-muted">{data.customerStep.text}</p>}
+      {data.publicUrl && data.customerStep?.linkLabel && (
+        <p>
+          <a className="underline" href={data.publicUrl} target="_blank" rel="noopener noreferrer">
+            {data.customerStep.linkLabel}
+          </a>
+        </p>
+      )}
+      {data.updatedAt && (
+        <p className="text-xs text-muted">
+          Zuletzt abgeglichen:{" "}
+          {new Date(data.updatedAt).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}
+        </p>
+      )}
       {failed && (
         <p role="status" className="text-sm text-muted">
           Die Aktualisierung ist gerade nicht möglich. Angezeigt wird der zuletzt geladene Stand.
@@ -56,7 +70,7 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
       )}
       {data.scheduledFor && (
         <p>
-          {data.fixed ? "Termin laut Auftrag" : "Wunschtermin (noch unbestätigt)"}:{" "}
+          {data.fixed ? "Termin im geprüften Angebot" : "Wunschtermin (noch unbestätigt)"}:{" "}
           {new Date(data.scheduledFor).toLocaleString("de-DE", {
             timeZone: "Europe/Berlin",
             dateStyle: "medium",

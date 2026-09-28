@@ -1,7 +1,9 @@
+import { roappOnlyEnabled } from "./booking-backend.ts";
 import type { Sql } from "./db.ts";
 import { bitrixWebhook, normalizeBitrixRestWebhook } from "./bitrix.ts";
 
 export async function readBitrixWebhook(sql: Sql): Promise<string> {
+  if (roappOnlyEnabled()) return "";
   const fromEnv = bitrixWebhook();
   if (fromEnv) return fromEnv;
   // Keep the existing settings column; old proxy keys are deliberately rejected.

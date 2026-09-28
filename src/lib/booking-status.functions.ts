@@ -1,3 +1,5 @@
+import { roappOnlyEnabled } from "./booking-backend";
+import { roappCustomerStatus } from "./roapp-customer-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSql } from "./db";
@@ -35,6 +37,12 @@ export const getBookingStatus = createServerFn({ method: "GET" })
           ))
     )
       return null;
+    if (roappOnlyEnabled())
+      return {
+        id: booking.id,
+        ...(await roappCustomerStatus(sql, data.id, booking.total_cents)),
+        statusUrl: bookingStatusUrl(data.id),
+      };
     const [state] = await sql<{ bitrix_deal_id: number | null }>`select bitrix_deal_id from bookings
       where id=${data.id} and shop_id='white-gloss'`;
     const current = state?.bitrix_deal_id
@@ -61,6 +69,9 @@ export const getBookingStatus = createServerFn({ method: "GET" })
     return {
       id: booking.id,
       ...current,
+      publicUrl: null,
+      customerStep: null,
+      updatedAt: null,
       statusUrl: bookingStatusUrl(data.id),
     };
   });

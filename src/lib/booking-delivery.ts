@@ -9,7 +9,7 @@ import { runNotificationWorker } from "./notification-worker.ts";
 export function kickBookingDelivery(sql: Sql): void {
   const state = globalThis as typeof globalThis & {
     __bookingDeliveryKick?: () => void;
-    __bitrixSyncKick?: () => void;
+    __crmSyncKick?: () => void;
   };
   state.__bookingDeliveryKick ??= createDeliveryKick(
     async () => {
@@ -20,15 +20,15 @@ export function kickBookingDelivery(sql: Sql): void {
         "[booking:delivery] Versandjob unterbrochen; gespeicherte Warteschlange bleibt erhalten.",
       ),
   );
-  state.__bitrixSyncKick ??= createDeliveryKick(
+  state.__crmSyncKick ??= createDeliveryKick(
     async () => {
-      const { runBitrixSync } = await import("./bitrix-sync.ts");
-      await runBitrixSync(sql);
+      const { runCrmSync } = await import("./booking-crm.ts");
+      await runCrmSync(sql);
     },
-    () => console.error("[bitrix:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
+    () => console.error("[crm:sync] Übertragung unterbrochen; Warteschlange bleibt erhalten."),
   );
   state.__bookingDeliveryKick();
-  state.__bitrixSyncKick();
+  state.__crmSyncKick();
 }
 
 export function createDeliveryKick(run: () => Promise<unknown>, onError: () => void): () => void {

@@ -1,3 +1,4 @@
+import { roappOnlyEnabled } from "./booking-backend.ts";
 import { ensureBitrixWorkshopSchema } from "./bitrix-workshop-schema.ts";
 import { formatBerlinRange } from "./booking-time.ts";
 import { createHash, randomUUID } from "node:crypto";
@@ -130,6 +131,7 @@ export async function queueBitrixBooking(
   sql: Sql,
   booking: Pick<WorkflowBooking, "id" | "version">,
 ) {
+  if (roappOnlyEnabled()) return;
   await ensureBitrixSchema(sql);
   const [source] =
     await sql<BitrixBooking>`select * from bookings where id=${booking.id} and shop_id=${SHOP}`;
@@ -146,6 +148,7 @@ export async function queueBitrixPhotos(
   sql: Sql,
   booking: Pick<WorkflowBooking, "id" | "version">,
 ) {
+  if (roappOnlyEnabled()) return;
   await queueBitrixBooking(sql, booking);
   await sql`update bitrix_sync_queue set photos_done=false,photos_revision=photos_revision+1,status=case when status='review' then 'review' else 'pending' end,next_attempt_at=now(),updated_at=now()
     where booking_id=${booking.id}`;
@@ -688,6 +691,7 @@ export async function runBitrixSync(
   } = {},
 ) {
   const result = { synced: 0, failed: 0, review: 0, skipped: 0 };
+  if (roappOnlyEnabled()) return { ...result, skipped: 1 };
   await ensureBitrixSchema(sql);
   if (!options.request && !(await readBitrixWebhook(sql))) {
     result.skipped = 1;

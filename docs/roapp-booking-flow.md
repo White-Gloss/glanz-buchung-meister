@@ -1,58 +1,38 @@
-# White Gloss: Anfragen in RO bearbeiten
+# White-Gloss: Anfrage und Freigabe mit RO App
 
-Website-Anfragen werden in RO unter **Aufträge** bearbeitet. Die RO-Bereiche
-„Anfragen“ und „Buchungen“ sind dafür nicht der Eingang. Es gibt keinen separaten
-Website-Adminbereich.
+Stand: 28.09.2026. RO App ersetzt Bitrix24 nach ausdrücklicher Betreiberanweisung.
+Dieser Stand ist vorbereitet, nicht auf IONOS aktiviert.
 
-## Der tägliche Ablauf
+1. Die Website speichert eine unverbindliche Anfrage mit Ab-Preisen, Wunschtermin, Kontaktdaten und optionalen Fotos. Sie überträgt genau einen Auftrag in das neue RO-Konto. Der Wunschtermin steht im Kommentar; bei Eingang wird kein fester Termin angelegt.
+2. Lars prüft Angaben und Fotos. Er ergänzt Leistungen, Endpreis und den angebotenen Zeitraum in RO. Fehlende E-Mail-Adressen müssen vor der Freigabe beim Kunden erfragt werden.
+3. Erst „Fixpreis bestätigt“ löst die Angebots-E-Mail aus. Die öffentliche Auftragsseite erlaubt nur in diesem Status die Annahme. Die Kundenunterschrift ist dort erforderlich.
+4. Der Kunde nimmt selbst an und unterschreibt. RO wechselt zu „Akzeptiert“. Lars prüft die Unterschrift, stimmt Abholung oder eigene Anlieferung ab und setzt „Termin verbindlich“. Dieser Status ist in RO nur aus „Akzeptiert“ erreichbar. Die API stellt keinen hier nachgewiesenen Signaturprüfnachweis bereit; der separate Besitzerstatus dokumentiert die menschliche Prüfung.
+5. Der Website-Versand plant die Erinnerung drei Tage vor dem finalen Termin. Bei einer kurzfristigen Bestätigung erfolgt sie zum nächsten Versandlauf. Abholzeit und Übergabe werden telefonisch abgestimmt. Preis- oder Terminänderungen entziehen die bisherige Freigabe; erneut prüfen, Kundenannahme einholen und bestätigen. Aktuelle RO-Daten werden vor jeder geplanten E-Mail gelesen; bei Fehlern wird nicht versandt.
+6. Nach erbrachter Leistung wird „Erledigt“ gesetzt. Rechnungen entstehen in RO, mit sieben Tagen Zahlungsziel. Eine Zahlung darf ausschließlich nach tatsächlichem Eingang gebucht werden. Bei Barzahlung wird anschließend der bezahlte Beleg ausgegeben; ein Statuswechsel erzeugt keinen Zahlungsnachweis.
+7. Sieben Tage nach dem erfassten Abschluss folgt einmalig eine Bewertungs-E-Mail, sofern die freiwillige Einwilligung vorliegt. Der Google-Link ist unabhängig von der Zufriedenheit erreichbar. Widerruf setzt bookings.review_email_consent=false; jede ausstehende Nachricht prüft die Einwilligung erneut.
 
-| Schritt | Was Sie tun | Ergebnis |
-| --- | --- | --- |
-| 1. Anfrage prüfen | Auftrag mit Status **Anfrage (Preise prüfen)** öffnen. Kundendaten und Wunschtermin prüfen. Die Fotolinks stehen im Auftragsverlauf. | Die Anfrage bleibt unverbindlich. |
-| 2. Angebot fertigstellen | Fotos begutachten. Unter **Dienstleistungen und Produkte** alle Leistungen, Extras und Abholung mit dem endgültigen Preis eintragen. Termin und verfügbare Arbeitszeit prüfen. E-Mail-Adresse des Kunden prüfen bzw. ergänzen. | Preis und Termin sind zur Freigabe vorbereitet. |
-| 3. Freigeben | Erst jetzt **Fixpreis bestätigt** wählen. | RO versendet die Bestätigung mit dem Link zur Auftragsannahme an die hinterlegte E-Mail-Adresse. Versand im Verlauf prüfen. |
-| 4. Kundenannahme abwarten | Der Kunde prüft den Auftrag und unterschreibt selbst über den Link. Die Annahme im RO-Verlauf kontrollieren. | **Akzeptiert**. Den Status nicht stellvertretend für eine Kundenunterschrift setzen. |
-| 5. Arbeiten ausführen | Bei Beginn **In Arbeit**, nach Abschluss **Erledigt** wählen. | Der Kunde erhält die dafür eingerichteten Statusnachrichten. Abholung oder Rückgabe vereinbaren. |
-| 6. Rechnung senden | Nach der Leistung die Rechnung erstellen. Anschrift, Leistungen, Betrag, Leistungszeitraum im Kommentar und Fälligkeit prüfen. E-Mail-Vorlage **Rechnungsversand White Gloss** und Dokumentanhang **Rechnung** wählen. | Rechnung wird manuell versandt. Zahlung erst nach tatsächlichem Eingang buchen. |
+## Bereits im neuen RO-Konto konfiguriert
 
-## Drei Regeln, die Fehler vermeiden
+- 50 zur Website passende Servicepositionen mit vorläufigen Preisen.
+- „Fixpreis bestätigt“ und „Termin verbindlich“.
+- Angebots-E-Mail nur bei Preisfreigabe; Annahme mit erforderlicher Unterschrift.
+- Die frühere sofortige Bewertungs-E-Mail wurde durch eine Abschlussinformation ersetzt.
+- Rechnungsziel sieben Tage (im RO-Formular geprüft).
+- Webhook zur Website angelegt. Bei der letzten Sichtprüfung aktiv; noch keine erfolgreiche Zustellung an den neuen Website-Empfänger nachgewiesen.
 
-- **Der Anfragetext ist eine Momentaufnahme.** Für den freigegebenen Gesamtbetrag
-  gelten die aktuellen Positionen im Auftrag. Ein alter Preis im Anfragetext wird
-  nicht nochmals als Endpreis in die Bestätigungs-E-Mail übernommen.
-- **Fotos stehen im Verlauf als geschützte Links.** Die Registerkarte „Dateien“
-  kann leer sein. Fehlende oder nicht erreichbare Fotos vor der Freigabe klären.
-- **Ein Status ist kein Beleg.** „Akzeptiert“ allein beweist keine Unterschrift;
-  die Kundenannahme im Verlauf prüfen. „Erledigt“ erstellt keine Rechnung und
-  „Geschlossen“ beweist keinen Zahlungseingang.
+## Noch vor produktiver Freigabe nötig
 
-## Wenn etwas fehlt
+- IONOS-Zugang wiederherstellen, Migration 0022 und den geprüften Release über den vorhandenen IONOS-Weg veröffentlichen.
+- Neues Konto, API-Schlüssel, Status-/Katalogzuordnung und tatsächlichen Umschaltzeitpunkt installieren. Nur nach dem Umschaltzeitpunkt neu eingehende Anfragen dürfen ins neue Konto gelangen. Keine alten Warteschlangen importieren.
+- Rechnungssteller vollständig hinterlegen. Das RO-Formular verlangt eine Handelsregisternummer; die angegebene Steuernummer darf nicht stillschweigend dafür verwendet werden.
+- Vollautomatisches Erstellen und Versenden von Rechnungs-PDFs ist noch nicht implementiert oder nachgewiesen. Der API-Katalog bietet Rechnungserstellung, aber keinen in dieser Prüfung gefundenen PDF-/Versandendpunkt. Bis zur geprüften Umsetzung erfolgt Erstellung und Versand in RO durch den Betreiber.
+- RO-Auftrags-E-Mails verwenden derzeit den RO App Gateway. Die gewünschte Firmen-Absenderadresse ist dort noch nicht verbunden. Erinnerungs-/Bewertungsmails nutzen den vorhandenen Website-Maildienst und buchung@white-gloss.de; dessen aktuelle Produktionskonfiguration ist wegen IONOS-Zugriff nicht geprüft.
+- Vor Aktivierung einen vollständig isolierten End-to-End-Test ohne echte Kundendaten bzw. Nachrichten durchführen. Das aktiviert keine echten Termine und simuliert keine Kundenunterschrift.
 
-- Keine E-Mail-Adresse: vor der Freigabe ergänzen oder den öffentlichen
-  Auftragslink persönlich über den vereinbarten Kontaktweg weitergeben. Eine reine
-  Fotoanfrage erfasst bisher nur Name und Telefon; daraus kann keine E-Mail
-  versandt werden.
-- Kein fester Termin: mit dem Kunden abstimmen und im RO-Auftrag eintragen.
-- Kein Versandereignis: E-Mail-Adresse und RO-Benachrichtigung prüfen. Nicht
-  mehrfach zwischen Statuswerten wechseln, um einen Versand zu erzwingen.
-- Nachträgliche Zusatzarbeiten: Umfang und Mehrpreis vor Ausführung mit dem Kunden
-  abstimmen. Eine Betragsänderung ersetzt keine erneute Kundenfreigabe.
+## Schutz vor Doppelungen und Altlasten
 
-## Was automatisch läuft – und was nicht
+BOOKING_OPERATIONS wählt genau ein CRM. Im RO-Modus lesen oder beschreiben die Bitrix-Einstiegspunkte keine Bitrix-Daten. Jeder API-Client prüft das Erstellungsdatum des neuen Unternehmens. Account-Scope und Umschaltzeitpunkt sperren alte RO-IDs und ausstehende Altfälle. Mehrdeutige API-Schreibantworten gehen in manuelle Prüfung statt erneut zu schreiben.
 
-Automatisch: Website-Anfrage, Leistungspositionen und Fotolinks nach RO;
-RO-Status und freigegebener Betrag zurück auf die persönliche Website-Statusseite;
-eingerichtete RO-E-Mails beim Wechsel auf den jeweiligen Status.
+Fotos werden über geschützte, befristete Links in privaten Auftragskommentaren bereitgestellt. Der öffentliche Kundenstatus ist nur über die bestehende Anfrageberechtigung erreichbar. Der Kalender liest alle Seiten; unvollständige Antworten gelten nicht als freie Kapazität.
 
-Manuell: Fotobegutachtung, Endpreis, Terminprüfung, Freigabe, Rechnungserstellung,
-Rechnungsversand und Prüfung des Zahlungseingangs.
-
-Die Website übernimmt belegte Zeiträume offener RO-Aufträge automatisch. Der
-Server hält erfolgreiche Kalenderabfragen höchstens 30 Sekunden vor. Änderungen
-an Beginn und Ende werden beim nächsten Abruf berücksichtigt. Erledigte,
-geschlossene und abgelehnte Aufträge geben ihre Zeiträume wieder frei. Die
-separaten RO-Bereiche „Buchungen“, Mitarbeiterschichten und Abwesenheiten sind
-nicht Teil dieses Abgleichs. Vor der endgültigen Zusage den gesamten Kalender
-in RO prüfen. Bei einem RO-Ausfall meldet die Website fehlende Verfügbarkeit,
-statt einen unvollständigen Kalender als frei anzuzeigen.
-Die endgültige PDF-Druckdarstellung der Rechnung ist noch nicht visuell abgenommen.
+RO-Dokumentation: [Externe Benachrichtigungen](https://help.roapp.io/de/articles/3293171-sms-und-e-mail-benachrichtigungen-fur-kunden). Im aktuellen Konto wurde die Verzögerungsoption nur bei SMS angezeigt; deshalb läuft die 7-Tage-E-Mail über den Website-Versand.

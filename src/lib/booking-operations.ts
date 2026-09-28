@@ -1,11 +1,13 @@
+import { assertWebsiteApprovalEnabled } from "./booking-backend.ts";
+import { crmBusyWindows } from "./booking-crm.ts";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
 import { requireBookingOwner } from "./booking-owner.ts";
 import { queueBookingEvent, type BookingEvent } from "./booking-notifications.ts";
 import { berlinWallToUtc, defaultWorkEnd, utcToBerlinWall } from "./booking-time.ts";
-import { queueBitrixBooking } from "./bitrix-sync.ts";
+import { queueCrmBooking } from "./booking-crm.ts";
 import { packages, extras as extraCatalog, vehicleClasses } from "../data/site.ts";
-import { assertBitrixCalendarAvailable, bitrixBusyWindows } from "./bitrix-calendar.ts";
+import { assertBitrixCalendarAvailable } from "./bitrix-calendar.ts";
 
 const SHOP = "white-gloss";
 
@@ -46,6 +48,7 @@ export type OperationsBooking = WorkflowBooking & {
 };
 
 export async function ensureBookingOperationsSchema(sql: Sql) {
+  await sql`alter table bookings add column if not exists review_email_consent boolean not null default false`;
   await sql`alter table bookings add column if not exists estimated_price_cents integer`;
   await sql`alter table bookings add column if not exists agreed_price_cents integer`;
   await sql`alter table bookings add column if not exists work_start_at timestamptz`;
@@ -183,7 +186,7 @@ async function recordEvent(
     returning id
   `;
   await queueBookingEvent(tx, row, name, saved.id, actor);
-  await queueBitrixBooking(tx, row);
+  await queueCrmBooking(tx, row);
 }
 
 export type ConfirmScheduleInput = {
@@ -205,6 +208,7 @@ export async function confirmBookingWithSchedule(
   actor: string,
   input: ConfirmScheduleInput,
 ) {
+  assertWebsiteApprovalEnabled();
   await requireBookingOwner(sql, actor);
   try {
     return await sql.transaction(async (tx) => {
@@ -430,7 +434,7 @@ export async function listBusyWindows(
       end: new Date(row.end_at).toISOString(),
       resourceId: row.resource_id,
     })),
-    ...(await bitrixBusyWindows(sql, fromIso, toIso)),
+    ...(await crmBusyWindows(sql, fromIso, toIso)),
     ...claims.map((row) => ({
       start: berlinWallToUtc(row.appointment_date.slice(0, 10), "09:00").toISOString(),
       end: berlinWallToUtc(row.appointment_date.slice(0, 10), "17:00").toISOString(),

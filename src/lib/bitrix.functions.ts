@@ -1,3 +1,4 @@
+import { assertBitrixActive } from "./booking-backend";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
@@ -23,6 +24,7 @@ export const repairBitrixContact = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
+    assertBitrixActive();
     assertSameSiteRequest();
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
@@ -36,6 +38,7 @@ export const repairBitrixContact = createServerFn({ method: "POST" })
 export const enableBitrixCalendar = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async ({ context }) => {
+    assertBitrixActive();
     assertSameSiteRequest();
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
@@ -52,6 +55,7 @@ export const enableBitrixCalendar = createServerFn({ method: "POST" })
 export const bitrixStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
+    assertBitrixActive();
     const sql = await getSql();
     await ensureBitrixSchema(sql);
     const fromEnv = Boolean(bitrixWebhook());
@@ -66,6 +70,7 @@ export const bitrixStatus = createServerFn({ method: "GET" })
 export const bitrixSyncOverview = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async ({ context }) => {
+    assertBitrixActive();
     const sql = await getSql();
     await ensureBitrixSchema(sql);
     const rows = await sql<{
@@ -93,6 +98,7 @@ export const saveBitrixApiKey = createServerFn({ method: "POST" })
     z.object({ apiKey: z.string().trim().min(20).max(1024) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    assertBitrixActive();
     assertSameSiteRequest();
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
@@ -109,6 +115,7 @@ export const retryBitrixSync = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .validator((input: unknown) => z.object({ bookingId: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
+    assertBitrixActive();
     assertSameSiteRequest();
     const sql = await getSql();
     await ensureBitrixSchema(sql);
@@ -123,6 +130,7 @@ export const retryBitrixSync = createServerFn({ method: "POST" })
 export const runBitrixNow = createServerFn({ method: "POST" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async ({ context }) => {
+    assertBitrixActive();
     assertSameSiteRequest();
     const sql = await getSql();
     if (!(await canConfirmBookings(sql, context.userId)))
@@ -135,6 +143,7 @@ export const runBitrixNow = createServerFn({ method: "POST" })
 export const bitrixReadiness = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
   .handler(async () => {
+    assertBitrixActive();
     // Deliberately no ensureBitrixSchema: this check must not change the database.
     const sql = await getSql();
     return bitrixCutoverReadiness(sql, {

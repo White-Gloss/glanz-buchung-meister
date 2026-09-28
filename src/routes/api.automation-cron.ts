@@ -21,13 +21,10 @@ export const Route = createFileRoute("/api/automation-cron")({
             () => "failed",
           );
           const remindersChecked = await scheduleDueBookingReminders(sql);
-          const { runBitrixSync } = await import("@/lib/bitrix-sync");
-          const [delivery, bitrix] = await Promise.all([
-            runNotificationWorker(sql),
-            runBitrixSync(sql),
-          ]);
+          const { runCrmSync } = await import("@/lib/booking-crm");
+          const [delivery, crm] = await Promise.all([runNotificationWorker(sql), runCrmSync(sql)]);
           return Response.json(
-            { ok: true, remindersChecked, ...delivery, bitrix, photoCleanup },
+            { ok: true, remindersChecked, ...delivery, crm, photoCleanup },
             { headers: { "cache-control": "no-store" } },
           );
         } catch {

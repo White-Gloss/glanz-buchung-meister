@@ -20,6 +20,7 @@ export const Route = createFileRoute("/admin")({
 function AdminShell() {
   const { user, isPending } = useCurrentUserState();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [backend, setBackend] = useState<"bitrix" | "roapp" | null>(null);
   const [access, setAccess] = useState<"pending" | "ok" | "denied">("pending");
 
   useEffect(() => {
@@ -30,7 +31,10 @@ function AdminShell() {
     let cancelled = false;
     getOperatorAccess()
       .then((result) => {
-        if (!cancelled) setAccess(result.ok ? "ok" : "denied");
+        if (!cancelled) {
+          setAccess(result.ok ? "ok" : "denied");
+          setBackend(result.backend);
+        }
       })
       .catch(() => {
         if (!cancelled) setAccess("denied");
@@ -88,29 +92,58 @@ function AdminShell() {
         className="sticky top-0 z-40 border-b border-line bg-bg/95 backdrop-blur-sm"
       >
         <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
-          {adminNav.map((item) => {
-            const Icon = icons[item.label] ?? Settings;
-            const active = pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                aria-current={active ? "page" : undefined}
-                className={[
-                  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm px-3 text-sm",
-                  active
-                    ? "bg-accent text-accent-fg"
-                    : "text-muted hover:bg-elevated hover:text-fg",
-                ].join(" ")}
-              >
-                <Icon aria-hidden className="size-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+          {backend === "roapp" && (
+            <a
+              className="inline-flex min-h-11 items-center px-3 text-sm underline"
+              href="https://web.roapp.io"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              RO App öffnen
+            </a>
+          )}
+          {adminNav
+            .filter((item) => backend !== "roapp" || item.label !== "Bitrix24")
+            .map((item) => {
+              const Icon = icons[item.label] ?? Settings;
+              const active = pathname.startsWith(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? "page" : undefined}
+                  className={[
+                    "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm px-3 text-sm",
+                    active
+                      ? "bg-accent text-accent-fg"
+                      : "text-muted hover:bg-elevated hover:text-fg",
+                  ].join(" ")}
+                >
+                  <Icon aria-hidden className="size-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
         </div>
       </nav>
-      <Outlet />
+      {backend === "roapp" && pathname.startsWith("/admin/bitrix") ? (
+        <main className="mx-auto max-w-4xl px-6 py-10">
+          <h1 className="font-display text-3xl">Aufträge in RO App</h1>
+          <p className="mt-4 text-muted">
+            Anfragen, Fotos, Preise und Termine werden in RO App bearbeitet.
+          </p>
+          <a
+            className="mt-6 inline-block underline"
+            href="https://web.roapp.io"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            RO App öffnen
+          </a>
+        </main>
+      ) : (
+        <Outlet />
+      )}
     </div>
   );
 }

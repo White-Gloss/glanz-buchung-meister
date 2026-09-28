@@ -288,10 +288,12 @@ test("website booking queues Bitrix without numbered 0015/0016 already applied",
 });
 
 for (const mode of ["bitrix", "roapp", ""])
-  test(`Only Bitrix receives bookings even with legacy mode ${mode || "unset"}`, async () => {
+  test(`Only the selected CRM receives bookings: ${mode || "default Bitrix"}`, async () => {
     const { pg, sql } = await database();
     const previousMode = process.env.BOOKING_OPERATIONS;
     process.env.BOOKING_OPERATIONS = mode;
+    process.env.ROAPP_ACCOUNT_SCOPE='workflow-test-account';
+    process.env.ROAPP_CUTOVER_AT='2020-01-01T00:00:00Z';
     try {
       const rows = async (table: string, id: number) => {
         const [exists] = await sql<{
@@ -301,12 +303,13 @@ for (const mode of ["bitrix", "roapp", ""])
         return (await sql.query(`select 1 from ${table} where booking_id=$1`, [id])).length;
       };
       const created = await create(sql);
-      await confirmBookingManually(sql, created.id, 1, "owner");
-      assert.equal(await rows("bitrix_sync_queue", created.id), 1);
+      if(mode==='roapp') await assert.rejects(confirmBookingManually(sql,created.id,1,'owner'),/RO-Auftrag/);
+      else await confirmBookingManually(sql, created.id, 1, "owner");
+      assert.equal(await rows("bitrix_sync_queue", created.id),mode==='roapp'?0:1);
+      assert.equal(await rows("roapp_sync_queue", created.id),mode==='roapp'?1:0);
       for (const table of [
         "zoho_job_queue",
         "zoho_sync_queue",
-        "roapp_sync_queue",
         "odoo_sync_queue",
         "lexware_sync_queue",
       ])
@@ -314,6 +317,8 @@ for (const mode of ["bitrix", "roapp", ""])
       // Customer notifications stay in the durable website queue.
       assert.ok((await rows("outbound_queue", created.id)) >= 1);
     } finally {
+      delete process.env.ROAPP_ACCOUNT_SCOPE;
+      delete process.env.ROAPP_CUTOVER_AT;
       if (previousMode === undefined) delete process.env.BOOKING_OPERATIONS;
       else process.env.BOOKING_OPERATIONS = previousMode;
       await pg.close();
