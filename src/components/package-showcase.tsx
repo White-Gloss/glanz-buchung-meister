@@ -1,14 +1,11 @@
 import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 import { packageServiceSlug, packages, site } from "@/data/site";
 import { customerPhotos } from "@/data/customer-photos";
+import { DESKTOP_MOTION, useScrollMotion } from "@/lib/scroll-motion";
 import { money } from "@/lib/utils";
 import { IconArrowRight } from "./icons";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
 const photos = ["customer-14", "customer-05", "customer-09"].map((id) =>
   customerPhotos.find((photo) => photo.id === id)!,
 );
@@ -16,30 +13,19 @@ const focalPoints = ["50% 58%", "50% 64%", "50% 66%"];
 
 export function PackageShowcase() {
   const root = useRef<HTMLElement>(null);
-  useGSAP(
-    () => {
+  // The stage is sticky in CSS; scroll only crossfades the three original photos.
+  useScrollMotion(
+    DESKTOP_MOTION,
+    ({ gsap }) => {
       const section = root.current;
       if (!section) return;
-      const media = gsap.matchMedia();
-      media.add("(min-width: 960px) and (prefers-reduced-motion: no-preference)", () => {
-        const stage = section.querySelector<HTMLElement>(".package-stage")!;
-        const track = section.querySelector<HTMLElement>(".package-track")!;
-        const images = gsap.utils.toArray<HTMLElement>(".package-frame", section);
-        const chapters = gsap.utils.toArray<HTMLElement>(".package-chapter", section);
-        gsap.set(images.slice(1), { opacity: 0, scale: 1.025 });
-        ScrollTrigger.create({
-          trigger: track,
-          pin: stage,
-          start: () => `top ${Math.round(document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 80) + 20}px`,
-          end: () => `+=${Math.max(0, track.offsetHeight - stage.offsetHeight)}`,
-          pinSpacing: false,
-          invalidateOnRefresh: true,
-        });
-        chapters.slice(1).forEach((chapter, index) => {
-          gsap.to(images[index + 1], {
-            opacity: 1,
-            scale: 1,
-            ease: "none",
+      const frames = gsap.utils.toArray<HTMLElement>(".package-frame", section);
+      const chapters = gsap.utils.toArray<HTMLElement>(".package-chapter", section);
+      chapters.slice(1).forEach((chapter, index) => {
+        const frame = frames[index + 1];
+        if (!frame) return;
+        gsap
+          .timeline({
             scrollTrigger: {
               trigger: chapter,
               start: "top 80%",
@@ -47,13 +33,12 @@ export function PackageShowcase() {
               scrub: 0.45,
               invalidateOnRefresh: true,
             },
-          });
-        });
-        return () => {};
+          })
+          .fromTo(frame, { opacity: 0 }, { opacity: 1, ease: "none" }, 0)
+          .fromTo(frame.querySelector("img"), { scale: 1.025 }, { scale: 1, ease: "none" }, 0);
       });
-      return () => media.revert();
     },
-    { scope: root },
+    root,
   );
 
   return (

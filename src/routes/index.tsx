@@ -4,7 +4,14 @@ import { IconArrowRight } from "@/components/icons";
 import { LazyGoogleReviews } from "@/components/lazy-google-reviews";
 import { LazyConfigurator } from "@/components/lazy-configurator";
 import { Shot } from "@/components/media";
-import { pickupKeramikNote, pickupTierSummary, processSteps, site } from "@/data/site";
+import {
+  cities,
+  pickupKeramikNote,
+  pickupTierSummary,
+  processSteps,
+  services,
+  site,
+} from "@/data/site";
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { scrollFilmPreloads } from "@/data/scroll-film";
@@ -112,7 +119,7 @@ function Home() {
       </div>
 
       <section className="film-chapter workshop-personal" aria-labelledby="workshop-title">
-        <div className="film-chapter-media" data-parallax>
+        <div className="film-chapter-media">
           <Shot
             name="atelier"
             alt="Aufbereitetes Kundenfahrzeug vor der Werkstatt von White Gloss in Horb am Neckar"
@@ -193,6 +200,40 @@ function Home() {
         </p>
         <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
       </section>
+      <section
+        className="home-directory mx-auto max-w-7xl px-4 sm:px-6"
+        aria-labelledby="fahrzeugaufbereitung-heading"
+      >
+        <header>
+          <p className="kicker">White Gloss Detailing</p>
+          <h2 id="fahrzeugaufbereitung-heading" className="heading-2 mt-4">
+            Fahrzeugaufbereitung in {site.city}
+          </h2>
+          <p>
+            Innenraumreinigung, Lackkorrektur und Keramikversiegelung: Wir beraten Sie zur passenden
+            Aufbereitung in unserer Werkstatt in {site.city}. In der Region bieten wir einen Hol-
+            und Bringservice an.
+          </p>
+        </header>
+        <nav aria-label="Leistungen">
+          <ul className="home-directory-links">
+            {services.map((s) => (
+              <li key={s.slug}>
+                <Link to="/leistungen/$slug" params={{ slug: s.slug }}>
+                  {s.nav}
+                  <IconArrowRight aria-hidden />
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link to="/ratgeber">
+                Ratgeber
+                <IconArrowRight aria-hidden />
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </section>
       <section className="home-location" aria-labelledby="standort-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div>
@@ -215,6 +256,15 @@ function Home() {
             <p>
               {pickupTierSummary()}. {pickupKeramikNote()}. Alle Beträge {site.vatNote}
             </p>
+            <ul className="home-city-links" aria-label="Abholorte">
+              {cities.map((c) => (
+                <li key={c.slug}>
+                  <Link to="/abholservice/$city" params={{ city: c.slug }}>
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
             <Link to="/abholservice" className="atelier-text-link">
               Abholorte & Konditionen <IconArrowRight aria-hidden />
             </Link>

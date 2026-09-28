@@ -214,6 +214,7 @@ try {
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
   await runCheck(server, "seo", ["scripts/qa/check-seo.mjs"]);
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"]);
+  await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";

@@ -59,6 +59,8 @@
 .wg-trust-strip { margin-bottom: 4rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
 .film-chapter { display: grid; grid-template-columns: 1.08fr 1fr; min-height: 0; background: var(--color-surface); overflow: hidden; }
 .film-chapter-media, .film-chapter-media[data-parallax] { position: relative; inset: auto; width: 100%; min-height: 36rem; height: 100%; transform: none; }
+/* The split chapter has no overscan for the former CSS pan; it would expose empty edges. */
+.film-chapter-media[data-parallax] { animation: none; will-change: auto; }
 .film-chapter-media picture, .film-chapter-media img, .film-chapter-media video { height: 100%; object-fit: cover; }
 .film-chapter-veil, .film-chapter::before, .film-chapter::after { display: none; }
 .film-chapter-copy { position: relative; inset: auto; align-self: center; width: auto; max-width: none; padding: clamp(2rem, 5vw, 5rem); }
