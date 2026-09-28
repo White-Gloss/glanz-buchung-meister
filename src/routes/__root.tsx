@@ -6,6 +6,8 @@ import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
 import appCss from "../styles.css?url";
+import refinementCss from "../styles/refinement.css?url";
+import luxuryCss from "../styles/luxury.css?url";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -42,6 +44,8 @@ export const Route = createRootRoute({
       // .hero-follow when critical CSS mismatched full utilities (post-#214).
       // Pre-#214 PSI had CLS ~0.01 with this pattern.
       { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: refinementCss },
+      { rel: "stylesheet", href: luxuryCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],

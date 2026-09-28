@@ -13,6 +13,7 @@ export interface CustomerPhoto {
   src: string;
   srcSet: string;
   category: CustomerPhotoCategory;
+  position: string;
 }
 
 const photo = (
@@ -33,7 +34,21 @@ const photo = (
     `/media/customer-photos/${id}-1400.webp 1200w`,
   ].join(", "),
   category,
+  position: photoPositions[id] ?? "50% 60%",
 });
+
+// Framing for the gallery; the full original remains available in the viewer.
+const photoPositions: Record<string, string> = {
+  "customer-01": "50% 70%", "customer-02": "50% 67%", "customer-03": "50% 64%",
+  "customer-04": "50% 52%", "customer-05": "50% 62%", "customer-06": "50% 66%",
+  "customer-07": "50% 68%", "customer-08": "50% 70%", "customer-09": "50% 63%",
+  "customer-10": "50% 53%", "customer-11": "50% 58%", "customer-12": "50% 66%",
+  "customer-13": "50% 61%", "customer-14": "50% 56%", "customer-15": "50% 68%",
+  "customer-16": "50% 66%", "customer-17": "50% 62%", "customer-18": "50% 57%",
+  "customer-19": "50% 67%",
+};
+
+export const featuredPhotoIds = ["customer-16", "customer-09", "customer-14", "customer-06", "customer-11", "customer-18"];
 
 export const customerPhotos: CustomerPhoto[] = [
   photo(

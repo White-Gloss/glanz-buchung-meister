@@ -1,15 +1,17 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { customerPhotos } from "@/data/customer-photos";
+import { customerPhotos, featuredPhotoIds } from "@/data/customer-photos";
 import "@/styles/customer-photos.css";
 
 export function CustomerPhotoGallery() {
-  const [category, setCategory] = useState("Alle");
+  const [category, setCategory] = useState("Auswahl");
   const [active, setActive] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const headingId = useId();
-  const categories = ["Alle", ...new Set(customerPhotos.map((photo) => photo.category))];
-  const visible = customerPhotos.filter((photo) => category === "Alle" || photo.category === category);
+  const categories = ["Auswahl", "Alle", ...new Set(customerPhotos.map((photo) => photo.category))];
+  const visible = category === "Auswahl"
+    ? featuredPhotoIds.map((id) => customerPhotos.find((item) => item.id === id)!)
+    : customerPhotos.filter((photo) => category === "Alle" || photo.category === category);
   const photo = active === null ? null : customerPhotos[active];
 
   useEffect(() => {
@@ -44,8 +46,8 @@ export function CustomerPhotoGallery() {
           </button>
         ))}
       </div>
-      <p className="customer-photo-count" role="status">{visible.length} echte Kundenbilder · Zum Vergrößern auswählen</p>
-      <ul className="customer-photo-grid">
+      <p className="customer-photo-count" role="status">{category === "Auswahl" ? `${visible.length} ausgewählte Motive` : `${visible.length} Kundenbilder`} · Zum Vergrößern auswählen</p>
+      <ul className="customer-photo-grid" data-curated={category === "Auswahl"}>
         {visible.map((item) => (
           <li key={item.id}>
             <button
@@ -58,7 +60,7 @@ export function CustomerPhotoGallery() {
                 setActive(customerPhotos.indexOf(item));
               }}
             >
-              <img src={item.src} srcSet={item.srcSet} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw" width={item.width} height={item.height} alt={item.alt} loading="lazy" decoding="async" />
+              <img src={item.src} srcSet={item.srcSet} style={{ objectPosition: item.position }} sizes="(min-width: 1024px) 60vw, (min-width: 640px) 45vw, 90vw" width={item.width} height={item.height} alt={item.alt} loading="lazy" decoding="async" />
               <span className="customer-photo-enlarge" aria-hidden="true">Vergrößern ↗</span>
             </button>
             <p className="customer-photo-category">{item.category}</p>
@@ -66,6 +68,7 @@ export function CustomerPhotoGallery() {
           </li>
         ))}
       </ul>
+      {category === "Auswahl" && <button type="button" className="customer-photo-all" onClick={() => setCategory("Alle")}>Alle {customerPhotos.length} Bilder ansehen <span aria-hidden>↗</span></button>}
       <dialog
         ref={dialogRef}
         className="customer-photo-dialog"

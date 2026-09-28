@@ -1,3 +1,4 @@
+import { ReviewsSpotlight } from "./reviews-spotlight";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { googleProfile, type GoogleReviewsData } from "@/data/google-profile";
 
@@ -66,28 +67,7 @@ export function GoogleReviews({ compact = false }: { compact?: boolean }) {
     </div>
   );
 
-  if (!current) {
-    return (
-      <aside aria-label="Google-Kundenbewertungen" className="mt-8 border-y border-line py-5">
-        <p className="text-lg font-medium">Erfahrungen unserer Kunden</p>
-        <div className="mt-2">{links}</div>
-      </aside>
-    );
-  }
-
-  if (compact)
-    return (
-      <aside aria-label="Google-Kundenbewertungen" className="mt-8 border-y border-line py-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <RatingStars rating={Math.round(current.averageRating)} />
-          <p className="text-lg font-medium">
-            {current.averageRating.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{" "}
-            von 5 Sternen · {current.totalReviewCount} Google-Bewertungen
-          </p>
-        </div>
-        <div className="mt-2">{links}</div>
-      </aside>
-    );
+  if (!current || compact) return <ReviewsSpotlight data={current} />;
 
   return (
     <section

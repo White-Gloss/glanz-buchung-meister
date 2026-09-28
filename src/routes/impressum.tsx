@@ -54,7 +54,7 @@ function ImpressumPage() {
           </p>
         </section>
         {site.vatId && <section>
-          <h2 className="font-display text-2xl">Umsatzsteuer</h2>
+          <h2 className="font-display text-2xl">Umsatzsteuer-ID</h2>
           <p className="mt-3 text-muted">
             Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: {site.vatId}
           </p>
@@ -85,7 +85,7 @@ function ImpressumPage() {
             bekannt werden, entfernen wir entsprechende Links nach Prüfung.
           </p>
         </section>
-        <p className="text-xs text-subtle">Stand: 3. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 28. September 2026</p>
       </div>
       </div>
     </main>
