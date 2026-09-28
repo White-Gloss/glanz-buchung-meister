@@ -48,16 +48,6 @@ const NAV_SHOT: Record<string, ShotName> = {
   Geschäftskunden: "private",
 };
 
-const MENU_SHOTS: ShotName[] = [
-  "lack",
-  "private",
-  "finish",
-  "atelier",
-  "felgen",
-  "keramik",
-  "dellen",
-];
-
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [layer, setLayer] = useState(false);
@@ -126,10 +116,10 @@ export function SiteHeader() {
           <BrandMark variant="header" decorative />
         </Link>
         <nav className="header-quick-nav" aria-label="Direktnavigation">
-          <Link to="/leistungen">Leistungen</Link>
-          <Link to="/preise">Preise</Link>
-          <Link to="/galerie">Ergebnisse</Link>
-          <Link to="/" hash="buchung">Termin</Link>
+          <Link to="/leistungen" activeProps={{ "aria-current": "page" }}>Leistungen</Link>
+          <Link to="/preise" activeProps={{ "aria-current": "page" }}>Preise</Link>
+          <Link to="/galerie" activeProps={{ "aria-current": "page" }}>Ergebnisse</Link>
+          <Link to="/" hash="buchung" className="header-booking-link">Termin</Link>
         </nav>
         <div className="ga-tools flex items-center">
           {pathname === "/" && <Link to="/" hash="buchung" className="header-film-booking">Termin anfragen</Link>}
@@ -254,16 +244,14 @@ function FilmMenu({
         </div>
       </div>
       <div className="film-menu-visual" aria-hidden>
-        {MENU_SHOTS.map((name) => (
           <Shot
-            key={name}
-            name={name}
+            key={visual}
+            name={visual}
             alt=""
             framed={false}
-            className={`film-menu-shot${name === visual ? " is-on" : ""}`}
+            className="film-menu-shot is-on"
             sizes="50vw"
           />
-        ))}
       </div>
       <nav className="film-menu-panel" aria-label="Hauptnavigation">
         <ul className="film-menu-list">

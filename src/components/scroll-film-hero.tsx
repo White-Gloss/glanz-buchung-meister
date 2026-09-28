@@ -80,9 +80,9 @@ export function ScrollFilmHero() {
       target = Math.min(1, Math.max(0, (window.scrollY - top) / distance));
       const difference = target - position;
       position = Math.abs(difference) < 0.0008 ? target : position + difference * 0.24;
-      const opacity = Math.max(0, 1 - position / 0.22);
+      const opacity = Math.max(0, 1 - position / 0.65);
       copy.style.opacity = String(opacity);
-      copy.style.transform = `translateY(${-position * 55}px)`;
+      copy.style.transform = `translateY(${-position * 24}px)`;
       // Invisible links must not remain keyboard focus targets.
       copy.inert = opacity < 0.03;
       section.style.setProperty("--film-progress", String(position));
@@ -280,6 +280,10 @@ export function ScrollFilmHero() {
           <Link to="/preise" className="scroll-film-prices">
             Pakete & Preise
           </Link>
+        </div>
+        <div className="scroll-film-signature" aria-hidden="true">
+          <p>Sorgfalt für Ihr Fahrzeug.</p>
+          <span>In unserer Werkstatt in Horb.</span>
         </div>
         <div className="scroll-film-bottom">
           <a href="#nach-dem-film" className="scroll-film-skip">

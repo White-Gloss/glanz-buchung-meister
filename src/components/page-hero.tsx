@@ -51,8 +51,8 @@ export function PageHero({
   crumbs?: { label: string; to?: string }[];
 }) {
   return (
-    <section className="film-chapter">
-      <div className="film-chapter-media" data-parallax>
+    <section className="film-chapter page-hero">
+      <div className="film-chapter-media">
         {shot ? (
           <Shot
             name={shot}

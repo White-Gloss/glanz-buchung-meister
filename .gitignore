@@ -46,3 +46,4 @@ dist-ssr
 
 # Synthetic data from isolated local flow checks
 .qa-output/
+.live-check/

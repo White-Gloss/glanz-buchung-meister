@@ -224,7 +224,8 @@ test("forward and reverse scroll reach matching times, with no overlapping seeks
   h.load();
   h.scroll(1800);
   assert.ok(Math.abs(h.video.currentTime - 3.979) < 0.03);
-  assert.equal(h.copy.inert, true);
+  // The shortened introduction keeps readable links available halfway through.
+  assert.equal(h.copy.inert, false);
   h.scroll(720);
   assert.ok(Math.abs(h.video.currentTime - 1.592) < 0.03);
   h.scroll(0);
@@ -232,6 +233,7 @@ test("forward and reverse scroll reach matching times, with no overlapping seeks
   assert.equal(h.copy.inert, false);
   h.scroll(6000);
   assert.ok(Math.abs(h.video.currentTime - 7.958) < 0.03);
+  assert.equal(h.copy.inert, true);
   h.cleanup();
 });
 test("pause holds the decoded frame and resume seeks to the current scroll position", () => {
