@@ -7,6 +7,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getOperatorAccess } from "@/lib/admin.functions";
 import { adminNav } from "@/lib/admin-nav";
 import { site } from "@/data/site";
+import { RoappInvoicesPanel } from "@/components/roapp-invoices-panel";
 
 const icons: Record<string, typeof Settings> = { Bitrix24: Share2, Website: Settings };
 
@@ -140,6 +141,7 @@ function AdminShell() {
           >
             RO App öffnen
           </a>
+          <RoappInvoicesPanel />
         </main>
       ) : (
         <Outlet />

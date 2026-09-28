@@ -123,7 +123,9 @@ export function bookingManagerNotes(bookingId: number): string {
     "3. Erst nach der Prüfung „Fixpreis bestätigt“ wählen. RO sendet jetzt das geprüfte Angebot zur Kundenunterschrift.",
     "4. Der Kunde nimmt selbst über den Link an. „Akzeptiert“ nicht stellvertretend setzen.",
     "5. Die Kundenunterschrift prüfen, Abholung oder Anlieferung abstimmen, danach „Termin verbindlich“ wählen. Erinnerung drei Tage vorher. Bei Arbeitsbeginn „In Arbeit“, nach Abschluss „Erledigt“ wählen.",
-    "6. Rechnung nach der Leistung erstellen: sieben Tage Zahlungsziel. Nur tatsächlich erhaltenes Bargeld als Zahlung buchen und dann den bezahlten Beleg senden. Status allein ist kein Zahlungsnachweis.",
+    process.env.ROAPP_INVOICE_ENABLED?.trim() === "true"
+      ? "6. Nach „Erledigt“ erstellt die Website die Rechnung (sieben Tage Zahlungsziel) aus den RO-Positionen und sendet sie per E-Mail. In RO keine zusätzliche Rechnung anlegen. Zahlungen erst nach tatsächlichem Eingang im Website-Betriebspanel erfassen; bei Barzahlung folgt die Quittung automatisch. Status allein ist kein Zahlungsnachweis."
+      : "6. Rechnung nach der Leistung erstellen: sieben Tage Zahlungsziel. Nur tatsächlich erhaltenes Bargeld als Zahlung buchen und dann den bezahlten Beleg senden. Status allein ist kein Zahlungsnachweis.",
     "7. Bei erteilter Einwilligung folgt sieben Tage nach Abschluss einmalig die Bewertungs-E-Mail. Keine Auswahl nach Kundenzufriedenheit.",
     "Bei fehlender E-Mail diese vor der Angebotsfreigabe beim Kunden erfragen und ergänzen. Die Einwilligung für RO-Auftrags-E-Mails im Kontakt prüfen.",
     "Termin und tatsächliche Arbeitsdauer im RO-Auftrag pflegen. Die Website übernimmt belegte Zeiträume aus offenen RO-Aufträgen automatisch; vor der Zusage den gesamten Kalender prüfen.",

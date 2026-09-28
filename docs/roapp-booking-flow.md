@@ -1,33 +1,42 @@
 # White-Gloss: Anfrage und Freigabe mit RO App
 
-Stand: 28.09.2026. RO App ersetzt Bitrix24 nach ausdrücklicher Betreiberanweisung.
-Dieser Stand ist vorbereitet, nicht auf IONOS aktiviert.
+Stand: 29.09.2026. RO App ersetzt Bitrix24 ausschließlich für neue Website-Anfragen (Umschaltung
+2026-09-28T22:27:15.023Z). Aktiver IONOS-Release laut Deploy-Lauf 263: `9b42bbd` (main).
 
 1. Die Website speichert eine unverbindliche Anfrage mit Ab-Preisen, Wunschtermin, Kontaktdaten und optionalen Fotos. Sie überträgt genau einen Auftrag in das neue RO-Konto. Der Wunschtermin steht im Kommentar; bei Eingang wird kein fester Termin angelegt.
 2. Lars prüft Angaben und Fotos. Er ergänzt Leistungen, Endpreis und den angebotenen Zeitraum in RO. Fehlende E-Mail-Adressen müssen vor der Freigabe beim Kunden erfragt werden.
 3. Erst „Fixpreis bestätigt“ löst die Angebots-E-Mail aus. Die öffentliche Auftragsseite erlaubt nur in diesem Status die Annahme. Die Kundenunterschrift ist dort erforderlich.
-4. Der Kunde nimmt selbst an und unterschreibt. RO wechselt zu „Akzeptiert“. Lars prüft die Unterschrift, stimmt Abholung oder eigene Anlieferung ab und setzt „Termin verbindlich“. Dieser Status ist in RO nur aus „Akzeptiert“ erreichbar. Die API stellt keinen hier nachgewiesenen Signaturprüfnachweis bereit; der separate Besitzerstatus dokumentiert die menschliche Prüfung.
-5. Der Website-Versand plant die Erinnerung drei Tage vor dem finalen Termin. Bei einer kurzfristigen Bestätigung erfolgt sie zum nächsten Versandlauf. Abholzeit und Übergabe werden telefonisch abgestimmt. Preis- oder Terminänderungen entziehen die bisherige Freigabe; erneut prüfen, Kundenannahme einholen und bestätigen. Aktuelle RO-Daten werden vor jeder geplanten E-Mail gelesen; bei Fehlern wird nicht versandt.
-6. Nach erbrachter Leistung wird „Erledigt“ gesetzt. Rechnungen entstehen in RO, mit sieben Tagen Zahlungsziel. Eine Zahlung darf ausschließlich nach tatsächlichem Eingang gebucht werden. Bei Barzahlung wird anschließend der bezahlte Beleg ausgegeben; ein Statuswechsel erzeugt keinen Zahlungsnachweis.
+4. Der Kunde nimmt selbst an und unterschreibt. RO wechselt zu „Akzeptiert“. Lars prüft die Unterschrift, stimmt Abholung oder eigene Anlieferung ab und setzt „Termin verbindlich“. Die API stellt keinen hier nachgewiesenen Signaturprüfnachweis bereit; der separate Besitzerstatus dokumentiert die menschliche Prüfung.
+5. Der Website-Versand plant die Erinnerung drei Tage vor dem finalen Termin (bei kurzfristiger Bestätigung zum nächsten Versandlauf). Abholzeit und Übergabe werden telefonisch abgestimmt. Preis- oder Terminänderungen entziehen die bisherige Freigabe; erneut prüfen, Kundenannahme einholen und bestätigen. Vor jeder geplanten E-Mail werden Auftrag und Kontakt in RO neu gelesen; bei Fehlern wird nicht versandt.
+6. Nach erbrachter Leistung wird „Erledigt“ gesetzt. Bei eingeschalteter Rechnungsautomatik (`ROAPP_INVOICE_ENABLED=true`) erstellt die Website nach der Wartezeit (Standard 15 Minuten) die Rechnung aus den RO-Positionen, mit sieben Tagen Zahlungsziel, und sendet sie als PDF per E-Mail. In RO wird dann keine zusätzliche Rechnung angelegt. Als bezahlt gilt eine Rechnung nur, wenn Lars im Betriebspanel einen tatsächlichen Zahlungseingang erfasst; bei Barzahlung entsteht daraus automatisch eine Quittung. Ein Statuswechsel erzeugt keinen Zahlungsnachweis.
 7. Sieben Tage nach dem erfassten Abschluss folgt einmalig eine Bewertungs-E-Mail, sofern die freiwillige Einwilligung vorliegt. Der Google-Link ist unabhängig von der Zufriedenheit erreichbar. Widerruf setzt bookings.review_email_consent=false; jede ausstehende Nachricht prüft die Einwilligung erneut.
 
-## Bereits im neuen RO-Konto konfiguriert
+## Rechnungsautomatik (Website als Rechnungssteller)
 
-- 50 zur Website passende Servicepositionen mit vorläufigen Preisen.
-- „Fixpreis bestätigt“ und „Termin verbindlich“.
-- Angebots-E-Mail nur bei Preisfreigabe; Annahme mit erforderlicher Unterschrift.
-- Die frühere sofortige Bewertungs-E-Mail wurde durch eine Abschlussinformation ersetzt.
-- Rechnungsziel sieben Tage (im RO-Formular geprüft).
-- Webhook zur Website angelegt. Bei der letzten Sichtprüfung aktiv; noch keine erfolgreiche Zustellung an den neuen Website-Empfänger nachgewiesen.
+Die RO-API bietet in den bisherigen Prüfungen keinen PDF- oder Versandendpunkt für Rechnungen. Automatischer Versand ist deshalb nur über die Website möglich; sie ist dann der einzige Rechnungssteller.
 
-## Noch vor produktiver Freigabe nötig
+- Auslöser: RO-Status in `ROAPP_COMPLETED_STATUS_IDS`, zuvor Fixpreis, Kundenannahme und „Termin verbindlich“. Nur Abschlüsse ab `ROAPP_INVOICE_FROM`; ältere, womöglich manuell abgerechnete Aufträge werden nie angefasst.
+- Daten: RO-Auftrag, RO-Positionen und RO-Kontakt werden unmittelbar vor der Ausstellung neu gelesen. Die Positionssumme muss exakt dem freigegebenen RO-Betrag entsprechen. Rabatte oder unbekannte Antwortformate werden nicht interpretiert, sondern gehen in „Prüfung erforderlich“.
+- Pflichtangaben: fortlaufende Nummer `WG-RE-JJJJ-NNNN` (lückenlos, in derselben Transaktion vergeben), Rechnungs- und Leistungsdatum, Positionen, Netto, 19 % USt, Brutto, USt-IdNr. (optional Steuernummer), Bankverbindung. Über 250 € brutto ist die Anschrift des Kunden Pflicht (§ 14 UStG / § 33 UStDV); fehlt sie im RO-Kontakt, wird keine Nummer vergeben und Lars einmalig informiert.
+- Doppelschutz: höchstens eine Rechnung je Vorgang (Primärschlüssel), eindeutige Nummer, eindeutiger Versandschlüssel, Versand nur nach erneutem Abgleich von Nummer und Empfänger. Ein privater RO-Kommentar hält fest, dass die Rechnung bereits erstellt wurde.
+- Spätere RO-Änderungen (Storno, Wiedereröffnung, anderer Betrag) ändern eine ausgestellte Rechnung nie. Lars erhält einmalig einen Hinweis zur manuellen Stornorechnung bzw. Korrektur.
+- Ohne Kunden-E-Mail erhält Lars die Rechnung als PDF zur persönlichen Übergabe.
+- Zahlungen: nur Betrag bis zum offenen Rest, Datum nicht in der Zukunft, doppelte Übermittlung wird erkannt. Zustände `offen`, `teilbezahlt`, `bezahlt`.
 
-- IONOS-Zugang wiederherstellen, Migration 0022 und den geprüften Release über den vorhandenen IONOS-Weg veröffentlichen.
-- Neues Konto, API-Schlüssel, Status-/Katalogzuordnung und tatsächlichen Umschaltzeitpunkt installieren. Nur nach dem Umschaltzeitpunkt neu eingehende Anfragen dürfen ins neue Konto gelangen. Keine alten Warteschlangen importieren.
-- Rechnungssteller vollständig hinterlegen. Das RO-Formular verlangt eine Handelsregisternummer; die angegebene Steuernummer darf nicht stillschweigend dafür verwendet werden.
-- Vollautomatisches Erstellen und Versenden von Rechnungs-PDFs ist noch nicht implementiert oder nachgewiesen. Der API-Katalog bietet Rechnungserstellung, aber keinen in dieser Prüfung gefundenen PDF-/Versandendpunkt. Bis zur geprüften Umsetzung erfolgt Erstellung und Versand in RO durch den Betreiber.
-- RO-Auftrags-E-Mails verwenden derzeit den RO App Gateway. Die gewünschte Firmen-Absenderadresse ist dort noch nicht verbunden. Erinnerungs-/Bewertungsmails nutzen den vorhandenen Website-Maildienst und buchung@white-gloss.de; dessen aktuelle Produktionskonfiguration ist wegen IONOS-Zugriff nicht geprüft.
-- Vor Aktivierung einen vollständig isolierten End-to-End-Test ohne echte Kundendaten bzw. Nachrichten durchführen. Das aktiviert keine echten Termine und simuliert keine Kundenunterschrift.
+## Fehlerfälle und Datenänderungen
+
+- Geänderte Kundendaten: Eine in RO korrigierte E-Mail-Adresse ersetzt die Website-Adresse und wird auch für bereits geplante, noch nicht versandte Nachrichten verwendet. Versandte Nachrichten werden nicht wiederholt.
+- Fehlende E-Mail: keine Kundenmail; bei verbindlichem Termin erhält Lars einmalig den Hinweis, telefonisch zu erinnern.
+- Umbuchung: Terminänderung in RO widerruft die Bestätigung und die geplante Erinnerung; nach erneuter Bestätigung entsteht eine neue Erinnerung.
+- Storno: geplante Erinnerungen und Bewertungsbitten werden vor dem Versand verworfen; es entsteht keine Rechnung.
+- RO nicht erreichbar oder Antwort mehrdeutig: nichts wird versandt oder nummeriert; begrenzte Wiederholung, danach „Prüfung erforderlich“ mit Inhaberhinweis.
+
+## Noch offen (nicht aus dem Repository lösbar)
+
+- Rechnungsautomatik auf IONOS aktivieren: `ROAPP_INVOICE_*` im geschützten Server-Environment setzen (siehe [ops-roapp-env.md](ops-roapp-env.md)), `ROAPP_INVOICE_FROM` auf den tatsächlichen Aktivierungszeitpunkt. Ab dann in RO keine Rechnungen mehr anlegen.
+- Live-Nachweis der RO-Endpunkte `GET /orders/{id}/items` und `GET /contacts/people/{id}` (Antwortformat, Adressfeld). Bei abweichendem Format geht die Rechnung sicher in „Prüfung erforderlich“.
+- Eigener Firmenabsender für native RO-Angebotsmails (derzeit RO App Gateway): in RO einrichten und DNS bei IONOS nach RO-Vorgabe ergänzen.
+- Durchgängiger Live-Nachweis mit einem echten, freiwilligen Testkunden (eigene Unterschrift, echte Zahlung) steht aus.
 
 ## Schutz vor Doppelungen und Altlasten
 
