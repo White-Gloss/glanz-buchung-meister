@@ -41,13 +41,18 @@ export const publicBookingSchema = z.object({
   note: z.string().max(2000).optional(),
   packageId: z.enum(["basis", "premium", "keramik"]),
   classId: z.enum(["kompakt", "suv", "transporter"]),
-  extraIds: z.array(z.string().max(40)).max(20).refine(
-    (ids) => ids.every((id) => !extras.some((extra) => extra.id === id && extra.requestable === false)),
-    "Eine gewählte Zusatzleistung ist derzeit nicht buchbar. Bitte aktualisieren Sie Ihre Auswahl.",
-  ),
+  extraIds: z
+    .array(z.string().max(40))
+    .max(20)
+    .refine(
+      (ids) =>
+        ids.every((id) => !extras.some((extra) => extra.id === id && extra.requestable === false)),
+      "Eine gewählte Zusatzleistung ist derzeit nicht buchbar. Bitte aktualisieren Sie Ihre Auswahl.",
+    ),
   citySlug: z.string().max(80),
   kind: z.enum(["booking", "dent", "condition"]).default("booking"),
   privacy: z.literal(true),
+  reviewEmailConsent: z.boolean().optional(),
   website: z.string().max(120).optional(),
   vehicleMake: z.string().trim().max(80).optional(),
   vehicleModel: z.string().trim().max(80).optional(),

@@ -68,6 +68,7 @@ export function Configurator({
     "loading",
   );
   const [privacy, setPrivacy] = useBookingDraft("privacy", false);
+  const [reviewEmailConsent, setReviewEmailConsent] = useBookingDraft("reviewEmailConsent", false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -101,7 +102,11 @@ export function Configurator({
 
   useEffect(() => {
     setExtraIds((current) => {
-      const remaining = current.filter((id) => extras.some((extra) => extra.id === id && extra.requestable !== false) && !extraIncluded(packageId, id));
+      const remaining = current.filter(
+        (id) =>
+          extras.some((extra) => extra.id === id && extra.requestable !== false) &&
+          !extraIncluded(packageId, id),
+      );
       return remaining.length === current.length ? current : remaining;
     });
   }, [packageId, setExtraIds]);
@@ -216,6 +221,7 @@ export function Configurator({
             vehiclePlate: vehiclePlate.trim() || undefined,
             kind: "booking",
             privacy: true as const,
+            reviewEmailConsent,
             website,
           },
         }));
@@ -701,6 +707,18 @@ export function Configurator({
           </span>
         </label>
         {fieldError("privacy")}
+        <label className="flex items-start gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={reviewEmailConsent}
+            onChange={(e) => setReviewEmailConsent(e.target.checked)}
+          />
+          <span>
+            Ich möchte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um ehrliches
+            Feedback und eine Google-Bewertung gebeten werden. Freiwillig und jederzeit widerrufbar.
+          </span>
+        </label>
         {error ? (
           <div className="space-y-2">
             <p className="text-sm text-danger" role="alert">

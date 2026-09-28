@@ -8,12 +8,18 @@ import { Button, Field, inputLine } from "./ui";
 import { useBookingDraft, clearBookingDraft } from "./booking-draft";
 import { readFileAsBase64 } from "./booking-photo-upload";
 import { UPLOAD_MIME_TYPES, uploadSelectionError } from "@/lib/upload-policy";
+import { isEmailAddress } from "@/lib/utils";
 
 export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
   const [files, setFiles] = useBookingDraft<File[]>("photo.files", []);
   const [text, setText] = useBookingDraft("photo.text", "");
   const [name, setName] = useBookingDraft("photo.name", "");
   const [phone, setPhone] = useBookingDraft("photo.phone", "");
+  const [email, setEmail] = useBookingDraft("photo.email", "");
+  const [reviewEmailConsent, setReviewEmailConsent] = useBookingDraft(
+    "photo.reviewEmailConsent",
+    false,
+  );
   const [privacy, setPrivacy] = useBookingDraft("photo.privacy", false);
   const [website, setWebsite] = useState("");
   const [requestId] = useState(() => crypto.randomUUID());
@@ -26,6 +32,8 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
     e.preventDefault();
     if (pending) return;
     const errors = photoInquiryErrors({ name, phone, privacy, text, files });
+    if (email && !isEmailAddress(email.trim()))
+      errors.email = "Bitte eine gültige E-Mail-Adresse eingeben.";
     showErrors(errors, e.currentTarget);
     if (Object.keys(errors).length) {
       setError("Bitte prüfen Sie die markierten Felder.");
@@ -47,6 +55,8 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
           requestId,
           name: name.trim(),
           phone: phone.trim(),
+          email: email.trim(),
+          reviewEmailConsent,
           text,
           files: await Promise.all(
             files.map(async (f) => ({
@@ -73,8 +83,8 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
     return (
       <SubmissionResult className="rounded-card border border-line bg-elevated p-5 text-sm text-muted">
         Ihre Anfrage ist eingegangen. Wir prüfen Ihre Beschreibung und die ausgewählten Fotos und
-        melden uns unter der angegebenen Telefonnummer. Den Fixpreis und einen Termin vereinbaren
-        wir nach der Begutachtung.
+        melden uns über Ihre angegebenen Kontaktdaten. Den Fixpreis und einen Termin vereinbaren wir
+        nach der Begutachtung.
       </SubmissionResult>
     );
   }
@@ -157,6 +167,31 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
         />
         {fieldError("phone")}
       </Field>
+      <Field tone="public" id="iemail" label="E-Mail für das Angebot (optional)">
+        <input
+          id="iemail"
+          type="email"
+          autoComplete="email"
+          className={inputLine}
+          maxLength={160}
+          value={email}
+          {...fieldProps("email")}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        {fieldError("email")}
+      </Field>
+      <label className="flex items-start gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={reviewEmailConsent}
+          onChange={(e) => setReviewEmailConsent(e.target.checked)}
+        />
+        <span>
+          Ich möchte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um ehrliches
+          Feedback und eine Google-Bewertung gebeten werden. Freiwillig und jederzeit widerrufbar.
+        </span>
+      </label>
       <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
         <label htmlFor="iwebsite">Website</label>
         <input
@@ -179,8 +214,8 @@ export function PhotoInquiry({ title, hint }: { title: string; hint: string }) {
           required
         />
         <span className="min-w-0">
-          Name, Telefon, Beschreibung und ausgewählte Aufnahmen werden zur Bearbeitung Ihrer Anfrage
-          geschützt übermittelt. Siehe{" "}
+          Name, Kontaktdaten, Beschreibung und ausgewählte Aufnahmen werden zur Bearbeitung Ihrer
+          Anfrage geschützt übermittelt. Siehe{" "}
           <Link to="/datenschutz" className="underline hover:text-fg">
             Datenschutzerklärung
           </Link>

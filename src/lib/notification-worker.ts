@@ -13,6 +13,7 @@ import {
 } from "./booking-notifications.ts";
 import { bookingOwnerNotifyTargets, ownerNotifyTargets } from "./ops.ts";
 import { EmailDeliveryError, mailConfigured, sendResendEmail } from "./resend-mail.ts";
+import { RO_REMINDER, RO_REVIEW, validateRoLifecycle } from "./roapp-lifecycle.ts";
 import {
   sendWhatsAppNotification,
   validateWhatsAppConfiguration,
@@ -212,6 +213,24 @@ export async function runNotificationWorker(
         where id=${row.id} and shop_id=${SHOP} and lease_token=${token}`;
       result.skipped++;
       continue;
+    }
+    if ([RO_REMINDER, RO_REVIEW].includes(row.event_type || "")) {
+      try {
+        if (!(await validateRoLifecycle(sql, row))) {
+          await sql`update outbound_queue set status='cancelled',last_error_code='ro_lifecycle_changed',lease_token=null,locked_until=null,updated_at=now()
+            where id=${row.id} and lease_token=${token}`;
+          result.skipped++;
+          continue;
+        }
+      } catch {
+        const status = row.attempt_count >= MAX_DELIVERY_ATTEMPTS ? "review" : "queued";
+        await sql`update outbound_queue set status=${status},last_error_code='ro_live_check_failed',lease_token=null,locked_until=null,
+          next_attempt_at=now()+interval '60 seconds',updated_at=now() where id=${row.id} and lease_token=${token}`;
+        if (status === "review")
+          await recordNotificationAttention(sql, row, "ro_live_check_failed");
+        result.skipped++;
+        continue;
+      }
     }
     // Recheck immediately before delivery; edits/cancellations invalidate old reminders.
     if (row.event_type === "booking.reminder" || row.event_type === "booking.confirmed") {

@@ -33,6 +33,7 @@ export const expectedMigrations = [
   "0019_roapp_write_journal.sql",
   "0020_roapp_customer_status.sql",
   "0021_bitrix_native_transfer.sql",
+  "0022_roapp_account_scope.sql",
 ];
 const tables = [
   "_migrations",

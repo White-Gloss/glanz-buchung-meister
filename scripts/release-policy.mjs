@@ -4,10 +4,51 @@ export function releaseConfigurationProblems(env) {
   /** @param {string} key */
   const value = (key) => env[key]?.trim() || "";
   const problems = [];
-  if (value("BOOKING_OPERATIONS") !== "bitrix")
+  const backend = value("BOOKING_OPERATIONS");
+  if (!["bitrix", "roapp"].includes(backend))
     problems.push(
-      "BOOKING_OPERATIONS=bitrix ist für diese Version erforderlich; CRM-Umstellung zuerst freigeben und prüfen.",
+      "BOOKING_OPERATIONS muss für den Produktivbetrieb bitrix oder roapp sein.",
     );
+  if (backend === "roapp") {
+    if (!value("ROAPP_API_KEY")) problems.push("ROAPP_API_KEY fehlt.");
+    if (value("ROAPP_WEBHOOK_SECRET").length < 20)
+      problems.push("ROAPP_WEBHOOK_SECRET muss mindestens 20 Zeichen lang sein.");
+    const scope = value("ROAPP_ACCOUNT_SCOPE");
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{7,79}$/.test(scope) || scope === "legacy")
+      problems.push("ROAPP_ACCOUNT_SCOPE muss das neue Konto eindeutig abgrenzen.");
+    for (const key of ["ROAPP_CUTOVER_AT", "ROAPP_EXPECTED_COMPANY_CREATED_AT"]) {
+      if (
+        !/^\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})$/.test(value(key)) ||
+        !Number.isFinite(Date.parse(value(key)))
+      ) problems.push(`${key} muss ein vollständiger Zeitpunkt mit Zeitzone sein.`);
+    }
+    if (
+      value("ROAPP_API_BASE") &&
+      value("ROAPP_API_BASE").replace(/\/+$/, "") !== "https://api.roapp.io/v2"
+    ) problems.push("ROAPP_API_BASE muss die freigegebene RO-App-API sein.");
+    for (const key of [
+      "ROAPP_BRANCH_ID", "ROAPP_ASSIGNEE_ID", "ROAPP_ORDER_TYPE_ID",
+      "ROAPP_REVIEW_STATUS_ID", "ROAPP_APPROVED_STATUS_ID", "ROAPP_FIRM_STATUS_ID",
+    ]) {
+      if (!/^[1-9]\d*$/.test(value(key)) || !Number.isSafeInteger(Number(value(key))))
+        problems.push(`${key} muss eine gültige RO-App-ID sein.`);
+    }
+    for (const key of ["ROAPP_CONFIRMED_STATUS_IDS", "ROAPP_COMPLETED_STATUS_IDS"]) {
+      const ids = value(key).split(",").map((id) => id.trim());
+      if (ids.some((id) => !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))))
+        problems.push(`${key} muss gültige RO-App-Status-IDs enthalten.`);
+    }
+    try {
+      const map = JSON.parse(value("ROAPP_ENTITY_MAP"));
+      if (
+        !map || typeof map !== "object" || Array.isArray(map) ||
+        !Object.keys(map).length ||
+        Object.values(map).some((id) => !Number.isSafeInteger(id) || Number(id) <= 0)
+      ) throw new Error();
+    } catch {
+      problems.push("ROAPP_ENTITY_MAP muss eine gültige Zuordnung der Leistungs-IDs enthalten.");
+    }
+  }
   const database = value("DATABASE_URL");
   if (!database) problems.push("DATABASE_URL fehlt (kein produktiver PGlite-Fallback).");
   else {

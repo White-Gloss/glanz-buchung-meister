@@ -1,3 +1,4 @@
+import { assertWebsiteApprovalEnabled } from "./booking-backend.ts";
 import { createHash } from "node:crypto";
 import { bitrixCalendarEnabled } from "./bitrix-calendar.ts";
 import type { Sql } from "./db.ts";
@@ -18,7 +19,7 @@ import {
 } from "./booking-notifications.ts";
 import type { UploadCapability } from "./booking-upload-capability.ts";
 import { ensureBookingOperationsSchema } from "./booking-operations.ts";
-import { queueBitrixBooking } from "./bitrix-sync.ts";
+import { queueCrmBooking } from "./booking-crm.ts";
 
 const SHOP = "white-gloss";
 export type WorkflowStatus =
@@ -96,7 +97,7 @@ async function event(
     returning id
   `;
   await enqueue(tx, row, name, saved.id, actor);
-  await queueBitrixBooking(tx, row);
+  await queueCrmBooking(tx, row);
 }
 
 async function findBooking(tx: Sql, id: number) {
@@ -194,6 +195,7 @@ async function persistBookingRequest(
         insert into bookings(shop_id,status,customer_name,phone,email,preferred_date,preferred_slot,package_id,class_id,extra_ids,city_slug,note,total_cents,pickup_cents,estimated_price_cents,vehicle_make,vehicle_model,vehicle_plate,upload_token_hash,upload_token_expires_at,request_key_hash,request_fingerprint)
         values(${SHOP},'neu',${data.name},${data.phone},${data.email || null},${data.date || null},${data.slot || null},${data.packageId},${data.classId},${JSON.stringify(data.extraIds)},${data.citySlug || null},${note || null},${Math.round(quote.total * 100)},${Math.round((quote.pickup ?? 0) * 100)},${Math.round(quote.total * 100)},${"vehicleMake" in data ? data.vehicleMake || null : null},${"vehicleModel" in data ? data.vehicleModel || null : null},${"vehiclePlate" in data ? data.vehiclePlate || null : null},${capability.hash},${capability.expiresAt},${key},${fingerprint}) returning *
       `;
+      await tx`update bookings set review_email_consent=${data.reviewEmailConsent === true} where id=${booking.id} and shop_id=${SHOP}`;
       await tx`insert into customers(shop_id,name,phone,email) values(${SHOP},${data.name},${data.phone},${data.email || null})
         on conflict(shop_id,phone) do update set name=excluded.name,email=coalesce(excluded.email,customers.email)`;
       await tx`insert into inbox_messages(shop_id,channel,sender,subject,body,booking_id)
@@ -242,6 +244,7 @@ export async function confirmBookingManually(
         return { booking: before, changed: false };
       checkVersion(before, expectedVersion);
       if (before.status !== "neu") throw new Error("Nur offene Anfragen können bestätigt werden.");
+      assertWebsiteApprovalEnabled();
       assertConfirmable(before);
       if (await bitrixCalendarEnabled(tx))
         throw new Error(

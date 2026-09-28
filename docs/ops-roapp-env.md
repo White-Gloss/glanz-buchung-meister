@@ -1,45 +1,37 @@
-# RO App-Umgebung (VPS)
+# RO App: neues White-Gloss-Konto aktivieren
 
-Website-Buchungen bleiben lokal. Die durable Queue legt Kontakt, Termin und Auftrag in RO App an. Odoo-Sync bleibt parallel unveraendert.
+Stand 28.09.2026. Kein lokales Hosting. Veröffentlichung nur über den freigegebenen IONOS-Weg. Der Server war während dieser Vorbereitung per SSH nicht erreichbar; diese Anleitung ist kein Nachweis einer Aktivierung.
 
-## Variablen in /etc/white-gloss/environment
+## Erforderliche Konfiguration
 
-Werte mit Leerzeichen immer quoten. Niemals Secrets committen.
+- BOOKING_OPERATIONS=roapp
+- ROAPP_API_KEY: neuer Schlüssel, nur serverseitig und niemals im Repository.
+- ROAPP_EXPECTED_COMPANY_CREATED_AT=2026-09-28T13:56:33Z
+- ROAPP_ACCOUNT_SCOPE=white-gloss-20260928
+- ROAPP_CUTOVER_AT: tatsächlicher Aktivierungszeitpunkt als ISO-Zeit mit Zeitzone; nicht vorab schätzen.
+- ROAPP_BRANCH_ID=234698
+- ROAPP_ASSIGNEE_ID=336589
+- ROAPP_ORDER_TYPE_ID=358349
+- ROAPP_REVIEW_STATUS_ID=5706133
+- ROAPP_APPROVED_STATUS_ID=5706367
+- ROAPP_FIRM_STATUS_ID=5706483
+- ROAPP_CONFIRMED_STATUS_IDS=5706483,5706160
+- ROAPP_COMPLETED_STATUS_IDS=5706130,5706131,5706151,5706152
+- ROAPP_ENTITY_MAP: vollständige JSON-Zuordnung der 50 Positionen. Schlüssel z.B. basis:kompakt, felgen:suv, pickup:tier_20. Fehlende Zuordnung stoppt die Übertragung.
+- ROAPP_WEBHOOK_SECRET: geschützter neuer Wert, mindestens 20 Zeichen.
+- ROAPP_LIFECYCLE_MAIL_ENABLED=false bis Versandweg, Datenbankmigration, Statusablauf und Empfängerprüfung verifiziert sind; danach gezielt true.
 
-Required:
-ROAPP_API_KEY
-ROAPP_BRANCH_ID
-ROAPP_ASSIGNEE_ID
-ROAPP_ORDER_TYPE_ID
+API-Basis ist ausschließlich https://api.roapp.io/v2. Der API-Schlüssel und das Webhook-Secret liegen lokal nur im für den Betreiber geschützten DPAPI-Deployment-Profil außerhalb des Repositories.
 
-Optional:
-ROAPP_API_BASE (default https://api.roapp.io/v2, no trailing slash)
-ROAPP_ENTITY_MAP (JSON: Website package/extra id -> RO entity_id)
+## Aktivierung
 
-Auth: Authorization Bearer token from RO App Settings > API.
-Rate limit: 3 requests/second; client throttles and retries on HTTP 429.
+1. Backup und aktuellen Releasezustand auf IONOS prüfen.
+2. Migration 0022 mit dem regulären Release anwenden. Bestehende RO-Zeilen erhalten den Scope legacy und dürfen nicht zurückgesetzt werden.
+3. Neue Umgebung installieren; shop_settings.roapp_sync_enabled für white-gloss einschalten. Bitrix-Schlüssel werden im RO-Modus nicht verwendet.
+4. Release nach den vorhandenen Deployment-Verträgen aktivieren und Dienstzustand prüfen.
+5. Ohne Kundenaktionen prüfen: Website, Statusroute, geschützte Fotos, Kalender, authentifizierter Cron und Webhook-Signaturprüfung.
+6. Isolierten Prozessnachweis für Anfrage, Fotos, Besitzerfreigabe, echte Testkundenannahme, finale Terminfreigabe, Umbuchung/Storno und Abschluss durchführen. Keine fremde Unterschrift stellvertretend abgeben.
+7. Versand erst nach Prüfung des Absenders und der Warteschlange aktivieren. Frühere RO-/Bitrix-/ERP-Nachrichten bleiben gesperrt.
+8. Alte Aufträge werden nicht automatisch übernommen. Einen gewünschten Altfalltransfer gesondert prüfen.
 
-## Entity-Mapping
-
-ROAPP_ENTITY_MAP='""basis":101"'
-ROAPP_ENTITY_MAP='""premium":102"'
-ROAPP_ENTITY_MAP='""keramik":103"'
-ROAPP_ENTITY_MAP='""felgen":201"'
-
-Ohne Mapping werden Kontakt/Booking/Order trotzdem angelegt; Positionen entfallen fuer unbekannte Katalog-IDs. Kommentar enthaelt WG-{id}.
-
-## Deploy-Check
-1. Env speichern und quoten
-2. Migration 0013_roapp_sync.sql einspielen
-3. systemctl restart white-gloss.service
-4. Im Admin RO-App-Uebertragung einschalten
-5. Testbuchung mit Wunschtermin/-slot anlegen
-6. Automation-Cron ausfuehren; in RO App WG-{id} pruefen
-7. Odoo-Sync unveraendert smoke-testen
-
-## Nicht tun
-- Secrets committen
-- Odoo abschalten
-- Website-Mails durch RO ersetzen
-- Webhooks von RO zurueck (v1 out of scope)
-- Browser-Redirect zu roapp.io
+Der Webhook liest Preise und Status erneut über die API; Nutzdaten des eingehenden Webhooks setzen weder Preise noch eine Unterschrift oder Zahlung. Die Rechnungsautomatik ist noch offen; keine Buchhaltung anhand von Statusnamen simulieren.

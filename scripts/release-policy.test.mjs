@@ -49,6 +49,56 @@ test("missing or unsafe runtime settings are rejected without leaking their valu
   );
 });
 
+test("production gate accepts configured RO App and rejects incomplete or retired account settings", () => {
+  const base = {
+    BOOKING_OPERATIONS: "roapp",
+    DATABASE_URL: "postgres://user:private-password@localhost/app",
+    BETTER_AUTH_SECRET: "a".repeat(32),
+    SUPABASE_SERVICE_ROLE_KEY: "private-key",
+    SUPABASE_URL: "https://storage.example.invalid",
+    RESEND_API_KEY: "private-mail-key",
+    MAIL_FROM: "test@example.invalid",
+  };
+  const ro = {
+    ROAPP_API_KEY: "private-ro-key",
+    ROAPP_WEBHOOK_SECRET: "private-webhook-secret-long",
+    ROAPP_ACCOUNT_SCOPE: "white-gloss-new-account",
+    ROAPP_CUTOVER_AT: "2026-09-28T22:00:00Z",
+    ROAPP_EXPECTED_COMPANY_CREATED_AT: "2026-09-28T13:56:33Z",
+    ROAPP_BRANCH_ID: "100",
+    ROAPP_ASSIGNEE_ID: "101",
+    ROAPP_ORDER_TYPE_ID: "102",
+    ROAPP_REVIEW_STATUS_ID: "1",
+    ROAPP_APPROVED_STATUS_ID: "2",
+    ROAPP_FIRM_STATUS_ID: "3",
+    ROAPP_CONFIRMED_STATUS_IDS: "3,4",
+    ROAPP_COMPLETED_STATUS_IDS: "5,6",
+    ROAPP_ENTITY_MAP: '{"basis:kompakt":200}',
+  };
+  assert.deepEqual(releaseConfigurationProblems({ ...base, ...ro }), []);
+  for (const key of Object.keys(ro)) {
+    const issues = releaseConfigurationProblems({ ...base, ...ro, [key]: "" });
+    assert.ok(issues.some((issue) => issue.includes(key)), key);
+    assert.doesNotMatch(issues.join(""), /private-/);
+  }
+  for (const invalid of [
+    { BOOKING_OPERATIONS: "unknown" },
+    { ROAPP_ACCOUNT_SCOPE: "legacy" },
+    { ROAPP_CUTOVER_AT: "2026-09-28T22:00:00" },
+    { ROAPP_API_BASE: "https://private-ro-key@other.example/v2" },
+    { ROAPP_BRANCH_ID: "1.5" },
+    { ROAPP_ENTITY_MAP: "[]" },
+    { ROAPP_ENTITY_MAP: '{"basis":0}' },
+    { ROAPP_ENTITY_MAP: '{"basis":"200"}' },
+    { ROAPP_CONFIRMED_STATUS_IDS: "3,invalid" },
+  ]) {
+    const issues = releaseConfigurationProblems({ ...base, ...ro, ...invalid });
+    assert.ok(issues.length, JSON.stringify(invalid));
+    assert.doesNotMatch(issues.join(""), /private-/);
+  }
+  assert.deepEqual(releaseConfigurationProblems({ ...base, BOOKING_OPERATIONS: "bitrix" }), []);
+});
+
 async function withCompleteSchema(check) {
   const db = new PGlite();
   try {
