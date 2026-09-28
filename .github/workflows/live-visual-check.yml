@@ -1,0 +1,53 @@
+name: Live Visual Check
+
+# Read-only browser check of https://white-gloss.de after a deployment.
+# No server is started and no form, upload or message is submitted.
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Deploy to IONOS VPS
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-visual-check
+  cancel-in-progress: true
+
+jobs:
+  live:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+
+      - name: Chromium bereitstellen
+        run: npx playwright install --with-deps chromium
+
+      - name: Veröffentlichte Website lesend prüfen
+        run: node scripts/live-visual-check.mjs
+
+      - name: Live-Nachweise sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: live-visual-check
+          path: .live-check/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
