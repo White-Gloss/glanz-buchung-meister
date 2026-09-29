@@ -101,24 +101,23 @@ try {
     const { context, page, assets } = await openContext(viewport, mobile);
     await visit(page, "/#buchung");
     await page.locator("form.booking-flow").waitFor({ timeout: 20_000 });
-    const extras = await page.locator(".booking-extra input[type=checkbox]").count();
+    const extras = await page.locator('input[type=checkbox][id^="extra-"]').count();
+    const steps = page.locator(".booking-steps button");
+    const sel = ".booking-price strong";
     await page.locator('input[name="klasse"][value="kompakt"]').check();
     await page.locator('input[name="paket"][value="premium"]').check();
+    await steps.nth(1).click();
+    const extrasBox = page.locator("details.booking-extras");
+    if (!(await extrasBox.evaluate((details) => details.open)))
+      await extrasBox.locator("summary").click();
     await page.locator("#extra-felgen").check();
-    const sel = mobile ? ".booking-pricebar-toggle strong" : ".booking-aside .booking-total strong";
     const kompakt = await total(page, sel, "468 €");
+    await page.screenshot({ path: `${output}/${name}-buchung-extras.png` });
+    await steps.nth(0).click();
     await page.locator('input[name="klasse"][value="suv"]').check();
     const suv = await total(page, sel, "585 €");
-    await page.locator("#extra-felgen").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${output}/${name}-buchung-auswahl.png` });
-    if (mobile) {
-      await page.locator(".booking-pricebar-toggle").click();
-      await page.screenshot({ path: `${output}/${name}-buchung-preisdetails.png` });
-      await page.keyboard.press("Escape");
-      await page.locator(".booking-pricebar-action").click();
-    } else {
-      await page.locator(".booking-aside-action").click();
-    }
+    await steps.nth(2).click();
     await page.locator("#name").waitFor({ state: "visible" });
     await page.screenshot({ path: `${output}/${name}-buchung-kontakt.png` });
     report.booking.push({

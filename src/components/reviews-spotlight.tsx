@@ -3,26 +3,9 @@ import { googleProfile, type GoogleReviewsData } from "@/data/google-profile";
 import { DESKTOP_MOTION, useScrollMotion } from "@/lib/scroll-motion";
 import { IconArrowRight } from "./icons";
 
-const EXCERPT_LENGTH = 240;
-
-// Shortens at a word boundary; the full review stays one click away on Google.
-function excerpt(text: string) {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (clean.length <= EXCERPT_LENGTH) return { text: clean, shortened: false };
-  const cut = clean.slice(0, EXCERPT_LENGTH);
-  const space = cut.lastIndexOf(" ");
-  return { text: `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()} …`, shortened: true };
-}
-
-const dateFormat = { timeZone: "Europe/Berlin" } as const;
-
-/**
- * Only fresh, verified Google API data is shown as rating or customer review.
- * Without it, the section links to the public profile instead of inventing quotes.
- */
+/** Only fresh, verified Google API data is shown as a rating; no quotes are invented. */
 export function ReviewsSpotlight({ data }: { data?: GoogleReviewsData | null }) {
   const root = useRef<HTMLElement>(null);
-  const reviews = (data?.reviews ?? []).filter((review) => review.text.trim()).slice(0, 3);
   useScrollMotion(
     DESKTOP_MOTION,
     ({ gsap }) => {
@@ -70,49 +53,8 @@ export function ReviewsSpotlight({ data }: { data?: GoogleReviewsData | null }) 
             <IconArrowRight aria-hidden />
           </span>
         </a>
-        <p className="reviews-source-note">
-          {data && (
-            <>
-              Gesamtbewertung und Rezensionen aus Google Maps. Stand:{" "}
-              <time dateTime={data.fetchedAt}>
-                {new Date(data.fetchedAt).toLocaleDateString("de-DE", dateFormat)}
-              </time>
-              .{" "}
-            </>
-          )}
-          Externer Link zu Google Maps.
-        </p>
+        <p className="reviews-source-note">Externer Link zu Google Maps.</p>
       </div>
-      {reviews.length > 0 && (
-        <div className="reviews-excerpts">
-          {reviews.map((review) => {
-            const quote = excerpt(review.text);
-            return (
-              <figure key={review.id}>
-                <p
-                  className="review-stars"
-                  role="img"
-                  aria-label={`${review.rating} von 5 Sternen`}
-                >
-                  {"★".repeat(review.rating)}
-                </p>
-                <blockquote cite={googleProfile.url}>
-                  <p>„{quote.text}“</p>
-                </blockquote>
-                <figcaption>
-                  {review.author}
-                  <span>
-                    Google-Rezension{quote.shortened ? " · Auszug" : ""} ·{" "}
-                    <time dateTime={review.date}>
-                      {new Date(review.date).toLocaleDateString("de-DE", dateFormat)}
-                    </time>
-                  </span>
-                </figcaption>
-              </figure>
-            );
-          })}
-        </div>
-      )}
     </aside>
   );
 }

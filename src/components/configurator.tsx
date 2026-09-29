@@ -53,6 +53,8 @@ export function Configurator({
   }
   const [classId, setClassId] = useBookingDraft<VehicleClass["id"]>("classId", "kompakt");
   const [extraIds, setExtraIds] = useBookingDraft<string[]>("extraIds", []);
+  // Opens for restored selections, then follows the customer's own toggling.
+  const [extrasOpen, setExtrasOpen] = useState(() => extraIds.length > 0);
   const [citySlug, setCitySlug] = useBookingDraft("citySlug", initialCity ?? "horb-am-neckar");
   const [name, setName] = useBookingDraft("name", "");
   const [phone, setPhone] = useBookingDraft("phone", "");
@@ -78,34 +80,6 @@ export function Configurator({
   const saved = useRef<{ reference: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState("");
   const { fieldProps, fieldError, showErrors } = usePublicFormErrors();
-  const formRef = useRef<HTMLFormElement>(null);
-  const [priceBarVisible, setPriceBarVisible] = useState(false);
-  const [priceDetailsOpen, setPriceDetailsOpen] = useState(false);
-
-  // The mobile price bar follows the same visibility window as the WhatsApp
-  // button, which hides while the form fills the upper part of the screen.
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setPriceBarVisible(entry.isIntersecting);
-        if (!entry.isIntersecting) setPriceDetailsOpen(false);
-      },
-      { rootMargin: "0px 0px -55% 0px" },
-    );
-    observer.observe(form);
-    return () => observer.disconnect();
-  }, []);
-  // The lazily mounted form is not known to the WhatsApp button's observer.
-  useEffect(() => {
-    const root = document.documentElement;
-    if (priceBarVisible) root.dataset.bookingBar = "visible";
-    else delete root.dataset.bookingBar;
-    return () => {
-      delete root.dataset.bookingBar;
-    };
-  }, [priceBarVisible]);
 
   useEffect(() => {
     if (appliedBookingEntries.has(entryKey) || pending || savedReference) return;
@@ -203,7 +177,7 @@ export function Configurator({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting.current) return;
-    if (step < 2) {
+    if (step < 3) {
       changeStep(step + 1);
       return;
     }
@@ -291,38 +265,8 @@ export function Configurator({
     }
   }
 
-  const locked = pending || savedReference !== null;
-  const selectedExtras = extras.filter(
-    (ex) => extraIds.includes(ex.id) && !extraIncluded(packageId, ex.id),
-  );
-  const requestableCount = extras.filter((ex) => ex.requestable !== false).length;
-  const priceLines = (
-    <dl className="booking-lines">
-      <div>
-        <dt>Fahrzeug</dt>
-        <dd>{quote.klass.label}</dd>
-      </div>
-      <div>
-        <dt>{quote.pack.name}</dt>
-        <dd>{eur(quote.pack.price * quote.klass.factor)}</dd>
-      </div>
-      {selectedExtras.map((ex) => (
-        <div key={ex.id}>
-          <dt>{ex.name}</dt>
-          <dd>{eur(ex.price * quote.klass.factor)}</dd>
-        </div>
-      ))}
-      <div>
-        <dt>Abholung · {quote.city?.name}</dt>
-        <dd>{quote.pickupOnRequest ? "nach Absprache" : eur(quote.pickup ?? 0)}</dd>
-      </div>
-    </dl>
-  );
-  const priceTerms = `${site.vatNote}${quote.pickupOnRequest ? " · zzgl. Abholung nach Absprache" : ""}`;
-
   return (
     <form
-      ref={formRef}
       onSubmit={onSubmit}
       noValidate
       data-hide-whatsapp
@@ -331,577 +275,520 @@ export function Configurator({
       className="booking-flow"
     >
       <nav aria-label="Schritte der Terminanfrage" className="booking-steps">
-        {["Ihre Auswahl", "Kontakt & Termin"].map((label, index) => (
+        {["Fahrzeug & Paket", "Extras & Abholung", "Kontakt & Anfrage"].map((label, index) => (
           <button
             key={label}
             type="button"
             aria-current={step === index + 1 ? "step" : undefined}
-            disabled={locked}
+            disabled={pending || savedReference !== null}
             onClick={() => changeStep(index + 1)}
           >
-            <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span> {label}
+            <span aria-hidden="true">{index + 1}.</span> {label}
           </button>
         ))}
       </nav>
-      <div className="booking-layout">
-        <div className="booking-main">
-          <h3 ref={stepHeading} tabIndex={-1} className="booking-step-title">
-            {step === 1 ? "Ihre Auswahl" : "Kontakt & Termin"}
-          </h3>
-          <div hidden={step !== 1} className="booking-stage">
-            <fieldset className="booking-group">
-              <legend className="booking-legend">
-                <span aria-hidden="true">01</span> Fahrzeug
-              </legend>
-              <div className="booking-choices booking-choices--vehicle">
-                {vehicleClasses.map((c) => (
-                  <label key={c.id} className="booking-choice" data-selected={classId === c.id}>
-                    <input
-                      disabled={locked}
-                      type="radio"
-                      name="klasse"
-                      value={c.id}
-                      checked={classId === c.id}
-                      onChange={() => setClassId(c.id)}
-                    />
-                    <span className="booking-choice-copy">
-                      <span className="booking-choice-name">{c.label}</span>
-                      <span className="booking-choice-hint">{c.hint}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="booking-group">
-              <legend className="booking-legend">
-                <span aria-hidden="true">02</span> Paket
-              </legend>
-              <div className="booking-choices">
-                {packages.map((p) => (
-                  <label key={p.id} className="booking-choice" data-selected={packageId === p.id}>
-                    <input
-                      disabled={locked}
-                      type="radio"
-                      name="paket"
-                      value={p.id}
-                      checked={packageId === p.id}
-                      onChange={() => setPackageId(p.id)}
-                    />
-                    <span className="booking-choice-copy">
-                      <span className="booking-choice-meta">
-                        {p.searchLabel}
-                        {p.featured ? <span className="booking-choice-tag">Empfohlen</span> : null}
-                      </span>
-                      <span className="booking-choice-name">{p.name}</span>
-                      <span className="booking-choice-hint">{p.kicker}</span>
-                      <span className="booking-choice-price">
-                        <span>ab</span> {eur(p.price * quote.klass.factor)}
-                        <span> · {p.duration}</span>
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="booking-group">
-              <legend className="booking-legend">
-                <span aria-hidden="true">03</span> Zusatzleistungen
-                <small>
-                  optional · {requestableCount} Leistungen · Preise für {quote.klass.label}
-                </small>
-              </legend>
-              {(["pflege", "reparatur"] as const).map((group) => (
-                <div key={group} className="booking-extra-group">
-                  <p className="booking-extra-group-title">
-                    {group === "pflege" ? "Pflege" : "Reparatur"}
-                  </p>
-                  <ul className="booking-extra-list">
-                    {extras
-                      .filter((ex) => ex.group === group && ex.requestable !== false)
-                      .map((ex) => {
-                        const included = extraIncluded(packageId, ex.id);
-                        const checked = extraIds.includes(ex.id) || included;
-                        return (
-                          <li key={ex.id}>
-                            <label
-                              className="booking-extra"
-                              data-selected={checked}
-                              data-included={included || undefined}
-                            >
-                              <input
-                                disabled={locked || included}
-                                id={`extra-${ex.id}`}
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleExtra(ex.id)}
-                              />
-                              <span className="booking-extra-copy">
-                                <span className="booking-extra-name">{ex.name}</span>
-                                <span className="booking-extra-hint">
-                                  {ex.hint}
-                                  {packageId === "keramik" && ex.id === "felgen"
-                                    ? " · Felgenversiegelung ist im Paket enthalten; dieses Extra umfasst zusätzlich die Demontage und Tiefenreinigung."
-                                    : ""}
-                                  {packageId === "keramik" && ex.id === "leder"
-                                    ? " · Lederpflege ist im Paket enthalten. Einen darüber hinausgehenden Aufwand stimmen wir nach der Begutachtung mit Ihnen ab."
-                                    : ""}
-                                  {ex.inspect ? " · nach Prüfung" : ""}
-                                </span>
-                              </span>
-                              <span className="booking-extra-price">
-                                {included
-                                  ? "Im Paket enthalten"
-                                  : `ab ${eur(ex.price * quote.klass.factor)}`}
-                              </span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                  </ul>
-                </div>
-              ))}
-            </fieldset>
-
-            <div className="booking-group">
-              <p className="booking-legend">
-                <span aria-hidden="true">04</span> Hol- und Bringservice
-              </p>
-              <Field tone="public" id="city" label="Abholort">
-                <select
-                  disabled={locked}
-                  id="city"
-                  className={inputLine}
-                  value={citySlug}
-                  onChange={(e) => setCitySlug(e.target.value)}
-                >
-                  {cities.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name} · {c.km} km
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <p className="booking-pickup-note">
-                {quote.city
-                  ? `Abholung ab ${quote.city.name}: ${pickupPriceText(quote.city.km, packageId)}.`
-                  : null}{" "}
-                Abholort und Übergabezeit stimmen wir persönlich mit Ihnen ab.
-              </p>
-            </div>
-          </div>
-
-          <div hidden={step !== 2} className="booking-contact">
-            <p className="booking-contact-lead">
-              Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
-              Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
-              {paymentNote}
-            </p>
-            <div className="booking-fields">
-              <Field tone="public" id="name" label="Name (Pflichtfeld)">
-                <input
-                  disabled={locked}
-                  id="name"
-                  className={inputLine}
-                  autoComplete="name"
-                  name="name"
-                  minLength={2}
-                  maxLength={120}
-                  {...fieldProps("name")}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                {fieldError("name")}
-              </Field>
-              <Field tone="public" id="phone" label="Telefon (Pflichtfeld)">
-                <input
-                  disabled={locked}
-                  id="phone"
-                  className={inputLine}
-                  autoComplete="tel"
-                  inputMode="tel"
-                  type="tel"
-                  name="tel"
-                  minLength={6}
-                  maxLength={40}
-                  {...fieldProps("phone")}
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-                {fieldError("phone")}
-              </Field>
-              <Field tone="public" id="email" label="E-Mail (optional)">
-                <input
-                  disabled={locked}
-                  id="email"
-                  type="email"
-                  className={inputLine}
-                  autoComplete="email"
-                  name="email"
-                  maxLength={160}
-                  {...fieldProps("email")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                {fieldError("email")}
-              </Field>
-            </div>
-            <details className="booking-more">
-              <summary>Weitere Fahrzeugangaben (optional)</summary>
-              <div className="booking-fields">
-                <Field tone="public" id="vehicleMake" label="Fahrzeugmarke (optional)">
-                  <input
-                    disabled={locked}
-                    id="vehicleMake"
-                    className={inputLine}
-                    maxLength={80}
-                    value={vehicleMake}
-                    onChange={(e) => setVehicleMake(e.target.value)}
-                  />
-                </Field>
-                <Field tone="public" id="vehicleModel" label="Fahrzeugmodell (optional)">
-                  <input
-                    disabled={locked}
-                    id="vehicleModel"
-                    className={inputLine}
-                    maxLength={80}
-                    value={vehicleModel}
-                    onChange={(e) => setVehicleModel(e.target.value)}
-                  />
-                </Field>
-                <Field tone="public" id="vehiclePlate" label="Kennzeichen (optional)">
-                  <input
-                    disabled={locked}
-                    id="vehiclePlate"
-                    className={inputLine}
-                    maxLength={20}
-                    autoComplete="off"
-                    value={vehiclePlate}
-                    onChange={(e) => setVehiclePlate(e.target.value)}
-                  />
-                </Field>
-              </div>
-            </details>
-            <div className="booking-fields">
-              <Field tone="public" id="date" label="Wunschtermin (optional)">
-                <input
-                  disabled={locked}
-                  id="date"
-                  type="date"
-                  {...fieldProps("date")}
-                  className={inputLine}
-                  min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-                {fieldError("date")}
-                {date && blockedSlots.length > 0 ? (
-                  <p className="text-xs text-muted">
-                    Einige Zeiträume sind bereits belegt. Bitte wählen Sie eine verfügbare
-                    Abgabezeit oder fragen Sie ohne feste Uhrzeit an.
-                  </p>
-                ) : null}
-              </Field>
-              <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
-                <select
-                  disabled={locked || availabilityState !== "ready"}
-                  id="slot"
-                  className={inputLine}
-                  value={slot}
-                  onChange={(e) => setSlot(e.target.value)}
-                >
-                  <option value="">Keine Angabe</option>
-                  {timeSlots.map((s) => {
-                    const isBlocked = Boolean(
-                      date && availabilityState === "ready" && blockedSlots.includes(s),
-                    );
-                    return (
-                      <option key={s} value={s} disabled={isBlocked}>
-                        {s} Uhr{isBlocked ? " - belegt" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-                <p className="text-xs text-muted">
-                  {availabilityState === "loading"
-                    ? "Freie Zeiträume werden geprüft …"
-                    : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
-                </p>
-              </Field>
-            </div>
-            {availabilityState !== "ready" ? (
-              <p role="status" className="text-xs text-muted">
-                {availabilityState === "loading"
-                  ? "Verfügbarkeit wird geprüft …"
-                  : "Die Kalenderprüfung ist vorübergehend nicht verfügbar. Eine Anfrage ohne feste Uhrzeit ist möglich."}
-              </p>
-            ) : null}
-            <Field tone="public" id="note" label="Ihre Nachricht (optional)">
-              <textarea
-                disabled={locked}
-                id="note"
-                maxLength={2000}
-                {...fieldProps("note")}
-                className={`${inputLine} min-h-24 py-2`}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              {fieldError("note")}
-            </Field>
-            <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
-              <label htmlFor="website">Website</label>
-              <input
-                disabled={locked}
-                id="website"
-                name="website"
-                tabIndex={-1}
-                autoComplete="off"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-              />
-            </div>
-            <BookingMediaPicker files={media} onChange={setMedia} disabled={pending} />
-            {uploadProgress ? (
-              <p role="status" className="text-sm">
-                {uploadProgress}
-              </p>
-            ) : null}
-            {savedReference ? (
-              <p role="status" className="text-sm">
-                Anfrage {savedReference} gespeichert. Noch keine Terminzusage.
-              </p>
-            ) : null}
-            <section aria-label="Zusammenfassung Ihrer Anfrage" className="booking-overview">
-              <h4>Ihre Anfrage im Überblick</h4>
-              <dl className="booking-summary">
-                <dt>Paket · {quote.klass.label}</dt>
-                <dd>
-                  {quote.pack.name} · {eur(quote.pack.price * quote.klass.factor)}
-                </dd>
-                {selectedExtras.map((ex) => (
-                  <div key={ex.id}>
-                    <dt>{ex.name}</dt>
-                    <dd>{eur(ex.price * quote.klass.factor)}</dd>
-                  </div>
-                ))}
-                <dt>Abholung · {quote.city?.name}</dt>
-                <dd>{quote.pickupOnRequest ? "Preis nach Absprache" : eur(quote.pickup ?? 0)}</dd>
-                <dt>Gesamtpreis (voraussichtlich)</dt>
-                <dd>
-                  {eur(quote.total)}
-                  {quote.pickupOnRequest ? " zzgl. Abholung" : ""}
-                </dd>
-                <dt>Kontakt</dt>
-                <dd>
-                  {name || "Bitte Namen ergänzen"} · {phone || "Bitte Telefon ergänzen"}
-                  {email ? ` · ${email}` : ""}
-                </dd>
-                <dt>Wunschtermin</dt>
-                <dd>
-                  {date || "Nach Absprache"}
-                  {slot ? ` · ${slot} Uhr` : ""}
-                </dd>
-                <dt>Aufnahmen</dt>
-                <dd>{media.length} ausgewählt</dd>
-              </dl>
-            </section>
-            <p className="text-sm text-muted">
-              So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
-              unserer Prüfung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die
-              Rechnung folgt nach erbrachter Leistung.
-            </p>
-            <label htmlFor="privacy" className="booking-consent">
-              <input
-                disabled={locked}
-                id="privacy"
-                {...fieldProps("privacy")}
-                type="checkbox"
-                checked={privacy}
-                onChange={(e) => setPrivacy(e.target.checked)}
-                required
-              />
-              <span>
-                Ich habe die{" "}
-                <Link to="/datenschutz" className="underline hover:text-fg">
-                  Datenschutzerklärung
-                </Link>{" "}
-                zur Kenntnis genommen (Pflichtfeld). Die Anfrage ist unverbindlich.{" "}
-                <Link to="/agb" className="underline hover:text-fg">
-                  AGB
-                </Link>{" "}
-                und{" "}
-                <Link to="/widerruf" className="underline hover:text-fg">
-                  Widerruf
-                </Link>
-                .
-              </span>
-            </label>
-            {fieldError("privacy")}
-            <label className="booking-consent">
-              <input
-                type="checkbox"
-                checked={reviewEmailConsent}
-                onChange={(e) => setReviewEmailConsent(e.target.checked)}
-              />
-              <span>
-                Ich möchte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um
-                ehrliches Feedback und eine Google-Bewertung gebeten werden. Freiwillig und
-                jederzeit widerrufbar.
-              </span>
-            </label>
-            {error ? (
-              <div className="space-y-2">
-                <p className="text-sm text-danger" role="alert">
-                  {error}
-                </p>
-                <Button
-                  tone="public"
-                  variant="line"
-                  type="button"
-                  disabled={pending}
-                  onClick={() => {
-                    saved.current = null;
-                    setSavedReference(null);
-                    bookingRequestId.clear();
-                    setError("");
-                  }}
-                >
-                  Neue Anfrage beginnen
-                </Button>
-              </div>
-            ) : null}
-            <Button
-              tone="public"
-              type="submit"
-              className="booking-submit w-full"
-              disabled={pending}
-              aria-busy={pending}
-            >
-              {pending
-                ? "Wird gesendet …"
-                : savedReference
-                  ? media.length
-                    ? "Übrige Fotos erneut senden"
-                    : "Weiter zur Bestätigung"
-                  : "Terminanfrage senden"}
-            </Button>
-            <a
-              href={site.whatsapp}
-              className="block text-center text-sm text-muted hover:text-fg"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Oder per WhatsApp schreiben
-            </a>
-          </div>
-          <div className="booking-nav">
-            {step > 1 && !savedReference ? (
-              <Button
-                tone="public"
-                variant="line"
-                type="button"
-                disabled={pending}
-                onClick={() => changeStep(step - 1)}
+      <div className="booking-price" aria-live="polite" aria-atomic="true">
+        <span>
+          Voraussichtlicher Gesamtpreis
+          {quote.pickupOnRequest ? " zzgl. Abholung nach Absprache" : ""}
+          <small> inkl. MwSt.</small>
+        </span>
+        <strong>{eur(quote.total)}</strong>
+      </div>
+      <h3
+        ref={stepHeading}
+        tabIndex={-1}
+        className="font-display text-2xl"
+        style={{ scrollMarginTop: "6rem" }}
+      >
+        {step === 1 ? "Fahrzeug & Paket" : step === 2 ? "Extras & Abholung" : "Kontakt & Anfrage"}
+      </h3>
+      <div hidden={step !== 1} className="space-y-8">
+        <fieldset>
+          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Paket</legend>
+          <div className="mt-3 flex flex-col gap-3">
+            {packages.map((p) => (
+              <label
+                key={p.id}
+                className={`lift flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
+                  packageId === p.id ? "border-accent bg-elevated" : "border-line bg-surface"
+                }`}
               >
-                Zurück zur Auswahl
-              </Button>
-            ) : (
-              <span />
-            )}
-            {step < 2 ? (
-              <Button tone="public" type="button" onClick={() => changeStep(step + 1)}>
-                Weiter zu Kontakt & Termin
-              </Button>
-            ) : null}
+                <input
+                  disabled={pending || savedReference !== null}
+                  type="radio"
+                  name="paket"
+                  value={p.id}
+                  className="mt-1"
+                  checked={packageId === p.id}
+                  onChange={() => setPackageId(p.id)}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-fg">{p.name}</span>
+                  <span className="text-xs uppercase tracking-[0.14em] text-subtle">
+                    {p.searchLabel}
+                  </span>
+                  <span className="block text-sm text-muted">
+                    ab {eur(p.price * quote.klass.factor)} · {p.duration}
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-subtle">{p.kicker}</span>
+                </span>
+              </label>
+            ))}
           </div>
-        </div>
+        </fieldset>
 
-        <aside className="booking-aside" aria-label="Ihre Auswahl und voraussichtlicher Preis">
-          <p className="booking-aside-kicker">Ihre Auswahl</p>
-          {priceLines}
-          <div className="booking-total" aria-live="polite" aria-atomic="true">
-            <span className="booking-total-label">Voraussichtlich</span>
-            <strong>
-              <span>ab</span> {eur(quote.total)}
-            </strong>
+        <fieldset>
+          <legend className="text-xs uppercase tracking-[0.16em] text-subtle">
+            Fahrzeugklasse
+          </legend>
+          <div className="gd-tiles gd-tiles-3 mt-3">
+            {vehicleClasses.map((c) => (
+              <label
+                key={c.id}
+                className={`flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
+                  classId === c.id ? "border-accent bg-elevated" : "border-line bg-surface"
+                }`}
+              >
+                <input
+                  disabled={pending || savedReference !== null}
+                  type="radio"
+                  name="klasse"
+                  value={c.id}
+                  className="mt-1"
+                  checked={classId === c.id}
+                  onChange={() => setClassId(c.id)}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-fg">{c.label}</span>
+                  <span className="mt-1 block text-xs text-muted">{c.hint}</span>
+                </span>
+              </label>
+            ))}
           </div>
-          <p className="booking-total-terms">{priceTerms}</p>
-          <p className="booking-total-note">
-            Den verbindlichen Preis stimmen wir nach der Fahrzeugprüfung mit Ihnen ab.
-          </p>
-          {step === 1 ? (
-            <button
-              type="button"
-              className="booking-aside-action"
-              disabled={locked}
-              onClick={() => changeStep(2)}
-            >
-              Weiter zur Anfrage
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="booking-aside-back"
-              disabled={locked}
-              onClick={() => changeStep(1)}
-            >
-              Auswahl ändern
-            </button>
-          )}
-        </aside>
+        </fieldset>
+      </div>
+      <div hidden={step !== 2} className="space-y-6">
+        <details
+          className="booking-extras"
+          open={extrasOpen}
+          onToggle={(e) => setExtrasOpen(e.currentTarget.open)}
+        >
+          <summary>
+            Zusatzleistungen (optional){extraIds.length ? ` · ${extraIds.length} ausgewählt` : ""}
+          </summary>
+          <fieldset className="mt-4">
+            <legend className="sr-only">Zusatzleistungen</legend>
+            {(["pflege", "reparatur"] as const).map((group) => (
+              <div key={group} className="mt-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-subtle">
+                  {group === "pflege" ? "Pflege" : "Reparatur"}
+                </p>
+                <div className="mt-2 grid gap-2">
+                  {extras
+                    .filter((ex) => ex.group === group && ex.requestable !== false)
+                    .map((ex) => (
+                      <label
+                        key={ex.id}
+                        className="flex flex-col items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 sm:flex-row"
+                      >
+                        <span className="flex min-w-0 items-start">
+                          <input
+                            disabled={
+                              pending || savedReference !== null || extraIncluded(packageId, ex.id)
+                            }
+                            id={`extra-${ex.id}`}
+                            type="checkbox"
+                            className="mt-1 mr-3"
+                            checked={extraIds.includes(ex.id) || extraIncluded(packageId, ex.id)}
+                            onChange={() => toggleExtra(ex.id)}
+                          />
+                          <span>
+                            <span className="block text-sm text-fg">{ex.name}</span>
+                            <span className="mt-0.5 block text-xs text-subtle">
+                              {ex.hint}
+                              {packageId === "keramik" && ex.id === "felgen"
+                                ? " · Felgenversiegelung ist im Paket enthalten; dieses Extra umfasst zusätzlich die Demontage und Tiefenreinigung."
+                                : ""}
+                              {packageId === "keramik" && ex.id === "leder"
+                                ? " · Lederpflege ist im Paket enthalten. Einen darüber hinausgehenden Aufwand stimmen wir nach der Begutachtung mit Ihnen ab."
+                                : ""}
+                              {ex.inspect ? " · nach Prüfung" : ""}
+                            </span>
+                          </span>
+                        </span>
+                        <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
+                          {extraIncluded(packageId, ex.id)
+                            ? "Im Paket enthalten"
+                            : `ab ${eur(ex.price * quote.klass.factor)}`}
+                        </span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </fieldset>
+        </details>
+
+        <Field tone="public" id="city" label="Abholort">
+          <select
+            disabled={pending || savedReference !== null}
+            id="city"
+            className={inputLine}
+            value={citySlug}
+            onChange={(e) => setCitySlug(e.target.value)}
+          >
+            {cities.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name} · {c.km} km
+              </option>
+            ))}
+          </select>
+        </Field>
       </div>
 
       <div
-        className="booking-pricebar"
-        data-visible={priceBarVisible}
-        data-open={priceDetailsOpen}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && priceDetailsOpen) {
-            e.stopPropagation();
-            setPriceDetailsOpen(false);
-          }
-        }}
+        hidden={step !== 3}
+        className="space-y-5 rounded-card border border-line bg-elevated p-5"
       >
-        <div
-          id="booking-price-details"
-          className="booking-pricebar-details"
-          hidden={!priceDetailsOpen}
-        >
-          <p className="booking-aside-kicker">Preisdetails</p>
-          {priceLines}
-          <p className="booking-total-terms">{priceTerms}</p>
-        </div>
-        <div className="booking-pricebar-row">
-          <button
-            type="button"
-            className="booking-pricebar-toggle"
-            aria-expanded={priceDetailsOpen}
-            aria-controls="booking-price-details"
-            onClick={() => setPriceDetailsOpen((open) => !open)}
+        <p className="text-xs uppercase tracking-[0.16em] text-subtle">Unverbindliche Anfrage</p>
+        <p className="font-display text-3xl text-fg" aria-live="polite">
+          {eur(quote.total)}
+        </p>
+        <p className="text-sm text-muted">
+          {quote.klass.label} · {quote.pack.name}
+          {quote.pickup === 0
+            ? " · Abholung kostenlos"
+            : quote.pickupOnRequest
+              ? " · Abholung auf Anfrage"
+              : quote.pickup
+                ? ` · Abholung ${eur(quote.pickup)}`
+                : ""}
+        </p>
+        <p className="text-xs text-subtle">
+          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
+          Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
+          {paymentNote}
+        </p>
+        <Field tone="public" id="name" label="Name (Pflichtfeld)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="name"
+            className={inputLine}
+            autoComplete="name"
+            name="name"
+            minLength={2}
+            maxLength={120}
+            {...fieldProps("name")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          {fieldError("name")}
+        </Field>
+        <Field tone="public" id="phone" label="Telefon (Pflichtfeld)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="phone"
+            className={inputLine}
+            autoComplete="tel"
+            inputMode="tel"
+            type="tel"
+            name="tel"
+            minLength={6}
+            maxLength={40}
+            {...fieldProps("phone")}
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          {fieldError("phone")}
+        </Field>
+        <Field tone="public" id="email" label="E-Mail (optional)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="email"
+            type="email"
+            className={inputLine}
+            autoComplete="email"
+            name="email"
+            maxLength={160}
+            {...fieldProps("email")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          {fieldError("email")}
+        </Field>
+        <details>
+          <summary className="min-h-11 cursor-pointer py-3">
+            Weitere Fahrzeugangaben (optional)
+          </summary>
+          <div className="space-y-5">
+            <Field tone="public" id="vehicleMake" label="Fahrzeugmarke (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehicleMake"
+                className={inputLine}
+                maxLength={80}
+                value={vehicleMake}
+                onChange={(e) => setVehicleMake(e.target.value)}
+              />
+            </Field>
+            <Field tone="public" id="vehicleModel" label="Fahrzeugmodell (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehicleModel"
+                className={inputLine}
+                maxLength={80}
+                value={vehicleModel}
+                onChange={(e) => setVehicleModel(e.target.value)}
+              />
+            </Field>
+            <Field tone="public" id="vehiclePlate" label="Kennzeichen (optional)">
+              <input
+                disabled={pending || savedReference !== null}
+                id="vehiclePlate"
+                className={inputLine}
+                maxLength={20}
+                autoComplete="off"
+                value={vehiclePlate}
+                onChange={(e) => setVehiclePlate(e.target.value)}
+              />
+            </Field>
+          </div>
+        </details>
+        <Field tone="public" id="date" label="Wunschtermin (optional)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="date"
+            type="date"
+            {...fieldProps("date")}
+            className={inputLine}
+            min={new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" })}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          {fieldError("date")}
+          {date && blockedSlots.length > 0 ? (
+            <p className="text-xs text-muted">
+              Einige Zeiträume sind bereits belegt. Bitte wählen Sie eine verfügbare Abgabezeit oder
+              fragen Sie ohne feste Uhrzeit an.
+            </p>
+          ) : null}
+        </Field>
+        {availabilityState !== "ready" ? (
+          <p role="status" className="text-xs text-muted">
+            {availabilityState === "loading"
+              ? "Verfügbarkeit wird geprüft …"
+              : "Die Kalenderprüfung ist vorübergehend nicht verfügbar. Eine Anfrage ohne feste Uhrzeit ist möglich."}
+          </p>
+        ) : null}
+        <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
+          <select
+            disabled={pending || savedReference !== null || availabilityState !== "ready"}
+            id="slot"
+            className={inputLine}
+            value={slot}
+            onChange={(e) => setSlot(e.target.value)}
           >
-            <span className="booking-pricebar-label">Voraussichtlich ab</span>
-            <strong>{eur(quote.total)}</strong>
-            <span className="booking-pricebar-more">
-              {priceDetailsOpen ? "Details schließen" : "Preisdetails"}
-            </span>
-          </button>
-          {step === 1 ? (
-            <button
+            <option value="">Keine Angabe</option>
+            {timeSlots.map((s) => {
+              const isBlocked = Boolean(
+                date && availabilityState === "ready" && blockedSlots.includes(s),
+              );
+              return (
+                <option key={s} value={s} disabled={isBlocked}>
+                  {s} Uhr{isBlocked ? " - belegt" : ""}
+                </option>
+              );
+            })}
+          </select>
+          <p className="text-xs text-muted">
+            {availabilityState === "loading"
+              ? "Freie Zeiträume werden geprüft …"
+              : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+          </p>
+        </Field>
+        <Field tone="public" id="note" label="Ihre Nachricht (optional)">
+          <textarea
+            disabled={pending || savedReference !== null}
+            id="note"
+            maxLength={2000}
+            {...fieldProps("note")}
+            className={`${inputLine} min-h-24 py-2`}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          {fieldError("note")}
+        </Field>
+        <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            disabled={pending || savedReference !== null}
+            id="website"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+          />
+        </div>
+        <BookingMediaPicker files={media} onChange={setMedia} disabled={pending} />
+        {uploadProgress ? (
+          <p role="status" className="text-sm">
+            {uploadProgress}
+          </p>
+        ) : null}
+        {savedReference ? (
+          <p role="status" className="text-sm">
+            Anfrage {savedReference} gespeichert. Noch keine Terminzusage.
+          </p>
+        ) : null}
+        <section aria-label="Zusammenfassung Ihrer Anfrage" className="border-y border-line py-5">
+          <h4 className="text-lg font-medium">Ihre Anfrage im Überblick</h4>
+          <dl className="booking-summary mt-3 text-sm">
+            <dt>Paket · {quote.klass.label}</dt>
+            <dd>
+              {quote.pack.name} · {eur(quote.pack.price * quote.klass.factor)}
+            </dd>
+            {extras
+              .filter((ex) => extraIds.includes(ex.id) && !extraIncluded(packageId, ex.id))
+              .map((ex) => (
+                <div key={ex.id}>
+                  <dt>{ex.name}</dt>
+                  <dd>{eur(ex.price * quote.klass.factor)}</dd>
+                </div>
+              ))}
+            <dt>Abholung · {quote.city?.name}</dt>
+            <dd>{quote.pickupOnRequest ? "Preis nach Absprache" : eur(quote.pickup ?? 0)}</dd>
+            <dt>Gesamtpreis (voraussichtlich)</dt>
+            <dd>
+              {eur(quote.total)}
+              {quote.pickupOnRequest ? " zzgl. Abholung" : ""}
+            </dd>
+            <dt>Kontakt</dt>
+            <dd>
+              {name || "Bitte Namen ergänzen"} · {phone || "Bitte Telefon ergänzen"}
+              {email ? ` · ${email}` : ""}
+            </dd>
+            <dt>Wunschtermin</dt>
+            <dd>
+              {date || "Nach Absprache"}
+              {slot ? ` · ${slot} Uhr` : ""}
+            </dd>
+            <dt>Aufnahmen</dt>
+            <dd>{media.length} ausgewählt</dd>
+          </dl>
+        </section>
+        <p className="text-sm text-muted">
+          So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
+          unserer Prüfung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die Rechnung
+          folgt nach erbrachter Leistung.
+        </p>
+        <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
+          <input
+            disabled={pending || savedReference !== null}
+            id="privacy"
+            {...fieldProps("privacy")}
+            type="checkbox"
+            className="mt-1"
+            checked={privacy}
+            onChange={(e) => setPrivacy(e.target.checked)}
+            required
+          />
+          <span>
+            Ich habe die{" "}
+            <Link to="/datenschutz" className="underline hover:text-fg">
+              Datenschutzerklärung
+            </Link>{" "}
+            zur Kenntnis genommen (Pflichtfeld). Die Anfrage ist unverbindlich.{" "}
+            <Link to="/agb" className="underline hover:text-fg">
+              AGB
+            </Link>{" "}
+            und{" "}
+            <Link to="/widerruf" className="underline hover:text-fg">
+              Widerruf
+            </Link>
+            .
+          </span>
+        </label>
+        {fieldError("privacy")}
+        <label className="flex items-start gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={reviewEmailConsent}
+            onChange={(e) => setReviewEmailConsent(e.target.checked)}
+          />
+          <span>
+            Ich möchte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um ehrliches
+            Feedback und eine Google-Bewertung gebeten werden. Freiwillig und jederzeit widerrufbar.
+          </span>
+        </label>
+        {error ? (
+          <div className="space-y-2">
+            <p className="text-sm text-danger" role="alert">
+              {error}
+            </p>
+            <Button
+              tone="public"
+              variant="line"
               type="button"
-              className="booking-pricebar-action"
-              disabled={locked}
+              disabled={pending}
               onClick={() => {
-                setPriceDetailsOpen(false);
-                changeStep(2);
+                saved.current = null;
+                setSavedReference(null);
+                bookingRequestId.clear();
+                setError("");
               }}
             >
-              Weiter zur Anfrage
-            </button>
-          ) : null}
-        </div>
+              Neue Anfrage beginnen
+            </Button>
+          </div>
+        ) : null}
+        <Button
+          tone="public"
+          type="submit"
+          className="w-full"
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending
+            ? "Wird gesendet …"
+            : savedReference
+              ? media.length
+                ? "Übrige Fotos erneut senden"
+                : "Weiter zur Bestätigung"
+              : "Terminanfrage senden"}
+        </Button>
+        <a
+          href={site.whatsapp}
+          className="block text-center text-sm text-muted hover:text-fg"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Oder per WhatsApp schreiben
+        </a>
+      </div>
+      <div className="flex flex-wrap justify-between gap-3">
+        {step > 1 && !savedReference ? (
+          <Button
+            tone="public"
+            variant="line"
+            type="button"
+            disabled={pending}
+            onClick={() => changeStep(step - 1)}
+          >
+            Zurück
+          </Button>
+        ) : (
+          <span />
+        )}
+        {step < 3 ? (
+          <Button tone="public" type="button" onClick={() => changeStep(step + 1)}>
+            Weiter zu {step === 1 ? "Extras & Abholung" : "Kontakt & Anfrage"}
+          </Button>
+        ) : null}
       </div>
     </form>
   );

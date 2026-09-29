@@ -76,12 +76,12 @@ async function overflow(page) {
 }
 
 try {
-  /* ---- Desktop: selection, prices, package/vehicle changes, pickup ---- */
+  /* ---- Desktop: existing three-step form, prices, package/vehicle changes, pickup ---- */
   {
     const { context, page, assets } = await openContext({ viewport: { width: 1280, height: 900 } });
     await openBooking(page);
     const ids = await page
-      .locator(".booking-extra input[type=checkbox]")
+      .locator('input[type=checkbox][id^="extra-"]')
       .evaluateAll((inputs) => inputs.map((input) => input.id));
     assert.deepEqual(
       ids.sort(),
@@ -90,59 +90,63 @@ try {
     );
     results.push("All 12 bookable extras render with their production IDs");
 
-    const total = ".booking-aside .booking-total strong";
+    const total = ".booking-price strong";
+    const step = async (number) => {
+      await page
+        .locator(".booking-steps button")
+        .nth(number - 1)
+        .click();
+      if (number === 2) {
+        const extrasBox = page.locator("details.booking-extras");
+        if (!(await extrasBox.evaluate((details) => details.open)))
+          await extrasBox.locator("summary").click();
+      }
+    };
     await page.locator('input[name="klasse"][value="kompakt"]').check();
     await page.locator('input[name="paket"][value="premium"]').check();
+    await step(2);
     await page.selectOption("#city", "horb-am-neckar");
     await page.locator("#extra-felgen").check();
     await expectText(page, total, "468 €", "Kompakt · Reinigung & Politur + Felgen");
+    await step(1);
     await page.locator('input[name="klasse"][value="suv"]').check();
     await expectText(page, total, "585 €", "SUV · Reinigung & Politur + Felgen");
-    await page.locator("#extra-felgen").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${output}/desktop-1280-auswahl.png` });
 
+    await step(2);
     await page.locator("#extra-leder").check();
     await expectText(page, total, "771,25 €", "SUV · Politur + Felgen + Lederpflege");
+    await step(1);
     await page.locator('input[name="paket"][value="keramik"]').check();
+    await step(2);
     for (const id of ["leder", "glas"]) {
       assert.ok(await page.locator(`#extra-${id}`).isChecked(), `${id} shown as included`);
       assert.ok(await page.locator(`#extra-${id}`).isDisabled(), `${id} not selectable twice`);
     }
-    assert.doesNotMatch(
-      flat(await page.locator(".booking-aside .booking-lines").textContent()),
-      /Lederpflege/,
-      "Included leather care must not be charged again",
-    );
     await expectText(page, total, "1.272,50 €", "SUV · Keramikschutz + Felgen, Leder inklusive");
+    await step(1);
     await page.locator('input[name="paket"][value="premium"]').check();
+    await step(2);
     assert.equal(await page.locator("#extra-leder").isChecked(), false, "Included extra dropped");
     await expectText(page, total, "585 €", "Back to Reinigung & Politur without leftover extras");
 
+    await step(1);
     await page.locator('input[name="klasse"][value="kompakt"]').check();
+    await step(2);
     await page.selectOption("#city", "nagold");
     await expectText(page, total, "518 €", "Kompakt · Politur + Felgen · Abholung Nagold 50 €");
     await page.selectOption("#city", "sindelfingen");
     await expectText(page, total, "468 €", "Pickup beyond 50 km is not priced");
-    await expectText(
-      page,
-      ".booking-aside .booking-total-terms",
-      "zzgl. Abholung nach Absprache",
-      "Pickup on request is stated",
-    );
+    await expectText(page, ".booking-price", "zzgl. Abholung nach Absprache", "Pickup on request");
+    await step(1);
     await page.locator('input[name="paket"][value="keramik"]').check();
     await expectText(page, total, "1.018 €", "Keramikschutz includes pickup up to 60 km");
 
-    await page.locator(".booking-aside-action").click();
+    await step(3);
     await page.locator("#name").waitFor({ state: "visible" });
-    assert.equal(
-      await page.evaluate(() => document.activeElement?.classList.contains("booking-step-title")),
-      true,
-      "Step change moves focus to the step heading",
-    );
     assert.ok(await page.locator('button[type="submit"]').isVisible());
     await page.screenshot({ path: `${output}/desktop-1280-kontakt.png` });
-    await page.locator(".booking-aside-back").click();
-    await page.locator("#extra-felgen").waitFor({ state: "visible" });
+    await step(2);
     assert.equal(await page.locator("#extra-felgen").isChecked(), true, "Selection is kept");
     results.push("Contact step reachable and reversible without losing the selection");
 
@@ -157,7 +161,7 @@ try {
     await context.close();
   }
 
-  /* ---- Mobile: price bar, expandable price details, Escape ---- */
+  /* ---- Mobile: form without overflow, no desktop motion download ---- */
   {
     const { context, page, assets } = await openContext({
       viewport: { width: 390, height: 844 },
@@ -165,36 +169,23 @@ try {
       hasTouch: true,
     });
     await openBooking(page);
-    await page.locator("#extra-ozon").scrollIntoViewIfNeeded();
+    await page.locator(".booking-steps button").nth(1).click();
+    const extrasBox = page.locator("details.booking-extras");
+    if (!(await extrasBox.evaluate((details) => details.open)))
+      await extrasBox.locator("summary").click();
     await page.locator("#extra-ozon").check();
     await page.locator("#extra-leder").check();
-    const bar = page.locator(".booking-pricebar");
+    await expectText(page, ".booking-price strong", "597 €", "Mobile total");
+    assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the extras step");
+    await page.locator("form.booking-flow").evaluate((form) => form.scrollIntoView());
     await page.waitForFunction(
-      () => document.querySelector(".booking-pricebar")?.getAttribute("data-visible") === "true",
+      () => document.querySelector("[data-wa-float]")?.getAttribute("aria-hidden") === "true",
+      undefined,
+      { timeout: 5000 },
     );
-    await expectText(page, ".booking-pricebar-toggle strong", "597 €", "Mobile bar total");
-    assert.equal(
-      await page.locator("[data-wa-float]").evaluate((link) => getComputedStyle(link).visibility),
-      "hidden",
-      "WhatsApp button yields to the price bar",
-    );
-    await page.screenshot({ path: `${output}/mobile-390-preisleiste.png` });
-    const toggle = bar.locator(".booking-pricebar-toggle");
-    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
-    await toggle.click();
-    assert.equal(await toggle.getAttribute("aria-expanded"), "true");
-    await bar.locator(".booking-pricebar-details").waitFor({ state: "visible" });
-    assert.match(flat(await bar.locator(".booking-lines").textContent()), /Lederpflege/);
-    await page.screenshot({ path: `${output}/mobile-390-preisdetails.png` });
-    await page.keyboard.press("Escape");
-    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
-    assert.equal(
-      await toggle.evaluate((element) => element === document.activeElement),
-      true,
-      "Focus stays on the toggle",
-    );
-    results.push("Mobile price bar opens details, closes with Escape and keeps focus");
-    await bar.locator(".booking-pricebar-action").click();
+    results.push("WhatsApp button hides over the lazily loaded booking form");
+    await page.screenshot({ path: `${output}/mobile-390-extras.png` });
+    await page.locator(".booking-steps button").nth(2).click();
     await page.locator("#name").waitFor({ state: "visible" });
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the contact step");
     await page.screenshot({ path: `${output}/mobile-390-kontakt.png` });
@@ -202,7 +193,7 @@ try {
       !assets.some((path) => /\/assets\/(gsap|ScrollTrigger)-/.test(path)),
       "Phones never download the desktop motion chunk",
     );
-    results.push("Phones do not download GSAP");
+    results.push("Phones: booking without overflow, no GSAP download");
     await context.close();
   }
 
