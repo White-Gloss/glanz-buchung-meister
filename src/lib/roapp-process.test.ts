@@ -964,3 +964,35 @@ test("runtime schema setup records migration 0023 in the history", async () => {
     await pg.close();
   }
 });
+
+test("billing address from the booking form completes invoices above 250 EUR", async () => {
+  const { pg, sql } = await database();
+  const ro = fakeRo();
+  try {
+    // Same columns the application adds at runtime (ensureBookingOperationsSchema).
+    await pg.exec(`alter table bookings add column if not exists customer_street text;
+      alter table bookings add column if not exists customer_postal_code text;
+      alter table bookings add column if not exists customer_city text;`);
+    const booking = await insertBooking(sql, { email: "formular@example.invalid" });
+    await sql`update bookings set customer_street='Musterweg 1',customer_postal_code='72160',customer_city='Horb am Neckar'
+      where id=${booking.id}`;
+    const orderId = await transfer(sql, ro, booking);
+    await roStep(sql, ro, orderId, {
+      items: [{ title: "Aufbereitung", quantity: 1, price: "349.00" }],
+    });
+    await roStep(sql, ro, orderId, { status: S.approved });
+    await roStep(sql, ro, orderId, {
+      status: S.accepted,
+      scheduled: new Date(Date.now() - DAY).toISOString(),
+    });
+    await roStep(sql, ro, orderId, { status: S.firm });
+    await roStep(sql, ro, orderId, { status: S.done });
+    assert.equal((await runRoInvoices(sql, { request: ro.request })).issued, 1);
+    const [invoice] = await sql<{
+      recipient: { address: string };
+    }>`select recipient from roapp_invoices`;
+    assert.equal(invoice.recipient.address, "Musterweg 1, 72160 Horb am Neckar");
+  } finally {
+    await pg.close();
+  }
+});

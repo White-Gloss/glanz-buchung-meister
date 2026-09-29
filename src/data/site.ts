@@ -50,8 +50,7 @@ export const openingHours = {
   dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const,
 };
 
-export const paymentNote =
-  "Ihre Terminanfrage ist unverbindlich. Es ist keine Anzahlung erforderlich. Zahlung fällig nach erbrachter Dienstleistung. Es erfolgt kein automatischer Einzug.";
+export const paymentNote = "Ihre Terminanfrage ist unverbindlich. Es ist keine Anzahlung erforderlich. Zahlung fällig nach erbrachter Dienstleistung. Es erfolgt kein automatischer Einzug.";
 
 export const timeSlots = ["09:00", "11:00", "13:00", "15:00"];
 
@@ -825,10 +824,8 @@ export const services: ServicePage[] = [
     title: "Scheinwerferaufbereitung: Hinweise zur Zulässigkeit",
     nav: "Scheinwerferaufbereitung",
     metaTitle: "Scheinwerferaufbereitung: Zulässigkeit | White Gloss",
-    description:
-      "Hinweise zu matten Scheinwerfern: Schleifen, Polieren und Versiegeln können die Bauartgenehmigung betreffen. Derzeit keine Buchung dieser Leistung.",
-    teaser:
-      "Die Scheinwerferaufbereitung ist bis zur Klärung des Verfahrens und seiner Zulässigkeit nicht buchbar.",
+    description: "Hinweise zu matten Scheinwerfern: Schleifen, Polieren und Versiegeln können die Bauartgenehmigung betreffen. Derzeit keine Buchung dieser Leistung.",
+    teaser: "Die Scheinwerferaufbereitung ist bis zur Klärung des Verfahrens und seiner Zulässigkeit nicht buchbar.",
     group: "finish",
     pendingApproval: true,
     image: "/media/finish.webp",
@@ -838,8 +835,7 @@ export const services: ServicePage[] = [
       "Schleifen, Polieren und Versiegeln können die Genehmigung und Betriebserlaubnis betreffen",
       "Keine Zusage einer zulässigen Instandsetzung ohne fahrzeug- und verfahrensbezogenen Nachweis",
     ],
-    honestNote:
-      "Wir bieten diese Bearbeitung derzeit nicht als Standardleistung an. Bei matten oder beschädigten Scheinwerfern lassen Sie die zulässigen Möglichkeiten durch eine Fachwerkstatt oder Prüforganisation klären.",
+    honestNote: "Wir bieten diese Bearbeitung derzeit nicht als Standardleistung an. Bei matten oder beschädigten Scheinwerfern lassen Sie die zulässigen Möglichkeiten durch eine Fachwerkstatt oder Prüforganisation klären.",
     body: [
       "Eine optische Verbesserung allein belegt weder eine zulässige Reparatur noch die vorgeschriebene Lichtverteilung. Auch eine Materialprüfung ersetzt keinen Genehmigungsnachweis.",
       "Bis Verfahren und gegebenenfalls erforderliche Genehmigung fachlich geklärt sind, ist die Scheinwerferaufbereitung aus der Preisauswahl und dem Anfragerechner ausgesetzt. Diese Informationsseite bleibt erreichbar.",
