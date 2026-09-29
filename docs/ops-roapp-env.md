@@ -25,15 +25,15 @@ API-Basis ist ausschließlich https://api.roapp.io/v2. API-Schlüssel, Webhook-S
 
 ## Rechnungsautomatik (standardmäßig aus)
 
-Ohne `ROAPP_INVOICE_ENABLED=true` bleibt alles wie bisher: keine Tabellenänderung, keine Rechnung, kein Versand. Die Release-Prüfung (`/`-Gate) verlangt diese Werte nicht; eine unvollständige Rechnungskonfiguration legt die Website nicht lahm, sondern stoppt nur die Rechnungserstellung und meldet das einmalig an buchung@white-gloss.de.
+Ohne `ROAPP_INVOICE_ENABLED=true` bleibt alles wie bisher: keine Tabellenänderung, keine Rechnung, kein Versand. Wird die Automatik später auf `false` gesetzt (Notstopp), entstehen keine neuen Rechnungen und keine Rechnungsmails mehr; ausgestellte Rechnungen bleiben im Betriebspanel sichtbar, Zahlungen erfassbar und Quittungen zustellbar. Die Release-Prüfung (`/`-Gate) verlangt diese Werte nicht; eine unvollständige Rechnungskonfiguration legt die Website nicht lahm, sondern stoppt nur die Rechnungserstellung und meldet das einmalig an buchung@white-gloss.de.
 
 - ROAPP_INVOICE_ENABLED=true
-- ROAPP_INVOICE_FROM: Aktivierungszeitpunkt mit Zeitzone. Nur Aufträge, die danach „Erledigt“ werden, erhalten eine Website-Rechnung.
+- ROAPP_INVOICE_FROM: Aktivierungszeitpunkt mit Zeitzone. Nur Aufträge, deren Termin nach diesem Zeitpunkt „Termin verbindlich“ bestätigt wurde, erhalten eine Website-Rechnung (Nachweis, dass der Abschluss danach lag). Früher bestätigte Aufträge werden manuell abgerechnet.
 - ROAPP_INVOICE_DELAY_MINUTES: Wartezeit nach „Erledigt“ (0–1440, Standard 15) für versehentliche Statuswechsel.
 - ROAPP_INVOICE_BANK_HOLDER, ROAPP_INVOICE_BANK_NAME, ROAPP_INVOICE_IBAN (Prüfziffer wird geprüft), ROAPP_INVOICE_BIC.
 - ROAPP_INVOICE_TAX_NUMBER: optional. Die USt-IdNr. DE465024196 steht bereits auf jeder Rechnung; § 14 UStG verlangt nur eine der beiden Angaben.
 
-Schema: `migrations/0023_roapp_invoices.sql` ist rein additiv und wird von der Anwendung beim ersten Rechnungslauf identisch angelegt (`ensureRoInvoiceSchema`). Die Datei ist deshalb – wie 0015–0018 – nicht Teil des Release-Gates; GitHub-CI kann die IONOS-Datenbank nicht migrieren. Ein Rollback auf einen älteren Release ist schemakompatibel: ältere Stände ignorieren die zusätzlichen Tabellen, und die CRM-Konfiguration bleibt RO.
+Schema: `migrations/0023_roapp_invoices.sql` ist rein additiv und wird von der Anwendung beim ersten Rechnungslauf identisch angelegt (`ensureRoInvoiceSchema`). Die Datei ist deshalb – wie 0015–0018 – nicht Teil des Release-Gates; GitHub-CI kann die IONOS-Datenbank nicht migrieren. Die Anwendung trägt 0023 dabei in `_migrations` ein, damit Inventur und `db:migrate` übereinstimmen. Ein Rollback auf einen älteren Release ist schemakompatibel: ältere Stände ignorieren die zusätzlichen Tabellen, und die CRM-Konfiguration bleibt RO.
 
 Aktivierung:
 

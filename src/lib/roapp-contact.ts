@@ -15,8 +15,9 @@ const RO_MAIL_EVENTS = ["wg.ro.reminder", "wg.ro.review"];
 /** Reads the customer's current RO contact. A corrected e-mail address in RO
  * replaces the website address and retargets messages that are still queued;
  * sent messages are never repeated. Unsupported or unreadable contact data
- * keeps the website data. With strict=true, transport failures propagate so the
- * caller can retry instead of issuing a document with stale data. */
+ * keeps the website data only when RO offers no single-contact read. With
+ * strict=true, transport failures and unexpected payloads propagate so the
+ * caller retries or reviews instead of issuing a document with stale data. */
 export async function currentRoContact(
   sql: Sql,
   bookingId: number,
@@ -42,8 +43,9 @@ export async function currentRoContact(
   try {
     person = await getPerson(request, row.ro_contact_id);
   } catch (error) {
-    const invalidShape = error instanceof RoappError && error.code === "roapp_contact_invalid";
-    if (options.strict && !invalidShape) throw error;
+    // Documents must not go to a possibly outdated address: strict callers move
+    // the case to review. Reminders (strict=false) keep the website address.
+    if (options.strict) throw error;
     return website;
   }
   if (!person) return website;

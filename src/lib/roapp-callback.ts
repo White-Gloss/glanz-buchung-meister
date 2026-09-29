@@ -2,7 +2,8 @@ import { roappAccountScope, roappOnlyEnabled } from "./booking-backend.ts";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
-import { queueRoLifecycle, roStatusIds } from "./roapp-lifecycle.ts";
+import { queueRoLifecycle, roLifecycleEnabled, roStatusIds } from "./roapp-lifecycle.ts";
+import { currentRoContact } from "./roapp-contact.ts";
 
 export function verifyRoSignature(id: string, signature: string, secret: string): boolean {
   if (!/^[a-f0-9-]{36}$/i.test(id) || !/^[a-f0-9]{64}$/i.test(signature) || secret.length < 20)
@@ -25,7 +26,7 @@ export async function refreshRoOrder(sql: Sql, orderId: number, request?: RoappR
   const creds = roappCredentialsFromEnv();
   if (!request && !creds) throw new Error("ro_not_configured");
   const call = request || createRoappClient(creds!);
-  return sql.transaction(async (tx) => {
+  const refreshed = await sql.transaction(async (tx) => {
     const [mapping] = await tx<{
       booking_id: number;
       total_cents: number;
@@ -139,6 +140,23 @@ export async function refreshRoOrder(sql: Sql, orderId: number, request?: RoappR
     await queueRoLifecycle(tx, mapping.booking_id);
     return true;
   });
+  if (refreshed) await adoptMissingEmail(sql, orderId, call).catch(() => undefined);
+  return refreshed;
+}
+
+/** A confirmed appointment without e-mail picks up an address added to the RO
+ * contact later, so the three-day reminder can still be planned. */
+async function adoptMissingEmail(sql: Sql, orderId: number, call: RoappRequest) {
+  if (!roLifecycleEnabled()) return;
+  const [row] = await sql<{ booking_id: number }>`select q.booking_id from roapp_sync_queue q
+    join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
+    join roapp_order_state s on s.booking_id=q.booking_id
+    where q.ro_order_id=${orderId} and q.account_scope=${roappAccountScope()} and q.shop_id='white-gloss'
+      and coalesce(trim(b.email),'')='' and s.owner_confirmed_at is not null and s.completed_at is null
+      and s.scheduled_for>now()`;
+  if (!row) return;
+  const contact = await currentRoContact(sql, row.booking_id, call, { strict: false });
+  if (contact.email) await queueRoLifecycle(sql, row.booking_id);
 }
 
 export async function reconcileRoOrders(sql: Sql) {

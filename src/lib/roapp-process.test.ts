@@ -684,7 +684,17 @@ test("error cases keep numbering gapless and never silently rewrite an issued in
       isApprovedCustomerNotification(key.replace("isolated-process-test", "legacy"), RO_INVOICE),
       false,
     );
-    await sql`update outbound_queue set to_addr='fremd@example.invalid' where event_type=${RO_INVOICE}`;
+    // An operational failure during the pre-send check is retried, not parked in review.
+    await pg.exec("alter table roapp_invoices rename to roapp_invoices_offline");
+    await runNotificationWorker(sql, { sendEmail: mail.sendEmail, roRequest: ro.request });
+    await pg.exec("alter table roapp_invoices_offline rename to roapp_invoices");
+    const [retry] = await sql<{
+      status: string;
+      last_error_code: string;
+    }>`select status,last_error_code
+      from outbound_queue where event_type=${RO_INVOICE}`;
+    assert.deepEqual(retry, { status: "queued", last_error_code: "ro_invoice_check_failed" });
+    await sql`update outbound_queue set to_addr='fremd@example.invalid',next_attempt_at=now() where event_type=${RO_INVOICE}`;
     await runNotificationWorker(sql, { sendEmail: mail.sendEmail, roRequest: ro.request });
     assert.equal(mail.sent.filter((m) => m.subject.startsWith("Rechnung")).length, 0);
     assert.equal(
@@ -786,4 +796,166 @@ test("unknown RO response shapes stop automation instead of guessing", async () 
     }, 5),
     null,
   );
+});
+
+test("review follow-ups: strict contact data, late e-mail, start proof, paused automation", async () => {
+  const { pg, sql } = await database();
+  const ro = fakeRo();
+  const person = (orderId: number) =>
+    ro.people.find((p) => p.id === ro.orders.get(orderId)!.clientId)!;
+  const complete = async (orderId: number, price = "199.00") => {
+    await roStep(sql, ro, orderId, { items: [{ title: "Politur", quantity: 1, price }] });
+    await roStep(sql, ro, orderId, { status: S.approved });
+    await roStep(sql, ro, orderId, {
+      status: S.accepted,
+      scheduled: new Date(Date.now() - DAY).toISOString(),
+    });
+    await roStep(sql, ro, orderId, { status: S.firm });
+    await roStep(sql, ro, orderId, { status: S.done });
+  };
+  try {
+    // An unexpected RO contact payload stops the invoice instead of using a stale address.
+    const first = await insertBooking(sql, { email: "alt@example.invalid" });
+    const firstOrder = await transfer(sql, ro, first);
+    await complete(firstOrder);
+    person(firstOrder).email = "kein-gueltiges-format";
+    assert.equal((await runRoInvoices(sql, { request: ro.request })).review, 1);
+    assert.deepEqual(
+      (await sql`select status,invoice_number from roapp_invoices where booking_id=${first.id}`)[0],
+      { status: "pruefung", invoice_number: null },
+    );
+
+    // An e-mail added to RO after confirmation still yields the three-day reminder.
+    const late = await insertBooking(sql, { email: null });
+    const lateOrder = await transfer(sql, ro, late);
+    await roStep(sql, ro, lateOrder, {
+      items: [{ title: "Politur", quantity: 1, price: "199.00" }],
+    });
+    await roStep(sql, ro, lateOrder, { status: S.approved });
+    const appointment = new Date(Date.now() + 10 * DAY).toISOString();
+    await roStep(sql, ro, lateOrder, { status: S.accepted, scheduled: appointment });
+    await roStep(sql, ro, lateOrder, { status: S.firm });
+    assert.equal(
+      (
+        await sql`select 1 from outbound_queue where event_type='wg.ro.reminder' and booking_id=${late.id}`
+      ).length,
+      0,
+    );
+    person(lateOrder).email = "spaeter@example.invalid";
+    await refreshRoOrder(sql, lateOrder, ro.request);
+    const [reminder] = await sql<{
+      to_addr: string;
+      next_attempt_at: Date;
+    }>`select to_addr,next_attempt_at
+      from outbound_queue where event_type='wg.ro.reminder' and booking_id=${late.id}`;
+    assert.equal(reminder.to_addr, "spaeter@example.invalid");
+    assert.equal(reminder.next_attempt_at.getTime(), Date.parse(appointment) - 3 * DAY);
+
+    // Confirmed before the start, completed after: no automatic invoice (may be billed manually).
+    const straddle = await insertBooking(sql, { email: "grenze@example.invalid" });
+    const straddleOrder = await transfer(sql, ro, straddle);
+    await roStep(sql, ro, straddleOrder, {
+      items: [{ title: "Politur", quantity: 1, price: "199.00" }],
+    });
+    await roStep(sql, ro, straddleOrder, { status: S.approved });
+    await roStep(sql, ro, straddleOrder, {
+      status: S.accepted,
+      scheduled: new Date(Date.now() - DAY).toISOString(),
+    });
+    await roStep(sql, ro, straddleOrder, { status: S.firm });
+    process.env.ROAPP_INVOICE_FROM = new Date(Date.now() + 1000).toISOString();
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await roStep(sql, ro, straddleOrder, { status: S.done });
+    await runRoInvoices(sql, { request: ro.request });
+    assert.equal(
+      (await sql`select 1 from roapp_invoices where booking_id=${straddle.id}`).length,
+      0,
+    );
+
+    // A failed RO hint is surfaced once; issued invoices stay visible and receipts
+    // deliverable while the automation is paused.
+    const hinted = await insertBooking(sql, { email: "hinweis@example.invalid" });
+    const hintedOrder = await transfer(sql, ro, hinted);
+    await complete(hintedOrder, "149.00");
+    ro.failures.set(
+      `POST /orders/${hintedOrder}/comments`,
+      new RoappError("roapp_request_failed", { status: 500, review: true }),
+    );
+    assert.equal((await runRoInvoices(sql, { request: ro.request })).issued, 1);
+    const [hint] = await sql<{
+      invoice_number: string;
+      ro_comment_state: string;
+    }>`select invoice_number,ro_comment_state
+      from roapp_invoices where booking_id=${hinted.id}`;
+    assert.equal(hint.ro_comment_state, "pruefung");
+    await runRoInvoices(sql, { request: ro.request });
+    assert.equal(
+      (await sql`select 1 from outbound_queue where event_key like '%:owner:ro-hinweis-fehlt-%'`)
+        .length,
+      1,
+    );
+    process.env.ROAPP_INVOICE_ENABLED = "false";
+    try {
+      const { roInvoiceOverview } = await import("./roapp-invoice.ts");
+      const overview = await roInvoiceOverview(sql);
+      assert.equal(overview.enabled, false);
+      assert.ok(overview.invoices.some((row) => row.invoice_number === hint.invoice_number));
+      assert.equal(
+        approvedRoInvoiceMessage(
+          roInvoiceMessageKey(hinted.id, "invoice", hint.invoice_number),
+          RO_INVOICE,
+        ),
+        false,
+      );
+      assert.equal(
+        approvedRoInvoiceMessage(
+          roInvoiceMessageKey(hinted.id, "receipt", `${hint.invoice_number}-Q1`),
+          "wg.ro.receipt",
+        ),
+        true,
+      );
+      assert.equal(
+        (
+          await recordRoInvoicePayment(sql, {
+            invoiceNumber: hint.invoice_number,
+            amountCents: 14_900,
+            method: "bar",
+            paidOn: berlinCalendarDate(),
+            requestId: "00000000-0000-4000-8000-000000000009",
+            recordedBy: "owner",
+          })
+        ).paymentStatus,
+        "bezahlt",
+      );
+    } finally {
+      process.env.ROAPP_INVOICE_ENABLED = "true";
+    }
+  } finally {
+    process.env.ROAPP_INVOICE_FROM = "2020-01-01T00:00:00Z";
+    await pg.close();
+  }
+});
+
+test("runtime schema setup records migration 0023 in the history", async () => {
+  const pg = new PGlite();
+  const sql = wrap(pg);
+  try {
+    for (const file of (await readdir("migrations")).filter((f) => f.endsWith(".sql")).sort())
+      if (file !== "0023_roapp_invoices.sql")
+        await pg.exec(await readFile(`migrations/${file}`, "utf8"));
+    await sql`create table _migrations(name text primary key, applied_at timestamptz not null default now())`;
+    const { ensureRoInvoiceSchema } = await import("./roapp-invoice.ts");
+    await ensureRoInvoiceSchema(sql);
+    await ensureRoInvoiceSchema(sql);
+    assert.deepEqual(
+      (await sql<{ name: string }>`select name from _migrations`).map((row) => row.name),
+      ["0023_roapp_invoices.sql"],
+    );
+    assert.equal(
+      (await sql`select to_regclass('roapp_invoice_payments') as t`)[0].t,
+      "roapp_invoice_payments",
+    );
+  } finally {
+    await pg.close();
+  }
 });

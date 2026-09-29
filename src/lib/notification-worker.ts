@@ -252,7 +252,15 @@ export async function runNotificationWorker(
       try {
         valid = await validateRoInvoiceMessage(sql, row);
       } catch {
-        valid = false;
+        // An operational failure is not a mismatch: retry within the attempt budget.
+        const status = row.attempt_count >= MAX_DELIVERY_ATTEMPTS ? "review" : "queued";
+        await sql`update outbound_queue set status=${status},last_error_code='ro_invoice_check_failed',lease_token=null,locked_until=null,
+          next_attempt_at=now()+interval '60 seconds',updated_at=now() where id=${row.id} and lease_token=${token}`;
+        if (status === "review") {
+          await recordNotificationAttention(sql, row, "ro_invoice_check_failed");
+          result.review++;
+        } else result.retried++;
+        continue;
       }
       if (!valid) {
         await sql`update outbound_queue set status='review',last_error_code='ro_invoice_mismatch',lease_token=null,locked_until=null,updated_at=now()

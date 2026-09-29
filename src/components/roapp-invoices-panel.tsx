@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button, Field, inputClass } from "@/components/ui";
+import { parseEuroInput } from "@/lib/money-input";
 import {
   recordRoPayment,
   retryRoInvoiceCheck,
@@ -50,8 +51,8 @@ function PaymentForm({ invoice, onDone }: { invoice: Invoice; onDone: (text: str
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const normalized = amount.trim().replace(/\./g, "").replace(",", ".");
-    if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    const amountCents = parseEuroInput(amount);
+    if (!amountCents) {
       onDone("Bitte den Betrag als Euro-Betrag eingeben, z. B. 178,00.");
       return;
     }
@@ -60,7 +61,7 @@ function PaymentForm({ invoice, onDone }: { invoice: Invoice; onDone: (text: str
       const result = await recordRoPayment({
         data: {
           invoiceNumber: invoice.invoice_number!,
-          amountCents: Math.round(Number(normalized) * 100),
+          amountCents,
           method,
           paidOn,
           requestId,
@@ -165,8 +166,9 @@ export function RoappInvoicesPanel() {
       </h2>
       {!overview.enabled ? (
         <p className="mt-3 text-sm text-muted">
-          Die automatische Rechnungserstellung ist nicht eingeschaltet. Rechnungen werden bis dahin
-          manuell erstellt.
+          Die automatische Rechnungserstellung ist ausgeschaltet: keine neuen Rechnungen und kein
+          Rechnungsversand. Bereits ausgestellte Rechnungen bleiben hier sichtbar; Zahlungseingänge
+          können weiter erfasst werden.
         </p>
       ) : (
         <p className="mt-3 max-w-3xl text-sm text-muted">
@@ -210,6 +212,8 @@ export function RoappInvoicesPanel() {
                 {issued && invoice.paid_cents > 0 && open > 0 && ` · offen ${euro(open)}`}
                 {invoice.reason && ` · Grund: ${invoice.reason.replace(/_/g, " ")}`}
                 {invoice.attention && ` · Achtung: ${invoice.attention.replace(/_/g, " ")}`}
+                {invoice.ro_comment_state === "pruefung" &&
+                  " · RO-Hinweis fehlt: in RO keine zweite Rechnung anlegen"}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {invoice.invoice_number && (

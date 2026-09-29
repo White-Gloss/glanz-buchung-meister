@@ -15,7 +15,7 @@ Stand: 29.09.2026. RO App ersetzt Bitrix24 ausschließlich für neue Website-Anf
 
 Die RO-API bietet in den bisherigen Prüfungen keinen PDF- oder Versandendpunkt für Rechnungen. Automatischer Versand ist deshalb nur über die Website möglich; sie ist dann der einzige Rechnungssteller.
 
-- Auslöser: RO-Status in `ROAPP_COMPLETED_STATUS_IDS`, zuvor Fixpreis, Kundenannahme und „Termin verbindlich“. Nur Abschlüsse ab `ROAPP_INVOICE_FROM`; ältere, womöglich manuell abgerechnete Aufträge werden nie angefasst.
+- Auslöser: RO-Status in `ROAPP_COMPLETED_STATUS_IDS`, zuvor Fixpreis, Kundenannahme und „Termin verbindlich“. Nur Aufträge, deren „Termin verbindlich“ nach `ROAPP_INVOICE_FROM` bestätigt wurde; ältere, womöglich manuell abgerechnete Aufträge werden nie angefasst.
 - Daten: RO-Auftrag, RO-Positionen und RO-Kontakt werden unmittelbar vor der Ausstellung neu gelesen. Die Positionssumme muss exakt dem freigegebenen RO-Betrag entsprechen. Rabatte oder unbekannte Antwortformate werden nicht interpretiert, sondern gehen in „Prüfung erforderlich“.
 - Pflichtangaben: fortlaufende Nummer `WG-RE-JJJJ-NNNN` (lückenlos, in derselben Transaktion vergeben), Rechnungs- und Leistungsdatum, Positionen, Netto, 19 % USt, Brutto, USt-IdNr. (optional Steuernummer), Bankverbindung. Über 250 € brutto ist die Anschrift des Kunden Pflicht (§ 14 UStG / § 33 UStDV); fehlt sie im RO-Kontakt, wird keine Nummer vergeben und Lars einmalig informiert.
 - Doppelschutz: höchstens eine Rechnung je Vorgang (Primärschlüssel), eindeutige Nummer, eindeutiger Versandschlüssel, Versand nur nach erneutem Abgleich von Nummer und Empfänger. Ein privater RO-Kommentar hält fest, dass die Rechnung bereits erstellt wurde.

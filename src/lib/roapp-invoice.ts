@@ -93,11 +93,13 @@ export function roInvoiceConfig(env: NodeJS.ProcessEnv = process.env): {
   };
 }
 
-let schemaReady: Promise<void> | undefined;
+const schemaReady = new WeakMap<Sql, Promise<void>>();
 /** Additive DDL, identical to migrations/0023_roapp_invoices.sql. GitHub CI cannot
  * migrate the IONOS database, so the release gate does not require that file. */
 export function ensureRoInvoiceSchema(sql: Sql): Promise<void> {
-  schemaReady ??= (async () => {
+  const known = schemaReady.get(sql);
+  if (known) return known;
+  const ready = (async () => {
     await sql`create table if not exists roapp_invoices (
       booking_id integer primary key references bookings(id),
       shop_id text not null default 'white-gloss',
@@ -152,11 +154,24 @@ export function ensureRoInvoiceSchema(sql: Sql): Promise<void> {
       created_at timestamptz not null default now(),
       unique (invoice_number, request_id)
     )`;
+    // Same DDL as the migration file: record it so history and db:migrate agree.
+    const [registry] = await sql<{ present: boolean }>`
+      select to_regclass('_migrations') is not null as present`;
+    if (registry?.present)
+      await sql`insert into _migrations(name) values('0023_roapp_invoices.sql') on conflict do nothing`;
   })().catch((error) => {
-    schemaReady = undefined;
+    schemaReady.delete(sql);
     throw error;
   });
-  return schemaReady;
+  schemaReady.set(sql, ready);
+  return ready;
+}
+
+/** Read paths never create tables: a paused automation still shows issued invoices. */
+async function invoiceTablesExist(sql: Sql) {
+  const [row] = await sql<{ present: boolean }>`
+    select to_regclass('roapp_invoice_payments') is not null as present`;
+  return Boolean(row?.present);
 }
 
 function stamp(value: string) {
@@ -173,9 +188,11 @@ function ownerKey(bookingId: number, topic: string, detail: string) {
   return `wg-ro-v1:${roappAccountScope()}:${bookingId}:owner:${topic}-${stamp(detail)}`;
 }
 
-/** Only invoice/receipt messages of the active account pass the customer-mail policy. */
+/** Only invoice/receipt messages of the active account pass the customer-mail policy.
+ * Pausing the automation stops invoice mail; receipts for recorded cash stay deliverable. */
 export function approvedRoInvoiceMessage(key: string, event: string): boolean {
-  if (!roInvoiceEnabled() || ![RO_INVOICE, RO_RECEIPT].includes(event)) return false;
+  if (!roappOnlyEnabled() || ![RO_INVOICE, RO_RECEIPT].includes(event)) return false;
+  if (event === RO_INVOICE && !roInvoiceEnabled()) return false;
   const parts = key.split(":");
   return (
     parts.length === 5 &&
@@ -390,8 +407,10 @@ async function eligible(sql: Sql, bookingId: number) {
   return row;
 }
 
-/** Plans an invoice once per completed order after the automation start. Orders
- * completed earlier may already carry a manual invoice and are never touched. */
+/** Plans an invoice once per completed order. Orders completed before the start
+ * may already carry a manual invoice. Local completion time is only an observation,
+ * so the proof is the owner's confirmation seen after the start: at that moment RO
+ * still showed the open status "Termin verbindlich", hence completion came later. */
 async function planInvoices(sql: Sql, config: RoInvoiceConfig) {
   const scope = roappAccountScope();
   const rows = await sql<{ booking_id: number }>`
@@ -402,7 +421,7 @@ async function planInvoices(sql: Sql, config: RoInvoiceConfig) {
     join roapp_sync_queue q on q.booking_id=s.booking_id and q.shop_id=${SHOP} and q.account_scope=${scope}
     join bookings b on b.id=s.booking_id and b.shop_id=${SHOP}
     where q.ro_order_id is not null and s.fixed_price and s.owner_confirmed_at is not null
-      and s.completed_at is not null and s.completed_at>=${config.from}::timestamptz and s.amount_cents>0
+      and s.completed_at is not null and s.owner_confirmed_at>=${config.from}::timestamptz and s.amount_cents>0
       and b.status not in ('storniert','abgelehnt','nicht_erschienen')
     on conflict (booking_id) do update set status='geplant',reason=null,attempts=0,
       completed_at=excluded.completed_at,due_at=excluded.due_at,updated_at=now()
@@ -620,7 +639,15 @@ async function issue(
     return { number, delivery };
   });
   if (!issued) return "retry";
-  await commentInvoice(sql, row.booking_id, job.ro_order_id, request, issued.number, totals.gross);
+  await commentInvoice(
+    sql,
+    row.booking_id,
+    job.ro_order_id,
+    request,
+    issued.number,
+    totals.gross,
+    issued.delivery,
+  );
   return "issued";
 }
 
@@ -631,18 +658,37 @@ async function commentInvoice(
   request: RoappRequest,
   number: string,
   grossCents: number,
+  delivery: string | null,
 ) {
   try {
     await createOrderComment(
       journalRoappWrites(sql, bookingId, request),
       orderId,
-      `Rechnung ${number} über ${euro(grossCents)} wurde von der Website erstellt und versendet. Keine weitere Rechnung in RO anlegen. Zahlungen erst nach tatsächlichem Eingang im Website-Betriebspanel erfassen.`,
+      `Rechnung ${number} über ${euro(grossCents)} wurde von der Website erstellt. ${
+        delivery === "email"
+          ? "Der E-Mail-Versand an den Kunden ist beauftragt; den Versandstatus zeigt das Website-Betriebspanel."
+          : "Keine Kunden-E-Mail: Übergabe durch den Inhaber (PDF an buchung@white-gloss.de)."
+      } Keine weitere Rechnung in RO anlegen. Zahlungen erst nach tatsächlichem Eingang im Website-Betriebspanel erfassen.`,
     );
     await sql`update roapp_invoices set ro_comment_state='erledigt',updated_at=now() where booking_id=${bookingId}`;
   } catch (error) {
     const review = error instanceof RoappError && error.review;
-    await sql`update roapp_invoices set ro_comment_state=${review ? "pruefung" : "offen"},updated_at=now()
-      where booking_id=${bookingId}`;
+    await sql.transaction(async (tx) => {
+      const changed =
+        await tx`update roapp_invoices set ro_comment_state=${review ? "pruefung" : "offen"},updated_at=now()
+        where booking_id=${bookingId} and ro_comment_state<>${review ? "pruefung" : "offen"} returning booking_id`;
+      if (review && changed.length)
+        await ownerAlert(
+          tx,
+          bookingId,
+          "ro-hinweis-fehlt",
+          number,
+          [
+            `Rechnung ${number} für WG-${bookingId} ist ausgestellt, aber der Hinweis im RO-Auftrag konnte nicht sicher gesetzt werden.`,
+            "Bitte in RO keine zweite Rechnung anlegen und den Hinweis „Rechnung durch Website erstellt“ manuell als privaten Kommentar ergänzen.",
+          ].join("\n"),
+        );
+    });
   }
 }
 
@@ -674,7 +720,8 @@ export async function runRoInvoices(
     ro_order_id: number;
     invoice_number: string;
     gross_cents: number;
-  }>`select booking_id,ro_order_id,invoice_number,gross_cents from roapp_invoices
+    delivery: string | null;
+  }>`select booking_id,ro_order_id,invoice_number,gross_cents,delivery from roapp_invoices
     where account_scope=${roappAccountScope()} and status in ('ausgestellt','versendet')
       and ro_comment_state='offen' limit 3`)
     await commentInvoice(
@@ -684,6 +731,7 @@ export async function runRoInvoices(
       request,
       pending.invoice_number,
       pending.gross_cents,
+      pending.delivery,
     );
   for (let index = 0; index < (options.limit ?? 3); index++) {
     const job = await claimDue(sql);
@@ -724,7 +772,7 @@ export async function runRoInvoices(
 
 /** Owner action after checking RO data: retry an invoice that waits or needs review. */
 export async function retryRoInvoice(sql: Sql, bookingId: number) {
-  await ensureRoInvoiceSchema(sql);
+  if (!(await invoiceTablesExist(sql))) return false;
   const rows =
     await sql`update roapp_invoices set status='geplant',reason=null,attempts=0,due_at=now(),updated_at=now()
     where booking_id=${bookingId} and account_scope=${roappAccountScope()} and status in ('wartet','pruefung')
@@ -747,7 +795,7 @@ export async function recordRoInvoicePayment(
   input: PaymentInput,
   today = berlinCalendarDate(),
 ) {
-  await ensureRoInvoiceSchema(sql);
+  if (!(await invoiceTablesExist(sql))) throw new Error("Rechnung nicht gefunden.");
   if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0)
     throw new Error("Bitte einen gültigen Betrag eingeben.");
   if (!["bar", "ueberweisung"].includes(input.method)) throw new Error("Zahlungsart ungültig.");
@@ -884,8 +932,8 @@ export async function markRoInvoiceSent(sql: Sql, bookingId: number) {
 export async function roInvoiceOverview(sql: Sql) {
   const enabled = roInvoiceEnabled();
   const { problems } = roInvoiceConfig();
-  if (!enabled) return { enabled, problems, invoices: [] };
-  await ensureRoInvoiceSchema(sql);
+  if (!(await invoiceTablesExist(sql))) return { enabled, problems, invoices: [] };
+  // Everything that still needs action is always listed; settled history is capped.
   const invoices = await sql<{
     booking_id: number;
     status: string;
@@ -903,13 +951,17 @@ export async function roInvoiceOverview(sql: Sql) {
     ro_comment_state: string;
   }>`select booking_id,status,reason,attention,invoice_number,issued_on::text,payment_due_on::text,gross_cents,
       paid_cents,payment_status,delivery,sent_at::text,due_at::text,ro_comment_state
-    from roapp_invoices where account_scope=${roappAccountScope()}
-    order by coalesce(issued_on::timestamptz,due_at) desc,booking_id desc limit 100`;
+    from roapp_invoices where account_scope=${roappAccountScope()} and (
+      status in ('geplant','wartet','in_arbeit','pruefung') or attention is not null
+      or ro_comment_state='pruefung' or (status in ('ausgestellt','versendet') and payment_status<>'bezahlt')
+      or booking_id in (select booking_id from roapp_invoices where account_scope=${roappAccountScope()}
+        order by coalesce(issued_on::timestamptz,due_at) desc,booking_id desc limit 100))
+    order by coalesce(issued_on::timestamptz,due_at) desc,booking_id desc`;
   return { enabled, problems, invoices };
 }
 
 export async function roInvoicePdf(sql: Sql, invoiceNumber: string) {
-  await ensureRoInvoiceSchema(sql);
+  if (!(await invoiceTablesExist(sql))) return null;
   const [row] = await sql<{ pdf_base64: string }>`select pdf_base64 from roapp_invoices
     where invoice_number=${invoiceNumber} and account_scope=${roappAccountScope()} and pdf_base64 is not null`;
   return row?.pdf_base64 || null;
