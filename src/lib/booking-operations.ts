@@ -66,6 +66,9 @@ export async function ensureBookingOperationsSchema(sql: Sql) {
   await sql`alter table bookings add column if not exists vehicle_make text`;
   await sql`alter table bookings add column if not exists vehicle_model text`;
   await sql`alter table bookings add column if not exists vehicle_plate text`;
+  await sql`alter table bookings add column if not exists customer_street text`;
+  await sql`alter table bookings add column if not exists customer_postal_code text`;
+  await sql`alter table bookings add column if not exists customer_city text`;
   await sql`alter table bookings add column if not exists confirmation_pdf_version integer not null default 0`;
   await sql.query(`
     create table if not exists booking_time_blocks (

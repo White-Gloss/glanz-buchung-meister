@@ -3,6 +3,7 @@ import { packages, extras, vehicleClasses, site } from "../data/site.ts";
 import { documentLogoBase64 } from "./document-logo.generated.ts";
 import { formatBerlinRange } from "./booking-time.ts";
 import type { OperationsBooking } from "./booking-operations.ts";
+import { customerAddress } from "./customer-address.ts";
 
 function extraNames(raw: string | null | undefined) {
   try {
@@ -38,6 +39,9 @@ export type ConfirmationPdfInput = Pick<
   | "vehicle_model"
   | "vehicle_plate"
   | "confirmation_pdf_version"
+  | "customer_street"
+  | "customer_postal_code"
+  | "customer_city"
 > & {
   payment_method?: string | null;
   final_rows?: { name: string; quantity: number; grossCents: number }[];
@@ -71,7 +75,12 @@ export async function createBookingConfirmationPdf(booking: ConfirmationPdfInput
     company: `${site.legalName} · ${site.owner}`,
     address: `${site.street}, ${site.postalCode} ${site.city}`,
     email: site.bookingEmail,
-    customer: [booking.customer_name, booking.phone, booking.email || ""],
+    customer: [
+      booking.customer_name,
+      customerAddress(booking),
+      booking.phone,
+      booking.email || "",
+    ].filter(Boolean),
     metadata: [
       `Buchungsreferenz: WG-${booking.id}`,
       `Dokumentversion: ${Math.max(1, booking.confirmation_pdf_version || 1)}`,

@@ -2,7 +2,17 @@ import { isEmailAddress } from "./utils.ts";
 import { isCalendarDate } from "./calendar-date.ts";
 
 export type PublicFormField =
-  "name" | "phone" | "email" | "date" | "note" | "privacy" | "media" | "text";
+  | "name"
+  | "phone"
+  | "email"
+  | "street"
+  | "postalCode"
+  | "town"
+  | "date"
+  | "note"
+  | "privacy"
+  | "media"
+  | "text";
 export type PublicFormErrors = Partial<Record<PublicFormField, string>>;
 
 type ContactFields = { name: string; phone: string; privacy: boolean };
@@ -16,17 +26,36 @@ function contactErrors({ name, phone, privacy }: ContactFields): PublicFormError
   if (phone.trim().length < 6 || phone.trim().length > 40) {
     errors.phone = "Bitte geben Sie Ihre Telefonnummer mit 6 bis 40 Zeichen an.";
   }
-  if (!privacy) errors.privacy = "Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.";
+  if (!privacy)
+    errors.privacy =
+      "Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.";
   return errors;
 }
 
 export function bookingFormErrors(
-  values: ContactFields & { email: string; date: string; note: string },
+  values: ContactFields & {
+    email: string;
+    street: string;
+    postalCode: string;
+    town: string;
+    date: string;
+    note: string;
+  },
   today: string,
 ): PublicFormErrors {
   const errors = contactErrors(values);
-  if (values.email.trim().length > 160 || (values.email.trim() && !isEmailAddress(values.email))) {
-    errors.email = "Bitte geben Sie eine gültige E-Mail-Adresse an oder lassen Sie das Feld leer.";
+  // Required for the confirmation, documents and invoices; mirrors publicBookingSchema.
+  if (values.email.trim().length > 160 || !isEmailAddress(values.email)) {
+    errors.email = "Bitte geben Sie eine gültige E-Mail-Adresse an.";
+  }
+  if (values.street.trim().length < 3 || values.street.trim().length > 120) {
+    errors.street = "Bitte geben Sie Straße und Hausnummer an.";
+  }
+  if (!/^\d{5}$/.test(values.postalCode.trim())) {
+    errors.postalCode = "Bitte geben Sie eine fünfstellige Postleitzahl an.";
+  }
+  if (values.town.trim().length < 2 || values.town.trim().length > 80) {
+    errors.town = "Bitte geben Sie den Ort an.";
   }
   if (values.date && (!isCalendarDate(values.date) || values.date < today)) {
     errors.date = "Bitte wählen Sie heute oder ein späteres Datum.";
@@ -41,7 +70,8 @@ export function photoInquiryErrors(
 ): PublicFormErrors {
   const errors = contactErrors(values);
   if (!values.text.trim() && values.files.length === 0) {
-    errors.text = "Bitte beschreiben Sie Ihr Anliegen oder wählen Sie mindestens eine Aufnahme aus.";
+    errors.text =
+      "Bitte beschreiben Sie Ihr Anliegen oder wählen Sie mindestens eine Aufnahme aus.";
   }
   if (values.text.length > 2000)
     errors.text = "Bitte kürzen Sie die Beschreibung auf höchstens 2.000 Zeichen.";

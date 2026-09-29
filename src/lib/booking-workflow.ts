@@ -6,9 +6,11 @@ import {
   publicBookingSchema,
   manualBookingSchema,
   type PublicBookingInput,
+  type BookingRequestInput,
   type ManualBookingInput,
 } from "./booking-schema.ts";
 import { createRequestUploadCapability } from "./booking-upload-capability.ts";
+import { customerAddress } from "./customer-address.ts";
 import { cities, extras, extraIncluded, quoteTotal, timeSlots } from "../data/site.ts";
 import { berlinCalendarDate, berlinMinutesSinceMidnight } from "./ops.ts";
 import { requireBookingOwner } from "./booking-owner.ts";
@@ -45,7 +47,11 @@ export type WorkflowBooking = {
   cancelled_at: string | null;
   request_fingerprint: string | null;
   upload_token_expires_at: string | Date | null;
+  customer_street?: string | null;
+  customer_postal_code?: string | null;
+  customer_city?: string | null;
 };
+
 type Enqueue = typeof queueBookingEvent;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -154,7 +160,7 @@ export async function saveManualBookingRequest(sql: Sql, raw: ManualBookingInput
 
 async function persistBookingRequest(
   sql: Sql,
-  data: Omit<PublicBookingInput, "privacy"> & { privacy?: true },
+  data: Omit<BookingRequestInput, "privacy"> & { privacy?: true },
   capability: UploadCapability,
   enqueue: Enqueue,
   manual?: { actor: string; requestKey: string; notifyCustomer: boolean },
@@ -192,14 +198,14 @@ async function persistBookingRequest(
         .filter(Boolean)
         .join("\n");
       const [booking] = await tx<WorkflowBooking>`
-        insert into bookings(shop_id,status,customer_name,phone,email,preferred_date,preferred_slot,package_id,class_id,extra_ids,city_slug,note,total_cents,pickup_cents,estimated_price_cents,vehicle_make,vehicle_model,vehicle_plate,upload_token_hash,upload_token_expires_at,request_key_hash,request_fingerprint)
-        values(${SHOP},'neu',${data.name},${data.phone},${data.email || null},${data.date || null},${data.slot || null},${data.packageId},${data.classId},${JSON.stringify(data.extraIds)},${data.citySlug || null},${note || null},${Math.round(quote.total * 100)},${Math.round((quote.pickup ?? 0) * 100)},${Math.round(quote.total * 100)},${"vehicleMake" in data ? data.vehicleMake || null : null},${"vehicleModel" in data ? data.vehicleModel || null : null},${"vehiclePlate" in data ? data.vehiclePlate || null : null},${capability.hash},${capability.expiresAt},${key},${fingerprint}) returning *
+        insert into bookings(shop_id,status,customer_name,phone,email,preferred_date,preferred_slot,package_id,class_id,extra_ids,city_slug,note,total_cents,pickup_cents,estimated_price_cents,vehicle_make,vehicle_model,vehicle_plate,customer_street,customer_postal_code,customer_city,upload_token_hash,upload_token_expires_at,request_key_hash,request_fingerprint)
+        values(${SHOP},'neu',${data.name},${data.phone},${data.email || null},${data.date || null},${data.slot || null},${data.packageId},${data.classId},${JSON.stringify(data.extraIds)},${data.citySlug || null},${note || null},${Math.round(quote.total * 100)},${Math.round((quote.pickup ?? 0) * 100)},${Math.round(quote.total * 100)},${"vehicleMake" in data ? data.vehicleMake || null : null},${"vehicleModel" in data ? data.vehicleModel || null : null},${"vehiclePlate" in data ? data.vehiclePlate || null : null},${data.street || null},${data.postalCode || null},${data.town || null},${capability.hash},${capability.expiresAt},${key},${fingerprint}) returning *
       `;
       await tx`update bookings set review_email_consent=${data.reviewEmailConsent === true} where id=${booking.id} and shop_id=${SHOP}`;
       await tx`insert into customers(shop_id,name,phone,email) values(${SHOP},${data.name},${data.phone},${data.email || null})
         on conflict(shop_id,phone) do update set name=excluded.name,email=coalesce(excluded.email,customers.email)`;
       await tx`insert into inbox_messages(shop_id,channel,sender,subject,body,booking_id)
-        values(${SHOP},'form',${data.name},${`Neue Anfrage WG-${booking.id}`},${`${data.name} · ${data.phone}\n${data.packageId}\nWunschtermin: ${data.date || "offen"} ${data.slot || ""}\nStatus: Wartet auf Bestätigung\n${note}`},${booking.id})`;
+        values(${SHOP},'form',${data.name},${`Neue Anfrage WG-${booking.id}`},${`${data.name} · ${data.phone}${data.email ? ` · ${data.email}` : ""}\n${customerAddress({ customer_street: data.street, customer_postal_code: data.postalCode, customer_city: data.town }) || "Adresse offen"}\n${data.packageId}\nWunschtermin: ${data.date || "offen"} ${data.slot || ""}\nStatus: Wartet auf Bestätigung\n${note}`},${booking.id})`;
       await event(tx, booking, null, "booking.created", manual?.actor ?? "customer", enqueue);
       return { booking, replayed: false, quote };
     });

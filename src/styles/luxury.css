@@ -114,14 +114,16 @@
 .home-location p:not(.kicker) { color:var(--color-muted); line-height:1.8; margin-top:1.5rem; max-width:48ch; }
 .home-location a { margin-top:1.5rem; }
 /* SEO directory: kept for internal links and local relevance, typeset as small print. */
-.home-directory { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:1rem 3rem; padding-block:1.5rem 2rem; border-top:1px solid var(--color-line); }
+/* SEO directory: small introductory text, full-size service list for visitors. */
+.home-directory { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:1.5rem clamp(2.5rem,6vw,6rem); align-items:start; padding-block:clamp(3rem,6vw,5rem); border-top:1px solid var(--color-line-strong); }
 .home-directory .kicker { font-size:.75rem; letter-spacing:.1em; }
 [data-home="polish"] .home-directory .heading-2 { margin-top:.25rem; font-size:.75rem; font-weight:500; line-height:1.5; letter-spacing:.02em; }
 .home-directory header > p:not(.kicker) { margin-top:.35rem; max-width:60ch; color:var(--color-subtle); font-size:.75rem; line-height:1.55; }
-.home-directory-links { display:flex; flex-wrap:wrap; gap:0 1rem; }
-.home-directory-links a { display:inline-flex; align-items:center; min-height:1.75rem; color:var(--color-subtle); font-size:.75rem; text-decoration:underline; text-decoration-color:var(--color-line-strong); text-underline-offset:.2rem; }
+.home-directory-links { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:2rem; border-top:1px solid var(--color-line); }
+.home-directory-links a { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:3.25rem; padding-block:.75rem; border-bottom:1px solid var(--color-line); color:var(--color-muted); font-size:1rem; transition:color 200ms ease; }
 .home-directory-links a:hover { color:var(--color-fg); }
-.home-directory-links svg { display:none; }
+.home-directory-links svg { width:1rem; height:1rem; flex-shrink:0; opacity:.6; transition:transform 220ms ease; }
+.home-directory-links a:hover svg { transform:translateX(3px); }
 .home-city-links { display:flex; flex-wrap:wrap; gap:0 .9rem; margin-top:.75rem; max-width:60ch; }
 .home-city-links a { display:inline-flex; align-items:center; min-height:1.75rem; margin-top:0; color:var(--color-subtle); font-size:.75rem; text-decoration:underline; text-decoration-color:var(--color-line-strong); text-underline-offset:.2rem; }
 .home-city-links a:hover { color:var(--color-fg); }
@@ -144,11 +146,12 @@
   .reviews-excerpts figure + figure { border-top:1px solid var(--color-line); padding-top:2rem; }
   .reviews-excerpts blockquote { font-size:2rem; padding-bottom:1.25rem; }
 }
+@media(max-width:520px) { .home-directory-links { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:400px) {
   .home-process { grid-template-columns:minmax(0,1fr); }
   .home-specialties a { grid-template-columns:1.5rem minmax(0,1fr) 1rem; gap:.75rem; }
 }
-@media(prefers-reduced-motion:reduce) { .home-specialties svg { transition:none; } }
+@media(prefers-reduced-motion:reduce) { .home-specialties svg,.home-directory-links svg,.home-directory-links a { transition:none; } }
 
 /* Shared proportions: compact navigation, clear type and deliberate motion. */
 :root { --site-banner-height:0px; --site-header-height:84px; --site-header-initial:84px; }

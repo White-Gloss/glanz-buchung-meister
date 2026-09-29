@@ -21,7 +21,7 @@ describe("city landing SEO", () => {
       serviceCityHeading("Fahrzeugaufbereitung", horb),
       "Fahrzeugaufbereitung mit Abholung in Horb am Neckar",
     );
-    assert.equal(serviceCityHeading("Innenraumreinigung", nagold!), "Innenraumreinigung in Nagold");
+    assert.equal(serviceCityHeading("Innenraumreinigung", nagold!), "Innenraumreinigung für Fahrzeuge aus Nagold");
   });
 
   it("describes the city page as a service from the real Horb business", () => {
