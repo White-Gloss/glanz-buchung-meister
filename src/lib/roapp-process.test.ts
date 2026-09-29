@@ -354,6 +354,11 @@ test("complete process: inquiry, approval, acceptance, reminder, invoice, cash r
     assert.equal(invoice.payment_status, "offen");
     assert.equal(Date.parse(invoice.payment_due_on) - Date.parse(invoice.issued_on), 7 * DAY);
     assert.equal(Buffer.from(invoice.pdf_base64, "base64").subarray(0, 5).toString(), "%PDF-");
+    const { PDFDocument } = await import("pdf-lib");
+    assert.equal(
+      (await PDFDocument.load(Buffer.from(invoice.pdf_base64, "base64"))).getAuthor(),
+      "White Gloss Detailing · Inhaber Lars Marco Hägele",
+    );
     assert.ok(ro.orders.get(orderId)!.comments.some((c) => c.includes(invoice.invoice_number)));
 
     // Double-invoice protection: webhook replays, further runs and a status change to "Geschlossen".
