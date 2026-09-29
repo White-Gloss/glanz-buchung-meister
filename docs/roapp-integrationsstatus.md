@@ -14,7 +14,8 @@ Stand 29.09.2026. Ergänzt die lokalen Betreibernachweise (`outputs\RO-App-*.md/
 
 - Rechnung aus RO-Positionen nach „Erledigt“, lückenlose Nummer, PDF, E-Mail-Versand, Zahlungsstatus nur durch erfasste Zahlung, Quittung bei Barzahlung, Doppelrechnungsschutz, Inhaberhinweise. Standardmäßig ausgeschaltet.
 - Kontaktänderungen aus RO, fehlende E-Mail, Umbuchung, Storno, RO-Fehler.
-- `src/lib/roapp-process.test.ts`: kompletter Ablauf Anfrage → Fixpreis → Annahme (RO-Fixture) → Termin → Erinnerung → Abschluss → Rechnung → Teil-/Restzahlung bar mit Quittungen → Bewertung nach sieben Tagen, plus Fehlerfälle. `npm test`: 596/596 bestanden; Lint 0 Fehler; Typprüfung und Produktions-Build bestanden.
+- `src/lib/roapp-process.test.ts`: kompletter Ablauf Anfrage → Fixpreis → Annahme (RO-Fixture) → Termin → Erinnerung → Abschluss → Rechnung → Teil-/Restzahlung bar mit Quittungen → Bewertung nach sieben Tagen, plus Fehlerfälle, Review-Folgefälle (strenge Kontaktdaten, nachträglich ergänzte E-Mail, Stichtagsnachweis, pausierte Automatik, Migrationsvermerk). `npm test`: 599/599 bestanden; Lint 0 Fehler; Typprüfung und Produktions-Build bestanden; GitHub-CI (verify, schema, CodeQL, Lighthouse) auf PR #272 grün.
+- Veröffentlichung über den freigegebenen Weg: PR #272 → `main` → „Deploy to IONOS VPS“ mit Live-Smoke und automatischem Rollback bei Fehlschlag.
 
 ## Offen
 
