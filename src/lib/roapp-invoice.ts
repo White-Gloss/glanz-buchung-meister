@@ -17,6 +17,7 @@ import {
   type RoappRequest,
 } from "./roapp.ts";
 import { currentRoContact } from "./roapp-contact.ts";
+import { customerAddress, type CustomerAddressFields } from "./customer-address.ts";
 import { site, vehicleClasses } from "../data/site.ts";
 
 /** Customer invoice and cash receipt produced after RO completion. */
@@ -260,7 +261,7 @@ export async function renderRoInvoicePdf(input: {
     title: "Rechnung",
     reference: input.number,
     logo: documentLogoBase64,
-    company: `${site.legalName} · Inhaber ${site.owner}`,
+    company: `${site.legalName} · Inhaber ${site.ownerLegalName}`,
     address: `${site.street}, ${site.postalCode} ${site.city}`,
     email: site.bookingEmail,
     customer: [input.recipient.name, input.recipient.address || "", input.recipient.email || ""],
@@ -304,7 +305,7 @@ async function renderReceiptPdf(input: {
     title: "Quittung",
     reference: input.receiptNumber,
     logo: documentLogoBase64,
-    company: `${site.legalName} · Inhaber ${site.owner}`,
+    company: `${site.legalName} · Inhaber ${site.ownerLegalName}`,
     address: `${site.street}, ${site.postalCode} ${site.city}`,
     email: site.bookingEmail,
     customer: [input.recipient.name, input.recipient.address || "", input.recipient.email || ""],
@@ -392,12 +393,15 @@ type EligibleRow = {
   customer_name: string;
   email: string | null;
   class_id: string;
-};
+} & CustomerAddressFields;
 
 async function eligible(sql: Sql, bookingId: number) {
   const [row] = await sql<EligibleRow>`select b.id as booking_id,q.ro_order_id,q.ro_contact_id,
       s.completed_at,s.scheduled_for,s.amount_cents,
-      b.customer_name,b.email,b.class_id
+      b.customer_name,b.email,b.class_id,
+      to_jsonb(b)->>'customer_street' as customer_street,
+      to_jsonb(b)->>'customer_postal_code' as customer_postal_code,
+      to_jsonb(b)->>'customer_city' as customer_city
     from bookings b join roapp_sync_queue q on q.booking_id=b.id and q.shop_id=b.shop_id
     join roapp_order_state s on s.booking_id=b.id
     where b.shop_id=${SHOP} and b.id=${bookingId} and q.account_scope=${roappAccountScope()}
@@ -545,7 +549,8 @@ async function issue(
   const contact = await currentRoContact(sql, row.booking_id, request);
   const recipient: Recipient = {
     name: contact.name || row.customer_name,
-    address: contact.address,
+    // A corrected RO address wins; otherwise the billing address from the booking form.
+    address: contact.address || customerAddress(row) || null,
     email: contact.email,
   };
   if (totals.gross > SMALL_INVOICE_LIMIT_CENTS && !recipient.address) {

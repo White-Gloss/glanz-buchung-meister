@@ -5,6 +5,8 @@ export const site = {
   legalName: "White Gloss Detailing",
   tagline: "Fahrzeugaufbereitung in Horb am Neckar.",
   owner: "Lars Hägele",
+  /** Full legal name of the sole proprietor, required on invoices (§ 14 UStG). */
+  ownerLegalName: "Lars Marco Hägele",
   street: "Arnistal 27",
   postalCode: "72160",
   city: "Horb am Neckar",
