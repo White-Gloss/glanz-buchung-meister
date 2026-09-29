@@ -177,6 +177,13 @@ try {
     await page.locator("#extra-leder").check();
     await expectText(page, ".booking-price strong", "597 €", "Mobile total");
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the extras step");
+    await page.locator("form.booking-flow").evaluate((form) => form.scrollIntoView());
+    await page.waitForFunction(
+      () => document.querySelector("[data-wa-float]")?.getAttribute("aria-hidden") === "true",
+      undefined,
+      { timeout: 5000 },
+    );
+    results.push("WhatsApp button hides over the lazily loaded booking form");
     await page.screenshot({ path: `${output}/mobile-390-extras.png` });
     await page.locator(".booking-steps button").nth(2).click();
     await page.locator("#name").waitFor({ state: "visible" });

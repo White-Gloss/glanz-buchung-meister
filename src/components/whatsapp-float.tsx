@@ -7,9 +7,8 @@ export function WhatsAppFloat() {
 
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return;
-    const targets = Array.from(document.querySelectorAll("[data-hide-whatsapp]"));
-    if (targets.length === 0) return;
     const visible = new Set<Element>();
+    const observed = new WeakSet<Element>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -20,8 +19,25 @@ export function WhatsAppFloat() {
       },
       { rootMargin: "0px 0px -55% 0px" },
     );
-    targets.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    const scan = () => {
+      for (const element of document.querySelectorAll("[data-hide-whatsapp]")) {
+        if (observed.has(element)) continue;
+        observed.add(element);
+        observer.observe(element);
+      }
+      for (const element of visible) {
+        if (!element.isConnected) visible.delete(element);
+      }
+      setHidden(visible.size > 0);
+    };
+    scan();
+    // Lazily loaded forms (e.g. the homepage booking form) mount after this effect.
+    const mutations = new MutationObserver(scan);
+    mutations.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      mutations.disconnect();
+      observer.disconnect();
+    };
   }, []);
 
   return (

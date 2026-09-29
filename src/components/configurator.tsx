@@ -53,6 +53,8 @@ export function Configurator({
   }
   const [classId, setClassId] = useBookingDraft<VehicleClass["id"]>("classId", "kompakt");
   const [extraIds, setExtraIds] = useBookingDraft<string[]>("extraIds", []);
+  // Opens for restored selections, then follows the customer's own toggling.
+  const [extrasOpen, setExtrasOpen] = useState(() => extraIds.length > 0);
   const [citySlug, setCitySlug] = useBookingDraft("citySlug", initialCity ?? "horb-am-neckar");
   const [name, setName] = useBookingDraft("name", "");
   const [phone, setPhone] = useBookingDraft("phone", "");
@@ -367,7 +369,11 @@ export function Configurator({
         </fieldset>
       </div>
       <div hidden={step !== 2} className="space-y-6">
-        <details className="booking-extras" open={extraIds.length > 0 ? true : undefined}>
+        <details
+          className="booking-extras"
+          open={extrasOpen}
+          onToggle={(e) => setExtrasOpen(e.currentTarget.open)}
+        >
           <summary>
             Zusatzleistungen (optional){extraIds.length ? ` · ${extraIds.length} ausgewählt` : ""}
           </summary>
