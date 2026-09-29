@@ -3,7 +3,15 @@ import { describe, it } from "node:test";
 import { bookingFormErrors, photoInquiryErrors } from "./public-form-validation.ts";
 
 const contact = { name: "Anna Test", phone: "+49 123456789", privacy: true };
-const booking = { ...contact, email: "", date: "", note: "" };
+const booking = {
+  ...contact,
+  email: "anna@example.org",
+  street: "Musterweg 1",
+  postalCode: "72160",
+  town: "Horb am Neckar",
+  date: "",
+  note: "",
+};
 const today = "2026-09-06";
 
 describe("public form feedback before submitting", () => {
@@ -37,6 +45,15 @@ describe("public form feedback before submitting", () => {
       today,
     );
     assert.deepEqual(Object.keys(errors).sort(), ["name", "phone"]);
+  });
+
+  it("requires e-mail and a complete billing address", () => {
+    const errors = bookingFormErrors(
+      { ...booking, email: "", street: " ", postalCode: "7216", town: "" },
+      today,
+    );
+    assert.deepEqual(Object.keys(errors).sort(), ["email", "postalCode", "street", "town"]);
+    assert.ok(bookingFormErrors({ ...booking, postalCode: "72 160" }, today).postalCode);
   });
 
   it("allows optional booking fields and today, and associates invalid values with their fields", () => {

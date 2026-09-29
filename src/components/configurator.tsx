@@ -59,6 +59,9 @@ export function Configurator({
   const [name, setName] = useBookingDraft("name", "");
   const [phone, setPhone] = useBookingDraft("phone", "");
   const [email, setEmail] = useBookingDraft("email", "");
+  const [street, setStreet] = useBookingDraft("street", "");
+  const [postalCode, setPostalCode] = useBookingDraft("postalCode", "");
+  const [town, setTown] = useBookingDraft("town", "");
   const [date, setDate] = useBookingDraft("date", "");
   const [slot, setSlot] = useBookingDraft("slot", "");
   const [note, setNote] = useBookingDraft("note", "");
@@ -185,7 +188,10 @@ export function Configurator({
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const errors = saved.current
       ? {}
-      : bookingFormErrors({ name, phone, email, date, note, privacy }, today);
+      : bookingFormErrors(
+          { name, phone, email, street, postalCode, town, date, note, privacy },
+          today,
+        );
     if (
       !saved.current &&
       e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput
@@ -211,6 +217,9 @@ export function Configurator({
             name: name.trim(),
             phone: phone.trim(),
             email: email.trim(),
+            street: street.trim(),
+            postalCode: postalCode.trim(),
+            town: town.trim(),
             date,
             slot,
             note,
@@ -504,7 +513,7 @@ export function Configurator({
           />
           {fieldError("phone")}
         </Field>
-        <Field tone="public" id="email" label="E-Mail (optional)">
+        <Field tone="public" id="email" label="E-Mail (Pflichtfeld)">
           <input
             disabled={pending || savedReference !== null}
             id="email"
@@ -513,12 +522,64 @@ export function Configurator({
             autoComplete="email"
             name="email"
             maxLength={160}
+            required
             {...fieldProps("email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           {fieldError("email")}
         </Field>
+        <Field tone="public" id="street" label="Straße und Hausnummer (Pflichtfeld)">
+          <input
+            disabled={pending || savedReference !== null}
+            id="street"
+            className={inputLine}
+            autoComplete="street-address"
+            name="street"
+            minLength={3}
+            maxLength={120}
+            {...fieldProps("street")}
+            required
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+          />
+          {fieldError("street")}
+        </Field>
+        <div className="grid gap-5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+          <Field tone="public" id="postalCode" label="PLZ (Pflichtfeld)">
+            <input
+              disabled={pending || savedReference !== null}
+              id="postalCode"
+              className={inputLine}
+              autoComplete="postal-code"
+              inputMode="numeric"
+              name="postal-code"
+              pattern="[0-9]{5}"
+              maxLength={5}
+              {...fieldProps("postalCode")}
+              required
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+            />
+            {fieldError("postalCode")}
+          </Field>
+          <Field tone="public" id="town" label="Ort (Pflichtfeld)">
+            <input
+              disabled={pending || savedReference !== null}
+              id="town"
+              className={inputLine}
+              autoComplete="address-level2"
+              name="town"
+              minLength={2}
+              maxLength={80}
+              {...fieldProps("town")}
+              required
+              value={town}
+              onChange={(e) => setTown(e.target.value)}
+            />
+            {fieldError("town")}
+          </Field>
+        </div>
         <details>
           <summary className="min-h-11 cursor-pointer py-3">
             Weitere Fahrzeugangaben (optional)
@@ -670,6 +731,12 @@ export function Configurator({
             <dd>
               {name || "Bitte Namen ergänzen"} · {phone || "Bitte Telefon ergänzen"}
               {email ? ` · ${email}` : ""}
+            </dd>
+            <dt>Anschrift</dt>
+            <dd>
+              {street && postalCode && town
+                ? `${street}, ${postalCode} ${town}`
+                : "Bitte Anschrift ergänzen"}
             </dd>
             <dt>Wunschtermin</dt>
             <dd>

@@ -8,7 +8,10 @@ function bookingInput(date?: string) {
     idempotencyKey: "00000000-0000-4000-8000-000000000001",
     name: "Testkunde",
     phone: "+491701112233",
-    email: "",
+    email: "kunde@example.org",
+    street: "Musterweg 1",
+    postalCode: "72160",
+    town: "Horb am Neckar",
     date,
     slot: "09:00",
     note: "",
@@ -24,8 +27,14 @@ function bookingInput(date?: string) {
 
 describe("createPublicBooking past-date validation", () => {
   it("rejects suspended headlight work before any customer request can be written", () => {
-    assert.equal(publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["scheinwerfer"] }).success, false);
-    assert.equal(publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["leder-repair"] }).success, true);
+    assert.equal(
+      publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["scheinwerfer"] }).success,
+      false,
+    );
+    assert.equal(
+      publicBookingSchema.safeParse({ ...bookingInput(), extraIds: ["leder-repair"] }).success,
+      true,
+    );
   });
   it("rejects malformed and impossible calendar days before database writes", () => {
     for (const date of ["tomorrow", "2999-02-31", "2999-13-01", "2999-00-01", "2999-02-29"]) {
@@ -50,5 +59,31 @@ describe("createPublicBooking past-date validation", () => {
   it("accepts a missing or empty preferred date", () => {
     assert.equal(publicBookingSchema.safeParse(bookingInput(undefined)).success, true);
     assert.equal(publicBookingSchema.safeParse(bookingInput("")).success, true);
+  });
+});
+
+describe("createPublicBooking contact requirements", () => {
+  it("rejects a missing or invalid e-mail address", () => {
+    for (const email of ["", "kunde@", "   "])
+      assert.equal(
+        publicBookingSchema.safeParse({ ...bookingInput(), email }).success,
+        false,
+        email,
+      );
+  });
+  it("rejects a missing street, malformed postal code or missing town", () => {
+    for (const change of [
+      { street: "" },
+      { postalCode: "7216" },
+      { postalCode: "ABCDE" },
+      { town: " " },
+    ])
+      assert.equal(
+        publicBookingSchema.safeParse({ ...bookingInput(), ...change }).success,
+        false,
+        JSON.stringify(change),
+      );
+    const { street: _street, ...withoutStreet } = bookingInput();
+    assert.equal(publicBookingSchema.safeParse(withoutStreet).success, false);
   });
 });

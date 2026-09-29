@@ -10,7 +10,7 @@ import { extras, timeSlots } from "../data/site.ts";
  * `configurator.tsx` only for immediate feedback. The past-date comparison
  * uses Europe/Berlin calendar days, matching the client check.
  */
-export const publicBookingSchema = z.object({
+const bookingFields = z.object({
   idempotencyKey: z.string().uuid("Ungültige Anfragekennung."),
   name: z.string().trim().min(2).max(120),
   phone: z
@@ -57,14 +57,35 @@ export const publicBookingSchema = z.object({
   vehicleMake: z.string().trim().max(80).optional(),
   vehicleModel: z.string().trim().max(80).optional(),
   vehiclePlate: z.string().trim().max(20).optional(),
+  street: z.string().trim().max(120).optional(),
+  postalCode: z.string().trim().max(5).optional(),
+  town: z.string().trim().max(80).optional(),
+});
+
+/** Online requests need an e-mail and a billing address; see public-form-validation. */
+export const publicBookingSchema = bookingFields.extend({
+  email: z
+    .string()
+    .trim()
+    .max(160)
+    .refine((v) => isEmailAddress(v), "Bitte eine gültige E-Mail-Adresse angeben."),
+  street: z.string().trim().min(3, "Bitte Straße und Hausnummer angeben.").max(120),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^\d{5}$/, "Bitte eine fünfstellige Postleitzahl angeben."),
+  town: z.string().trim().min(2, "Bitte den Ort angeben.").max(80),
 });
 
 export type PublicBookingInput = z.infer<typeof publicBookingSchema>;
+/** Stored request shape shared by online and operator-recorded bookings. */
+export type BookingRequestInput = z.infer<typeof bookingFields>;
 
-/** A signed-in operator records the request; no customer checkbox is impersonated. */
-export const manualBookingSchema = publicBookingSchema
-  .omit({ privacy: true, website: true })
-  .extend({
-    notifyCustomer: z.boolean().default(false),
-  });
+/**
+ * A signed-in operator records the request; no customer checkbox is impersonated.
+ * Phone requests may lack e-mail and address, so these stay optional here.
+ */
+export const manualBookingSchema = bookingFields.omit({ privacy: true, website: true }).extend({
+  notifyCustomer: z.boolean().default(false),
+});
 export type ManualBookingInput = z.infer<typeof manualBookingSchema>;

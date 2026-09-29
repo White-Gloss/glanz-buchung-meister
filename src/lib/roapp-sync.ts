@@ -2,6 +2,7 @@ import { defaultDurationMinutes } from "./booking-time.ts";
 import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
+import { customerAddress } from "./customer-address.ts";
 import { packages, vehicleClasses, extras, pickupPricing, cities } from "../data/site.ts";
 import { roappOnlyEnabled, roappAccountScope, roappCutoverAt } from "./booking-backend.ts";
 import { isCalendarDate } from "./calendar-date.ts";
@@ -98,6 +99,8 @@ export function bookingComment(booking: WorkflowBooking): string {
     : [];
   return [
     `Website-Anfrage WG-${booking.id}`,
+    customerAddress(booking) ? `Rechnungsadresse: ${customerAddress(booking)}` : "",
+    booking.email ? `E-Mail: ${booking.email}` : "",
     `Paket: ${pack}`,
     `Fahrzeugklasse: ${vehicleClass}`,
     `Extras: ${extraNames.join(", ") || "keine"}`,
