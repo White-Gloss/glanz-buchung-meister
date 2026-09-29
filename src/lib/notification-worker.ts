@@ -15,6 +15,13 @@ import { bookingOwnerNotifyTargets, ownerNotifyTargets } from "./ops.ts";
 import { EmailDeliveryError, mailConfigured, sendResendEmail } from "./resend-mail.ts";
 import { RO_REMINDER, RO_REVIEW, validateRoLifecycle } from "./roapp-lifecycle.ts";
 import {
+  markRoInvoiceSent,
+  RO_INVOICE,
+  RO_RECEIPT,
+  validateRoInvoiceMessage,
+} from "./roapp-invoice.ts";
+import type { RoappRequest } from "./roapp.ts";
+import {
   sendWhatsAppNotification,
   validateWhatsAppConfiguration,
   WhatsAppDeliveryError,
@@ -171,6 +178,8 @@ export async function runNotificationWorker(
     limit?: number;
     sendEmail?: typeof sendResendEmail;
     sendWhatsApp?: typeof sendWhatsAppNotification;
+    /** Isolated tests only; production reads RO with the configured client. */
+    roRequest?: RoappRequest;
   } = {},
 ) {
   await maintainQueue(sql);
@@ -216,11 +225,17 @@ export async function runNotificationWorker(
     }
     if ([RO_REMINDER, RO_REVIEW].includes(row.event_type || "")) {
       try {
-        if (!(await validateRoLifecycle(sql, row))) {
+        const to = await validateRoLifecycle(sql, row, options.roRequest);
+        if (!to) {
           await sql`update outbound_queue set status='cancelled',last_error_code='ro_lifecycle_changed',lease_token=null,locked_until=null,updated_at=now()
             where id=${row.id} and lease_token=${token}`;
           result.skipped++;
           continue;
+        }
+        if (to !== row.to_addr) {
+          // The customer's address was corrected in RO after this message was queued.
+          await sql`update outbound_queue set to_addr=${to},updated_at=now() where id=${row.id} and lease_token=${token}`;
+          row.to_addr = to;
         }
       } catch {
         const status = row.attempt_count >= MAX_DELIVERY_ATTEMPTS ? "review" : "queued";
@@ -229,6 +244,29 @@ export async function runNotificationWorker(
         if (status === "review")
           await recordNotificationAttention(sql, row, "ro_live_check_failed");
         result.skipped++;
+        continue;
+      }
+    }
+    if ([RO_INVOICE, RO_RECEIPT].includes(row.event_type || "")) {
+      let valid = false;
+      try {
+        valid = await validateRoInvoiceMessage(sql, row);
+      } catch {
+        // An operational failure is not a mismatch: retry within the attempt budget.
+        const status = row.attempt_count >= MAX_DELIVERY_ATTEMPTS ? "review" : "queued";
+        await sql`update outbound_queue set status=${status},last_error_code='ro_invoice_check_failed',lease_token=null,locked_until=null,
+          next_attempt_at=now()+interval '60 seconds',updated_at=now() where id=${row.id} and lease_token=${token}`;
+        if (status === "review") {
+          await recordNotificationAttention(sql, row, "ro_invoice_check_failed");
+          result.review++;
+        } else result.retried++;
+        continue;
+      }
+      if (!valid) {
+        await sql`update outbound_queue set status='review',last_error_code='ro_invoice_mismatch',lease_token=null,locked_until=null,updated_at=now()
+          where id=${row.id} and lease_token=${token}`;
+        await recordNotificationAttention(sql, row, "ro_invoice_mismatch");
+        result.review++;
         continue;
       }
     }
@@ -291,6 +329,8 @@ export async function runNotificationWorker(
       `;
       if (changed.length) {
         result.sent++;
+        if (row.event_type === RO_INVOICE && row.booking_id)
+          await markRoInvoiceSent(sql, row.booking_id).catch(() => undefined);
         if (row.event_type === "bitrix.invoice" && row.booking_id) {
           await sql`update bitrix_sync_queue set status=case when status='review' then status else 'pending' end,next_attempt_at=now() where booking_id=${row.booking_id} and shop_id=${SHOP}`;
         }

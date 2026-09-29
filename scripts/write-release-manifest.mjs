@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Numbered SQL stays in migrations/ for `db:migrate`, but these integrations
- * already apply the same DDL at runtime (ensureBookingOperationsSchema / ensureBitrixSchema),
+ * already apply the same DDL at runtime (ensureBookingOperationsSchema / ensureBitrixSchema /
+ * ensureRoInvoiceSchema),
  * the Lexware pattern. Including them in the GET / gate 503s every IONOS
  * activate until a root shell can migrate — GitHub CI cannot.
  */
@@ -13,6 +14,7 @@ export const RUNTIME_ENSURED_MIGRATIONS = [
   "0016_bitrix_sync.sql",
   "0017_bitrix_agent.sql",
   "0018_bitrix_workshop_bridge.sql",
+  "0023_roapp_invoices.sql",
 ];
 
 /** @param {string[]} names */

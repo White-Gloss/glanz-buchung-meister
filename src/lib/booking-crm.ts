@@ -20,8 +20,15 @@ export async function runCrmSync(sql: Sql) {
   if (roappOnlyEnabled()) {
     const { runRoappSync } = await import("./roapp-sync.ts");
     const { reconcileRoOrders } = await import("./roapp-callback.ts");
+    const { runRoInvoices } = await import("./roapp-invoice.ts");
     const result = await runRoappSync(sql);
-    return { backend: "roapp", ...result, ...(await reconcileRoOrders(sql)) };
+    const reconciled = await reconcileRoOrders(sql);
+    // Invoice problems must not stop request transfer or status reconciliation.
+    const invoices = await runRoInvoices(sql).catch(() => {
+      console.error("[roapp-invoice] Lauf fehlgeschlagen; keine Kundendaten protokolliert.");
+      return { error: "invoice_run_failed" };
+    });
+    return { backend: "roapp", ...result, ...reconciled, invoices };
   }
   const { runBitrixSync } = await import("./bitrix-sync.ts");
   return { backend: "bitrix", ...(await runBitrixSync(sql)) };

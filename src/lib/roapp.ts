@@ -436,3 +436,103 @@ export async function createOrderComment(
     is_private: true,
   });
 }
+
+export type RoappPerson = {
+  id: number;
+  name: string | null;
+  email: string | null;
+  address: string | null;
+};
+
+function optionalText(value: unknown, max: number): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") throw new RoappError("roapp_contact_invalid", { review: true });
+  const text = value.replace(/\s+/g, " ").trim();
+  if (text.length > max) throw new RoappError("roapp_contact_invalid", { review: true });
+  return text || null;
+}
+
+/** Current contact data from RO. Returns null if this API revision offers no
+ * single-contact read, so callers keep the website data instead of guessing. */
+export async function getPerson(request: RoappRequest, id: number): Promise<RoappPerson | null> {
+  let payload: unknown;
+  try {
+    payload = await request<unknown>("GET", `/contacts/people/${id}`);
+  } catch (error) {
+    if (error instanceof RoappError && (error.status === 404 || error.status === 405)) return null;
+    throw error;
+  }
+  const row = (
+    payload && typeof payload === "object" && "data" in payload
+      ? (payload as { data: unknown }).data
+      : payload
+  ) as Record<string, unknown> | null;
+  if (!row || typeof row !== "object" || Array.isArray(row) || row.id !== id)
+    throw new RoappError("roapp_contact_invalid", { review: true });
+  const email = optionalText(row.email, 254)?.toLowerCase() ?? null;
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    throw new RoappError("roapp_contact_invalid", { review: true });
+  const name = [optionalText(row.first_name, 120), optionalText(row.last_name, 120)]
+    .filter(Boolean)
+    .join(" ");
+  const address =
+    typeof row.address === "object" && row.address !== null ? null : optionalText(row.address, 500);
+  return { id, name: name || null, email, address };
+}
+
+export type RoappOrderLine = { name: string; quantity: number; grossCents: number };
+
+function moneyCents(value: unknown): number {
+  const text = typeof value === "number" ? String(value) : value;
+  if (typeof text !== "string" || !/^\d+(\.\d{1,2})?$/.test(text.trim()))
+    throw new RoappError("roapp_items_invalid", { review: true });
+  const cents = Math.round(Number(text) * 100);
+  if (!Number.isSafeInteger(cents) || cents > 100_000_000)
+    throw new RoappError("roapp_items_invalid", { review: true });
+  return cents;
+}
+
+/** Parses order positions strictly. Discounts or unknown shapes are never
+ * interpreted: the caller compares the sum with RO's canonical total. */
+export function parseRoappOrderLines(payload: unknown): RoappOrderLine[] {
+  const rows = extractRoappList(payload);
+  if (!rows.length || rows.length > 100)
+    throw new RoappError("roapp_items_invalid", { review: true });
+  return rows.map((row) => {
+    const entity =
+      row.entity && typeof row.entity === "object" ? (row.entity as Record<string, unknown>) : {};
+    const name = [row.title, row.name, entity.title, entity.name, row.comment].find(
+      (value): value is string => typeof value === "string" && value.trim().length > 0,
+    );
+    const quantity = typeof row.quantity === "string" ? Number(row.quantity) : row.quantity;
+    if (
+      !name ||
+      name.length > 300 ||
+      typeof quantity !== "number" ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0 ||
+      quantity > 1000
+    )
+      throw new RoappError("roapp_items_invalid", { review: true });
+    const discount =
+      row.discount && typeof row.discount === "object"
+        ? (row.discount as Record<string, unknown>)
+        : null;
+    if (
+      discount &&
+      [discount.amount, discount.percentage, discount.value].some(
+        (value) => value !== undefined && value !== null && Number(value) !== 0,
+      )
+    )
+      throw new RoappError("roapp_items_discount", { review: true });
+    const unit = moneyCents(row.price);
+    return { name: name.trim(), quantity, grossCents: unit * quantity };
+  });
+}
+
+export async function getOrderLines(
+  request: RoappRequest,
+  orderId: number,
+): Promise<RoappOrderLine[]> {
+  return parseRoappOrderLines(await request<unknown>("GET", `/orders/${orderId}/items`));
+}

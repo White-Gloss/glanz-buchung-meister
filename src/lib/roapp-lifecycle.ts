@@ -4,6 +4,8 @@ import { roappAccountScope, roappOnlyEnabled } from "./booking-backend.ts";
 import { enqueueNotification } from "./booking-notifications.ts";
 import { googleProfile } from "../data/google-profile.ts";
 import { site } from "../data/site.ts";
+import { currentRoContact } from "./roapp-contact.ts";
+import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
 
 export const RO_REMINDER = "wg.ro.reminder";
 export const RO_REVIEW = "wg.ro.review";
@@ -118,6 +120,24 @@ export async function queueRoLifecycle(sql: Sql, bookingId: number) {
   if (!roLifecycleEnabled()) return;
   const row = await state(sql, bookingId);
   if (!row) return;
+  if (!row.email) {
+    // Without an address the reminder must happen by phone. Tell the owner once
+    // per confirmed appointment instead of silently skipping it.
+    const reminder = lifecyclePlan({ ...row, email: "fehlt@invalid.invalid" }).find(
+      (plan) => plan.kind === "reminder",
+    );
+    if (reminder)
+      await enqueueNotification(sql, {
+        key: `wg-ro-v1:${roappAccountScope()}:${row.id}:owner:ohne-email-${lifecycleKey(row.id, "reminder", reminder.at).split(":")[4]}`,
+        eventType: "wg.ro.owner",
+        channel: "email",
+        to: site.bookingEmail,
+        bookingId: row.id,
+        subject: `WG-${row.id}: Erinnerung telefonisch geben`,
+        body: `Für WG-${row.id} (${row.customer_name}) ist ein verbindlicher Termin bestätigt, aber keine E-Mail-Adresse hinterlegt.\nDie automatische Erinnerung drei Tage vorher entfällt. Bitte telefonisch erinnern und Abholung bzw. Übergabe abstimmen oder die E-Mail-Adresse im RO-Kontakt ergänzen.`,
+      });
+    return;
+  }
   for (const plan of lifecyclePlan(row)) {
     await enqueueNotification(sql, {
       key: lifecycleKey(row.id, plan.kind, plan.at),
@@ -141,7 +161,8 @@ export async function validateRoLifecycle(
     event_type: string | null;
     to_addr: string | null;
   },
-) {
+  request?: RoappRequest,
+): Promise<string | false> {
   if (
     !message.booking_id ||
     !approvedRoLifecycleMessage(message.event_key, message.event_type || "")
@@ -150,11 +171,14 @@ export async function validateRoLifecycle(
   const before = await state(sql, message.booking_id);
   if (!before) return false;
   const { refreshRoOrder } = await import("./roapp-callback.ts");
-  await refreshRoOrder(sql, before.ro_order_id);
+  await refreshRoOrder(sql, before.ro_order_id, request);
+  const creds = request ? null : roappCredentialsFromEnv();
+  const call = request || (creds ? createRoappClient(creds) : null);
+  // Best effort: a corrected RO e-mail address wins; unreadable contacts keep the website address.
+  if (call) await currentRoContact(sql, message.booking_id, call, { strict: false });
   const current = await state(sql, message.booking_id);
-  return Boolean(
-    current &&
-    current.email === message.to_addr &&
+  const valid = Boolean(
+    current?.email &&
     lifecyclePlan(current).some(
       (plan) =>
         plan.event === message.event_type &&
@@ -162,4 +186,5 @@ export async function validateRoLifecycle(
         lifecycleKey(current.id, plan.kind, plan.at) === message.event_key,
     ),
   );
+  return valid ? current!.email! : false;
 }
