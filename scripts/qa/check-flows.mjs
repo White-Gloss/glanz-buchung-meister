@@ -283,6 +283,46 @@ results.push(
   "Different UUIDs for the same desired appointment are both recorded as pending requests",
 );
 
+// Hub pull: read-only, server-to-server, never 410.
+const hub = (init = {}) =>
+  fetch(base + "/api/hub", {
+    method: "POST",
+    body: JSON.stringify({ action: "list" }),
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      authorization: "Bearer isolated-qa-hub-sync-token-32-characters",
+      ...init.headers,
+    },
+  });
+const hubDenied = await fetch(base + "/api/hub", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ action: "list" }),
+});
+assert.equal(hubDenied.status, 401);
+assert.deepEqual(await hubDenied.json(), { error: "unauthorized" });
+assert.equal((await hub({ headers: { authorization: "Bearer wrong" } })).status, 401);
+assert.equal((await fetch(base + "/api/hub")).status, 405);
+assert.equal((await hub({ body: JSON.stringify({ action: "sync" }) })).status, 400);
+const hubFirst = await hub();
+assert.equal(hubFirst.status, 200);
+assert.equal(hubFirst.headers.get("access-control-allow-origin"), null);
+const pulled = (await hubFirst.json()).inquiries;
+const pulledIds = pulled.map((row) => row.id);
+for (const id of [booking3.body.result.id, booking2.body.result.id])
+  assert.equal(pulledIds.filter((value) => value === id).length, 1, String(id));
+assert.ok(pulledIds.indexOf(booking3.body.result.id) < pulledIds.indexOf(booking2.body.result.id));
+for (const row of pulled) {
+  assert.ok(Number.isSafeInteger(row.id) && row.id > 0);
+  assert.ok(Number.isInteger(row.total_cents) && Number.isInteger(row.pickup_cents));
+  assert.equal(row.review_email_consent, false);
+  assert.ok(Object.values(row).every((value) => value !== null));
+}
+assert.deepEqual((await (await hub()).json()).inquiries, pulled);
+results.push("Hub pull lists open requests with stable ids; missing or wrong token gets 401");
+
 const id2 = booking2.body.result.id;
 const id3 = booking3.body.result.id;
 // The former website CRM cannot be used to bypass Bitrix24 decisions.
@@ -295,7 +335,7 @@ for (const name of [
   "sendQontoInvoice",
 ])
   assert.equal(ids[name], undefined, name + " must not be published");
-for (const route of ["/api/ro-callback", "/api/zoho-webhook", "/api/hub", "/api/operator"])
+for (const route of ["/api/ro-callback", "/api/zoho-webhook", "/api/operator"])
   assert.equal((await fetch(base + route, { method: "POST", body: "{}" })).status, 410, route);
 assert.equal(
   (await fetch(base + "/api/bitrix-workshop", { method: "POST", body: "{}" })).status,

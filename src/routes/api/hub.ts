@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleHubInquiries } from "@/lib/hub-inquiries";
+import { handleHubInquiries, hubMethodNotAllowed } from "@/lib/hub-inquiries";
 
-const retired = () => new Response(null, { status: 410 });
-
+// Server-to-server pull for the Hub. Read-only; no CORS, no browser use.
 export const Route = createFileRoute("/api/hub")({
   server: {
     handlers: {
-      GET: retired,
       POST: ({ request }) => handleHubInquiries(request),
+      ANY: hubMethodNotAllowed,
     },
   },
 });
