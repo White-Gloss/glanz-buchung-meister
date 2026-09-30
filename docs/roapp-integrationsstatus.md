@@ -18,6 +18,15 @@ Stand 29.09.2026. Ergänzt die lokalen Betreibernachweise (`outputs\RO-App-*.md/
 - `src/lib/roapp-process.test.ts`: kompletter Ablauf Anfrage → Fixpreis → Annahme (RO-Fixture) → Termin → Erinnerung → Abschluss → Rechnung → Teil-/Restzahlung bar mit Quittungen → Bewertung nach sieben Tagen, plus Fehlerfälle, Review-Folgefälle (strenge Kontaktdaten, nachträglich ergänzte E-Mail, Stichtagsnachweis, pausierte Automatik, Migrationsvermerk). `npm test`: 599/599 bestanden; Lint 0 Fehler; Typprüfung und Produktions-Build bestanden; GitHub-CI (verify, schema, CodeQL, Lighthouse) auf PR #272 grün.
 - Veröffentlicht über den freigegebenen Weg: PR #272 → `main` (`a119b8a`) → „Deploy to IONOS VPS“ #269.
 
+## Befund 30.09.2026: Anfragen kamen nicht in RO an
+
+Read-only Inspect #277 (`roapp_diagnostics`, 03:12 UTC):
+
+- Betriebsart `roapp`, Übertragung eingeschaltet, Zugangsdaten vollständig, alle Katalogpositionen zugeordnet, RO-Kontoprüfung `GET /company` ok.
+- Seit der Umschaltung eine Anfrage. Sie steht in „Prüfung erforderlich“ mit `roapp_write_needs_reconciliation`. Es gab noch keine erfolgreiche Übertragung.
+
+Ursache im Code: Das Schreibjournal hat jeden Fehler eines Schreibvorgangs als „Ausgang unklar“ gewertet, auch eindeutige RO-Ablehnungen (4xx) und nie gesendete Aufrufe. Dadurch gingen HTTP-Status, Schritt und RO-Meldung verloren, und die Anfrage blieb dauerhaft gesperrt; „Erneut übertragen“ half nicht. Korrigiert: eindeutige Fälle geben die Sperre frei und speichern den echten Grund; unklare Fälle nennen den Schritt und lassen sich nach Prüfung in RO durch den Inhaber freigeben („In RO geprüft – neu übertragen“).
+
 ## Offen
 
 1. Rechnungsautomatik im IONOS-Server-Environment aktivieren (Bankdaten, `ROAPP_INVOICE_FROM`); nur mit Betreiberzugang möglich.

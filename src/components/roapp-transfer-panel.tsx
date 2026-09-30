@@ -29,9 +29,16 @@ export function RoappTransferPanel() {
     void refresh().catch(() => setMessage("Übertragungsstatus konnte nicht geladen werden."));
   }, []);
 
-  async function retry(bookingId: number) {
+  async function retry(bookingId: number, checkedInRo = false) {
+    if (
+      checkedInRo &&
+      !window.confirm(
+        `Bitte zuerst in RO nachsehen, ob es für WG-${bookingId} schon einen Auftrag gibt. Nur fortfahren, wenn dort KEIN Auftrag existiert – sonst entsteht ein zweiter. Fortfahren?`,
+      )
+    )
+      return;
     try {
-      const result = await retryRoTransfer({ data: { bookingId } });
+      const result = await retryRoTransfer({ data: { bookingId, checkedInRo } });
       setMessage(
         result.retried
           ? `WG-${bookingId} wird erneut an RO übertragen.`
@@ -124,9 +131,15 @@ export function RoappTransferPanel() {
             </p>
             {overview.owner && ["review", "failed"].includes(row.status) && (
               <div className="mt-2">
-                <Button variant="ghost" onClick={() => void retry(row.booking_id)}>
-                  Erneut übertragen
-                </Button>
+                {row.unclearWrite ? (
+                  <Button variant="ghost" onClick={() => void retry(row.booking_id, true)}>
+                    In RO geprüft – neu übertragen
+                  </Button>
+                ) : (
+                  <Button variant="ghost" onClick={() => void retry(row.booking_id)}>
+                    Erneut übertragen
+                  </Button>
+                )}
               </div>
             )}
           </li>

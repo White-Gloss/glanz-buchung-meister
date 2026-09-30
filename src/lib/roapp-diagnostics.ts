@@ -1,6 +1,7 @@
 import type { Sql } from "./db.ts";
 import { extras, packages, pickupPricing, vehicleClasses } from "../data/site.ts";
 import { bookingBackend, roappAccountScope, roappCutoverAt } from "./booking-backend.ts";
+import { journalStep } from "./roapp-write-journal.ts";
 import {
   createRoappClient,
   roappCredentialsFromEnv,
@@ -116,12 +117,32 @@ export async function roappDiagnostics(
     );
     const [other] = await sql<{ count: number }>`select count(*)::int as count
       from roapp_sync_queue where shop_id=${SHOP} and account_scope<>${scope.value}`;
+    // Only the part before "|" (code, HTTP status, step); RO's detail stays private.
     const problems = await sql.query<{ problem: string; count: number }>(
-      `select status||':'||coalesce(last_error,'-') as problem,count(*)::int as count
+      `select status||':'||coalesce(split_part(last_error,'|',1),'-') as problem,
+         count(*)::int as count
        from roapp_sync_queue where shop_id=$1 and account_scope=$2 and status<>'synced'
        group by 1 order by 1`,
       [SHOP, scope.value],
     );
+    const [progress] = await sql.query<{ contact: number; order: number }>(
+      `select count(*) filter (where ro_contact_id is not null)::int as contact,
+         count(*) filter (where ro_order_id is not null)::int as "order"
+       from roapp_sync_queue where shop_id=$1 and account_scope=$2 and status<>'synced'`,
+      [SHOP, scope.value],
+    );
+    const journal = await sql.query<{ operation: string; state: string }>(
+      `select j.operation,j.state from roapp_write_journal j
+       join roapp_sync_queue q on q.booking_id=j.booking_id
+       where q.shop_id=$1 and q.account_scope=$2 and q.status<>'synced'
+         and j.operation like $3`,
+      [SHOP, scope.value, `${scope.value}:%`],
+    );
+    const writes: Record<string, number> = {};
+    for (const row of journal) {
+      const key = `${row.state}:${journalStep(row.operation)}`;
+      writes[key] = (writes[key] || 0) + 1;
+    }
     const [times] = await sql.query<{
       synced_hours: number | null;
       pending_hours: number | null;
@@ -140,6 +161,8 @@ export async function roappDiagnostics(
       queue: Object.fromEntries(queue.map((row) => [row.status, row.count])),
       otherAccountScopes: other?.count ?? 0,
       problems: Object.fromEntries(problems.map((row) => [row.problem, row.count])),
+      openProgress: { contactKnown: progress?.contact ?? 0, orderKnown: progress?.order ?? 0 },
+      openWrites: writes,
       hoursSinceLastTransfer: times?.synced_hours ?? null,
       hoursOldestWaiting: times?.pending_hours ?? null,
       runner: runner ? (runner.locked ? "running" : "idle") : "missing",
