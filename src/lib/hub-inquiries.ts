@@ -26,6 +26,8 @@ type Row = {
   review_email_consent: boolean | null;
 };
 
+const gone = () => new Response(null, { status: 410 });
+
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
     status,
@@ -86,7 +88,7 @@ export async function handleHubInquiries(request: Request) {
   const { getSql } = await import("./db.ts");
   const sql = await getSql();
   const secret = await expectedToken(sql);
-  if (secret.length < 32) return json({ ok: false, error: "not_configured" }, 503);
+  if (secret.length < 32) return gone();
   if (!sameSecret(secret, bearer(request))) return json({ ok: false, error: "unauthorized" }, 401);
 
   let action = "";
@@ -96,7 +98,7 @@ export async function handleHubInquiries(request: Request) {
   } catch {
     return json({ ok: false, error: "bad_json" }, 400);
   }
-  if (action !== "list") return json({ ok: false, error: "read_only" }, 410);
+  if (action !== "list") return gone();
 
   let rows: Row[];
   try {
