@@ -179,7 +179,7 @@ export function toHubInquiry(row: Row): HubInquiry | null {
 }
 
 /** Open = still a request: not accepted, cancelled, rejected, done or billed anywhere. */
-export async function listOpenInquiries(sql: Sql): Promise<HubInquiry[]> {
+export async function readOpenInquiries(sql: Sql): Promise<HubInquiry[]> {
   // RO tables and the address columns are partly created at runtime by other
   // paths. This route only reads, so it adapts instead of running DDL.
   const [optional] = await sql<{ ro_state: boolean; ro_invoices: boolean }>`
@@ -233,7 +233,7 @@ export async function handleHubInquiries(
   if (!sameSecret(token, presentedToken(request))) return json({ error: "unauthorized" }, 401);
   if (!(await isListAction(request))) return json({ error: "bad_request" }, 400);
   try {
-    return json({ inquiries: await listOpenInquiries(await loadSql()) }, 200);
+    return json({ inquiries: await readOpenInquiries(await loadSql()) }, 200);
   } catch {
     // No query text, parameters or customer data in logs.
     console.error("[hub] list_failed");
