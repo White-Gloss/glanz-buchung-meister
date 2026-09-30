@@ -16,6 +16,7 @@ process.env.NODE_ENV = "production";
 process.env.OPERATOR_ENFORCE = "1";
 process.env.BOOKING_OPERATIONS = "bitrix";
 process.env.REMINDER_CRON_SECRET = "isolated-qa-cron-secret-32-characters";
+process.env.HUB_SYNC_TOKEN = "isolated-qa-hub-sync-token-32-characters";
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
 process.env.BETTER_AUTH_URL = qaBase;
 process.env.QA_RUN_ID ||= randomUUID();

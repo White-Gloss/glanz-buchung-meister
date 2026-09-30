@@ -1,37 +1,61 @@
-# Hub-Sync (Betriebspanel)
+# Hub-Sync: offene Website-Anfragen abholen
 
-Das Notiz-Hub liest und schreibt Website-Buchungen über `POST /api/hub`.
-Qonto-Zugangsdaten bleiben auf dem VPS. Das Hub speichert nur Origin + Sync-Token.
+Der Hub holt offene Buchungsanfragen von der Website ab („Website-Anfragen holen“).
+Die Website ruft den Hub nie auf. Die Route liest nur; sie bestätigt, blockiert,
+mailt und rechnet nichts ab.
 
-## Token setzen (bevorzugt)
+Route: `src/routes/api/hub.ts`, Logik: `src/lib/hub-inquiries.ts`.
 
-Im Admin unter [Einstellungen](https://white-gloss.de/admin/einstellungen), nur Inhaber:
+## Token setzen
 
-1. **Hub-Token erzeugen**
-2. Den angezeigten Wert **einmal** kopieren
-3. Im Hub unter Buchungen → **Webseite verbinden** denselben Wert speichern
-
-Der Token liegt in `shop_settings.hub_sync_token` und wird nicht zurück ins Formular gelegt.
-Erzeugen ersetzt den bisherigen Panel-Token. Die Hub-Verbindung muss dann neu gesetzt werden.
-
-## Server-Datei (hat Vorrang)
-
-In `/etc/white-gloss/environment`:
+Nur als Server-Umgebungsvariable, in `/etc/white-gloss/environment`:
 
 ```
 HUB_SYNC_TOKEN="<mindestens 32 Zeichen, zufällig>"
 ```
 
-Ist diese Variable gesetzt, ignoriert die Seite den Panel-Token. Nach dem Setzen in der Datei: Dienst neu starten.
+Danach den Dienst neu starten. Im Hub unter „Website-Anfragen holen“ denselben
+Wert hinterlegen. Der Token gehört nicht ins Repo, nicht in Logs, nicht ins
+Frontend und nicht in den Chat.
 
-Ohne Token (weder Datei noch Panel) antwortet `/api/hub` mit 503 und ändert nichts.
+## Vertrag
 
-Bestätigen im Hub ruft dieselbe manuelle Bestätigung auf wie `/admin`.
-`erledigt` legt die Qonto-Rechnung an (ohne Auto-Mail).
-„Rechnung per E-Mail“ im Hub sendet die Qonto-Rechnung.
+```
+POST https://white-gloss.de/api/hub
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <HUB_SYNC_TOKEN>
 
-## Nicht tun
+{"action":"list"}
+```
 
-- Token committen oder in den Chat legen
-- Qonto-Login im Hub hinterlegen
-- Die Route ohne Token öffentlich lassen (sie bleibt tot, solange Datei und Panel leer sind)
+| Fall                                     | Antwort                          |
+| ---------------------------------------- | -------------------------------- |
+| Andere Methode als POST                  | 405, leer                        |
+| `HUB_SYNC_TOKEN` fehlt oder < 32 Zeichen | 503 `{"error":"not_configured"}` |
+| Header fehlt oder Token falsch           | 401 `{"error":"unauthorized"}`   |
+| `action` nicht `"list"`                  | 400 `{"error":"bad_request"}`    |
+| Erfolg (auch ohne offene Anfrage)        | 200 `{"inquiries":[…]}`          |
+| Datenbankfehler                          | 500 `{"error":"unavailable"}`    |
+
+Die Route antwortet nie mit 410. Für den Hub heißt 410: Route aus.
+
+Offen heißt: `status = 'neu'`, nicht bestätigt, nicht storniert, noch vor der
+Annahme (`ops_stage` Anfrage, Prüfung oder Kundenrückmeldung), keine Rechnung
+und keine Zahlung erfasst, in der RO App weder vom Inhaber bestätigt noch
+abgeschlossen. Höchstens 40, neueste zuerst.
+
+`id` ist die bestehende Buchungsnummer (WG-Nummer ohne Präfix). Beträge sind
+ganze Cent, `total_cents` ist der gespeicherte Ab-Preis inklusive Klasse,
+Extras und Abholung. Fotos liegen privat; `note` nennt nur ihre Anzahl, nie
+Pfade oder signierte Links.
+
+## Prüfen, ohne den Token auszugeben
+
+```sh
+# erwartet 401
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://white-gloss.de/api/hub \
+  -H 'content-type: application/json' -d '{"action":"list"}'
+```
+
+Mit Token nur aus einer Datei oder Variable lesen, nie in die Kommandozeile tippen.
