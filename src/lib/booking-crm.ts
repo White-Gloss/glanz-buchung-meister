@@ -21,6 +21,10 @@ export async function runCrmSync(sql: Sql) {
     const { runRoappSync } = await import("./roapp-sync.ts");
     const { reconcileRoOrders } = await import("./roapp-callback.ts");
     const { runRoInvoices } = await import("./roapp-invoice.ts");
+    const { logRoappDiagnostics } = await import("./roapp-sync.ts");
+    await logRoappDiagnostics(sql).catch(() =>
+      console.error("[roapp-sync] diagnostics_failed; keine Kundendaten protokolliert."),
+    );
     const result = await runRoappSync(sql);
     const reconciled = await reconcileRoOrders(sql);
     // Invoice problems must not stop request transfer or status reconciliation.

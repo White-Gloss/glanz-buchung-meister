@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
 import { customerAddress } from "./customer-address.ts";
-import { packages, vehicleClasses, extras, pickupPricing, cities } from "../data/site.ts";
+import { packages, vehicleClasses, extras, pickupPricing, cities, site } from "../data/site.ts";
 import { roappOnlyEnabled, roappAccountScope, roappCutoverAt } from "./booking-backend.ts";
 import { isCalendarDate } from "./calendar-date.ts";
 import { journalRoappWrites } from "./roapp-write-journal.ts";
@@ -368,12 +368,32 @@ export async function runRoappSync(
           status=case when requested_version>${row.version} or requested_at<>${row.request_revision}::timestamptz then 'pending' else 'synced' end,attempts=0,last_error=null,updated_at=now()
           where booking_id=${row.id} and account_scope=${scope}`;
         result.synced++;
+        console.info(
+          "[roapp-sync] transferred",
+          JSON.stringify({ booking: `WG-${row.id}`, order: ids.orderId }),
+        );
       } catch (error) {
         const code = error instanceof RoappError ? error.code : "roapp_processing_failed";
         const review = error instanceof RoappError && error.review;
-        await sql`update roapp_sync_queue set attempts=attempts+1,
+        const [stored] = await sql<{
+          status: string;
+        }>`update roapp_sync_queue set attempts=attempts+1,
           status=case when ${review} then 'review' when attempts>=5 then 'failed' else 'pending' end,
-          last_error=${code},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id} and account_scope=${scope}`;
+          last_error=${code},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id} and account_scope=${scope}
+          returning status`;
+        // Operational metadata only: booking number, code and HTTP status, never customer data.
+        console.warn(
+          "[roapp-sync] transfer_failed",
+          JSON.stringify({
+            booking: `WG-${row.id}`,
+            status: stored?.status,
+            code,
+            http: error instanceof RoappError ? error.status : null,
+            error: error instanceof RoappError ? undefined : errorKind(error),
+          }),
+        );
+        if (stored && stored.status !== "pending")
+          await alertTransferProblem(sql, row.id, stored.status, code).catch(() => undefined);
         if (review) result.review++;
         else result.failed++;
         break;
@@ -383,4 +403,137 @@ export async function runRoappSync(
     await sql`update roapp_sync_runner set lease_token=null,locked_until=null where shop_id=${SHOP} and lease_token=${token}`;
   }
   return result;
+}
+
+function errorKind(error: unknown) {
+  const code = (error as { code?: unknown })?.code;
+  return {
+    name: error instanceof Error ? error.name : typeof error,
+    sqlstate: typeof code === "string" && /^[0-9A-Z]{5}$/.test(code) ? code : undefined,
+  };
+}
+
+/** Plain-language reasons for the owner; codes stay stable for diagnostics. */
+export const transferProblemText: Record<string, string> = {
+  roapp_catalog_mapping_missing:
+    "Eine gebuchte Leistung fehlt in der RO-Zuordnung (ROAPP_ENTITY_MAP) im Server-Environment.",
+  roapp_pickup_mapping_missing: "Die Abholpauschale fehlt in der RO-Zuordnung (ROAPP_ENTITY_MAP).",
+  roapp_quote_changed: "Die Positionssumme passt nicht zum Website-Preis der Anfrage.",
+  roapp_account_identity_missing: "ROAPP_EXPECTED_COMPANY_CREATED_AT fehlt im Server-Environment.",
+  roapp_account_identity_mismatch:
+    "Das RO-Konto des API-Schlüssels passt nicht zu ROAPP_EXPECTED_COMPANY_CREATED_AT.",
+  roapp_access_denied: "RO lehnt den API-Schlüssel ab (ungültig oder ohne Rechte).",
+  roapp_request_failed: "RO hat eine Anfrage abgelehnt oder mit einem Fehler beantwortet.",
+  roapp_write_needs_reconciliation:
+    "Die Antwort von RO war unklar. Bitte in RO prüfen, ob Kontakt/Auftrag angelegt wurden; sonst den Auftrag manuell anlegen.",
+  roapp_create_needs_review: "RO hat keine Kennung für den neu angelegten Datensatz geliefert.",
+  roapp_contact_ambiguous: "In RO gibt es mehrere Kontakte mit derselben E-Mail-Adresse.",
+  roapp_contact_invalid: "Der gefundene RO-Kontakt hat ein unerwartetes Format.",
+  roapp_missing_phone: "Die Anfrage enthält keine gültige Telefonnummer.",
+  roapp_missing_slot: "Die Anfrage enthält keinen vollständigen Wunschtermin.",
+  roapp_invalid_slot: "Der Wunschtermin ist ungültig (z. B. Zeitumstellung).",
+  roapp_not_configured: "Die RO-Zugangsdaten fehlen im Server-Environment.",
+  roapp_unreachable: "RO war nicht erreichbar.",
+  roapp_runner_expired: "Die Übertragung wurde wegen Zeitüberschreitung unterbrochen.",
+  roapp_processing_failed: "Unerwarteter Fehler auf der Website bei der Übertragung.",
+};
+
+async function alertTransferProblem(sql: Sql, bookingId: number, status: string, code: string) {
+  const { enqueueNotification } = await import("./booking-notifications.ts");
+  const id = await enqueueNotification(sql, {
+    key: `wg-ro-v1:${roappAccountScope()}:${bookingId}:owner:transfer-${status}-${code}`,
+    eventType: "wg.ro.owner",
+    channel: "email",
+    to: site.bookingEmail,
+    bookingId,
+    subject: `WG-${bookingId}: Anfrage nicht an RO App übertragen`,
+    body: [
+      `Die Website-Anfrage WG-${bookingId} wurde nicht nach RO App übertragen (${code}).`,
+      transferProblemText[code] || "Unbekannter Übertragungsfehler.",
+      "Die Anfrage ist auf der Website gespeichert und geht nicht verloren.",
+      "Nach der Korrektur im Betriebspanel (Betrieb → Übertragung nach RO) „Erneut übertragen“ wählen.",
+    ].join("\n"),
+  });
+  if (id)
+    await sql`insert into automation_events(shop_id, area, event, severity, context)
+      values (${SHOP}, 'roapp', 'uebertragung-pruefen', 'error', ${`WG-${bookingId}: ${code}`})`;
+}
+
+type TransferRow = {
+  booking_id: number;
+  status: string;
+  last_error: string | null;
+  attempts: number;
+  ro_order_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Read-only overview for the operating panel and the diagnostics log. */
+export async function roappTransferOverview(sql: Sql) {
+  const scope = roappAccountScope();
+  const cutover = roappCutoverAt();
+  const [settings] = await sql<{ roapp_sync_enabled: boolean }>`
+    select roapp_sync_enabled from shop_settings where shop_id=${SHOP}`;
+  let credentials: "ok" | "missing" | "invalid" = "missing";
+  try {
+    credentials = roappCredentialsFromEnv() ? "ok" : "missing";
+  } catch {
+    credentials = "invalid";
+  }
+  const rows =
+    await sql<TransferRow>`select q.booking_id,q.status,q.last_error,q.attempts,q.ro_order_id,
+      to_char(b.created_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+      to_char(q.updated_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
+    from roapp_sync_queue q join bookings b on b.id=q.booking_id and b.shop_id=q.shop_id
+    where q.shop_id=${SHOP} and q.account_scope=${scope}
+    order by b.created_at desc limit 30`;
+  const [unqueued] = await sql<{ count: number }>`select count(*)::int as count from bookings b
+    where b.shop_id=${SHOP} and b.created_at>=${cutover}::timestamptz
+      and not exists (select 1 from roapp_sync_queue q where q.booking_id=b.id and q.account_scope=${scope})`;
+  const [recent] = await sql<{ count: number }>`select count(*)::int as count from bookings
+    where shop_id=${SHOP} and created_at>now()-interval '7 days'`;
+  return {
+    syncEnabled: Boolean(settings?.roapp_sync_enabled),
+    credentials,
+    cutover,
+    bookings7d: recent?.count ?? 0,
+    unqueuedSinceCutover: unqueued?.count ?? 0,
+    rows,
+  };
+}
+
+let lastDiagnostics = 0;
+/** Writes one privacy-safe summary line at most hourly (and after each restart). */
+export async function logRoappDiagnostics(sql: Sql, now = Date.now()) {
+  if (!roappOnlyEnabled() || now - lastDiagnostics < 3_600_000) return;
+  lastDiagnostics = now;
+  const overview = await roappTransferOverview(sql);
+  const counts: Record<string, number> = {};
+  for (const row of overview.rows) counts[row.status] = (counts[row.status] || 0) + 1;
+  console.info(
+    "[roapp-sync] diagnostics",
+    JSON.stringify({
+      syncEnabled: overview.syncEnabled,
+      credentials: overview.credentials,
+      cutover: overview.cutover,
+      bookings7d: overview.bookings7d,
+      unqueuedSinceCutover: overview.unqueuedSinceCutover,
+      queue: counts,
+      problems: overview.rows
+        .filter((row) => row.status !== "synced")
+        .slice(0, 10)
+        .map((row) => `WG-${row.booking_id}:${row.status}:${row.last_error || "-"}`),
+    }),
+  );
+}
+
+/** Owner action after fixing the cause. The write journal still blocks any write whose
+ * outcome was unclear, so a retry can never create a second RO contact or order. */
+export async function retryRoappTransfer(sql: Sql, bookingId: number) {
+  const rows = await sql`update roapp_sync_queue set status='pending',attempts=0,last_error=null,
+      next_attempt_at=now(),updated_at=now()
+    where booking_id=${bookingId} and shop_id=${SHOP} and account_scope=${roappAccountScope()}
+      and status in ('review','failed') returning booking_id`;
+  return rows.length > 0;
 }

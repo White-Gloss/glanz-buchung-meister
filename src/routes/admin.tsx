@@ -8,6 +8,7 @@ import { getOperatorAccess } from "@/lib/admin.functions";
 import { adminNav } from "@/lib/admin-nav";
 import { site } from "@/data/site";
 import { RoappInvoicesPanel } from "@/components/roapp-invoices-panel";
+import { RoappTransferPanel } from "@/components/roapp-transfer-panel";
 
 const icons: Record<string, typeof Settings> = { Bitrix24: Share2, Website: Settings };
 
@@ -141,6 +142,7 @@ function AdminShell() {
           >
             RO App öffnen
           </a>
+          <RoappTransferPanel />
           <RoappInvoicesPanel />
         </main>
       ) : (
