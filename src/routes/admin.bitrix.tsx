@@ -11,6 +11,7 @@ import {
   enableBitrixCalendar,
 } from "@/lib/bitrix.functions";
 import { Button, Field, inputClass } from "@/components/ui";
+import { OpenInquiriesPanel } from "@/components/open-inquiries-panel";
 
 export const Route = createFileRoute("/admin/bitrix")({
   component: AdminBitrix,
@@ -77,6 +78,7 @@ function AdminBitrix() {
         Preise, Wunschtermin, Fotos und Videos gehören dort zusammen. Die weitere Bearbeitung erfolgt in
         Bitrix24.
       </p>
+      <OpenInquiriesPanel />
 
       <section className="mt-8 rounded-md border border-line bg-surface p-5">
         <h2 className="font-display text-2xl">Verbindung</h2>

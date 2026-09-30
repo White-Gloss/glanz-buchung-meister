@@ -26,6 +26,27 @@ type Row = {
   review_email_consent: boolean | null;
 };
 
+export type HubInquiry = {
+  id: number;
+  wg_number: string;
+  status: "neu";
+  customer_name: string;
+  phone: string;
+  email: string;
+  vehicle: string;
+  package_id: string;
+  class_id: string;
+  extra_ids: string[];
+  city_slug: string;
+  note: string;
+  total_cents: number;
+  pickup_cents: number;
+  preferred_date: string;
+  preferred_slot: string;
+  address: string;
+  review_email_consent: boolean;
+};
+
 const gone = () => new Response(null, { status: 410 });
 
 function json(body: unknown, status: number) {
@@ -84,6 +105,43 @@ function extras(value: Row["extra_ids"]) {
   }
 }
 
+export async function readOpenInquiries(sql: Sql): Promise<HubInquiry[]> {
+  const rows = await sql<Row>`
+    select id, customer_name, phone, email, preferred_date, preferred_slot,
+      package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
+      vehicle_make, vehicle_model, vehicle_plate,
+      customer_street, customer_postal_code, customer_city, review_email_consent
+    from bookings
+    where shop_id = ${SHOP} and status = 'neu'
+    order by id desc
+    limit 40
+  `;
+  return rows.map((row) => {
+    const street = text(row.customer_street);
+    const place = [text(row.customer_postal_code), text(row.customer_city)].filter(Boolean).join(" ");
+    return {
+      id: row.id,
+      wg_number: `WG-${row.id}`,
+      status: "neu" as const,
+      customer_name: row.customer_name,
+      phone: text(row.phone),
+      email: text(row.email),
+      vehicle: [row.vehicle_make, row.vehicle_model, row.vehicle_plate].filter(Boolean).join(" "),
+      package_id: row.package_id,
+      class_id: row.class_id,
+      extra_ids: extras(row.extra_ids),
+      city_slug: text(row.city_slug),
+      note: text(row.note),
+      total_cents: Number(row.total_cents) || 0,
+      pickup_cents: Number(row.pickup_cents) || 0,
+      preferred_date: text(row.preferred_date).slice(0, 10),
+      preferred_slot: text(row.preferred_slot).slice(0, 8),
+      address: [street, place].filter(Boolean).join(", "),
+      review_email_consent: row.review_email_consent === true,
+    };
+  });
+}
+
 export async function handleHubInquiries(request: Request) {
   const { getSql } = await import("./db.ts");
   const sql = await getSql();
@@ -100,51 +158,10 @@ export async function handleHubInquiries(request: Request) {
   }
   if (action !== "list") return gone();
 
-  let rows: Row[];
   try {
-    rows = await sql<Row>`
-      select id, customer_name, phone, email, preferred_date, preferred_slot,
-        package_id, class_id, extra_ids, city_slug, note, total_cents, pickup_cents,
-        vehicle_make, vehicle_model, vehicle_plate,
-        customer_street, customer_postal_code, customer_city, review_email_consent
-      from bookings
-      where shop_id = ${SHOP} and status = 'neu'
-      order by id desc
-      limit 40
-    `;
+    return json({ ok: true, inquiries: await readOpenInquiries(sql) }, 200);
   } catch {
     console.error("[hub-inquiries] query_failed");
     return json({ ok: false, error: "query_failed" }, 500);
   }
-
-  return json(
-    {
-      ok: true,
-      inquiries: rows.map((row) => {
-        const street = text(row.customer_street);
-        const place = [text(row.customer_postal_code), text(row.customer_city)].filter(Boolean).join(" ");
-        return {
-          id: row.id,
-          wg_number: `WG-${row.id}`,
-          status: "neu",
-          customer_name: row.customer_name,
-          phone: text(row.phone),
-          email: text(row.email),
-          vehicle: [row.vehicle_make, row.vehicle_model, row.vehicle_plate].filter(Boolean).join(" "),
-          package_id: row.package_id,
-          class_id: row.class_id,
-          extra_ids: extras(row.extra_ids),
-          city_slug: text(row.city_slug),
-          note: text(row.note),
-          total_cents: Number(row.total_cents) || 0,
-          pickup_cents: Number(row.pickup_cents) || 0,
-          preferred_date: text(row.preferred_date).slice(0, 10),
-          preferred_slot: text(row.preferred_slot).slice(0, 8),
-          address: [street, place].filter(Boolean).join(", "),
-          review_email_consent: row.review_email_consent === true,
-        };
-      }),
-    },
-    200,
-  );
 }
