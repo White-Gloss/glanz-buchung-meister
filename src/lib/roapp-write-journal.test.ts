@@ -49,3 +49,91 @@ test("journal replays completed items, stops ambiguous writes and permits reject
     await db.close();
   }
 });
+
+test("rejected or unsent writes are released with their reason; unclear writes stay blocked", async () => {
+  process.env.ROAPP_ACCOUNT_SCOPE = "new-test-account";
+  const { releaseRoappWrites, roappWriteStep, journalStep } =
+    await import("./roapp-write-journal.ts");
+  const { roappErrorDetail } = await import("./roapp.ts");
+  const db = new PGlite();
+  const sql = (async (parts: TemplateStringsArray, ...values: unknown[]) =>
+    (
+      await db.query(
+        parts.reduce((s, p, i) => s + (i ? `$${i}` : "") + p, ""),
+        values,
+      )
+    ).rows) as Sql;
+  await db.exec(
+    "create table roapp_write_journal (booking_id int, operation text, state text, response jsonb, primary key(booking_id,operation))",
+  );
+  try {
+    let calls = 0;
+    let next: () => unknown = () => ({ id: 1 });
+    const request = journalRoappWrites(sql, 7, async <T>() => {
+      calls++;
+      return next() as T;
+    });
+
+    // Client error: RO did not write anything. Reason kept, intent released.
+    next = () => {
+      throw new RoappError("roapp_request_failed", {
+        status: 422,
+        review: true,
+        detail: "Felder: branch_id",
+      });
+    };
+    await assert.rejects(request("POST", "/orders", {}), (error: RoappError) => {
+      assert.equal(error.code, "roapp_request_failed");
+      assert.equal(error.status, 422);
+      assert.equal(error.operation, "POST /orders");
+      assert.equal(error.detail, "Felder: branch_id");
+      return true;
+    });
+    // Never sent (account check before the write).
+    next = () => {
+      throw new RoappError("roapp_unreachable", { retryable: true });
+    };
+    await assert.rejects(request("POST", "/orders", {}), { code: "roapp_unreachable" });
+    next = () => ({ id: 42 });
+    assert.deepEqual(await request("POST", "/orders", {}), { id: 42 });
+    assert.equal(calls, 3);
+
+    // Server error or timeout: outcome unknown, blocked with step and cause.
+    next = () => {
+      throw new RoappError("roapp_request_failed", { status: 502, review: true });
+    };
+    await assert.rejects(
+      request("POST", "/orders/42/items", { entity_id: 5 }),
+      (error: RoappError) => {
+        assert.equal(error.code, "roapp_write_needs_reconciliation");
+        assert.equal(error.status, 502);
+        assert.equal(error.operation, "POST /orders/:id/items");
+        assert.equal(error.detail, "roapp_request_failed");
+        return true;
+      },
+    );
+    next = () => ({ id: 9 });
+    await assert.rejects(request("POST", "/orders/42/items", { entity_id: 5 }), {
+      code: "roapp_write_needs_reconciliation",
+    });
+    assert.equal(calls, 4, "an unclear write is never repeated automatically");
+    // Owner checked RO and released it: the item is written once; done steps stay replayed.
+    assert.equal(await releaseRoappWrites(sql, 7), 1);
+    await request("POST", "/orders/42/items", { entity_id: 5 });
+    assert.deepEqual(await request("POST", "/orders", {}), { id: 42 });
+    assert.equal(calls, 5);
+
+    assert.equal(roappWriteStep("POST", "/orders/123/comments"), "POST /orders/:id/comments");
+    assert.equal(journalStep("scope-a:POST /orders/123/items:66904352"), "POST /orders/:id/items");
+    assert.equal(journalStep("scope-a:POST /contacts/people"), "POST /contacts/people");
+    assert.equal(
+      roappErrorDetail({
+        errors: { phones: ["+49 170 1234567 ungültig"] },
+        message: "Person max@example.com mit +49 170 1234567 existiert",
+      }),
+      "Felder: phones · Person … mit … existiert",
+    );
+  } finally {
+    await db.close();
+  }
+});

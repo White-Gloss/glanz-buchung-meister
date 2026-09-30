@@ -6,7 +6,7 @@ import { customerAddress } from "./customer-address.ts";
 import { packages, vehicleClasses, extras, pickupPricing, cities, site } from "../data/site.ts";
 import { roappOnlyEnabled, roappAccountScope, roappCutoverAt } from "./booking-backend.ts";
 import { isCalendarDate } from "./calendar-date.ts";
-import { journalRoappWrites } from "./roapp-write-journal.ts";
+import { journalRoappWrites, releaseRoappWrites } from "./roapp-write-journal.ts";
 import { syncRoappPhotos } from "./roapp-photo-links.ts";
 import {
   addOrderItem,
@@ -393,13 +393,14 @@ export async function runRoappSync(
       } catch (error) {
         const code = error instanceof RoappError ? error.code : "roapp_processing_failed";
         const review = error instanceof RoappError && error.review;
+        const lastError = describeTransferError(error);
         const [stored] = await sql<{
           status: string;
         }>`update roapp_sync_queue set attempts=attempts+1,
           status=case when ${review} then 'review' when attempts>=5 then 'failed' else 'pending' end,
-          last_error=${code},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id} and account_scope=${scope}
+          last_error=${lastError},next_attempt_at=now()+interval '5 minutes',updated_at=now() where booking_id=${row.id} and account_scope=${scope}
           returning status`;
-        // Operational metadata only: booking number, code and HTTP status, never customer data.
+        // Operational metadata only: booking number, code, step and HTTP status, never customer data.
         console.warn(
           "[roapp-sync] transfer_failed",
           JSON.stringify({
@@ -407,11 +408,14 @@ export async function runRoappSync(
             status: stored?.status,
             code,
             http: error instanceof RoappError ? error.status : null,
+            step: error instanceof RoappError ? error.operation : undefined,
             error: error instanceof RoappError ? undefined : errorKind(error),
           }),
         );
         if (stored && stored.status !== "pending")
-          await alertTransferProblem(sql, row.id, stored.status, code).catch(() => undefined);
+          await alertTransferProblem(sql, row.id, stored.status, code, lastError).catch(
+            () => undefined,
+          );
         if (review) result.review++;
         else result.failed++;
         break;
@@ -421,6 +425,21 @@ export async function runRoappSync(
     await sql`update roapp_sync_runner set lease_token=null,locked_until=null where shop_id=${SHOP} and lease_token=${token}`;
   }
   return result;
+}
+
+/** Stored reason: "code[:http] [step][|RO detail]". The part before "|" is safe for
+ * public aggregates; the RO detail (masked field names/message) stays in the panel. */
+export function describeTransferError(error: unknown): string {
+  if (!(error instanceof RoappError)) return "roapp_processing_failed";
+  const head = [error.status ? `${error.code}:${error.status}` : error.code, error.operation || ""]
+    .filter(Boolean)
+    .join(" ");
+  return (error.detail ? `${head}|${error.detail}` : head).slice(0, 300);
+}
+
+/** Base code of a stored reason, e.g. "roapp_request_failed". */
+export function transferErrorCode(lastError: string): string {
+  return lastError.split(/[:\s|]/)[0];
 }
 
 function errorKind(error: unknown) {
@@ -443,7 +462,7 @@ export const transferProblemText: Record<string, string> = {
   roapp_access_denied: "RO lehnt den API-Schlüssel ab (ungültig oder ohne Rechte).",
   roapp_request_failed: "RO hat eine Anfrage abgelehnt oder mit einem Fehler beantwortet.",
   roapp_write_needs_reconciliation:
-    "Die Antwort von RO war unklar. Bitte in RO prüfen, ob Kontakt/Auftrag angelegt wurden; sonst den Auftrag manuell anlegen.",
+    "Ein Schreibvorgang nach RO hatte keinen eindeutigen Ausgang (z. B. Zeitüberschreitung). Automatisch wird er nicht wiederholt, damit nichts doppelt entsteht. Bitte in RO nachsehen, ob Kontakt/Auftrag angelegt wurden.",
   roapp_create_needs_review: "RO hat keine Kennung für den neu angelegten Datensatz geliefert.",
   roapp_contact_ambiguous: "In RO gibt es mehrere Kontakte mit derselben E-Mail-Adresse.",
   roapp_contact_invalid: "Der gefundene RO-Kontakt hat ein unerwartetes Format.",
@@ -463,7 +482,13 @@ export const transferProblemText: Record<string, string> = {
   roapp_processing_failed: "Unerwarteter Fehler auf der Website bei der Übertragung.",
 };
 
-async function alertTransferProblem(sql: Sql, bookingId: number, status: string, code: string) {
+async function alertTransferProblem(
+  sql: Sql,
+  bookingId: number,
+  status: string,
+  code: string,
+  reason = code,
+) {
   const { enqueueNotification } = await import("./booking-notifications.ts");
   const id = await enqueueNotification(sql, {
     key: `wg-ro-v1:${roappAccountScope()}:${bookingId}:owner:transfer-${status}-${code}`,
@@ -473,12 +498,14 @@ async function alertTransferProblem(sql: Sql, bookingId: number, status: string,
     bookingId,
     subject: `WG-${bookingId}: Anfrage nicht an RO App übertragen`,
     body: [
-      `Die Website-Anfrage WG-${bookingId} wurde nicht nach RO App übertragen (${code}).`,
+      `Die Website-Anfrage WG-${bookingId} wurde nicht nach RO App übertragen (${reason}).`,
       transferProblemText[code] || "Unbekannter Übertragungsfehler.",
       "Die Anfrage ist auf der Website gespeichert und geht nicht verloren.",
       status === "pending"
         ? "Nach der Korrektur wird sie automatisch übertragen (Betriebspanel → Übertragung nach RO)."
-        : "Nach der Korrektur im Betriebspanel (Betrieb → Übertragung nach RO) „Erneut übertragen“ wählen.",
+        : code === "roapp_write_needs_reconciliation"
+          ? "Bitte in RO prüfen. Fehlt der Auftrag dort, im Betriebspanel (Übertragung nach RO) „In RO geprüft – neu übertragen“ wählen. Existiert er, den Auftrag in RO manuell weiterführen."
+          : "Nach der Korrektur im Betriebspanel (Betrieb → Übertragung nach RO) „Erneut übertragen“ wählen.",
     ].join("\n"),
   });
   if (id)
@@ -595,6 +622,22 @@ export async function setRoappTransferEnabled(sql: Sql, enabled: boolean) {
   await sql`insert into automation_events(shop_id, area, event, severity, context)
     values (${SHOP}, 'roapp', ${enabled ? "uebertragung-eingeschaltet" : "uebertragung-angehalten"}, 'info', null)`;
   return enabled;
+}
+
+/** Owner action after checking RO: the unclear write did not arrive there. Releases
+ * the stuck write intents and queues the transfer again. Completed steps are replayed
+ * from the journal, so an existing contact or order is never created twice. */
+export async function releaseRoappTransfer(sql: Sql, bookingId: number) {
+  const scope = roappAccountScope();
+  const [row] = await sql<{ last_error: string | null }>`select last_error from roapp_sync_queue
+    where booking_id=${bookingId} and shop_id=${SHOP} and account_scope=${scope}
+      and status in ('review','failed')`;
+  if (!row || transferErrorCode(row.last_error || "") !== "roapp_write_needs_reconciliation")
+    return false;
+  await releaseRoappWrites(sql, bookingId);
+  await sql`insert into automation_events(shop_id, area, event, severity, context)
+    values (${SHOP}, 'roapp', 'schreibsperre-freigegeben', 'info', ${`WG-${bookingId}`})`;
+  return retryRoappTransfer(sql, bookingId);
 }
 
 /** Owner action after fixing the cause. The write journal still blocks any write whose

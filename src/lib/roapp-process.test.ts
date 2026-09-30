@@ -1185,3 +1185,78 @@ test("switched-off transfer is reported, diagnosed without customer data and can
     await pg.close();
   }
 });
+
+test("RO rejections show their real reason; unclear writes are released only after checking RO", async () => {
+  const { pg, sql } = await database();
+  const ro = fakeRo();
+  const warn = console.warn;
+  console.warn = () => undefined;
+  try {
+    const { releaseRoappTransfer, retryRoappTransfer } = await import("./roapp-sync.ts");
+    const { roappDiagnostics } = await import("./roapp-diagnostics.ts");
+    const lastError = async (id: number) =>
+      (
+        await sql<{ status: string; last_error: string | null }>`
+          select status,last_error from roapp_sync_queue where booking_id=${id}`
+      )[0];
+
+    // 1. RO rejects the order (client error): real reason stored, nothing blocked.
+    const rejected = await insertBooking(sql, { email: "abgelehnt@example.invalid" });
+    await queueRoappBooking(sql, rejected);
+    ro.failures.set(
+      "POST /orders",
+      new RoappError("roapp_request_failed", {
+        status: 422,
+        review: true,
+        detail: "Felder: branch_id",
+      }),
+    );
+    await runRoappSync(sql, { request: ro.request, creds });
+    assert.deepEqual(await lastError(rejected.id), {
+      status: "review",
+      last_error: "roapp_request_failed:422 POST /orders|Felder: branch_id",
+    });
+    const report = await roappDiagnostics(sql);
+    assert.deepEqual(report.problems, { "review:roapp_request_failed:422 POST /orders": 1 });
+    assert.deepEqual(report.openProgress, { contactKnown: 1, orderKnown: 0 });
+    assert.doesNotMatch(JSON.stringify(report), /branch_id|abgelehnt@/);
+    const alert = await sql<{ body: string }>`select body from outbound_queue
+      where event_key like ${`%:${rejected.id}:owner:transfer-review-roapp_request_failed`}`;
+    assert.match(alert[0].body, /roapp_request_failed:422 POST \/orders\|Felder: branch_id/);
+    // After the correction a plain retry transfers it, reusing the contact.
+    assert.equal(await retryRoappTransfer(sql, rejected.id), true);
+    assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 1);
+    assert.equal(ro.people.length, 1);
+    assert.equal(ro.orders.size, 1);
+
+    // 2. Unclear outcome (timeout on the order write): blocked, step visible.
+    const unclear = await insertBooking(sql, { email: "unklar@example.invalid" });
+    await queueRoappBooking(sql, unclear);
+    ro.failures.set("POST /orders", new RoappError("roapp_unreachable", { review: true }));
+    await runRoappSync(sql, { request: ro.request, creds });
+    assert.deepEqual(await lastError(unclear.id), {
+      status: "review",
+      last_error: "roapp_write_needs_reconciliation POST /orders|roapp_unreachable",
+    });
+    const blocked = await roappDiagnostics(sql);
+    assert.deepEqual(blocked.openWrites, {
+      "done:POST /contacts/people": 1,
+      "started:POST /orders": 1,
+    });
+    // A plain retry never repeats the unclear write.
+    await retryRoappTransfer(sql, unclear.id);
+    await runRoappSync(sql, { request: ro.request, creds });
+    assert.equal(ro.orders.size, 1);
+    assert.equal((await lastError(unclear.id)).status, "review");
+    // Owner checked RO (no order there) and releases it: exactly one order, one contact.
+    assert.equal(await releaseRoappTransfer(sql, rejected.id), false, "only unclear writes");
+    assert.equal(await releaseRoappTransfer(sql, unclear.id), true);
+    assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 1);
+    assert.equal(ro.orders.size, 2);
+    assert.equal(ro.people.length, 2);
+    assert.deepEqual((await roappDiagnostics(sql)).queue, { synced: 2 });
+  } finally {
+    console.warn = warn;
+    await pg.close();
+  }
+});

@@ -17,6 +17,10 @@ export class RoappError extends Error {
   status: number | null;
   retryable: boolean;
   review: boolean;
+  /** Normalized write step, e.g. "POST /orders/:id/items" (no ids, no data). */
+  operation?: string;
+  /** RO's rejection reason without contact data, e.g. "Felder: phones". */
+  detail?: string;
   constructor(
     code: string,
     options: {
@@ -24,6 +28,7 @@ export class RoappError extends Error {
       retryable?: boolean;
       review?: boolean;
       cause?: unknown;
+      detail?: string;
     } = {},
   ) {
     super(code);
@@ -31,8 +36,36 @@ export class RoappError extends Error {
     this.status = options.status ?? null;
     this.retryable = Boolean(options.retryable);
     this.review = Boolean(options.review);
+    if (options.detail) this.detail = options.detail;
     if (options.cause !== undefined) (this as Error & { cause?: unknown }).cause = options.cause;
   }
+}
+
+/** Field names and message of an RO error response. E-mail addresses and digit
+ * runs (phone numbers, ids) are masked, so no contact data leaves RO's answer. */
+export function roappErrorDetail(payload: unknown): string | undefined {
+  let text = "";
+  if (typeof payload === "string") text = payload;
+  else if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const row = payload as Record<string, unknown>;
+    const errors = row.errors;
+    const fields =
+      errors && typeof errors === "object" && !Array.isArray(errors) ? Object.keys(errors) : [];
+    const message = [row.message, row.error, row.detail].find(
+      (value): value is string => typeof value === "string",
+    );
+    text = [fields.length ? `Felder: ${fields.join(", ")}` : "", message || ""]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  const safe = text
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\S+@\S+/g, "…")
+    .replace(/\+?\d[\d\s/().-]{2,}\d/g, "…")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+  return safe || undefined;
 }
 
 function trimEnv(key: string): string {
@@ -233,12 +266,17 @@ export function createRoappClient(
         continue;
       }
       if (response.status === 401 || response.status === 403)
-        throw new RoappError("roapp_access_denied", { status: response.status, review: true });
+        throw new RoappError("roapp_access_denied", {
+          status: response.status,
+          review: true,
+          detail: roappErrorDetail(payload),
+        });
       if (!response.ok)
         throw new RoappError("roapp_request_failed", {
           status: response.status,
           retryable: readOnly && response.status >= 500,
           review: !readOnly || response.status < 500,
+          detail: roappErrorDetail(payload),
         });
       return payload as T;
     }
