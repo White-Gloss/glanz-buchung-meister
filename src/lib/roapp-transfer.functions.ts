@@ -7,7 +7,12 @@ import { getSql } from "@/lib/db";
 import { canConfirmBookings } from "@/lib/booking-owner";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
 import { roappOnlyEnabled } from "@/lib/booking-backend";
-import { retryRoappTransfer, roappTransferOverview, transferProblemText } from "@/lib/roapp-sync";
+import {
+  retryRoappTransfer,
+  roappTransferOverview,
+  setRoappTransferEnabled,
+  transferProblemText,
+} from "@/lib/roapp-sync";
 
 export const roTransfers = createServerFn({ method: "GET" })
   .middleware([authMiddleware, operatorMiddleware])
@@ -37,4 +42,18 @@ export const retryRoTransfer = createServerFn({ method: "POST" })
     const retried = await retryRoappTransfer(sql, data.bookingId);
     if (retried) kickBookingDelivery(sql);
     return { retried };
+  });
+
+export const setRoTransfer = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ enabled: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    if (!roappOnlyEnabled()) throw new Error("RO App ist nicht das aktive CRM.");
+    assertSameSiteRequest();
+    const sql = await getSql();
+    if (!(await canConfirmBookings(sql, context.userId)))
+      throw new Error("Nur der Inhaber darf die Übertragung nach RO umschalten.");
+    const enabled = await setRoappTransferEnabled(sql, data.enabled);
+    if (enabled) kickBookingDelivery(sql);
+    return { enabled };
   });

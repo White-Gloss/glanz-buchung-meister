@@ -147,8 +147,9 @@ jobs:
           echo "journal_unit_readable=$(journalctl -u white-gloss.service -n 1 --no-pager >/dev/null 2>&1 && echo yes || echo no)"
           echo "release_journal=$(journalctl -u white-gloss.service --since '2026-09-10 06:50:00 UTC' --no-pager -o cat 2>/dev/null | grep -E '\\[release\\]' | tail -n 20 | tr '\\n' '|' | head -c 800)"
           echo "reminder_journal=$(journalctl -u white-gloss-reminder.service -n 8 --no-pager -o cat 2>/dev/null | tr '\\n' '|' | head -c 800)"
-          # RO transfer/config diagnostics: booking numbers, codes and HTTP status only.
-          echo "roapp_journal=$(journalctl -u white-gloss.service --since '-3 days' --no-pager -o cat 2>/dev/null | grep -E '\[(roapp-(sync|webhook|invoice)|crm:sync|release|notification-worker)\]' | tail -n 25 | tr '\n' '|' | head -c 3000)"
+          # The SSH user cannot read the service journal. The app answers this loopback-only
+          # endpoint with aggregated RO transfer state (switches, counts, codes; no customer data).
+          echo "roapp_diagnostics=$(curl --silent --max-time 40 'http://127.0.0.1:3000/api/ro-diagnostics?probe=1' 2>/dev/null | tr -d '\000\r\n' | head -c 3000)"
           postgres_peers="$(ss -tn 2>/dev/null | awk '$5 ~ /:(5432|6543)$/ {print $5}' | sort -u || true)"
           peer_kinds=""
           peer_count=0

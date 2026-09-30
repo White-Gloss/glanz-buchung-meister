@@ -59,6 +59,7 @@ import { Route as ApiGoogleReviewsRouteImport } from './routes/api.google-review
 import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
 import { Route as ApiRoCallbackRouteImport } from './routes/api.ro-callback'
+import { Route as ApiRoDiagnosticsRouteImport } from './routes/api.ro-diagnostics'
 import { Route as ApiRoPhotoRouteImport } from './routes/api.ro-photo'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
@@ -320,6 +321,11 @@ const ApiRoCallbackRoute = ApiRoCallbackRouteImport.update({
   path: '/api/ro-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRoDiagnosticsRoute = ApiRoDiagnosticsRouteImport.update({
+  id: '/api/ro-diagnostics',
+  path: '/api/ro-diagnostics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRoPhotoRoute = ApiRoPhotoRouteImport.update({
   id: '/api/ro-photo',
   path: '/api/ro-photo',
@@ -420,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -540,6 +548,7 @@ export interface FileRoutesById {
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
+  '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
@@ -604,6 +613,7 @@ export interface FileRouteTypes {
     | '/api/hub'
     | '/api/operator'
     | '/api/ro-callback'
+    | '/api/ro-diagnostics'
     | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/api/hub'
     | '/api/operator'
     | '/api/ro-callback'
+    | '/api/ro-diagnostics'
     | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/api/hub'
     | '/api/operator'
     | '/api/ro-callback'
+    | '/api/ro-diagnostics'
     | '/api/ro-photo'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
@@ -769,6 +781,7 @@ export interface RootRouteChildren {
   ApiHubRoute: typeof ApiHubRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
   ApiRoCallbackRoute: typeof ApiRoCallbackRoute
+  ApiRoDiagnosticsRoute: typeof ApiRoDiagnosticsRoute
   ApiRoPhotoRoute: typeof ApiRoPhotoRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
@@ -1127,6 +1140,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRoCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ro-diagnostics': {
+      id: '/api/ro-diagnostics'
+      path: '/api/ro-diagnostics'
+      fullPath: '/api/ro-diagnostics'
+      preLoaderRoute: typeof ApiRoDiagnosticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ro-photo': {
       id: '/api/ro-photo'
       path: '/api/ro-photo'
@@ -1330,6 +1350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHubRoute: ApiHubRoute,
   ApiOperatorRoute: ApiOperatorRoute,
   ApiRoCallbackRoute: ApiRoCallbackRoute,
+  ApiRoDiagnosticsRoute: ApiRoDiagnosticsRoute,
   ApiRoPhotoRoute: ApiRoPhotoRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,

@@ -306,9 +306,27 @@ export async function runRoappSync(
   const [settings] = await sql<{
     roapp_sync_enabled: boolean;
   }>`select roapp_sync_enabled from shop_settings where shop_id=${SHOP}`;
-  if (!settings?.roapp_sync_enabled) return result;
-  const creds = options.creds || (options.request ? null : roappCredentialsFromEnv());
-  if (!options.request && !creds) return result;
+  // Waiting requests must never go unnoticed: the owner is told once per request.
+  if (!settings?.roapp_sync_enabled) {
+    await alertWaitingTransfers(sql, "roapp_sync_disabled");
+    return result;
+  }
+  let creds = options.creds || null;
+  if (!creds && !options.request) {
+    try {
+      creds = roappCredentialsFromEnv();
+    } catch (error) {
+      await alertWaitingTransfers(
+        sql,
+        error instanceof RoappError ? error.code : "roapp_not_configured",
+      );
+      return result;
+    }
+    if (!creds) {
+      await alertWaitingTransfers(sql, "roapp_not_configured");
+      return result;
+    }
+  }
   const token = randomUUID();
   const deadline = Date.now() + 35_000;
   const lease =
@@ -433,6 +451,13 @@ export const transferProblemText: Record<string, string> = {
   roapp_missing_slot: "Die Anfrage enthält keinen vollständigen Wunschtermin.",
   roapp_invalid_slot: "Der Wunschtermin ist ungültig (z. B. Zeitumstellung).",
   roapp_not_configured: "Die RO-Zugangsdaten fehlen im Server-Environment.",
+  roapp_sync_disabled:
+    "Die Übertragung nach RO ist ausgeschaltet. Im Betriebspanel unter „Übertragung nach RO“ einschalten.",
+  roapp_invalid_entity_map: "ROAPP_ENTITY_MAP im Server-Environment ist kein gültiges JSON.",
+  roapp_invalid_api_base: "ROAPP_API_BASE im Server-Environment ist ungültig.",
+  roapp_invalid_branch_id: "ROAPP_BRANCH_ID im Server-Environment ist ungültig.",
+  roapp_invalid_assignee_id: "ROAPP_ASSIGNEE_ID im Server-Environment ist ungültig.",
+  roapp_invalid_order_type_id: "ROAPP_ORDER_TYPE_ID im Server-Environment ist ungültig.",
   roapp_unreachable: "RO war nicht erreichbar.",
   roapp_runner_expired: "Die Übertragung wurde wegen Zeitüberschreitung unterbrochen.",
   roapp_processing_failed: "Unerwarteter Fehler auf der Website bei der Übertragung.",
@@ -451,12 +476,32 @@ async function alertTransferProblem(sql: Sql, bookingId: number, status: string,
       `Die Website-Anfrage WG-${bookingId} wurde nicht nach RO App übertragen (${code}).`,
       transferProblemText[code] || "Unbekannter Übertragungsfehler.",
       "Die Anfrage ist auf der Website gespeichert und geht nicht verloren.",
-      "Nach der Korrektur im Betriebspanel (Betrieb → Übertragung nach RO) „Erneut übertragen“ wählen.",
+      status === "pending"
+        ? "Nach der Korrektur wird sie automatisch übertragen (Betriebspanel → Übertragung nach RO)."
+        : "Nach der Korrektur im Betriebspanel (Betrieb → Übertragung nach RO) „Erneut übertragen“ wählen.",
     ].join("\n"),
   });
   if (id)
     await sql`insert into automation_events(shop_id, area, event, severity, context)
       values (${SHOP}, 'roapp', 'uebertragung-pruefen', 'error', ${`WG-${bookingId}: ${code}`})`;
+  return Boolean(id);
+}
+
+/** Requests that have waited more than ten minutes because the transfer cannot run. */
+async function alertWaitingTransfers(sql: Sql, code: string) {
+  const scope = roappAccountScope();
+  const rows = await sql<{ booking_id: number }>`select q.booking_id from roapp_sync_queue q
+    where q.shop_id=${SHOP} and q.account_scope=${scope} and q.status='pending'
+      and q.requested_at<now()-interval '10 minutes'
+      and not exists (select 1 from outbound_queue o where o.shop_id=${SHOP}
+        and o.event_key=${`wg-ro-v1:${scope}:`}::text||q.booking_id::text||${`:owner:transfer-pending-${code}`}::text)
+    order by q.booking_id limit 5`;
+  const alerted: string[] = [];
+  for (const row of rows)
+    if (await alertTransferProblem(sql, row.booking_id, "pending", code).catch(() => false))
+      alerted.push(`WG-${row.booking_id}`);
+  if (alerted.length)
+    console.warn("[roapp-sync] transfer_waiting", JSON.stringify({ code, bookings: alerted }));
 }
 
 type TransferRow = {
@@ -526,6 +571,30 @@ export async function logRoappDiagnostics(sql: Sql, now = Date.now()) {
         .map((row) => `WG-${row.booking_id}:${row.status}:${row.last_error || "-"}`),
     }),
   );
+}
+
+/** Owner switch for the transfer (also the emergency stop). Switching on requires a
+ * complete RO configuration, so queued requests cannot fail on missing credentials. */
+export async function setRoappTransferEnabled(sql: Sql, enabled: boolean) {
+  if (enabled) {
+    roappAccountScope();
+    roappCutoverAt();
+    let creds: RoappCredentials | null = null;
+    try {
+      creds = roappCredentialsFromEnv();
+    } catch {
+      creds = null;
+    }
+    if (!creds?.expectedCompanyCreatedAt)
+      throw new Error(
+        "Die RO-Zugangsdaten im Server-Environment sind unvollständig oder ungültig. Übertragung bleibt aus.",
+      );
+  }
+  await sql`insert into shop_settings(shop_id,roapp_sync_enabled) values(${SHOP},${enabled})
+    on conflict(shop_id) do update set roapp_sync_enabled=excluded.roapp_sync_enabled,updated_at=now()`;
+  await sql`insert into automation_events(shop_id, area, event, severity, context)
+    values (${SHOP}, 'roapp', ${enabled ? "uebertragung-eingeschaltet" : "uebertragung-angehalten"}, 'info', null)`;
+  return enabled;
 }
 
 /** Owner action after fixing the cause. The write journal still blocks any write whose

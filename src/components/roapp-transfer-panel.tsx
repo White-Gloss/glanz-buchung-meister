@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
-import { retryRoTransfer, roTransfers } from "@/lib/roapp-transfer.functions";
+import { retryRoTransfer, roTransfers, setRoTransfer } from "@/lib/roapp-transfer.functions";
 
 type Overview = Awaited<ReturnType<typeof roTransfers>>;
 
@@ -43,12 +43,32 @@ export function RoappTransferPanel() {
     }
   }
 
+  async function toggle(enabled: boolean) {
+    if (
+      !enabled &&
+      !window.confirm("Übertragung nach RO anhalten? Neue Anfragen werden gesammelt.")
+    )
+      return;
+    try {
+      await setRoTransfer({ data: { enabled } });
+      setMessage(
+        enabled
+          ? "Übertragung nach RO ist eingeschaltet. Wartende Anfragen werden jetzt übertragen."
+          : "Übertragung nach RO ist angehalten.",
+      );
+      await refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Umschalten fehlgeschlagen.");
+    }
+  }
+
   if (!overview)
     return (
       <p className="mt-8 text-sm text-muted">{message || "Übertragungsstatus wird geladen …"}</p>
     );
   const setupProblems = [
-    !overview.syncEnabled && "Die Übertragung nach RO ist in den Shop-Einstellungen ausgeschaltet.",
+    !overview.syncEnabled &&
+      "Die Übertragung nach RO ist ausgeschaltet. Anfragen warten, bis sie eingeschaltet wird.",
     overview.credentials !== "ok" &&
       (overview.credentials === "invalid"
         ? "Die RO-Zugangsdaten im Server-Environment sind ungültig (z. B. ROAPP_ENTITY_MAP)."
@@ -71,6 +91,17 @@ export function RoappTransferPanel() {
             <li key={problem}>{problem}</li>
           ))}
         </ul>
+      )}
+      {overview.owner && (
+        <div className="mt-3">
+          {overview.syncEnabled ? (
+            <Button variant="ghost" onClick={() => void toggle(false)}>
+              Übertragung anhalten
+            </Button>
+          ) : (
+            <Button onClick={() => void toggle(true)}>Übertragung nach RO einschalten</Button>
+          )}
+        </div>
       )}
       {message && (
         <p role="status" className="mt-4 text-sm">
