@@ -996,3 +996,70 @@ test("billing address from the booking form completes invoices above 250 EUR", a
     await pg.close();
   }
 });
+
+test("a failed RO transfer alerts the owner once, is listed with its reason and can be retried", async () => {
+  const { pg, sql } = await database();
+  const ro = fakeRo();
+  const logs: string[] = [];
+  const warn = console.warn;
+  const info = console.info;
+  console.warn = (...args: unknown[]) => void logs.push(args.join(" "));
+  console.info = (...args: unknown[]) => void logs.push(args.join(" "));
+  try {
+    const { roappTransferOverview, retryRoappTransfer, logRoappDiagnostics } =
+      await import("./roapp-sync.ts");
+    const booking = await insertBooking(sql, { email: "zuordnung@example.invalid" });
+    await queueRoappBooking(sql, booking);
+    const broken = { ...creds, entityMap: {} };
+    assert.equal((await runRoappSync(sql, { request: ro.request, creds: broken })).review, 1);
+    assert.equal(ro.orders.size, 0);
+    await sql`update roapp_sync_queue set next_attempt_at=now()`;
+    await runRoappSync(sql, { request: ro.request, creds: broken });
+    const alerts = await sql<{ subject: string; body: string; to_addr: string }>`
+      select subject,body,to_addr from outbound_queue where event_key like '%:owner:transfer-%'`;
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0].to_addr, "buchung@white-gloss.de");
+    assert.match(
+      alerts[0].subject,
+      new RegExp(`WG-${booking.id}: Anfrage nicht an RO App übertragen`),
+    );
+    assert.match(alerts[0].body, /ROAPP_ENTITY_MAP/);
+    assert.doesNotMatch(alerts[0].body, /zuordnung@example/);
+    assert.ok(
+      logs.some(
+        (line) =>
+          line.includes("[roapp-sync] transfer_failed") &&
+          line.includes(`WG-${booking.id}`) &&
+          line.includes("roapp_catalog_mapping_missing") &&
+          !line.includes("zuordnung@example"),
+      ),
+    );
+
+    const overview = await roappTransferOverview(sql);
+    assert.equal(overview.syncEnabled, true);
+    assert.equal(overview.unqueuedSinceCutover, 0);
+    assert.deepEqual(
+      overview.rows.map((row) => [row.booking_id, row.status, row.last_error]),
+      [[booking.id, "review", "roapp_catalog_mapping_missing"]],
+    );
+    await logRoappDiagnostics(sql, Date.now() + 7_200_000);
+    assert.ok(
+      logs.some(
+        (line) =>
+          line.includes("[roapp-sync] diagnostics") &&
+          line.includes(`WG-${booking.id}:review:roapp_catalog_mapping_missing`),
+      ),
+    );
+
+    // After the owner fixed the mapping, the retry transfers exactly one order.
+    assert.equal(await retryRoappTransfer(sql, booking.id), true);
+    assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 1);
+    assert.equal(ro.orders.size, 1);
+    assert.equal(await retryRoappTransfer(sql, booking.id), false);
+    assert.ok(logs.some((line) => line.includes("[roapp-sync] transferred")));
+  } finally {
+    console.warn = warn;
+    console.info = info;
+    await pg.close();
+  }
+});
