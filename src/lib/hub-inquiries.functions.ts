@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
-import { listHubInquiries } from "@/lib/hub-inquiries";
+import { readOpenInquiries } from "@/lib/hub-inquiries";
 import { requireOperator } from "@/lib/operator";
 
 export const listOpenWebsiteInquiries = createServerFn({ method: "GET" })
@@ -9,5 +9,5 @@ export const listOpenWebsiteInquiries = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await requireOperator(context.userId);
     const sql = await getSql();
-    return { inquiries: await listHubInquiries(sql) };
+    return { inquiries: await readOpenInquiries(sql) };
   });
