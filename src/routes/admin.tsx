@@ -7,6 +7,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getOperatorAccess } from "@/lib/admin.functions";
 import { adminNav } from "@/lib/admin-nav";
 import { site } from "@/data/site";
+import { OpenInquiriesPanel } from "@/components/open-inquiries-panel";
 import { RoappInvoicesPanel } from "@/components/roapp-invoices-panel";
 import { RoappTransferPanel } from "@/components/roapp-transfer-panel";
 
@@ -134,6 +135,7 @@ function AdminShell() {
           <p className="mt-4 text-muted">
             Anfragen, Fotos, Preise und Termine werden in RO App bearbeitet.
           </p>
+          <OpenInquiriesPanel />
           <a
             className="mt-6 inline-block underline"
             href="https://web.roapp.io"
