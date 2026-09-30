@@ -1063,3 +1063,125 @@ test("a failed RO transfer alerts the owner once, is listed with its reason and 
     await pg.close();
   }
 });
+
+test("switched-off transfer is reported, diagnosed without customer data and can be switched on", async () => {
+  const { pg, sql } = await database();
+  const ro = fakeRo();
+  const env = { ...process.env };
+  const logs: string[] = [];
+  const warn = console.warn;
+  console.warn = (...args: unknown[]) => void logs.push(args.join(" "));
+  try {
+    const { setRoappTransferEnabled } = await import("./roapp-sync.ts");
+    const { roappDiagnostics, isLocalDiagnosticsRequest, unmappedCatalog } =
+      await import("./roapp-diagnostics.ts");
+    await sql`update shop_settings set roapp_sync_enabled=false where shop_id='white-gloss'`;
+    const booking = await insertBooking(sql, {
+      email: "wartet@example.invalid",
+      name: "Wanda Wartend",
+    });
+    await queueRoappBooking(sql, booking);
+    await sql`update roapp_sync_queue set requested_at=now()-interval '15 minutes'`;
+
+    // Switched off: nothing reaches RO, the owner is told exactly once.
+    for (let i = 0; i < 2; i++)
+      assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 0);
+    assert.equal(ro.orders.size, 0);
+    const alerts = await sql<{ subject: string; body: string }>`
+      select subject,body from outbound_queue where event_key like '%:owner:transfer-pending-roapp_sync_disabled'`;
+    assert.equal(alerts.length, 1);
+    assert.match(alerts[0].body, /ausgeschaltet/);
+    assert.match(alerts[0].body, /automatisch übertragen/);
+    assert.doesNotMatch(alerts[0].body, /wartet@example|Wanda/);
+    assert.equal(logs.filter((line) => line.includes("[roapp-sync] transfer_waiting")).length, 1);
+
+    // Aggregated diagnostics: switch state, counts and codes, never customer data.
+    const report = await roappDiagnostics(sql, { probe: true, request: async <T>() => ({}) as T });
+    assert.equal(report.backend, "roapp");
+    assert.equal(report.syncEnabled, false);
+    assert.deepEqual(report.queue, { pending: 1 });
+    assert.deepEqual(report.problems, { "pending:-": 1 });
+    assert.equal(report.hoursOldestWaiting, 0);
+    assert.equal(report.probe, "ok");
+    const text = JSON.stringify(report);
+    assert.doesNotMatch(text, /wartet@example|Wanda|\+49|WG-\d/);
+    const denied = await roappDiagnostics(sql, {
+      probe: true,
+      request: async () => {
+        throw new RoappError("roapp_access_denied", { status: 401, review: true });
+      },
+    });
+    assert.equal(denied.probe, "roapp_access_denied:401");
+
+    // Switching on needs complete credentials; afterwards the waiting request is transferred.
+    for (const key of [
+      "ROAPP_API_KEY",
+      "ROAPP_BRANCH_ID",
+      "ROAPP_ASSIGNEE_ID",
+      "ROAPP_ORDER_TYPE_ID",
+    ])
+      delete process.env[key];
+    await assert.rejects(setRoappTransferEnabled(sql, true), /unvollständig/);
+    Object.assign(process.env, {
+      ROAPP_API_KEY: "unused-in-isolated-test",
+      ROAPP_BRANCH_ID: "10",
+      ROAPP_ASSIGNEE_ID: "20",
+      ROAPP_ORDER_TYPE_ID: "30",
+      ROAPP_ENTITY_MAP: JSON.stringify(creds.entityMap),
+      ROAPP_EXPECTED_COMPANY_CREATED_AT: creds.expectedCompanyCreatedAt,
+    });
+    assert.equal(await setRoappTransferEnabled(sql, true), true);
+    assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 1);
+    assert.equal(ro.orders.size, 1);
+    assert.deepEqual((await roappDiagnostics(sql)).queue, { synced: 1 });
+
+    // Missing credentials while switched on are reported the same way.
+    const second = await insertBooking(sql, { email: null });
+    await queueRoappBooking(sql, second);
+    await sql`update roapp_sync_queue set requested_at=now()-interval '15 minutes' where booking_id=${second.id}`;
+    delete process.env.ROAPP_API_KEY;
+    await runRoappSync(sql);
+    const missing = await sql`select 1 from outbound_queue
+      where event_key like ${`%:${second.id}:owner:transfer-pending-roapp_not_configured`}`;
+    assert.equal(missing.length, 1);
+
+    // Loopback gate: only a direct request on the server itself.
+    const headers = (entries: Record<string, string>) => new Headers(entries);
+    assert.equal(isLocalDiagnosticsRequest("127.0.0.1", headers({ host: "127.0.0.1:3000" })), true);
+    assert.equal(
+      isLocalDiagnosticsRequest("::ffff:127.0.0.1", headers({ host: "localhost:3000" })),
+      true,
+    );
+    assert.equal(
+      isLocalDiagnosticsRequest(
+        "127.0.0.1",
+        headers({ host: "white-gloss.de", "x-forwarded-for": "203.0.113.7" }),
+      ),
+      false,
+    );
+    assert.equal(
+      isLocalDiagnosticsRequest(
+        "127.0.0.1",
+        headers({ host: "127.0.0.1:3000", "x-forwarded-for": "127.0.0.1" }),
+      ),
+      false,
+    );
+    assert.equal(
+      isLocalDiagnosticsRequest("203.0.113.7", headers({ host: "127.0.0.1:3000" })),
+      false,
+    );
+    assert.equal(isLocalDiagnosticsRequest(undefined, headers({ host: "127.0.0.1:3000" })), false);
+
+    // Catalog coverage of the documented RO mapping.
+    const template = JSON.parse(await readFile("ops/roapp-entity-map.json", "utf8"));
+    assert.deepEqual(unmappedCatalog(template), []);
+    const gaps = unmappedCatalog({});
+    assert.ok(gaps.includes("basis:kompakt") && gaps.includes("pickup:tier_20"));
+    assert.ok(!gaps.includes("pickup:tier_10"));
+  } finally {
+    console.warn = warn;
+    for (const key of Object.keys(process.env)) if (!(key in env)) delete process.env[key];
+    Object.assign(process.env, env);
+    await pg.close();
+  }
+});

@@ -23,6 +23,12 @@ Stand 29.09.2026. Kein lokales Hosting. Veröffentlichung nur über den freigege
 
 API-Basis ist ausschließlich https://api.roapp.io/v2. API-Schlüssel, Webhook-Secret und Bankdaten liegen nur im geschützten Server-Environment bzw. im DPAPI-Deployment-Profil des Betreibers außerhalb des Repositories.
 
+## Übertragung nach RO: Schalter, Hinweise, Diagnose
+
+- Zusätzlich zu `BOOKING_OPERATIONS=roapp` muss die Übertragung eingeschaltet sein (`shop_settings.roapp_sync_enabled`, Standard: aus). Der Inhaber schaltet sie im Betriebspanel unter „Übertragung nach RO“ ein oder hält sie an. Einschalten ist nur mit vollständigen Zugangsdaten möglich. Wartende Anfragen werden danach automatisch übertragen.
+- Wartet eine Anfrage länger als zehn Minuten, weil die Übertragung aus ist oder Zugangsdaten fehlen, geht einmalig ein Hinweis an buchung@white-gloss.de. Dasselbe gilt für jede Anfrage, die RO ablehnt („Prüfung erforderlich“). Die Mail enthält nur WG-Nummer und Fehlercode.
+- Diagnose ohne Datenbankzugang: Der read-only Inspect-Job („Deploy to IONOS VPS“ per workflow_dispatch) fragt `http://127.0.0.1:3000/api/ro-diagnostics?probe=1` auf dem Server ab und gibt `roapp_diagnostics=` aus. Der Endpunkt antwortet nur auf direkte Loopback-Anfragen ohne Proxy-Header (sonst 404). Er liefert ausschließlich Summen: Betriebsart, Schalter, Konfigurationsstatus (fehlende Variablennamen, nicht zugeordnete Katalogpositionen), Anzahlen je Status und Fehlercode, Stunden seit dem letzten Ereignis und das Ergebnis eines lesenden `GET /company`. Das Actions-Log ist öffentlich; deshalb erscheinen dort keine WG-Nummern, Zeitpunkte oder Kundendaten.
+
 ## Rechnungsautomatik (standardmäßig aus)
 
 Ohne `ROAPP_INVOICE_ENABLED=true` bleibt alles wie bisher: keine Tabellenänderung, keine Rechnung, kein Versand. Wird die Automatik später auf `false` gesetzt (Notstopp), entstehen keine neuen Rechnungen und keine Rechnungsmails mehr; ausgestellte Rechnungen bleiben im Betriebspanel sichtbar, Zahlungen erfassbar und Quittungen zustellbar. Die Release-Prüfung (`/`-Gate) verlangt diese Werte nicht; eine unvollständige Rechnungskonfiguration legt die Website nicht lahm, sondern stoppt nur die Rechnungserstellung und meldet das einmalig an buchung@white-gloss.de.
