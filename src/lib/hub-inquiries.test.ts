@@ -299,3 +299,34 @@ test("hub route: database failure answers 500 without details, never 410", async
   }
   assert.deepEqual(logged, ["[hub] list_failed"]);
 });
+
+test("hub photos: signed preview only, storage path stays out", async () => {
+  process.env.HUB_SYNC_TOKEN = TOKEN;
+  const sql = await database();
+  const booking = await book(sql);
+  const stored = `bookings/${booking.id}/${"ab".repeat(16)}.jpg`;
+  await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
+    values('white-gloss',${booking.id},${stored},'image/jpeg',10,'vorne.jpg','ready')`;
+  await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
+    values('white-gloss',${booking.id},'private/secret-path.jpg','image/jpeg',10,'geheim.jpg','ready')`;
+  const response = await handleHubInquiries(
+    new Request("https://white-gloss.de/api/hub", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${TOKEN}`,
+      },
+      body: JSON.stringify({ action: "photos", id: booking.id }),
+    }),
+    async () => sql,
+    async () => "https://cdn.example.invalid/preview",
+  );
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { photos: { name: string; mime: string; url: string }[] };
+  assert.deepEqual(body.photos, [
+    { name: "vorne.jpg", mime: "image/jpeg", url: "https://cdn.example.invalid/preview" },
+  ]);
+  const raw = JSON.stringify(body);
+  assert.ok(!raw.includes("secret-path"));
+  assert.ok(!raw.includes(stored));
+});
