@@ -247,8 +247,11 @@ describe("Qonto webhook route", () => {
   it("marks the mapped booking paid once and ignores the same event id", async () => {
     const { pg, sql } = await database({ ensureQontoSchema: false });
     assert.equal(
-      (await pg.query("select to_regclass('qonto_webhook_receipts') is not null as present")).rows[0]
-        .present,
+      (
+        await pg.query<{ present: boolean }>(
+          "select to_regclass('qonto_webhook_receipts') is not null as present",
+        )
+      ).rows[0].present,
       false,
     );
     const handle = createQontoWebhookHandler({
