@@ -1064,7 +1064,7 @@ test("a failed RO transfer alerts the owner once, is listed with its reason and 
   }
 });
 
-test("switched-off transfer is reported, diagnosed without customer data and can be switched on", async () => {
+test("paused transfer stays quiet, is diagnosed without customer data and can be switched on", async () => {
   const { pg, sql } = await database();
   const ro = fakeRo();
   const env = { ...process.env };
@@ -1083,17 +1083,15 @@ test("switched-off transfer is reported, diagnosed without customer data and can
     await queueRoappBooking(sql, booking);
     await sql`update roapp_sync_queue set requested_at=now()-interval '15 minutes'`;
 
-    // Switched off: nothing reaches RO, the owner is told exactly once.
+    // Owner pause: nothing reaches RO, the request stays queued and no RO notice is
+    // sent (the website's own new-request mail already informs the owner).
     for (let i = 0; i < 2; i++)
       assert.equal((await runRoappSync(sql, { request: ro.request, creds })).synced, 0);
     assert.equal(ro.orders.size, 0);
-    const alerts = await sql<{ subject: string; body: string }>`
-      select subject,body from outbound_queue where event_key like '%:owner:transfer-pending-roapp_sync_disabled'`;
-    assert.equal(alerts.length, 1);
-    assert.match(alerts[0].body, /ausgeschaltet/);
-    assert.match(alerts[0].body, /automatisch übertragen/);
-    assert.doesNotMatch(alerts[0].body, /wartet@example|Wanda/);
-    assert.equal(logs.filter((line) => line.includes("[roapp-sync] transfer_waiting")).length, 1);
+    const alerts =
+      await sql`select 1 from outbound_queue where event_key like '%:owner:transfer-%'`;
+    assert.equal(alerts.length, 0);
+    assert.equal(logs.filter((line) => line.includes("[roapp-sync] transfer_waiting")).length, 0);
 
     // Aggregated diagnostics: switch state, counts and codes, never customer data.
     const report = await roappDiagnostics(sql, { probe: true, request: async <T>() => ({}) as T });
