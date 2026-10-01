@@ -12,6 +12,14 @@ Die vorhandenen isolierten Flowtests bleiben ausschließlich im Linux-GitHub-
 CI-Job zugelassen; sie dürfen nicht auf den lokalen Rechner verlagert werden.
 Eine Aufhebung erfordert eine ausdrückliche neue Betreiberanweisung.
 
+## Cursor Cloud specific instructions
+
+- Node.js 24 steht über nvm bereit (`nvm install 24`, Alias `default`). `node`, `npm` und `npx` sind zusätzlich unter `/usr/local/cargo/bin` verlinkt, damit sie vor dem mitgelieferten Node 22 liegen.
+- Abhängigkeiten installiert der Cloud-Agent mit `npm ci --ignore-scripts`, wie die GitHub-CI. Der Befehl ist wiederholbar.
+- Nachweis ohne Website-Server: `npm run lint`, `npm run typecheck`, `npm run typecheck:functions`, `npm test`, `npm run build`. Dafür sind keine Produktionsgeheimnisse nötig.
+- Die Betreiberregel oben gilt auf Cloud Agents weiter. Isolierte Flowtests (`npm run test:release`) bleiben im Linux-GitHub-CI-Job.
+- `npm run check:migrations`, `npm run check:rls` und `npm run check:erpnext-approval` brauchen PostgreSQL 16 und gehören nicht zum Start.
+
 # Historischer App-Builder-Vertrag
 
 **The single source of truth** for the App Builder sandbox contract. You are
