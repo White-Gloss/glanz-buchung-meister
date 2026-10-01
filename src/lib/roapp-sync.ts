@@ -306,11 +306,10 @@ export async function runRoappSync(
   const [settings] = await sql<{
     roapp_sync_enabled: boolean;
   }>`select roapp_sync_enabled from shop_settings where shop_id=${SHOP}`;
-  // Waiting requests must never go unnoticed: the owner is told once per request.
-  if (!settings?.roapp_sync_enabled) {
-    await alertWaitingTransfers(sql, "roapp_sync_disabled");
-    return result;
-  }
+  // Owner pause: requests stay queued and are transferred after switching on. The
+  // owner already receives the website's own new-request mail, so no extra notice.
+  if (!settings?.roapp_sync_enabled) return result;
+  // Missing credentials are a fault, not a pause: the owner is told once per request.
   let creds = options.creds || null;
   if (!creds && !options.request) {
     try {
@@ -470,8 +469,6 @@ export const transferProblemText: Record<string, string> = {
   roapp_missing_slot: "Die Anfrage enthält keinen vollständigen Wunschtermin.",
   roapp_invalid_slot: "Der Wunschtermin ist ungültig (z. B. Zeitumstellung).",
   roapp_not_configured: "Die RO-Zugangsdaten fehlen im Server-Environment.",
-  roapp_sync_disabled:
-    "Die Übertragung nach RO ist ausgeschaltet. Im Betriebspanel unter „Übertragung nach RO“ einschalten.",
   roapp_invalid_entity_map: "ROAPP_ENTITY_MAP im Server-Environment ist kein gültiges JSON.",
   roapp_invalid_api_base: "ROAPP_API_BASE im Server-Environment ist ungültig.",
   roapp_invalid_branch_id: "ROAPP_BRANCH_ID im Server-Environment ist ungültig.",
