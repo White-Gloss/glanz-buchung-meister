@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
 import {
   applyQontoNotice,
   createQontoWebhookHandler,
+  ensureQontoWebhookSchema,
   matchClientInvoice,
   matchTransaction,
   qontoSignatureHeader,
@@ -134,7 +134,7 @@ describe("Qonto webhook matching", () => {
   });
 });
 
-async function database() {
+async function database(options: { ensureQontoSchema?: boolean } = {}) {
   const pg = new PGlite();
   await pg.exec(`
     create table bookings (
@@ -163,10 +163,11 @@ async function database() {
       after_data jsonb not null,
       created_at timestamptz not null default now()
     );
+    create table _migrations (
+      name text primary key,
+      applied_at timestamptz not null default now()
+    );
   `);
-  await pg.exec(
-    readFileSync(new URL("../../migrations/0024_qonto_webhook.sql", import.meta.url), "utf8"),
-  );
   const adapter = (
     query: (statement: string, values?: unknown[]) => Promise<{ rows: unknown[] }>,
   ) => {
@@ -184,6 +185,7 @@ async function database() {
   const sql = adapter((statement, values) => pg.query(statement, values));
   sql.transaction = (work) =>
     pg.transaction((tx) => work(adapter((statement, values) => tx.query(statement, values))));
+  if (options.ensureQontoSchema !== false) await ensureQontoWebhookSchema(sql);
   await pg.query(
     `insert into bookings (shop_id, qonto_invoice_id, qonto_invoice_number, qonto_invoice_status, agreed_price_cents, total_cents)
      values ('white-gloss', $1, 'WG-RE-1042', 'unpaid', 43600, 43600)`,
@@ -243,7 +245,12 @@ describe("Qonto webhook route", () => {
   });
 
   it("marks the mapped booking paid once and ignores the same event id", async () => {
-    const { pg, sql } = await database();
+    const { pg, sql } = await database({ ensureQontoSchema: false });
+    assert.equal(
+      (await pg.query("select to_regclass('qonto_webhook_receipts') is not null as present")).rows[0]
+        .present,
+      false,
+    );
     const handle = createQontoWebhookHandler({
       env: { QONTO_WEBHOOK_SECRET: secret },
       now: () => now,
@@ -255,6 +262,10 @@ describe("Qonto webhook route", () => {
     assert.equal((await first.json()).outcome, "paid");
     assert.equal(second.status, 200);
     assert.equal((await second.json()).outcome, "duplicate");
+    assert.deepEqual(
+      (await pg.query("select name from _migrations")).rows,
+      [{ name: "0024_qonto_webhook.sql" }],
+    );
     const [booking] = (
       await pg.query<{
         payment_status: string;

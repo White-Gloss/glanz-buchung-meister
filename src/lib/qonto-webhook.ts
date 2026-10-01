@@ -12,6 +12,31 @@ const EVENT_ID = /^[A-Za-z0-9_-]{8,80}$/;
 export type QontoWebhookOutcome =
   "paid" | "already_paid" | "mirrored" | "unmatched" | "ambiguous" | "ignored" | "duplicate";
 
+const schemaReady = new WeakMap<Sql, Promise<void>>();
+
+export function ensureQontoWebhookSchema(sql: Sql): Promise<void> {
+  const known = schemaReady.get(sql);
+  if (known) return known;
+  const ready = (async () => {
+    await sql`create table if not exists qonto_webhook_receipts (
+      event_id text primary key check (event_id ~ '^[A-Za-z0-9_-]{8,80}$'),
+      event_type text not null check (event_type ~ '^[a-z0-9/_-]{1,48}$'),
+      outcome text not null check (outcome ~ '^[a-z_]{1,32}$'),
+      booking_id integer,
+      received_at timestamptz not null default now()
+    )`;
+    const [registry] = await sql<{ present: boolean }>`
+      select to_regclass('_migrations') is not null as present`;
+    if (registry?.present)
+      await sql`insert into _migrations(name) values('0024_qonto_webhook.sql') on conflict do nothing`;
+  })().catch((error) => {
+    schemaReady.delete(sql);
+    throw error;
+  });
+  schemaReady.set(sql, ready);
+  return ready;
+}
+
 type InvoiceCandidate = {
   id: number;
   qonto_invoice_id: string | null;
@@ -458,8 +483,10 @@ export function createQontoWebhookHandler(options: {
     }
     if (!parsed) return json({ ok: true, outcome: "ignored" });
     try {
+      const sql = await options.getSql();
+      await ensureQontoWebhookSchema(sql);
       const outcome = await applyQontoNotice(
-        await options.getSql(),
+        sql,
         parsed,
         options.now?.() ?? new Date(),
       );
