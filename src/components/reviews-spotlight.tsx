@@ -54,6 +54,12 @@ export function ReviewsSpotlight({ data }: { data?: GoogleReviewsData | null }) 
           </span>
         </a>
         <p className="reviews-source-note">Externer Link zu Google Maps.</p>
+        {data ? (
+          <p className="reviews-source-note">
+            Gesamtbewertung ungefiltert aus unserem Google-Unternehmensprofil. Wir prüfen nicht
+            selbst, ob die Verfasser unsere Leistungen in Anspruch genommen haben.
+          </p>
+        ) : null}
       </div>
     </aside>
   );

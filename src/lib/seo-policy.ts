@@ -29,6 +29,7 @@ export const helperPaths = new Set([
   "/agb",
   "/datenschutz",
   "/widerruf",
+  "/vertrag-widerrufen",
   "/impressum",
   "/barrierefreiheit",
   "/datenloeschung",

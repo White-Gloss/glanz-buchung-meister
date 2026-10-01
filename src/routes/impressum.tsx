@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
@@ -32,9 +32,11 @@ function ImpressumPage() {
         <section>
           <h2 className="font-display text-2xl">Angaben gemäß § 5 DDG</h2>
           <address className="mt-3 not-italic text-muted">
-            <strong className="text-fg">{site.legalName}</strong>
+            <strong className="text-fg">{site.ownerLegalName}</strong>
             <br />
-            Inhaber: {site.owner}
+            Geschäftsbezeichnung: {site.legalName}
+            <br />
+            Rechtsform: {site.legalForm}
             <br />
             {site.street}
             <br />
@@ -60,9 +62,19 @@ function ImpressumPage() {
           </p>
         </section>}
         <section>
+          <h2 className="font-display text-2xl">Vertragsbedingungen und Widerruf</h2>
+          <p className="mt-3 text-muted">
+            Es gelten unsere <Link to="/agb">Allgemeinen Geschäftsbedingungen</Link>.
+            Verbraucherinnen und Verbraucher finden Informationen zum Widerrufsrecht in der{" "}
+            <Link to="/widerruf">Widerrufsbelehrung</Link>. Einen im Fernabsatz geschlossenen
+            Vertrag können Sie online über <Link to="/vertrag-widerrufen">Vertrag widerrufen</Link>{" "}
+            widerrufen.
+          </p>
+        </section>
+        <section>
           <h2 className="font-display text-2xl">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
           <address className="mt-3 not-italic text-muted">
-            {site.owner}
+            {site.ownerLegalName}
             <br />
             {site.street}
             <br />
@@ -85,7 +97,7 @@ function ImpressumPage() {
             bekannt werden, entfernen wir entsprechende Links nach Prüfung.
           </p>
         </section>
-        <p className="text-xs text-subtle">Stand: 28. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 1. Oktober 2026</p>
       </div>
       </div>
     </main>
