@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
+import { createSignedPhotoUrl } from "./booking-photos.ts";
 
 // Read-only pull contract for the Hub: POST {"action":"list"} with
 // "Authorization: Bearer $HUB_SYNC_TOKEN". The route never writes, never calls
@@ -11,6 +12,16 @@ const MAX_BODY = 4096;
 const MAX_INQUIRIES = 40;
 const MAX_NOTE = 1499;
 const MAX_PICKUP_CENTS = 50_000;
+const MAX_PHOTOS = 8;
+const PHOTO_PATH = /^bookings\/[1-9]\d*\/[a-f0-9]{32}\.(?:jpg|png|webp|mp4|webm|mov)$/;
+const PHOTO_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
 /** Pre-acceptance stages. Anything later is accepted, done, rejected or cancelled. */
 const OPEN_STAGES = ["anfrage_eingegangen", "in_pruefung", "kundenrueckmeldung"];
 
@@ -92,19 +103,22 @@ function sameSecret(expected: string, presented: string) {
   return timingSafeEqual(a, b) && presented.length > 0;
 }
 
-async function isListAction(request: Request) {
+async function readBody(request: Request): Promise<{ action: "list" } | { action: "photos"; id: number } | null> {
   try {
     const raw = await request.text();
-    if (raw.length > MAX_BODY) return false;
+    if (raw.length > MAX_BODY) return null;
     const body = JSON.parse(raw) as unknown;
-    return (
-      typeof body === "object" &&
-      body !== null &&
-      !Array.isArray(body) &&
-      (body as { action?: unknown }).action === "list"
-    );
+    if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+    const action = (body as { action?: unknown }).action;
+    if (action === "list") return { action: "list" };
+    if (action === "photos") {
+      const id = Number((body as { id?: unknown }).id);
+      if (!Number.isSafeInteger(id) || id < 1 || id > 1_000_000_000) return null;
+      return { action: "photos", id };
+    }
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -178,6 +192,39 @@ export function toHubInquiry(row: Row): HubInquiry | null {
   };
 }
 
+export async function readCustomerPhotos(
+  sql: Sql,
+  bookingId: number,
+  sign: (path: string) => Promise<string> = createSignedPhotoUrl,
+) {
+  const rows = await sql.query<{ original_name: string | null; storage_path: string | null; mime: string | null }>(
+    `select original_name, storage_path, mime from booking_photos
+     where shop_id = $1 and booking_id = $2 and upload_state = 'ready'
+     order by id
+     limit $3`,
+    [SHOP, bookingId, MAX_PHOTOS],
+  );
+  const photos: { name: string; mime: string; url: string }[] = [];
+  for (const row of rows) {
+    const path = text(row.storage_path);
+    const mime = text(row.mime).toLowerCase();
+    if (!PHOTO_PATH.test(path) || !PHOTO_MIME.has(mime)) continue;
+    let url = "";
+    try {
+      url = await sign(path);
+    } catch {
+      continue;
+    }
+    if (!url.startsWith("https://") || url.length > 2000) continue;
+    photos.push({
+      name: text(row.original_name).replace(/[\r\n]/g, " ").slice(0, 80),
+      mime,
+      url,
+    });
+  }
+  return photos;
+}
+
 /** Open = still a request: not accepted, cancelled, rejected, done or billed anywhere. */
 export async function readOpenInquiries(sql: Sql): Promise<HubInquiry[]> {
   // RO tables and the address columns are partly created at runtime by other
@@ -226,14 +273,20 @@ async function defaultSql() {
 export async function handleHubInquiries(
   request: Request,
   loadSql: () => Promise<Sql> = defaultSql,
+  sign?: (path: string) => Promise<string>,
 ) {
   if (request.method !== "POST") return hubMethodNotAllowed();
   const token = configuredToken();
   if (!token) return json({ error: "not_configured" }, 503);
   if (!sameSecret(token, presentedToken(request))) return json({ error: "unauthorized" }, 401);
-  if (!(await isListAction(request))) return json({ error: "bad_request" }, 400);
+  const action = await readBody(request);
+  if (!action) return json({ error: "bad_request" }, 400);
   try {
-    return json({ inquiries: await readOpenInquiries(await loadSql()) }, 200);
+    const sql = await loadSql();
+    if (action.action === "photos") {
+      return json({ photos: await readCustomerPhotos(sql, action.id, sign) }, 200);
+    }
+    return json({ inquiries: await readOpenInquiries(sql) }, 200);
   } catch {
     // No query text, parameters or customer data in logs.
     console.error("[hub] list_failed");
