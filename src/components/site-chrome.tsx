@@ -547,14 +547,6 @@ export function SiteFooter() {
             </li>
             <li>
               <Link
-                to="/vertrag-widerrufen"
-                className="withdrawal-link link-draw inline-flex min-h-11 items-center font-medium text-fg hover:text-accent"
-              >
-                Vertrag widerrufen
-              </Link>
-            </li>
-            <li>
-              <Link
                 to="/barrierefreiheit"
                 className="link-draw inline-flex min-h-11 items-center hover:text-fg"
               >

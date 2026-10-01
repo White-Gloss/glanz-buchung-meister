@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getBookingStatus } from "@/lib/booking-status.functions";
 const money = (cents: number) =>
@@ -51,37 +50,11 @@ export function BookingStatus({ id, token }: { id: number; token?: string }) {
         </strong>
       </p>
       {data.customerStep && <p className="text-sm text-muted">{data.customerStep.text}</p>}
-      {data.publicUrl && data.customerStep?.linkLabel === "Auftrag prüfen und unterschreiben" && (
-        <p className="text-xs text-muted">
-          Mit Ihrer Annahme und Unterschrift auf der Auftragsseite beauftragen Sie uns verbindlich
-          und zahlungspflichtig zu dem dort genannten Festpreis. Es gelten unsere{" "}
-          <Link to="/agb" className="underline">
-            AGB
-          </Link>
-          . Als Verbraucherin oder Verbraucher haben Sie ein Widerrufsrecht; Einzelheiten stehen
-          in der{" "}
-          <Link to="/widerruf" className="underline">
-            Widerrufsbelehrung
-          </Link>
-          .
-        </p>
-      )}
       {data.publicUrl && data.customerStep?.linkLabel && (
         <p>
           <a className="underline" href={data.publicUrl} target="_blank" rel="noopener noreferrer">
             {data.customerStep.linkLabel}
           </a>
-        </p>
-      )}
-      {data.fixed && !/abgelehnt|storniert/i.test(data.status) && (
-        <p className="text-sm">
-          <Link
-            to="/vertrag-widerrufen"
-            search={{ vorgang: `WG-${id}` }}
-            className="underline"
-          >
-            Vertrag widerrufen
-          </Link>
         </p>
       )}
       {data.updatedAt && (

@@ -145,8 +145,8 @@ Die Bildbewertung unter `/admin/zustand` ist die einzige Stelle, an der
 Fotos aus dem privaten Bucket den Server verlassen. Sie läuft ausschließlich
 auf ausdrücklichen Knopfdruck, nie automatisch beim Eingang einer Meldung.
 Videos und Dateien über rund 3,7 MB werden übersprungen und im Ergebnis
-benannt. Die Datenschutzerklärung (Stand 1. Oktober 2026) nennt keinen
-KI-Dienst — vor einer Aktivierung muss sie um diese Übermittlung ergänzt werden.
+benannt. Die Datenschutzerklärung führt diese Übermittlung in Abschnitt 7
+auf — wird der Assistent abgeschaltet, gehört dieser Abschnitt entfernt.
 
 ## Posteingang im Adminbereich
 
