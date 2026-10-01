@@ -21,7 +21,10 @@ function canonicalLinks(html) {
 
 test("service index and city routes render distinct content with one canonical", async () => {
   for (const [path, heading] of [
-    ["/leistungen/keramikversiegelung", "Keramikversiegelung"],
+    [
+      "/leistungen/keramikversiegelung",
+      "Keramikversiegelung &amp; Langzeitschutz in Horb",
+    ],
     ["/leistungen/keramikversiegelung/nagold", "Keramikversiegelung für Fahrzeuge aus Nagold"],
     [
       "/leistungen/keramikversiegelung/horb-am-neckar",
