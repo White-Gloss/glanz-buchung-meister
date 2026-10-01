@@ -60,7 +60,7 @@ function PrivacyPage() {
             IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, übertragene Datenmenge, Referrer
             sowie Browser- und Betriebssystemangaben in Server-Protokollen. Zum Schutz vor
             Missbrauch begrenzen wir Formularübermittlungen je IP-Adresse; diese Zählung liegt nur
-            im Arbeitsspeicher und verfällt nach wenigen Minuten.
+            im Arbeitsspeicher und wird spätestens nach etwa einer Viertelstunde gelöscht.
           </p>
           <p>
             Zweck ist die sichere, stabile und fehlerfreie Bereitstellung der Website. Die

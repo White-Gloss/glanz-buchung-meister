@@ -103,10 +103,18 @@ test("withdrawal is stored durably, idempotent and delivered as receipt", async 
     assert.equal(first.duplicate, false);
     assert.equal(first.receivedAtLabel, "01.10.2026 um 14:03:04 MESZ");
 
-    const again = await queueWithdrawal(sql, input, new Date("2026-10-01T12:09:00Z"));
+    // A retry with the same ID but edited fields returns the stored declaration, not the edit.
+    const again = await queueWithdrawal(
+      sql,
+      { ...input, name: "Geändert", email: "anders@example.invalid" },
+      new Date("2026-10-01T12:09:00Z"),
+    );
     assert.equal(again.duplicate, true);
     assert.equal(again.reference, first.reference);
     assert.equal(again.receivedAtLabel, first.receivedAtLabel);
+    assert.deepEqual(again.declaration, first.declaration);
+    assert.equal(again.email, "erika@example.invalid");
+    assert.ok(again.declaration.includes("Name: Erika Mustermann"));
 
     const rows = await sql<{
       event_key: string;

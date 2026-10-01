@@ -52,6 +52,9 @@ export type WithdrawalReceipt = {
   reference: string;
   receivedAt: string;
   receivedAtLabel: string;
+  /** Die gespeicherte Erklärung – bei Wiederholungen die ursprüngliche, nie das neue Formular. */
+  declaration: string[];
+  email: string;
   duplicate: boolean;
 };
 
@@ -93,6 +96,7 @@ export function withdrawalDeclaration(input: WithdrawalInput): string[] {
 }
 
 const RECEIVED_LINE = "Eingang der Widerrufserklärung: ";
+const DECLARATION_HEADING = "Inhalt Ihrer Widerrufserklärung:";
 
 export function withdrawalMessages(input: WithdrawalInput, reference: string, receivedAt: Date) {
   const received = formatReceivedAt(receivedAt);
@@ -108,7 +112,7 @@ export function withdrawalMessages(input: WithdrawalInput, reference: string, re
       `${RECEIVED_LINE}${received}`,
       `Referenz: ${reference}`,
       "",
-      "Inhalt Ihrer Widerrufserklärung:",
+      DECLARATION_HEADING,
       ...declaration.map((line) => `  ${line}`),
       "",
       "Diese Nachricht bestätigt den Eingang Ihrer Erklärung. Die Folgen des Widerrufs, insbesondere die Rückzahlung, richten sich nach unserer Widerrufsbelehrung:",
@@ -141,6 +145,18 @@ export function withdrawalMessages(input: WithdrawalInput, reference: string, re
 function receivedLabelFromBody(body: string | null | undefined): string | null {
   const line = body?.split("\n").find((entry) => entry.startsWith(RECEIVED_LINE));
   return line ? line.slice(RECEIVED_LINE.length) : null;
+}
+
+function declarationFromBody(body: string | null | undefined): string[] {
+  const lines = body?.split("\n") ?? [];
+  const start = lines.indexOf(DECLARATION_HEADING);
+  if (start < 0) return [];
+  const declaration: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!line.startsWith("  ")) break;
+    declaration.push(line.slice(2));
+  }
+  return declaration;
 }
 
 /**
@@ -199,18 +215,23 @@ export async function queueWithdrawal(
       reference,
       receivedAt: now.toISOString(),
       receivedAtLabel: messages.received,
+      declaration: withdrawalDeclaration(input),
+      email: input.email.trim(),
       duplicate: false,
     };
   }
-  const [existing] = await sql<{ body: string; created_at: string | Date }>`
-    select body, created_at from outbound_queue
+  const [existing] = await sql<{ body: string; to_addr: string | null; created_at: string | Date }>`
+    select body, to_addr, created_at from outbound_queue
     where shop_id = 'white-gloss' and event_key = ${customerKey}
   `;
-  const createdAt = existing ? new Date(existing.created_at) : now;
+  if (!existing) throw new Error("Widerruf konnte nicht gelesen werden.");
+  const createdAt = new Date(existing.created_at);
   return {
     reference,
     receivedAt: createdAt.toISOString(),
-    receivedAtLabel: receivedLabelFromBody(existing?.body) ?? formatReceivedAt(createdAt),
+    receivedAtLabel: receivedLabelFromBody(existing.body) ?? formatReceivedAt(createdAt),
+    declaration: declarationFromBody(existing.body),
+    email: existing.to_addr ?? "",
     duplicate: true,
   };
 }

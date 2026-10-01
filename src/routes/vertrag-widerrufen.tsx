@@ -46,6 +46,19 @@ function validate(input: {
   return errors;
 }
 
+/** UUID v4 auch für Browser ohne crypto.randomUUID (ältere Safari-/WebView-Versionen). */
+function newWithdrawalRequestId(): string {
+  const source = typeof globalThis.crypto !== "undefined" ? globalThis.crypto : undefined;
+  if (source && typeof source.randomUUID === "function") return source.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (source && typeof source.getRandomValues === "function") source.getRandomValues(bytes);
+  else for (let index = 0; index < bytes.length; index++) bytes[index] = Math.floor(Math.random() * 256);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function WithdrawalFunctionPage() {
   const { vorgang } = Route.useSearch();
   const [name, setName] = useState("");
@@ -54,9 +67,9 @@ function WithdrawalFunctionPage() {
   const [part, setPart] = useState("");
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
-  const [requestId] = useState(() =>
-    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "",
-  );
+  // Die Kennung gehört zu genau einem Formularinhalt: Wiederholungen nach einem
+  // Verbindungsfehler nutzen dieselbe, geänderte Angaben bekommen eine neue.
+  const [attempt, setAttempt] = useState<{ snapshot: string; id: string } | null>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -73,20 +86,21 @@ function WithdrawalFunctionPage() {
       event.currentTarget.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
       return;
     }
+    const data = {
+      name: name.trim(),
+      contract: contract.trim(),
+      scope,
+      part: scope === "teil" ? part.trim() : undefined,
+      email: email.trim(),
+    };
+    const snapshot = JSON.stringify(data);
+    const requestId =
+      attempt?.snapshot === snapshot ? attempt.id : newWithdrawalRequestId();
+    setAttempt({ snapshot, id: requestId });
     setPending(true);
     setError("");
     try {
-      const result = await submitWithdrawal({
-        data: {
-          requestId: requestId || crypto.randomUUID(),
-          name: name.trim(),
-          contract: contract.trim(),
-          scope,
-          part: scope === "teil" ? part.trim() : undefined,
-          email: email.trim(),
-          website,
-        },
-      });
+      const result = await submitWithdrawal({ data: { ...data, requestId, website } });
       setReceipt(result);
     } catch {
       setError(
@@ -141,19 +155,22 @@ function WithdrawalFunctionPage() {
               <dd>{receipt.receivedAtLabel}</dd>
               <dt className="text-fg">Referenz</dt>
               <dd>{receipt.reference}</dd>
-              <dt className="text-fg">Name</dt>
-              <dd>{name.trim()}</dd>
-              <dt className="text-fg">Vertrag</dt>
-              <dd className="break-words">{contract.trim()}</dd>
-              <dt className="text-fg">Umfang</dt>
-              <dd className="break-words">
-                {scope === "gesamt" ? "Gesamter Vertrag" : `Teil des Vertrags: ${part.trim()}`}
-              </dd>
             </dl>
+            <div>
+              <p className="text-fg">Inhalt Ihrer Widerrufserklärung</p>
+              <ul className="mt-2 space-y-1 text-muted">
+                {receipt.declaration.map((line, index) => (
+                  <li key={index} className="break-words">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <p className="text-muted">
-              Eine Eingangsbestätigung mit dem Inhalt Ihrer Erklärung sowie Datum und Uhrzeit des
-              Eingangs senden wir unverzüglich an <strong className="text-fg">{email.trim()}</strong>.
-              Bitte prüfen Sie auch Ihren Spam-Ordner.
+              Eine Eingangsbestätigung mit diesem Inhalt sowie Datum und Uhrzeit des Eingangs
+              senden wir unverzüglich an{" "}
+              <strong className="break-words text-fg">{receipt.email}</strong>. Bitte prüfen Sie
+              auch Ihren Spam-Ordner.
             </p>
           </div>
         ) : (
