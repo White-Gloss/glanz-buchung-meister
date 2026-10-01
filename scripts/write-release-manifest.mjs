@@ -15,6 +15,7 @@ export const RUNTIME_ENSURED_MIGRATIONS = [
   "0017_bitrix_agent.sql",
   "0018_bitrix_workshop_bridge.sql",
   "0023_roapp_invoices.sql",
+  "0024_qonto_webhook.sql",
 ];
 
 /** @param {string[]} names */
