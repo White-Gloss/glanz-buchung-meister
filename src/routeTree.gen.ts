@@ -58,6 +58,7 @@ import { Route as ApiBitrixWorkshopRouteImport } from './routes/api/bitrix-works
 import { Route as ApiGoogleReviewsRouteImport } from './routes/api.google-reviews'
 import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiOperatorRouteImport } from './routes/api.operator'
+import { Route as ApiQontoWebhookRouteImport } from './routes/api/qonto-webhook'
 import { Route as ApiRoCallbackRouteImport } from './routes/api.ro-callback'
 import { Route as ApiRoDiagnosticsRouteImport } from './routes/api.ro-diagnostics'
 import { Route as ApiRoPhotoRouteImport } from './routes/api.ro-photo'
@@ -316,6 +317,11 @@ const ApiOperatorRoute = ApiOperatorRouteImport.update({
   path: '/api/operator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiQontoWebhookRoute = ApiQontoWebhookRouteImport.update({
+  id: '/api/qonto-webhook',
+  path: '/api/qonto-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRoCallbackRoute = ApiRoCallbackRouteImport.update({
   id: '/api/ro-callback',
   path: '/api/ro-callback',
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/qonto-webhook': typeof ApiQontoWebhookRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
@@ -484,6 +491,7 @@ export interface FileRoutesByTo {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/qonto-webhook': typeof ApiQontoWebhookRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
@@ -547,6 +555,7 @@ export interface FileRoutesById {
   '/api/google-reviews': typeof ApiGoogleReviewsRoute
   '/api/hub': typeof ApiHubRoute
   '/api/operator': typeof ApiOperatorRoute
+  '/api/qonto-webhook': typeof ApiQontoWebhookRoute
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
@@ -612,6 +621,7 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/qonto-webhook'
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/qonto-webhook'
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/api/google-reviews'
     | '/api/hub'
     | '/api/operator'
+    | '/api/qonto-webhook'
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
@@ -780,6 +792,7 @@ export interface RootRouteChildren {
   ApiGoogleReviewsRoute: typeof ApiGoogleReviewsRoute
   ApiHubRoute: typeof ApiHubRoute
   ApiOperatorRoute: typeof ApiOperatorRoute
+  ApiQontoWebhookRoute: typeof ApiQontoWebhookRoute
   ApiRoCallbackRoute: typeof ApiRoCallbackRoute
   ApiRoDiagnosticsRoute: typeof ApiRoDiagnosticsRoute
   ApiRoPhotoRoute: typeof ApiRoPhotoRoute
@@ -1133,6 +1146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOperatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/qonto-webhook': {
+      id: '/api/qonto-webhook'
+      path: '/api/qonto-webhook'
+      fullPath: '/api/qonto-webhook'
+      preLoaderRoute: typeof ApiQontoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ro-callback': {
       id: '/api/ro-callback'
       path: '/api/ro-callback'
@@ -1349,6 +1369,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGoogleReviewsRoute: ApiGoogleReviewsRoute,
   ApiHubRoute: ApiHubRoute,
   ApiOperatorRoute: ApiOperatorRoute,
+  ApiQontoWebhookRoute: ApiQontoWebhookRoute,
   ApiRoCallbackRoute: ApiRoCallbackRoute,
   ApiRoDiagnosticsRoute: ApiRoDiagnosticsRoute,
   ApiRoPhotoRoute: ApiRoPhotoRoute,
