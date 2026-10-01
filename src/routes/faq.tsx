@@ -58,7 +58,7 @@ function FaqPage() {
         shot="atelier"
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Antworten vorab"
-        title="Häufige Fragen."
+        title="Häufige Fragen zur Fahrzeugaufbereitung"
         lead="Kosten, Dauer, Keramik, Innenraum – kurz beantwortet."
         crumbs={[
           { label: "Startseite", to: "/" },

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/kontakt")({
   component: KontaktPage,
   head: () =>
     pageHead({
-      title: `Kontakt | ${site.name}`,
+      title: `Kontakt & Anfahrt in Horb am Neckar | ${site.name}`,
       description: `White Gloss Detailing in ${site.city}: Telefon, WhatsApp, E-Mail und Anschrift. Werkstatt ${site.street}.`,
       path: "/kontakt",
       preloadShot: "atelier",
@@ -25,7 +25,7 @@ function KontaktPage() {
         shot="atelier"
         alt={`Werkstatt von White Gloss in ${site.city}`}
         kicker={`Werkstatt ${site.city}`}
-        title="Kontakt."
+        title="Kontakt & Anfahrt nach Horb am Neckar"
         lead="Sie erreichen uns telefonisch, per E-Mail oder WhatsApp und in unserer Werkstatt in Horb am Neckar."
         crumbs={[
           { label: "Startseite", to: "/" },

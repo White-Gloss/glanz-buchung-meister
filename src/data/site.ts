@@ -20,7 +20,7 @@ export const site = {
   instagram: "https://www.instagram.com/white_gloss.detailing",
   instagramHandle: "white_gloss.detailing",
   whatsapp:
-    "https://wa.me/4915233540284?text=Hallo%20White%20Gloss%2C%20ich%20interessiere%20mich%20f%C3%BCr%20eine%20Fahrzeugaufbereitung.",
+    "https://api.whatsapp.com/send?phone=4915233540284&text=Hallo%20White%20Gloss%2C%20ich%20interessiere%20mich%20f%C3%BCr%20eine%20Fahrzeugaufbereitung.",
   whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
   vatNote: "inkl. 19 % MwSt.",
   vatRate: 0.19,
@@ -512,7 +512,7 @@ export const services: ServicePage[] = [
     nav: "Fahrzeugaufbereitung",
     metaTitle: "Fahrzeugaufbereitung: Leistungen in Horb | White Gloss",
     description:
-      "Fahrzeugaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Wir richten uns nach dem Zustand, nicht nach einem Waschstraßenprogramm.",
+      "Fahrzeugaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Individuell nach Fahrzeugzustand, kein Standardprogramm.",
     teaser: "Handwäsche, Innenraumreinigung und Lackpflege passend zu Ihrem Fahrzeug.",
     group: "atelier",
     fromPrice: 149,
@@ -550,7 +550,7 @@ export const services: ServicePage[] = [
   {
     slug: "innenraumreinigung",
     seoNav: "Innenraumreinigung",
-    title: "Innenraumreinigung",
+    title: "Innenraumreinigung & Fahrzeuginnenpflege in Horb",
     nav: "Innenraumreinigung",
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
     description:
@@ -592,7 +592,7 @@ export const services: ServicePage[] = [
   {
     slug: "lackkorrektur",
     seoNav: "Lackkorrektur",
-    title: "Lackkorrektur",
+    title: "Lackkorrektur & Politur in Horb am Neckar",
     nav: "Lackkorrektur",
     metaTitle: "Lackkorrektur & Politur Horb | White Gloss",
     description:
@@ -634,7 +634,7 @@ export const services: ServicePage[] = [
   {
     slug: "keramikversiegelung",
     seoNav: "Keramikversiegelung",
-    title: "Keramikversiegelung",
+    title: "Keramikversiegelung & Langzeitschutz in Horb",
     nav: "Keramikversiegelung",
     metaTitle: "Keramikversiegelung Auto Horb | White Gloss",
     description:
@@ -677,7 +677,7 @@ export const services: ServicePage[] = [
   {
     slug: "lederpflege",
     seoNav: "Lederpflege",
-    title: "Lederpflege",
+    title: "Lederpflege & Lederreinigung im Auto in Horb",
     nav: "Lederpflege",
     metaTitle: "Auto-Lederpflege Horb am Neckar | White Gloss",
     description:
@@ -724,7 +724,7 @@ export const services: ServicePage[] = [
   {
     slug: "leasingrueckgabe",
     seoNav: "Leasingaufbereitung",
-    title: "Leasingrückläufer-Aufbereitung",
+    title: "Aufbereitung vor der Leasingrückgabe in Horb",
     nav: "Leasingaufbereitung",
     metaTitle: "Leasingrückgabe-Aufbereitung Horb | White Gloss",
     description:

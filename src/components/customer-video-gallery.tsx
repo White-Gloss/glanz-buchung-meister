@@ -47,7 +47,12 @@ export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = fa
         {videos.map((video, index) => (
           <li key={video.src} className={video.featured && !compact ? "wg-video-card wg-video-card--featured" : "wg-video-card"}>
             <button type="button" className="wg-video-trigger" onClick={(event) => { triggerRef.current = event.currentTarget; setActive(video); }} aria-labelledby={`${titleId}-preview-${index}`} aria-describedby={`${titleId}-description-${index}`}>
-              <img src={video.poster} alt="" className="wg-video-poster" loading="lazy" />
+              <img
+                src={video.poster}
+                alt={`Video-Vorschau: ${video.title} – ${video.category}`}
+                className="wg-video-poster"
+                loading="lazy"
+              />
               <span className="wg-video-play" aria-hidden><span /></span>
               <span id={`${titleId}-preview-${index}`} className="wg-video-meta"><span>{video.category}</span>{" "}<span>{video.duration}</span></span>
             </button>
