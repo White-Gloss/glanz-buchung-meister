@@ -57,7 +57,6 @@ const tables = [
   "booking_workflow_locks",
   "booking_capacity_claims",
   "whatsapp_webhook_receipts",
-  "qonto_webhook_receipts",
   "odoo_sync_queue",
   "odoo_record_links",
   "odoo_sync_runner",
@@ -114,7 +113,6 @@ const requiredColumns = [
   ["outbound_queue", "legacy_status", "text"],
   ["shop_settings", "notification_worker_last_run_at", "timestamptz"],
   ["whatsapp_webhook_receipts", "event_hash", "text"],
-  ["qonto_webhook_receipts", "event_id", "text"],
 ];
 const SHOP = "white-gloss";
 const DEFAULT_OWNER_EMAIL = "info@white-gloss.de";

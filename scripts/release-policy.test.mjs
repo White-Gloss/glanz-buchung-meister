@@ -8,6 +8,7 @@ import {
   releaseConfigurationProblems,
   schemaCompatibilityProblems,
 } from "./release-policy.mjs";
+import { requiredReleaseMigrations } from "./write-release-manifest.mjs";
 
 test("missing or unsafe runtime settings are rejected without leaking their values", () => {
   const valid = {
@@ -300,6 +301,29 @@ test("real schema detects pending migrations and drift, then passes the complete
         p.includes("upload_token_hash"),
       ),
     );
+  } finally {
+    await db.close();
+  }
+});
+
+test("release readiness gate passes without runtime-ensured migrations such as Qonto webhook receipt schema", async () => {
+  const db = new PGlite();
+  try {
+    const dir = new URL("../migrations/", import.meta.url);
+    const names = (await readdir(dir)).filter((name) => name.endsWith(".sql")).sort();
+    const required = requiredReleaseMigrations(names);
+    assert.equal(required.includes("0024_qonto_webhook.sql"), false);
+    await db.exec("create table _migrations(name text primary key)");
+    for (const name of names.filter((name) => name !== "0024_qonto_webhook.sql")) {
+      await db.exec(await readFile(new URL(name, dir), "utf8"));
+      await db.query("insert into _migrations values ($1)", [name]);
+    }
+    assert.equal(
+      (await db.query("select to_regclass('qonto_webhook_receipts') is not null as present")).rows[0].present,
+      false,
+    );
+    const problems = await checkReleaseSchema((sql) => db.query(sql), required);
+    assert.deepEqual(problems, []);
   } finally {
     await db.close();
   }

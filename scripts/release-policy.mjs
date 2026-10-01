@@ -101,8 +101,7 @@ export const releaseColumnsQuery = `
       'bookings', 'customers', 'booking_photos', 'cms_items', 'inbox_messages',
       'outbound_queue', 'documents', 'agent_commands', 'automation_events',
       'shop_settings', 'user', 'session', 'account', 'verification',
-      'booking_events', 'booking_workflow_locks', 'booking_capacity_claims', 'whatsapp_webhook_receipts',
-      'qonto_webhook_receipts'
+      'booking_events', 'booking_workflow_locks', 'booking_capacity_claims', 'whatsapp_webhook_receipts'
     )`;
 
 // ON CONFLICT(shop_id, phone) needs a usable, immediate, non-partial unique
@@ -186,7 +185,6 @@ export async function checkReleaseSchema(query, migrationNames) {
     ["outbound_queue", "lease_token", "text"],
     ["outbound_queue", "next_attempt_at", "timestamptz"],
     ["whatsapp_webhook_receipts", "event_hash", "text"],
-    ["qonto_webhook_receipts", "event_id", "text"],
     ["booking_photos", "booking_id", "int4"],
     ["customers", "phone", "text"],
     ["user", "email", "text"],
