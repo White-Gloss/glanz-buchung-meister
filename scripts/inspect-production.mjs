@@ -35,6 +35,7 @@ export const expectedMigrations = [
   "0021_bitrix_native_transfer.sql",
   "0022_roapp_account_scope.sql",
   "0023_roapp_invoices.sql",
+  "0024_qonto_webhook.sql",
 ];
 const tables = [
   "_migrations",
@@ -56,6 +57,7 @@ const tables = [
   "booking_workflow_locks",
   "booking_capacity_claims",
   "whatsapp_webhook_receipts",
+  "qonto_webhook_receipts",
   "odoo_sync_queue",
   "odoo_record_links",
   "odoo_sync_runner",
@@ -112,6 +114,7 @@ const requiredColumns = [
   ["outbound_queue", "legacy_status", "text"],
   ["shop_settings", "notification_worker_last_run_at", "timestamptz"],
   ["whatsapp_webhook_receipts", "event_hash", "text"],
+  ["qonto_webhook_receipts", "event_id", "text"],
 ];
 const SHOP = "white-gloss";
 const DEFAULT_OWNER_EMAIL = "info@white-gloss.de";
@@ -202,6 +205,7 @@ export function inspectConfiguration(env) {
     "QONTO_LOGIN",
     "QONTO_SECRET_KEY",
     "QONTO_IBAN",
+    "QONTO_WEBHOOK_SECRET",
     "LEXWARE_API_KEY",
     "VIBE_API_KEY",
     "BITRIX_WEBHOOK_URL",
@@ -492,7 +496,7 @@ export function inspectionSummary(report) {
     `Capacity: ${report.capacity ? `conflicting days=${report.capacity.conflicting_days}; duplicate slots=${report.capacity.duplicate_dropoff_slots}; invalid=${report.capacity.invalid_active_appointments}` : "not checked"}`,
     `Owner: ${owner.selector ?? "not checked"}; exists=${owner.exists === true}; verified=${owner.emailVerified === true}; may-confirm=${owner.canConfirmByIdentity === true}`,
     `Providers: storage=${config?.storageConfigured === true}; mail=${fields.RESEND_API_KEY?.present && fields.MAIL_FROM?.valid ? "configured" : "incomplete"}; WhatsApp fields=${config?.whatsappConfigurationPresent === true}`,
-    `Qonto presence: login=${fields.QONTO_LOGIN?.present === true}; secret=${fields.QONTO_SECRET_KEY?.present === true}; IBAN=${fields.QONTO_IBAN?.present === true}`,
+    `Qonto presence: login=${fields.QONTO_LOGIN?.present === true}; secret=${fields.QONTO_SECRET_KEY?.present === true}; IBAN=${fields.QONTO_IBAN?.present === true}; webhook=${fields.QONTO_WEBHOOK_SECRET?.present === true}`,
     `Lexware presence: key=${fields.LEXWARE_API_KEY?.present === true}`,
     `Bitrix presence: native-webhook=${fields.BITRIX_WEBHOOK_URL?.present === true}; legacy-key=${fields.VIBE_API_KEY?.present === true}`,
     `Worker: last successful run=${report.notificationWorker?.lastSuccessfulRun ?? "not recorded"}`,

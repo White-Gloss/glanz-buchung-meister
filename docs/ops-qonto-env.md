@@ -14,13 +14,22 @@ QONTO_IBAN
 Optional:
 QONTO_API_BASE (default https://thirdparty.qonto.com/v2, no trailing slash)
 QONTO_STAGING_TOKEN (sandbox only)
+QONTO_WEBHOOK_SECRET (HMAC für POST /api/qonto-webhook, nicht der API-Schlüssel)
 
 Auth header format: login:secret (no Bearer, no base64).
 
 ## Scopes
+
 client.read, client.write, client_invoice.read / client_invoices.read, client_invoice.write
 
+## Webhook
+
+Öffentliche URL: `POST https://white-gloss.de/api/qonto-webhook`
+
+Qonto signiert `{zeitstempel}.{roher Body}` mit HMAC-SHA256. Der Stempel steht in `X-Qonto-Signature` als `t=...,v1=...`. Ohne gültigen Stempel antwortet die Route mit 401. Ein `paid`-Ereignis setzt `payment_status` nur, wenn genau eine Buchung über `qonto_invoice_id` oder über Rechnungsnummer plus Betrag getroffen wird. Dieselbe Event-ID wird ignoriert. Der Roh-Body wird nicht gespeichert.
+
 ## Deploy-Check
+
 1. Env speichern und quoten
 2. systemctl restart white-gloss.service
 3. Rebuild so migration 0006_qonto_invoice.sql runs
@@ -29,6 +38,7 @@ client.read, client.write, client_invoice.read / client_invoices.read, client_in
 6. Logs ohne Secrets
 
 ## Nicht tun
+
 - Secrets committen
 - ERPNext Finanzbelege
 - Auto-Mail ohne Admin-Klick

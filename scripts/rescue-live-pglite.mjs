@@ -93,7 +93,8 @@ export async function inspectRuntime(expectedPid) {
     .map((name) => [name, typeof pg[name] === "function"]));
   const tables = ["_migrations", "user", "session", "account", "verification", "bookings",
     "customers", "inbox_messages", "documents", "cms_items", "outbound_queue", "automation_events",
-    "shop_settings", "booking_photos", "booking_events", "whatsapp_webhook_receipts"];
+    "shop_settings", "booking_photos", "booking_events", "whatsapp_webhook_receipts",
+    "qonto_webhook_receipts"];
   for (const table of tables) {
     const exists = await pg.query("SELECT to_regclass($1) IS NOT NULL AS present", [`public.${table}`]);
     if (!exists.rows[0]?.present) continue;
