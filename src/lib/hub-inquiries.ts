@@ -1,9 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 
-// Read-only pull contract for the Hub: POST {"action":"list"} with
-// "Authorization: Bearer $HUB_SYNC_TOKEN". The route never writes, never calls
-// out and never answers 410 (for the Hub, 410 means "route switched off").
+// Read-only pull contract for the Hub: POST {"action":"list"} or
+// {"action":"photos","id":<booking id>} with "Authorization: Bearer
+// $HUB_SYNC_TOKEN". The route never writes, only calls out to storage to sign
+// photo links, and never answers 410 (for the Hub, 410 means "route switched off").
 
 const SHOP = "white-gloss";
 const MIN_TOKEN = 32;
@@ -11,6 +12,9 @@ const MAX_BODY = 4096;
 const MAX_INQUIRIES = 40;
 const MAX_NOTE = 1499;
 const MAX_PICKUP_CENTS = 50_000;
+const MAX_PHOTOS = 8;
+const MAX_PHOTO_NAME = 80;
+const PHOTO_MIME = /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime))$/;
 /** Pre-acceptance stages. Anything later is accepted, done, rejected or cancelled. */
 const OPEN_STAGES = ["anfrage_eingegangen", "in_pruefung", "kundenrueckmeldung"];
 
@@ -92,19 +96,21 @@ function sameSecret(expected: string, presented: string) {
   return timingSafeEqual(a, b) && presented.length > 0;
 }
 
-async function isListAction(request: Request) {
+type HubAction = { action: "list" } | { action: "photos"; id: number };
+
+async function readAction(request: Request): Promise<HubAction | null> {
   try {
     const raw = await request.text();
-    if (raw.length > MAX_BODY) return false;
+    if (raw.length > MAX_BODY) return null;
     const body = JSON.parse(raw) as unknown;
-    return (
-      typeof body === "object" &&
-      body !== null &&
-      !Array.isArray(body) &&
-      (body as { action?: unknown }).action === "list"
-    );
+    if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+    const { action, id } = body as { action?: unknown; id?: unknown };
+    if (action === "list") return { action };
+    if (action === "photos" && Number.isSafeInteger(id) && (id as number) > 0)
+      return { action, id: id as number };
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -218,25 +224,73 @@ export async function readOpenInquiries(sql: Sql): Promise<HubInquiry[]> {
   return rows.map(toHubInquiry).filter((row): row is HubInquiry => row !== null);
 }
 
+export type HubPhoto = { name: string; mime: string; url: string };
+export type SignPhoto = (storagePath: string) => Promise<string>;
+
+/**
+ * Short-lived signed links (10 min) to the ready uploads of one booking, for
+ * the Hub to download once. Bookings of other shops or unknown ids yield [].
+ * A single unsignable file is skipped; if none can be signed it throws.
+ */
+export async function readBookingPhotos(
+  sql: Sql,
+  bookingId: number,
+  sign: SignPhoto,
+): Promise<HubPhoto[]> {
+  const rows = await sql.query<{ storage_path: string; mime: string; original_name: string }>(
+    `select p.storage_path, p.mime, p.original_name
+     from booking_photos p
+     join bookings b on b.id = p.booking_id and b.shop_id = p.shop_id
+     where p.shop_id = $1 and p.booking_id = $2 and p.upload_state = 'ready'
+     order by p.created_at asc, p.id asc
+     limit $3`,
+    [SHOP, bookingId, MAX_PHOTOS],
+  );
+  const usable = rows.filter((row) => PHOTO_MIME.test(row.mime));
+  const signed = await Promise.allSettled(usable.map((row) => sign(row.storage_path)));
+  const photos: HubPhoto[] = [];
+  signed.forEach((result, index) => {
+    if (result.status !== "fulfilled") return;
+    photos.push({
+      name: text(usable[index].original_name)
+        .replace(/[\r\n]/g, " ")
+        .slice(0, MAX_PHOTO_NAME),
+      mime: usable[index].mime,
+      url: result.value,
+    });
+  });
+  if (usable.length > 0 && photos.length === 0) throw new Error("photos_unsignable");
+  return photos;
+}
+
 async function defaultSql() {
   const { getSql } = await import("./db.ts");
   return getSql();
 }
 
+async function defaultSign(storagePath: string) {
+  const { createSignedPhotoUrl } = await import("./booking-photos.ts");
+  return createSignedPhotoUrl(storagePath);
+}
+
 export async function handleHubInquiries(
   request: Request,
   loadSql: () => Promise<Sql> = defaultSql,
+  sign: SignPhoto = defaultSign,
 ) {
   if (request.method !== "POST") return hubMethodNotAllowed();
   const token = configuredToken();
   if (!token) return json({ error: "not_configured" }, 503);
   if (!sameSecret(token, presentedToken(request))) return json({ error: "unauthorized" }, 401);
-  if (!(await isListAction(request))) return json({ error: "bad_request" }, 400);
+  const action = await readAction(request);
+  if (!action) return json({ error: "bad_request" }, 400);
   try {
+    if (action.action === "photos")
+      return json({ photos: await readBookingPhotos(await loadSql(), action.id, sign) }, 200);
     return json({ inquiries: await readOpenInquiries(await loadSql()) }, 200);
   } catch {
-    // No query text, parameters or customer data in logs.
-    console.error("[hub] list_failed");
+    // No query text, parameters, links or customer data in logs.
+    console.error(`[hub] ${action.action}_failed`);
     return json({ error: "unavailable" }, 500);
   }
 }

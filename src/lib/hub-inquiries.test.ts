@@ -4,7 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "./db.ts";
-import { handleHubInquiries } from "./hub-inquiries.ts";
+import { handleHubInquiries, type SignPhoto } from "./hub-inquiries.ts";
 import { saveBookingRequest } from "./booking-workflow.ts";
 import { createRequestUploadCapability } from "./booking-upload-capability.ts";
 import type { PublicBookingInput } from "./booking-schema.ts";
@@ -80,6 +80,9 @@ async function book(sql: Sql, data = form()) {
 function call(
   sql: Sql | null,
   init: { method?: string; auth?: string | null; body?: string } = {},
+  sign: SignPhoto = async () => {
+    throw new Error("storage must not be touched");
+  },
 ): Promise<Response> {
   const headers: Record<string, string> = {
     "content-type": "application/json",
@@ -98,6 +101,7 @@ function call(
       if (!sql) throw new Error("database must not be touched");
       return sql;
     },
+    sign,
   );
 }
 
@@ -143,8 +147,23 @@ test("hub route: configuration, auth, method and action gates", async () => {
     assert.equal(await response.text(), "");
   }
 
-  for (const body of ['{"action":"sync"}', "{}", "[]", "null", "not json", '{"action":"LIST"}'])
+  for (const body of [
+    '{"action":"sync"}',
+    "{}",
+    "[]",
+    "null",
+    "not json",
+    '{"action":"LIST"}',
+    '{"action":"photos"}',
+    '{"action":"photos","id":0}',
+    '{"action":"photos","id":-3}',
+    '{"action":"photos","id":1.5}',
+    '{"action":"photos","id":"7"}',
+    '{"action":"photos","id":9007199254740993}',
+  ])
     assert.equal((await call(null, { body })).status, 400, body);
+  for (const auth of [null, "Bearer wrong"])
+    assert.equal((await call(null, { auth, body: '{"action":"photos","id":1}' })).status, 401);
   assert.deepEqual(await (await call(null, { body: "{}" })).json(), { error: "bad_request" });
 });
 
@@ -298,4 +317,89 @@ test("hub route: database failure answers 500 without details, never 410", async
     console.error = original;
   }
   assert.deepEqual(logged, ["[hub] list_failed"]);
+});
+
+async function addPhoto(
+  sql: Sql,
+  bookingId: number,
+  options: { name?: string; mime?: string; state?: string; shop?: string } = {},
+) {
+  const path = `bookings/${bookingId}/${randomUUID().replaceAll("-", "")}.jpg`;
+  await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
+    values(${options.shop ?? "white-gloss"},${bookingId},${path},${options.mime ?? "image/jpeg"},10,
+      ${options.name ?? "foto.jpg"},${options.state ?? "ready"})`;
+  return path;
+}
+
+const signer: SignPhoto = async (path) =>
+  `https://project.supabase.co/storage/v1/object/sign/condition-photos/${path}?token=t`;
+
+async function photos(sql: Sql, id: number, sign: SignPhoto = signer) {
+  return call(sql, { body: JSON.stringify({ action: "photos", id }) }, sign);
+}
+
+test("hub photos: signed links for ready uploads of one booking, at most 8", async () => {
+  process.env.HUB_SYNC_TOKEN = TOKEN;
+  const sql = await database();
+  const booking = await book(sql);
+  const other = await book(sql, form({ name: "Erika Muster" }));
+
+  let response = await photos(sql, booking.id);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), { photos: [] });
+  assert.deepEqual(await (await photos(sql, 999_999)).json(), { photos: [] });
+
+  const first = await addPhoto(sql, booking.id, { name: "vorne\r\nlinks.jpg" });
+  const video = await addPhoto(sql, booking.id, { name: "x".repeat(120), mime: "video/quicktime" });
+  await addPhoto(sql, booking.id, { state: "pending" });
+  await addPhoto(sql, booking.id, { mime: "application/pdf" });
+  await addPhoto(sql, other.id);
+
+  response = await photos(sql, booking.id);
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { photos: { name: string; mime: string; url: string }[] };
+  assert.deepEqual(body.photos, [
+    { name: "vorne  links.jpg", mime: "image/jpeg", url: await signer(first) },
+    { name: "x".repeat(80), mime: "video/quicktime", url: await signer(video) },
+  ]);
+
+  for (let index = 0; index < 10; index += 1) await addPhoto(sql, other.id);
+  assert.equal(((await (await photos(sql, other.id)).json()) as { photos: [] }).photos.length, 8);
+});
+
+test("hub photos: other shops stay hidden; storage failures answer 500 without links", async () => {
+  process.env.HUB_SYNC_TOKEN = TOKEN;
+  const sql = await database();
+  const booking = await book(sql);
+  await sql`update bookings set shop_id='andere' where id=${booking.id}`;
+  await addPhoto(sql, booking.id, { shop: "andere" });
+  assert.deepEqual(await (await photos(sql, booking.id)).json(), { photos: [] });
+
+  const mine = await book(sql, form({ name: "Erika Muster" }));
+  const kept = await addPhoto(sql, mine.id);
+  const broken = await addPhoto(sql, mine.id);
+  const partial: SignPhoto = async (path) => {
+    if (path === broken) throw new Error(`cannot sign ${path}`);
+    return signer(path);
+  };
+  const ok = (await (await photos(sql, mine.id, partial)).json()) as { photos: { url: string }[] };
+  assert.deepEqual(
+    ok.photos.map((photo) => photo.url),
+    [await signer(kept)],
+  );
+
+  const original = console.error;
+  const logged: unknown[] = [];
+  console.error = (...args: unknown[]) => logged.push(...args);
+  try {
+    const response = await photos(sql, mine.id, async (path) => {
+      throw new Error(`cannot sign ${path}`);
+    });
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { error: "unavailable" });
+  } finally {
+    console.error = original;
+  }
+  assert.deepEqual(logged, ["[hub] photos_failed"]);
 });
