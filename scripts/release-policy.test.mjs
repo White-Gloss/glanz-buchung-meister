@@ -114,7 +114,7 @@ async function withCompleteSchema(check) {
         assert.match(sql.trim(), /^select\b/i, "readiness must perform only SELECTs");
         return db.query(sql);
       }, names);
-    await check(db, inspect);
+    await check(db, inspect, names);
   } finally {
     await db.close();
   }
@@ -134,6 +134,20 @@ test("recorded migrations cannot hide missing auth or booking tables", async () 
         await db.exec("rollback");
       }
     }
+  });
+});
+
+test("Qonto receipt schema is not required before runtime initialization", async () => {
+  await withCompleteSchema(async (db, _inspect, names) => {
+    await db.exec("drop table qonto_webhook_receipts");
+    await db.query("delete from _migrations where name = $1", ["0024_qonto_webhook.sql"]);
+    assert.deepEqual(
+      await checkReleaseSchema(
+        (sql) => db.query(sql),
+        names.filter((name) => name !== "0024_qonto_webhook.sql"),
+      ),
+      [],
+    );
   });
 });
 

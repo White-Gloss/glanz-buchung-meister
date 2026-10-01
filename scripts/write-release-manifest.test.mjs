@@ -6,13 +6,15 @@ import {
   requiredReleaseMigrations,
 } from "./write-release-manifest.mjs";
 
-test("release gate keeps 0013/0014 and does not require runtime-ensured Zoho/Bitrix SQL", async () => {
+test("release gate does not require SQL applied by runtime-ensured integrations", async () => {
   const onDisk = (await readdir(new URL("../migrations/", import.meta.url)))
     .filter((name) => name.endsWith(".sql"))
     .sort();
   const required = requiredReleaseMigrations(onDisk);
   assert.ok(onDisk.includes("0015_zoho_ops.sql"));
   assert.ok(onDisk.includes("0016_bitrix_sync.sql"));
+  assert.ok(onDisk.includes("0024_qonto_webhook.sql"));
+  assert.ok(RUNTIME_ENSURED_MIGRATIONS.includes("0024_qonto_webhook.sql"));
   assert.ok(required.includes("0013_roapp_sync.sql"));
   assert.ok(required.includes("0014_booking_photo_recovery.sql"));
   assert.deepEqual(
