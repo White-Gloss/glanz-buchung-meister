@@ -32,7 +32,6 @@ import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as RatgeberRouteImport } from './routes/ratgeber'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as VertragWiderrufenRouteImport } from './routes/vertrag-widerrufen'
 import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
@@ -186,11 +185,6 @@ const RatgeberRoute = RatgeberRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VertragWiderrufenRoute = VertragWiderrufenRouteImport.update({
-  id: '/vertrag-widerrufen',
-  path: '/vertrag-widerrufen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WiderrufRoute = WiderrufRouteImport.update({
@@ -413,7 +407,6 @@ export interface FileRoutesByFullPath {
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/vertrag-widerrufen': typeof VertragWiderrufenRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -474,7 +467,6 @@ export interface FileRoutesByTo {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/vertrag-widerrufen': typeof VertragWiderrufenRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -539,7 +531,6 @@ export interface FileRoutesById {
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/vertrag-widerrufen': typeof VertragWiderrufenRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -606,7 +597,6 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/ratgeber'
     | '/sitemap.xml'
-    | '/vertrag-widerrufen'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -667,7 +657,6 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/sitemap.xml'
-    | '/vertrag-widerrufen'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -731,7 +720,6 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/ratgeber'
     | '/sitemap.xml'
-    | '/vertrag-widerrufen'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -797,7 +785,6 @@ export interface RootRouteChildren {
   QualitaetRoute: typeof QualitaetRoute
   RatgeberRoute: typeof RatgeberRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  VertragWiderrufenRoute: typeof VertragWiderrufenRoute
   WiderrufRoute: typeof WiderrufRoute
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiAvailabilityRoute: typeof ApiAvailabilityRoute
@@ -975,13 +962,6 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vertrag-widerrufen': {
-      id: '/vertrag-widerrufen'
-      path: '/vertrag-widerrufen'
-      fullPath: '/vertrag-widerrufen'
-      preLoaderRoute: typeof VertragWiderrufenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widerruf': {
@@ -1382,7 +1362,6 @@ const rootRouteChildren: RootRouteChildren = {
   QualitaetRoute: QualitaetRoute,
   RatgeberRoute: RatgeberRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  VertragWiderrufenRoute: VertragWiderrufenRoute,
   WiderrufRoute: WiderrufRoute,
   ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiAvailabilityRoute: ApiAvailabilityRoute,

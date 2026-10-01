@@ -22,18 +22,6 @@ function RatingStars({ rating = 5 }: { rating?: number }) {
   );
 }
 
-/** § 5b Abs. 3 UWG: Hinweis, ob und wie die Echtheit der Bewertungen geprüft wird. */
-export function ReviewSourceNote() {
-  return (
-    <p className="mt-2 text-xs text-subtle">
-      Hinweis zu den Bewertungen: Wir zeigen die Gesamtbewertung und die neuesten Rezensionen aus
-      unserem Google-Unternehmensprofil ungefiltert und unverändert an. Wir prüfen nicht selbst, ob
-      die Verfasser unsere Leistungen in Anspruch genommen haben; Google prüft Rezensionen nach
-      eigenen Richtlinien.
-    </p>
-  );
-}
-
 export function GoogleReviews({ compact = false }: { compact?: boolean }) {
   const { data } = useQuery(
     {
@@ -146,7 +134,6 @@ export function GoogleReviews({ compact = false }: { compact?: boolean }) {
       <p className="mt-3 text-xs text-subtle">
         Externe Links öffnen Google. Auf dieser Seite werden keine Google-Profilbilder geladen.
       </p>
-      <ReviewSourceNote />
     </section>
   );
 }

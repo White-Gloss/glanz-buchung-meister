@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { CONSENT_SETTINGS_EVENT, getStoredConsent, onConsentChange, setStoredConsent } from "@/lib/consent";
 import { loadGoogleTag, stopGoogleTag } from "@/lib/googleTag";
-import { ctaGhost } from "./ui";
+import { ctaGhost, ctaPrimary } from "./ui";
 
 export function CookieSettingsButton() {
   return <button type="button" className="link-draw inline-flex min-h-11 items-center text-left hover:text-fg" onClick={() => window.dispatchEvent(new Event(CONSENT_SETTINGS_EVENT))}>Cookie-Einstellungen</button>;
@@ -115,7 +115,7 @@ export function ConsentBanner() {
             Cookie-Einstellungen
           </p>
           <p id="consent-text" className="text-sm text-fg/80">
-            Mit Ihrer Zustimmung nutzen wir Google Ads und Analytics zur Werbe- und Besucherauswertung. Dabei werden Cookies gesetzt und Daten an Google übertragen, auch in die USA. Die Dienste werden erst nach einem Klick auf „Akzeptieren“ geladen; Ihre Wahl können Sie jederzeit über „Cookie-Einstellungen“ im Fußbereich ändern. Details finden Sie in der{" "}
+            Mit Ihrer Zustimmung nutzen wir Google Ads und Analytics zur Werbe- und Besucherauswertung. Die Dienste werden erst nach einem Klick auf „Akzeptieren“ geladen. Details finden Sie in der{" "}
             <Link to="/datenschutz" className="underline underline-offset-2">
               Datenschutzerklärung
             </Link>
@@ -126,8 +126,7 @@ export function ConsentBanner() {
           <button ref={rejectRef} type="button" onClick={reject} className={ctaGhost}>
             {accepted ? "Einwilligung widerrufen" : "Ablehnen"}
           </button>
-          {/* Gleichwertige Gestaltung: Ablehnen darf nicht schwächer wirken als Akzeptieren. */}
-          <button type="button" onClick={accept} className={ctaGhost}>
+          <button type="button" onClick={accept} className={ctaPrimary}>
             Akzeptieren
           </button>
         </div>
