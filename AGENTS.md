@@ -12,6 +12,12 @@ Die vorhandenen isolierten Flowtests bleiben ausschließlich im Linux-GitHub-
 CI-Job zugelassen; sie dürfen nicht auf den lokalen Rechner verlagert werden.
 Eine Aufhebung erfordert eine ausdrückliche neue Betreiberanweisung.
 
+# Cloud Agents
+
+Node.js 24 und PostgreSQL 16 sind vorbereitet. Abhängigkeiten mit `npm ci --ignore-scripts` installieren.
+Schema-Prüfungen (`npm run check:migrations`, `npm run check:rls`, `npm run check:erpnext-approval`) nutzen das lokale PostgreSQL: `PGHOST=127.0.0.1`, `PGUSER=postgres`, `PGPASSWORD=postgres`.
+Keinen Dev-, Preview-, QA- oder Ersatzserver starten.
+
 # Historischer App-Builder-Vertrag
 
 **The single source of truth** for the App Builder sandbox contract. You are
