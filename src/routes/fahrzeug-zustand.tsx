@@ -32,7 +32,7 @@ function ZustandPage() {
         shot="atelier"
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Ersteinschätzung"
-        title="Zustand prüfen lassen."
+        title="Fahrzeugzustand prüfen lassen"
         lead="Wir geben Ihnen eine kostenlose, unverbindliche Ersteinschätzung. Senden Sie uns eine Beschreibung und passende Fotos Ihres Fahrzeugs."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Zustand prüfen" }]}
         actions={

@@ -360,19 +360,22 @@ const brandVariant = {
 
 export function BrandMark({
   variant,
+  alt,
   decorative = false,
 }: {
   variant: keyof typeof brandVariant;
+  alt?: string;
   decorative?: boolean;
 }) {
   const cfg = brandVariant[variant];
+  const altText = alt ?? (decorative ? "" : `${site.name} Fahrzeugaufbereitung Horb am Neckar`);
   return (
     <picture>
       <source type="image/avif" srcSet={logoAvifSrcSet} sizes={cfg.sizes} />
       <source type="image/webp" srcSet={logoWebpSrcSet} sizes={cfg.sizes} />
       <img
         src={cfg.src}
-        alt={decorative ? "" : site.legalName}
+        alt={altText}
         width={cfg.width}
         height={cfg.height}
         className={cn(

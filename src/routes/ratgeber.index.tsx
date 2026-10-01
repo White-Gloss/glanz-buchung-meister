@@ -78,13 +78,11 @@ function RatgeberIndex() {
       <section className="border-t border-line">
         <div className="gd-split gd-split--duo">
           {articles.map((a) => (
-            <Link
+            <article
               key={a.slug}
-              to="/ratgeber/$slug"
-              params={{ slug: a.slug }}
-              className="block border-b border-line lg:odd:border-r"
+              className="group relative block border-b border-line lg:odd:border-r"
             >
-              <MediaTile src={a.image} alt="">
+              <MediaTile src={a.image} alt={`Titelbild: ${a.title}`}>
                 <p className="kicker">
                   {new Date(a.date).toLocaleDateString("de-DE", {
                     day: "2-digit",
@@ -93,14 +91,22 @@ function RatgeberIndex() {
                   })}{" "}
                   · {a.minutes} Min.
                 </p>
-                <h2 className="heading-2 mt-3 max-w-md">{a.title}</h2>
+                <h2 className="heading-2 mt-3 max-w-md">
+                  <Link
+                    to="/ratgeber/$slug"
+                    params={{ slug: a.slug }}
+                    className="after:absolute after:inset-0 hover:underline"
+                  >
+                    {a.title}
+                  </Link>
+                </h2>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">{a.excerpt}</p>
-                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
+                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg" aria-hidden="true">
                   Lesen
                   <IconArrowRight className="link-arrow size-4" />
                 </span>
               </MediaTile>
-            </Link>
+            </article>
           ))}
           {extra
             .filter((r) => r.slug)
@@ -112,16 +118,22 @@ function RatgeberIndex() {
                 /* ignore */
               }
               return (
-                <Link
+                <article
                   key={r.id}
-                  to="/ratgeber/$slug"
-                  params={{ slug: r.slug as string }}
-                  className="block border-b border-line p-8 lg:odd:border-r"
+                  className="group relative block border-b border-line p-8 lg:odd:border-r"
                 >
                   <p className="kicker">Aktuell</p>
-                  <h2 className="heading-2 mt-3">{r.title}</h2>
+                  <h2 className="heading-2 mt-3">
+                    <Link
+                      to="/ratgeber/$slug"
+                      params={{ slug: r.slug as string }}
+                      className="after:absolute after:inset-0 hover:underline"
+                    >
+                      {r.title}
+                    </Link>
+                  </h2>
                   <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">{excerpt}</p>
-                </Link>
+                </article>
               );
             })}
         </div>

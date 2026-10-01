@@ -59,14 +59,20 @@ function LeistungenIndex() {
         </div>
         <div className="gd-split gd-split--duo">
           {atelier.map((s) => (
-            <Link
+            <article
               key={s.slug}
-              to="/leistungen/$slug"
-              params={{ slug: s.slug }}
-              className="block border-b border-line lg:odd:border-r"
+              className="group relative block border-b border-line lg:odd:border-r"
             >
               <MediaTile src={s.image} alt={s.imageAlt}>
-                <h3 className="heading-2 max-w-md">{s.nav}</h3>
+                <h3 className="heading-2 max-w-md">
+                  <Link
+                    to="/leistungen/$slug"
+                    params={{ slug: s.slug }}
+                    className="after:absolute after:inset-0 hover:underline"
+                  >
+                    {s.nav}
+                  </Link>
+                </h3>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
                   {s.teaser}
                 </p>
@@ -75,12 +81,12 @@ function LeistungenIndex() {
                     ab {money(s.fromPrice)}&nbsp;€<span className="mt-1 block font-sans text-xs text-muted">{site.vatNote}</span>
                   </p>
                 ) : null}
-                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg">
+                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg" aria-hidden="true">
                   Zur Leistung
                   <IconArrowRight className="link-arrow size-4" />
                 </span>
               </MediaTile>
-            </Link>
+            </article>
           ))}
           {extra.map((row) => (
             <article
@@ -93,20 +99,22 @@ function LeistungenIndex() {
               </p>
             </article>
           ))}
-          <Link
-            to="/luxusfahrzeuge"
-            className="block border-b border-line lg:odd:border-r"
-          >
+          <article className="group relative block border-b border-line lg:odd:border-r">
             <MediaTile shot="private" alt="Freigegebenes Kundenfahrzeug nach der Aufbereitung bei White Gloss">
               <p className="kicker">Luxusfahrzeuge</p>
               <h2 className="heading-2 mt-3 max-w-md">
-                Luxusfahrzeuge ab ca. 80.000&nbsp;€
+                <Link
+                  to="/luxusfahrzeuge"
+                  className="after:absolute after:inset-0 hover:underline"
+                >
+                  Luxusfahrzeuge ab ca. 80.000&nbsp;€
+                </Link>
               </h2>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
                 Telefonische Beratung und anschließende Begutachtung vor Ort.
               </p>
             </MediaTile>
-          </Link>
+          </article>
         </div>
       </section>
 
@@ -116,17 +124,19 @@ function LeistungenIndex() {
         <ol className="mt-12 divide-y divide-line border-y border-line">
           {finish.map((s, i) => (
             <li key={s.slug}>
-              <Link
-                to="/leistungen/$slug"
-                params={{ slug: s.slug }}
-                className="lift group gd-pack py-8"
-              >
+              <div className="lift group relative gd-pack py-8">
                 <span className="ga-num font-display text-sm text-subtle tabular-nums">
                   {String(i + 1).padStart(2, "0")}.
                 </span>
                 <span className="ga-pack-copy">
                   <span className="font-display text-3xl tracking-tight sm:text-4xl">
-                    {s.nav}
+                    <Link
+                      to="/leistungen/$slug"
+                      params={{ slug: s.slug }}
+                      className="after:absolute after:inset-0 hover:underline"
+                    >
+                      {s.nav}
+                    </Link>
                   </span>
                   <span className="mt-2 block max-w-lg text-sm leading-relaxed text-muted">
                     {s.teaser}
@@ -146,7 +156,7 @@ function LeistungenIndex() {
                   )}
                   <span className="mt-1 block text-xs text-subtle">{site.vatNote}</span>
                 </span>
-              </Link>
+              </div>
             </li>
           ))}
         </ol>

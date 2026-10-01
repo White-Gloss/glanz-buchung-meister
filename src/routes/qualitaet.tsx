@@ -32,7 +32,7 @@ function QualityPage() {
         shot="finish"
         alt="Lack unter Prüflicht"
         kicker="Ablauf"
-        title="Wie wir arbeiten."
+        title="Wie wir arbeiten: Ablauf der Aufbereitung"
         lead="Ein Auto nach dem anderen. Erst anschauen, dann arbeiten, dann kontrollieren."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Arbeitsweise" }]}
         actions={

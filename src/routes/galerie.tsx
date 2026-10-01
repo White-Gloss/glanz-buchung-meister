@@ -26,7 +26,7 @@ function GaleriePage() {
       <section className="gallery-intro mx-auto max-w-7xl px-4 sm:px-6">
         <nav aria-label="Brotkrumen" className="gallery-crumbs"><Link to="/">Startseite</Link><span aria-hidden>/</span><span aria-current="page">Ergebnisse</span></nav>
         <div className="gallery-intro-heading">
-          <div><p className="kicker">White Gloss · Kundenauftrag</p><h1 className="heading-page">Echte Ergebnisse.</h1></div>
+          <div><p className="kicker">White Gloss · Kundenauftrag</p><h1 className="heading-page">Echte Ergebnisse aus unserer Werkstatt.</h1></div>
           <div><p>Lack, Leder, Felgen. Entdecken Sie unsere Arbeit an einem echten Kundenfahrzeug – in Bildern und kurzen Filmen.</p><Link to="/" hash="buchung" className={ctaPrimary}>Termin anfragen</Link></div>
         </div>
         <figure className="gallery-cover">

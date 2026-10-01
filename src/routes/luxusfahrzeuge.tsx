@@ -48,8 +48,8 @@ function LuxuryPage() {
         shot="hero"
         alt="Schwarzer Klassiker im White Gloss Atelier in Horb am Neckar"
         kicker="Luxusfahrzeuge"
-        title="Fahrzeuge ab etwa 80.000 €"
-        lead="Wir besprechen Ihre Wünsche am Telefon und erstellen nach der Begutachtung ein individuelles Angebot."
+        title="Aufbereitung für Luxus- und Sammlerfahrzeuge"
+        lead="Wir besprechen Ihre Wünsche am Telefon und erstellen nach der Begutachtung ein individuelles Angebot für Fahrzeuge ab etwa 80.000 €."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Luxusfahrzeuge" },

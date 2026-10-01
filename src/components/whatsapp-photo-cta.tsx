@@ -8,7 +8,7 @@ interface WhatsAppPhotoCtaProps {
 export function WhatsAppPhotoCta({ className = "", headingLevel = 2 }: WhatsAppPhotoCtaProps) {
   const Heading = headingLevel === 3 ? "h3" : "h2";
   const whatsappPhotoUrl =
-    "https://wa.me/4915233540284?text=Hallo%20White%20Gloss%2C%20ich%20h%C3%A4tte%20gerne%20eine%20kurze%20Foto-Einsch%C3%A4tzung%20f%C3%BCr%20mein%20Fahrzeug.";
+    "https://api.whatsapp.com/send?phone=4915233540284&text=Hallo%20White%20Gloss%2C%20ich%20h%C3%A4tte%20gerne%20eine%20kurze%20Foto-Einsch%C3%A4tzung%20f%C3%BCr%20mein%20Fahrzeug.";
 
   return (
     <div

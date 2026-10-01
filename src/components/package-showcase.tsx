@@ -64,7 +64,7 @@ export function PackageShowcase() {
                 src={photo.src}
                 srcSet={photo.srcSet}
                 sizes="(min-width: 1440px) 600px, 45vw"
-                alt=""
+                alt={photo.alt}
                 width={photo.width}
                 height={photo.height}
                 loading="lazy"
@@ -112,7 +112,7 @@ export function PackageShowcase() {
                   params={{ slug: packageServiceSlug[pack.id] }}
                   className="atelier-text-link"
                 >
-                  Paket ansehen{" "}
+                  Paket {pack.name} ansehen{" "}
                   <span className="atelier-arrow">
                     <IconArrowRight aria-hidden />
                   </span>

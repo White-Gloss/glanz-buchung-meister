@@ -77,7 +77,7 @@ function AdminShell() {
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-h-11 items-center gap-3">
-            <BrandMark variant="header" decorative />
+            <BrandMark variant="header" alt="White Gloss Administration" />
             <p className="text-xs uppercase tracking-[0.16em] text-subtle">Betrieb</p>
           </div>
           <div className="flex shrink-0 items-center gap-4">

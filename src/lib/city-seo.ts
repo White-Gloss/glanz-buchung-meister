@@ -8,7 +8,7 @@ export function cityPath(city: City) {
 
 export function whatsappForCity(cityName: string) {
   const text = `Hallo White Gloss, ich interessiere mich für eine Fahrzeugaufbereitung in ${cityName} und würde den Aufwand gern anhand von Fotos einschätzen lassen.`;
-  return `https://wa.me/4915233540284?text=${encodeURIComponent(text)}`;
+  return `https://api.whatsapp.com/send?phone=4915233540284&text=${encodeURIComponent(text)}`;
 }
 
 export function serviceCityTitle(serviceName: string, city: City) {
