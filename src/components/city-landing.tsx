@@ -81,8 +81,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
           <p className="kicker mt-5">Mit Hol- und Bringservice</p>
           <h1 className="heading-page mt-4 max-w-4xl">{copy.heading}</h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            Sie suchen eine Autoaufbereitung für Ihr Fahrzeug aus {city.name}? Wir holen es bei
-            Ihnen ab und übernehmen Innenraumreinigung, Lackpflege oder Keramikversiegelung in
+            {city.blurb} Innenraumreinigung, Lackpflege oder Keramikversiegelung machen wir in
             unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -324,7 +323,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
 
       <a
         href={wa}
-        className="fixed inset-x-3 bottom-[max(0.65rem,env(safe-area-inset-bottom))] z-40 flex min-h-14 items-center justify-between gap-3 rounded-full border border-white/15 bg-elevated px-5 text-left shadow-[0_16px_40px_rgb(0_0_0_/_0.45)] lg:hidden"
+        className="city-wa-bar fixed inset-x-3 bottom-[max(0.65rem,env(safe-area-inset-bottom))] z-40 flex min-h-14 items-center justify-between gap-3 rounded-full border border-white/15 bg-elevated px-5 text-left shadow-[0_16px_40px_rgb(0_0_0_/_0.45)] lg:hidden"
         target="_blank"
         rel="noopener noreferrer"
       >
