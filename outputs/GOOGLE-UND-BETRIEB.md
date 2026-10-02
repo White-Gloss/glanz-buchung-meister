@@ -16,7 +16,8 @@ zugeordnet werden. Website-Fakten als Grundlage:
 - Leistungen: Innenraumreinigung, Lackkorrektur, Keramikversiegelung,
   Lederpflege/-reparatur, Dellenentfernung, Leasingaufbereitung und
   Geruchsbehandlung; endgültige Kategorien nur aus der aktuellen Google-Auswahl.
-- Die 13 weiteren Ortsseiten beschreiben Abholgebiete, keine Niederlassungen.
+- Die 13 Ortsseiten umfassen Horb und 12 weitere Orte; sie beschreiben die
+  Werkstatt in Horb und die Abholgebiete, keine weiteren Niederlassungen.
 - Scheinwerferaufbereitung nicht als verfügbar bewerben; im Repository
   weiterhin genehmigungspflichtig und nicht indexierbar.
 
@@ -67,3 +68,8 @@ Keine Platz-1-Zusage und kein gemessener SEO-Erfolg aus einem fehlerfreien Build
 
 Die technischen Änderungen beantworten diese Betriebsfragen nicht. Deshalb
 bleiben die bestehenden Rechtstexte bis zu einer bestätigten Grundlage erhalten.
+
+## Quellen für die vorbereiteten Google-Maßnahmen
+
+- [Google: Lokales Ranking verbessern](https://support.google.com/business/answer/7091?hl=de)
+- [Google: Rezensionen erhalten](https://support.google.com/business/answer/3474122?hl=de)

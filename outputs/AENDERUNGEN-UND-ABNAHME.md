@@ -42,7 +42,7 @@ Fallstudien, Bewertungen, Garantieaussagen oder Publikationsdaten erfunden.
 | 12 | Zugängliche Namen | Instagram enthält bereits alle sichtbaren Texte. Videonamen im Clone eindeutiger; alter Auditbefund nicht pauschal als aktueller Fehler übernommen. |
 | 13 | Buchungsflow | Bestehende serverlose Tests plus isolierte Linux-CI; neue Tastatur-/Fokusprüfung für Video. Vollständige Prüfung mit echtem Screenreader bleibt gesondert auszuweisen. |
 | 14 | Recht/Betrieb | Keine unbestätigten rechtlichen Texte geändert. Abgleich von Medienfreigaben, Widerruf, Auftragsverarbeitung und Löschfristen benötigt bestätigte Betriebsabläufe. |
-| 15 | lastmod/Erreichbarkeit | Sitemap nutzt bereits validierte Änderungsdaten aus dem CMS und belastbaren Fallback. Keine künstlich aktuellen lastmod-Werte gesetzt. |
+| 15 | lastmod/Erreichbarkeit | CMS-Artikel nutzen validierte Änderungsdaten mit belastbarem Fallback. Statische Seiten bleiben ohne belegte Änderungsdaten ohne lastmod. Keine künstlich aktuellen Werte gesetzt. |
 | 16 | Performance | Bestehendes Lazy Loading, lokale Schriften und Klickstart der Kundenvideos erhalten; keine zusätzliche UI-Bibliothek. |
 | 17 | CSP | Verschärfte Report-Only-Policy existiert bereits. Erzwungene Umstellung erst nach Auswertung tatsächlicher CSP-Verstöße und Betriebsprüfung. |
 
