@@ -13,9 +13,9 @@ Stand: 2. Oktober 2026. Kein lokaler Website-Server und keine Veröffentlichung.
 | Polish-Detektor für die 3 geänderten UI-Dateien | Keine Befunde. |
 | Unabhängiger Quellcode-Review | Keine konkreten Bugs/Regressionen im Diff gefunden. |
 | `npm test` unter Windows/Sandbox | Nicht vollständig bestanden: Linux-Deploymenttest benötigt `sha256sum`; Hosting-Guard-/Inspector-Tests liefen in Zeitlimits. Kein Erfolg behauptet; bestehende Linux-CI entscheidet zusätzlich. |
-| Erster lokaler Build | Client und SSR kompilierten; Nitro-Archivierung scheiterte an Sandbox-EPERM bei `readlink C:\Users\info`. Wiederholung ohne Sandbox angefordert, weiterhin ohne Server. |
-| Vollständige bestehende Linux-CI | Ausstehend. |
-| Desktop-/Mobilbilder und Video-Tastaturprüfung | Ausstehend im bestehenden Linux-CI-Job. |
+| Lokaler Build | Erfolgreich nach Wiederholung ohne Sandbox; SSR-Verträge bestanden. Kein Website-Server gestartet. |
+| Bestehende Linux-CI, erster Durchlauf | Installation, Audit, Lint, Typprüfung, vollständige Unit-Tests, Datenbankregeln, Build, SSR und SEO bestanden. Browserprüfung scheiterte an einem zu breiten Dialog-Locator im neuen Test. |
+| Desktop-/Mobilbilder und Video-Tastaturprüfung | Video-Locator auf den benannten Videodialog begrenzt; erneute Prüfung im bestehenden Linux-CI-Job ausstehend. |
 | Live-Domain | Referenz geprüft, neue Version nicht veröffentlicht. |
 
 ## Trennung der Nachweise
