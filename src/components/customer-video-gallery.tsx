@@ -49,7 +49,7 @@ export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = fa
             <button type="button" className="wg-video-trigger" onClick={(event) => { triggerRef.current = event.currentTarget; setActive(video); }} aria-labelledby={`${titleId}-preview-${index}`} aria-describedby={`${titleId}-description-${index}`}>
               <img
                 src={video.poster}
-                alt={`Video-Vorschau: ${video.title} – ${video.category}`}
+                alt=""
                 className="wg-video-poster"
                 loading="lazy"
               />
