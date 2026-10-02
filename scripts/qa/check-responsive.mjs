@@ -97,6 +97,11 @@ try {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
     await page.goto(qaBase + "/", { waitUntil: "networkidle" });
+    const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+    if (await consent.isVisible()) {
+      await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+      await consent.waitFor({ state: "hidden" });
+    }
     const order = await page.evaluate(() => {
       const packages = document.getElementById("pakete");
       const booking = document.getElementById("buchung");
@@ -116,7 +121,7 @@ try {
     await video.press("Enter");
     await page.getByRole("dialog", { name: "Hydrophober Lackschutz", exact: true }).waitFor({ state: "visible" });
     await page.keyboard.press("Escape");
-    await page.getByRole("dialog", { name: "Hydrophober Lackschutz", exact: true }).waitFor({ state: "hidden" });
+    await page.locator(".wg-video-dialog").waitFor({ state: "hidden" });
     assert.equal(await video.evaluate((element) => element === document.activeElement), true, "Return keyboard focus to the video trigger.");
     await page.locator("#kundenergebnisse").screenshot({ path: `.qa-output/review-results-${width}.png` });
     for (let y = 0; y < await page.evaluate(() => document.documentElement.scrollHeight); y += 650) {
