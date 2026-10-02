@@ -8,6 +8,7 @@ import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
 import appCss from "../styles.css?url";
 import refinementCss from "../styles/refinement.css?url";
 import luxuryCss from "../styles/luxury.css?url";
+import heroClearanceCss from "../styles/hero-clearance.css?url";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -46,6 +47,7 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       { rel: "stylesheet", href: refinementCss },
       { rel: "stylesheet", href: luxuryCss },
+      { rel: "stylesheet", href: heroClearanceCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
