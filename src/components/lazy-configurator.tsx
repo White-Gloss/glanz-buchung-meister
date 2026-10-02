@@ -55,6 +55,7 @@ export function LazyConfigurator({
   return (
     <div ref={ref}>
       <noscript>
+        <style>{".lazy-configurator-js { display: none; }"}</style>
         <p className="mb-6 text-muted">
           Für Ihre Terminanfrage erreichen Sie uns telefonisch unter{" "}
           <a href={site.phoneHref} className="underline underline-offset-4">
@@ -62,13 +63,15 @@ export function LazyConfigurator({
           </a>.
         </p>
       </noscript>
-      {ready ? (
-        <Suspense fallback={<Skeleton />}>
-          <Configurator initialPackage={initialPackage} initialCity={initialCity} />
-        </Suspense>
-      ) : (
-        <Skeleton />
-      )}
+      <div className="lazy-configurator-js">
+        {ready ? (
+          <Suspense fallback={<Skeleton />}>
+            <Configurator initialPackage={initialPackage} initialCity={initialCity} />
+          </Suspense>
+        ) : (
+          <Skeleton />
+        )}
+      </div>
     </div>
   );
 }
