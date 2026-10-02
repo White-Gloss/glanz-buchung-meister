@@ -134,6 +134,37 @@ try {
     await page.screenshot({ path: `.qa-output/review-home-${width}.png`, fullPage: true });
     results.push({ path: "/", width, review: true, ...order, videoKeyboardFocusReturned: true });
   }
+  const noJavaScriptContext = await browser.newContext({
+    javaScriptEnabled: false,
+    reducedMotion: "reduce",
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    await noJavaScriptContext.route("**/*", async (route) => {
+      const request = route.request();
+      if (new URL(request.url()).origin !== qaBase || !["GET", "HEAD"].includes(request.method()))
+        return route.abort();
+      return route.continue();
+    });
+    const noJavaScriptPage = await noJavaScriptContext.newPage();
+    await noJavaScriptPage.goto(qaBase + "/", { waitUntil: "networkidle" });
+    const booking = noJavaScriptPage.locator("#buchung");
+    await booking.scrollIntoViewIfNeeded();
+    const phoneFallback = booking.locator('a[href="tel:+4915233540284"]');
+    assert.equal(await phoneFallback.isVisible(), true, "Show the telephone request fallback without JavaScript.");
+    const loading = booking.getByRole("status", { name: "Buchungsformular wird geladen", exact: true });
+    assert.equal(await loading.isVisible(), false, "Do not leave a permanent loading placeholder without JavaScript.");
+    await booking.screenshot({ path: ".qa-output/review-request-no-javascript.png" });
+    results.push({
+      path: "/",
+      width: 390,
+      javaScriptEnabled: false,
+      phoneFallbackVisible: true,
+      loadingPlaceholderVisible: false,
+    });
+  } finally {
+    await noJavaScriptContext.close();
+  }
 } finally {
   await writeFile(".qa-output/responsive-results.json", JSON.stringify(results, null, 2));
   await writeFile(".qa-output/responsive-failures.json", JSON.stringify(failures, null, 2));
