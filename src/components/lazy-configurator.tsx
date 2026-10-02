@@ -1,6 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { PackageId } from "@/data/site";
+import { site } from "@/data/site";
 
 const Configurator = lazy(() =>
   import("@/components/configurator").then((m) => ({ default: m.Configurator })),
@@ -9,6 +10,7 @@ const Configurator = lazy(() =>
 function Skeleton() {
   return (
     <div className="gd-form min-h-[28rem]" role="status" aria-label="Buchungsformular wird geladen">
+      <span className="sr-only">Buchungsformular wird geladen.</span>
       <div className="ga-fields rounded-card border border-line bg-surface" />
       <div className="ga-quote h-fit min-h-80 rounded-card border border-line bg-elevated" />
     </div>
@@ -52,6 +54,14 @@ export function LazyConfigurator({
 
   return (
     <div ref={ref}>
+      <noscript>
+        <p className="mb-6 text-muted">
+          Für Ihre Terminanfrage erreichen Sie uns telefonisch unter{" "}
+          <a href={site.phoneHref} className="underline underline-offset-4">
+            {site.phoneDisplay}
+          </a>.
+        </p>
+      </noscript>
       {ready ? (
         <Suspense fallback={<Skeleton />}>
           <Configurator initialPackage={initialPackage} initialCity={initialCity} />

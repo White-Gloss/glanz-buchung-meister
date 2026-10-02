@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
     const head = pageHead({
       title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
       description:
-        "Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Startpreise ab 149 €, Hol- und Bringservice in 13 Städten.",
+        "Autoaufbereitung und Fahrzeugpflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Ab 149 €, Hol- und Bringservice in 13 Städten.",
       path: "/",
     });
     return { ...head, links: [...head.links, ...scrollFilmPreloads] };
@@ -113,6 +113,22 @@ function Home() {
       </div>
       <PackageShowcase />
 
+      <section
+        id="buchung"
+        className="section booking-section mx-auto max-w-7xl px-4 sm:px-6"
+        aria-labelledby="buchung-heading"
+      >
+        <p className="kicker">Fahrzeug · Paket · Feinschliff</p>
+        <h2 id="buchung-heading" className="heading-2 mt-3">
+          Ihre Aufbereitung.
+        </h2>
+        <p className="booking-intro text-muted">
+          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Sie sehen direkt den voraussichtlichen
+          Preis. Ihre Terminanfrage ist unverbindlich.
+        </p>
+        <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
+      </section>
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <ResultsTeaser />
         <LazyGoogleReviews id="bewertungen" compact />
@@ -186,21 +202,6 @@ function Home() {
       </nav>
 
       <section
-        id="buchung"
-        className="section booking-section mx-auto max-w-7xl px-4 sm:px-6"
-        aria-labelledby="buchung-heading"
-      >
-        <p className="kicker">Fahrzeug · Paket · Feinschliff</p>
-        <h2 id="buchung-heading" className="heading-2 mt-3">
-          Ihre Aufbereitung.
-        </h2>
-        <p className="booking-intro text-muted">
-          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Sie sehen direkt den voraussichtlichen
-          Preis. Ihre Terminanfrage ist unverbindlich.
-        </p>
-        <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
-      </section>
-      <section
         className="home-directory mx-auto max-w-7xl px-4 sm:px-6"
         aria-labelledby="fahrzeugaufbereitung-heading"
       >
@@ -211,7 +212,7 @@ function Home() {
           </h2>
           <p>
             Innenraumreinigung, Lackkorrektur und Keramikversiegelung: Wir beraten Sie zur passenden
-            Aufbereitung in unserer Werkstatt in {site.city}. In der Region bieten wir einen Hol-
+            Autoaufbereitung in unserer Werkstatt in {site.city}. In der Region bieten wir einen Hol-
             und Bringservice an.
           </p>
         </header>

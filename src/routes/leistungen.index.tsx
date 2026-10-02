@@ -6,6 +6,7 @@ import { ctaPrimary } from "@/components/ui";
 import { cities, services, site } from "@/data/site";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { pageHead } from "@/lib/seo";
+import { serializeJsonLd } from "@/lib/json-ld";
 import { money } from "@/lib/utils";
 
 export const Route = createFileRoute("/leistungen/")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/leistungen/")({
     pageHead({
       title: `Leistungen der Fahrzeugaufbereitung | ${site.name}`,
       description:
-        "Leistungen in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
+        "Autoaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
       path: "/leistungen",
       preloadShot: "lack",
     }),
@@ -34,12 +35,30 @@ function LeistungenIndex() {
 
   return (
     <main id="main-content" tabIndex={-1}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Leistungen",
+                item: `${site.origin}/leistungen`,
+              },
+            ],
+          }),
+        }}
+      />
       <PageHero
         shot="lack"
         alt="Poliermaschine auf dem Lack in der Werkstatt Horb"
         kicker="Leistungsspektrum"
         title="Leistungen der Fahrzeugaufbereitung."
-        lead="Innenraumreinigung, Lackpflege, Keramikversiegelung und Reparaturen in unserer Werkstatt in Horb am Neckar."
+        lead="Autoaufbereitung in unserer Werkstatt in Horb am Neckar: Innenraumreinigung, Lackpflege, Keramikversiegelung und Reparaturen."
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen" },

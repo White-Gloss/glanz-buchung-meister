@@ -92,6 +92,48 @@ try {
         failures.push(`${path} @${width}: horizontal overflow ${JSON.stringify(state)}`);
     }
   }
+  // Review the changed request path at phone and desktop sizes. These images
+  // are produced by the existing isolated Linux CI job, never a local server.
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    await page.goto(qaBase + "/", { waitUntil: "networkidle" });
+    const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+    if (await consent.isVisible()) {
+      await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+      await consent.waitFor({ state: "hidden" });
+    }
+    const order = await page.evaluate(() => {
+      const packages = document.getElementById("pakete");
+      const booking = document.getElementById("buchung");
+      return {
+        immediatelyAfterPackages: packages?.nextElementSibling === booking,
+        bookingCount: document.querySelectorAll("#buchung").length,
+      };
+    });
+    assert.equal(order.immediatelyAfterPackages, true, "The request should follow the packages.");
+    assert.equal(order.bookingCount, 1, "Keep one request flow and stable incoming anchor links.");
+    await page.locator(".home-jump-links").getByRole("link", { name: "Termin anfragen", exact: true }).click();
+    await page.getByRole("form", { name: "Ihre Aufbereitung." }).waitFor({ state: "visible" });
+    await page.locator("#buchung").screenshot({ path: `.qa-output/review-request-${width}.png` });
+    await page.locator("#kundenergebnisse").scrollIntoViewIfNeeded();
+    const video = page.getByRole("button", { name: "Video abspielen: Hydrophober Lackschutz Keramikschutz 0:11 Min.", exact: true });
+    await video.focus();
+    await video.press("Enter");
+    await page.getByRole("dialog", { name: "Hydrophober Lackschutz", exact: true }).waitFor({ state: "visible" });
+    await page.keyboard.press("Escape");
+    await page.locator(".wg-video-dialog").waitFor({ state: "hidden" });
+    assert.equal(await video.evaluate((element) => element === document.activeElement), true, "Return keyboard focus to the video trigger.");
+    await page.locator("#kundenergebnisse").screenshot({ path: `.qa-output/review-results-${width}.png` });
+    for (let y = 0; y < await page.evaluate(() => document.documentElement.scrollHeight); y += 650) {
+      await page.evaluate(async (top) => {
+        window.scrollTo(0, top);
+        await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+      }, y);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `.qa-output/review-home-${width}.png`, fullPage: true });
+    results.push({ path: "/", width, review: true, ...order, videoKeyboardFocusReturned: true });
+  }
 } finally {
   await writeFile(".qa-output/responsive-results.json", JSON.stringify(results, null, 2));
   await writeFile(".qa-output/responsive-failures.json", JSON.stringify(failures, null, 2));

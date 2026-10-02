@@ -46,7 +46,8 @@ export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = fa
       >
         {videos.map((video, index) => (
           <li key={video.src} className={video.featured && !compact ? "wg-video-card wg-video-card--featured" : "wg-video-card"}>
-            <button type="button" className="wg-video-trigger" onClick={(event) => { triggerRef.current = event.currentTarget; setActive(video); }} aria-labelledby={`${titleId}-preview-${index}`} aria-describedby={`${titleId}-description-${index}`}>
+            <button type="button" className="wg-video-trigger" onClick={(event) => { triggerRef.current = event.currentTarget; setActive(video); }} aria-labelledby={`${titleId}-play-${index} ${titleId}-title-${index} ${titleId}-preview-${index}`} aria-describedby={!compact ? `${titleId}-description-${index}` : undefined}>
+              <span id={`${titleId}-play-${index}`} className="sr-only">Video abspielen:</span>
               <img
                 src={video.poster}
                 alt=""
@@ -57,8 +58,8 @@ export function CustomerVideoGallery({ videos, compact = false, mobileSwipe = fa
               <span id={`${titleId}-preview-${index}`} className="wg-video-meta"><span>{video.category}</span>{" "}<span>{video.duration}</span></span>
             </button>
             <div className="wg-video-copy">
-              <h3 id={`${titleId}-description-${index}`} className="heading-3">{video.title}</h3>
-              {!compact ? <p>{video.description}</p> : null}
+              <h3 id={`${titleId}-title-${index}`} className="heading-3">{video.title}</h3>
+              {!compact ? <p id={`${titleId}-description-${index}`}>{video.description}</p> : null}
             </div>
           </li>
         ))}

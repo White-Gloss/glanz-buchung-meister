@@ -510,9 +510,9 @@ export const services: ServicePage[] = [
     seoNav: "Fahrzeugaufbereitung",
     title: "Fahrzeugaufbereitung in Horb am Neckar",
     nav: "Fahrzeugaufbereitung",
-    metaTitle: "Fahrzeugaufbereitung: Leistungen in Horb | White Gloss",
+    metaTitle: "Autoaufbereitung: Leistungen in Horb | White Gloss",
     description:
-      "Fahrzeugaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Individuell nach Fahrzeugzustand, kein Standardprogramm.",
+      "Autoaufbereitung in Horb am Neckar: Handwäsche, Innenraum und Lackpflege. Individuell nach Fahrzeugzustand, kein Standardprogramm.",
     teaser: "Handwäsche, Innenraumreinigung und Lackpflege passend zu Ihrem Fahrzeug.",
     group: "atelier",
     fromPrice: 149,
@@ -525,7 +525,7 @@ export const services: ServicePage[] = [
       "Abschließende Kontrolle vor der Fahrzeugübergabe",
     ],
     body: [
-      "Wir prüfen Lack und Innenraum und besprechen Ihre Wünsche. So legen wir gemeinsam fest, welche Reinigung und Pflege Ihr Fahrzeug benötigt.",
+      "Bei der Autoaufbereitung prüfen wir Lack und Innenraum und besprechen Ihre Wünsche. So legen wir gemeinsam fest, welche Reinigung und Pflege Ihr Fahrzeug benötigt.",
       "Die Arbeit bleibt in Horb. Aus 13 Städten holen wir das Auto ab und bringen es wieder.",
     ],
     steps: [
