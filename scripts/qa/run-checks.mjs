@@ -159,7 +159,7 @@ async function waitForReady(server) {
   );
 }
 
-async function runCheck(server, name, args) {
+async function runCheck(server, name, args, timeoutMs = 120_000) {
   requireRunning(server);
   log(`QA: ${name}`);
   const check = startNode(name, args);
@@ -170,10 +170,10 @@ async function runCheck(server, name, args) {
       server.done.then(() => {
         throw new Error("The isolated server stopped during a check.");
       }),
-      delay(120_000, undefined, {
+      delay(timeoutMs, undefined, {
         signal: AbortSignal.any([abort.signal, stageAbort.signal]),
       }).then(() => {
-        throw new Error(`${name} exceeded its 120-second deadline.`);
+        throw new Error(`${name} exceeded its ${timeoutMs / 1000}-second deadline.`);
       }),
     ]);
     if (result.error || result.code !== 0) {
@@ -215,6 +215,12 @@ try {
   await runCheck(server, "seo", ["scripts/qa/check-seo.mjs"]);
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"]);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
+  await runCheck(server, "hero-stability", ["scripts/qa/check-hero-stability.mjs"]);
+  // Keep every existing stage's deadline; reserve 30 seconds under the 8-minute
+  // workflow limit for cleanup/artifacts and bound only the new measurement stage.
+  const lighthouseBudget = Math.min(240_000, 445_000 - (Date.now() - Date.parse(summary.startedAt)));
+  assert.ok(lighthouseBudget >= 30_000, "Insufficient runtime budget for Lighthouse measurements.");
+  await runCheck(server, "lighthouse", ["scripts/qa/check-lighthouse.mjs", `--budget-ms=${lighthouseBudget}`], lighthouseBudget + 5_000);
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";

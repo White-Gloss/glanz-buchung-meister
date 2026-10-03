@@ -1,0 +1,54 @@
+{
+  "source": "https://pagespeed.web.dev/analysis/https-white-gloss-de/5r8hjl3zho",
+  "reportDate": "2026-10-03T22:48:25+02:00",
+  "release": "8e900aa082fa2f502290a85a6036fcc9a0b3a95a",
+  "lighthouse": "13.5.0",
+  "mobile": {
+    "scores": {
+      "performance": 87,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "fcpMs": 1951,
+      "lcpMs": 2401,
+      "tbtMs": 0,
+      "cls": 0.195,
+      "speedIndexMs": 1951
+    },
+    "agentic": "2/3",
+    "layoutShiftCauses": [
+      {
+        "selector": ".scroll-film-copy",
+        "score": 0.188
+      },
+      {
+        "selector": ".scroll-film-bottom",
+        "score": 0.007
+      }
+    ],
+    "renderBlocking": {
+      "requests": 5,
+      "estimatedSavingsMs": 300
+    },
+    "fieldData": "No CrUX data"
+  },
+  "desktop": {
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "fcpMs": 441,
+      "lcpMs": 521,
+      "tbtMs": 0,
+      "cls": 0.028,
+      "speedIndexMs": 534
+    },
+    "agentic": "3/3"
+  },
+  "scope": "Supplied homepage report. Observed in PageSpeed UI; no new-build or field results inferred."
+}

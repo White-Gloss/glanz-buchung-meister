@@ -10,21 +10,11 @@
 }
 [data-shell="public"] .scroll-film-service + .scroll-film-cta { margin-top: 1.25rem; }
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-  bottom: calc(clamp(6rem, 11svh, 7.5rem) + var(--consent-banner-height, 0px));
+  translate: 0 calc(-1 * var(--consent-banner-height, 0px));
 }
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
   transform: translateY(calc(-1 * var(--consent-banner-height, 0px)));
 }
 body[data-consent-banner="open"] .city-wa-bar {
   bottom: calc(var(--consent-banner-height, 0px) + max(0.65rem, env(safe-area-inset-bottom)));
-}
-@media (max-width: 639px) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-    bottom: calc(8rem + var(--consent-banner-height, 0px));
-  }
-}
-@media (max-height: 600px) and (orientation: landscape) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-    bottom: calc(6rem + var(--consent-banner-height, 0px));
-  }
 }
