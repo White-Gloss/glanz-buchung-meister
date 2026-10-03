@@ -15,6 +15,9 @@ body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
   transform: translateY(calc(-1 * var(--consent-banner-height, 0px)));
 }
+body[data-consent-banner="open"] [data-wa-float] {
+  translate: 0 calc(-1 * var(--consent-banner-height, 0px));
+}
 body[data-consent-banner="open"] .city-wa-bar {
   bottom: calc(var(--consent-banner-height, 0px) + max(0.65rem, env(safe-area-inset-bottom)));
 }

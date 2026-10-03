@@ -5,7 +5,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
-import publicCss from "../styles/public.css?url";
+import "../styles/public.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -38,10 +38,6 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      // Blocking stylesheet again: deferred print→all caused ~0.50 CLS on
-      // .hero-follow when critical CSS mismatched full utilities (post-#214).
-      // Pre-#214 PSI had CLS ~0.01 with this pattern.
-      { rel: "stylesheet", href: publicCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
