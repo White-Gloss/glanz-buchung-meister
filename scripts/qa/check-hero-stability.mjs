@@ -155,6 +155,11 @@ try {
       assert.equal(result.initial.storedConsent, null, "First-visit measurement must have no saved decision.");
       assert.equal(result.observerSupported, true, "Layout-shift observation must be supported.");
       assert.ok(result.initial.banner && result.initial.banner.width > 0 && result.initial.banner.height > 0, "The visible consent banner must have measurable bounds.");
+      const { copy, stage, banner, controls } = result.initial;
+      if (!copy || !stage || copy.top < stage.top - 1 || copy.bottom > banner.top + 1)
+        report.failures.push(`${viewport.name}: hero copy is obscured by the header or consent banner`);
+      if (!controls || controls.top < stage.top - 1 || controls.bottom > banner.top + 1)
+        report.failures.push(`${viewport.name}: film controls are outside the visible area above consent`);
       if (result.cls > 0.1) report.failures.push(`${viewport.name}: initial CLS ${result.cls} exceeds 0.1`);
       result.overlap = {};
       for (const name of ["cta", "prices"]) {

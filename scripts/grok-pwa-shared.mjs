@@ -210,7 +210,8 @@ export function shouldInjectGrokExtensions(hostHeader) {
     .split(":")[0]
     .toLowerCase();
   if (!host) return true;
-  if (host === "localhost" || host === "127.0.0.1") return true;
+  // Loopback uses the public production variant; local Grok previews are obsolete.
+  if (host === "localhost" || host === "127.0.0.1") return false;
   if (host === "grok.me" || host.endsWith(".grok.me")) return true;
   if (host === "grok.com" || host.endsWith(".grok.com")) return true;
   return false;

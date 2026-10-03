@@ -213,9 +213,8 @@ html:has([data-shell="public"]) { scroll-padding-top:0; }
   [data-home="polish"] .booking-section { padding-top:1rem; }
 }
 @media(max-height:600px) and (orientation:landscape) {
-  [data-shell="public"] .scroll-film-stage { min-height:34rem; height:34rem; }
+  [data-shell="public"] .scroll-film-stage { min-height:0; height:calc(100svh - var(--site-banner-height) - var(--site-header-height)); }
   [data-shell="public"] .scroll-film[data-motion] { height:auto; }
-  [data-shell="public"] .scroll-film-copy { top:auto; bottom:6rem; }
 }
 @media(prefers-reduced-motion:reduce) {
   [data-shell="public"] .scroll-film[data-motion] { height:auto; }
