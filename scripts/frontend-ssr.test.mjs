@@ -134,8 +134,8 @@ test("public route metadata survives the PWA injector", async () => {
 
 test("Node serves compressed build assets and revalidates mutable media", async () => {
   const { html } = await get("/");
-  const css = html.match(/href="(\/assets\/styles-[^"]+\.css)"/)?.[1];
-  assert.ok(css, "the production document must reference the built stylesheet");
+  const css = html.match(/href="(\/assets\/public-[^"]+\.css)"/)?.[1];
+  assert.ok(css, "the production document must reference the bundled global stylesheet");
   const { response, html: stylesheet } = await get(css, { "accept-encoding": "gzip" });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-encoding"), "gzip");
