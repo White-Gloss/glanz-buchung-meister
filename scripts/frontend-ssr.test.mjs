@@ -142,9 +142,12 @@ test("Node serves compressed build assets and revalidates mutable media", async 
   );
   const globals = stylesheets.filter(({ source }) => source.includes("--color-bg:") && source.includes("@font-face"));
   assert.equal(globals.length, 1, "the build must contain one complete global stylesheet");
-  assert.ok(html.includes(globals[0].source), "SSR must inline the exact compiled global CSS, not a reduced substitute");
+  // Start inlines the compiled stylesheet verbatim apart from the file's
+  // trailing newline, which never reaches the served style element.
+  const inlined = globals[0].source.replace(/\n+$/, "");
+  assert.ok(inlined.length > 1000 && html.includes(inlined), "SSR must inline the exact compiled global CSS, not a reduced substitute");
   assert.doesNotMatch(html, /<link\b[^>]*rel="stylesheet"/, "the initial route CSS must be present synchronously in HTML");
-  assert.match(html, /data-tss-inline-css/, "Start must manage the inline CSS through hydration");
+  assert.match(html, /data-tsr-inline-css/, "Start must manage the inline CSS through hydration");
   const css = `/assets/${globals[0].name}`;
   const { response, html: stylesheet } = await get(css, { "accept-encoding": "gzip" });
   assert.equal(response.status, 200);
