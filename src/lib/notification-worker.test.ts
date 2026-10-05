@@ -38,6 +38,7 @@ async function database(beforeDeliveryMigration?: (sql: Sql) => Promise<void>) {
 }
 
 const keys = [
+  "BOOKING_OPERATIONS",
   "OWNER_EMAIL",
   "OWNER_WHATSAPP",
   "ADMIN_WHATSAPP_NUMBER",
@@ -55,6 +56,7 @@ beforeEach(() => {
     delete process.env[key];
   });
   process.env.OWNER_EMAIL = "owner@example.invalid";
+  process.env.BOOKING_OPERATIONS = "bitrix";
   process.env.ADMIN_WHATSAPP_NUMBER = "+490000111111";
   process.env.MAIL_FROM = "Fixture <sender@example.invalid>";
   previousFetch = globalThis.fetch;
@@ -581,6 +583,50 @@ test("a setup failure after a real attempt preserves the original provider idemp
     assert.equal(blocked.status, "blocked");
     assert.equal(blocked.attempt_count, 1);
     assert.deepEqual(blocked.first_attempt_at, attempt.first_attempt_at);
+  } finally {
+    await pg.close();
+  }
+});
+
+test("panel mode retains old CRM and appointment mail as blocked without delivering or probing it", async () => {
+  process.env.BOOKING_OPERATIONS = "panel";
+  const { pg, sql } = await database();
+  try {
+    const ids = [];
+    for (const eventType of [
+      "wg.ro.reminder",
+      "wg.ro.invoice",
+      "bitrix.invoice",
+      "booking.confirmed",
+      "booking.reminder",
+      "booking.rejected",
+      "booking.cancelled",
+      "booking.rescheduled",
+      "booking.updated",
+      "booking.completed",
+      "booking.no_show",
+      "booking.conflict",
+    ])
+      ids.push(await enqueue(sql, "synthetic-" + eventType, "email", eventType));
+    await enqueue(sql, "synthetic-current-request", "email", "booking.created");
+    let delivered = 0;
+    const result = await runNotificationWorker(sql, {
+      sendEmail: async () => {
+        delivered++;
+        return { id: "synthetic-current-request" };
+      },
+      sendWhatsApp: async () => assert.fail("No CRM delivery"),
+    });
+    assert.equal(delivered, 1);
+    assert.equal(result.skipped, ids.length);
+    for (const id of ids) {
+      const [row] = await sql.query(
+        "select status,last_error_code from outbound_queue where id=$1",
+        [id],
+      );
+      assert.equal(row.status, "blocked");
+      assert.equal(row.last_error_code, "panel_only");
+    }
   } finally {
     await pg.close();
   }

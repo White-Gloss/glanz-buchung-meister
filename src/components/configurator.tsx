@@ -69,6 +69,7 @@ export function Configurator({
   const [vehicleModel, setVehicleModel] = useBookingDraft("vehicleModel", "");
   const [vehiclePlate, setVehiclePlate] = useBookingDraft("vehiclePlate", "");
   const [busyWindows, setBusyWindows] = useState<{ start: string; end: string }[]>([]);
+  const [requestOnly, setRequestOnly] = useState(false);
   const [availabilityState, setAvailabilityState] = useState<"loading" | "ready" | "error">(
     "loading",
   );
@@ -134,12 +135,19 @@ export function Configurator({
           if (!response.ok) throw new Error("unavailable");
           return response.json();
         })
-        .then((payload: { ok: boolean; windows?: { start: string; end: string }[] }) => {
-          if (controller.signal.aborted) return;
-          if (!payload.ok || !Array.isArray(payload.windows)) throw new Error("unavailable");
-          setBusyWindows(payload.windows);
-          setAvailabilityState("ready");
-        })
+        .then(
+          (payload: {
+            ok: boolean;
+            windows?: { start: string; end: string }[];
+            requestOnly?: boolean;
+          }) => {
+            if (controller.signal.aborted) return;
+            if (!payload.ok || !Array.isArray(payload.windows)) throw new Error("unavailable");
+            setBusyWindows(payload.windows);
+            setRequestOnly(payload.requestOnly === true);
+            setAvailabilityState("ready");
+          },
+        )
         .catch(() => {
           if (!controller.signal.aborted) setAvailabilityState("error");
         })
@@ -665,9 +673,11 @@ export function Configurator({
             })}
           </select>
           <p className="text-xs text-muted">
-            {availabilityState === "loading"
-              ? "Freie Zeiträume werden geprüft …"
-              : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+            {requestOnly && availabilityState === "ready"
+              ? "Datum und Uhrzeit sind Wünsche. Ihren verbindlichen Termin wählen und unterschreiben Sie später im persönlichen Angebot."
+              : availabilityState === "loading"
+                ? "Freie Zeiträume werden geprüft …"
+                : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
           </p>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">

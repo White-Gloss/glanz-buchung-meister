@@ -80,6 +80,8 @@ export async function roappDiagnostics(
   options: { probe?: boolean; request?: RoappRequest } = {},
 ) {
   const backend = attempt(bookingBackend);
+  if (backend.value !== "roapp")
+    return { ok: true, backend: backend.value ?? "invalid", disabled: true };
   const scope = attempt(roappAccountScope);
   const cutover = attempt(roappCutoverAt);
   const creds = attempt<RoappCredentials | null>(roappCredentialsFromEnv);

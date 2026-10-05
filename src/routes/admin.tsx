@@ -23,7 +23,7 @@ export const Route = createFileRoute("/admin")({
 function AdminShell() {
   const { user, isPending } = useCurrentUserState();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [backend, setBackend] = useState<"bitrix" | "roapp" | null>(null);
+  const [backend, setBackend] = useState<"panel" | "bitrix" | "roapp" | null>(null);
   const [access, setAccess] = useState<"pending" | "ok" | "denied">("pending");
 
   useEffect(() => {
@@ -95,6 +95,14 @@ function AdminShell() {
         className="sticky top-0 z-40 border-b border-line bg-bg/95 backdrop-blur-sm"
       >
         <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+          {backend === "panel" && (
+            <a
+              className="inline-flex min-h-11 items-center px-3 text-sm underline"
+              href="https://panel.white-gloss.de/"
+            >
+              White-Gloss-Panel öffnen
+            </a>
+          )}
           {backend === "roapp" && (
             <a
               className="inline-flex min-h-11 items-center px-3 text-sm underline"
@@ -106,7 +114,7 @@ function AdminShell() {
             </a>
           )}
           {adminNav
-            .filter((item) => backend !== "roapp" || item.label !== "Bitrix24")
+            .filter((item) => backend === "bitrix" || item.label !== "Bitrix24")
             .map((item) => {
               const Icon = icons[item.label] ?? Settings;
               const active = pathname.startsWith(item.to);
@@ -129,7 +137,17 @@ function AdminShell() {
             })}
         </div>
       </nav>
-      {backend === "roapp" && pathname.startsWith("/admin/bitrix") ? (
+      {backend === "panel" && pathname.startsWith("/admin/bitrix") ? (
+        <main className="mx-auto max-w-4xl px-6 py-10">
+          <h1 className="font-display text-3xl">Aufträge im White-Gloss-Panel</h1>
+          <p className="mt-4 text-muted">
+            Anfragen, Fotos, Preise und Termine werden ausschließlich im Panel bearbeitet.
+          </p>
+          <a className="mt-6 inline-block underline" href="https://panel.white-gloss.de/">
+            White-Gloss-Panel öffnen
+          </a>
+        </main>
+      ) : backend === "roapp" && pathname.startsWith("/admin/bitrix") ? (
         <main className="mx-auto max-w-4xl px-6 py-10">
           <h1 className="font-display text-3xl">Aufträge in RO App</h1>
           <p className="mt-4 text-muted">

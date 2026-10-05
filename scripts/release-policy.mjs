@@ -5,9 +5,9 @@ export function releaseConfigurationProblems(env) {
   const value = (key) => env[key]?.trim() || "";
   const problems = [];
   const backend = value("BOOKING_OPERATIONS");
-  if (!["bitrix", "roapp"].includes(backend))
+  if (!["panel", "bitrix", "roapp"].includes(backend))
     problems.push(
-      "BOOKING_OPERATIONS muss für den Produktivbetrieb bitrix oder roapp sein.",
+      "BOOKING_OPERATIONS muss für den Produktivbetrieb panel, bitrix oder roapp sein.",
     );
   if (backend === "roapp") {
     if (!value("ROAPP_API_KEY")) problems.push("ROAPP_API_KEY fehlt.");

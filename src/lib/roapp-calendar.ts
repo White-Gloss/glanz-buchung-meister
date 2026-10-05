@@ -1,4 +1,4 @@
-import { roappAccountScope } from "./booking-backend.ts";
+import { roappAccountScope, roappOnlyEnabled } from "./booking-backend.ts";
 import { createRoappClient, roappCredentialsFromEnv, type RoappRequest } from "./roapp.ts";
 
 type Window = { start: string; end: string; resourceId: number };
@@ -121,6 +121,7 @@ export async function readRoBookings(request: RoappRequest, branchId: number): P
 let snapshot: { key: string; windows: Window[]; until: number } | undefined;
 let pending: { key: string; promise: Promise<Window[]> } | undefined;
 export async function roappBusyWindows(from: string, to: string): Promise<Window[]> {
+  if (!roappOnlyEnabled()) return [];
   const credentials = roappCredentialsFromEnv();
   if (!credentials) throw new Error("roapp_calendar_not_configured");
   const key = [

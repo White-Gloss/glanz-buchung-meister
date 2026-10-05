@@ -163,6 +163,7 @@ export async function validateRoLifecycle(
   },
   request?: RoappRequest,
 ): Promise<string | false> {
+  if (!roappOnlyEnabled()) return false;
   if (
     !message.booking_id ||
     !approvedRoLifecycleMessage(message.event_key, message.event_type || "")

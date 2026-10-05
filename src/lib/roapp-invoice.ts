@@ -777,6 +777,7 @@ export async function runRoInvoices(
 
 /** Owner action after checking RO data: retry an invoice that waits or needs review. */
 export async function retryRoInvoice(sql: Sql, bookingId: number) {
+  if (!roappOnlyEnabled()) return false;
   if (!(await invoiceTablesExist(sql))) return false;
   const rows =
     await sql`update roapp_invoices set status='geplant',reason=null,attempts=0,due_at=now(),updated_at=now()
@@ -800,6 +801,8 @@ export async function recordRoInvoicePayment(
   input: PaymentInput,
   today = berlinCalendarDate(),
 ) {
+  if (!roappOnlyEnabled())
+    throw new Error("RO App ist ausgeschaltet. Zahlungen bitte im Panel bearbeiten.");
   if (!(await invoiceTablesExist(sql))) throw new Error("Rechnung nicht gefunden.");
   if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0)
     throw new Error("Bitte einen gültigen Betrag eingeben.");
@@ -909,6 +912,7 @@ export async function validateRoInvoiceMessage(
     to_addr: string | null;
   },
 ) {
+  if (!roappOnlyEnabled()) return false;
   if (!message.booking_id || !approvedRoInvoiceMessage(message.event_key, message.event_type || ""))
     return false;
   const stampValue = message.event_key.split(":")[4];

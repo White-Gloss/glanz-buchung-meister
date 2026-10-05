@@ -98,6 +98,8 @@ test("production gate accepts configured RO App and rejects incomplete or retire
     assert.doesNotMatch(issues.join(""), /private-/);
   }
   assert.deepEqual(releaseConfigurationProblems({ ...base, BOOKING_OPERATIONS: "bitrix" }), []);
+  // Panel mode does not require credentials or configuration for retired CRMs.
+  assert.deepEqual(releaseConfigurationProblems({ ...base, BOOKING_OPERATIONS: "panel" }), []);
 });
 
 async function withCompleteSchema(check) {

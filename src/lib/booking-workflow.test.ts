@@ -1,3 +1,5 @@
+// Explicit legacy mode keeps regression coverage separate from the panel default.
+process.env.BOOKING_OPERATIONS = "bitrix";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFile, readdir } from "node:fs/promises";
@@ -290,13 +292,13 @@ test("website booking queues Bitrix without numbered 0015/0016 already applied",
   }
 });
 
-for (const mode of ["bitrix", "roapp", ""])
-  test(`Only the selected CRM receives bookings: ${mode || "default Bitrix"}`, async () => {
+for (const mode of ["bitrix", "roapp", "panel", ""])
+  test(`Only the selected CRM receives bookings: ${mode || "default panel"}`, async () => {
     const { pg, sql } = await database();
     const previousMode = process.env.BOOKING_OPERATIONS;
     process.env.BOOKING_OPERATIONS = mode;
-    process.env.ROAPP_ACCOUNT_SCOPE='workflow-test-account';
-    process.env.ROAPP_CUTOVER_AT='2020-01-01T00:00:00Z';
+    process.env.ROAPP_ACCOUNT_SCOPE = "workflow-test-account";
+    process.env.ROAPP_CUTOVER_AT = "2020-01-01T00:00:00Z";
     try {
       const rows = async (table: string, id: number) => {
         const [exists] = await sql<{
@@ -306,10 +308,16 @@ for (const mode of ["bitrix", "roapp", ""])
         return (await sql.query(`select 1 from ${table} where booking_id=$1`, [id])).length;
       };
       const created = await create(sql);
-      if(mode==='roapp') await assert.rejects(confirmBookingManually(sql,created.id,1,'owner'),/RO-Auftrag/);
-      else await confirmBookingManually(sql, created.id, 1, "owner");
-      assert.equal(await rows("bitrix_sync_queue", created.id),mode==='roapp'?0:1);
-      assert.equal(await rows("roapp_sync_queue", created.id),mode==='roapp'?1:0);
+      if (mode === "roapp")
+        await assert.rejects(confirmBookingManually(sql, created.id, 1, "owner"), /RO-Auftrag/);
+      else if (mode === "bitrix") await confirmBookingManually(sql, created.id, 1, "owner");
+      else
+        await assert.rejects(
+          confirmBookingManually(sql, created.id, 1, "owner"),
+          /White-Gloss-Panel/,
+        );
+      assert.equal(await rows("bitrix_sync_queue", created.id), mode === "bitrix" ? 1 : 0);
+      assert.equal(await rows("roapp_sync_queue", created.id), mode === "roapp" ? 1 : 0);
       for (const table of [
         "zoho_job_queue",
         "zoho_sync_queue",

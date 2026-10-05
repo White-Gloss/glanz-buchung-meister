@@ -22,7 +22,7 @@ test("RO mode prevents Bitrix queueing, reads and writes even with injected cred
   }
 });
 test("backend and account configuration fail closed", () => {
-  assert.equal(bookingBackend(), "bitrix");
+  assert.equal(bookingBackend(), "panel");
   process.env.BOOKING_OPERATIONS = "typo";
   assert.throws(() => bookingBackend(), /invalid/);
   delete process.env.BOOKING_OPERATIONS;

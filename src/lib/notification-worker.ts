@@ -1,3 +1,4 @@
+import { panelOnlyEnabled } from "./booking-backend.ts";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { Sql } from "./db.ts";
 import {
@@ -120,6 +121,7 @@ export async function recordNotificationAttention(
 
 /** Reminders are derived only from already confirmed bookings; no status writes. */
 export async function scheduleDueBookingReminders(sql: Sql): Promise<number> {
+  if (panelOnlyEnabled()) return 0;
   const rows = await sql<NotificationBooking>`
     select id, customer_name, email, phone, package_id, preferred_date::text, preferred_slot, status, version, confirmed_at
     from bookings where shop_id = ${SHOP} and status = 'bestaetigt'
@@ -135,7 +137,8 @@ export async function scheduleDueBookingReminders(sql: Sql): Promise<number> {
 }
 
 async function maintainQueue(sql: Sql) {
-  await sql`
+  if (!panelOnlyEnabled())
+    await sql`
     update outbound_queue q set status = 'cancelled', lease_token = null, locked_until = null,
       last_error_code = 'booking_changed', updated_at = now()
     where q.shop_id = ${SHOP} and q.status in ('queued', 'blocked')
@@ -204,6 +207,17 @@ export async function runNotificationWorker(
       from candidate where q.id = candidate.id returning q.*
     `;
     if (!row) break;
+    if (
+      panelOnlyEnabled() &&
+      (/^(wg[.]ro[.]|bitrix[.:-])/.test(row.event_type || "") ||
+        (/^booking[.]/.test(row.event_type || "") && row.event_type !== "booking.created"))
+    ) {
+      // Preserve the old queue entry without contacting providers or sending stale operational mail.
+      await sql`update outbound_queue set status='blocked',last_error_code='panel_only',lease_token=null,locked_until=null,updated_at=now()
+        where id=${row.id} and shop_id=${SHOP} and lease_token=${token}`;
+      result.skipped++;
+      continue;
+    }
     if (
       /^(zoho|lexware|roapp|odoo|erpnext|qonto)[.:-]/.test(row.event_type || "") ||
       /^(zoho|lexware|roapp|odoo|erpnext|qonto)[.:-]/.test(row.event_key || "")

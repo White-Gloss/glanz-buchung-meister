@@ -1,4 +1,4 @@
-import { assertWebsiteApprovalEnabled } from "./booking-backend.ts";
+import { assertWebsiteApprovalEnabled, assertWebsiteOperationsActive } from "./booking-backend.ts";
 import { crmBusyWindows } from "./booking-crm.ts";
 import type { Sql } from "./db.ts";
 import type { WorkflowBooking } from "./booking-workflow.ts";
@@ -324,6 +324,7 @@ export async function rejectOrCancelBooking(
   actor: string,
   status: "abgelehnt" | "storniert",
 ) {
+  assertWebsiteOperationsActive();
   await requireBookingOwner(sql, actor);
   return sql.transaction(async (tx) => {
     await lockShop(tx);
@@ -365,6 +366,7 @@ export async function completeServiceWithPayment(
   actor: string,
   input: CompleteInput,
 ) {
+  assertWebsiteOperationsActive();
   await requireBookingOwner(sql, actor);
   if (input.payment === "bar") {
     if (!input.cashCents || input.cashCents <= 0) {

@@ -1,3 +1,5 @@
+// Explicit legacy mode keeps regression coverage separate from the panel default.
+process.env.BOOKING_OPERATIONS = "bitrix";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { test } from "node:test";
