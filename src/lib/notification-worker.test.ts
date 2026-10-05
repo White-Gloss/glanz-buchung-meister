@@ -598,6 +598,14 @@ test("panel mode retains old CRM and appointment mail as blocked without deliver
       "wg.ro.invoice",
       "bitrix.invoice",
       "booking.confirmed",
+      "booking.reminder",
+      "booking.rejected",
+      "booking.cancelled",
+      "booking.rescheduled",
+      "booking.updated",
+      "booking.completed",
+      "booking.no_show",
+      "booking.conflict",
     ])
       ids.push(await enqueue(sql, "synthetic-" + eventType, "email", eventType));
     await enqueue(sql, "synthetic-current-request", "email", "booking.created");
@@ -610,7 +618,7 @@ test("panel mode retains old CRM and appointment mail as blocked without deliver
       sendWhatsApp: async () => assert.fail("No CRM delivery"),
     });
     assert.equal(delivered, 1);
-    assert.equal(result.skipped, 4);
+    assert.equal(result.skipped, ids.length);
     for (const id of ids) {
       const [row] = await sql.query(
         "select status,last_error_code from outbound_queue where id=$1",

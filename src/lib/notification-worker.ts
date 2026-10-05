@@ -210,9 +210,7 @@ export async function runNotificationWorker(
     if (
       panelOnlyEnabled() &&
       (/^(wg[.]ro[.]|bitrix[.:-])/.test(row.event_type || "") ||
-        /^booking[.](confirmed|reminder|rejected|cancelled|rescheduled|updated|completed)$/.test(
-          row.event_type || "",
-        ))
+        (/^booking[.]/.test(row.event_type || "") && row.event_type !== "booking.created"))
     ) {
       // Preserve the old queue entry without contacting providers or sending stale operational mail.
       await sql`update outbound_queue set status='blocked',last_error_code='panel_only',lease_token=null,locked_until=null,updated_at=now()
