@@ -1,3 +1,5 @@
+// Explicit legacy fixture; production defaults to the panel.
+process.env.BOOKING_OPERATIONS = "bitrix";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";

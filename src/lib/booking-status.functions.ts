@@ -1,4 +1,4 @@
-import { roappOnlyEnabled } from "./booking-backend";
+import { panelOnlyEnabled, roappOnlyEnabled } from "./booking-backend";
 import { roappCustomerStatus } from "./roapp-customer-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -37,6 +37,19 @@ export const getBookingStatus = createServerFn({ method: "GET" })
           ))
     )
       return null;
+    if (panelOnlyEnabled())
+      return {
+        id: booking.id,
+        status:
+          "Anfrage eingegangen. Angebot und Terminbestätigung erhalten Sie über Ihren persönlichen Link per E-Mail.",
+        amount: booking.total_cents,
+        fixed: false,
+        scheduledFor: null,
+        publicUrl: null,
+        customerStep: null,
+        updatedAt: null,
+        statusUrl: bookingStatusUrl(data.id),
+      };
     if (roappOnlyEnabled())
       return {
         id: booking.id,

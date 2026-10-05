@@ -1,4 +1,4 @@
-import { assertWebsiteApprovalEnabled } from "./booking-backend.ts";
+import { assertWebsiteApprovalEnabled, assertWebsiteOperationsActive } from "./booking-backend.ts";
 import { createHash } from "node:crypto";
 import { bitrixCalendarEnabled } from "./bitrix-calendar.ts";
 import type { Sql } from "./db.ts";
@@ -145,6 +145,7 @@ export async function saveBookingRequest(
 
 /** actor comes only from the authenticated operator middleware. */
 export async function saveManualBookingRequest(sql: Sql, raw: ManualBookingInput, actor: string) {
+  assertWebsiteOperationsActive();
   if (!actor.trim()) throw new Error("Kein Betriebszugang.");
   const { notifyCustomer, ...data } = manualBookingSchema.parse(raw);
   const requestKey = `manual:${actor}:${data.idempotencyKey}`;
@@ -291,6 +292,7 @@ export async function changeBookingStatus(
   actor: string,
   enqueue: Enqueue = queueBookingEvent,
 ) {
+  assertWebsiteOperationsActive();
   if (!actor || actor === "auto" || actor.startsWith("operator:"))
     throw new Error("Eine angemeldete Benutzeraktion ist erforderlich.");
   if (status === "bestaetigt") throw new Error("Bitte die manuelle Terminbestätigung verwenden.");
@@ -350,6 +352,7 @@ export async function editBooking(
   actor: string,
   enqueue: Enqueue = queueBookingEvent,
 ) {
+  assertWebsiteOperationsActive();
   assertPricing(data);
   const quote = quoteTotal(data);
   data = { ...data, extraIds: data.extraIds.filter((id) => !extraIncluded(data.packageId, id)) };

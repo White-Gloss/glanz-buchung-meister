@@ -1,4 +1,5 @@
 import { crmBusyWindows } from "@/lib/booking-crm";
+import { panelOnlyEnabled } from "@/lib/booking-backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { calendarDateRange } from "@/lib/bitrix-calendar";
 
@@ -27,6 +28,11 @@ export const Route = createFileRoute("/api/availability")({
         }
         try {
           const range = calendarDateRange(from, to);
+          if (panelOnlyEnabled())
+            return Response.json(
+              { ok: true, windows: [], requestOnly: true },
+              { headers: { "cache-control": "no-store" } },
+            );
           const { getSql } = await import("@/lib/db");
           const windows = await crmBusyWindows(await getSql(), range.from, range.to, true);
           return Response.json({ ok: true, windows }, { headers: { "cache-control": "no-store" } });

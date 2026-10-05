@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { bookingBackend } from "./booking-backend.ts";
 import type { Sql } from "./db.ts";
 import { readBitrixWebhook } from "./bitrix-credentials.server.ts";
 import { normalizeBitrixRestWebhook, restCall } from "./bitrix-rest.ts";
@@ -30,6 +31,7 @@ export async function ensureBitrixCalendarSchema(sql: Sql) {
 }
 
 export async function bitrixCalendarEnabled(sql: Sql) {
+  if (bookingBackend() !== "bitrix") return false;
   await ensureBitrixCalendarSchema(sql);
   const [row] = await sql<{
     enabled: boolean;
@@ -240,6 +242,7 @@ export async function bitrixBusyWindows(
     fetchImpl?: typeof fetch;
   } = {},
 ): Promise<BusyWindow[]> {
+  if (bookingBackend() !== "bitrix") return [];
   if (!options.force && !(await bitrixCalendarEnabled(sql))) return [];
   const key = await readBitrixWebhook(sql);
   const cacheKey = createHash("sha256").update(`${key}:${from}:${to}`).digest("hex");

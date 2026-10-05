@@ -1,8 +1,16 @@
-/** One CRM owns new website requests. Missing configuration preserves the existing backend. */
-export function bookingBackend(): "bitrix" | "roapp" {
-  const mode = process.env.BOOKING_OPERATIONS?.trim() || "bitrix";
-  if (mode !== "bitrix" && mode !== "roapp") throw new Error("booking_backend_invalid");
+/** The private panel owns operations by default; legacy providers require an explicit mode. */
+export function bookingBackend(): "panel" | "bitrix" | "roapp" {
+  const mode = process.env.BOOKING_OPERATIONS?.trim() || "panel";
+  if (mode !== "panel" && mode !== "bitrix" && mode !== "roapp")
+    throw new Error("booking_backend_invalid");
   return mode;
+}
+export function panelOnlyEnabled(): boolean {
+  return bookingBackend() === "panel";
+}
+export function assertWebsiteOperationsActive(): void {
+  if (panelOnlyEnabled())
+    throw new Error("Aufträge bitte ausschließlich im White-Gloss-Panel bearbeiten.");
 }
 export function roappOnlyEnabled(): boolean {
   return bookingBackend() === "roapp";
@@ -21,9 +29,15 @@ export function roappCutoverAt(): string {
 }
 export function assertBitrixActive(): void {
   if (bookingBackend() !== "bitrix")
-    throw new Error("Die Auftragsbearbeitung erfolgt jetzt in RO App.");
+    throw new Error(
+      panelOnlyEnabled()
+        ? "Die Auftragsbearbeitung erfolgt im White-Gloss-Panel."
+        : "Die Auftragsbearbeitung erfolgt jetzt in RO App.",
+    );
 }
 export function assertWebsiteApprovalEnabled(): void {
+  if (panelOnlyEnabled())
+    throw new Error("Preis und Termin bitte im White-Gloss-Panel prüfen und freigeben.");
   if (roappOnlyEnabled())
     throw new Error("Preis und Termin bitte im RO-Auftrag prüfen und freigeben.");
 }

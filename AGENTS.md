@@ -12,6 +12,13 @@ Die vorhandenen isolierten Flowtests bleiben ausschließlich im Linux-GitHub-
 CI-Job zugelassen; sie dürfen nicht auf den lokalen Rechner verlagert werden.
 Eine Aufhebung erfordert eine ausdrückliche neue Betreiberanweisung.
 
+## Operativer Weg: ausschließlich Panel (05.10.2026)
+
+Betreiberanweisung: RO App und Bitrix ausschalten, nur das bestehende
+White-Gloss-Panel verwenden. `docs/panel-only.md` beschreibt die geprüften
+Sperren und den erforderlichen IONOS-Konfigurationswechsel. Keine neuen
+CRM-Verbindungen, keine Datenlöschung oder automatische Bestandsmigration.
+
 ## Cursor Cloud specific instructions
 
 - Node.js 24 steht über nvm bereit (`nvm install 24`, Alias `default`). `node`, `npm` und `npx` sind zusätzlich unter `/usr/local/cargo/bin` verlinkt, damit sie vor dem mitgelieferten Node 22 liegen.
