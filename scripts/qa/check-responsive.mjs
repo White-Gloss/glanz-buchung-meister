@@ -10,6 +10,13 @@ import { cities, services } from "../../src/data/site.ts";
 const browser = await chromium.launch({ headless: true });
 const results = [];
 const failures = [];
+let progress = { stage: "starting", completed: 0 };
+async function scrollAndRender(page, top) {
+  await page.evaluate((position) => window.scrollTo(0, position), top);
+  // The runner clock also works when headless Chromium suspends frame/timer
+  // promises. The subsequent geometry reads still force the actual layout.
+  await new Promise((done) => setTimeout(done, 32));
+}
 const paths = [
   ...new Set([
     "/",
@@ -47,6 +54,7 @@ try {
   for (const width of [320, 375, 390]) {
     await page.setViewportSize({ width, height: 844 });
     for (const path of paths) {
+      progress = { stage: "navigation", path, width, completed: results.length };
       await page.goto(qaBase + path, { waitUntil: "networkidle" });
       // content-visibility:auto defers layout below the fold. Exercise the real
       // scroll path before judging overflow; do not disable production styles.
@@ -55,19 +63,8 @@ try {
         y < (await page.evaluate(() => document.documentElement.scrollHeight));
         y += 650
       ) {
-        await page.evaluate(async (top) => {
-          window.scrollTo(0, top);
-          // Background/headless Chromium can suspend animation frames. Bound
-          // only this rendering yield; the following DOM reads still force
-          // layout and every overflow assertion remains in place.
-          await new Promise((done) => {
-            const timeout = setTimeout(done, 100);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-              clearTimeout(timeout);
-              done();
-            }));
-          });
-        }, y);
+        progress = { stage: "scroll", path, width, top: y, completed: results.length };
+        await scrollAndRender(page, y);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
@@ -138,10 +135,8 @@ try {
     assert.equal(await video.evaluate((element) => element === document.activeElement), true, "Return keyboard focus to the video trigger.");
     await page.locator("#kundenergebnisse").screenshot({ path: `.qa-output/review-results-${width}.png` });
     for (let y = 0; y < await page.evaluate(() => document.documentElement.scrollHeight); y += 650) {
-      await page.evaluate(async (top) => {
-        window.scrollTo(0, top);
-        await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
-      }, y);
+      progress = { stage: "review-scroll", path: "/", width, top: y, completed: results.length };
+      await scrollAndRender(page, y);
     }
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `.qa-output/review-home-${width}.png`, fullPage: true });
@@ -182,6 +177,7 @@ try {
   failures.push(error.message);
   throw error;
 } finally {
+  await writeFile(".qa-output/responsive-progress.json", JSON.stringify(progress, null, 2));
   await writeFile(".qa-output/responsive-results.json", JSON.stringify(results, null, 2));
   await writeFile(".qa-output/responsive-failures.json", JSON.stringify(failures, null, 2));
   await browser.close();
