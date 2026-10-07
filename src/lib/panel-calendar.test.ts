@@ -6,7 +6,7 @@ const openDay = () => ({
   timeZone: "Europe/Berlin", from: "2099-12-01", to: "2099-12-02", duration: 15,
   days: [{ day: "2099-12-01", weekend: false, closed: false, available: true,
     windows: [{ start: "2099-12-01T07:30:00.000Z", end: "2099-12-01T17:00:00.000Z" }],
-    busy: [], free: [{ start: "2099-12-01T07:30:00.000Z", end: "2099-12-01T17:00:00.000Z" }],
+    busy: [] as Array<{start: string; end: string}>, free: [{ start: "2099-12-01T07:30:00.000Z", end: "2099-12-01T17:00:00.000Z" }],
   }],
 });
 
@@ -18,7 +18,7 @@ test("website inclusive days become bounded exclusive panel chunks, including al
   for (const [from, to] of [["2026-02-30", "2026-03-01"], ["2026-10-01", "2027-01-02"], ["2026-10-02", "2026-10-01"]]) assert.throws(() => panelCalendarChunks(from, to), /invalid_range/);
 });
 
-test("outside 08:30�18:00 is blocked for both existing website resources", () => {
+test("outside 08:30–18:00 is blocked for both existing website resources", () => {
   assert.deepEqual(panelCalendarBusyWindows(openDay(), "2099-12-01", "2099-12-02"), [
     { start: "2099-11-30T23:00:00.000Z", end: "2099-12-01T07:30:00.000Z", resourceId: 1 },
     { start: "2099-11-30T23:00:00.000Z", end: "2099-12-01T07:30:00.000Z", resourceId: 2 },
@@ -39,7 +39,7 @@ test("closed weekend DST days have 23 or 25 real hours, rather than a fixed 24-h
     ["2026-03-29", "2026-03-30", "2026-03-28T23:00:00.000Z", "2026-03-29T22:00:00.000Z", 23],
     ["2026-10-25", "2026-10-26", "2026-10-24T22:00:00.000Z", "2026-10-25T23:00:00.000Z", 25],
   ] as const) {
-    const windows = panelCalendarBusyWindows({ timeZone: "Europe/Berlin", from: day, to: after, days: [{ day, weekend: true, closed: true, available: false, windows: [], busy: [], free: [] }] }, day, after);
+    const windows = panelCalendarBusyWindows({ timeZone: "Europe/Berlin", from: day, to: after, days: [{ day, weekend: true, closed: true, available: false, windows: [], busy: [] as Array<{start: string; end: string}>, free: [] }] }, day, after);
     assert.equal(windows[0].start, start);assert.equal(windows[0].end, end);assert.equal((Date.parse(end) - Date.parse(start)) / 3_600_000, hours);assert.equal(windows.length, 2);
   }
 });
