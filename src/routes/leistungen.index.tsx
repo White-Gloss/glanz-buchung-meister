@@ -186,7 +186,7 @@ function LeistungenIndex() {
       </section>
 
       <section className="section mx-auto max-w-7xl px-4 sm:px-6">
-        <p className="kicker">13 Städte</p>
+        <p className="kicker">{cities.length} Abholorte</p>
         <h2 className="heading-2 mt-4">Leistungen nach Stadt</h2>
         <p className="mt-4 max-w-2xl text-muted">
           Wählen Sie Ihren Ort und informieren Sie sich über unsere Leistungen

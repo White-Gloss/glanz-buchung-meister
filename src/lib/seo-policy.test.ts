@@ -32,13 +32,13 @@ const evidence: LocalSeoEvidence = {
   proof: { label: "Synthetic proof", url: "https://example.com/test-proof", kind: "photo" },
 };
 
-test("all 130 combinations have one decision; unavailable services redirect without chains", () => {
+test("all service-city combinations have one decision; unavailable services redirect without chains", () => {
   const decisions = services.flatMap((service) =>
     cities.map((city) => serviceCitySeo(service.slug, city.slug)),
   );
-  assert.equal(decisions.length, 130);
-  assert.equal(decisions.filter((d) => d.status === "noindex").length, 117);
-  assert.equal(decisions.filter((d) => d.status === "redirect").length, 13);
+  assert.equal(decisions.length, services.length * cities.length);
+  assert.equal(decisions.filter((d) => d.status === "noindex").length, services.filter((s) => !s.pendingApproval).length * cities.length);
+  assert.equal(decisions.filter((d) => d.status === "redirect").length, services.filter((s) => s.pendingApproval).length * cities.length);
   for (const decision of decisions)
     if (decision.status === "redirect") {
       assert.notEqual(publicSeo(decision.target).status, "redirect");
@@ -68,7 +68,7 @@ test("index requires demand AND two distinct facts AND public proof AND availabi
 
 test("sitemap, robots and links agree and cannot override noindex", () => {
   const filtered = filterIndexableSitemap(inventory);
-  assert.equal([...filtered.matchAll(/<loc>/g)].length, 48);
+  assert.equal([...filtered.matchAll(/<loc>/g)].length, 54);
   assert.doesNotMatch(
     filtered,
     /scheinwerferaufbereitung|\/impressum|\/datenschutz|\/agb|\/widerruf|\/barrierefreiheit|\/datenloeschung/,

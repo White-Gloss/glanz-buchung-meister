@@ -1,5 +1,11 @@
 import { pickupPriceText, site, type City } from "../data/site.ts";
 
+export function cityJourneyText(city: City) {
+  return city.km !== null && city.minutes !== null
+    ? `ca. ${city.km} km · ca. ${city.minutes} Min.`
+    : "Entfernung und Fahrzeit nach Abholadresse";
+}
+
 /** City hubs own the local vehicle-detailing intent; Horb's main intent stays on /. */
 export function citySeoCopy(city: City) {
   const isHorb = city.slug === "horb-am-neckar";

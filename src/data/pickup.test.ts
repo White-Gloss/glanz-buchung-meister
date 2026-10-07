@@ -6,9 +6,11 @@ import { fileURLToPath } from "node:url";
 import {
   cities,
   extras,
+  packages,
   pickupFee,
   pickupKeramikNote,
   pickupPricing,
+  pickupPriceText,
   pickupTierSummary,
   quoteTotal,
 } from "./site.ts";
@@ -73,6 +75,28 @@ describe("pickup pricing source of truth", () => {
     });
     assert.equal(quote.pickup, null);
     assert.equal(quote.pickupOnRequest, true);
+  });
+
+  it("keeps unconfirmed distances out of every package total, including Keramik", () => {
+    const newCities = ["sulz-am-neckar", "empfingen", "voehringen", "dornhan", "dornstetten", "schopfloch"];
+    for (const slug of newCities) {
+      const city = cities.find((item) => item.slug === slug);
+      assert.ok(city, slug);
+      assert.equal(city.km, null);
+      assert.equal(city.minutes, null);
+      for (const { id: packageId } of packages) {
+        const quote = quoteTotal({ packageId, classId: "kompakt", extraIds: [], citySlug: slug });
+        assert.equal(quote.city?.slug, slug);
+        assert.equal(quote.pickup, null);
+        assert.equal(quote.pickupOnRequest, true);
+        assert.equal(quote.total, quote.subtotal);
+        assert.equal(pickupPriceText(city.km, packageId), "auf Anfrage");
+      }
+    }
+    for (const invalid of [null, NaN, Infinity, -1]) {
+      assert.equal(pickupFee(invalid, "keramik"), null);
+      assert.equal(pickupPriceText(invalid, "keramik"), "auf Anfrage");
+    }
   });
 
   it("does not leave a second hardcoded pickup staffel in source", () => {

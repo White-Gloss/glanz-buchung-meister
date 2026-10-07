@@ -391,7 +391,7 @@ export function SiteFooter() {
           </Link>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
             Fahrzeugaufbereitung in {site.city}: Innenraumreinigung, Lackkorrektur und
-            Keramikversiegelung, mit Hol- und Bringservice in 13 Städten.
+            Keramikversiegelung, mit Hol- und Bringservice in Horb und Umgebung.
           </p>
           <address className="mt-4 not-italic text-sm text-muted" aria-label="Anschrift">
             {site.legalName}

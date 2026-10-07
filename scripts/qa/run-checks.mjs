@@ -159,7 +159,7 @@ async function waitForReady(server) {
   );
 }
 
-async function runCheck(server, name, args) {
+async function runCheck(server, name, args, timeoutMs = 120_000) {
   requireRunning(server);
   log(`QA: ${name}`);
   const check = startNode(name, args);
@@ -170,10 +170,10 @@ async function runCheck(server, name, args) {
       server.done.then(() => {
         throw new Error("The isolated server stopped during a check.");
       }),
-      delay(120_000, undefined, {
+      delay(timeoutMs, undefined, {
         signal: AbortSignal.any([abort.signal, stageAbort.signal]),
       }).then(() => {
-        throw new Error(`${name} exceeded its 120-second deadline.`);
+        throw new Error(`${name} exceeded its ${timeoutMs / 1000}-second deadline.`);
       }),
     ]);
     if (result.error || result.code !== 0) {
@@ -213,7 +213,9 @@ try {
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
   await runCheck(server, "seo", ["scripts/qa/check-seo.mjs"]);
-  await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"]);
+  // The expanded city list adds 18 full scroll-throughs across three viewports.
+  // Keep every page and assertion; only this stage gets a bounded extra minute.
+  await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
   summary.status = "passed";
 } catch (error) {

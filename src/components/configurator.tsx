@@ -457,7 +457,7 @@ export function Configurator({
           >
             {cities.map((c) => (
               <option key={c.slug} value={c.slug}>
-                {c.name} · {c.km} km
+                {c.name} · {c.km === null ? "Abholung auf Anfrage" : `${c.km} km`}
               </option>
             ))}
           </select>
@@ -871,6 +871,6 @@ export function Configurator({
   );
 }
 
-export function PickupNote({ km, packageId }: { km: number; packageId?: PackageId }) {
+export function PickupNote({ km, packageId }: { km: number | null; packageId?: PackageId }) {
   return <span>{pickupPriceText(km, packageId)}</span>;
 }

@@ -3,13 +3,13 @@ import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { cities, pickupPriceText, pickupTierSummary, pickupKeramikNote, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
-import { citySeoCopy } from "@/lib/city-copy";
+import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
 
 export const Route = createFileRoute("/abholservice/")({
   component: AbholIndex,
   head: () =>
     pageHead({
-      title: `Hol- & Bringservice 13 Städte | ${site.name}`,
+      title: `Hol- & Bringservice: ${cities.length} Abholorte | ${site.name}`,
       description:
         "Abholung und Rückgabe in Horb, Tübingen, Nagold, Freudenstadt, Böblingen, Sindelfingen und weiteren Städten. Ausführung in Horb am Neckar.",
       path: "/abholservice",
@@ -23,7 +23,7 @@ function AbholIndex() {
       <PageHero
         shot="atelier"
         alt={`Werkstatt von White Gloss in ${site.city}`}
-        kicker="13 Städte"
+        kicker={`${cities.length} Abholorte`}
         title="Hol- und Bringservice."
         lead="Sparen Sie sich die Fahrt zur Werkstatt: Wir stimmen Abholung und Rückgabe mit Ihnen ab und bereiten Ihr Fahrzeug in Horb am Neckar auf."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Hol- und Bringservice" }]}
@@ -46,7 +46,7 @@ function AbholIndex() {
               <Link
                 to="/abholservice/$city"
                 params={{ city: c.slug }}
-                aria-label={`${citySeoCopy(c).linkLabel}, ca. ${c.km} Kilometer, ca. ${c.minutes} Minuten, Abholung ${pickupPriceText(c.km)}`}
+                aria-label={`${citySeoCopy(c).linkLabel}, ${cityJourneyText(c)}, Abholung ${pickupPriceText(c.km)}`}
                 className="flex min-h-16 flex-col items-start gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <span>
@@ -54,7 +54,7 @@ function AbholIndex() {
                     {citySeoCopy(c).linkLabel}
                   </span>
                   <span className="mt-1 block text-sm text-muted">
-                    ca. {c.km} km · ca. {c.minutes} Min.
+                    {cityJourneyText(c)}
                   </span>
                 </span>
                 <span className="text-sm text-muted">{pickupPriceText(c.km)}</span>

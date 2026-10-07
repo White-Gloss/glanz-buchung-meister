@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
     const head = pageHead({
       title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
       description:
-        "Autoaufbereitung und Fahrzeugpflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Ab 149 €, Hol- und Bringservice in 13 Städten.",
+        `Autoaufbereitung und Fahrzeugpflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Ab 149 €, Hol- und Bringservice für ${cities.length} Orte.`,
       path: "/",
     });
     return { ...head, links: [...head.links, ...scrollFilmPreloads] };
@@ -60,11 +60,11 @@ function Home() {
           >
             <p
               className="font-display text-xl tracking-tight sm:text-2xl"
-              data-count="13"
+              data-count={cities.length}
               data-count-prefix=""
-              data-count-suffix=" Städte"
+              data-count-suffix=" Abholorte"
             >
-              13 Städte
+              {cities.length} Abholorte
             </p>
             <p className="mt-1 text-xs text-subtle">Hol- und Bringservice</p>
           </li>
@@ -252,7 +252,7 @@ function Home() {
             </Link>
           </div>
           <div>
-            <p className="kicker">Hol- und Bringservice · 13 Städte</p>
+            <p className="kicker">Hol- und Bringservice · {cities.length} Abholorte</p>
             <h3>Wir holen Ihr Fahrzeug ab und bringen es zurück.</h3>
             <p>
               {pickupTierSummary()}. {pickupKeramikNote()}. Alle Beträge {site.vatNote}

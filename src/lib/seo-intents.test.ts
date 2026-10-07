@@ -4,7 +4,8 @@ import { test } from "node:test";
 import { filterIndexableSitemap } from "./seo-policy.ts";
 import { cmsSeoIntents, resolveSeoIntent, seoIntents } from "./seo-intents.ts";
 import { cities } from "../data/site.ts";
-import { citySeoCopy } from "./city-copy.ts";
+import { cityJourneyText, citySeoCopy } from "./city-copy.ts";
+import { parseBookingSelection, serviceBookingSelection } from "./booking-selection.ts";
 import { publicSeo } from "./seo-policy.ts";
 
 test("each static indexable URL has one distinct primary intent", () => {
@@ -66,5 +67,19 @@ test("each pickup city has an indexable vehicle-detailing keyword destination", 
       assert.equal(copy.linkLabel, `Fahrzeugaufbereitung ${city.name}`);
       assert.equal(copy.cluster, `fahrzeugaufbereitung ${city.name.toLowerCase()}`);
     }
+  }
+});
+
+test("six new pickup hubs are discoverable and preserve city and package in booking links", () => {
+  const xml = filterIndexableSitemap(readFileSync(new URL("../data/sitemap-static.xml", import.meta.url), "utf8"));
+  for (const slug of ["sulz-am-neckar", "empfingen", "voehringen", "dornhan", "dornstetten", "schopfloch"]) {
+    const city = cities.find((item) => item.slug === slug);
+    assert.ok(city, slug);
+    assert.ok(xml.includes(`/abholservice/${slug}</loc>`));
+    assert.ok(!xml.includes(`/leistungen/keramikversiegelung/${slug}</loc>`));
+    assert.equal(cityJourneyText(city), "Entfernung und Fahrzeit nach Abholadresse");
+    assert.ok(city.pickupNote?.trim());
+    assert.deepEqual(parseBookingSelection(serviceBookingSelection("keramikversiegelung", slug)), { paket: "keramik", ort: slug });
+    assert.deepEqual(parseBookingSelection(serviceBookingSelection("lederreparatur", slug)), { leistung: "lederreparatur", ort: slug });
   }
 });
