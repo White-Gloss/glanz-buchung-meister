@@ -198,6 +198,23 @@ test("poster is displayed before any video download; small screens choose the sm
   assert.equal(h.video.dataset.visible, "true");
   h.cleanup();
 });
+test("SSR reserves the scroll-film height before hydration without affecting no-script users", () => {
+  const component = readFileSync(
+    new URL("../src/components/scroll-film-hero.tsx", import.meta.url),
+    "utf8",
+  );
+  const styles = readFileSync(
+    new URL("../src/components/scroll-film-hero.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(component, /useState<boolean \| null>\(null\)/);
+  assert.match(component, /data-motion=\{motion === false \? "still" : "scroll"\}/);
+  assert.match(
+    component,
+    /<noscript>\s*<style>\{`\.scroll-film\[data-motion="scroll"\] \{ height: auto; \}`\}<\/style>\s*<\/noscript>/,
+  );
+  assert.match(styles, /html:has\(#buchung:target\) \.scroll-film\[data-motion="scroll"\]\s*\{\s*height: auto;/);
+});
 test("initial view downloads no video until the visitor scrolls", () => {
   const h = harness({ engaged: false });
   assert.equal(h.downloads.length, 0);

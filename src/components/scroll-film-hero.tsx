@@ -17,7 +17,7 @@ export function ScrollFilmHero() {
   const copyRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const [paused, setPaused] = useState(false);
-  const [motion, setMotion] = useState(false);
+  const [motion, setMotion] = useState<boolean | null>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -240,7 +240,15 @@ export function ScrollFilmHero() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="scroll-film" aria-label="White Gloss – bis ins Detail">
+    <section
+      ref={sectionRef}
+      className="scroll-film"
+      data-motion={motion === false ? "still" : "scroll"}
+      aria-label="White Gloss – bis ins Detail"
+    >
+      <noscript>
+        <style>{`.scroll-film[data-motion="scroll"] { height: auto; }`}</style>
+      </noscript>
       <div ref={stageRef} className="scroll-film-stage">
         <div className="scroll-film-media">
           <picture>
