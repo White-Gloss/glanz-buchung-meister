@@ -226,6 +226,13 @@ test("Node serves compressed build assets and revalidates mutable media", async 
       /<link\b[^>]*rel="stylesheet"/,
       `${path} must inline its initial route styles through Start`,
     );
+    const modulePreloads = [...head.matchAll(/<link\b[^>]*>/g)]
+      .map(([tag]) => tag)
+      .filter((tag) => /\brel="modulepreload"/.test(tag));
+    assert.ok(modulePreloads.length > 0, `${path} must retain Start's hydration assets`);
+    for (const tag of modulePreloads) {
+      assert.match(tag, /\bfetch[Pp]riority="low"/, `${path} prioritizes visible content ahead of hydration preloads`);
+    }
   }
   const css = `/assets/${globals[0].name}`;
   const { response, html: stylesheet } = await get(css, { "accept-encoding": "gzip" });
