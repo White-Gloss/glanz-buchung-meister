@@ -69,21 +69,23 @@ async function releasePorts() {
   }
 }
 
-function startNode(name, args) {
+function startNode(name, args, command = process.execPath) {
   abort.signal.throwIfAborted();
   const descriptor = openSync(resolve(outputRoot, `${name}.log`), "w");
   let child;
   try {
-    child = spawn(process.execPath, args, {
+    child = spawn(command, args, {
       cwd: projectRoot,
       env: { ...process.env, QA_RUN_ID: runId, FRONTEND_BASE_URL: base },
       windowsHide: true,
+      // Linux CI only: npm exec and its Node child share an owned process group.
+      detached: true,
       stdio: ["ignore", descriptor, descriptor],
     });
   } finally {
     closeSync(descriptor);
   }
-  const record = { name, child, closed: false, error: null };
+  const record = { name, child, closed: false, stopped: false, error: null };
   record.done = new Promise((accept) => {
     child.once("error", (error) => {
       record.error = error;
@@ -159,45 +161,72 @@ async function waitForReady(server) {
   );
 }
 
-async function runCheck(server, name, args, timeoutMs = 120_000) {
+async function runCheck(server, name, args, timeoutMs = 120_000, command = process.execPath) {
   requireRunning(server);
   log(`QA: ${name}`);
-  const check = startNode(name, args);
+  const check = startNode(name, args, command);
   const stageAbort = new AbortController();
   try {
-    const result = await Promise.race([
-      check.done,
-      server.done.then(() => {
-        throw new Error("The isolated server stopped during a check.");
-      }),
-      delay(timeoutMs, undefined, {
-        signal: AbortSignal.any([abort.signal, stageAbort.signal]),
-      }).then(() => {
-        throw new Error(`${name} exceeded its ${timeoutMs / 1000}-second deadline.`);
-      }),
-    ]);
-    if (result.error || result.code !== 0) {
-      throw new Error(
-        `${name} failed (${result.error?.message ?? result.signal ?? result.code}); see .qa-output/${name}.log.`,
-      );
+    try {
+      const result = await Promise.race([
+        check.done,
+        server.done.then(() => {
+          throw new Error("The isolated server stopped during a check.");
+        }),
+        delay(timeoutMs, undefined, {
+          signal: AbortSignal.any([abort.signal, stageAbort.signal]),
+        }).then(() => {
+          throw new Error(`${name} exceeded its ${timeoutMs / 1000}-second deadline.`);
+        }),
+      ]);
+      if (result.error || result.code !== 0) {
+        throw new Error(
+          `${name} failed (${result.error?.message ?? result.signal ?? result.code}); see .qa-output/${name}.log.`,
+        );
+      }
+    } finally {
+      stageAbort.abort();
+      // A timed-out npm wrapper must not leave its audit alongside the next check.
+      await stopChild(check);
     }
     summary.checks.push({ name, passed: true });
     log(`QA: ${name} passed`);
-  } finally {
-    stageAbort.abort();
+  } catch (error) {
+    summary.checks.push({ name, passed: false, error: error.message });
+    throw error;
   }
 }
 
-async function stopChild(record) {
-  if (!record.child.pid || record.closed) return;
-  record.child.kill("SIGTERM");
-  await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
-  if (!record.closed) {
-    record.child.kill("SIGKILL");
-    await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
+function signalOwnedGroup(record, signal) {
+  try {
+    process.kill(-record.child.pid, signal);
+    return true;
+  } catch (error) {
+    if (error.code === "ESRCH") return false;
+    throw error;
   }
+}
+
+async function waitForOwnedGroupExit(record) {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline && signalOwnedGroup(record, 0)) {
+    await delay(50);
+  }
+  return !signalOwnedGroup(record, 0);
+}
+
+async function stopChild(record) {
+  if (!record.child.pid || record.stopped) return;
+  if (signalOwnedGroup(record, "SIGTERM") && !await waitForOwnedGroupExit(record)) {
+    signalOwnedGroup(record, "SIGKILL");
+    if (!await waitForOwnedGroupExit(record)) {
+      throw new Error(`Could not stop owned group ${record.name} (PID ${record.child.pid}).`);
+    }
+  }
+  await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
   if (!record.closed)
     throw new Error(`Could not stop owned child ${record.name} (PID ${record.child.pid}).`);
+  record.stopped = true;
 }
 
 await mkdir(outputRoot, { recursive: true });
@@ -217,6 +246,29 @@ try {
   // Keep every page and assertion; only this stage gets a bounded extra minute.
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
+  const diagnosticFailures = [];
+  for (const check of [
+    {
+      name: "lighthouse",
+      command: "npm",
+      args: ["exec", "--yes", "--package=@lhci/cli@0.15.1", "--", "node", "scripts/qa/check-lighthouse.mjs"],
+      timeoutMs: 270_000,
+    },
+    {
+      name: "hero-stability",
+      command: process.execPath,
+      args: ["scripts/qa/check-hero-stability.mjs"],
+      timeoutMs: 120_000,
+    },
+  ]) {
+    try {
+      await runCheck(server, check.name, check.args, check.timeoutMs, check.command);
+    } catch (error) {
+      diagnosticFailures.push(error.message);
+      log(`QA: ${error.message}`);
+    }
+  }
+  if (diagnosticFailures.length) throw new Error(diagnosticFailures.join("; "));
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";

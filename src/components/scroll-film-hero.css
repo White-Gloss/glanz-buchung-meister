@@ -53,7 +53,8 @@
   top: 50%;
   margin-top: -135px;
   max-width: 48%;
-  will-change: opacity, transform;
+  will-change: transform, opacity;
+  transform: translateY(var(--film-copy-offset, 0px)) translateZ(0);
 }
 .scroll-film-eyebrow {
   margin: 0 0 24px;

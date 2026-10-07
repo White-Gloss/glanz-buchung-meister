@@ -213,7 +213,11 @@ export default defineConfig(({ command, isPreview }) => {
     // PWA head + ?install=1 tutorial page; runs before Start/Nitro.
     grokPwaPlugin(),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      // Inline the complete build-collected CSS, including the matched route.
+      // A partial critical stylesheet previously caused layout shifts.
+      server: { build: { inlineCss: true } },
+    }),
     ...(command === "build" || isPreview
       ? [
           nitro({

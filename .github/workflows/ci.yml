@@ -90,7 +90,7 @@ jobs:
 
   verify:
     runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -135,6 +135,8 @@ jobs:
           node --check scripts/write-google-oauth.mjs
           node --check scripts/audit-domain-migration.mjs
           node --check scripts/qa/run-checks.mjs
+          node --check scripts/qa/check-lighthouse.mjs
+          node --check scripts/qa/check-hero-stability.mjs
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs
           bash -n scripts/check-migrations.sh
@@ -156,8 +158,8 @@ jobs:
             npx playwright install chromium
           fi
 
-      - name: Isolierte SSR-, Buchungs-, SEO- und Mobilabläufe prüfen
-        timeout-minutes: 8
+      - name: Isolierte SSR-, Buchungs-, SEO-, Mobil-, Lighthouse- und Heroabläufe prüfen
+        timeout-minutes: 12
         run: node scripts/qa/run-checks.mjs
 
       - name: Isolierte Prüfnachweise sichern

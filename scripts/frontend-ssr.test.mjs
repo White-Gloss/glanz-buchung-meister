@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { cities, services } from "../src/data/site.ts";
 import { serviceCitySeo } from "../src/lib/seo-policy.ts";
@@ -133,9 +134,48 @@ test("public route metadata survives the PWA injector", async () => {
 });
 
 test("Node serves compressed build assets and revalidates mutable media", async () => {
-  const { html } = await get("/");
-  const css = html.match(/href="(\/assets\/styles-[^"]+\.css)"/)?.[1];
-  assert.ok(css, "the production document must reference the built stylesheet");
+  const assetDirectory = new URL("../.output/public/assets/", import.meta.url);
+  const stylesheets = await Promise.all(
+    (await readdir(assetDirectory))
+      .filter((name) => name.endsWith(".css"))
+      .map(async (name) => ({
+        name,
+        source: await readFile(new URL(name, assetDirectory), "utf8"),
+      })),
+  );
+  const globals = stylesheets.filter(({ source }) =>
+    source.includes("--color-bg:") && source.includes("@font-face"),
+  );
+  assert.equal(globals.length, 1, "the build must contain one complete global stylesheet");
+  for (const path of [
+    "/",
+    "/preise",
+    "/leistungen/keramikversiegelung",
+    "/leistungen/keramikversiegelung/nagold",
+    "/fahrzeug-zustand",
+    "/galerie",
+    "/qualitaet",
+    "/kontakt",
+    "/impressum",
+    "/datenschutz",
+  ]) {
+    const { response, html } = await get(path);
+    assert.equal(response.status, 200, path);
+    const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/)?.[1] || "";
+    const inlineCss = [...head.matchAll(/<style\b(?=[^>]*data-tsr-inline-css)[^>]*>([\s\S]*?)<\/style>/g)]
+      .map(([, css]) => css)
+      .join("");
+    assert.ok(
+      inlineCss.includes(globals[0].source.trim()),
+      `${path} must inline the complete generated global CSS before the body, also without JavaScript`,
+    );
+    assert.doesNotMatch(
+      head,
+      /<link\b[^>]*rel="stylesheet"/,
+      `${path} must inline its initial route styles through Start`,
+    );
+  }
+  const css = `/assets/${globals[0].name}`;
   const { response, html: stylesheet } = await get(css, { "accept-encoding": "gzip" });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-encoding"), "gzip");

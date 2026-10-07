@@ -64,10 +64,45 @@
 
 @font-face {
   font-family: "Barlow Fallback";
-  src: local("Arial"), local("Helvetica Neue"), local("Helvetica");
-  size-adjust: 101%;
-  ascent-override: 94%;
-  descent-override: 25%;
+  font-style: normal;
+  font-weight: 300;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 97.19322%;
+  ascent-override: 102.887835%;
+  descent-override: 20.577567%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 97.578908%;
+  ascent-override: 102.481164%;
+  descent-override: 20.496233%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 98.157439%;
+  ascent-override: 101.877149%;
+  descent-override: 20.37543%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  size-adjust: 98.543126%;
+  ascent-override: 101.478412%;
+  descent-override: 20.295682%;
   line-gap-override: 0%;
 }
 
