@@ -122,6 +122,18 @@ activate_release "$NEW_ID" unused "$NEW_ID" "${"0".repeat(64)}"
     assert.doesNotMatch(result.stdout, /EXTRACT|SWITCH|LINK|SERVICE/);
   }));
 
+test("checked activation is a no-op when the requested release is already active", shellOptions, async () =>
+  fixture(async (directory) => {
+    await release(directory, NEW_ID);
+    const result = await shell(directory, `
+extract_release() { echo EXTRACT; }
+switch_release() { echo SWITCH; }
+activate_release "$NEW_ID" unused "$NEW_ID" "${"0".repeat(64)}"
+`, NEW_ID);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, "");
+  }));
+
 test("checked rollback never overwrites a newer deployment", shellOptions, async () =>
   fixture(async (directory) => {
     await release(directory, OLD_ID);

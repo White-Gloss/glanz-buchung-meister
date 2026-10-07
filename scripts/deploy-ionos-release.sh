@@ -214,6 +214,9 @@ activate_release() {
   archive_path="$2"
   validate_release_id "$release_id"
   assert_expected_release "${3:-}"
+  if [[ -n "${3:-}" && "${3}" == "$release_id" ]]; then
+    return 0
+  fi
   if [[ -n "${3:-}" ]]; then
     [[ ! -e "$(release_path "$release_id")" && ! -L "$(release_path "$release_id")" ]] ||
       die "checked release already exists; use explicit rollback or a new commit, never silently reuse old build bytes"
