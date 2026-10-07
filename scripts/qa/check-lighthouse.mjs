@@ -39,6 +39,7 @@ const summary = {
   runs: [],
   profiles: {},
   requestFiltering: "none",
+  forwardedHost: "white-gloss.de (same production head rules as the Caddy proxy)",
   externalRequests: [],
 };
 
@@ -159,6 +160,9 @@ try {
           output: "json",
           onlyCategories: categories,
           throttlingMethod: "simulate",
+          // Mirror Caddy's customer host while connecting only to the owned CI build.
+          // The existing host rule then omits preview-only Grok extensions.
+          extraHeaders: { "x-forwarded-host": "white-gloss.de" },
           maxWaitForFcp: 15_000,
           maxWaitForLoad: 20_000,
         }, profile === "desktop" ? desktopConfig : undefined), runBudget);

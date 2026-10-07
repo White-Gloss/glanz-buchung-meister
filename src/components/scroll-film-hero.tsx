@@ -29,6 +29,7 @@ export function ScrollFilmHero() {
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mobile = window.matchMedia(scrollFilm.mobileQuery);
+    const shortLandscape = window.matchMedia("(max-height: 600px) and (orientation: landscape)");
     const device = navigator as DeviceNavigator;
     const connection = device.connection;
     let disposed = false;
@@ -52,6 +53,7 @@ export function ScrollFilmHero() {
     const allowed = () =>
       !directBooking &&
       !reduce.matches &&
+      !shortLandscape.matches &&
       !connection?.saveData &&
       !["slow-2g", "2g", "3g"].includes(connection?.effectiveType ?? "") &&
       !(device.deviceMemory && device.deviceMemory <= 2) &&
@@ -206,6 +208,7 @@ export function ScrollFilmHero() {
     document.addEventListener("visibilitychange", visibility);
     mobile.addEventListener("change", resizeMedia);
     reduce.addEventListener("change", configure);
+    shortLandscape.addEventListener("change", configure);
     connection?.addEventListener("change", configure);
     configure();
 
@@ -227,6 +230,7 @@ export function ScrollFilmHero() {
       document.removeEventListener("visibilitychange", visibility);
       mobile.removeEventListener("change", resizeMedia);
       reduce.removeEventListener("change", configure);
+      shortLandscape.removeEventListener("change", configure);
       connection?.removeEventListener("change", configure);
       video.pause();
       video.removeAttribute("src");

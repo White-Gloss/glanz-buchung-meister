@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { cities, services } from "../src/data/site.ts";
@@ -19,6 +20,54 @@ function canonicalLinks(html) {
     ([tag]) => tag.match(/href="([^"]+)"/)?.[1],
   );
 }
+
+function executableInlineScripts(html) {
+  return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)]
+    .filter(([, attributes, source]) => {
+      if (/\bsrc\s*=/i.test(attributes) || !source.trim()) return false;
+      const type = attributes.match(/\btype\s*=\s*["']([^"']+)["']/i)?.[1].toLowerCase();
+      return !type || ["module", "text/javascript", "application/javascript"].includes(type);
+    });
+}
+
+test("production SSR nonces match streamed scripts on successful and 404 documents", async () => {
+  const nonces = new Set();
+  for (const path of ["/", "/", "/preise", "/leistungen/nicht-vorhanden"]) {
+    const { response, html } = await get(path, { "x-forwarded-host": "white-gloss.de" });
+    assert.equal(response.status, path.includes("nicht-vorhanden") ? 404 : 200);
+    assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
+    assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains; preload");
+    const csp = response.headers.get("content-security-policy");
+    const scriptSrc = csp?.split(";").find((part) => part.trim().startsWith("script-src"));
+    assert.ok(scriptSrc && !scriptSrc.includes("'unsafe-inline'"));
+    const nonce = scriptSrc.match(/'nonce-([A-Za-z0-9+/]{43}=)'/)?.[1];
+    assert.ok(nonce, "SSR needs a fresh request nonce");
+    assert.ok(!nonces.has(nonce), "Separate responses must never reuse a nonce");
+    nonces.add(nonce);
+    const scripts = executableInlineScripts(html);
+    assert.ok(scripts.length > 0, "The real streaming bootstrap must be present");
+    for (const [, attributes] of scripts) {
+      assert.equal(attributes.match(/\bnonce="([^"]+)"/)?.[1], nonce, path);
+    }
+    assert.ok(html.includes(`name="csp-nonce" content="${nonce}"`), "Hydration must restore the same nonce");
+    assert.doesNotMatch(html, /grok-app-builder\/extensions\.js/, "Customer documents omit the preview extension");
+  }
+});
+
+test("production installer authorizes its unchanged static classifier with a hash", async () => {
+  const { response, html } = await get("/?install=1&platform=ios", { "x-forwarded-host": "white-gloss.de" });
+  assert.equal(response.status, 200);
+  const csp = response.headers.get("content-security-policy");
+  const scriptSrc = csp?.split(";").find((part) => part.trim().startsWith("script-src"));
+  assert.ok(scriptSrc && !scriptSrc.includes("'unsafe-inline'"));
+  const scripts = executableInlineScripts(html);
+  assert.ok(scripts.length > 0);
+  for (const [, , source] of scripts) {
+    const digest = createHash("sha256").update(source.replace(/\r\n?/g, "\n"), "utf8").digest("base64");
+    assert.ok(scriptSrc.includes(`'sha256-${digest}'`));
+  }
+  assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
+});
 
 test("service index and city routes render distinct content with one canonical", async () => {
   for (const [path, heading] of [
