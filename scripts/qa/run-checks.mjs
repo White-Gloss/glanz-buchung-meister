@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
+import { qaBase, controlBase, qaPort, controlPort, tlsPort } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 assertIsolatedGithubCi();
 import assert from "node:assert/strict";
@@ -233,7 +233,7 @@ await mkdir(outputRoot, { recursive: true });
 await writeFile(resolve(outputRoot, "runner.log"), "");
 try {
   await access(resolve(projectRoot, ".output/server/index.mjs"));
-  for (const port of [qaPort, controlPort]) await reservePort(port);
+  for (const port of [qaPort, controlPort, tlsPort]) await reservePort(port);
   await releasePorts();
   log("QA: starting a fresh isolated production server");
   const server = startNode("isolated-server", ["scripts/qa/isolated-server.mjs"]);
