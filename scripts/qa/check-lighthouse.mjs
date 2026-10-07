@@ -341,6 +341,80 @@ try {
           );
           for (const id of metricIds)
             assert.ok(Number.isFinite(metrics[id].value), `Missing ${id} metric`);
+          if (profile === "mobile" && run === 1) {
+            // Keep the real first valid trace for offline diagnosis. This recomputes
+            // computed artifacts from the same navigation, without changing scores.
+            const artifacts = result.artifacts;
+            assert.ok(artifacts?.Trace?.traceEvents && Array.isArray(artifacts.DevtoolsLog));
+            const input = {
+              trace: artifacts.Trace,
+              devtoolsLog: artifacts.DevtoolsLog,
+              gatherContext: artifacts.GatherContext,
+              settings: report.configSettings,
+              URL: artifacts.URL,
+              SourceMaps: artifacts.SourceMaps,
+              simulator: null,
+            };
+            await writeFile(resolve(output, `${prefix}.metric-input.json`), JSON.stringify(input));
+            const { LanternFirstContentfulPaint } = await import(
+              pathToFileURL(resolve(packageRoot, "core/computed/metrics/lantern-first-contentful-paint.js"))
+            );
+            const { LanternLargestContentfulPaint } = await import(
+              pathToFileURL(resolve(packageRoot, "core/computed/metrics/lantern-largest-contentful-paint.js"))
+            );
+            const { getComputationDataParams } = await import(
+              pathToFileURL(resolve(packageRoot, "core/computed/metrics/lantern-metric.js"))
+            );
+            const context = { computedCache: new Map() };
+            const fcp = await LanternFirstContentfulPaint.request(input, context);
+            const lcp = await LanternLargestContentfulPaint.request(input, context);
+            const data = await getComputationDataParams(input, context);
+            const serializeEstimate = (estimate) => ({
+              timeInMs: estimate.timeInMs,
+              nodeTimings: [...estimate.nodeTimings].map(([node, timing]) => ({
+                id: node.id,
+                type: node.type,
+                ...timing,
+                observedStartTimeUs: node.startTime,
+                observedEndTimeUs: node.endTime,
+                ...(node.type === "network" ? {
+                  url: node.request.url,
+                  resourceType: node.request.resourceType,
+                  priority: node.request.priority,
+                  protocol: node.request.protocol,
+                  transferSize: node.request.transferSize,
+                  initiatorType: node.initiatorType,
+                } : {
+                  eventName: node.event.name,
+                  observedDurationUs: node.duration,
+                  performedLayout: node.didPerformLayout(),
+                  evaluatedScriptURLs: [...node.getEvaluateScriptURLs()],
+                  childEventNames: [...new Set(node.childEvents.map((event) => event.name))],
+                }),
+              })).sort((a, b) => b.endTime - a.endTime),
+            });
+            const serializeMetric = (metric) => ({
+              timing: metric.timing,
+              optimistic: serializeEstimate(metric.optimisticEstimate),
+              pessimistic: serializeEstimate(metric.pessimisticEstimate),
+            });
+            await writeFile(resolve(output, `${prefix}.lantern.json`), JSON.stringify({
+              reportedFCP: report.audits["first-contentful-paint"].numericValue,
+              reportedLCP: report.audits["largest-contentful-paint"].numericValue,
+              fcp: serializeMetric(fcp),
+              lcp: serializeMetric(lcp),
+              processedNavigation: {
+                timings: data.processedNavigation.timings,
+                timestamps: data.processedNavigation.timestamps,
+              },
+              simulator: {
+                rtt: data.simulator.rtt,
+                throughput: data.simulator.throughput,
+                cpuSlowdownMultiplier: data.simulator.cpuSlowdownMultiplier,
+                layoutTaskMultiplier: data.simulator.layoutTaskMultiplier,
+              },
+            }, null, 2));
+          }
           const failedAudits = Object.fromEntries(
             categories.map((id) => [
               id,
