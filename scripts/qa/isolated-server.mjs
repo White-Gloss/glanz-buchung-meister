@@ -1,4 +1,4 @@
-import { qaBase, controlBase, qaPort, controlPort } from "./ports.mjs";
+import { qaBase, controlBase, qaPort, controlPort, tlsPort, lighthouseBase } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 assertIsolatedGithubCi();
 // Isolated local verification only; this file is not imported by the application.
@@ -7,9 +7,17 @@ import { fileURLToPath } from "node:url";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 process.chdir(projectRoot);
 const outputRoot = resolve(".qa-output");
-import { createServer } from "node:http";
-import { writeFile, mkdir } from "node:fs/promises";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createServer, request } from "node:http";
+import { createSecureServer } from "node:http2";
+import { execFileSync } from "node:child_process";
+import { writeFile, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { createHash, createHmac, randomBytes, randomUUID, X509Certificate } from "node:crypto";
+
+function proxyHeaders(headers) {
+  const hop = new Set(["connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "http2-settings", "te", "trailer", "proxy-authenticate", "proxy-authorization"]);
+  for (const name of String(headers.connection || "").split(",")) hop.add(name.trim().toLowerCase());
+  return Object.fromEntries(Object.entries(headers).filter(([name]) => !name.startsWith(":") && !hop.has(name.toLowerCase())));
+}
 process.env.DATABASE_URL = "";
 process.env.ALLOW_LOCAL_PGLITE = "1";
 process.env.NODE_ENV = "production";
@@ -249,4 +257,72 @@ createServer(async (req, res) => {
     res.end(String(error));
   }
 }).listen(controlPort, "127.0.0.1");
+
+// Same guarded process and unchanged Nitro build; only Lighthouse uses TLS/H2.
+const tlsDirectory = await mkdtemp(resolve(outputRoot, "lighthouse-tls-"));
+const keyPath = resolve(tlsDirectory, "key.pem");
+const certificatePath = resolve(tlsDirectory, "cert.pem");
+let tlsServer;
+let certificate;
+try {
+  try {
+    execFileSync("openssl", ["version"], { timeout: 5_000, stdio: "pipe" });
+  } catch (error) {
+    throw new Error("OpenSSL must be installed on the isolated Linux CI runner for Lighthouse TLS.", { cause: error });
+  }
+  const previousUmask = process.umask(0o077);
+  try {
+    execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-noenc", "-sha256", "-days", "1",
+      "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1,DNS:localhost",
+      "-keyout", keyPath, "-out", certificatePath], { timeout: 10_000, stdio: "pipe" });
+  } finally {
+    process.umask(previousUmask);
+  }
+  certificate = new X509Certificate(await readFile(certificatePath));
+  tlsServer = createSecureServer({ key: await readFile(keyPath), cert: await readFile(certificatePath), allowHTTP1: false }, (req, res) => {
+    const runId = process.env.QA_RUN_ID;
+    res.setHeader("x-qa-run-id", runId);
+    if (typeof req.url !== "string" || !req.url.startsWith("/") || req.url.startsWith("//")) {
+      res.writeHead(400);
+      res.end("An origin-form request path is required");
+      return;
+    }
+    if (req.method === "GET" && req.url === "/__qa/h2-identity") {
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(JSON.stringify({ runId, protocol: "h2" }));
+      return;
+    }
+    // The destination is constant; incoming URLs are used only as request paths.
+    const upstream = request(qaBase, { method: req.method, path: req.url, headers: {
+      ...proxyHeaders(req.headers), host: new URL(qaBase).host,
+      "x-forwarded-host": "white-gloss.de", "x-forwarded-proto": "https",
+    } }, (response) => {
+      if (res.destroyed) return response.destroy();
+      res.writeHead(response.statusCode, { ...proxyHeaders(response.headers), "x-qa-run-id": runId });
+      response.on("error", () => res.destroy());
+      response.pipe(res);
+    });
+    upstream.on("error", () => {
+      if (res.destroyed) return;
+      if (res.headersSent) return res.destroy();
+      res.writeHead(502);
+      res.end("Isolated upstream unavailable");
+    });
+    req.on("aborted", () => upstream.destroy());
+    req.on("error", () => upstream.destroy());
+    res.on("close", () => upstream.destroy());
+    res.on("error", () => upstream.destroy());
+    req.pipe(upstream);
+  });
+} finally {
+  // Node has loaded the key into its TLS context; never retain it in CI artifacts.
+  await rm(keyPath, { force: true });
+}
+tlsServer.on("error", (error) => { throw error; });
+await new Promise((ready) => tlsServer.listen({ port: tlsPort, host: "127.0.0.1", exclusive: true }, ready));
+await writeFile(resolve(outputRoot, "lighthouse-transport.json"), JSON.stringify({
+  runId: process.env.QA_RUN_ID, origin: lighthouseBase, port: tlsPort,
+  spkiPin: createHash("sha256").update(certificate.publicKey.export({ type: "spki", format: "der" })).digest("base64"),
+  certificatePath, protocol: "h2",
+}, null, 2));
 await import("../../.output/server/index.mjs");
