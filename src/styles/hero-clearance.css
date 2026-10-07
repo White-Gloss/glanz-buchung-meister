@@ -67,6 +67,12 @@ body[data-consent-banner="open"] .city-wa-bar {
   [data-shell="public"] .scroll-film-copy {
     padding-bottom: 6rem;
   }
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
+    --film-copy-offset: 0px;
+  }
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
+    transform: translateY(0);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-shell="public"] .scroll-film-copy {

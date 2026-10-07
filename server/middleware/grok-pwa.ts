@@ -16,6 +16,7 @@
  */
 import installPageTemplate from "../../scripts/install-page.html?raw";
 import { REVALIDATE_CACHE_CONTROL } from "../cache-policy";
+import { applySecurityHeaders, inlineScriptHashes } from "../security-headers";
 import { grokOgIdentity } from "virtual:grok-og-identity";
 import {
   acceptsHtml,
@@ -108,12 +109,20 @@ export default async function grokPwaMiddleware(
       host: requestHost(event),
       url: urlWithQuery,
     });
+    // This document returns before the downstream security middleware runs.
+    // Hash its final static classifier script without modifying the template.
+    const headers = new Headers({
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-cache",
+    });
+    applySecurityHeaders((name, value) => headers.set(name, value), {
+      allowFraming: false,
+      hsts: true,
+      scriptHashes: inlineScriptHashes(html),
+    });
     return gzipHtml(
       new Response(html, {
-        headers: {
-          "content-type": "text/html; charset=utf-8",
-          "cache-control": "no-cache",
-        },
+        headers,
       }),
       acceptEncoding,
     );

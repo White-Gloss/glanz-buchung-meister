@@ -64,11 +64,50 @@ async function geometry(page) {
     const pause = document.querySelector(".scroll-film-pause");
     const style = copy && getComputedStyle(copy);
     const video = document.querySelector(".scroll-film video");
+    const title = document.querySelector(".scroll-film-copy h1");
+    const titleText = title && [...title.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    let titleStart = null;
+    if (titleText) {
+      const range = document.createRange();
+      range.selectNodeContents(titleText);
+      titleStart = range.getClientRects()[0]?.toJSON() ?? null;
+    }
+    const titleHit = titleStart && document.elementFromPoint(titleStart.left + Math.min(4, titleStart.width / 2), titleStart.top + Math.min(4, titleStart.height / 2));
+    const inspect = (selector) => {
+      const element = document.querySelector(selector);
+      if (!element) return null;
+      const css = getComputedStyle(element);
+      const opacity = (node) => {
+        let value = 1;
+        for (let ancestor = node; ancestor; ancestor = ancestor.parentElement)
+          value *= Number(getComputedStyle(ancestor).opacity);
+        return value;
+      };
+      const targets = element.matches("a[href], button") ? [element]
+        : [...element.querySelectorAll("a[href], button:not(:disabled)")].filter((target) =>
+          !target.closest('[aria-hidden="true"]') && getComputedStyle(target).visibility === "visible" && opacity(target) > 0);
+      return {
+        opacity: opacity(element),
+        visibility: css.visibility,
+        display: css.display,
+        inert: Boolean(element.closest("[inert]")),
+        hitTest: targets.length > 0 && targets.every((target) => {
+          const bounds = target.getBoundingClientRect();
+          const hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+          return bounds.width > 0 && bounds.height > 0 && Boolean(hit && target.contains(hit));
+        }),
+      };
+    };
     return {
       viewport: { width: innerWidth, height: innerHeight },
+      scrollY,
+      shortLandscape: matchMedia("(max-height: 600px) and (orientation: landscape)").matches,
       copy: rect(".scroll-film-copy-inner"),
       reservedCopy: rect(".scroll-film-copy"),
       stage: rect(".scroll-film-stage"),
+      header: rect(".site-header"),
+      titleStart,
+      titleStartHit: Boolean(titleHit && title?.contains(titleHit)),
       controls: rect(".scroll-film-bottom"),
       cta: rect(".scroll-film-cta"),
       prices: rect(".scroll-film-prices"),
@@ -79,8 +118,15 @@ async function geometry(page) {
         height: style.height,
         paddingBottom: style.paddingBottom,
         contain: style.contain,
+        opacity: style.opacity,
+        inert: copy.inert,
         translate: style.translate,
         transform: style.transform,
+      },
+      targetVisibility: {
+        cta: inspect(".scroll-film-cta"),
+        prices: inspect(".scroll-film-prices"),
+        controls: inspect(".scroll-film-bottom"),
       },
       consentHeight: getComputedStyle(document.documentElement).getPropertyValue("--consent-banner-height"),
       storedConsent: localStorage.getItem("wg-consent"),
@@ -100,6 +146,37 @@ async function geometry(page) {
   });
 }
 
+function visibilityFailure(snapshot, name) {
+  const target = snapshot[name];
+  const visible = snapshot.targetVisibility[name];
+  if (!target || target.width <= 0 || target.height <= 0) return "has no measurable bounds";
+  if (!snapshot.header || !snapshot.banner) return "has no measured header or consent boundary";
+  if (target.top < snapshot.header.bottom - 1 || target.bottom > snapshot.banner.top + 1
+    || target.left < -1 || target.right > snapshot.viewport.width + 1)
+    return "is not fully between the header and consent banner";
+  if (!visible || visible.opacity < 0.99 || visible.visibility !== "visible" || visible.display === "none" || visible.inert)
+    return "is transparent, hidden or inert";
+  if (!visible.hitTest) return "is obstructed at its interactive targets";
+  return null;
+}
+
+async function scrollToVisibleTarget(page, name) {
+  const attempts = [];
+  let snapshot = await geometry(page);
+  for (let attempt = 0; attempt < 3 && visibilityFailure(snapshot, name); attempt++) {
+    const target = snapshot[name];
+    if (!target || !snapshot.header || !snapshot.banner) break;
+    const delta = (target.top + target.bottom - snapshot.header.bottom - snapshot.banner.top) / 2;
+    await page.evaluate((amount) => window.scrollBy({ top: amount, behavior: "instant" }), delta);
+    // Native scroll updates the fixed header and film policy before measurement.
+    await page.waitForTimeout(200);
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+    snapshot = await geometry(page);
+    attempts.push(snapshot);
+  }
+  return { attempts, geometry: snapshot, failure: visibilityFailure(snapshot, name) };
+}
+
 try {
   for (const viewport of viewports) {
     const result = { viewport, blockedRequests: [], pageErrors: [] };
@@ -108,6 +185,7 @@ try {
       viewport: { width: viewport.width, height: viewport.height },
       reducedMotion: "no-preference",
       locale: "de-DE",
+      extraHTTPHeaders: { "x-forwarded-host": "white-gloss.de" },
     });
     try {
       await context.route("**/*", (route) => {
@@ -165,16 +243,22 @@ try {
       assert.equal(result.initial.storedConsent, null, "First-visit measurement must have no saved decision.");
       assert.equal(result.observerSupported, true, "Layout-shift observation must be supported.");
       assert.ok(result.initial.banner && result.initial.banner.width > 0 && result.initial.banner.height > 0, "The visible consent banner must have measurable bounds.");
-      const { copy, reservedCopy, stage, banner, controls } = result.initial;
-      if (!copy || !stage || copy.top < stage.top - 1 || copy.bottom > banner.top + 1)
+      const { copy, reservedCopy, stage, banner, controls, header, titleStart } = result.initial;
+      const scrollLayout = result.initial.shortLandscape && stage && header && stage.height > viewport.height - header.bottom + 1;
+      result.intentionalScrollLayout = Boolean(scrollLayout);
+      if (!copy || !stage || copy.top < stage.top - 1 || copy.bottom > (scrollLayout ? stage.bottom : banner.top) + 1
+        || (scrollLayout && (copy.left < stage.left - 1 || copy.right > stage.right + 1)))
         report.failures.push(`${viewport.name}: hero copy is obscured by the header or consent banner`);
+      if (scrollLayout && (!titleStart || titleStart.top < header.bottom - 1 || titleStart.top >= banner.top - 1
+        || !result.initial.titleStartHit || Number(result.initial.copyCss?.opacity) < 0.99 || result.initial.copyCss?.inert))
+        report.failures.push(`${viewport.name}: the start of the hero title is not initially visible`);
       if (!reservedCopy || !stage || reservedCopy.width <= 0 || Math.abs(reservedCopy.height - stage.height) > 1)
         report.failures.push(`${viewport.name}: copy space is not reserved for the full stage height`);
-      if (!controls || controls.top < stage.top - 1 || controls.bottom > banner.top + 1)
+      if (!controls || controls.top < stage.top - 1 || controls.bottom > (scrollLayout ? stage.bottom : banner.top) + 1)
         report.failures.push(`${viewport.name}: film controls are outside the visible area above consent`);
       if (result.cls > 0.1) report.failures.push(`${viewport.name}: initial CLS ${result.cls} exceeds 0.1`);
       result.overlap = {};
-      for (const name of ["cta", "prices"]) {
+      for (const name of scrollLayout ? [] : ["cta", "prices"]) {
         const target = result.initial[name];
         result.overlap[name] = overlap(target, result.initial.banner);
         if (!target || target.width <= 0 || target.height <= 0 || target.top < -1 || target.bottom > viewport.height + 1)
@@ -186,6 +270,23 @@ try {
         const pause = result.initial.pause;
         if (!pause || pause.visibility !== "visible" || Number(pause.opacity) <= 0 || pause.disabled || pause.ariaHidden === "true" || pause.tabIndex < 0)
           report.failures.push(`${viewport.name}: enabled motion has no accessible pause control`);
+      }
+
+      if (scrollLayout) {
+        result.reachability = {};
+        try {
+          for (const name of ["cta", "prices", "controls"]) {
+            result.reachability[name] = await scrollToVisibleTarget(page, name);
+            if (result.reachability[name].failure)
+              report.failures.push(`${viewport.name}: ${name} ${result.reachability[name].failure} after native page scrolling`);
+            await page.screenshot({ path: `${output}/${viewport.name}-${name}-reachable.png` });
+          }
+        } finally {
+          await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+          await page.waitForTimeout(200);
+          result.afterReachabilityReset = await geometry(page);
+          assert.ok(result.afterReachabilityReset.scrollY <= 1, "Reset native scrolling before consent and film interactions.");
+        }
       }
 
       // Interactions follow the completed first-visit measurement, never alter it.

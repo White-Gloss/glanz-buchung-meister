@@ -33,6 +33,7 @@ function harness({
   memory = 8,
   cores = 8,
   mobile = false,
+  shortLandscape = false,
   posterReady = true,
   hash = "",
   engaged = true,
@@ -41,11 +42,13 @@ function harness({
   const document = Object.assign(new EventTarget(), { hidden: false });
   const mobileMedia = Object.assign(new EventTarget(), { matches: mobile });
   const motion = Object.assign(new EventTarget(), { matches: reduced });
+  const landscapeMedia = Object.assign(new EventTarget(), { matches: shortLandscape });
   const connection = Object.assign(new EventTarget(), { saveData, effectiveType });
   const pending = new Map();
   let id = 0;
   Object.assign(window, {
-    matchMedia: (q) => (q.includes("prefers-reduced-motion") ? motion : mobileMedia),
+    matchMedia: (q) => q.includes("prefers-reduced-motion") ? motion
+      : q.includes("max-height: 600px") ? landscapeMedia : mobileMedia,
     requestAnimationFrame: (fn) => {
       pending.set(++id, fn);
       return id;
@@ -163,6 +166,7 @@ function harness({
     pending,
     pausedRef,
     mobileMedia,
+    landscapeMedia,
     cleanup,
     flush,
     finishSeek,
@@ -276,6 +280,44 @@ test("changing reduced-motion preference removes video and restores readable cop
   assert.equal(h.copy.inert, false);
   assert.equal(h.copy.style.opacity, "1");
   h.cleanup();
+});
+test("short landscape keeps scrolling copy readable and avoids video downloads", () => {
+  const h = harness({ shortLandscape: true });
+  h.scroll(450);
+  assert.equal(h.section.dataset.motion, "still");
+  assert.equal(h.downloads.length, 0);
+  assert.equal(h.copy.style.opacity, "1");
+  assert.equal(h.copy.inert, false);
+  h.cleanup();
+});
+test("rotation into short landscape stops motion; rotating back restores it and cleanup detaches the policy", () => {
+  const h = harness({ engaged: false });
+  h.scroll(300);
+  h.load();
+  h.scroll(3000);
+  assert.equal(h.copy.inert, true);
+  h.landscapeMedia.matches = true;
+  h.landscapeMedia.dispatchEvent(new Event("change"));
+  assert.equal(h.section.dataset.motion, "still");
+  assert.equal(h.video.source, "");
+  assert.equal(h.copy.style.opacity, "1");
+  assert.equal(h.copy.inert, false);
+  const count = h.downloads.length;
+  h.scroll(350);
+  assert.equal(h.downloads.length, count);
+  h.landscapeMedia.matches = false;
+  h.landscapeMedia.dispatchEvent(new Event("change"));
+  assert.equal(h.section.dataset.motion, "scroll");
+  assert.equal(h.downloads.length, count + 1);
+  h.load();
+  assert.equal(h.video.dataset.visible, "true");
+  h.cleanup();
+  const afterCleanup = h.downloads.length;
+  h.landscapeMedia.matches = true;
+  h.landscapeMedia.dispatchEvent(new Event("change"));
+  h.landscapeMedia.matches = false;
+  h.landscapeMedia.dispatchEvent(new Event("change"));
+  assert.equal(h.downloads.length, afterCleanup);
 });
 test("media errors retain the poster and do not collapse an already entered sequence", () => {
   const h = harness();

@@ -27,9 +27,15 @@ export default async function securityHeadersMiddleware(
   if (!result || typeof result !== "object") return result;
   const res = result as { headers?: HeaderBag; status?: number };
   if (typeof res.headers?.set !== "function") return result;
+  // Start's request-scoped router has already nonced every streamed bootstrap.
+  // Reuse that value when applying the final Nitro policy instead of replacing it.
+  const nonce = res.headers
+    .get?.("content-security-policy")
+    ?.match(/(?:^|;)\s*script-src\b[^;]*'nonce-([A-Za-z0-9+/]{43}=)'/)?.[1];
   applySecurityHeaders((name, value) => res.headers!.set(name, value), {
     allowFraming: false,
     hsts: true,
+    nonce,
   });
   const cacheControl = responseCacheControl({
     pathname: event.url?.pathname ?? "",

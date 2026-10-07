@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { applySecurityHeaders, inlineScriptHashes } from "../server/security-headers.ts";
 import {
   acceptsHtml,
   createHeadInjector,
@@ -39,6 +40,11 @@ function sendHtml(res, html) {
   res.setHeader("content-type", "text/html; charset=utf-8");
   res.setHeader("cache-control", "no-cache");
   res.setHeader("content-length", String(body.byteLength));
+  applySecurityHeaders((name, value) => res.setHeader(name, value), {
+    allowFraming: true,
+    hsts: false,
+    scriptHashes: inlineScriptHashes(html),
+  });
   res.end(body);
 }
 
