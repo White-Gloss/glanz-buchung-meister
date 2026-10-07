@@ -300,9 +300,11 @@ export const extras: Extra[] = [
 export type City = {
   slug: string;
   name: string;
-  km: number;
-  minutes: number;
+  /** Null means the exact pickup address still needs a distance/price confirmation. */
+  km: number | null;
+  minutes: number | null;
   blurb: string;
+  pickupNote?: string;
 };
 
 export const cities: City[] = [
@@ -313,6 +315,54 @@ export const cities: City[] = [
     minutes: 10,
     blurb:
       "Horb am Neckar ist unser Standort. Die Werkstatt befindet sich an der Adresse Arnistal 27. Viele Kunden bringen das Fahrzeug selbst vorbei.",
+  },
+  {
+    slug: "sulz-am-neckar",
+    name: "Sulz am Neckar",
+    km: null,
+    minutes: null,
+    blurb: "Aus Sulz am Neckar zur Aufbereitung nach Horb: Abholung und Rückgabe stimmen wir anhand Ihrer Adresse ab.",
+    pickupNote: "Bitte nennen Sie bei der Anfrage auch den Teilort, zum Beispiel Fischingen, Glatt oder Holzhausen. Für die Kernstadt und die Teilorte von Sulz lässt sich die Abholung erst mit der vollständigen Adresse planen. Den Preis bestätigen wir vor dem Termin.",
+  },
+  {
+    slug: "empfingen",
+    name: "Empfingen",
+    km: null,
+    minutes: null,
+    blurb: "Für Fahrzeuge aus Empfingen verbinden wir die Aufbereitung in Horb mit einer persönlich abgestimmten Abholung.",
+    pickupNote: "Wählen Sie Empfingen als Abholort und nennen Sie die vollständige Übergabeadresse. Liegt diese in Wiesenstetten oder Dommelsberg, geben Sie den Ortsteil bitte dazu an. Abholpreis und Rückgabezeit bestätigen wir passend zum vereinbarten Arbeitsumfang.",
+  },
+  {
+    slug: "voehringen",
+    name: "Vöhringen",
+    km: null,
+    minutes: null,
+    blurb: "Unser Abholgebiet Vöhringen liegt in Baden-Württemberg. Die Fahrzeugpflege führen wir in unserer Horber Werkstatt aus.",
+    pickupNote: "Gemeint ist Vöhringen im Landkreis Rottweil mit Wittershausen. Bitte geben Sie Ortsteil, Straße und Hausnummer für die Übergabe an. So können wir die Abholung eindeutig zuordnen und den Preis vorab bestätigen.",
+  },
+  {
+    slug: "dornhan",
+    name: "Dornhan",
+    km: null,
+    minutes: null,
+    blurb: "Für die Aufbereitung Ihres Fahrzeugs aus Dornhan vereinbaren wir Übergabe und Rückgabe persönlich. Gearbeitet wird in Horb.",
+    pickupNote: "Bei einer Adresse etwa in Leinstetten, Bettenhausen oder Marschalkenzimmern nennen Sie bitte den Stadtteil mit. Die Angabe Dornhan allein ersetzt die genaue Abholadresse nicht. Strecke, Abholpreis und Übergabezeit klären wir vor der Zusage.",
+  },
+  {
+    slug: "dornstetten",
+    name: "Dornstetten",
+    km: null,
+    minutes: null,
+    blurb: "Fahrzeugaufbereitung für Dornstetten: Sie können das Auto nach Horb bringen oder eine Abholung an Ihrer Adresse anfragen.",
+    pickupNote: "Ob Dornstetten, Aach oder Hallwangen: Teilen Sie uns den Ortsteil und die genaue Übergabeadresse mit. Für die Planung zählen diese Adresse und die gewählte Aufbereitung. Abholung, Preis und Rückgabe werden persönlich bestätigt.",
+  },
+  {
+    slug: "schopfloch",
+    name: "Schopfloch",
+    km: null,
+    minutes: null,
+    blurb: "Aus Schopfloch im Landkreis Freudenstadt bereiten wir Fahrzeuge in Horb auf. Den Hol- und Bringservice planen wir nach Ihrer Adresse.",
+    pickupNote: "Nennen Sie bei Ihrer Anfrage Schopfloch, Oberiflingen oder Unteriflingen zusammen mit Straße und Hausnummer. Damit lässt sich die Übergabe konkret abstimmen. Einen festen Abholpreis sagen wir erst nach Prüfung dieser Adresse zu.",
   },
   {
     slug: "nagold",
@@ -421,7 +471,8 @@ export const pickupPricing = {
   freeUpToKm: 60,
 };
 
-export function pickupFee(km: number, packageId?: PackageId) {
+export function pickupFee(km: number | null, packageId?: PackageId) {
+  if (km === null || !Number.isFinite(km) || km < 0) return null;
   if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm) return 0;
   const tiers = [...pickupPricing.tiers].sort((a, b) => a.maxKm - b.maxKm);
   for (const tier of tiers) {
@@ -430,8 +481,8 @@ export function pickupFee(km: number, packageId?: PackageId) {
   return null;
 }
 
-export function pickupPriceText(km: number, packageId?: PackageId) {
-  if (packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm) {
+export function pickupPriceText(km: number | null, packageId?: PackageId) {
+  if (km !== null && km >= 0 && packageId === pickupPricing.freeWithPackageId && km <= pickupPricing.freeUpToKm) {
     return `inklusive bis ${pickupPricing.freeUpToKm} km`;
   }
   const fee = pickupFee(km, packageId ?? "basis");
@@ -526,7 +577,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Bei der Autoaufbereitung prüfen wir Lack und Innenraum und besprechen Ihre Wünsche. So legen wir gemeinsam fest, welche Reinigung und Pflege Ihr Fahrzeug benötigt.",
-      "Die Arbeit bleibt in Horb. Aus 13 Städten holen wir das Auto ab und bringen es wieder.",
+      "Die Arbeit bleibt in Horb. In den aufgeführten Abholgebieten holen wir das Auto nach Vereinbarung ab und bringen es wieder.",
     ],
     steps: [
       {
@@ -777,7 +828,7 @@ export const services: ServicePage[] = [
       "Bei Brandlöchern und Rissen im Ledersitz kann eine punktuelle Reparatur möglich sein. Ob sie für Ihr Fahrzeug geeignet ist, prüfen wir vor der Beauftragung.",
       "Wir prüfen Material, Dicke, Schadensränder und die Belastung der Stelle. Sitzwangen und Einstiegsbereiche sind besonders beansprucht. Ist keine dauerhafte Reparatur zu erwarten, führen wir sie nicht aus.",
       "Wir passen die Farbe an das vorhandene Leder an. Bei älterem oder ausgebleichtem Leder kann ein Unterschied sichtbar bleiben. Für ein vollständig einheitliches Ergebnis ist unter Umständen ein Neubezug durch eine Sattlerei nötig.",
-      "Schicken Sie Fotos bei Tageslicht, ohne Blitz. Wenn es machbar wirkt, schauen wir das Auto in Horb an und nennen den Preis. Abholung aus 13 Städten ist möglich.",
+      "Schicken Sie Fotos bei Tageslicht, ohne Blitz. Wenn es machbar wirkt, schauen wir das Auto in Horb an und nennen den Preis. Abholung in unseren Abholgebieten ist nach Vereinbarung möglich.",
     ],
     steps: [
       {

@@ -339,18 +339,18 @@ export const articles: Article[] = [
   {
     slug: "fahrzeugaufbereitung-horb-am-neckar",
     seoExcerpt:
-      "Standort Arnistal 27, Hol- und Bringservice in 13 Städten, klare Pakete ab 149 Euro. Warum die Ausführung in Horb bleibt.",
+      "Standort Arnistal 27, Hol- und Bringservice in Horb und Umgebung, klare Pakete ab 149 Euro. Warum die Ausführung in Horb bleibt.",
     title: "Fahrzeugaufbereitung in Horb am Neckar – Werkstatt statt Waschstraße",
     excerpt:
-      "Standort Arnistal 27, Hol- und Bringservice in 13 Städten, klare Pakete ab 149 €. Warum die Ausführung in Horb bleibt.",
+      "Standort Arnistal 27, Hol- und Bringservice in Horb und Umgebung, klare Pakete ab 149 €. Warum die Ausführung in Horb bleibt.",
     date: "2026-03-08",
     image: "/media/hero.webp",
     minutes: 5,
     sections: [
       {
-        heading: "Ein Standort, 13 Abholorte",
+        heading: "Eine Werkstatt, mehrere Abholgebiete",
         paragraphs: [
-          "White Gloss Detailing arbeitet in Horb am Neckar. Aus Nagold, Rottenburg, Freudenstadt, Tübingen, Herrenberg, Calw, Balingen, Rottweil, Böblingen, Reutlingen, Oberndorf und Sindelfingen holen wir Fahrzeuge ab.",
+          "White Gloss Detailing arbeitet in Horb am Neckar. Der Hol- und Bringservice umfasst auch Sulz am Neckar, Empfingen, Vöhringen, Dornhan, Dornstetten und Schopfloch. Alle Abholorte finden Sie in der Abholübersicht; die genaue Übergabeadresse und den Preis stimmen wir persönlich ab.",
           `${pickupTierSummary()}. ${pickupKeramikNote()}. Die Politur erfolgt in unserer Werkstatt mit geeigneter Beleuchtung und geschützten Arbeitsbedingungen.`,
         ],
       },

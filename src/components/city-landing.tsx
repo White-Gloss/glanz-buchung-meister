@@ -18,7 +18,7 @@ import {
 import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
 import { serviceAreaLink } from "@/lib/seo-policy";
-import { citySeoCopy } from "@/lib/city-copy";
+import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 
 const steps = [
@@ -201,8 +201,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den
-            Termin stimmen wir vorab ab.
+            {city.pickupNote ?? `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den Termin stimmen wir vorab ab.`}
           </p>
           <p className="mt-4 max-w-2xl text-muted">
             Unser einziger Werkstattstandort ist {site.street}, {site.postalCode} {site.city}.{" "}
@@ -211,18 +210,18 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
               : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}
           </p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            Aus {city.name} sind es ca. {city.km} km / {city.minutes} Minuten. Politur und Keramik
+            {cityJourneyText(city)}. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
             vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.
           </p>
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Entfernung</dt>
-              <dd className="mt-2 font-display text-3xl">ca. {city.km} km</dd>
+              <dd className="mt-2 font-display text-3xl">{city.km === null ? "Nach Adresse" : `ca. ${city.km} km`}</dd>
             </div>
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Fahrzeit</dt>
-              <dd className="mt-2 font-display text-3xl">ca. {city.minutes} Min.</dd>
+              <dd className="mt-2 font-display text-3xl">{city.minutes === null ? "Nach Absprache" : `ca. ${city.minutes} Min.`}</dd>
             </div>
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Abholung</dt>

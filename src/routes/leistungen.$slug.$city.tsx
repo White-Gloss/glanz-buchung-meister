@@ -97,7 +97,7 @@ function ServiceCityPage() {
       <PageHero
         src={service.image}
         alt={service.imageAlt}
-        kicker={`${city.name} · ${city.km} km`}
+        kicker={`${city.name} · ${city.km === null ? "Abholung nach Vereinbarung" : `${city.km} km`}`}
         title={serviceCityHeading(service.seoNav, city)}
         lead={service.teaser}
         crumbs={[
@@ -126,7 +126,7 @@ function ServiceCityPage() {
           <>
         <section aria-label={`Anfahrt und Abholung aus ${city.name}`} className="mb-8 space-y-4">
           <h2 className="font-display text-2xl">{city.slug === "horb-am-neckar" ? "Direkt zur Werkstatt in Horb" : `Abholung aus ${city.name} planen`}</h2>
-          <p className="text-muted">{city.blurb} Entfernungen und Fahrzeiten sind Richtwerte; die genaue Übergabeadresse stimmen wir vorab ab.</p>
+          <p className="text-muted">{city.pickupNote ?? `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte; die genaue Übergabeadresse stimmen wir vorab ab.`}</p>
           <p className="text-sm text-muted">{city.slug === "horb-am-neckar"
             ? `Sie können das Fahrzeug nach Terminvereinbarung direkt zu ${site.street} bringen. Die Uhrzeit der Anfrage bezeichnet die Fahrzeugabgabe.`
             : pickupFee(city.km, "basis") === null
@@ -158,7 +158,7 @@ function ServiceCityPage() {
           ))}
           {service.pendingApproval ? null : (
             <p>
-              Aus {city.name} beträgt die Fahrt rund {city.minutes} Minuten. Sie übergeben das
+              {city.minutes === null ? "Fahrzeit und Übergabetermin stimmen wir anhand Ihrer Adresse ab." : `Aus ${city.name} beträgt die Fahrt rund ${city.minutes} Minuten.`} Sie übergeben das
               Fahrzeug an der vereinbarten Adresse; die Rückgabe erfolgt nach der Kontrolle unter
               Werkstattlicht.
             </p>
@@ -166,6 +166,19 @@ function ServiceCityPage() {
         </div>
         {service.honestNote ? <p className="mt-6 border border-line p-4 text-sm">{service.honestNote}</p> : null}
         <ServicePriceNote service={service} />
+        {service.steps?.length ? (
+          <section className="mt-10" aria-label={`Ablauf: ${service.seoNav}`}>
+            <h2 className="font-display text-2xl">So läuft die {service.seoNav} ab</h2>
+            <ol className="mt-6 space-y-5">
+              {service.steps.map((step) => (
+                <li key={step.title} className="border-l border-line pl-4">
+                  <h3 className="font-display text-lg">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
         {service.slug === "keramikversiegelung" ? (
           <p className="mt-8 text-sm">
             Paket Keramikschutz ab {eur(packages[2].price)} {site.vatNote} {pickupKeramikNote()}.

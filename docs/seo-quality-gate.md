@@ -1,4 +1,4 @@
-# SEO-Qualitätsgate – 27. September 2026
+# SEO-Qualitätsgate – ergänzt am 7. Oktober 2026
 
 ## Verbindlicher Stand
 
@@ -17,9 +17,9 @@ Sitemap. Die Route filtert es vor der CMS-Ergänzung und auch für den CMS-Ausfa
 
 | Gruppe | URLs | HTTP / Indexierung |
 | --- | ---: | --- |
-| Öffentliche Hubs, Leistungsseiten, Ratgeber, Abholgebiete | 48 | 200, index, Self-Canonical, Sitemap |
-| Angebotene Leistung × Stadt ohne vollständigen Nachweis | 117 | 200, noindex,follow, Self-Canonical, keine Sitemap |
-| Scheinwerferaufbereitung × Stadt, aktuell nicht angeboten | 13 | 301 zur zentralen Erläuterung, keine Sitemap |
+| Öffentliche Hubs, Leistungsseiten, Ratgeber, Abholgebiete | 54 | 200, index, Self-Canonical, Sitemap |
+| Angebotene Leistung × Stadt ohne vollständigen Nachweis | 171 | 200, noindex,follow, Self-Canonical, keine Sitemap |
+| Scheinwerferaufbereitung × Stadt, aktuell nicht angeboten | 19 | 301 zur zentralen Erläuterung, keine Sitemap |
 | Zentrale Scheinwerfer-Erläuterung und sechs rechtliche Hilfsseiten | 7 | 200, noindex,follow, Self-Canonical, keine Sitemap |
 
 Das ist eine bewusste Verringerung indexierbarer Duplikate, keine Zusage steigender
@@ -51,17 +51,17 @@ Zahl. Google garantiert weder Indexierung noch Rankings oder Rich Results.
 
 ## Dauerhaftes Redirect-Verzeichnis
 
-Für jeden der 13 Slugs aus `cities` gilt:
+Für jeden der 19 Slugs aus `cities` gilt:
 `/leistungen/scheinwerferaufbereitung/{stadt}` → 301 →
 `/leistungen/scheinwerferaufbereitung` (200, noindex).
 Grund: Leistung derzeit nicht angeboten; eine einzige Erläuterung hat mehr Nutzen
-als 13 Ortsvarianten. Kein Redirect auf die Startseite, keine Kette, keine Änderung
+als einzelne Ortsvarianten. Kein Redirect auf die Startseite, keine Kette, keine Änderung
 anderer Leistungs-URLs. Bei Änderungen an Ziel oder Verfügbarkeit Register und
 Tests gemeinsam aktualisieren. Weitere Konsolidierungen benötigen Einzelbelege.
 
 ## Suchintents und interne Links
 
-`src/lib/seo-intents.ts` erfasst alle 48 indexierbaren statischen Seiten. Der Test
+`src/lib/seo-intents.ts` erfasst alle 54 indexierbaren statischen Seiten. Der Test
 verhindert fehlende Zuordnungen und identische Primärcluster. Er ersetzt keine
 GSC-Query/Seiten-Analyse: verschiedene Formulierungen können trotzdem denselben
 Intent haben. Der Crawl bezieht auch veröffentlichte CMS-Artikel ein: ein
@@ -76,7 +76,7 @@ abgegrenzte Wissensfrage. Der Foto-Anfrageweg für Dellen wird bewusst von der
 Leistungsbeschreibung getrennt. Nichtindexierbare Matrixseiten sind keine
 seitenweiten Navigationsziele mehr. URLs und direkte Buchungswege bleiben nutzbar.
 
-Die zwölf auswärtigen Stadt-Hubs tragen „Fahrzeugaufbereitung + Stadt“ im Title
+Die 18 auswärtigen Stadt-Hubs tragen „Fahrzeugaufbereitung + Stadt“ im Title
 und internen Linktext; H1, Beschreibung, Leistungsübersicht und echte Ablauf-/
 Preis-FAQs verbinden die Aufbereitung mit dem jeweiligen Abholgebiet. Beispiel:
 `/abholservice/nagold` ist das indexierbare Ziel für „Fahrzeugaufbereitung Nagold“.
@@ -97,7 +97,7 @@ zusätzliche Matrixseiten nach dem oben vereinbarten Qualitäts-Gate.
 - Lokal ohne Server: `npm run lint`, `npm run typecheck`, `npm test`,
   `node --test src/lib/seo-policy.test.ts src/lib/seo-intents.test.ts`, `npm run build`.
 - CI: vorhandene isolierte Buchungs-/Upload-/Integrationsprüfungen plus Crawl
-  aller 185 Inventar-URLs und veröffentlichter CMS-Artikel. Status, Canonical,
+  aller 251 Inventar-URLs und veröffentlichter CMS-Artikel. Status, Canonical,
   Robots, Title, Description, H1, JSON-LD, Sitemap, Eingangslinks und Ortsangaben.
 - Ähnlichkeit: 5-Wort-Shingle-Jaccard als Diagnose, kein angeblicher Rankingwert.
   Nicht indexierbare Matrixduplikate bleiben bewusst sichtbar im Bericht.
@@ -136,6 +136,11 @@ für bestandenes Feld-INP. Bestehende responsive AVIF-Bilder, Hero-Priorität,
 lokale Fonts, verzögertes Video und Cache-Regeln erhalten und Regressionen prüfen.
 
 ## Quellen
+
+Die sechs zusätzlichen Abholgebiete vom 07.10.2026 sowie ihre Quellen und die
+noch offene Freigabe von Leistungs-Ortsseiten sind in
+[`ortsseiten-2026-10-07.md`](ortsseiten-2026-10-07.md) dokumentiert. Die Zahlen
+oben beschreiben den Codebestand; ein Live-Nachweis muss zum Release gehören.
 
 - https://developers.google.com/search/docs/essentials/spam-policies
 - https://developers.google.com/search/docs/crawling-indexing/block-indexing
