@@ -57,6 +57,10 @@ export function ScrollFilmHero() {
       !(device.deviceMemory && device.deviceMemory <= 2) &&
       !(device.hardwareConcurrency && device.hardwareConcurrency <= 2);
 
+    const setCopyTransform = (offset: number) => {
+      copy.style.transform = `translateY(calc(var(--film-copy-offset, 0px) + ${offset}px)) translateZ(0)`;
+    };
+
     const reveal = () => {
       if (disposed || !enabled || video.readyState < 2) return;
       firstFrame = true;
@@ -82,7 +86,7 @@ export function ScrollFilmHero() {
       position = Math.abs(difference) < 0.0008 ? target : position + difference * 0.24;
       const opacity = Math.max(0, 1 - position / 0.65);
       copy.style.opacity = String(opacity);
-      copy.style.transform = `translateY(${-position * 24}px)`;
+      setCopyTransform(-position * 24);
       // Invisible links must not remain keyboard focus targets.
       copy.inert = opacity < 0.03;
       section.style.setProperty("--film-progress", String(position));
@@ -160,7 +164,7 @@ export function ScrollFilmHero() {
         lastSeek = -1;
         releaseVideo?.();
         copy.style.opacity = "1";
-        copy.style.transform = "none";
+        setCopyTransform(0);
         copy.inert = false;
       }
     };
@@ -171,7 +175,7 @@ export function ScrollFilmHero() {
       section.dataset.motion = window.scrollY > top + 80 ? "fallback" : "still";
       delete video.dataset.visible;
       copy.style.opacity = "1";
-      copy.style.transform = "none";
+      setCopyTransform(0);
       copy.inert = false;
     };
     const visibility = () => {
@@ -266,25 +270,27 @@ export function ScrollFilmHero() {
         </div>
         <div className="scroll-film-shade" aria-hidden="true" />
         <div ref={copyRef} className="scroll-film-copy">
-          <p className="scroll-film-eyebrow">
-            White Gloss Detailing · <span className="scroll-film-place">Horb am Neckar</span>
-          </p>
-          <h1>
-            Ihr Fahrzeug.
-            <br />
-            Unser Handwerk.
-            <br />
-            <span>Bis ins Detail.</span>
-          </h1>
-          <p className="scroll-film-service">
-            Fahrzeugaufbereitung in Horb: Innenraum, Politur und Keramik.
-          </p>
-          <Link to="/" hash="buchung" className="scroll-film-cta">
-            Termin anfragen <IconArrowRight className="size-4" aria-hidden />
-          </Link>
-          <Link to="/preise" className="scroll-film-prices">
-            Pakete & Preise
-          </Link>
+          <div className="scroll-film-copy-inner">
+            <p className="scroll-film-eyebrow">
+              White Gloss Detailing · <span className="scroll-film-place">Horb am Neckar</span>
+            </p>
+            <h1>
+              Ihr Fahrzeug.
+              <br />
+              Unser Handwerk.
+              <br />
+              <span>Bis ins Detail.</span>
+            </h1>
+            <p className="scroll-film-service">
+              Fahrzeugaufbereitung in Horb: Innenraum, Politur und Keramik.
+            </p>
+            <Link to="/" hash="buchung" className="scroll-film-cta">
+              Termin anfragen <IconArrowRight className="size-4" aria-hidden />
+            </Link>
+            <Link to="/preise" className="scroll-film-prices">
+              Pakete & Preise
+            </Link>
+          </div>
         </div>
         <div className="scroll-film-signature" aria-hidden="true">
           <p>Sorgfalt für Ihr Fahrzeug.</p>
@@ -292,26 +298,34 @@ export function ScrollFilmHero() {
         </div>
         <div className="scroll-film-bottom">
           <a href="#nach-dem-film" className="scroll-film-skip">
-            <span>{motion ? "Scrollen & entdecken" : "Mehr entdecken"}</span>
+            <span>
+              <span className="scroll-film-skip-label">{motion ? "Scrollen & entdecken" : "Mehr entdecken"}</span>
+              <span className="scroll-film-label-reserve" aria-hidden="true">Scrollen & entdecken</span>
+              <span className="scroll-film-label-reserve" aria-hidden="true">Mehr entdecken</span>
+            </span>
             <span aria-hidden="true">↓</span>
           </a>
           <div className="scroll-film-track" aria-hidden="true">
             <span />
           </div>
-          {motion && (
-            <button
-              type="button"
-              className="scroll-film-pause"
-              aria-pressed={paused}
-              onClick={() => {
-                pausedRef.current = !pausedRef.current;
-                setPaused(pausedRef.current);
-                sectionRef.current?.dispatchEvent(new Event("film-resume"));
-              }}
-            >
-              {paused ? "Bewegung fortsetzen" : "Bewegung pausieren"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="scroll-film-pause"
+            style={{ opacity: motion ? 1 : 0, pointerEvents: motion ? "auto" : "none" }}
+            disabled={!motion}
+            aria-hidden={motion ? undefined : true}
+            tabIndex={motion ? 0 : -1}
+            aria-pressed={paused}
+            onClick={() => {
+              pausedRef.current = !pausedRef.current;
+              setPaused(pausedRef.current);
+              sectionRef.current?.dispatchEvent(new Event("film-resume"));
+            }}
+          >
+            <span>{paused ? "Bewegung fortsetzen" : "Bewegung pausieren"}</span>
+            <span className="scroll-film-label-reserve" aria-hidden="true">Bewegung fortsetzen</span>
+            <span className="scroll-film-label-reserve" aria-hidden="true">Bewegung pausieren</span>
+          </button>
         </div>
       </div>
     </section>

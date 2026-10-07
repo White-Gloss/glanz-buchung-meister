@@ -10,6 +10,13 @@ const photos = ["customer-14", "customer-05", "customer-09"].map((id) =>
   customerPhotos.find((photo) => photo.id === id)!,
 );
 const focalPoints = ["50% 58%", "50% 64%", "50% 66%"];
+// Match luxury.css without undersizing the original 3:4 photos when cover
+// crops a tall frame. The desktop stage occupies .95 / 1.95 of the track;
+// tablet images can reach 32rem high, requiring at least 24rem of source width.
+const desktopPhotoSizes =
+  "max(calc((min(90vw, 1380px) - clamp(3rem, 7vw, 7.5rem)) * 19 / 39), calc((clamp(400px, calc(100svh - 180px), 680px) - 44px) * .75))";
+const mobilePhotoSizes =
+  "(max-width: 639px) calc(100vw - 2.5rem), (prefers-reduced-motion: reduce) min(90vw, 1380px), max(calc(45vw - 1rem), 24rem)";
 
 export function PackageShowcase() {
   const root = useRef<HTMLElement>(null);
@@ -39,6 +46,7 @@ export function PackageShowcase() {
       });
     },
     root,
+    root,
   );
 
   return (
@@ -63,7 +71,7 @@ export function PackageShowcase() {
                 style={{ objectPosition: focalPoints[index] }}
                 src={photo.src}
                 srcSet={photo.srcSet}
-                sizes="(min-width: 1440px) 600px, 45vw"
+                sizes={desktopPhotoSizes}
                 alt={photo.alt}
                 width={photo.width}
                 height={photo.height}
@@ -85,7 +93,7 @@ export function PackageShowcase() {
                 style={{ objectPosition: focalPoints[index] }}
                 src={photos[index].src}
                 srcSet={photos[index].srcSet}
-                sizes="90vw"
+                sizes={mobilePhotoSizes}
                 alt={photos[index].alt}
                 width={photos[index].width}
                 height={photos[index].height}

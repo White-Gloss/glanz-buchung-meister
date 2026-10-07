@@ -9,8 +9,40 @@
   line-height: 1.45;
 }
 [data-shell="public"] .scroll-film-service + .scroll-film-cta { margin-top: 1.25rem; }
+[data-shell="public"] .scroll-film-copy {
+  --film-copy-offset: 0px;
+  top: 0;
+  bottom: auto;
+  width: 65%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  padding-bottom: clamp(6rem, 11svh, 7.5rem);
+  contain: layout size;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.scroll-film-copy-inner {
+  width: 100%;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+.scroll-film-skip > span:first-child,
+.scroll-film-pause {
+  display: inline-grid;
+}
+.scroll-film-skip-label,
+.scroll-film-label-reserve,
+.scroll-film-pause > span {
+  grid-area: 1 / 1;
+}
+.scroll-film-label-reserve {
+  visibility: hidden;
+}
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-  bottom: calc(clamp(6rem, 11svh, 7.5rem) + var(--consent-banner-height, 0px));
+  --film-copy-offset: calc(-1 * var(--consent-banner-height, 0px));
 }
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
   transform: translateY(calc(-1 * var(--consent-banner-height, 0px)));
@@ -18,13 +50,27 @@ body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
 body[data-consent-banner="open"] .city-wa-bar {
   bottom: calc(var(--consent-banner-height, 0px) + max(0.65rem, env(safe-area-inset-bottom)));
 }
+@media (max-width: 900px) {
+  [data-shell="public"] .scroll-film-copy {
+    width: 78%;
+  }
+}
 @media (max-width: 639px) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-    bottom: calc(8rem + var(--consent-banner-height, 0px));
+  [data-shell="public"] .scroll-film-copy {
+    left: 1.25rem;
+    right: 1.25rem;
+    width: auto;
+    padding-bottom: 8rem;
   }
 }
 @media (max-height: 600px) and (orientation: landscape) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-    bottom: calc(6rem + var(--consent-banner-height, 0px));
+  [data-shell="public"] .scroll-film-copy {
+    padding-bottom: 6rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-shell="public"] .scroll-film-copy {
+    transform: translateY(var(--film-copy-offset, 0px)) translateZ(0) !important;
+    will-change: auto;
   }
 }

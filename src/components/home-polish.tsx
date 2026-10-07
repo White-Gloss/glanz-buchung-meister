@@ -8,38 +8,43 @@ import { DESKTOP_MOTION, useScrollMotion } from "@/lib/scroll-motion";
 export function HomePolish() {
   const progressRef = useRef<HTMLDivElement>(null);
 
-  useScrollMotion(DESKTOP_MOTION, ({ gsap, ScrollTrigger }) => {
-    const main = document.querySelector<HTMLElement>('[data-home="polish"]');
-    if (!main) return;
-    const image = main.querySelector(".workshop-personal .film-chapter-media img");
-    if (image)
-      gsap.fromTo(
-        image,
-        { scale: 1.04, yPercent: 1 },
-        {
-          scale: 1.025,
-          yPercent: -1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: image.closest(".film-chapter"),
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 0.4,
+  useScrollMotion(
+    DESKTOP_MOTION,
+    ({ gsap, ScrollTrigger }) => {
+      const main = document.querySelector<HTMLElement>('[data-home="polish"]');
+      if (!main) return;
+      const image = main.querySelector(".workshop-personal .film-chapter-media img");
+      if (image)
+        gsap.fromTo(
+          image,
+          { scale: 1.04, yPercent: 1 },
+          {
+            scale: 1.025,
+            yPercent: -1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: image.closest(".film-chapter"),
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.4,
+            },
           },
-        },
-      );
-    // Lazy sections (reviews, booking) change the page height after load.
-    let timer = 0;
-    const resize = new ResizeObserver(() => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => ScrollTrigger.refresh(), 200);
-    });
-    resize.observe(main);
-    return () => {
-      resize.disconnect();
-      window.clearTimeout(timer);
-    };
-  });
+        );
+      // Lazy sections (reviews, booking) change the page height after load.
+      let timer = 0;
+      const resize = new ResizeObserver(() => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => ScrollTrigger.refresh(), 200);
+      });
+      resize.observe(main);
+      return () => {
+        resize.disconnect();
+        window.clearTimeout(timer);
+      };
+    },
+    undefined,
+    ".workshop-personal",
+  );
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

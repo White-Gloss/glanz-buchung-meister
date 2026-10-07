@@ -5,10 +5,12 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
-import appCss from "../styles.css?url";
-import refinementCss from "../styles/refinement.css?url";
-import luxuryCss from "../styles/luxury.css?url";
-import heroClearanceCss from "../styles/hero-clearance.css?url";
+// Start collects the complete stylesheets for SSR in this cascade order.
+// Side-effect imports also keep styles available during client navigation.
+import "../styles.css";
+import "../styles/refinement.css";
+import "../styles/luxury.css";
+import "../styles/hero-clearance.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -41,13 +43,6 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      // Blocking stylesheet again: deferred print→all caused ~0.50 CLS on
-      // .hero-follow when critical CSS mismatched full utilities (post-#214).
-      // Pre-#214 PSI had CLS ~0.01 with this pattern.
-      { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: refinementCss },
-      { rel: "stylesheet", href: luxuryCss },
-      { rel: "stylesheet", href: heroClearanceCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],

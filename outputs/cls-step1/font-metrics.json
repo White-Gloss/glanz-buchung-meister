@@ -1,0 +1,216 @@
+{
+  "inspectedAt": "2026-10-07T04:10:17.275Z",
+  "method": "Measured normalized x-height alignment with target vertical metric overrides",
+  "formulas": {
+    "adjustment": "(Barlow.xHeight / Barlow.unitsPerEm) / (Arial.xHeight / Arial.unitsPerEm)",
+    "sizeAdjustPercent": "100 * adjustment",
+    "ascentOverridePercent": "100 * (Barlow.targetAscent / Barlow.unitsPerEm) / adjustment",
+    "descentOverridePercent": "100 * abs(Barlow.targetDescent / Barlow.unitsPerEm) / adjustment",
+    "lineGapOverridePercent": "100 * (Barlow.targetLineGap / Barlow.unitsPerEm) / adjustment"
+  },
+  "limits": [
+    "Matching x-height and vertical metrics does not make distinct glyph advance widths identical.",
+    "Arial values are measured from the recorded local font binaries; other installed versions can differ.",
+    "Do not apply these Arial metric values to Helvetica or unrelated fallback fonts.",
+    "Explicit fallback descriptors cover normal-style weights 300, 400, 500 and 600; higher weights can synthesize bold."
+  ],
+  "specification": "https://www.w3.org/TR/WOFF2/#table_dir_format",
+  "fallbackFonts": [
+    {
+      "file": "C:/Windows/Fonts/arial.ttf",
+      "sha256": "b3658eadae55e682b5f69eb64c439c1ecc8f196c0bb8d4756d145d13bc86476a",
+      "bytes": 1045720,
+      "unitsPerEm": 2048,
+      "weight": 400,
+      "xHeight": 1062,
+      "capHeight": 1467,
+      "averageCharacterWidth": 904,
+      "hheaAscent": 1854,
+      "hheaDescent": -434,
+      "hheaLineGap": 67,
+      "typoAscent": 1491,
+      "typoDescent": -431,
+      "typoLineGap": 307,
+      "winAscent": 1854,
+      "winDescent": 434,
+      "fsSelection": 64,
+      "useTypoMetrics": false,
+      "targetAscent": 1854,
+      "targetDescent": -434,
+      "targetLineGap": 67
+    },
+    {
+      "file": "C:/Windows/Fonts/arialbd.ttf",
+      "sha256": "e8f4e3baf6cc35fed6fcce3a540e8b39e8f6cda1d22a28f2ec8f526fef7a43f5",
+      "bytes": 989780,
+      "unitsPerEm": 2048,
+      "weight": 700,
+      "xHeight": 1062,
+      "capHeight": 1466,
+      "averageCharacterWidth": 980,
+      "hheaAscent": 1854,
+      "hheaDescent": -434,
+      "hheaLineGap": 67,
+      "typoAscent": 1491,
+      "typoDescent": -431,
+      "typoLineGap": 307,
+      "winAscent": 1854,
+      "winDescent": 434,
+      "fsSelection": 32,
+      "useTypoMetrics": false,
+      "targetAscent": 1854,
+      "targetDescent": -434,
+      "targetLineGap": 67
+    }
+  ],
+  "fonts": [
+    {
+      "target": {
+        "file": "C:/Users/info/Documents/Codex/white-gloss-cls-20261007/public/fonts/barlow-300.woff2",
+        "sha256": "889347d7bc19d53d984a12f413457fbc8b3723757464cf514121534f626dc4db",
+        "bytes": 22076,
+        "unitsPerEm": 1000,
+        "weight": 300,
+        "xHeight": 504,
+        "capHeight": 700,
+        "averageCharacterWidth": 509,
+        "hheaAscent": 1000,
+        "hheaDescent": -200,
+        "hheaLineGap": 0,
+        "typoAscent": 1000,
+        "typoDescent": -200,
+        "typoLineGap": 0,
+        "winAscent": 1112,
+        "winDescent": 249,
+        "fsSelection": 192,
+        "useTypoMetrics": true,
+        "targetAscent": 1000,
+        "targetDescent": -200,
+        "targetLineGap": 0
+      },
+      "fallbackFile": "C:/Windows/Fonts/arial.ttf",
+      "fallbackSource": [
+        "Arial",
+        "ArialMT"
+      ],
+      "cssWeight": 300,
+      "css": {
+        "sizeAdjustPercent": 97.19322,
+        "ascentOverridePercent": 102.887835,
+        "descentOverridePercent": 20.577567,
+        "lineGapOverridePercent": 0
+      }
+    },
+    {
+      "target": {
+        "file": "C:/Users/info/Documents/Codex/white-gloss-cls-20261007/public/fonts/barlow-400.woff2",
+        "sha256": "b0a8ad37ac45f5fb22ced461576db72e44e295107aad7a9c8a7a4bad728fd03b",
+        "bytes": 22196,
+        "unitsPerEm": 1000,
+        "weight": 400,
+        "xHeight": 506,
+        "capHeight": 700,
+        "averageCharacterWidth": 513,
+        "hheaAscent": 1000,
+        "hheaDescent": -200,
+        "hheaLineGap": 0,
+        "typoAscent": 1000,
+        "typoDescent": -200,
+        "typoLineGap": 0,
+        "winAscent": 1112,
+        "winDescent": 249,
+        "fsSelection": 192,
+        "useTypoMetrics": true,
+        "targetAscent": 1000,
+        "targetDescent": -200,
+        "targetLineGap": 0
+      },
+      "fallbackFile": "C:/Windows/Fonts/arial.ttf",
+      "fallbackSource": [
+        "Arial",
+        "ArialMT"
+      ],
+      "cssWeight": 400,
+      "css": {
+        "sizeAdjustPercent": 97.578908,
+        "ascentOverridePercent": 102.481164,
+        "descentOverridePercent": 20.496233,
+        "lineGapOverridePercent": 0
+      }
+    },
+    {
+      "target": {
+        "file": "C:/Users/info/Documents/Codex/white-gloss-cls-20261007/public/fonts/barlow-500.woff2",
+        "sha256": "cd759df8ef9efc98fee14307b4eb5ba27f08b1f8f2f3ad2872432e25c89907a8",
+        "bytes": 22008,
+        "unitsPerEm": 1000,
+        "weight": 500,
+        "xHeight": 509,
+        "capHeight": 700,
+        "averageCharacterWidth": 518,
+        "hheaAscent": 1000,
+        "hheaDescent": -200,
+        "hheaLineGap": 0,
+        "typoAscent": 1000,
+        "typoDescent": -200,
+        "typoLineGap": 0,
+        "winAscent": 1112,
+        "winDescent": 249,
+        "fsSelection": 192,
+        "useTypoMetrics": true,
+        "targetAscent": 1000,
+        "targetDescent": -200,
+        "targetLineGap": 0
+      },
+      "fallbackFile": "C:/Windows/Fonts/arial.ttf",
+      "fallbackSource": [
+        "Arial",
+        "ArialMT"
+      ],
+      "cssWeight": 500,
+      "css": {
+        "sizeAdjustPercent": 98.157439,
+        "ascentOverridePercent": 101.877149,
+        "descentOverridePercent": 20.37543,
+        "lineGapOverridePercent": 0
+      }
+    },
+    {
+      "target": {
+        "file": "C:/Users/info/Documents/Codex/white-gloss-cls-20261007/public/fonts/barlow-600.woff2",
+        "sha256": "4b52ddd4836b592df0e4832b8286956883cdc651b015126bdd18f184b7f90cc3",
+        "bytes": 22772,
+        "unitsPerEm": 1000,
+        "weight": 600,
+        "xHeight": 511,
+        "capHeight": 700,
+        "averageCharacterWidth": 522,
+        "hheaAscent": 1000,
+        "hheaDescent": -200,
+        "hheaLineGap": 0,
+        "typoAscent": 1000,
+        "typoDescent": -200,
+        "typoLineGap": 0,
+        "winAscent": 1112,
+        "winDescent": 249,
+        "fsSelection": 192,
+        "useTypoMetrics": true,
+        "targetAscent": 1000,
+        "targetDescent": -200,
+        "targetLineGap": 0
+      },
+      "fallbackFile": "C:/Windows/Fonts/arialbd.ttf",
+      "fallbackSource": [
+        "Arial Bold",
+        "Arial-BoldMT"
+      ],
+      "cssWeight": 600,
+      "css": {
+        "sizeAdjustPercent": 98.543126,
+        "ascentOverridePercent": 101.478412,
+        "descentOverridePercent": 20.295682,
+        "lineGapOverridePercent": 0
+      }
+    }
+  ]
+}
