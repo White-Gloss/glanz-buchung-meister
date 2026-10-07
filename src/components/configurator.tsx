@@ -164,6 +164,7 @@ export function Configurator({
       window.removeEventListener("focus", refresh);
     };
   }, [date]);
+  const requestWithoutTime = packageId === "keramik";
   const blockedSlots = useMemo(() => {
     if (!isCalendarDate(date)) return [];
     return timeSlots.filter((time) => {
@@ -193,6 +194,7 @@ export function Configurator({
       return;
     }
     setError("");
+    const requestedSlot = requestWithoutTime ? "" : slot;
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const errors = saved.current
       ? {}
@@ -204,14 +206,14 @@ export function Configurator({
       !saved.current &&
       e.currentTarget.querySelector<HTMLInputElement>("#date")?.validity.badInput
     ) {
-      errors.date = "Bitte geben Sie ein vollständiges Datum an oder lassen Sie das Feld leer.";
+      errors.date = "Bitte geben Sie ein vollst�ndiges Datum an oder lassen Sie das Feld leer.";
     }
-    if (!saved.current && slot && (blockedSlots.includes(slot) || availabilityState !== "ready"))
+    if (!saved.current && requestedSlot && (blockedSlots.includes(requestedSlot) || availabilityState !== "ready"))
       errors.date =
-        "Bitte wählen Sie eine verfügbare Abgabezeit oder fragen Sie ohne feste Uhrzeit an.";
+        "Bitte w�hlen Sie eine verf�gbare Abgabezeit oder fragen Sie ohne feste Uhrzeit an.";
     showErrors(errors, e.currentTarget);
     if (Object.keys(errors).length) {
-      setError("Bitte prüfen Sie die markierten Felder.");
+      setError("Bitte pr�fen Sie die markierten Felder.");
       return;
     }
     submitting.current = true;
@@ -229,7 +231,7 @@ export function Configurator({
             postalCode: postalCode.trim(),
             town: town.trim(),
             date,
-            slot,
+            slot: requestedSlot,
             note,
             packageId,
             classId,
@@ -249,7 +251,7 @@ export function Configurator({
       queueBookingConversion(created.reference);
       const remaining = [...media];
       for (const [index, file] of media.entries()) {
-        setUploadProgress(`Aufnahme ${index + 1} von ${media.length} wird übertragen …`);
+        setUploadProgress(`Aufnahme ${index + 1} von ${media.length} wird �bertragen �`);
         await attachBookingPhotos({
           data: {
             vorgang: created.reference,
@@ -273,8 +275,8 @@ export function Configurator({
     } catch {
       setError(
         saved.current
-          ? `Ihre Anfrage ${saved.current.reference} ist gespeichert. Die übrigen Fotos konnten nicht übertragen werden. Bitte erneut versuchen oder die Fotoauswahl entfernen, um ohne weitere Fotos fortzufahren.`
-          : "Wir konnten den Eingang Ihrer Anfrage nicht bestätigen. Sie können dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
+          ? `Ihre Anfrage ${saved.current.reference} ist gespeichert. Die �brigen Fotos konnten nicht �bertragen werden. Bitte erneut versuchen oder die Fotoauswahl entfernen, um ohne weitere Fotos fortzufahren.`
+          : "Wir konnten den Eingang Ihrer Anfrage nicht best�tigen. Sie k�nnen dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
       );
       setUploadProgress("");
       submitting.current = false;
@@ -346,7 +348,7 @@ export function Configurator({
                     {p.searchLabel}
                   </span>
                   <span className="block text-sm text-muted">
-                    ab {eur(p.price * quote.klass.factor)} · {p.duration}
+                    ab {eur(p.price * quote.klass.factor)} � {p.duration}
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-subtle">{p.kicker}</span>
                 </span>
@@ -392,7 +394,7 @@ export function Configurator({
           onToggle={(e) => setExtrasOpen(e.currentTarget.open)}
         >
           <summary>
-            Zusatzleistungen (optional){extraIds.length ? ` · ${extraIds.length} ausgewählt` : ""}
+            Zusatzleistungen (optional){extraIds.length ? ` � ${extraIds.length} ausgew�hlt` : ""}
           </summary>
           <fieldset className="mt-4">
             <legend className="sr-only">Zusatzleistungen</legend>
@@ -425,12 +427,12 @@ export function Configurator({
                             <span className="mt-0.5 block text-xs text-subtle">
                               {ex.hint}
                               {packageId === "keramik" && ex.id === "felgen"
-                                ? " · Felgenversiegelung ist im Paket enthalten; dieses Extra umfasst zusätzlich die Demontage und Tiefenreinigung."
+                                ? " � Felgenversiegelung ist im Paket enthalten; dieses Extra umfasst zus�tzlich die Demontage und Tiefenreinigung."
                                 : ""}
                               {packageId === "keramik" && ex.id === "leder"
-                                ? " · Lederpflege ist im Paket enthalten. Einen darüber hinausgehenden Aufwand stimmen wir nach der Begutachtung mit Ihnen ab."
+                                ? " � Lederpflege ist im Paket enthalten. Einen dar�ber hinausgehenden Aufwand stimmen wir nach der Begutachtung mit Ihnen ab."
                                 : ""}
-                              {ex.inspect ? " · nach Prüfung" : ""}
+                              {ex.inspect ? " � nach Pr�fung" : ""}
                             </span>
                           </span>
                         </span>
@@ -457,7 +459,7 @@ export function Configurator({
           >
             {cities.map((c) => (
               <option key={c.slug} value={c.slug}>
-                {c.name} · {c.km} km
+                {c.name} � {c.km} km
               </option>
             ))}
           </select>
@@ -473,17 +475,17 @@ export function Configurator({
           {eur(quote.total)}
         </p>
         <p className="text-sm text-muted">
-          {quote.klass.label} · {quote.pack.name}
+          {quote.klass.label} � {quote.pack.name}
           {quote.pickup === 0
-            ? " · Abholung kostenlos"
+            ? " � Abholung kostenlos"
             : quote.pickupOnRequest
-              ? " · Abholung auf Anfrage"
+              ? " � Abholung auf Anfrage"
               : quote.pickup
-                ? ` · Abholung ${eur(quote.pickup)}`
+                ? ` � Abholung ${eur(quote.pickup)}`
                 : ""}
         </p>
         <p className="text-xs text-subtle">
-          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zusätzlichen
+          Dies ist der voraussichtliche Preis inkl. MwSt. Falls der Fahrzeugzustand zus�tzlichen
           Aufwand erfordert, stimmen wir den Endpreis nach der Begutachtung mit Ihnen ab.{" "}
           {paymentNote}
         </p>
@@ -537,7 +539,7 @@ export function Configurator({
           />
           {fieldError("email")}
         </Field>
-        <Field tone="public" id="street" label="Straße und Hausnummer (Pflichtfeld)">
+        <Field tone="public" id="street" label="Stra�e und Hausnummer (Pflichtfeld)">
           <input
             disabled={pending || savedReference !== null}
             id="street"
@@ -638,9 +640,9 @@ export function Configurator({
             onChange={(e) => setDate(e.target.value)}
           />
           {fieldError("date")}
-          {date && blockedSlots.length > 0 ? (
+          {!requestWithoutTime && date && blockedSlots.length > 0 ? (
             <p className="text-xs text-muted">
-              Einige Zeiträume sind bereits belegt. Bitte wählen Sie eine verfügbare Abgabezeit oder
+              Einige Zeitr�ume sind bereits belegt. Bitte w�hlen Sie eine verf�gbare Abgabezeit oder
               fragen Sie ohne feste Uhrzeit an.
             </p>
           ) : null}
@@ -648,20 +650,20 @@ export function Configurator({
         {availabilityState !== "ready" ? (
           <p role="status" className="text-xs text-muted">
             {availabilityState === "loading"
-              ? "Verfügbarkeit wird geprüft …"
-              : "Die Kalenderprüfung ist vorübergehend nicht verfügbar. Eine Anfrage ohne feste Uhrzeit ist möglich."}
+              ? "Verf�gbarkeit wird gepr�ft �"
+              : "Die Kalenderpr�fung ist vor�bergehend nicht verf�gbar. Eine Anfrage ohne feste Uhrzeit ist m�glich."}
           </p>
         ) : null}
-        <Field tone="public" id="slot" label="Gewünschte Abgabezeit (optional)">
+        <Field tone="public" id="slot" label={requestWithoutTime ? "Keramik-Anfrage ohne feste Uhrzeit" : "Gew�nschte Abgabezeit (optional)"}>
           <select
-            disabled={pending || savedReference !== null || availabilityState !== "ready"}
+            disabled={pending || savedReference !== null || requestWithoutTime || availabilityState !== "ready"}
             id="slot"
             className={inputLine}
-            value={slot}
+            value={requestWithoutTime ? "" : slot}
             onChange={(e) => setSlot(e.target.value)}
           >
-            <option value="">Keine Angabe</option>
-            {timeSlots.map((s) => {
+            <option value="">{requestWithoutTime ? "Anfrage ohne feste Uhrzeit" : "Keine Angabe"}</option>
+            {(!requestWithoutTime ? timeSlots : []).map((s) => {
               const isBlocked = Boolean(
                 date && availabilityState === "ready" && blockedSlots.includes(s),
               );
@@ -673,11 +675,13 @@ export function Configurator({
             })}
           </select>
           <p className="text-xs text-muted">
-            {requestOnly && availabilityState === "ready"
-              ? "Datum und Uhrzeit sind Wünsche. Ihren verbindlichen Termin wählen und unterschreiben Sie später im persönlichen Angebot."
+            {requestWithoutTime
+              ? "Ihre Keramik-Anfrage wird ohne feste Uhrzeit �bermittelt. White Gloss pr�ft die erforderliche Arbeitszeit und vereinbart den Termin pers�nlich mit Ihnen."
+              : requestOnly && availabilityState === "ready"
+              ? "Datum und Uhrzeit sind W�nsche. Ihren verbindlichen Termin w�hlen und unterschreiben Sie sp�ter im pers�nlichen Angebot."
               : availabilityState === "loading"
-                ? "Freie Zeiträume werden geprüft …"
-                : "Die Auswahl berücksichtigt die vorläufige Paketdauer. Die endgültige Arbeitszeit und Terminbestätigung folgen nach unserer Prüfung."}
+                ? "Freie Zeitr�ume werden gepr�ft �"
+                : "Die Auswahl ber�cksichtigt die vorl�ufige Paketdauer. Die endg�ltige Arbeitszeit und Terminbest�tigung folgen nach unserer Pr�fung."}
           </p>
         </Field>
         <Field tone="public" id="note" label="Ihre Nachricht (optional)">
@@ -716,11 +720,11 @@ export function Configurator({
           </p>
         ) : null}
         <section aria-label="Zusammenfassung Ihrer Anfrage" className="border-y border-line py-5">
-          <h4 className="text-lg font-medium">Ihre Anfrage im Überblick</h4>
+          <h4 className="text-lg font-medium">Ihre Anfrage im �berblick</h4>
           <dl className="booking-summary mt-3 text-sm">
-            <dt>Paket · {quote.klass.label}</dt>
+            <dt>Paket � {quote.klass.label}</dt>
             <dd>
-              {quote.pack.name} · {eur(quote.pack.price * quote.klass.factor)}
+              {quote.pack.name} � {eur(quote.pack.price * quote.klass.factor)}
             </dd>
             {extras
               .filter((ex) => extraIds.includes(ex.id) && !extraIncluded(packageId, ex.id))
@@ -730,7 +734,7 @@ export function Configurator({
                   <dd>{eur(ex.price * quote.klass.factor)}</dd>
                 </div>
               ))}
-            <dt>Abholung · {quote.city?.name}</dt>
+            <dt>Abholung � {quote.city?.name}</dt>
             <dd>{quote.pickupOnRequest ? "Preis nach Absprache" : eur(quote.pickup ?? 0)}</dd>
             <dt>Gesamtpreis (voraussichtlich)</dt>
             <dd>
@@ -739,27 +743,27 @@ export function Configurator({
             </dd>
             <dt>Kontakt</dt>
             <dd>
-              {name || "Bitte Namen ergänzen"} · {phone || "Bitte Telefon ergänzen"}
-              {email ? ` · ${email}` : ""}
+              {name || "Bitte Namen erg�nzen"} � {phone || "Bitte Telefon erg�nzen"}
+              {email ? ` � ${email}` : ""}
             </dd>
             <dt>Anschrift</dt>
             <dd>
               {street && postalCode && town
                 ? `${street}, ${postalCode} ${town}`
-                : "Bitte Anschrift ergänzen"}
+                : "Bitte Anschrift erg�nzen"}
             </dd>
             <dt>Wunschtermin</dt>
             <dd>
               {date || "Nach Absprache"}
-              {slot ? ` · ${slot} Uhr` : ""}
+              {slot ? ` � ${slot} Uhr` : ""}
             </dd>
             <dt>Aufnahmen</dt>
-            <dd>{media.length} ausgewählt</dd>
+            <dd>{media.length} ausgew�hlt</dd>
           </dl>
         </section>
         <p className="text-sm text-muted">
-          So geht es weiter: Wir prüfen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
-          unserer Prüfung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die Rechnung
+          So geht es weiter: Wir pr�fen Ihre Fotos, Leistungen und den Wunschtermin. Erst nach
+          unserer Pr�fung stimmen wir den verbindlichen Preis und Termin mit Ihnen ab. Die Rechnung
           folgt nach erbrachter Leistung.
         </p>
         <label htmlFor="privacy" className="flex items-start gap-2 text-sm text-muted">
@@ -776,7 +780,7 @@ export function Configurator({
           <span>
             Ich habe die{" "}
             <Link to="/datenschutz" className="underline hover:text-fg">
-              Datenschutzerklärung
+              Datenschutzerkl�rung
             </Link>{" "}
             zur Kenntnis genommen (Pflichtfeld). Die Anfrage ist unverbindlich.{" "}
             <Link to="/agb" className="underline hover:text-fg">
@@ -798,7 +802,7 @@ export function Configurator({
             onChange={(e) => setReviewEmailConsent(e.target.checked)}
           />
           <span>
-            Ich möchte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um ehrliches
+            Ich m�chte sieben Tage nach dem abgeschlossenen Auftrag einmalig per E-Mail um ehrliches
             Feedback und eine Google-Bewertung gebeten werden. Freiwillig und jederzeit widerrufbar.
           </span>
         </label>
@@ -831,11 +835,11 @@ export function Configurator({
           aria-busy={pending}
         >
           {pending
-            ? "Wird gesendet …"
+            ? "Wird gesendet �"
             : savedReference
               ? media.length
-                ? "Übrige Fotos erneut senden"
-                : "Weiter zur Bestätigung"
+                ? "�brige Fotos erneut senden"
+                : "Weiter zur Best�tigung"
               : "Terminanfrage senden"}
         </Button>
         <a
@@ -856,7 +860,7 @@ export function Configurator({
             disabled={pending}
             onClick={() => changeStep(step - 1)}
           >
-            Zurück
+            Zur�ck
           </Button>
         ) : (
           <span />
@@ -874,3 +878,4 @@ export function Configurator({
 export function PickupNote({ km, packageId }: { km: number; packageId?: PackageId }) {
   return <span>{pickupPriceText(km, packageId)}</span>;
 }
+
