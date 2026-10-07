@@ -122,6 +122,30 @@ function digestReport(report) {
   return lines;
 }
 
+function digestBlocking(report) {
+  const items = (id) => report.audits[id]?.details?.items ?? [];
+  return {
+    tbt: round(report.audits["total-blocking-time"]?.numericValue),
+    longTasks: items("long-tasks").map((task) => ({
+      url: shortUrl(task.url),
+      start: round(task.startTime),
+      duration: round(task.duration),
+    })),
+    bootup: items("bootup-time")
+      .slice(0, 6)
+      .map((item) => ({
+        url: shortUrl(item.url),
+        total: round(item.total),
+        scripting: round(item.scripting),
+        parse: round(item.scriptParseCompile),
+      })),
+    mainThread: items("mainthread-work-breakdown").map((item) => ({
+      group: item.group,
+      duration: round(item.duration),
+    })),
+  };
+}
+
 function digestLantern(lantern) {
   const estimate = (value) => ({
     timeInMs: round(value.timeInMs),
@@ -182,13 +206,18 @@ export async function lighthouseDigest(outputRoot) {
           .join(" "),
     );
   }
+  let detailed = false;
   for (const run of (summary.runs ?? []).filter((item) => item.profile === "mobile")) {
     const report = await readJson(resolve(directory, run.json));
     if (!report) continue;
-    for (const line of digestReport(report))
-      lines.push(`LH-DIAG mobile-${run.run} ${JSON.stringify(line)}`);
-    // The first mobile report is enough for the full request table.
-    break;
+    // The first mobile report is enough for the full request table; blocking
+    // time varies between runs, so its sources are listed for every run.
+    if (!detailed) {
+      for (const line of digestReport(report))
+        lines.push(`LH-DIAG mobile-${run.run} ${JSON.stringify(line)}`);
+      detailed = true;
+    }
+    lines.push(`LH-TBT mobile-${run.run} ${JSON.stringify(digestBlocking(report))}`);
   }
   const lantern = await readJson(resolve(directory, "mobile-home-1.lantern.json"));
   if (lantern) lines.push(`LH-LANTERN ${JSON.stringify(digestLantern(lantern))}`);

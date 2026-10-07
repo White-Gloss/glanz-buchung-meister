@@ -226,12 +226,30 @@ test("Node serves compressed build assets and revalidates mutable media", async 
       /<link\b[^>]*rel="stylesheet"/,
       `${path} must inline its initial route styles through Start`,
     );
-    const modulePreloads = [...head.matchAll(/<link\b[^>]*>/g)]
-      .map(([tag]) => tag)
-      .filter((tag) => /\brel="modulepreload"/.test(tag));
-    assert.ok(modulePreloads.length > 0, `${path} must retain Start's hydration assets`);
-    for (const tag of modulePreloads) {
-      assert.match(tag, /\bfetch[Pp]riority="low"/, `${path} prioritizes visible content ahead of hydration preloads`);
+    assert.doesNotMatch(
+      head,
+      /<link\b[^>]*rel="modulepreload"/,
+      `${path} leaves hydration preloads to the deferred bootstrap`,
+    );
+    assert.doesNotMatch(
+      html,
+      /<script\b[^>]*\bsrc="\/assets\//,
+      `${path} must not fetch the client entry before the first viewport has painted`,
+    );
+    const bootstraps = executableInlineScripts(html).filter(([, , source]) =>
+      source.includes('t.type="module"'),
+    );
+    assert.equal(bootstraps.length, 1, `${path} must start hydration through one deferred bootstrap`);
+    const [, , bootstrap] = bootstraps[0];
+    const lists = bootstrap.match(/\}\)\(document,window,(\[[^\]]*\]),(\[[^\]]*\])\)$/);
+    assert.ok(lists, `${path} bootstrap must end with its entry and preload lists`);
+    const [entries, preloads] = [JSON.parse(lists[1]), JSON.parse(lists[2])];
+    assert.ok(entries.length > 0 && preloads.length > 0, `${path} must retain Start's hydration assets`);
+    for (const asset of [...entries, ...preloads]) {
+      assert.match(asset, /^\/assets\/[\w.-]+\.js$/, `${path} hydration asset ${asset}`);
+      const response = await fetch(new URL(asset, base), { signal: AbortSignal.timeout(15000) });
+      assert.equal(response.status, 200, `${path} hydration asset ${asset}`);
+      await response.arrayBuffer();
     }
   }
   const css = `/assets/${globals[0].name}`;

@@ -1,4 +1,5 @@
-import { createRootRoute, Scripts, type AnyRouteMatch } from "@tanstack/react-router";
+import { createRootRoute, type AnyRouteMatch } from "@tanstack/react-router";
+import { DeferredScripts } from "@/components/deferred-scripts";
 import { PrioritizedHeadContent } from "@/components/prioritized-head-content";
 import { AuthProvider } from "@/lib/auth/provider";
 import { NotFoundComponent } from "@/components/not-found";
@@ -15,41 +16,39 @@ import "../styles/hero-clearance.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
-  head: ({ matches }) => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: `Fahrzeugaufbereitung ${site.city} | ${site.name}` },
-      {
-        name: "description",
-        content:
-          "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.",
-      },
-      { name: "theme-color", content: "#000000" },
-      { name: "robots", content: "index,follow,max-image-preview:large" },
-    ],
-    links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      {
-        rel: "preload",
-        href: "/fonts/barlow-400.woff2",
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
-      ...(!matches.some((match: AnyRouteMatch) => match.routeId === "/")
-        ? [{
-            rel: "preload",
-            href: "/fonts/barlow-300.woff2",
-            as: "font",
-            type: "font/woff2",
-            crossOrigin: "anonymous" as const,
-          }]
-        : []),
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
-    ],
-  }),
+  head: ({ matches }) => {
+    const home = matches.some((match: AnyRouteMatch) => match.routeId === "/");
+    // The homepage's first viewport sets type in Barlow 500 and 600. Preloading
+    // them starts the requests with the document instead of after the first
+    // style pass; Barlow 300 is only used above the fold on the other pages.
+    const fontPreloads = (home ? [400, 500, 600] : [400, 300]).map((weight) => ({
+      rel: "preload",
+      href: `/fonts/barlow-${weight}.woff2`,
+      as: "font",
+      type: "font/woff2",
+      crossOrigin: "anonymous" as const,
+    }));
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+        { title: `Fahrzeugaufbereitung ${site.city} | ${site.name}` },
+        {
+          name: "description",
+          content:
+            "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.",
+        },
+        { name: "theme-color", content: "#000000" },
+        { name: "robots", content: "index,follow,max-image-preview:large" },
+      ],
+      links: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        ...fontPreloads,
+        { rel: "manifest", href: "/__grok/manifest.webmanifest" },
+        { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      ],
+    };
+  },
   component: () => {
     return (
       <html lang="de" className="antialiased" suppressHydrationWarning>
@@ -78,12 +77,12 @@ export const Route = createRootRoute({
           <PrioritizedHeadContent />
         </head>
         <body className="bg-bg text-fg">
-        <PreviewHostBridge />
-        <AuthProvider>
-          <Shell />
-        </AuthProvider>
-        <Scripts />
-      </body>
+          <PreviewHostBridge />
+          <AuthProvider>
+            <Shell />
+          </AuthProvider>
+          <DeferredScripts />
+        </body>
       </html>
     );
   },
