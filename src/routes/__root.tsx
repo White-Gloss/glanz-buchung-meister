@@ -1,4 +1,4 @@
-import { createRootRoute, Scripts } from "@tanstack/react-router";
+import { createRootRoute, Scripts, type AnyRouteMatch } from "@tanstack/react-router";
 import { PrioritizedHeadContent } from "@/components/prioritized-head-content";
 import { AuthProvider } from "@/lib/auth/provider";
 import { NotFoundComponent } from "@/components/not-found";
@@ -15,7 +15,7 @@ import "../styles/hero-clearance.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
-  head: () => ({
+  head: ({ matches }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -37,13 +37,15 @@ export const Route = createRootRoute({
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
-      {
-        rel: "preload",
-        href: "/fonts/barlow-300.woff2",
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
+      ...(!matches.some((match: AnyRouteMatch) => match.routeId === "/")
+        ? [{
+            rel: "preload",
+            href: "/fonts/barlow-300.woff2",
+            as: "font",
+            type: "font/woff2",
+            crossOrigin: "anonymous" as const,
+          }]
+        : []),
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],

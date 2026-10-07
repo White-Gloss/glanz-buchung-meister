@@ -48,7 +48,6 @@ export function HomePolish() {
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const root = document.documentElement;
     const main = document.querySelector<HTMLElement>('[data-home="polish"]');
     if (!main) return;
 
@@ -144,14 +143,12 @@ export function HomePolish() {
       const targetPage = Math.min(1, Math.max(0, window.scrollY / max));
       pageP += (targetPage - pageP) * 0.18;
       if (Math.abs(targetPage - pageP) < 0.0005) pageP = targetPage;
-      root.style.setProperty("--page-progress", pageP.toFixed(4));
       if (progressEl) progressEl.style.transform = `scaleX(${pageP})`;
 
       const vh = window.innerHeight || 1;
       const targetHero = Math.min(1, Math.max(0, window.scrollY / (vh * 0.85)));
       heroP += (targetHero - heroP) * 0.14;
       if (Math.abs(targetHero - heroP) < 0.0005) heroP = targetHero;
-      root.style.setProperty("--home-hero-p", heroP.toFixed(4));
 
       if (pageP !== targetPage || heroP !== targetHero) {
         frame = window.requestAnimationFrame(paint);
@@ -174,12 +171,8 @@ export function HomePolish() {
         window.removeEventListener("scroll", onScroll);
         window.removeEventListener("resize", onScroll);
         if (frame) window.cancelAnimationFrame(frame);
-        root.style.removeProperty("--page-progress");
-        root.style.removeProperty("--home-hero-p");
       });
     } else {
-      root.style.setProperty("--page-progress", "0");
-      root.style.setProperty("--home-hero-p", "0");
       if (progressEl) progressEl.style.transform = "scaleX(0)";
     }
 
