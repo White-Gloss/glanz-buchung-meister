@@ -4,6 +4,9 @@
   background: #020303;
   color: #f2f1ed;
 }
+html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
+  height: auto;
+}
 .scroll-film[data-motion="scroll"],
 .scroll-film[data-motion="fallback"] {
   height: 460svh;
