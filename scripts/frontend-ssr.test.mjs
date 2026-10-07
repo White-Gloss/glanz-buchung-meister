@@ -49,7 +49,10 @@ test("production SSR nonces match streamed scripts on successful and 404 documen
     for (const [, attributes] of scripts) {
       assert.equal(attributes.match(/\bnonce="([^"]+)"/)?.[1], nonce, path);
     }
-    assert.ok(html.includes(`name="csp-nonce" content="${nonce}"`), "Hydration must restore the same nonce");
+    const nonceMeta = [...html.matchAll(/<meta\b[^>]*>/g)]
+      .map(([tag]) => tag)
+      .find((tag) => /\bproperty="csp-nonce"/.test(tag));
+    assert.equal(nonceMeta?.match(/\bcontent="([^"]+)"/)?.[1], nonce, "Hydration must restore the same nonce");
     assert.doesNotMatch(html, /grok-app-builder\/extensions\.js/, "Customer documents omit the preview extension");
   }
 });
