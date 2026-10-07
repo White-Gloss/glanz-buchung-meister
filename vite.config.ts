@@ -203,6 +203,22 @@ export default defineConfig(({ command, isPreview }) => {
         ),
     },
   },
+  environments: {
+    client: {
+      build: {
+        rolldownOptions: {
+          output: {
+            // Group the static browser startup graph to reduce asset requests.
+            codeSplitting: {
+              groups: [
+                { name: "initial-runtime", tags: ["$initial"] },
+              ],
+            },
+          },
+        },
+      },
+    },
+  },
   plugins: [
     pgliteBootstrapPlugin(),
     securityHeadersPlugin(),
