@@ -113,7 +113,7 @@ try {
     assert.equal(order.immediatelyAfterPackages, true, "The request should follow the packages.");
     assert.equal(order.bookingCount, 1, "Keep one request flow and stable incoming anchor links.");
     await page.locator(".home-jump-links").getByRole("link", { name: "Termin anfragen", exact: true }).click();
-    await page.getByRole("form", { name: "Ihre Aufbereitung." }).waitFor({ state: "visible" });
+    await page.getByRole("form", { name: "Ihre Aufbereitung." }).waitFor({ state: "visible", timeout: 15_000 });
     await page.locator("#buchung").screenshot({ path: `.qa-output/review-request-${width}.png` });
     await page.locator("#kundenergebnisse").scrollIntoViewIfNeeded();
     const video = page.getByRole("button", { name: "Video abspielen: Hydrophober Lackschutz Keramikschutz 0:11 Min.", exact: true });

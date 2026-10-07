@@ -63,6 +63,12 @@ Tests prüfen insbesondere, dass unbekannte Entfernungen keine kostenlose Abholu
 erzeugen und die sechs Orte mit der gewählten Leistung in der Anfrage ankommen.
 Kein lokaler Website-Server. Kein Absenden echter Kundenanfragen.
 
+Der erste Linux-Lauf bestand 646 Unit-Tests, SSR, Ablauf-, Sitemap- und SEO-Prüfung
+sowie 111 mobile Seitenansichten ohne Überlauf. Er erreichte anschließend das
+120-Sekunden-Limit der Responsive-Stufe. Nur diese Stufe erhält für die sechs
+zusätzlichen Orte ein begrenztes 180-Sekunden-Budget; keine Seite oder Prüfung
+wird ausgelassen. Das Formular wartet separat höchstens 15 Sekunden auf Sichtbarkeit.
+
 Die Abhängigkeit `source-map-js` wird ausschließlich im Lockfile von 1.2.1 auf
 1.2.2 aktualisiert, weil die bestehende Produktions-Audit-Prüfung die alte Version
 wegen GHSA-68fv-2mgg-jv7q ablehnt. Keine Änderung von Anwendungsschnittstellen.
