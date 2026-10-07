@@ -1,4 +1,5 @@
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { createRootRoute, Scripts } from "@tanstack/react-router";
+import { PrioritizedHeadContent } from "@/components/prioritized-head-content";
 import { AuthProvider } from "@/lib/auth/provider";
 import { NotFoundComponent } from "@/components/not-found";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
@@ -72,7 +73,7 @@ export const Route = createRootRoute({
           {googleSiteVerificationMeta(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION).map((tag) => (
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
-          <HeadContent />
+          <PrioritizedHeadContent />
         </head>
         <body className="bg-bg text-fg">
         <PreviewHostBridge />
