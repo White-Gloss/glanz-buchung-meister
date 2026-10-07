@@ -298,20 +298,22 @@ export function ScrollFilmHero() {
           <div className="scroll-film-track" aria-hidden="true">
             <span />
           </div>
-          {motion && (
-            <button
-              type="button"
-              className="scroll-film-pause"
-              aria-pressed={paused}
-              onClick={() => {
-                pausedRef.current = !pausedRef.current;
-                setPaused(pausedRef.current);
-                sectionRef.current?.dispatchEvent(new Event("film-resume"));
-              }}
-            >
-              {paused ? "Bewegung fortsetzen" : "Bewegung pausieren"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="scroll-film-pause"
+            style={{ visibility: motion ? "visible" : "hidden" }}
+            disabled={!motion}
+            aria-hidden={motion ? undefined : true}
+            tabIndex={motion ? 0 : -1}
+            aria-pressed={paused}
+            onClick={() => {
+              pausedRef.current = !pausedRef.current;
+              setPaused(pausedRef.current);
+              sectionRef.current?.dispatchEvent(new Event("film-resume"));
+            }}
+          >
+            {paused ? "Bewegung fortsetzen" : "Bewegung pausieren"}
+          </button>
         </div>
       </div>
     </section>

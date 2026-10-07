@@ -183,6 +183,10 @@ async function runCheck(server, name, args, timeoutMs = 120_000) {
     }
     summary.checks.push({ name, passed: true });
     log(`QA: ${name} passed`);
+  } catch (error) {
+    summary.checks.push({ name, passed: false, error: error.message });
+    await stopChild(check);
+    throw error;
   } finally {
     stageAbort.abort();
   }
@@ -192,6 +196,12 @@ async function stopChild(record) {
   if (!record.child.pid || record.closed) return;
   record.child.kill("SIGTERM");
   await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
+  if (!record.closed) {
+    // Playwright's repeated graceful-close handler force-kills its owned
+    // Chromium process group before the parent is forcibly terminated.
+    record.child.kill("SIGTERM");
+    await Promise.race([record.done, delay(1_000, undefined, { ref: false })]);
+  }
   if (!record.closed) {
     record.child.kill("SIGKILL");
     await Promise.race([record.done, delay(3_000, undefined, { ref: false })]);
@@ -217,6 +227,29 @@ try {
   // Keep every page and assertion; only this stage gets a bounded extra minute.
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
+  // Keep every existing stage's deadline; reserve 30 seconds under the 8-minute
+  // workflow limit for cleanup/artifacts and bound only the new measurement stage.
+  const measurementErrors = [];
+  try {
+    const lighthouseBudget = Math.min(240_000, 415_000 - (Date.now() - Date.parse(summary.startedAt)));
+    assert.ok(lighthouseBudget >= 30_000, "Insufficient runtime budget for Lighthouse measurements.");
+    await runCheck(server, "lighthouse", ["scripts/qa/check-lighthouse.mjs", `--budget-ms=${lighthouseBudget}`], lighthouseBudget + 5_000);
+  } catch (error) {
+    measurementErrors.push(error);
+    log(`QA: ${error.message}`);
+  }
+  // Collect independent visual evidence even when performance misses its gate.
+  // Every failed measurement still fails the entire QA run.
+  abort.signal.throwIfAborted();
+  try {
+    const heroBudget = Math.min(60_000, 450_000 - (Date.now() - Date.parse(summary.startedAt)));
+    assert.ok(heroBudget >= 10_000, "Insufficient runtime budget for hero stability checks.");
+    await runCheck(server, "hero-stability", ["scripts/qa/check-hero-stability.mjs"], heroBudget);
+  } catch (error) {
+    measurementErrors.push(error);
+  }
+  if (measurementErrors.length)
+    throw new AggregateError(measurementErrors, measurementErrors.map((error) => error.message).join("; "));
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";

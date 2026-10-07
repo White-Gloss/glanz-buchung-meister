@@ -473,12 +473,29 @@ test("strips prerendered grok extensions on customer production host", () => {
   assert.doesNotMatch(live, /grok-app-builder\/extensions\.js/);
 });
 
-test("keeps grok extensions on grok.me preview hosts", () => {
-  const out = injectGrokPwaHead("<html><head></head></html>", {
-    appName: "Demo",
-    host: "demo.grok.me",
-  });
-  assert.match(out, /grok-app-builder\/extensions\.js/);
+test("loopback production documents omit Grok extensions and remove baked preview tags", () => {
+  const document = "<html><head></head><body>White Gloss</body></html>";
+  const baked = injectGrokPwaHead(document, { appName: "Demo", projectId: "proj-123" });
+  assert.match(baked, /grok-app-builder\/extensions\.js/);
+  for (const host of ["localhost", "localhost:8082", "127.0.0.1", "127.0.0.1:8082"]) {
+    const ctx = { appName: "White Gloss", host, projectId: "proj-123" };
+    for (const input of [document, baked]) {
+      const out = injectGrokPwaHead(input, ctx);
+      assert.doesNotMatch(out, /grok-app-builder\/extensions\.js|grok-project-id|grok:app_id/, host);
+      assert.match(out, /rel="manifest"/, host);
+      assert.match(out, /<body>White Gloss<\/body>/, host);
+    }
+  }
+});
+
+test("keeps grok extensions on explicit Grok preview hosts", () => {
+  for (const host of ["grok.me", "demo.grok.me", "grok.com", "preview.grok.com"]) {
+    const out = injectGrokPwaHead("<html><head></head></html>", {
+      appName: "Demo",
+      host,
+    });
+    assert.match(out, /grok-app-builder\/extensions\.js/, host);
+  }
 });
 
 test("is idempotent", () => {

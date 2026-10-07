@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readdir, readFile } from "node:fs/promises";
 import { cities, services } from "../src/data/site.ts";
 import { serviceCitySeo } from "../src/lib/seo-policy.ts";
 
@@ -134,8 +135,17 @@ test("public route metadata survives the PWA injector", async () => {
 
 test("Node serves compressed build assets and revalidates mutable media", async () => {
   const { html } = await get("/");
-  const css = html.match(/href="(\/assets\/styles-[^"]+\.css)"/)?.[1];
-  assert.ok(css, "the production document must reference the built stylesheet");
+  const stylesheets = await Promise.all(
+    (await readdir(".output/public/assets"))
+      .filter((name) => name.endsWith(".css"))
+      .map(async (name) => ({ name, source: await readFile(`.output/public/assets/${name}`, "utf8") })),
+  );
+  const globals = stylesheets.filter(({ source }) => source.includes("--color-bg:") && source.includes("@font-face"));
+  assert.equal(globals.length, 1, "the build must contain one complete global stylesheet");
+  assert.ok(html.includes(globals[0].source), "SSR must inline the exact compiled global CSS, not a reduced substitute");
+  assert.doesNotMatch(html, /<link\b[^>]*rel="stylesheet"/, "the initial route CSS must be present synchronously in HTML");
+  assert.match(html, /data-tss-inline-css/, "Start must manage the inline CSS through hydration");
+  const css = `/assets/${globals[0].name}`;
   const { response, html: stylesheet } = await get(css, { "accept-encoding": "gzip" });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-encoding"), "gzip");
