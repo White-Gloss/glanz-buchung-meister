@@ -40,6 +40,10 @@ try {
     return route.continue();
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  page.setDefaultNavigationTimeout(15_000);
+  page.on("pageerror", (error) => failures.push(`${page.url()}: ${error.message}`));
+  await page.bringToFront();
   for (const width of [320, 375, 390]) {
     await page.setViewportSize({ width, height: 844 });
     for (const path of paths) {
@@ -53,7 +57,16 @@ try {
       ) {
         await page.evaluate(async (top) => {
           window.scrollTo(0, top);
-          await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+          // Background/headless Chromium can suspend animation frames. Bound
+          // only this rendering yield; the following DOM reads still force
+          // layout and every overflow assertion remains in place.
+          await new Promise((done) => {
+            const timeout = setTimeout(done, 100);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              clearTimeout(timeout);
+              done();
+            }));
+          });
         }, y);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -165,6 +178,9 @@ try {
   } finally {
     await noJavaScriptContext.close();
   }
+} catch (error) {
+  failures.push(error.message);
+  throw error;
 } finally {
   await writeFile(".qa-output/responsive-results.json", JSON.stringify(results, null, 2));
   await writeFile(".qa-output/responsive-failures.json", JSON.stringify(failures, null, 2));

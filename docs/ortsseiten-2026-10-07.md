@@ -68,6 +68,11 @@ sowie 111 mobile Seitenansichten ohne Überlauf. Er erreichte anschließend das
 120-Sekunden-Limit der Responsive-Stufe. Nur diese Stufe erhält für die sechs
 zusätzlichen Orte ein begrenztes 180-Sekunden-Budget; keine Seite oder Prüfung
 wird ausgelassen. Das Formular wartet separat höchstens 15 Sekunden auf Sichtbarkeit.
+Ein weiterer Lauf blieb bereits im Rendering-Yield der ersten Seite hängen.
+Der Test aktiviert deshalb seinen Browser-Tab und begrenzt das Warten auf
+Animationsframes auf 100 ms; die anschließenden Layout-Lesezugriffe und alle
+Überlaufprüfungen bleiben bestehen. Navigation, Elemente und JavaScript-Fehler
+werden weiterhin geprüft und zeitlich begrenzt.
 
 Die Abhängigkeit `source-map-js` wird ausschließlich im Lockfile von 1.2.1 auf
 1.2.2 aktualisiert, weil die bestehende Produktions-Audit-Prüfung die alte Version
