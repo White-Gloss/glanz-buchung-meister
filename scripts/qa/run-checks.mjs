@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { qaBase, controlBase, qaPort, controlPort, tlsPort } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
+import { lighthouseDigest } from "./lighthouse-digest.mjs";
 assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -266,6 +267,13 @@ try {
     } catch (error) {
       diagnosticFailures.push(error.message);
       log(`QA: ${error.message}`);
+    }
+    if (check.name === "lighthouse") {
+      try {
+        for (const line of await lighthouseDigest(outputRoot)) log(line);
+      } catch (error) {
+        log(`QA: Lighthouse digest unavailable (${error.message})`);
+      }
     }
   }
   if (diagnosticFailures.length) throw new Error(diagnosticFailures.join("; "));

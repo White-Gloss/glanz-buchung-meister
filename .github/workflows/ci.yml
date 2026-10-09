@@ -136,6 +136,7 @@ jobs:
           node --check scripts/audit-domain-migration.mjs
           node --check scripts/qa/run-checks.mjs
           node --check scripts/qa/check-lighthouse.mjs
+          node --check scripts/qa/lighthouse-digest.mjs
           node --check scripts/qa/check-hero-stability.mjs
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs
