@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import * as bootstrap from "./deferred-bootstrap.ts";
+import type { RouterManagedTag } from "@tanstack/router-core";
 import {
   DEFERRED_BOOTSTRAP_FALLBACK_MS,
   deferredBootstrapSource,
@@ -71,6 +73,20 @@ class FakeImage {
 
 const settle = () => new Promise((accept) => setTimeout(accept, 0));
 const source = deferredBootstrapSource(["/assets/index-a.js"], ["/assets/routes-b.js"]);
+
+test("image preloads precede competing font hints while metadata and stylesheet order stay intact", () => {
+  assert.equal(typeof bootstrap.prioritizeImagePreloads, "function");
+  const charset: RouterManagedTag = { tag: "meta", attrs: { charSet: "utf-8" } };
+  const css: RouterManagedTag = { tag: "link", attrs: { rel: "stylesheet", href: "/first.css" } };
+  const font: RouterManagedTag = { tag: "link", attrs: { rel: "preload", as: "font", href: "/font.woff2" } };
+  const mobile: RouterManagedTag = { tag: "link", attrs: { rel: "preload", as: "image", href: "/mobile.webp", media: "(max-width: 767px)" } };
+  const cssAfter: RouterManagedTag = { tag: "link", attrs: { rel: "stylesheet", href: "/second.css" } };
+  const desktop: RouterManagedTag = { tag: "link", attrs: { rel: "preload", as: "image", href: "/desktop.webp", media: "(min-width: 768px)" } };
+  const tags = [charset, css, font, mobile, cssAfter, desktop];
+  const original = [...tags];
+  assert.deepEqual(bootstrap.prioritizeImagePreloads(tags), [charset, css, mobile, desktop, font, cssAfter]);
+  assert.deepEqual(tags, original);
+});
 
 test("the client entry starts only after eager hero images loaded, decoded and painted", async () => {
   const hero = new FakeImage(false);

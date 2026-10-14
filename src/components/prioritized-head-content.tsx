@@ -3,7 +3,7 @@
 import { Asset, useRouter, useTags } from "@tanstack/react-router";
 import type { AssetCrossOriginConfig } from "@tanstack/router-core";
 import { isServer } from "@tanstack/router-core/isServer";
-import { isModulePreload } from "@/lib/deferred-bootstrap";
+import { isModulePreload, prioritizeImagePreloads } from "@/lib/deferred-bootstrap";
 
 export interface PrioritizedHeadContentProps {
   assetCrossOrigin?: AssetCrossOriginConfig;
@@ -16,7 +16,7 @@ export interface PrioritizedHeadContentProps {
  * client they stay low-priority hints for navigation.
  */
 export function PrioritizedHeadContent(props: PrioritizedHeadContentProps) {
-  const tags = useTags(props.assetCrossOrigin);
+  const tags = prioritizeImagePreloads(useTags(props.assetCrossOrigin));
   const router = useRouter();
   const nonce = router.options.ssr?.nonce;
   const server = isServer ?? router.isServer;
