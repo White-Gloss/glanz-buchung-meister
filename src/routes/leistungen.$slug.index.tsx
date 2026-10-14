@@ -10,6 +10,8 @@ import { ResultsTeaser } from "@/components/results-teaser";
 import { serializeJsonLd } from "@/lib/json-ld";
 import { ServicePriceNote } from "@/components/service-price-note";
 import { pickupAreaLink } from "@/lib/seo-policy";
+import { articles } from "@/data/ratgeber";
+import { articleNavigation } from "@/lib/article-navigation";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
@@ -35,6 +37,9 @@ function ServicePage() {
   const { ort } = Route.useSearch();
   const request = serviceBookingSelection(s.slug, ort);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
+  const guides = s.pendingApproval
+    ? []
+    : articles.filter((article) => articleNavigation[article.slug]?.service === s.slug).slice(0, 3);
   const resultService =
     s.slug === "keramikversiegelung"
       ? "Keramikschutz"
@@ -174,6 +179,26 @@ function ServicePage() {
         ) : null}
         {resultService ? <ResultsTeaser service={resultService} /> : null}
         <WhatsAppPhotoCta className="mt-12" />
+        {guides.length ? (
+          <section className="mt-12" aria-labelledby="service-guides-heading">
+            <h2 id="service-guides-heading" className="font-display text-2xl tracking-tight">
+              Passende Ratgeber zur {s.seoNav}
+            </h2>
+            <ul className="mt-4 space-y-3 text-sm text-muted">
+              {guides.map((article) => (
+                <li key={article.slug}>
+                  <Link
+                    to="/ratgeber/$slug"
+                    params={{ slug: article.slug }}
+                    className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-fg"
+                  >
+                    {article.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <h2 className="mt-16 font-display text-3xl tracking-tight">
           Hol- und Bringservice nach Stadt
         </h2>

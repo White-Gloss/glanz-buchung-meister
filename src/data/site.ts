@@ -801,7 +801,7 @@ export const services: ServicePage[] = [
     seoNav: "Lederreparatur",
     title: "Lederreparatur im Auto",
     nav: "Lederreparatur",
-    metaTitle: "Lederreparatur Auto Horb – Brandloch, Riss, Loch | White Gloss",
+    metaTitle: "Lederreparatur Horb: Brandloch & Riss | White Gloss",
     description:
       "Lederreparatur in Horb am Neckar: Brandlöcher, Risse, kleine Löcher. Nach Materialprüfung, mit individueller Einschätzung und Angebot.",
     teaser: "Reparatur von Brandlöchern und Rissen nach Materialprüfung.",
