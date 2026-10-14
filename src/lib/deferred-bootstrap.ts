@@ -3,6 +3,19 @@ import type { RouterManagedTag } from "@tanstack/router-core";
 /** Hydration starts at the latest this long after the bootstrap ran. */
 export const DEFERRED_BOOTSTRAP_FALLBACK_MS = 3000;
 
+/** Discover responsive hero images before fonts compete for the first connection. */
+export function prioritizeImagePreloads(tags: RouterManagedTag[]): RouterManagedTag[] {
+  const firstFont = tags.findIndex((tag) =>
+    tag.tag === "link" && tag.attrs?.rel === "preload" && tag.attrs?.as === "font");
+  if (firstFont < 0) return tags;
+  const images = tags.slice(firstFont).filter((tag) =>
+    tag.tag === "link" && tag.attrs?.rel === "preload" && tag.attrs?.as === "image");
+  if (!images.length) return tags;
+  const promoted = new Set(images);
+  return tags.flatMap((tag, index) =>
+    index === firstFont ? [...images, tag] : promoted.has(tag) ? [] : [tag]);
+}
+
 function serialize(value: readonly string[]) {
   // The lists are embedded in an inline script: never allow a closing tag.
   return JSON.stringify(value).replace(/</g, "\\u003c");
