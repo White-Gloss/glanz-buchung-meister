@@ -28,7 +28,7 @@ const pageChecks = [
   { path: "/faq", markers: ["Häufige Fragen"] },
   { path: "/kontakt", markers: ["Kontakt", "Arnistal"] },
   { path: "/galerie", markers: ["Werkstatt"] },
-  { path: "/impressum", markers: ["Angaben gemäß", "White Gloss Detailing"] },
+  { path: "/impressum", markers: ["Angaben gemäß", "White-Gloss Detailing"] },
   { path: "/datenschutz", markers: ["Verantwortlicher", "IONOS"] },
   { path: "/agb", markers: ["Allgemeine Geschäftsbedingungen"] },
   { path: "/widerruf", markers: ["Widerrufsbelehrung"] },

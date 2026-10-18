@@ -12,7 +12,7 @@ export const Route = createFileRoute("/kontakt")({
   head: () =>
     pageHead({
       title: `Kontakt & Anfahrt in Horb am Neckar | ${site.name}`,
-      description: `White Gloss Detailing in ${site.city}: Telefon, WhatsApp, E-Mail und Anschrift. Werkstatt ${site.street}.`,
+      description: `White-Gloss Detailing in ${site.city}: Telefon, WhatsApp, E-Mail und Anschrift. Werkstatt ${site.street}.`,
       path: "/kontakt",
       preloadShot: "atelier",
     }),

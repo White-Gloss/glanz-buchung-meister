@@ -3,6 +3,15 @@
 Stand: 17. August 2026. Betrifft den Eintrag „White-Gloss", Arnistal 27,
 72160 Horb am Neckar.
 
+> **Nachtrag 17. Oktober 2026:** Das Profil ist wieder sichtbar. Die
+> Rankingdaten vom 16.–17.10.2026 zeigen für „fahrzeugaufbereitung horb am
+> neckar“ Platz 2 in Google Maps. Der Name im Profil lautet „White-Gloss
+> Detailing“; die Website wurde am 17.10.2026 daran angeglichen. Den Namen im
+> Profil deshalb **nicht** mehr ändern. Die Schritte unten sind der historische
+> Wiederherstellungsweg; für die laufende Pflege gelten
+> [`google-unternehmensprofil-ausfuellen.md`](google-unternehmensprofil-ausfuellen.md)
+> und [`seo-sichtbarkeit.md`](seo-sichtbarkeit.md).
+
 Für einen örtlichen Dienstleistungsbetrieb ist dieser Eintrag der wichtigste
 Google-Baustein überhaupt — wichtiger als jede Optimierung an der Website.
 Wer „Autoaufbereitung Horb" sucht, bekommt zuerst die Karte mit drei
@@ -88,7 +97,7 @@ falsche Angaben sind der sicherste Weg zu einer dauerhaften Ablehnung.
 > Sehr geehrte Damen und Herren,
 >
 > ich bitte um Wiederherstellung meines Unternehmensprofils für
-> **White Gloss Detailing**, Arnistal 27, 72160 Horb am Neckar.
+> **White-Gloss Detailing**, Arnistal 27, 72160 Horb am Neckar.
 >
 > Es handelt sich um einen real bestehenden Betrieb für
 > Fahrzeugaufbereitung, den ich als Inhaber führe. Das Gewerbe ist seit
@@ -136,7 +145,7 @@ Erst wenn das Profil wieder erreichbar ist, diese vier Angaben korrigieren:
 
 | Angabe      | Soll                                                                         |
 | ----------- | ---------------------------------------------------------------------------- |
-| Name        | `White Gloss Detailing` — zeichengenau wie im Impressum, nicht `White-Gloss` |
+| Name        | `White-Gloss Detailing` — wie im Profil; Website und Impressum seit 17.10.2026 gleich |
 | Website     | `https://white-gloss.de` — derzeit ist die alte Domain hinterlegt            |
 | Betriebsart | Kein Ladengeschäft, Einzugsgebiet Horb am Neckar und Umgebung                |
 | Status      | Geöffnet, mit Öffnungszeiten                                                 |

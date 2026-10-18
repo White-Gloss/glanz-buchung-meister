@@ -115,7 +115,7 @@ export function receiptEmailCopy(name: string, reference: string) {
     "",
     `Vorgang: ${reference}`,
     "",
-    "White Gloss Detailing",
+    "White-Gloss Detailing",
     `${site.street}, ${site.postalCode} ${site.city}`,
     site.phoneDisplay,
     site.bookingEmail,
@@ -131,7 +131,7 @@ export function confirmationEmailCopy(
   return [
     `Hallo ${name},`,
     "",
-    "dein Termin bei White Gloss Detailing ist jetzt verbindlich bestätigt.",
+    "dein Termin bei White-Gloss Detailing ist jetzt verbindlich bestätigt.",
     `Bestätigter Zeitraum: ${when}`,
     `Vereinbarter Preis: ${price}`,
     `Vorgang: ${reference}`,
@@ -141,7 +141,7 @@ export function confirmationEmailCopy(
     "",
     `Leistungsort: ${site.street}, ${site.postalCode} ${site.city}`,
     "",
-    "White Gloss Detailing",
+    "White-Gloss Detailing",
     site.phoneDisplay,
     site.bookingEmail,
   ].join("\n");

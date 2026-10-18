@@ -22,7 +22,7 @@ export const Route = createFileRoute("/leistungen/")({
     pageHead({
       title: `Leistungen der Fahrzeugaufbereitung | ${site.name}`,
       description:
-        "Autoaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
+        "Autopflege und Kfz-Pflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
       path: "/leistungen",
       preloadShot: "lack",
     }),
@@ -75,6 +75,16 @@ function LeistungenIndex() {
         <div className="section mx-auto max-w-7xl px-4 sm:px-6 pt-16 pb-4">
           <p className="kicker">Fahrzeugpflege</p>
           <h2 className="heading-2 mt-4 max-w-xl">Reinigung, Politur und Schutz</h2>
+          <p className="mt-4 max-w-2xl text-muted leading-relaxed">
+            Von der regelmäßigen Autopflege bis zur Keramikversiegelung: Jede Leistungsseite
+            beschreibt, was wir am Fahrzeug machen, für welche Ausgangslage sie passt und welche
+            Angaben wir für eine erste Einschätzung brauchen. Für Kfz-Pflege bei Firmenfahrzeugen
+            und Flotten erstellen wir ein{" "}
+            <Link to="/b2b" className="underline underline-offset-4 hover:text-fg">
+              eigenes Angebot für Geschäftskunden
+            </Link>
+            .
+          </p>
         </div>
         <div className="gd-split gd-split--duo">
           {atelier.map((s) => (

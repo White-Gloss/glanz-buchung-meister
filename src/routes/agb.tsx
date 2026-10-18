@@ -9,7 +9,7 @@ export const Route = createFileRoute("/agb")({
     pageHead({
       title: `AGB | ${site.name}`,
       description:
-        "Allgemeine Geschäftsbedingungen von White Gloss Detailing für Fahrzeugaufbereitung.",
+        "Allgemeine Geschäftsbedingungen von White-Gloss Detailing für Fahrzeugaufbereitung.",
       path: "/agb",
     }),
 });
@@ -29,7 +29,7 @@ function TermsPage() {
         <p>
           Diese Allgemeinen Geschäftsbedingungen gelten für Leistungen der Fahrzeugaufbereitung von{" "}
           {site.legalName}, Inhaber {site.owner}, {site.street}, {site.postalCode} {site.city}{" "}
-          (nachfolgend „wir“ oder „White Gloss Detailing“), gegenüber Verbrauchern und Unternehmern.
+          (nachfolgend „wir“ oder „White-Gloss Detailing“), gegenüber Verbrauchern und Unternehmern.
         </p>
 
         <section>

@@ -2,7 +2,14 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
 import { ctaPrimary, PriceLine } from "@/components/ui";
-import { cities, packageServiceSlug, packages, services, site } from "@/data/site";
+import {
+  cities,
+  defaultRequestDetails,
+  packageServiceSlug,
+  packages,
+  services,
+  site,
+} from "@/data/site";
 import { parseBookingSelection, serviceBookingSelection } from "@/lib/booking-selection";
 import { pageHead } from "@/lib/seo";
 import { eur, money } from "@/lib/utils";
@@ -148,6 +155,43 @@ function ServicePage() {
             <p key={p}>{p}</p>
           ))}
         </div>
+        {s.comparison ? (
+          <section className="mt-12" aria-labelledby="service-comparison-heading">
+            <h2 id="service-comparison-heading" className="font-display text-2xl tracking-tight">
+              {s.comparison.heading}
+            </h2>
+            <dl className="mt-6 divide-y divide-line border-y border-line">
+              {s.comparison.items.map((item) => (
+                <div key={item.name} className="py-4">
+                  <dt className="text-sm text-fg">{item.name}</dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-muted">{item.text}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
+        {s.suitedFor ? (
+          <section className="mt-12" aria-labelledby="service-suited-heading">
+            <h2 id="service-suited-heading" className="font-display text-2xl tracking-tight">
+              Geeignet für
+            </h2>
+            <ul className="mt-4 space-y-3">
+              {s.suitedFor.map((item) => (
+                <li key={item} className="border-l border-line pl-4 text-sm text-fg">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+        {s.outcome ? (
+          <section className="mt-12" aria-labelledby="service-outcome-heading">
+            <h2 id="service-outcome-heading" className="font-display text-2xl tracking-tight">
+              Was realistisch erreichbar ist
+            </h2>
+            <p className="mt-4 leading-relaxed text-muted">{s.outcome}</p>
+          </section>
+        ) : null}
         {s.honestNote ? (
           <p className="mt-8 border border-line bg-surface p-5 text-sm leading-relaxed text-fg">
             {s.honestNote}
@@ -171,11 +215,62 @@ function ServicePage() {
             ))}
           </ol>
         ) : null}
+        {s.beforeBooking ? (
+          <section className="mt-12" aria-labelledby="service-before-heading">
+            <h2 id="service-before-heading" className="font-display text-2xl tracking-tight">
+              Gut zu wissen vor dem Termin
+            </h2>
+            <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
+              {s.beforeBooking.map((item) => (
+                <li key={item} className="border-l border-line pl-4">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {pack ? (
           <p className="mt-10 border border-line bg-surface p-5 text-sm leading-relaxed">
             Paket {pack.name} ab {eur(pack.price)} {site.vatNote} ·{" "}
             {pack.duration.replace(/\.$/, "")}.
           </p>
+        ) : null}
+        {!s.pendingApproval ? (
+          <section
+            className="mt-12 border border-line bg-surface p-5 sm:p-6"
+            aria-labelledby="service-request-heading"
+          >
+            <h2 id="service-request-heading" className="font-display text-2xl tracking-tight">
+              So fragen Sie an
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Für eine erste Einschätzung helfen uns diese Angaben. Fotos können Sie auch direkt
+              per WhatsApp senden.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {(s.requestDetails ?? defaultRequestDetails).map((item) => (
+                <li key={item} className="border-l border-line pl-4 text-sm text-fg">
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Link
+                to={request.leistung ? "/fahrzeug-zustand" : "/"}
+                hash="buchung"
+                search={request}
+                className={ctaPrimary}
+              >
+                Termin anfragen
+              </Link>
+              <a
+                href={site.phoneHref}
+                className="inline-flex min-h-11 items-center text-sm text-fg underline-offset-4 hover:underline"
+              >
+                Anrufen: {site.phoneDisplay}
+              </a>
+            </div>
+          </section>
         ) : null}
         {resultService ? <ResultsTeaser service={resultService} /> : null}
         <WhatsAppPhotoCta className="mt-12" />

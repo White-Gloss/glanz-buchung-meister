@@ -347,7 +347,7 @@ export function invoiceEmailBody(input: {
   return [
     `Hallo ${input.name},`,
     "",
-    `vielen Dank für deinen Auftrag WG-${input.bookingId} bei White Gloss Detailing. Im Anhang findest du die Rechnung ${input.number} über ${euro(input.grossCents)} als PDF.`,
+    `vielen Dank für deinen Auftrag WG-${input.bookingId} bei White-Gloss Detailing. Im Anhang findest du die Rechnung ${input.number} über ${euro(input.grossCents)} als PDF.`,
     "",
     `Bitte überweise den Betrag bis zum ${germanDate(input.dueOn)} (Zahlungsziel sieben Tage) unter Angabe der Rechnungsnummer auf das in der Rechnung genannte Konto. Hast du bereits bar bezahlt, erhältst du nach Erfassung der Zahlung eine Quittung.`,
     "",
@@ -617,7 +617,7 @@ async function issue(
         channel: "email",
         to: recipient.email,
         bookingId: row.booking_id,
-        subject: `Rechnung ${number} – White Gloss Detailing`,
+        subject: `Rechnung ${number} – White-Gloss Detailing`,
         body: invoiceEmailBody({
           name: recipient.name,
           number,
@@ -873,7 +873,7 @@ export async function recordRoInvoicePayment(
           channel: "email",
           to: invoice.recipient_email,
           bookingId: invoice.booking_id,
-          subject: `Quittung ${receiptNumber} – White Gloss Detailing`,
+          subject: `Quittung ${receiptNumber} – White-Gloss Detailing`,
           body: [
             `Hallo ${invoice.recipient.name},`,
             "",
