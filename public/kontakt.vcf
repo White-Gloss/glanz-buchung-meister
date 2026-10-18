@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Hägele;Lars;;;
+FN:Lars Hägele
+ORG:White-Gloss Detailing
+TEL;TYPE=CELL,WORK:+4915233540284
+EMAIL;TYPE=WORK:info@white-gloss.de
+URL:https://white-gloss.de
+ADR;TYPE=WORK:;;Arnistal 27;Horb am Neckar;;72160;Deutschland
+X-SOCIALPROFILE;TYPE=instagram:https://www.instagram.com/white_gloss.detailing
+IMPP;X-SERVICE-TYPE=WhatsApp:https://api.whatsapp.com/send?phone=4915233540284
+END:VCARD
