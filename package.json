@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/block-local-hosting.mjs",
-    "build": "node scripts/write-release-manifest.mjs && node scripts/write-favicon.mjs && node scripts/write-google-oauth.mjs && node scripts/with-app-env.mjs vite build && node scripts/fix-ssr-exports.mjs && node scripts/copy-pglite-assets.mjs && node scripts/write-deploy-contract.mjs",
+    "build": "node scripts/write-release-manifest.mjs && node scripts/write-favicon.mjs && node scripts/write-google-oauth.mjs && node scripts/write-contact-card.mjs && node scripts/with-app-env.mjs vite build && node scripts/fix-ssr-exports.mjs && node scripts/copy-pglite-assets.mjs && node scripts/write-deploy-contract.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "build:dev": "node scripts/with-app-env.mjs vite build --mode development",
     "preview": "node scripts/block-local-hosting.mjs",
@@ -114,3 +114,4 @@
     "vite": "^8.2.0"
   }
 }
+
