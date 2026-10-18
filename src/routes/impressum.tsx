@@ -8,7 +8,7 @@ export const Route = createFileRoute("/impressum")({
   head: () =>
     pageHead({
       title: `Impressum | ${site.name}`,
-      description: "Anbieterkennzeichnung und Kontaktdaten von White Gloss Detailing.",
+      description: "Anbieterkennzeichnung und Kontaktdaten von White-Gloss Detailing.",
       path: "/impressum",
     }),
 });
@@ -85,7 +85,7 @@ function ImpressumPage() {
             bekannt werden, entfernen wir entsprechende Links nach Prüfung.
           </p>
         </section>
-        <p className="text-xs text-subtle">Stand: 28. September 2026</p>
+        <p className="text-xs text-subtle">Stand: 17. Oktober 2026</p>
       </div>
       </div>
     </main>

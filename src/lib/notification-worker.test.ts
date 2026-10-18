@@ -198,7 +198,7 @@ test("missing booking senders are captured before delivery, while general mail k
     });
     assert.deepEqual(
       senders.sort(),
-      ["Fixture <sender@example.invalid>", "White Gloss Detailing <buchung@white-gloss.de>"].sort(),
+      ["Fixture <sender@example.invalid>", "White-Gloss Detailing <buchung@white-gloss.de>"].sort(),
     );
     const rows = await sql<{
       from_addr: string;

@@ -118,11 +118,14 @@ Duplikat-Verdacht.
 
 ### Der Textbaustein
 
-Überall **exakt** diese Angaben verwenden. Nicht „White-Gloss", nicht
-„White Gloss", nicht „Horb-Dettingen":
+Überall **exakt** diese Angaben verwenden. Nicht „White Gloss Detailing",
+nicht „White Gloss", nicht „Horb-Dettingen". Seit 17.10.2026 gilt die
+Schreibweise des Google-Unternehmensprofils; Einträge, die noch mit
+„White Gloss Detailing“ angelegt wurden, bitte angleichen (siehe
+[`seo-sichtbarkeit.md`](seo-sichtbarkeit.md)):
 
 ```
-Firmenname:  White Gloss Detailing
+Firmenname:  White-Gloss Detailing
 Inhaber:     Lars Hägele
 Straße:      Arnistal 27
 PLZ / Ort:   72160 Horb am Neckar
@@ -134,7 +137,7 @@ Branche:     Fahrzeugaufbereitung / Autopflege
 
 Kurzbeschreibung zum Kopieren (passt in die meisten Felder):
 
-> White Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung in
+> White-Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung in
 > Horb am Neckar. Wir übernehmen Innen- und Außenreinigung, mehrstufige
 > Lackkorrektur, Keramikversiegelung und Lederpflege — für Privatkunden
 > ebenso wie für Flotten und Leasingrückläufer. Auf Wunsch holen wir das
@@ -143,7 +146,7 @@ Kurzbeschreibung zum Kopieren (passt in die meisten Felder):
 
 Längere Fassung, falls ein Verzeichnis mehr Text zulässt:
 
-> White Gloss Detailing bereitet Fahrzeuge in Horb am Neckar und Umgebung
+> White-Gloss Detailing bereitet Fahrzeuge in Horb am Neckar und Umgebung
 > auf. Das Leistungsspektrum reicht von der materialgerechten
 > Innenreinigung über Lackknete, Politur und Keramikversiegelung bis zur
 > Aufbereitung von Leasingrückläufern und Flottenfahrzeugen. Für
@@ -213,7 +216,7 @@ Dort ist die Konkurrenz deutlich dünner als bei Google.
 | Zeitraum             | Was sichtbar wird                                         |
 | -------------------- | --------------------------------------------------------- |
 | 1–3 Tage             | Die sieben Seiten aus Schritt 1 erscheinen im Index       |
-| 1–2 Wochen           | Suche nach „White Gloss Detailing" findet die neue Domain |
+| 1–2 Wochen           | Suche nach „White-Gloss Detailing" findet die neue Domain |
 | 2–8 Wochen           | Die Wertung der alten Domain wandert über                 |
 | 3–6 Monate           | Allgemeine Begriffe wie „Fahrzeugaufbereitung Horb"       |
 | sofort nach Freigabe | Der Karteneintrag — der schnellste Weg zu Kundschaft      |

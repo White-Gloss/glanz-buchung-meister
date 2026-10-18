@@ -104,7 +104,7 @@ export const seoIntents: Record<string, SearchIntent> = {
         {
           cluster:
             s.slug === "fahrzeugaufbereitung"
-              ? "fahrzeugaufbereitung leistungsumfang"
+              ? "autoaufbereitung leistungsumfang"
               : `${s.seoNav.toLowerCase()} horb`,
           intent: "commercial" as const,
           purpose: `${s.nav}: Umfang, Grenzen und passende Anfrage`,

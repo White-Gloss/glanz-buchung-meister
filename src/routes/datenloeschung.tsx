@@ -9,7 +9,7 @@ export const Route = createFileRoute("/datenloeschung")({
     pageHead({
       title: `Datenlöschung anfragen | ${site.name}`,
       description:
-        "So fragen Sie bei White Gloss Detailing die Löschung Ihrer Buchungs- oder Kontodaten an.",
+        "So fragen Sie bei White-Gloss Detailing die Löschung Ihrer Buchungs- oder Kontodaten an.",
       path: "/datenloeschung",
     }),
 });

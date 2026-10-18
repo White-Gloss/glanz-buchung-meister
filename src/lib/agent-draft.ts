@@ -19,6 +19,6 @@ export function buildReplyDraft(input: ReplyDraftInput): string {
     `vielen Dank für Ihre Nachricht${pkg}. Gerne schauen wir uns Ihren Wunschtermin an und melden uns mit einem konkreten Vorschlag.`,
     "",
     "Freundliche Grüße",
-    "White Gloss Detailing",
+    "White-Gloss Detailing",
   ].join("\n");
 }

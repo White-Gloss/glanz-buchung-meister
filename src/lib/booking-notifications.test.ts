@@ -26,11 +26,11 @@ test("booking and CRM mail use the booking sender independently of general mail"
       "zoho.confirmed",
       "lexware.invoice",
     ]) {
-      assert.equal(notificationMailFrom(event), "White Gloss Detailing <buchung@white-gloss.de>");
+      assert.equal(notificationMailFrom(event), "White-Gloss Detailing <buchung@white-gloss.de>");
     }
     assert.equal(
       notificationMailFrom("notification.alert", 42),
-      "White Gloss Detailing <buchung@white-gloss.de>",
+      "White-Gloss Detailing <buchung@white-gloss.de>",
     );
     assert.equal(notificationMailFrom("notification.alert"), "General <info@white-gloss.de>");
   } finally {
@@ -169,7 +169,7 @@ test("booking notifications persist against all production migrations", async (t
             .every(
               (m) =>
                 m.to_addr === "buchung@white-gloss.de" &&
-                m.from_addr === "White Gloss Detailing <buchung@white-gloss.de>",
+                m.from_addr === "White-Gloss Detailing <buchung@white-gloss.de>",
             ),
         );
         assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 2);

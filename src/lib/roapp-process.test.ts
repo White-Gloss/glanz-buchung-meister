@@ -357,7 +357,7 @@ test("complete process: inquiry, approval, acceptance, reminder, invoice, cash r
     const { PDFDocument } = await import("pdf-lib");
     assert.equal(
       (await PDFDocument.load(Buffer.from(invoice.pdf_base64, "base64"))).getAuthor(),
-      "White Gloss Detailing · Inhaber Lars Marco Hägele",
+      "White-Gloss Detailing · Inhaber Lars Marco Hägele",
     );
     assert.ok(ro.orders.get(orderId)!.comments.some((c) => c.includes(invoice.invoice_number)));
 

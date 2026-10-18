@@ -152,7 +152,7 @@ function Home() {
             Wir stimmen die Pflege von Lack, Leder und Felgen auf den Zustand Ihres Fahrzeugs ab.
             Alle Arbeiten führen wir in unserer Werkstatt in Horb am Neckar aus.
           </p>
-          <div className="workshop-owner"><span>{site.owner}</span><p>Inhaber · White Gloss Detailing</p></div>
+          <div className="workshop-owner"><span>{site.owner}</span><p>Inhaber · White-Gloss Detailing</p></div>
           <Link to="/qualitaet" className="atelier-text-link">So arbeiten wir <IconArrowRight aria-hidden /></Link>
         </div>
       </section>
@@ -206,7 +206,7 @@ function Home() {
         aria-labelledby="fahrzeugaufbereitung-heading"
       >
         <header>
-          <p className="kicker">White Gloss Detailing</p>
+          <p className="kicker">White-Gloss Detailing</p>
           <h2 id="fahrzeugaufbereitung-heading" className="heading-2 mt-4">
             Fahrzeugaufbereitung in {site.city}
           </h2>

@@ -92,6 +92,16 @@ Leistung. Allgemeines Kundenlob wird keinem Abholort zugeschrieben. Das ist
 kein Grund, die Stadt-Hubs auszuschließen, aber kein vollständiger Nachweis für
 zusätzliche Matrixseiten nach dem oben vereinbarten Qualitäts-Gate.
 
+## Beobachtete Suchbegriffe (ergänzt am 17. Oktober 2026)
+
+Die 14 Begriffe der Rankingbeobachtung sind in `src/data/search-watchlist.ts`
+je genau einer Seite zugeordnet (ein Hauptbegriff pro Seite). Der Test
+`src/lib/search-watchlist.test.ts` läuft in `npm test` und verlangt den
+Hauptbegriff in Title oder Description, die verwandten Begriffe im sichtbaren
+Text und höchstens vier Nennungen je Leistungs- oder Ortsseite. Er prüft
+Zuordnung und Wortlaut, nicht Rankings. Auswertung und Änderungsprotokoll:
+[`seo-sichtbarkeit.md`](seo-sichtbarkeit.md).
+
 ## Prüfen und veröffentlichen
 
 - Lokal ohne Server: `npm run lint`, `npm run typecheck`, `npm test`,
