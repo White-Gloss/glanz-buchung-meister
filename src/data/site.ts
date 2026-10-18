@@ -20,6 +20,8 @@ export const site = {
   bookingEmail: "buchung@white-gloss.de",
   instagram: "https://www.instagram.com/white_gloss.detailing",
   instagramHandle: "white_gloss.detailing",
+  /** Fill only with the verified public business profile URL. */
+  facebook: "",
   whatsapp:
     "https://api.whatsapp.com/send?phone=4915233540284&text=Hallo%20White%20Gloss%2C%20ich%20interessiere%20mich%20f%C3%BCr%20eine%20Fahrzeugaufbereitung.",
   whatsappHref: "https://api.whatsapp.com/send?phone=4915233540284",
