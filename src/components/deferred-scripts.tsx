@@ -52,12 +52,14 @@ function ServerDeferredScripts() {
       children: deferredBootstrapSource(entries, [...new Set(preloads)]),
     });
   }
-  const buffered = router.serverSsr?.takeBufferedScripts();
-  if (buffered) scripts.unshift(buffered);
+  // Same order as Start's composeSsrBodyScripts: hydration data first, the
+  // streaming boundary last, so late hydration scripts follow ours.
+  const initial = router.serverSsr?.takeInitialHydrationScriptTags();
+  const rendered = initial ? [...initial.before, ...scripts, initial.boundary] : scripts;
 
   return (
     <>
-      {scripts.map((asset, index) => (
+      {rendered.map((asset, index) => (
         <Asset {...asset} key={`tsr-scripts-${asset.tag}-${index}`} />
       ))}
     </>
