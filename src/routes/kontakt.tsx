@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ContactRound, Facebook, Globe2, Instagram } from "lucide-react";
 import { IconMessage, IconPhone } from "@/components/icons";
 import { PageHero } from "@/components/page-hero";
 import { WhatsAppPhotoCta } from "@/components/whatsapp-photo-cta";
@@ -77,6 +78,29 @@ function KontaktPage() {
             </dd>
           </div>
         </dl>
+        <section className="mt-10" aria-labelledby="kontakt-wege">
+          <h2 id="kontakt-wege" className="font-display text-2xl">Kontakt auf einen Blick</h2>
+          <p className="mt-2 text-sm text-muted">Website und soziale Kanäle öffnen · Kontaktkarte auf dem Smartphone speichern.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a href={site.origin} className={ctaGhost}>
+              <Globe2 className="size-4" aria-hidden="true" /> Website
+            </a>
+            <a href={site.whatsapp} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+              <IconMessage className="size-4" aria-hidden="true" /> WhatsApp
+            </a>
+            <a href={site.instagram} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+              <Instagram className="size-4" aria-hidden="true" /> Instagram
+            </a>
+            {site.facebook && (
+              <a href={site.facebook} className={ctaGhost} target="_blank" rel="noopener noreferrer">
+                <Facebook className="size-4" aria-hidden="true" /> Facebook
+              </a>
+            )}
+            <a href="/kontakt.vcf" className={ctaPrimary} download="White-Gloss.vcf">
+              <ContactRound className="size-4" aria-hidden="true" /> Kontakt speichern
+            </a>
+          </div>
+        </section>
         <p className="mt-10 max-w-xl text-sm text-muted">
           Geöffnet {openingHours.daysLabel}, {openingHours.opens}–{openingHours.closes} Uhr.
           Samstag und Sonntag geschlossen.
