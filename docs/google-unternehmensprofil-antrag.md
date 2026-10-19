@@ -1,6 +1,6 @@
 # Wiederherstellungsantrag — fertig zum Absenden
 
-Stand: 24. August 2026. Für den Eintrag **White Gloss Detailing**,
+Stand: 24. August 2026. Für den Eintrag **White-Gloss Detailing**,
 Arnistal 27, 72160 Horb am Neckar.
 
 Alle Angaben stammen aus dem Impressum und der Website. **Eine einzige
@@ -45,7 +45,7 @@ nachfragt.
 ### Kurzfassung (1 062 Zeichen) — für das Formularfeld
 
 ```
-Ich bitte um Wiederherstellung des Unternehmensprofils für White Gloss Detailing, Arnistal 27, 72160 Horb am Neckar.
+Ich bitte um Wiederherstellung des Unternehmensprofils für White-Gloss Detailing, Arnistal 27, 72160 Horb am Neckar.
 
 Es handelt sich um einen real bestehenden, aktiven Betrieb für Fahrzeugaufbereitung, den ich als Inhaber führe. Das Gewerbe ist seit [Datum] angemeldet; die Gewerbeanmeldung liegt bei.
 
@@ -68,10 +68,10 @@ Lars Hägele, Inhaber
 Sehr geehrte Damen und Herren,
 
 ich bitte um Wiederherstellung meines Unternehmensprofils für
-White Gloss Detailing, Arnistal 27, 72160 Horb am Neckar.
+White-Gloss Detailing, Arnistal 27, 72160 Horb am Neckar.
 
 Zum Betrieb
-White Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung, den
+White-Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung, den
 ich als Inhaber führe. Das Gewerbe ist seit [Datum] angemeldet; die
 Gewerbeanmeldung füge ich bei. Der Betrieb übernimmt Innen- und
 Außenreinigung, mehrstufige Lackkorrektur, Keramikversiegelung und
@@ -113,7 +113,7 @@ zur Verfügung.
 
 Mit freundlichen Grüßen
 Lars Hägele
-Inhaber, White Gloss Detailing
+Inhaber, White-Gloss Detailing
 Arnistal 27
 72160 Horb am Neckar
 ```

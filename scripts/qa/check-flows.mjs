@@ -4,7 +4,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { toJSONAsync, fromCrossJSON } from "seroval";
-import { defaultSerovalPlugins } from "@tanstack/router-core";
+import { defaultSerovalPlugins } from "@tanstack/router-core/ssr/client";
 const base = qaBase;
 const identity = await fetch(controlBase + "/identity");
 const qaRunId = identity.headers.get("x-qa-run-id");

@@ -129,7 +129,7 @@ Für ein lokales Handwerks- und Dienstleistungsgeschäft ist das der wirksamste
 Google-Eintrag überhaupt – wichtiger als Analytics. Er läuft vollständig
 außerhalb der Website:
 
-1. https://business.google.com öffnen, Eintrag für „White Gloss Detailing" in
+1. https://business.google.com öffnen, Eintrag für „White-Gloss Detailing" in
    Horb am Neckar anlegen oder beanspruchen.
 2. Adresse, Telefonnummer und Öffnungszeiten **exakt** so eintragen wie im
    Impressum der Website. Abweichungen schwächen die lokale Auffindbarkeit.

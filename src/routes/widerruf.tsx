@@ -8,7 +8,7 @@ export const Route = createFileRoute("/widerruf")({
   head: () =>
     pageHead({
       title: `Widerrufsbelehrung | ${site.name}`,
-      description: "Widerrufsbelehrung und Muster-Widerrufsformular von White Gloss Detailing.",
+      description: "Widerrufsbelehrung und Muster-Widerrufsformular von White-Gloss Detailing.",
       path: "/widerruf",
     }),
 });

@@ -170,10 +170,10 @@ export async function queueBookingEvent(
       event === "booking.created" || event === "booking.rescheduled"
         ? receiptEmailCopy(booking.customer_name, `WG-${booking.id}`)
         : event === "booking.cancelled"
-          ? `Guten Tag ${booking.customer_name},\n\nIhr Termin wurde storniert.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`
+          ? `Guten Tag ${booking.customer_name},\n\nIhr Termin wurde storniert.\nVorgang WG-${booking.id}\n\nWhite-Gloss Detailing`
           : event === "booking.rejected"
-            ? `Guten Tag ${booking.customer_name},\n\nIhre Terminanfrage wurde abgelehnt. Für eine Alternative melden Sie sich gerne.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`
-            : `Guten Tag ${booking.customer_name},\n\nIhre Buchungsdaten wurden aktualisiert. Gewünschter Termin: ${when}.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`;
+            ? `Guten Tag ${booking.customer_name},\n\nIhre Terminanfrage wurde abgelehnt. Für eine Alternative melden Sie sich gerne.\nVorgang WG-${booking.id}\n\nWhite-Gloss Detailing`
+            : `Guten Tag ${booking.customer_name},\n\nIhre Buchungsdaten wurden aktualisiert. Gewünschter Termin: ${when}.\nVorgang WG-${booking.id}\n\nWhite-Gloss Detailing`;
     await enqueueNotification(sql, {
       key: `booking:${booking.id}:event:${eventId}:customer-v2:email:${recipientHash(booking.email)}`,
       eventType: event,
@@ -220,7 +220,7 @@ export async function queueBookingReminder(sql: Sql, booking: NotificationBookin
       channel: "email",
       to: booking.email,
       subject: `Terminerinnerung · White Gloss WG-${booking.id}`,
-      body: `Guten Tag ${booking.customer_name},\n\nIhre bestätigte Abgabe: ${booking.preferred_date.slice(0, 10)} um ${booking.preferred_slot} Uhr.\nVorgang WG-${booking.id}\n\nWhite Gloss Detailing`,
+      body: `Guten Tag ${booking.customer_name},\n\nIhre bestätigte Abgabe: ${booking.preferred_date.slice(0, 10)} um ${booking.preferred_slot} Uhr.\nVorgang WG-${booking.id}\n\nWhite-Gloss Detailing`,
       bookingId: booking.id,
       bookingVersion: version,
       runAt: time.run_at,

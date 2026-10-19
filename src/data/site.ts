@@ -2,7 +2,8 @@ import { eur } from "../lib/utils.ts";
 
 export const site = {
   name: "White Gloss",
-  legalName: "White Gloss Detailing",
+  /** Spelled exactly like the Google Business Profile; keep NAP data identical everywhere. */
+  legalName: "White-Gloss Detailing",
   tagline: "Fahrzeugaufbereitung in Horb am Neckar.",
   owner: "Lars Hägele",
   /** Full legal name of the sole proprietor, required on invoices (§ 14 UStG). */
@@ -553,7 +554,28 @@ export type ServicePage = {
   priceRows?: { name: string; price: number; note?: string }[];
   honestNote?: string;
   pendingApproval?: boolean;
+  /** Typical vehicles and starting situations for this service. */
+  suitedFor?: string[];
+  /** Realistic outcome without guarantees. */
+  outcome?: string;
+  /** Side-by-side overview of related offers, e.g. the paint protection options. */
+  comparison?: { heading: string; items: { name: string; text: string }[] };
+  /** What customers should know before booking. */
+  beforeBooking?: string[];
+  /** Details that help with a first estimate; falls back to `defaultRequestDetails`. */
+  requestDetails?: string[];
 };
+
+/** Asked on every bookable service page so a first estimate needs no follow-up questions. */
+export const defaultRequestDetails = [
+  "Fahrzeugmarke und Modell",
+  "Gewünschte Leistung und was Ihnen am Fahrzeug auffällt",
+  "Wenn möglich 2–3 Fotos der betroffenen Stellen bei Tageslicht",
+];
+
+const packageById = (id: PackageId) => packages.find((p) => p.id === id)!;
+const packageFrom = (id: PackageId) => `${packageById(id).name} ab ${eur(packageById(id).price)}`;
+const extraPrice = (id: string) => eur(extras.find((e) => e.id === id)!.price);
 
 export const services: ServicePage[] = [
   {
@@ -577,7 +599,29 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Bei der Autoaufbereitung prüfen wir Lack und Innenraum und besprechen Ihre Wünsche. So legen wir gemeinsam fest, welche Reinigung und Pflege Ihr Fahrzeug benötigt.",
+      "Fahrzeugaufbereitung, oft auch Detailing genannt, umfasst bei uns drei Bereiche: außen die Handwäsche mit Felgen, Reifen und Scheiben, innen die Reinigung von Fußräumen, Sitzen und Verkleidungen und am Lack die Politur mit anschließendem Schutz durch Sprühversiegelung, Wachs oder Keramik. Motorraumreinigung, Ozonbehandlung und Lederpflege sind als Zusatzleistungen möglich.",
       "Die Arbeit bleibt in Horb. In den aufgeführten Abholgebieten holen wir das Auto nach Vereinbarung ab und bringen es wieder.",
+    ],
+    suitedFor: [
+      "Alltagsfahrzeuge, die innen und außen gründlich gereinigt werden sollen",
+      "Gebrauchtwagen vor dem Verkauf oder vor einer Leasingrückgabe",
+      "Fahrzeuge mit stumpfem oder fein verkratztem Lack, bei denen eine Politur infrage kommt",
+      "Kleinwagen bis Transporter; die Fahrzeugklasse bestimmt den Endpreis",
+    ],
+    outcome:
+      "Ziel ist ein sauberer Innenraum und ein gleichmäßig gepflegter Lack. Wie weit sich Flecken, Gebrauchsspuren oder Kratzer reduzieren lassen, hängt vom Zustand des Fahrzeugs ab. Was erreichbar ist, sagen wir Ihnen nach der Prüfung und vor Beginn der Arbeiten.",
+    beforeBooking: [
+      `Planen Sie je nach Paket ${packageById("basis").duration} bis ${packageById("keramik").duration} ein; bei starker Verschmutzung kann mehr Zeit nötig sein.`,
+      "Die Terminanfrage ist unverbindlich. Den verbindlichen Preis nennen wir, nachdem wir das Fahrzeug gesehen haben.",
+      "Sie bringen das Fahrzeug nach Absprache selbst nach Horb oder nutzen den Hol- und Bringservice.",
+      "Bitte nehmen Sie Wertsachen und persönliche Gegenstände vor der Abgabe aus dem Fahrzeug.",
+    ],
+    requestDetails: [
+      "Fahrzeugmarke, Modell und Fahrzeugart, zum Beispiel Kombi, SUV oder Transporter",
+      "Gewünschte Arbeiten: innen, außen, Politur oder Lackschutz",
+      "Auffälligkeiten wie Flecken, Tierhaare, Gerüche oder Kratzer",
+      "Wenn möglich 2–3 Fotos von Lack und Innenraum",
+      "Ob Sie den Hol- und Bringservice nutzen möchten",
     ],
     steps: [
       {
@@ -618,8 +662,30 @@ export const services: ServicePage[] = [
       "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €",
     ],
     body: [
+      "Die Auto-Innenreinigung umfasst Fußräume und Teppiche, Sitze, Armaturen, Mittelkonsole und Verkleidungen sowie die Scheiben von innen. Dachhimmel, Alcantara- und Lederflächen sowie die Entfernung von Tierhaaren bieten wir als Zusatzleistungen an.",
       "Die Basisreinigung ab 149 € umfasst das Saugen des Innenraums und Abwischen der Oberflächen. Die textile Tiefenreinigung von Sitzen und Teppichen gehört zum Paket Reinigung & Politur ab 349 €. Beide Einstiegspreise gelten für die Kompaktklasse inklusive Mehrwertsteuer.",
       "Bei Gerüchen behandeln wir zuerst die Ursache. Falls nötig, kann eine zusätzliche Ozonbehandlung geruchsbildende Moleküle abbauen.",
+    ],
+    suitedFor: [
+      "Alltagsautos mit Staub, Krümeln und Gebrauchsspuren im Innenraum",
+      "Familien- und Hundeautos mit Flecken oder Tierhaaren",
+      "Fahrzeuge mit Gerüchen, etwa nach Rauch, Tieren oder Feuchtigkeit",
+      "Fahrzeuge vor dem Verkauf oder vor der Leasingrückgabe",
+    ],
+    outcome:
+      "Ziel ist ein sauberer, gepflegter Innenraum. Ob sich ältere Flecken, Verfärbungen oder Gerüche vollständig entfernen lassen, hängt von Material, Alter und Ursache ab. Verträgt eine Stelle keine weitere Behandlung, ohne das Material zu gefährden, sagen wir Ihnen das.",
+    beforeBooking: [
+      `Tierhaarentfernung (ab ${extraPrice("tierhaar")}) und Ozonbehandlung (ab ${extraPrice("ozon")}) sind Zusatzleistungen; den Umfang stimmen wir vor Beginn mit Ihnen ab.`,
+      "Bei starker Verschmutzung, Tierhaaren oder Gerüchen kann mehr Zeit nötig sein.",
+      "Eine Ozonbehandlung ersetzt keine Reinigung. Der Innenraum muss dafür sauber und trocken sein.",
+      "Bitte nehmen Sie Wertsachen und persönliche Gegenstände vor der Abgabe aus dem Fahrzeug.",
+    ],
+    requestDetails: [
+      "Fahrzeugmarke und Modell",
+      "Art der Verschmutzung: Flecken, Tierhaare, verschüttete Getränke oder Gerüche",
+      "Betroffene Materialien, zum Beispiel Stoff, Leder, Alcantara oder Dachhimmel",
+      "Ob bereits Reinigungsmittel verwendet wurden",
+      "Wenn möglich 2–3 Fotos der betroffenen Stellen bei Tageslicht",
     ],
     steps: [
       {
@@ -645,9 +711,9 @@ export const services: ServicePage[] = [
     seoNav: "Lackkorrektur",
     title: "Lackkorrektur & Politur in Horb am Neckar",
     nav: "Lackkorrektur",
-    metaTitle: "Lackkorrektur & Politur Horb | White Gloss",
+    metaTitle: "Lackkorrektur & Auto polieren in Horb | White Gloss",
     description:
-      "Lackkorrektur in Horb: Lackdickenmessung, materialschonende Politur und klare Beratung zu behandelbaren Waschkratzern.",
+      "Lackaufbereitung in Horb: Auto polieren lassen mit Lackdickenmessung, materialschonender Politur und klarer Beratung zu Waschkratzern.",
     teaser: "Lackpolitur zur Reduzierung feiner Kratzer und für gleichmäßigen Glanz.",
     group: "atelier",
     fromPrice: 349,
@@ -662,6 +728,25 @@ export const services: ServicePage[] = [
     body: [
       "Nicht jeder Kratzer lässt sich auspolieren. Wir prüfen den Lack vorab und erklären Ihnen die Möglichkeiten und Grenzen der Behandlung.",
       "Das Paket Reinigung & Politur enthält eine einstufige Lackpolitur. Im Paket Keramikschutz ist eine mehrstufige Lackkorrektur enthalten, sofern die Lackschicht dafür geeignet ist.",
+    ],
+    suitedFor: [
+      "Lack mit feinen Waschkratzern, Hologrammen oder Polierschleiern",
+      "Stumpfe, matte Lackflächen ohne Tiefenglanz",
+      "Leichte Kratzer, die nur in der Klarlackschicht liegen",
+      "Fahrzeuge, deren Lack anschließend Wachs oder eine Keramikversiegelung erhalten soll",
+    ],
+    outcome:
+      "Polieren trägt eine dünne Klarlackschicht ab. Feine Kratzer lassen sich deshalb oft deutlich reduzieren, aber nicht immer vollständig entfernen. Bleibt der Fingernagel in einem Kratzer hängen, reicht er meist zu tief. Steinschläge, Lackabplatzer und Rost behebt eine Politur nicht; dafür ist eine Lackiererei zuständig. Wie viel Spielraum der Lack bietet, zeigt die Lackdickenmessung vor Beginn.",
+    beforeBooking: [
+      `Planen Sie ${packageById("premium").duration} (${packageById("premium").name}) bis ${packageById("keramik").duration} (${packageById("keramik").name}) ein.`,
+      "Wurden Bauteile nachlackiert oder schon einmal poliert, sagen Sie es uns bitte vorab. Das beeinflusst, wie stark wir polieren können.",
+      "Den genauen Umfang legen wir erst nach Lackprüfung und Messung fest.",
+    ],
+    requestDetails: [
+      "Fahrzeugmarke, Modell und Lackfarbe",
+      "Fotos der Kratzer oder matten Stellen, am besten im Sonnenlicht oder unter einer Lampe",
+      "Ob Bauteile nachlackiert oder bereits poliert wurden",
+      "Ob der Lack anschließend Wachs oder eine Keramikversiegelung erhalten soll",
     ],
     steps: [
       {
@@ -705,6 +790,42 @@ export const services: ServicePage[] = [
       "Eine Keramikversiegelung braucht einen sorgfältig vorbereiteten Lack. Wir reinigen die Oberfläche, reduzieren behandelbare Waschkratzer durch mehrstufige Politur und entfetten den Lack vor dem Auftrag der Beschichtung.",
       "Die Beschichtung ergänzt den Oberflächenschutz und erleichtert die Pflege. Aushärtezeit, erster Kontakt mit Wasser und erste Wäsche richten sich nach den Vorgaben des verwendeten Produkts. Bei der Übergabe erhalten Sie die passenden Pflegehinweise.",
       "Planen Sie ca. 2 Tage ein. Glas- und Felgenversiegelung, Lederpflege sowie der Hol- und Bringservice bis 60 km sind im Paket enthalten.",
+    ],
+    comparison: {
+      heading: "Lackversiegelung im Vergleich",
+      items: [
+        {
+          name: "Sprühversiegelung",
+          text: `Im Paket ${packageFrom("basis")}: schneller Lackschutz nach der Handwäsche, ohne Politur. Haltbarkeit ca. 3 Monate.`,
+        },
+        {
+          name: "Wachs",
+          text: `Im Paket ${packageFrom("premium")}: nach einstufiger Politur für gleichmäßigen Glanz. Haltbarkeit ca. 6 Monate.`,
+        },
+        {
+          name: "Keramikversiegelung",
+          text: `Im Paket ${packageFrom("keramik")}: nach mehrstufiger Lackkorrektur, mit Glas- und Felgenversiegelung. Die Standzeit hängt von Beschichtung, Nutzung und Pflege ab.`,
+        },
+      ],
+    },
+    suitedFor: [
+      "Neuwagen und gepflegte Gebrauchtwagen, die Sie noch länger fahren möchten",
+      "Lack mit ausreichender Schichtstärke für die vorbereitende Politur",
+      "Halter, die sich eine leichtere Fahrzeugwäsche und Abperleffekt wünschen",
+    ],
+    outcome:
+      "Eine Keramikversiegelung macht den Lack nicht kratzfest und ersetzt keine regelmäßige Wäsche. Sie lässt Wasser abperlen, erleichtert die Pflege und ergänzt den Schutz vor Umwelteinflüssen. Wie lange die Wirkung anhält, hängt von Beschichtung, Fahrleistung, Witterung und Pflege ab; eine pauschale Laufzeit sagen wir nicht zu.",
+    beforeBooking: [
+      "Steht ein Verkauf oder eine Leasingrückgabe bald an, reicht oft das Paket Reinigung & Politur.",
+      "Die Beschichtung muss nach dem Auftrag geschützt aushärten. Wann die erste Wäsche möglich ist, erklären wir bei der Übergabe.",
+      "Bürstenwaschanlagen können feine Kratzer verursachen. Wir empfehlen Handwäsche mit pH-neutralem Shampoo oder eine berührungslose Anlage.",
+      "Den verbindlichen Preis nennen wir nach der Prüfung von Fahrzeugklasse und Lackzustand.",
+    ],
+    requestDetails: [
+      "Fahrzeugmarke, Modell, Baujahr und ungefähre Laufleistung",
+      "Ob das Fahrzeug in einer Garage oder im Freien steht",
+      "Fotos vom Lack, besonders von Kratzern und matten Stellen",
+      "Ob bereits eine Versiegelung oder Lackschutzfolie aufgebracht ist",
     ],
     steps: [
       {
@@ -779,7 +900,7 @@ export const services: ServicePage[] = [
     nav: "Leasingaufbereitung",
     metaTitle: "Leasingrückgabe-Aufbereitung Horb | White Gloss",
     description:
-      "Aufbereitung vor der Leasingrückgabe in Horb: Innenreinigung, Lackpflege, punktuelle Nacharbeit – ehrlich priorisiert.",
+      "Leasingrückläufer reinigen und aufbereiten in Horb: Innenreinigung, Lackpflege und punktuelle Nacharbeit vor der Rückgabe – ehrlich priorisiert.",
     teaser: "Gezielte Aufbereitung vor der Leasingrückgabe.",
     group: "finish",
     fromPrice: 349,
@@ -793,7 +914,28 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Vor der Leasingrückgabe konzentrieren wir uns auf relevante Gebrauchsspuren. Wir besprechen mit Ihnen, welche Arbeiten sinnvoll sind und welche Spuren bleiben.",
+      "Je nach Zustand reinigen wir den Innenraum gründlich, entfernen Tierhaare und Gerüche, waschen Fahrzeug und Felgen und polieren feine Kratzer. Parkdellen und kleine Lederschäden lassen sich nach Prüfung punktuell bearbeiten.",
       "Für Autohäuser und Flotten erstellen wir ein individuelles Angebot nach Fahrzeuganzahl und Zustand.",
+    ],
+    suitedFor: [
+      "Private und gewerbliche Leasingfahrzeuge vor dem Rückgabetermin",
+      "Innenräume mit Flecken, Tierhaaren oder Gerüchen",
+      "Lack und Felgen mit Gebrauchsspuren, die sich punktuell bearbeiten lassen",
+      "Autohäuser und Flotten mit mehreren Rückläufern",
+    ],
+    outcome:
+      "Wir verbessern den Zustand dort, wo es sich lohnt, und sagen offen, welche Spuren bleiben. Wie Leasinggeber oder Gutachter Gebrauchsspuren bewerten, richtet sich nach Ihrem Vertrag und deren Prüfung. Dass keine Nachforderung entsteht, können wir nicht zusagen.",
+    beforeBooking: [
+      "Fragen Sie etwa zwei Wochen vor dem Rückgabetermin an. Dann bleibt Zeit für Prüfung und Nacharbeit.",
+      "Prüfen Sie vorab die Rückgabebedingungen Ihres Leasinggebers.",
+      "Tiefe Kratzer, Steinschläge oder größere Lackschäden behebt eine Aufbereitung nicht; dafür ist eine Lackiererei zuständig.",
+      "Eine Aufbereitung ersetzt keine technische Fahrzeugprüfung.",
+    ],
+    requestDetails: [
+      "Fahrzeugmarke, Modell und geplanter Rückgabetermin",
+      "Fotos der Stellen, die Ihnen Sorgen machen: Flecken, Kratzer, Dellen, Felgen oder Lederschäden",
+      "Hinweise des Leasinggebers oder ein Vorabgutachten, falls vorhanden",
+      "Bei mehreren Fahrzeugen: Anzahl und gewünschter Zeitraum",
     ],
   },
   {
@@ -801,7 +943,7 @@ export const services: ServicePage[] = [
     seoNav: "Lederreparatur",
     title: "Lederreparatur im Auto",
     nav: "Lederreparatur",
-    metaTitle: "Lederreparatur Auto Horb – Brandloch, Riss, Loch | White Gloss",
+    metaTitle: "Lederreparatur Horb: Brandloch & Riss | White Gloss",
     description:
       "Lederreparatur in Horb am Neckar: Brandlöcher, Risse, kleine Löcher. Nach Materialprüfung, mit individueller Einschätzung und Angebot.",
     teaser: "Reparatur von Brandlöchern und Rissen nach Materialprüfung.",

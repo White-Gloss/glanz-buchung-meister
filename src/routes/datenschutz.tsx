@@ -10,7 +10,7 @@ export const Route = createFileRoute("/datenschutz")({
     pageHead({
       title: `Datenschutzerklärung | ${site.name}`,
       description:
-        "Informationen zur Verarbeitung personenbezogener Daten bei White Gloss Detailing.",
+        "Informationen zur Verarbeitung personenbezogener Daten bei White-Gloss Detailing.",
       path: "/datenschutz",
     }),
 });

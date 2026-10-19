@@ -246,6 +246,16 @@ export default defineConfig(({ command, isPreview }) => {
               },
             },
             routeRules: {
+              "/visitenkarte.html": {
+                headers: { "cache-control": REVALIDATE_CACHE_CONTROL },
+              },
+              "/visitenkarte.vcf": {
+                headers: {
+                  "cache-control": "no-store",
+                  "content-type": "text/vcard; charset=utf-8",
+                  "content-disposition": 'attachment; filename="White-Gloss-Detailing.vcf"',
+                },
+              },
               "/media/**": {
                 headers: { "cache-control": STATIC_MEDIA_CACHE_CONTROL },
               },
@@ -293,3 +303,4 @@ export default defineConfig(({ command, isPreview }) => {
   ],
   };
 });
+

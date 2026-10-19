@@ -350,7 +350,7 @@ export const articles: Article[] = [
       {
         heading: "Eine Werkstatt, mehrere Abholgebiete",
         paragraphs: [
-          "White Gloss Detailing arbeitet in Horb am Neckar. Der Hol- und Bringservice umfasst auch Sulz am Neckar, Empfingen, Vöhringen, Dornhan, Dornstetten und Schopfloch. Alle Abholorte finden Sie in der Abholübersicht; die genaue Übergabeadresse und den Preis stimmen wir persönlich ab.",
+          "White-Gloss Detailing arbeitet in Horb am Neckar. Der Hol- und Bringservice umfasst auch Sulz am Neckar, Empfingen, Vöhringen, Dornhan, Dornstetten und Schopfloch. Alle Abholorte finden Sie in der Abholübersicht; die genaue Übergabeadresse und den Preis stimmen wir persönlich ab.",
           `${pickupTierSummary()}. ${pickupKeramikNote()}. Die Politur erfolgt in unserer Werkstatt mit geeigneter Beleuchtung und geschützten Arbeitsbedingungen.`,
         ],
       },

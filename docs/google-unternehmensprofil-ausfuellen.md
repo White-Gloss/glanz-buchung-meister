@@ -1,28 +1,29 @@
 # Unternehmensprofil ausfüllen — Feld für Feld
 
-Stand: 24. August 2026. Alle Angaben stammen aus der Website und dem
-Impressum. Zeichengenau übernehmen: Google gleicht Profil, Impressum,
-strukturierte Daten und Verzeichniseinträge miteinander ab, und
-abweichende Schreibweisen schwächen genau diesen Abgleich.
+Stand: 17. Oktober 2026. Alle Angaben entsprechen der Website nach dem Stand
+vom 17.10.2026. Zeichengenau übernehmen: Google gleicht Profil, Impressum,
+strukturierte Daten und Verzeichniseinträge miteinander ab, und abweichende
+Schreibweisen schwächen genau diesen Abgleich.
 
-> **Vorher prüfen:** Zeigt das Profil noch „Mit deinem Unternehmensprofil
-> ist ein Problem aufgetreten" oder 0 % bestätigt, nimmt es Änderungen zwar
-> entgegen, veröffentlicht sie aber nicht. Dann zuerst die
-> Wiederherstellung nach [`google-unternehmensprofil.md`](google-unternehmensprofil.md),
-> und erst danach dieses Blatt. Ist das Profil erreichbar und bestätigt,
-> direkt hier weitermachen.
+Das Profil ist sichtbar: Die Rankingdaten vom 16.–17.10.2026 zeigen für
+„fahrzeugaufbereitung horb am neckar“ Platz 2 in Google Maps. Deshalb gilt:
+nur Angaben korrigieren, die nicht zur Website passen, und keine Änderung „auf
+Vorrat“. Den Arbeitsstand und die Rankingauswertung führt
+[`seo-sichtbarkeit.md`](seo-sichtbarkeit.md).
 
 ---
 
 ## 1 – Unternehmensname
 
 ```
-White Gloss Detailing
+White-Gloss Detailing
 ```
 
-Nicht `White-Gloss`, nicht `White Gloss`. Keine Zusätze wie
-„Fahrzeugaufbereitung Horb" — Beiwerk im Namen ist ein Verstoß gegen
-Googles Richtlinien und ein häufiger Grund für erneute Sperren.
+So steht der Name im Profil (geprüft am 15.09.2026), und so führt ihn seit dem
+17.10.2026 auch die Website. **Nicht umbenennen** – eine Namensänderung kann
+eine erneute Prüfung durch Google auslösen. Keine Zusätze wie
+„Fahrzeugaufbereitung Horb“: Beiwerk im Namen verstößt gegen Googles
+Richtlinien.
 
 ## 2 – Kategorien
 
@@ -31,65 +32,62 @@ Googles Richtlinien und ein häufiger Grund für erneute Sperren.
 | Hauptkategorie | `Autoaufbereitung`                                    |
 | Weitere        | `Autowäsche`, `Autopflege`, `Kfz-Aufbereitungsdienst` |
 
-Die Hauptkategorie entscheidet mit, für welche Suchanfragen die Karte
-erscheint. `Autoaufbereitung` trifft den Betrieb genauer als `Autowäsche`
-und gehört deshalb nach vorn.
+Nur Kategorien wählen, die Google im Auswahlfeld tatsächlich anbietet und die
+zum Angebot passen. Die Hauptkategorie entscheidet mit, für welche Suchanfragen
+die Karte erscheint.
 
 ## 3 – Betriebsart und Adresse
 
 | Feld                         | Wert                                               |
 | ---------------------------- | -------------------------------------------------- |
-| Ladengeschäft mit Kundschaft | **Nein**                                           |
 | Adresse (hinterlegt)         | `Arnistal 27`, `72160 Horb am Neckar`, Deutschland |
-| Adresse öffentlich anzeigen  | **Nein**                                           |
+| Adresse öffentlich anzeigen  | **Nein** (Stand der Prüfung vom 15.09.2026)        |
 
-Arnistal 27 ist eine Wohnadresse. Genau dafür ist die Betriebsart
-„Kein Ladengeschäft — ich besuche Kunden" vorgesehen: Die Adresse wird
-hinterlegt, aber nicht öffentlich angezeigt. Eine öffentlich gezeigte
-Wohnadresse ohne Publikumsverkehr ist der häufigste Sperrgrund für
-Dienstleister.
-
-Im Impressum bleibt die Anschrift stehen — das verlangt § 5 DDG und ist
-kein Widerspruch.
+Die Adresse bleibt im Profil verborgen; Website, Impressum und Kontaktseite
+nennen sie, wie es § 5 DDG verlangt. Das ist kein Widerspruch. Die Website sagt,
+dass Kundinnen und Kunden ihr Fahrzeug nach Terminvereinbarung in Horb abgeben
+können. Ob die Adresse deshalb im Profil sichtbar werden soll, entscheidet der
+Inhaber; eine Änderung kann eine erneute Prüfung auslösen.
 
 ## 4 – Einzugsgebiet
 
-Die dreizehn Orte, die auch die Website als Abholgebiet führt:
+Die 19 Abholorte der Website (ein Profil fasst bis zu 20 Servicegebiete):
 
 ```
 Horb am Neckar
+Sulz am Neckar
+Empfingen
+Vöhringen
+Dornhan
+Dornstetten
+Schopfloch
 Nagold
 Rottenburg am Neckar
 Freudenstadt
-Herrenberg
 Oberndorf am Neckar
-Balingen
-Calw
+Herrenberg
 Tübingen
-Böblingen
-Sindelfingen
+Calw
+Balingen
 Rottweil
+Böblingen
 Reutlingen
+Sindelfingen
 ```
 
-Nicht mehr eintragen als das. Ein aufgeblähtes Einzugsgebiet verwässert
-die Relevanz für den Kernort, statt sie zu vergrößern.
+Nur Orte eintragen, für die der Hol- und Bringservice tatsächlich angeboten
+wird. Kommt ein Ort hinzu oder fällt einer weg, zuerst die Website (`cities` in
+`src/data/site.ts`) und danach das Profil anpassen.
 
 ## 5 – Öffnungszeiten
 
-| Tag            | Zeit           |
-| -------------- | -------------- |
-| Montag–Freitag | `09:00–17:00`  |
-| Samstag        | Geschlossen \* |
-| Sonntag        | Geschlossen    |
+| Tag            | Zeit          |
+| -------------- | ------------- |
+| Montag–Freitag | `09:00–17:00` |
+| Samstag        | Geschlossen   |
+| Sonntag        | Geschlossen   |
 
-\* Samstagstermine laufen laut Website auf persönliche Anfrage. Wer sie als
-reguläre Öffnungszeit einträgt, erzeugt Anrufe zu Zeiten, an denen niemand
-erreichbar ist — das kostet Bewertungen. Besser über einen Beitrag oder die
-Beschreibung erwähnen.
-
-Status: **Geöffnet**. Falls dort noch „Dauerhaft geschlossen" steht, ist
-das der erste Punkt, der weg muss.
+So steht es auf der Kontaktseite. Status: **Geöffnet**.
 
 ## 6 – Kontakt und Verlinkung
 
@@ -100,52 +98,53 @@ das der erste Punkt, der weg muss.
 | Termin-Link | `https://white-gloss.de/#buchung` |
 | E-Mail      | `info@white-gloss.de`             |
 
-Die Website muss auf `white-gloss.de` zeigen — mit Bindestrich. Steht dort
-noch die alte Domain, ist das der zweitwichtigste Punkt nach dem Status.
-
 ## 7 – Beschreibung
 
-740 von 750 Zeichen, direkt zum Kopieren:
+Unter 750 Zeichen, direkt zum Kopieren:
 
 ```
-White Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung in Horb am Neckar. Wir übernehmen Innen- und Außenreinigung, mehrstufige Lackkorrektur, Keramikversiegelung und Lederpflege – für Privatkunden ebenso wie für Flotten und Leasingrückläufer.
+White-Gloss Detailing ist ein Fachbetrieb für Fahrzeugaufbereitung in Horb am Neckar. Wir übernehmen Innen- und Außenreinigung, Lackkorrektur, Keramikversiegelung und Lederpflege sowie die Aufbereitung vor der Leasingrückgabe – für Privatkunden ebenso wie für Flotten.
 
-Jede Aufbereitung beginnt mit einer Begutachtung des Fahrzeugs: Lackzustand, Materialien im Innenraum und Ihr Ziel bestimmen die Arbeitsschritte. Gearbeitet wird in einer Aufbereitungshalle mit kontrollierter Beleuchtung – so lässt sich das Polierergebnis beurteilen statt schätzen.
+Jede Aufbereitung beginnt mit einer Prüfung des Fahrzeugs: Lackzustand, Materialien im Innenraum und Ihr Ziel bestimmen die Arbeitsschritte. Gearbeitet wird ausschließlich in unserer Werkstatt in Horb.
 
-Auf Wunsch holen wir das Fahrzeug ab und bringen es zurück, im Umkreis von Horb bis Tübingen, Reutlingen, Böblingen und Rottweil.
+Auf Wunsch holen wir das Fahrzeug ab und bringen es zurück, unter anderem aus Nagold, Rottenburg, Freudenstadt, Tübingen, Reutlingen, Böblingen und Rottweil.
 
-Preise und Pakete auf white-gloss.de, Termine dort direkt anfragbar.
+Preise und Pakete auf white-gloss.de, Termine dort unverbindlich anfragbar.
 ```
 
-Keine Telefonnummer und keine Werbeversprechen in die Beschreibung —
-beides lehnt Google dort ab.
+Keine Telefonnummer und keine Werbeversprechen in die Beschreibung.
 
 ## 8 – Eröffnungsdatum
 
 Das Datum der **Gewerbeanmeldung** eintragen. Es liegt hier nicht vor und
-darf nicht geschätzt werden: Es ist genau die Angabe, die Google bei einer
-Prüfung gegen die eingereichte Gewerbeanmeldung hält.
+darf nicht geschätzt werden.
 
 ## 9 – Leistungen
 
-Vier Einträge, passend zu den Leistungsseiten der Website:
+Namen und Inhalte wie auf den Leistungsseiten der Website. Nur Leistungen
+eintragen, die tatsächlich angeboten werden.
 
-| Leistung            | Beschreibung                                                                    |
-| ------------------- | ------------------------------------------------------------------------------- |
-| Innenreinigung      | Tiefenreinigung von Textilien, Kunststoff und Verkleidungen – bis in jede Fuge. |
-| Lackkorrektur       | Mehrstufige Politur reduziert Swirls, Waschkratzer und Hologramme gezielt.      |
-| Keramikversiegelung | Härtender Schutzfilm für extremen Glanz und jahrelangen Abperleffekt.           |
-| Lederpflege         | Schonende Reinigung und Rückfettung für geschmeidige, geschützte Oberflächen.   |
+| Leistung                         | Beschreibung (max. 300 Zeichen)                                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Fahrzeugaufbereitung             | Handwäsche, Innenraumreinigung, Politur und Lackschutz passend zum Zustand des Fahrzeugs. Prüfung vor Beginn, Kontrolle vor der Übergabe.        |
+| Innenraumreinigung               | Fußräume, Teppiche, Sitze, Armaturen, Verkleidungen und Scheiben innen; textile Tiefenreinigung im Paket Reinigung & Politur.                    |
+| Lackkorrektur & Politur          | Lackdickenmessung und Politur zur Reduzierung feiner Waschkratzer und Hologramme, soweit der Lack es zulässt.                                    |
+| Keramikversiegelung              | Mehrstufige Lackkorrektur und Keramikbeschichtung mit Abperleffekt. Standzeit abhängig von Beschichtung, Nutzung und Pflege.                    |
+| Aufbereitung vor Leasingrückgabe | Innenreinigung, Lackpflege und punktuelle Nacharbeit vor der Rückgabe; offene Einschätzung, welche Spuren sich behandeln lassen.                 |
+| Lederpflege                      | Tiefenreinigung und Imprägnierung von Autoleder.                                                                                                 |
+| Lederreparatur                   | Reparatur von Brandlöchern, Rissen und kleinen Löchern nach Materialprüfung; Preis nach Prüfung am Fahrzeug.                                     |
+| Geruchsbehandlung mit Ozon       | Erst die Ursache beseitigen, dann bei Bedarf Ozon gegen Nikotin-, Tier- und Feuchtigkeitsgerüche.                                                |
+| Dellenentfernung                 | Lackschadenfreies Ausbeulen von Park- und Hageldellen, sofern technisch möglich; Angebot nach Begutachtung.                                      |
+| Hol- und Bringservice            | Abholung und Rückgabe in den Abholgebieten; die Aufbereitung erfolgt in der Werkstatt in Horb.                                                   |
 
-Ergänzend als weitere Leistungen anlegbar:
+**Nicht eintragen bzw. entfernen:** Scheinwerferaufbereitung. Die Website
+führt sie derzeit als nicht buchbar, weil Verfahren und Zulässigkeit noch
+geklärt werden müssen. Ebenfalls nicht verwenden: Formulierungen wie
+„Desinfektion“, „jahrelanger Abperleffekt“ oder „extremer Glanz“ – solche
+Zusagen macht die Website nicht.
 
-```
-Felgen-Spezial – Felgen demontiert, tiefengereinigt & versiegelt
-Innenraum-Ozon – Geruchsneutralisierung & Desinfektion
-Motorwäsche – Schonende Reinigung & Kunststoffpflege im Motorraum
-Scheinwerfer-Aufbereitung – Politur vergilbter Streuscheiben inkl. UV-Schutz
-Hol- & Bringservice – Abholung und Rückgabe im Einzugsgebiet
-```
+Als Zusatzleistungen anlegbar: Felgenreinigung und Versiegelung,
+Motorraumreinigung, Scheibenversiegelung, Tierhaarentfernung.
 
 ## 10 – Produkte (die drei Pakete)
 
@@ -154,112 +153,107 @@ Hol- & Bringservice – Abholung und Rückgabe im Einzugsgebiet
 > dem Code. Ein Preis im Profil, der von der Website abweicht, ist
 > schlimmer als gar keiner.
 
-Die Beträge gelten für die Kompaktklasse — deshalb durchgängig „ab".
+Die Beträge gelten für die Kompaktklasse – deshalb durchgängig „ab“.
 
-**Basis Pflege — ab 149 €** · ca. 3 Std.
-
-```
-Der saubere Neustart: Handwäsche mit pH-neutralem Shampoo, Felgen- und
-Reifenreinigung, gründliches Aussaugen und Entstauben des Innenraums,
-Scheibenreinigung innen und außen, Sprühversiegelung für rund 3 Monate.
-```
-
-**Premium Glanz — ab 349 €** · ca. 6 Std. · _meistgewählt_
+**Basisreinigung — ab 149 €** · ca. 3 Std.
 
 ```
-Alles aus der Basis Pflege, zusätzlich Lackknete und Eisenentferner,
-einstufige Lackpolitur für den Glanzaufbau, Tiefenreinigung von Innenraum
-und Textilien sowie ein hochwertiges Wachs für rund 6 Monate.
+Handwäsche mit pH-neutralem Shampoo, Felgen- und Reifenreinigung, Innenraum
+saugen, entstauben und materialgerecht reinigen, Scheiben innen und außen,
+Sprühversiegelung mit einer Haltbarkeit von ca. 3 Monaten. Ohne Lackpolitur.
 ```
 
-**High-End Keramik — ab 899 €** · ca. 2 Tage
+**Reinigung & Politur — ab 349 €** · ca. 6 Std.
 
 ```
-Alles aus Signature, zusätzlich mehrstufige Lackkorrektur,
-Keramikbeschichtung (Standzeit laut Produkt), Glas- und
-Felgenversiegelung, Leder-Konditionierung. Hol- und
-Bringservice inklusive.
+Alle Leistungen der Basisreinigung, dazu Lackreinigung mit Reinigungsknete und
+Eisenentferner, einstufige Lackpolitur, Tiefenreinigung von Innenraum und
+Textilien sowie Wachs mit einer Haltbarkeit von ca. 6 Monaten.
+```
+
+**Keramikschutz — ab 899 €** · ca. 2 Tage
+
+```
+Reinigung und Innenraumpflege wie im Paket Reinigung & Politur, mehrstufige
+Lackkorrektur, Keramikversiegelung, Glas- und Felgenversiegelung, Lederpflege.
+Hol- und Bringservice bis 60 km inklusive. Standzeit abhängig von
+Beschichtung, Nutzung und Pflege.
 ```
 
 ## 11 – Attribute
 
-| Attribut                  | Wert                                     |
-| ------------------------- | ---------------------------------------- |
-| Inhabergeführt            | Ja — Lars Hägele                         |
-| Termin erforderlich       | Ja                                       |
-| Online-Terminvereinbarung | Ja                                       |
-| Abhol- und Bringservice   | Ja                                       |
-| Zahlungsarten             | **prüfen** — nur eintragen, was zutrifft |
-| Barrierefreiheit          | leer lassen (kein Publikumsverkehr)      |
+| Attribut                  | Wert                                       |
+| ------------------------- | ------------------------------------------ |
+| Inhabergeführt            | Ja — Lars Hägele                           |
+| Termin erforderlich       | Ja                                         |
+| Online-Terminanfrage      | Ja (unverbindliche Anfrage über `/#buchung`) |
+| Abhol- und Bringservice   | Ja                                         |
+| Zahlungsarten             | **prüfen** — nur eintragen, was zutrifft   |
 
-Attribute nur setzen, wenn sie stimmen. Sie erscheinen als Zusage im
-Profil, und eine nicht eingehaltene Zusage kostet die erste schlechte
-Bewertung.
+Attribute nur setzen, wenn sie stimmen. Sie erscheinen als Zusage im Profil.
 
 ## 12 – Fotos
 
-Der Eintrag lebt von Bildern; ein Profil ohne Fotos wird deutlich seltener
-angeklickt. Sinnvolle Reihenfolge:
-
 1. **Logo** — `public/wgd-logo-760.webp` liegt im Repository.
 2. **Titelbild** — ein fertig aufbereitetes Fahrzeug, quer.
-3. **Vorher-Nachher** — das Wirksamste überhaupt. Beide Bilder aus
-   gleicher Perspektive und bei gleichem Licht.
-4. **Arbeitsstätte** — Halle, Arbeitsplatz, Poliermaschine, Lagerregal.
-   Diese Bilder helfen zusätzlich bei einer Prüfung durch Google.
-5. **Team / Inhaber** — ein Bild bei der Arbeit.
+3. **Vorher-Nachher** — beide Bilder aus gleicher Perspektive und bei gleichem
+   Licht.
+4. **Arbeitsstätte** — Werkstatt, Arbeitsplatz, Poliermaschine.
+5. **Inhaber** — ein Bild bei der Arbeit.
 
-Dieselben Bilder gehören in die Referenzgalerie der Website. Keine
-Stockfotos: Google erkennt sie, und sie zeigen nicht diesen Betrieb.
+Nur eigene Bilder verwenden, an denen die Rechte bestehen. Kennzeichen
+unkenntlich machen, Kundendaten und Personen nur mit Zustimmung zeigen. Die
+Kundenfotos der Website sind auf abgedeckte Kennzeichen geprüft (17.10.2026);
+bei `customer-02` steht eine Person am Bildrand – vor einer Verwendung im Profil
+das Einverständnis klären oder zuschneiden. Keine Stockfotos.
 
 ## 13 – Fragen und Antworten
 
-Eigene Fragen dürfen selbst eingestellt und beantwortet werden. Das ist
-kein Trick, sondern eine vorgesehene Funktion — und es besetzt den Platz,
-bevor es jemand anders mit einer schlecht gestellten Frage tut.
+Falls das Profil diese Funktion noch anbietet, eigene Fragen einstellen und
+beantworten:
 
 **Wie lange dauert eine Aufbereitung?**
 
 ```
-Das hängt vom Paket ab: Basis Pflege rund 3 Stunden, Premium Glanz rund
-6 Stunden, High-End Keramik etwa 2 Tage. Den genauen Rahmen stimmen wir
-bei der Terminvereinbarung ab.
+Das hängt vom Paket ab: Basisreinigung ca. 3 Stunden, Reinigung & Politur
+ca. 6 Stunden, Keramikschutz ca. 2 Tage. Bei starker Verschmutzung kann mehr
+Zeit nötig sein. Den Rahmen stimmen wir bei der Terminvereinbarung ab.
 ```
 
 **Holen Sie das Fahrzeug ab?**
 
 ```
-Ja. Wir holen das Fahrzeug ab und bringen es zurück – von Horb am Neckar
-bis Tübingen, Reutlingen, Böblingen und Rottweil. Beim Paket High-End
-Keramik ist der Service enthalten, sonst richtet sich der Preis nach der
-Entfernung.
+Ja, in unseren Abholgebieten, unter anderem aus Nagold, Rottenburg,
+Freudenstadt, Tübingen, Reutlingen, Böblingen und Rottweil. Im Paket
+Keramikschutz ist die Abholung bis 60 km enthalten, sonst richtet sich der
+Preis nach der Entfernung. Alle Orte und Preise stehen auf white-gloss.de.
 ```
 
 **Was kostet eine Keramikversiegelung?**
 
 ```
-Die Keramikversiegelung ist Teil des Pakets High-End Keramik ab 899 Euro
-für die Kompaktklasse; größere Fahrzeuge entsprechend mehr. Der Preis für
-Ihr Fahrzeug lässt sich auf white-gloss.de direkt berechnen.
+Die Keramikversiegelung ist Teil des Pakets Keramikschutz ab 899 Euro für die
+Kompaktklasse; größere Fahrzeuge kosten entsprechend mehr. Den verbindlichen
+Preis nennen wir nach der Prüfung von Fahrzeug und Lackzustand.
 ```
 
 **Gibt es ein Ladengeschäft?**
 
 ```
-Nein. Wir arbeiten ohne Publikumsverkehr in eigenen Räumlichkeiten und
-kommen zu Ihnen bzw. holen das Fahrzeug ab. Termine nach Vereinbarung.
+Nein. Wir arbeiten in unserer Werkstatt in Horb am Neckar. Sie bringen Ihr
+Fahrzeug nach Terminvereinbarung vorbei oder nutzen den Hol- und Bringservice.
+Eine mobile Aufbereitung vor Ort bieten wir nicht an.
 ```
 
 ---
 
 ## Die eine Regel, die über allem steht
 
-Name, Anschrift und Telefonnummer müssen in Profil, Impressum,
-strukturierten Daten und jedem Verzeichnis **identisch** lauten. Google
-nutzt diese Übereinstimmung als Ranking-Signal für örtliche Betriebe.
+Name, Anschrift und Telefonnummer müssen in Profil, Impressum, strukturierten
+Daten und jedem Verzeichnis **identisch** lauten.
 
 ```
-White Gloss Detailing
+White-Gloss Detailing
 Arnistal 27
 72160 Horb am Neckar
 0152 33540284
@@ -267,14 +261,12 @@ info@white-gloss.de
 https://white-gloss.de
 ```
 
-Lieber fünf Einträge mit exakt gleichen Daten als zwanzig mit
-Abweichungen.
+Lieber fünf Einträge mit exakt gleichen Daten als zwanzig mit Abweichungen.
 
 ## Was nicht zu tun ist
 
-- **Keinen Ortsnamen in den Firmennamen.** Häufigster Grund für erneute
-  Sperren.
-- **Keinen zweiten Eintrag anlegen**, solange ein Duplikat gemeldet ist.
-- **Keine Bewertungen kaufen oder tauschen.** Google erkennt Muster, und
-  die Folge trifft das Profil, nicht den Verkäufer.
+- **Den Namen nicht ändern**, solange er mit der Website übereinstimmt.
+- **Keinen Ortsnamen in den Firmennamen.**
+- **Keinen zweiten Eintrag anlegen.**
+- **Keine Bewertungen kaufen oder tauschen.**
 - **Während eines laufenden Prüfverfahrens nichts ändern.**

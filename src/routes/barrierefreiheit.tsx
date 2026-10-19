@@ -36,7 +36,7 @@ function AccessibilityPage() {
       />
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <p>
-          White Gloss Detailing bemüht sich, diese Website für alle nutzbar zu halten. Eine
+          White-Gloss Detailing bemüht sich, diese Website für alle nutzbar zu halten. Eine
           unabhängige Konformitätsprüfung nach WCAG 2.2 AA liegt noch nicht vor. Diese Erklärung
           beschreibt den aktuellen Stand.
         </p>
