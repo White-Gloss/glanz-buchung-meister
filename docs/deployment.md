@@ -232,19 +232,20 @@ nicht als gesund bestätigen. Eine negative Prüfung wird frühestens nach fünf
 Sekunden wiederholt. Es wird weder eine Datenbank angelegt noch ein Schema
 automatisch umgeschrieben.
 
-Der Workflow `.github/workflows/deploy-ionos.yml` reagiert ausschließlich auf
-einen erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit,
-reproduziert den Build, verifiziert Archiv und Server-Helfer per SHA-256 und
-prüft zusätzlich die versionierte systemd-Unit auf Konfigurationsdrift. Untätige
-PostgreSQL-Verbindungen halten den Prozess nach dem Schließen des HTTP-Servers
-nicht mehr offen; zusätzlich bleibt der Produktionsneustart auf 15 Sekunden
-begrenzt. Danach führt der Workflow den Produktions-Smoke-Test aus. Ohne die
-explizite Repository-Variable `IONOS_DEPLOY_ENABLED=true` wird der
-Deployment-Job vollständig übersprungen.
+Der Workflow `.github/workflows/deploy-hostinger.yml` reagiert auf einen
+erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit. Ein manueller
+Lauf ist erst nach einem bestätigten erfolgreichen CI-Lauf desselben Commits
+zulässig. Der Workflow reproduziert den Build, verifiziert Archiv und
+Server-Helfer per SHA-256 und prüft zusätzlich die versionierte systemd-Unit auf
+Konfigurationsdrift. Untätige PostgreSQL-Verbindungen halten den Prozess nach dem
+Schließen des HTTP-Servers nicht mehr offen; zusätzlich bleibt der
+Produktionsneustart auf 15 Sekunden begrenzt. Danach führt der Workflow den
+Produktions-Smoke-Test aus. Ohne die explizite Repository-Variable
+`HOSTINGER_DEPLOY_ENABLED=true` wird der Deployment-Job vollständig übersprungen.
 
 ## Rollback-Grundsatz
 
-Ein Rollback muss immer auf einen bekannten Git-Stand erfolgen. Keine Produktionsdateien werden manuell „repariert“, ohne dass dieselbe Änderung auch im Repository existiert. So bleiben GitHub, IONOS und die tatsächlich laufende Version nachvollziehbar synchron.
+Ein Rollback muss immer auf einen bekannten Git-Stand erfolgen. Keine Produktionsdateien werden manuell „repariert“, ohne dass dieselbe Änderung auch im Repository existiert. So bleiben GitHub, Hostinger und die tatsächlich laufende Version nachvollziehbar synchron.
 
 Der erfolgreiche Produktions-Build schreibt als letzten Schritt
 `.output/booking-workflow.contract` mit `white-gloss-booking-workflow=1`.
@@ -271,7 +272,7 @@ Rollback-Schritt und darf neue Buchungen nicht unbemerkt verwerfen.
 
 ### Erstmaliges Wartungsfenster für Migration 0007
 
-1. Den geprüften neuen Quellstand und Build bereitstellen. `IONOS_DEPLOY_ENABLED`
+1. Den geprüften neuen Quellstand und Build bereitstellen. `HOSTINGER_DEPLOY_ENABLED`
    vor dem Fenster auf `false` setzen und sicherstellen, dass keine bereits
    gestartete Deployment-Aktivierung mehr läuft. Die Variable beendet keinen
    laufenden Job. Während des Fensters darf kein älterer CI-Lauf den Altcode

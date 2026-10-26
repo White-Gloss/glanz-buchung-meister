@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows:
-      - Deploy to IONOS VPS
+      - Deploy to Hostinger VPS
     types:
       - completed
 

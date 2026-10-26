@@ -12,7 +12,7 @@ Seit dem 24.09.2026 starten die GitHub-Runner keine Jobs mehr: `verify` und `sch
 - **Keine Fork-PRs.** Die Workflows schicken Pull Requests aus Forks immer zu den GitHub-Runnern, nie auf den eigenen. Auf dem eigenen Runner läuft nur Code aus Branches dieses Repositorys, also von Personen mit Schreibrecht.
 - **Zusätzlich** unter Settings → Actions → General → „Approval for running fork pull request workflows“ die Einstellung „Require approval for all external contributors“ wählen.
 - Der Benutzer `gh-runner` hat kein `sudo`. Er ist in der Gruppe `docker` (für den PostgreSQL-Testcontainer). Das entspricht auf diesem Server root-Rechten; deshalb gehört auf den VPS nichts anderes.
-- **Keine Produktionsschlüssel auf dem CI-Runner.** `deploy-ionos.yml` verwendet `CI_RUNS_ON` ausdrücklich nicht. Inspektion und Deployment laufen auf jeweils frischen GitHub-Runnern. Ein gemeinsamer dauerhafter Runner würde den in `~/.ssh` gespeicherten Produktionsschlüssel nachfolgenden Branch-Tests zugänglich machen. Auch getrennte Labels auf derselben Maschine wären keine Isolation. Siehe [GitHub: sichere Verwendung von Actions](https://docs.github.com/en/actions/reference/security/secure-use).
+- **Keine Produktionsschlüssel auf dem CI-Runner.** `deploy-hostinger.yml` verwendet `CI_RUNS_ON` ausdrücklich nicht. Inspektion und Deployment laufen auf jeweils frischen GitHub-Runnern. Ein gemeinsamer dauerhafter Runner würde den in `~/.ssh` gespeicherten Produktionsschlüssel nachfolgenden Branch-Tests zugänglich machen. Auch getrennte Labels auf derselben Maschine wären keine Isolation. Siehe [GitHub: sichere Verwendung von Actions](https://docs.github.com/en/actions/reference/security/secure-use).
 
 ## Einrichtung
 

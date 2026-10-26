@@ -125,14 +125,14 @@ in `review` übernommen; ihr ursprünglicher Status bleibt in `legacy_status`
 erhalten. Die erste Aktivierung versendet keine
 historische WhatsApp-Warteschlange unkontrolliert.
 
-Im bekannten IONOS-Betrieb werden Secrets über `/etc/white-gloss/environment`
+Im aktiven Hostinger-Betrieb werden Secrets über `/etc/white-gloss/environment`
 geladen. Zusätzlich zur bestehenden Datenbank/Auth/Resend/Storage-Konfiguration
 sind Meta-Konfiguration und `REMINDER_CRON_SECRET` mit mindestens 32 Zeichen
 erforderlich. Die Anwendung muss lokal unter Port 3000 erreichbar sein.
 
 Vor der erstmaligen `0007` ist ein Schreibwartungsfenster erforderlich. Alte
 Bestätigungsaufrufe sind nach dieser Migration nicht mehr kompatibel.
-Automatische Deployments zunächst über `IONOS_DEPLOY_ENABLED=false` pausieren,
+Automatische Deployments zunächst über `HOSTINGER_DEPLOY_ENABLED=false` pausieren,
 bereits laufende Aktivierungen beenden lassen und alte Buchungs-/Erinnerungsjobs
 sowie den Hauptdienst kontrolliert anhalten. Nach Ende der Schreibzugriffe die
 richtige Datenbank konsistent sichern. Den neuen root-eigenen Deployment-Helfer

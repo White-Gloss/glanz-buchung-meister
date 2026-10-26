@@ -1,0 +1,2 @@
+# Der root-eigene Helfer validiert Release-ID, Archiv, Prüfsumme und Rückfallziel.
+white-gloss-ci ALL=(root) NOPASSWD: /usr/local/sbin/white-gloss-deploy

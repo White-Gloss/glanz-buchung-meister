@@ -1,0 +1,309 @@
+name: Deploy to Hostinger VPS
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: hostinger-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      vars.HOSTINGER_DEPLOY_ENABLED == 'true' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      )
+    # Derselbe geschützte Produktionskontext liefert die öffentlichen Buildwerte;
+    # Hostinger-Zugangsdaten bleiben separate Repository-Secrets.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    env:
+      HOSTINGER_SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+      HOSTINGER_SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+      HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+      HOSTINGER_SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
+      HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      RELEASE_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      REMOTE_ARCHIVE: /home/white-gloss-ci/incoming/${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}.tgz
+
+    steps:
+      - name: Deployment-Konfiguration validieren
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in \
+            HOSTINGER_SSH_HOST \
+            HOSTINGER_SSH_USER \
+            HOSTINGER_SSH_PRIVATE_KEY \
+            HOSTINGER_SSH_KNOWN_HOSTS
+          do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Erforderliche Produktionskonfiguration fehlt: ${name}" >&2
+              exit 1
+            fi
+          done
+          [[ "$HOSTINGER_SSH_USER" == "white-gloss-ci" ]] || {
+            echo "Unerwarteter Hostinger-CI-Benutzer" >&2
+            exit 1
+          }
+
+      - name: Freigegebenen main-Stand auschecken
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 5
+          persist-credentials: false
+
+      - name: Erfolgreiche CI für manuellen Lauf bestätigen
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          conclusion="$(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=main&event=push&per_page=100" \
+              --jq ".workflow_runs[] | select(.head_sha == \"${RELEASE_ID}\" and .status == \"completed\") | .conclusion" |
+              head -n 1
+          )"
+          [[ "$conclusion" == "success" ]] || {
+            echo "Für ${RELEASE_ID} ist kein erfolgreicher CI-Lauf bestätigt." >&2
+            exit 1
+          }
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Aktuellen main-Stand bestätigen
+        id: current_main
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git fetch --no-tags --depth=1 origin main
+          current_main="$(git rev-parse FETCH_HEAD)"
+          if [[ "$current_main" != "$RELEASE_ID" ]]; then
+            echo "Ein neuerer main-Stand existiert bereits; dieses ältere Deployment wird übersprungen."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Veraltetes Deployment übersprungen
+        if: steps.current_main.outputs.skip == 'true'
+        run: echo "Kein Produktionsrelease aktiviert, weil main inzwischen einen neueren Commit enthält."
+
+      - name: Nur-Workflow-Änderungen erkennen
+        id: scope
+        if: steps.current_main.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git fetch --no-tags --deepen=20 origin main >/dev/null 2>&1 || true
+          if git rev-parse --verify --quiet "${RELEASE_ID}^2" >/dev/null; then
+            mapfile -t changed < <(git diff --name-only "${RELEASE_ID}^1" "${RELEASE_ID}")
+          else
+            mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r -m --first-parent "$RELEASE_ID")
+          fi
+          if [[ "${#changed[@]}" -eq 0 ]]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Keine Dateiliste für diesen Commit; Deployment wird nicht übersprungen."
+            exit 0
+          fi
+          skip=true
+          for path in "${changed[@]}"; do
+            case "$path" in
+              .github/workflows/*) ;;
+              *) skip=false; break ;;
+            esac
+          done
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "Geänderte Dateien:"
+          printf '%s\n' "${changed[@]}"
+          if [[ "$skip" == "true" ]]; then
+            echo "Nur Workflow-Dateien geändert; Produktionsrelease und Dienst bleiben unverändert."
+          fi
+
+      - name: Produktions-Build reproduzieren
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+
+      - name: Release-Paket erstellen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f .output/server/index.mjs
+          tar -czf release.tgz .output
+          sha256sum release.tgz > release.tgz.sha256
+
+      - name: SSH mit festem Hostschlüssel einrichten
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          install -m 600 /dev/null "$HOME/.ssh/id_hostinger"
+          install -m 600 /dev/null "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$HOSTINGER_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_hostinger"
+          printf '%s\n' "$HOSTINGER_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          port="${HOSTINGER_SSH_PORT:-22}"
+          if [[ ! "$port" =~ ^[0-9]{1,5}$ ]] || ((10#$port > 65535)); then
+            echo "HOSTINGER_SSH_PORT ist ungültig" >&2
+            exit 1
+          fi
+          {
+            echo "Host hostinger-production"
+            echo "  HostName $HOSTINGER_SSH_HOST"
+            echo "  User $HOSTINGER_SSH_USER"
+            echo "  Port $port"
+            echo "  IdentityFile $HOME/.ssh/id_hostinger"
+            echo "  IdentitiesOnly yes"
+            echo "  BatchMode yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  UserKnownHostsFile $HOME/.ssh/known_hosts"
+            echo "  GlobalKnownHostsFile /dev/null"
+            echo "  ConnectTimeout 15"
+            echo "  ServerAliveInterval 15"
+            echo "  ServerAliveCountMax 4"
+          } > "$HOME/.ssh/config"
+          chmod 600 "$HOME/.ssh/config"
+
+      - name: Release übertragen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        run: scp release.tgz "hostinger-production:${REMOTE_ARCHIVE}"
+
+      - name: Übertragung und privilegierten Helfer verifizieren
+        id: server_contract
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          local_archive_sha="$(cut -d ' ' -f 1 release.tgz.sha256)"
+          remote_archive_sha="$(
+            ssh hostinger-production "sha256sum '${REMOTE_ARCHIVE}'" | cut -d ' ' -f 1
+          )"
+          [[ "$remote_archive_sha" == "$local_archive_sha" ]] || {
+            echo "Die Prüfsumme des übertragenen Release-Pakets stimmt nicht." >&2
+            exit 1
+          }
+
+          local_helper_sha="$(sha256sum scripts/deploy-ionos-release.sh | cut -d ' ' -f 1)"
+          remote_helper_sha="$(
+            ssh hostinger-production "sha256sum /usr/local/sbin/white-gloss-deploy" |
+              cut -d ' ' -f 1
+          )"
+          [[ "$remote_helper_sha" == "$local_helper_sha" ]] || {
+            echo "Der root-eigene Deployment-Helfer weicht vom geprüften Repository-Stand ab." >&2
+            exit 1
+          }
+
+          local_unit_sha="$(sha256sum ops/white-gloss.service | cut -d ' ' -f 1)"
+          remote_unit_sha="$(
+            ssh hostinger-production "sha256sum /etc/systemd/system/white-gloss.service" |
+              cut -d ' ' -f 1
+          )"
+          [[ "$remote_unit_sha" == "$local_unit_sha" ]] || {
+            echo "Die installierte systemd-Unit weicht vom geprüften Repository-Stand ab." >&2
+            exit 1
+          }
+
+          expected_release="$(
+            ssh hostinger-production "basename \"\$(readlink -f /srv/white-gloss-current)\""
+          )"
+          [[ "$expected_release" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Der aktive Serverstand hat keine gültige Release-ID; keine automatische Aktivierung." >&2
+            exit 1
+          }
+          echo "expected_release=$expected_release" >> "$GITHUB_OUTPUT"
+          echo "archive_sha=$local_archive_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Release atomar aktivieren
+        id: activate
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        shell: bash
+        env:
+          EXPECTED_CURRENT_RELEASE: ${{ steps.server_contract.outputs.expected_release }}
+          VERIFIED_ARCHIVE_SHA: ${{ steps.server_contract.outputs.archive_sha }}
+        run: |
+          set -Eeuo pipefail
+          previous_release="$(
+            ssh hostinger-production \
+              "sudo -n /usr/local/sbin/white-gloss-deploy activate ${RELEASE_ID} ${REMOTE_ARCHIVE} ${EXPECTED_CURRENT_RELEASE} ${VERIFIED_ARCHIVE_SHA}"
+          )"
+          if [[ -n "$previous_release" && ! "$previous_release" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Der Server lieferte eine ungültige vorherige Release-ID" >&2
+            exit 1
+          fi
+          echo "previous_release=$previous_release" >> "$GITHUB_OUTPUT"
+
+      - name: Live-Smoke-Test
+        id: smoke
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        continue-on-error: true
+        run: node scripts/smoke-production.mjs
+        env:
+          SMOKE_BASE_URL: https://white-gloss.de
+          SMOKE_TIMEOUT_MS: "15000"
+
+      - name: Bei fehlgeschlagenem Smoke-Test zurückrollen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'failure' && steps.activate.outputs.previous_release != ''
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh hostinger-production \
+            "sudo -n /usr/local/sbin/white-gloss-deploy rollback ${{ steps.activate.outputs.previous_release }} ${RELEASE_ID}"
+
+          SMOKE_BASE_URL=https://white-gloss.de \
+            SMOKE_TIMEOUT_MS=15000 \
+            node scripts/smoke-production.mjs
+
+      - name: Aktive Release-ID bestätigen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'success'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          active_release="$(
+            ssh hostinger-production "basename \"\$(readlink -f /srv/white-gloss-current)\""
+          )"
+          [[ "$active_release" == "$RELEASE_ID" ]] || {
+            echo "Der aktive Serverstand entspricht nicht dem geprüften Commit." >&2
+            exit 1
+          }
+
+      - name: Deployment bei fehlgeschlagenem Smoke-Test abbrechen
+        if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true' && steps.smoke.outcome == 'failure'
+        run: |
+          echo "Der Live-Smoke-Test ist fehlgeschlagen; ein vorhandenes vorheriges Release wurde reaktiviert." >&2
+          exit 1
+
+      - name: Temporäre Serverdatei entfernen
+        if: always() && steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
+        run: ssh hostinger-production "rm -f '${REMOTE_ARCHIVE}'" || true
