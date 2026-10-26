@@ -79,6 +79,11 @@ fi
 chown white-gloss-ci:white-gloss-ci "$authorized_keys"
 chmod 0600 "$authorized_keys"
 if ! grep -qxF -- "$(<"$public_key")" "$authorized_keys"; then
+  # Vorhandene Dateien dürfen ohne abschließenden Zeilenumbruch vorliegen.
+  # Sonst würde der neue Schlüssel nur Teil des vorherigen Kommentars.
+  if [[ -s $authorized_keys && -n $(tail -c 1 "$authorized_keys") ]]; then
+    printf '\n' >> "$authorized_keys"
+  fi
   printf '%s\n' "$(<"$public_key")" >> "$authorized_keys"
 fi
 
