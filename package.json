@@ -73,7 +73,7 @@
     "jose": "6.2.9",
     "kysely": "^0.28.5",
     "lucide-react": "^0.510.0",
-    "nodemailer": "10.0.9",
+    "nodemailer": "10.2.1",
     "pdf-lib": "1.17.1",
     "pg": "^8.16.3",
     "react": "^19.2.0",
@@ -87,7 +87,6 @@
     "tailwindcss": "^4.3.0",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
-    "vitest": "^4.1.11",
     "zod": "^4.4.0",
     "zustand": "^5.0.0"
   },
@@ -111,7 +110,7 @@
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.2.0"
+    "vite": "^8.2.0",
+    "vitest": "^5.0.5"
   }
 }
-
