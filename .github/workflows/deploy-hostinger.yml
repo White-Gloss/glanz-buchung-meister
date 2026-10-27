@@ -135,6 +135,7 @@ jobs:
           skip=true
           for path in "${changed[@]}"; do
             case "$path" in
+              .github/workflows/deploy-hostinger.yml) skip=false; break ;;
               .github/workflows/*) ;;
               *) skip=false; break ;;
             esac
@@ -193,8 +194,13 @@ jobs:
             echo "  ConnectTimeout 15"
             echo "  ServerAliveInterval 15"
             echo "  ServerAliveCountMax 4"
+            echo "  ControlMaster auto"
+            echo "  ControlPath $HOME/.ssh/hostinger-control"
+            echo "  ControlPersist 10m"
           } > "$HOME/.ssh/config"
           chmod 600 "$HOME/.ssh/config"
+          # Hostinger begrenzt schnelle SSH-Neuverbindungen; alle Schritte teilen eine Sitzung.
+          ssh -MNf hostinger-production
 
       - name: Release übertragen
         if: steps.current_main.outputs.skip != 'true' && steps.scope.outputs.skip != 'true'
