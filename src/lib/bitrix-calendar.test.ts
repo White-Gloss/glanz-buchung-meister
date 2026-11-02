@@ -20,8 +20,8 @@ import { site } from "../data/site.ts";
 const event = {
   id: 12,
   sectionId: 2,
-  from: "2026-11-02T08:00:00Z",
-  to: "2026-11-02T14:00:00Z",
+  from: "2027-11-02T08:00:00Z",
+  to: "2027-11-02T14:00:00Z",
   accessibility: "busy",
 };
 const webhook = "https://example.bitrix24.de/rest/1/testcode123/";
@@ -46,8 +46,8 @@ test("all-day Bitrix blocks follow Berlin DST and overnight blocks keep their wh
   assert.equal(block.start, "2026-10-24T22:00:00.000Z");
   assert.equal(block.end, "2026-10-25T23:00:00.000Z");
   assert.equal(
-    eventWindows([{ ...event, to: "2026-11-04T14:00:00Z" }])[0].end,
-    "2026-11-04T14:00:00.000Z",
+    eventWindows([{ ...event, to: "2027-11-04T14:00:00Z" }])[0].end,
+    "2027-11-04T14:00:00.000Z",
   );
   assert.deepEqual(
     eventWindows([
@@ -57,7 +57,7 @@ test("all-day Bitrix blocks follow Berlin DST and overnight blocks keep their wh
     [],
   );
   assert.throws(() => eventWindows([{ ...event, sectionId: undefined } as any]), /vollständig/);
-  assert.throws(() => eventWindows([{ ...event, from: "2026-11-02T09:00:00" }]), /vollständig/);
+  assert.throws(() => eventWindows([{ ...event, from: "2027-11-02T09:00:00" }]), /vollständig/);
 });
 
 test("availability queries use inclusive Berlin dates and reject invalid or unbounded ranges", () => {
@@ -85,13 +85,13 @@ test("native calendar reads the portal directly and fails closed on malformed or
       type: "user",
       ownerId: 1,
       section: [2],
-      from: "2026-11-02",
-      to: "2026-11-02",
+      from: "2027-11-02",
+      to: "2027-11-02",
     });
     return envelope([event]);
   });
   assert.equal(rows.length, 2);
-  assert.equal(rows[0].start, "2026-11-02T08:00:00.000Z");
+  assert.equal(rows[0].start, "2027-11-02T08:00:00.000Z");
   for (const body of [
     {},
     { result: true },
@@ -152,12 +152,12 @@ test("native calendar matches the live German wall time despite inconsistent UTC
 
 test("a full package interval needs one continuously free capacity; adjoining bookings do not overlap", () => {
   const windows = eventWindows([event]);
-  assert.equal(requestedSlotBusy(windows, "2026-11-02", "09:00", "basis"), true);
-  assert.equal(requestedSlotBusy(windows, "2026-11-02", "15:00", "basis"), false);
+  assert.equal(requestedSlotBusy(windows, "2027-11-02", "09:00", "basis"), true);
+  assert.equal(requestedSlotBusy(windows, "2027-11-02", "15:00", "basis"), false);
   assert.equal(
     requestedSlotBusy(
       windows.filter((w) => w.resourceId === 1),
-      "2026-11-02",
+      "2027-11-02",
       "09:00",
       "basis",
     ),
@@ -195,9 +195,9 @@ test("manual approval fails closed on Bitrix conflicts and outages; matching exp
       id: number;
       version: number;
     }>`insert into bookings(shop_id,customer_name,phone,package_id,class_id,extra_ids,total_cents,pickup_cents,preferred_date,preferred_slot)
-      values('white-gloss','Calendar Test','000000000','basis','kompakt','[]',14900,0,'2026-11-02','09:00') returning id,version`;
+      values('white-gloss','Calendar Test','000000000','basis','kompakt','[]',14900,0,'2027-11-02','09:00') returning id,version`;
     const input = {
-      startDate: "2026-11-02",
+      startDate: "2027-11-02",
       startTime: "09:00",
       durationMinutes: 180,
       agreedCents: 14900,
@@ -230,7 +230,7 @@ test("manual approval fails closed on Bitrix conflicts and outages; matching exp
     );
     assert.equal(confirmed.booking.status, "bestaetigt");
     await sql`update bookings set bitrix_event_id=12 where id=${booking.id}`;
-    globalThis.fetch = async () => envelope([{ ...event, to: "2026-11-02T11:00:00Z" }]);
+    globalThis.fetch = async () => envelope([{ ...event, to: "2027-11-02T11:00:00Z" }]);
     assert.deepEqual(await bitrixBusyWindows(sql, event.from, event.to, { fresh: true }), []);
     globalThis.fetch = async () => envelope([event]);
     assert.equal((await bitrixBusyWindows(sql, event.from, event.to, { fresh: true })).length, 2);
