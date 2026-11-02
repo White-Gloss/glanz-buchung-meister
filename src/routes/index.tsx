@@ -113,18 +113,33 @@ function Home() {
       </div>
       <PackageShowcase />
 
+      <section className="concierge-service" aria-labelledby="concierge-heading">
+        <header>
+          <p className="kicker">Hol- und Bringservice · digitale Übergabe</p>
+          <h2 id="concierge-heading" className="heading-2">
+            Sie geben uns den Schlüssel.<br />Wir kümmern uns um den Rest.
+          </h2>
+          <p>Sie müssen dafür nicht vor Ort sein. Auf Wunsch stimmen wir eine sichere Schlüsselhinterlegung mit Ihnen ab.</p>
+        </header>
+        <ol>
+          <li><span>01</span><h3>Wir holen ab</h3><p>Zum vereinbarten Zeitpunkt – persönlich oder mit abgestimmter Schlüsselhinterlegung.</p></li>
+          <li><span>02</span><h3>Wir bereiten auf</h3><p>Ihr Fahrzeug ist in unserer Werkstatt in guten Händen. Umfang und Preis werden vorher mit Ihnen abgestimmt.</p></li>
+          <li><span>03</span><h3>Wir bringen zurück</h3><p>Stressfrei und ohne Wartezeit. Die digitale Übergabe dokumentiert das Ergebnis für Sie.</p></li>
+        </ol>
+      </section>
+
       <section
         id="buchung"
         className="section booking-section mx-auto max-w-7xl px-4 sm:px-6"
         aria-labelledby="buchung-heading"
       >
-        <p className="kicker">Fahrzeug · Paket · Feinschliff</p>
+        <p className="kicker">Fahrzeug → Wunschergebnis → Termin und Übergabe</p>
         <h2 id="buchung-heading" className="heading-2 mt-3">
           Ihre Aufbereitung.
         </h2>
         <p className="booking-intro text-muted">
-          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Sie sehen direkt den voraussichtlichen
-          Preis. Ihre Terminanfrage ist unverbindlich.
+          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Preis und Zeitaufwand bleiben transparent.
+          Danach stimmen wir Termin, Abholung und digitale Übergabe mit Ihnen ab – unverbindlich.
         </p>
         <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
       </section>
@@ -152,6 +167,9 @@ function Home() {
             Wir stimmen die Pflege von Lack, Leder und Felgen auf den Zustand Ihres Fahrzeugs ab.
             Alle Arbeiten führen wir in unserer Werkstatt in Horb am Neckar aus.
           </p>
+          <blockquote className="workshop-quote">
+            „Ich behandle jedes Fahrzeug so, als müsste ich es Ihnen unter perfektem Licht zurückgeben – weil ich genau das tue.“
+          </blockquote>
           <div className="workshop-owner"><span>{site.owner}</span><p>Inhaber · White-Gloss Detailing</p></div>
           <Link to="/qualitaet" className="atelier-text-link">So arbeiten wir <IconArrowRight aria-hidden /></Link>
         </div>

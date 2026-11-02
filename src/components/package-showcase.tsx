@@ -10,6 +10,11 @@ const photos = ["customer-14", "customer-05", "customer-09"].map((id) =>
   customerPhotos.find((photo) => photo.id === id)!,
 );
 const focalPoints = ["50% 58%", "50% 64%", "50% 66%"];
+const packageGoals = [
+  "Frisch im Alltag – für sichtbar gepflegten Innenraum und Lack.",
+  "Der spürbare Unterschied – für deutlich mehr Glanz und ein rundum gepflegtes Fahrzeug.",
+  "Langfristig besonders – für anspruchsvolle Lackkorrektur und dauerhaften Schutz.",
+];
 // Match luxury.css without undersizing the original 3:4 photos when cover
 // crops a tall frame. The desktop stage occupies .95 / 1.95 of the track;
 // tablet images can reach 32rem high, requiring at least 24rem of source width.
@@ -107,6 +112,7 @@ export function PackageShowcase() {
                   {pack.featured && <span className="package-recommendation">Empfohlen</span>}
                 </div>
                 <h3>{pack.name}</h3>
+                <p className="package-goal">{packageGoals[index]}</p>
                 <p className="package-description">{pack.kicker}</p>
                 <div className="package-price">
                   <span>ab</span>

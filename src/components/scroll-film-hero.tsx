@@ -287,17 +287,18 @@ export function ScrollFilmHero() {
               White-Gloss Detailing · <span className="scroll-film-place">Horb am Neckar</span>
             </p>
             <h1>
-              Ihr Fahrzeug.
+              Ihr Auto.
               <br />
-              Unser Handwerk.
+              Nicht nur sauber.
               <br />
-              <span>Bis ins Detail.</span>
+              <span>Wieder besonders.</span>
             </h1>
             <p className="scroll-film-service">
-              Fahrzeugaufbereitung in Horb: Innenraum, Politur und Keramik.
+              Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft,
+              stressfrei abgeholt und digital übergeben.
             </p>
             <Link to="/" hash="buchung" className="scroll-film-cta">
-              Termin anfragen <IconArrowRight className="size-4" aria-hidden />
+              Fahrzeug verwandeln lassen <IconArrowRight className="size-4" aria-hidden />
             </Link>
             <Link to="/preise" className="scroll-film-prices">
               Pakete & Preise

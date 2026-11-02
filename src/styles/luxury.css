@@ -223,3 +223,19 @@ html:has([data-shell="public"]) { scroll-padding-top:0; }
   [data-home="polish"] [data-reveal], [data-home="polish"] .film-chapter-copy[data-reveal] > * { opacity:1; transform:none; transition:none; }
   [data-shell="public"] .site-header .gd-header, [data-shell="public"] .site-header .ga-logo img { transition:none; }
 }
+
+/* Concierge story: static, lightweight and readable without JavaScript. */
+.package-goal { max-width:35ch; margin-top:1.25rem; color:var(--color-fg); font-size:1.125rem; line-height:1.5; }
+.concierge-service { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:clamp(3rem,7vw,7rem); padding:clamp(4rem,8vw,8rem) max(5vw,calc((100vw - 1380px)/2)); background:var(--color-surface); border-block:1px solid var(--color-line-strong); }
+.concierge-service header > p:last-child { max-width:44ch; margin-top:1.5rem; color:var(--color-muted); line-height:1.7; }
+.concierge-service .heading-2 { margin-top:1.5rem; }
+.concierge-service ol { display:grid; align-content:center; }
+.concierge-service li { display:grid; grid-template-columns:3rem minmax(0,1fr); column-gap:1.25rem; padding-block:1.5rem; border-top:1px solid var(--color-line-strong); }
+.concierge-service li:last-child { border-bottom:1px solid var(--color-line-strong); }
+.concierge-service li > span { grid-row:1/3; color:var(--color-subtle); font-size:.75rem; letter-spacing:.12em; padding-top:.3rem; }
+.concierge-service h3 { font-size:1.35rem; font-weight:400; }
+.concierge-service li p { margin-top:.5rem; color:var(--color-muted); line-height:1.65; }
+.workshop-quote { max-width:30ch; margin-top:1.75rem; color:var(--color-fg); font-size:clamp(1.35rem,2vw,1.8rem); line-height:1.45; }
+.scroll-film-service { max-width:54ch; }
+@media(max-width:800px) { .concierge-service { grid-template-columns:minmax(0,1fr); gap:2.5rem; } }
+@media(max-width:639px) { .concierge-service { padding:3.5rem 1.25rem; } .concierge-service li { grid-template-columns:2rem minmax(0,1fr); } .scroll-film-service { max-width:36ch; } }

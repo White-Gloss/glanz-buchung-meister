@@ -836,7 +836,7 @@ export function Configurator({
               ? media.length
                 ? "Übrige Fotos erneut senden"
                 : "Weiter zur Bestätigung"
-              : "Terminanfrage senden"}
+              : "Unverbindliche Anfrage prüfen"}
         </Button>
         <a
           href={site.whatsapp}
