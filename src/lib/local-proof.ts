@@ -30,10 +30,19 @@ export function localProofText(proof: CityLocalProof | undefined): string {
 const monthPattern = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const datePattern = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
+/** Rejects impossible days such as 2026-02-31 or 2026-02-29. */
+function isCalendarDay(value: string) {
+  if (!datePattern.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 /** Privacy guards: published copy must not identify a customer. */
 const privacyPatterns: { label: string; pattern: RegExp }[] = [
   { label: "E-Mail-Adresse", pattern: /[\w.+-]+@[\w-]+\.[\w.]+/ },
-  { label: "Telefonnummer", pattern: /(?:\+?\d[\s/-]?){7,}/ },
+  // Digits may be split by spaces, slashes, dots, hyphens or brackets: "(07451) 12345".
+  { label: "Telefonnummer", pattern: /\+?\(?\d(?:[\s/().-]*\d){6,}/ },
   // German number plates such as "FDS-AB 123", "RW-K 1234H" or "TÜ XY 12E".
   // Model names like "BMW M3", "BMW X5" or "VW ID 3" stay allowed.
   { label: "Kennzeichen", pattern: /\b[A-ZÄÖÜ]{1,3}-[A-Z]{1,2}\s?\d{1,4}[EH]?\b/ },
@@ -59,7 +68,7 @@ export function validateLocalProof(slug: string, proof: CityLocalProof, today: D
   const todayIso = today.toISOString().slice(0, 10);
 
   if (!cities.some((c) => c.slug === slug)) problems.push(`${slug}: unbekannter Abholort`);
-  if (!datePattern.test(proof.confirmedAt)) {
+  if (!isCalendarDay(proof.confirmedAt)) {
     problems.push(`${slug}: confirmedAt muss JJJJ-MM-TT sein`);
   } else if (proof.confirmedAt > todayIso) {
     problems.push(`${slug}: confirmedAt liegt in der Zukunft`);

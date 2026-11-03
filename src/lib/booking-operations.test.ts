@@ -17,6 +17,20 @@ import {
 } from "./booking-operations.ts";
 import { berlinWallToUtc } from "./booking-time.ts";
 
+// Fixtures need a fixed weekday pattern (Mon, Wed, Thu, Fri, Sat, next Mon) on a
+// future week; hard-coded dates expire against the "no past dates" rule.
+const baseMonday = (() => {
+  const d = new Date();
+  d.setUTCHours(12, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 14 + ((8 - d.getUTCDay()) % 7));
+  return d;
+})();
+function day(offset: number) {
+  const d = new Date(baseMonday);
+  d.setUTCDate(d.getUTCDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
 function wrap(pg: Pick<PGlite, "query">, transaction?: Sql["transaction"]): Sql {
   const sql = (async (strings: TemplateStringsArray, ...args: unknown[]) => {
     const text = strings.reduce((s, part, i) => s + (i ? `$${i}` : "") + part, "");
@@ -46,7 +60,7 @@ function input(overrides: Partial<PublicBookingInput> = {}): PublicBookingInput 
     street: "Musterweg 1",
     postalCode: "72160",
     town: "Horb am Neckar",
-    date: "2026-11-02",
+    date: day(0),
     slot: "09:00",
     note: "",
     packageId: "basis",
@@ -69,9 +83,9 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
   try {
     const first = await create(sql);
     const second = await create(sql, input({ slot: "11:00" }));
-    const third = await create(sql, input({ date: "2026-11-04" }));
+    const third = await create(sql, input({ date: day(2) }));
     await confirmBookingWithSchedule(sql, first.id, first.version, "owner", {
-      startDate: "2026-11-02",
+      startDate: day(0),
       startTime: "09:00",
       durationMinutes: 180,
       agreedCents: 14900,
@@ -79,7 +93,7 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
     await assert.rejects(
       () =>
         confirmBookingWithSchedule(sql, second.id, second.version, "owner", {
-          startDate: "2026-11-02",
+          startDate: day(0),
           startTime: "11:00",
           durationMinutes: 180,
           agreedCents: 14900,
@@ -88,9 +102,9 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
     );
     assert.equal((await sql`select * from booking_time_blocks`).length, 1);
     assert.equal((await sql`select * from bookings where status='bestaetigt'`).length, 1);
-    const long = await create(sql, input({ date: "2026-11-05", packageId: "keramik" }));
+    const long = await create(sql, input({ date: day(3), packageId: "keramik" }));
     await confirmBookingWithSchedule(sql, long.id, long.version, "owner", {
-      startDate: "2026-11-05",
+      startDate: day(3),
       startTime: "09:00",
       durationMinutes: 1920,
       agreedCents: 89900,
@@ -98,7 +112,7 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
     await assert.rejects(
       () =>
         confirmBookingWithSchedule(sql, third.id, third.version, "owner", {
-          startDate: "2026-11-06",
+          startDate: day(4),
           startTime: "09:00",
           durationMinutes: 180,
           agreedCents: 14900,
@@ -108,13 +122,12 @@ test("duration blocks overlap including overnight; inquiries never occupy the sh
     );
     const busy = await listBusyWindows(
       sql,
-      berlinWallToUtc("2026-11-05", "00:00").toISOString(),
-      berlinWallToUtc("2026-11-07", "00:00").toISOString(),
+      berlinWallToUtc(day(3), "00:00").toISOString(),
+      berlinWallToUtc(day(5), "00:00").toISOString(),
     );
     assert.ok(
       busy.some(
-        (window) =>
-          new Date(window.end).getTime() > berlinWallToUtc("2026-11-06", "08:00").getTime(),
+        (window) => new Date(window.end).getTime() > berlinWallToUtc(day(4), "08:00").getTime(),
       ),
     );
   } finally {
@@ -127,7 +140,7 @@ test("price increase or date change waits for customer acceptance and does not r
   try {
     const row = await create(sql);
     const result = await confirmBookingWithSchedule(sql, row.id, row.version, "owner", {
-      startDate: "2026-11-09",
+      startDate: day(7),
       startTime: "09:00",
       durationMinutes: 180,
       agreedCents: 24900,
@@ -145,7 +158,7 @@ test("price increase or date change waits for customer acceptance and does not r
       result.booking.version,
       "owner",
       {
-        startDate: "2026-11-09",
+        startDate: day(7),
         startTime: "09:00",
         durationMinutes: 180,
         agreedCents: 24900,
@@ -168,7 +181,7 @@ test("Bitrix owns confirmation and invoicing; legacy queues remain empty after c
   try {
     const row = await create(sql);
     const confirmed = await confirmBookingWithSchedule(sql, row.id, row.version, "owner", {
-      startDate: "2026-11-02",
+      startDate: day(0),
       startTime: "09:00",
       durationMinutes: 180,
       agreedCents: 14900,
@@ -182,7 +195,7 @@ test("Bitrix owns confirmation and invoicing; legacy queues remain empty after c
       {
         payment: "bar",
         cashCents: 14900,
-        cashDate: "2026-11-02",
+        cashDate: day(0),
       },
     );
     assert.equal(completed.booking.invoice_status, "ausstehend");
@@ -217,7 +230,7 @@ test("an old customer acceptance never approves a revised offer", async () => {
     const row = await create(sql);
     await sql`update bookings set customer_accepted_at=now() where id=${row.id}`;
     const result = await confirmBookingWithSchedule(sql, row.id, row.version, "owner", {
-      startDate: "2026-11-02",
+      startDate: day(0),
       startTime: "09:00",
       durationMinutes: 180,
       agreedCents: 34900,

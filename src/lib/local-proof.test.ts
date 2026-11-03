@@ -62,7 +62,13 @@ describe("validateLocalProof", () => {
   it("rejects unknown cities and dates in the future", () => {
     assert.ok(problemsFor({}, "stuttgart").some((p) => p.includes("unbekannter Abholort")));
     assert.ok(problemsFor({ confirmedAt: "2026-11-04" }).some((p) => p.includes("Zukunft")));
-    assert.ok(problemsFor({ confirmedAt: "03.11.2026" }).some((p) => p.includes("JJJJ-MM-TT")));
+    for (const confirmedAt of ["03.11.2026", "2026-02-31", "2026-02-29", "2026-04-31"]) {
+      assert.ok(
+        problemsFor({ confirmedAt }).some((p) => p.includes("JJJJ-MM-TT")),
+        confirmedAt,
+      );
+    }
+    assert.deepEqual(problemsFor({ confirmedAt: "2024-02-29" }), []);
     assert.ok(withReference({ month: "2026-12" }).some((p) => p.includes("Zukunft")));
   });
 
@@ -86,7 +92,18 @@ describe("validateLocalProof", () => {
     assert.ok(summary("Kennzeichen TÜ-AB 123.").some((p) => p.includes("Kennzeichen")));
     assert.ok(summary("Kennzeichen FDS XY 12.").some((p) => p.includes("Kennzeichen")));
     assert.ok(summary("Kontakt max@example.de.").some((p) => p.includes("E-Mail")));
-    assert.ok(summary("Rückruf unter 0151 2345678.").some((p) => p.includes("Telefonnummer")));
+    for (const phone of [
+      "0151 2345678",
+      "07451 / 12345",
+      "07451.123456",
+      "(07451) 12345",
+      "+49 7451 12345",
+    ]) {
+      assert.ok(
+        summary(`Rückruf unter ${phone}.`).some((p) => p.includes("Telefonnummer")),
+        phone,
+      );
+    }
     assert.ok(
       summary("Abholung in der Bahnhofstraße 12.").some((p) => p.includes("Straßenangabe")),
     );
