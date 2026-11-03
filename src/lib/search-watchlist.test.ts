@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { cities, defaultRequestDetails, services, type ServicePage } from "../data/site.ts";
 import { watchedSearchTerms } from "../data/search-watchlist.ts";
 import { citySeoCopy } from "./city-copy.ts";
+import { localProofFor, localProofText } from "./local-proof.ts";
 import { seoIntents } from "./seo-intents.ts";
 
 // Hyphenated compounds ("Kfz-Pflege", "Auto-Innenreinigung") count as the spaced search term.
@@ -52,7 +53,14 @@ function pageCopy(path: string): { snippet: string; full: string; fromData: bool
     const copy = citySeoCopy(city);
     return {
       snippet: `${copy.title} ${copy.description}`,
-      full: [copy.title, copy.heading, copy.description, city.blurb, city.pickupNote ?? ""].join(" "),
+      full: [
+        copy.title,
+        copy.heading,
+        copy.description,
+        city.blurb,
+        city.pickupNote ?? "",
+        localProofText(localProofFor(city.slug)),
+      ].join(" "),
       fromData: true,
     };
   }

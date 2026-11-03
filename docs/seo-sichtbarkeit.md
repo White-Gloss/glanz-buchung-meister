@@ -155,3 +155,4 @@ Begriffe werden vollständige aktuelle Rankingdaten benötigt.
 | 4. Lokale Aussagen prüfen                  | erledigt; Horb als einziger Standort, 19 Abholgebiete               |
 | 5. Kontaktaufnahme vereinfachen            | erledigt; Anfragekasten auf jeder buchbaren Leistungsseite          |
 | 6. Suchergebnisse erneut auswerten         | offen; nächster Abruf frühestens Mitte November 2026 (Abschnitt 6)  |
+| 7. Ortsseiten mit echten Angaben ausbauen  | vorbereitet 03.11.2026; Katalog leer, Ausfüllhilfe: [`ortsseiten-ausbau-2026-11-03.md`](ortsseiten-ausbau-2026-11-03.md) |
