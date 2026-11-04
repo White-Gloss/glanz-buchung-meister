@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { appendFileSync, closeSync, openSync } from "node:fs";
-import { access, mkdir, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -194,7 +194,19 @@ async function runCheck(server, name, args, timeoutMs = 120_000, command = proce
     log(`QA: ${name} passed`);
   } catch (error) {
     summary.checks.push({ name, passed: false, error: error.message });
+    await printLogTail(name);
     throw error;
+  }
+}
+
+/** Shows the end of a failed stage's log in the job output; artifacts are not always reachable. */
+async function printLogTail(name, lines = 80) {
+  try {
+    const text = await readFile(resolve(outputRoot, `${name}.log`), "utf8");
+    log(`QA: last ${lines} lines of .qa-output/${name}.log`);
+    for (const line of text.trimEnd().split("\n").slice(-lines)) log(`  ${line}`);
+  } catch {
+    log(`QA: .qa-output/${name}.log is not readable.`);
   }
 }
 

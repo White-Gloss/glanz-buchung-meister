@@ -62,6 +62,14 @@ body[data-consent-banner="open"] .city-wa-bar {
   }
 }
 @media (max-width: 639px) {
+  /* The longer service line must still fit above the cookie bar on a phone. */
+  [data-shell="public"] .scroll-film-service {
+    max-width: none;
+    margin-top: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  [data-shell="public"] .scroll-film-service + .scroll-film-cta { margin-top: 1rem; }
   [data-shell="public"] .scroll-film-copy {
     left: 1.25rem;
     right: 1.25rem;

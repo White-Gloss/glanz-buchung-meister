@@ -20,6 +20,8 @@ import { IconMessage } from "@/components/icons";
 import { serviceAreaLink } from "@/lib/seo-policy";
 import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
 import { serviceBookingSelection } from "@/lib/booking-selection";
+import { localProofFor } from "@/lib/local-proof";
+import { CityLocalProofSection } from "@/components/city-local-proof";
 
 const steps = [
   {
@@ -46,6 +48,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
   const copy = citySeoCopy(city);
   const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
   const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
+  const proof = localProofFor(city.slug);
 
   useEffect(() => {
     document.body.dataset.cityWa = "1";
@@ -110,6 +113,8 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
           </ul>
         </div>
       </section>
+
+      {proof ? <CityLocalProofSection city={city} proof={proof} /> : null}
 
       <section className="cv-auto section mx-auto max-w-7xl px-4 sm:px-6">
         <p className="kicker">Blick in die Arbeit</p>
@@ -308,6 +313,12 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
                 helfen bei der ersten Einschätzung des Fahrzeugzustands.
               </dd>
             </div>
+            {proof?.faqs?.map((faq) => (
+              <div key={faq.question}>
+                <dt className="heading-3">{faq.question}</dt>
+                <dd className="mt-3 text-muted">{faq.answer}</dd>
+              </div>
+            ))}
           </dl>
         </div>
       </section>

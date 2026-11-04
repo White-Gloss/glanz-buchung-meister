@@ -248,7 +248,9 @@ try {
       result.intentionalScrollLayout = Boolean(scrollLayout);
       if (!copy || !stage || copy.top < stage.top - 1 || copy.bottom > (scrollLayout ? stage.bottom : banner.top) + 1
         || (scrollLayout && (copy.left < stage.left - 1 || copy.right > stage.right + 1)))
-        report.failures.push(`${viewport.name}: hero copy is obscured by the header or consent banner`);
+        report.failures.push(
+          `${viewport.name}: hero copy is obscured by the header or consent banner ${JSON.stringify({ copy, stage, banner, header, scrollLayout })}`,
+        );
       if (scrollLayout && (!titleStart || titleStart.top < header.bottom - 1 || titleStart.top >= banner.top - 1
         || !result.initial.titleStartHit || Number(result.initial.copyCss?.opacity) < 0.99 || result.initial.copyCss?.inert))
         report.failures.push(`${viewport.name}: the start of the hero title is not initially visible`);
