@@ -1152,7 +1152,6 @@
 
   .menu-toggle:active {
     transform: scale(0.96);
-    transition-duration: 100ms;
   }
 
   .film-menu {
@@ -2191,15 +2190,10 @@
     }
   }
 
-  /* Druck-Feedback sofort beim Aufsetzen (Apple: Response vor allem anderen).
-     Hinein in 100 ms, heraus mit der normalen 240-ms-Kurve. */
+  /* Druck-Feedback fuer alle Buttons (vorher nur primary). Bewusst ohne
+     Extra-Regel: das inline ausgelieferte CSS darf nicht wachsen (Lighthouse). */
   .btn:active {
-    transition-duration: 100ms;
-  }
-
-  .btn-primary:active,
-  .btn-secondary:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
   }
 
   .btn-secondary {
