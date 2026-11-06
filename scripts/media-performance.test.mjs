@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { clampPercent, positionFromPointer } from "../src/lib/compare-gesture.ts";
 
 // Execute the actual TSX callbacks, not copies of their implementation. The
 // browser dependencies are isolated so these regressions need no live website,
@@ -168,7 +167,7 @@ for (const [key, expected] of [["ArrowLeft", 45], ["ArrowDown", 45], ["ArrowRigh
   test(`comparison ${key} updates its value without scrolling the page`, () => {
     let position = 50;
     let prevented = false;
-    const handle = sliderCallback("handleKeyDown", { posRef: { current: position }, step(value) { position = clampPercent(value); } });
+    const handle = sliderCallback("handleKeyDown", { setSliderPos(value) { position = typeof value === "function" ? value(position) : value; } });
     handle({ key, preventDefault() { prevented = true; } });
     assert.equal(position, expected);
     assert.equal(prevented, true);
@@ -178,7 +177,7 @@ for (const [key, expected] of [["ArrowLeft", 45], ["ArrowDown", 45], ["ArrowRigh
 test("comparison keeps Tab available for normal keyboard navigation", () => {
   let position = 50;
   let prevented = false;
-  const handle = sliderCallback("handleKeyDown", { posRef: { current: position }, step(value) { position = clampPercent(value); } });
+  const handle = sliderCallback("handleKeyDown", { setSliderPos(value) { position = typeof value === "function" ? value(position) : value; } });
   handle({ key: "Tab", preventDefault() { prevented = true; } });
   assert.equal(position, 50);
   assert.equal(prevented, false);
@@ -186,24 +185,22 @@ test("comparison keeps Tab available for normal keyboard navigation", () => {
 
 test("comparison never writes NaN for a zero-width container", () => {
   let position = 50;
-  const update = sliderCallback("track", {
+  const update = sliderCallback("updatePosition", {
     containerRef: { current: { getBoundingClientRect: () => ({ left: 0, width: 0 }) } },
-    positionFromPointer,
-    commit(value) { position = value; },
+    setSliderPos(value) { position = value; },
   });
-  update(20, 0);
+  update(20);
   assert.equal(position, 50);
 });
 
 test("comparison pointer movement remains clamped to its visible range", () => {
   let position = 50;
-  const update = sliderCallback("track", {
+  const update = sliderCallback("updatePosition", {
     containerRef: { current: { getBoundingClientRect: () => ({ left: 20, width: 100 }) } },
-    positionFromPointer,
-    commit(value) { position = value; },
+    setSliderPos(value) { position = value; },
   });
   for (const [x, expected] of [[0, 0], [70, 50], [200, 100]]) {
-    update(x, 0);
+    update(x);
     assert.equal(position, expected);
   }
 });

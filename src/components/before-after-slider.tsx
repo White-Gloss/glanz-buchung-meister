@@ -1,10 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  clampPercent,
-  positionFromPointer,
-  resolveDirection,
-  startGesture,
-} from "@/lib/compare-gesture";
+import { useState, useRef, useCallback } from "react";
 
 interface BeforeAfterSliderProps {
   beforeImage?: string;
@@ -60,46 +54,34 @@ export function BeforeAfterSlider({
   afterLabel = "Nach der Politur",
   className = "",
 }: BeforeAfterSliderProps) {
-  // Stufenlose Position (Float). Gerundet wird nur fuer Screenreader, sonst
-  // springt die Linie auf breiten Bildschirmen in ~12-px-Schritten.
   const [sliderPos, setSliderPos] = useState(50);
-  const [isPressed, setIsPressed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const posRef = useRef(50);
-  const frameRef = useRef(0);
-  const gestureRef = useRef<{
-    id: number;
-    mode: "pending" | "dragging";
-    startX: number;
-    startY: number;
-    offsetPx: number;
-  } | null>(null);
 
-  useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
-
-  // Pointer-Events kommen haeufiger als Frames: pro Frame genau ein Render.
-  const commit = useCallback((next: number) => {
-    posRef.current = next;
-    if (frameRef.current) return;
-    frameRef.current = requestAnimationFrame(() => {
-      frameRef.current = 0;
-      setSliderPos(posRef.current);
-    });
+  const updatePosition = useCallback((clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percent = Math.round((x / rect.width) * 100);
+    setSliderPos(percent);
   }, []);
 
-  const track = useCallback(
-    (clientX: number, offsetPx: number) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const next = positionFromPointer(clientX, rect.left, rect.width, offsetPx);
-      if (next !== null) commit(next);
-    },
-    [commit],
-  );
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.focus({ preventScroll: true });
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    updatePosition(e.clientX);
+  };
 
-  const endGesture = (e: React.PointerEvent<HTMLDivElement>) => {
-    gestureRef.current = null;
-    setIsPressed(false);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    updatePosition(e.clientX);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(false);
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
@@ -107,76 +89,25 @@ export function BeforeAfterSlider({
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || gestureRef.current) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect || rect.width <= 0) return;
-    e.currentTarget.focus({ preventScroll: true });
-    const start = startGesture(e.clientX, rect.left, rect.width, posRef.current, e.pointerType);
-    gestureRef.current = {
-      id: e.pointerId,
-      mode: start.mode,
-      startX: e.clientX,
-      startY: e.clientY,
-      offsetPx: start.offsetPx,
-    };
-    // Feedback beim Druck, nicht erst beim Loslassen.
-    setIsPressed(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    if (start.jumpNow) track(e.clientX, 0);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const g = gestureRef.current;
-    if (!g || g.id !== e.pointerId) return;
-    if (g.mode === "pending") {
-      const dir = resolveDirection(e.clientX - g.startX, e.clientY - g.startY);
-      if (dir === "pending") return;
-      if (dir === "vertical") {
-        // Nutzer scrollt die Seite: Geste sauber abgeben, Slider bleibt stehen.
-        endGesture(e);
-        return;
-      }
-      g.mode = "dragging";
-    }
-    track(e.clientX, g.offsetPx);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    const g = gestureRef.current;
-    // Touch-Tipp ohne Bewegung neben den Griff: erst beim Loslassen springen,
-    // damit ein beginnender Scroll den Slider nicht verstellt.
-    if (g && g.id === e.pointerId && g.mode === "pending" && g.offsetPx === 0) {
-      track(e.clientX, 0);
-    }
-    endGesture(e);
-  };
-
-  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    endGesture(e);
-  };
-
-  const step = (next: number) => commit(clampPercent(next));
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {
       case "ArrowLeft":
       case "ArrowDown":
         e.preventDefault();
-        step(posRef.current - 5);
+        setSliderPos((prev) => Math.max(0, prev - 5));
         break;
       case "ArrowRight":
       case "ArrowUp":
         e.preventDefault();
-        step(posRef.current + 5);
+        setSliderPos((prev) => Math.min(100, prev + 5));
         break;
       case "Home":
         e.preventDefault();
-        step(0);
+        setSliderPos(0);
         break;
       case "End":
         e.preventDefault();
-        step(100);
+        setSliderPos(100);
         break;
     }
   };
@@ -188,20 +119,16 @@ export function BeforeAfterSlider({
         role="slider"
         tabIndex={0}
         aria-label="Vorher-Nachher-Vergleich der Lackaufbereitung"
-        aria-valuenow={Math.round(sliderPos)}
-        aria-valuetext={`${Math.round(sliderPos)}% ${beforeLabel}, ${100 - Math.round(sliderPos)}% ${afterLabel}`}
+        aria-valuenow={sliderPos}
+        aria-valuetext={`${sliderPos}% ${beforeLabel}, ${100 - sliderPos}% ${afterLabel}`}
         aria-valuemin={0}
         aria-valuemax={100}
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onLostPointerCapture={() => {
-          gestureRef.current = null;
-          setIsPressed(false);
-        }}
-        data-pressed={isPressed ? "true" : undefined}
+        onPointerCancel={handlePointerUp}
+        onLostPointerCapture={() => setIsDragging(false)}
         className="group relative aspect-[16/10] sm:aspect-[16/9] w-full cursor-ew-resize select-none overflow-hidden rounded-card border border-line bg-surface touch-pan-y touch-pinch-zoom focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <ComparisonImage src={afterImage} alt={afterAlt} />
@@ -221,10 +148,10 @@ export function BeforeAfterSlider({
         </span>
 
         <div
-          className="absolute inset-y-0 w-0.5 bg-accent-fg/80 pointer-events-none"
+          className="absolute inset-y-0 w-0.5 bg-accent-fg/80 pointer-events-none transition-shadow duration-200"
           style={{ left: `${sliderPos}%` }}
         >
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border border-line bg-bg/95 text-fg shadow-xl backdrop-blur transition-transform duration-150 ease-out group-hover:scale-105 group-data-[pressed=true]:scale-90 group-data-[pressed=true]:duration-100 motion-reduce:transition-none">
+          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border border-line bg-bg/95 text-fg shadow-xl backdrop-blur transition-transform group-hover:scale-105 active:scale-95">
             <svg
               viewBox="0 0 24 24"
               fill="none"

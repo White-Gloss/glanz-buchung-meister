@@ -2190,9 +2190,7 @@
     }
   }
 
-  /* Druck-Feedback fuer alle Buttons (vorher nur primary). Bewusst ohne
-     Extra-Regel: das inline ausgelieferte CSS darf nicht wachsen (Lighthouse). */
-  .btn:active {
+  .btn-primary:active {
     transform: scale(0.96);
   }
 
