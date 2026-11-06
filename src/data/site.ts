@@ -301,7 +301,7 @@ export const extras: Extra[] = [
 export type City = {
   slug: string;
   name: string;
-  /** Null means the exact pickup address still needs a distance/price confirmation. */
+  /** Null means the exact pickup address still needs a distance/price confirmation. Values are rounded-up Google Maps route distances to the town centre (measured 03.11.2026). */
   km: number | null;
   minutes: number | null;
   blurb: string;
@@ -320,50 +320,50 @@ export const cities: City[] = [
   {
     slug: "sulz-am-neckar",
     name: "Sulz am Neckar",
-    km: null,
-    minutes: null,
+    km: 12,
+    minutes: 13,
     blurb: "Aus Sulz am Neckar zur Aufbereitung nach Horb: Abholung und Rückgabe stimmen wir anhand Ihrer Adresse ab.",
-    pickupNote: "Bitte nennen Sie bei der Anfrage auch den Teilort, zum Beispiel Fischingen, Glatt oder Holzhausen. Für die Kernstadt und die Teilorte von Sulz lässt sich die Abholung erst mit der vollständigen Adresse planen. Den Preis bestätigen wir vor dem Termin.",
+    pickupNote: "Bitte nennen Sie bei der Anfrage auch den Teilort, zum Beispiel Fischingen, Glatt oder Holzhausen. Für die Kernstadt und die Teilorte von Sulz lässt sich die Abholung erst mit der vollständigen Adresse planen. Den Preis bestätigen wir vor dem Termin. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "empfingen",
     name: "Empfingen",
-    km: null,
-    minutes: null,
+    km: 10,
+    minutes: 12,
     blurb: "Für Fahrzeuge aus Empfingen verbinden wir die Aufbereitung in Horb mit einer persönlich abgestimmten Abholung.",
-    pickupNote: "Wählen Sie Empfingen als Abholort und nennen Sie die vollständige Übergabeadresse. Liegt diese in Wiesenstetten oder Dommelsberg, geben Sie den Ortsteil bitte dazu an. Abholpreis und Rückgabezeit bestätigen wir passend zum vereinbarten Arbeitsumfang.",
+    pickupNote: "Wählen Sie Empfingen als Abholort und nennen Sie die vollständige Übergabeadresse. Liegt diese in Wiesenstetten oder Dommelsberg, geben Sie den Ortsteil bitte dazu an. Abholpreis und Rückgabezeit bestätigen wir passend zum vereinbarten Arbeitsumfang. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "voehringen",
     name: "Vöhringen",
-    km: null,
-    minutes: null,
+    km: 17,
+    minutes: 19,
     blurb: "Unser Abholgebiet Vöhringen liegt in Baden-Württemberg. Die Fahrzeugpflege führen wir in unserer Horber Werkstatt aus.",
-    pickupNote: "Gemeint ist Vöhringen im Landkreis Rottweil mit Wittershausen. Bitte geben Sie Ortsteil, Straße und Hausnummer für die Übergabe an. So können wir die Abholung eindeutig zuordnen und den Preis vorab bestätigen.",
+    pickupNote: "Gemeint ist Vöhringen im Landkreis Rottweil mit Wittershausen. Bitte geben Sie Ortsteil, Straße und Hausnummer für die Übergabe an. So können wir die Abholung eindeutig zuordnen und den Preis vorab bestätigen. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "dornhan",
     name: "Dornhan",
-    km: null,
-    minutes: null,
+    km: 20,
+    minutes: 23,
     blurb: "Für die Aufbereitung Ihres Fahrzeugs aus Dornhan vereinbaren wir Übergabe und Rückgabe persönlich. Gearbeitet wird in Horb.",
-    pickupNote: "Bei einer Adresse etwa in Leinstetten, Bettenhausen oder Marschalkenzimmern nennen Sie bitte den Stadtteil mit. Die Angabe Dornhan allein ersetzt die genaue Abholadresse nicht. Strecke, Abholpreis und Übergabezeit klären wir vor der Zusage.",
+    pickupNote: "Bei einer Adresse etwa in Leinstetten, Bettenhausen oder Marschalkenzimmern nennen Sie bitte den Stadtteil mit. Die Angabe Dornhan allein ersetzt die genaue Abholadresse nicht. Strecke, Abholpreis und Übergabezeit klären wir vor der Zusage. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "dornstetten",
     name: "Dornstetten",
-    km: null,
-    minutes: null,
+    km: 19,
+    minutes: 19,
     blurb: "Fahrzeugaufbereitung für Dornstetten: Sie können das Auto nach Horb bringen oder eine Abholung an Ihrer Adresse anfragen.",
-    pickupNote: "Ob Dornstetten, Aach oder Hallwangen: Teilen Sie uns den Ortsteil und die genaue Übergabeadresse mit. Für die Planung zählen diese Adresse und die gewählte Aufbereitung. Abholung, Preis und Rückgabe werden persönlich bestätigt.",
+    pickupNote: "Ob Dornstetten, Aach oder Hallwangen: Teilen Sie uns den Ortsteil und die genaue Übergabeadresse mit. Für die Planung zählen diese Adresse und die gewählte Aufbereitung. Abholung, Preis und Rückgabe werden persönlich bestätigt. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "schopfloch",
     name: "Schopfloch",
-    km: null,
-    minutes: null,
+    km: 11,
+    minutes: 11,
     blurb: "Aus Schopfloch im Landkreis Freudenstadt bereiten wir Fahrzeuge in Horb auf. Den Hol- und Bringservice planen wir nach Ihrer Adresse.",
-    pickupNote: "Nennen Sie bei Ihrer Anfrage Schopfloch, Oberiflingen oder Unteriflingen zusammen mit Straße und Hausnummer. Damit lässt sich die Übergabe konkret abstimmen. Einen festen Abholpreis sagen wir erst nach Prüfung dieser Adresse zu.",
+    pickupNote: "Nennen Sie bei Ihrer Anfrage Schopfloch, Oberiflingen oder Unteriflingen zusammen mit Straße und Hausnummer. Damit lässt sich die Übergabe konkret abstimmen. Einen festen Abholpreis sagen wir erst nach Prüfung dieser Adresse zu. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
   {
     slug: "nagold",

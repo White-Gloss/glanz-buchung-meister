@@ -77,22 +77,34 @@ describe("pickup pricing source of truth", () => {
     assert.equal(quote.pickupOnRequest, true);
   });
 
-  it("keeps unconfirmed distances out of every package total, including Keramik", () => {
-    const newCities = ["sulz-am-neckar", "empfingen", "voehringen", "dornhan", "dornstetten", "schopfloch"];
-    for (const slug of newCities) {
+  it("prices the six areas added on 07.10.2026 from their measured town-centre distance", () => {
+    // Rounded-up Google Maps route distances from Arnistal 27 to the town centre (03.11.2026).
+    const measured: Record<string, { km: number; minutes: number; basis: number; keramik: number }> = {
+      empfingen: { km: 10, minutes: 12, basis: 0, keramik: 0 },
+      schopfloch: { km: 11, minutes: 11, basis: 50, keramik: 0 },
+      "sulz-am-neckar": { km: 12, minutes: 13, basis: 50, keramik: 0 },
+      voehringen: { km: 17, minutes: 19, basis: 50, keramik: 0 },
+      dornstetten: { km: 19, minutes: 19, basis: 50, keramik: 0 },
+      dornhan: { km: 20, minutes: 23, basis: 50, keramik: 0 },
+    };
+    for (const [slug, expected] of Object.entries(measured)) {
       const city = cities.find((item) => item.slug === slug);
       assert.ok(city, slug);
-      assert.equal(city.km, null);
-      assert.equal(city.minutes, null);
+      assert.equal(city.km, expected.km, slug);
+      assert.equal(city.minutes, expected.minutes, slug);
+      assert.equal(pickupFee(city.km, "basis"), expected.basis, slug);
+      assert.equal(pickupFee(city.km, "keramik"), expected.keramik, slug);
       for (const { id: packageId } of packages) {
         const quote = quoteTotal({ packageId, classId: "kompakt", extraIds: [], citySlug: slug });
-        assert.equal(quote.city?.slug, slug);
-        assert.equal(quote.pickup, null);
-        assert.equal(quote.pickupOnRequest, true);
-        assert.equal(quote.total, quote.subtotal);
-        assert.equal(pickupPriceText(city.km, packageId), "auf Anfrage");
+        assert.equal(quote.pickupOnRequest, false, `${slug} ${packageId}`);
+        assert.equal(quote.pickup, packageId === "keramik" ? expected.keramik : expected.basis, `${slug} ${packageId}`);
+        assert.equal(quote.total, quote.subtotal + (quote.pickup ?? 0));
       }
+      assert.ok(city.pickupNote?.includes("Ortsmitte"), `${slug} names the town centre`);
     }
+  });
+
+  it("never prices an unknown or invalid distance", () => {
     for (const invalid of [null, NaN, Infinity, -1]) {
       assert.equal(pickupFee(invalid, "keramik"), null);
       assert.equal(pickupPriceText(invalid, "keramik"), "auf Anfrage");
