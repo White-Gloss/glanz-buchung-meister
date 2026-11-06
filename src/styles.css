@@ -1152,6 +1152,7 @@
 
   .menu-toggle:active {
     transform: scale(0.96);
+    transition-duration: 100ms;
   }
 
   .film-menu {
@@ -2190,8 +2191,15 @@
     }
   }
 
-  .btn-primary:active {
-    transform: scale(0.96);
+  /* Druck-Feedback sofort beim Aufsetzen (Apple: Response vor allem anderen).
+     Hinein in 100 ms, heraus mit der normalen 240-ms-Kurve. */
+  .btn:active {
+    transition-duration: 100ms;
+  }
+
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.97);
   }
 
   .btn-secondary {
