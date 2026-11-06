@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { pickupFee, pickupPriceText, site, type City } from "../data/site.ts";
+=======
+import { cityPickupPriceText, site, type City } from "../data/site.ts";
+>>>>>>> origin/main
 
 export function cityJourneyText(city: City) {
   return city.km !== null && city.minutes !== null
@@ -16,7 +20,7 @@ export function citySeoCopy(city: City) {
     heading: isHorb
       ? `Fahrzeugaufbereitung mit Abholung in ${city.name}`
       : `Fahrzeugaufbereitung für ${city.name}`,
-    description: `Autoaufbereitung für ${city.name}: Innenraumreinigung, Politur und Keramik. Werkstatt in Horb am Neckar. Hol- und Bringservice ${pickupPriceText(city.km)}.`,
+    description: `Autoaufbereitung für ${city.name}: Innenraumreinigung, Politur und Keramik. Werkstatt in Horb am Neckar. Hol- und Bringservice ${cityPickupPriceText(city)}.`,
     linkLabel: isHorb
       ? "Fahrzeugaufbereitung: Abholung in Horb"
       : `Fahrzeugaufbereitung ${city.name}`,

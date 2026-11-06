@@ -77,7 +77,7 @@ test("six new pickup hubs are discoverable and preserve city and package in book
     assert.ok(city, slug);
     assert.ok(xml.includes(`/abholservice/${slug}</loc>`));
     assert.ok(!xml.includes(`/leistungen/keramikversiegelung/${slug}</loc>`));
-    assert.equal(cityJourneyText(city), "Entfernung und Fahrzeit nach Abholadresse");
+    assert.equal(cityJourneyText(city), `ca. ${city.km} km · ca. ${city.minutes} Min.`);
     assert.ok(city.pickupNote?.trim());
     assert.deepEqual(parseBookingSelection(serviceBookingSelection("keramikversiegelung", slug)), { paket: "keramik", ort: slug });
     assert.deepEqual(parseBookingSelection(serviceBookingSelection("lederreparatur", slug)), { leistung: "lederreparatur", ort: slug });

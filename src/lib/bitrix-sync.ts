@@ -8,7 +8,7 @@ import {
   cities,
   extras,
   packages,
-  pickupFee,
+  cityPickupFee,
   vehicleClasses,
   type PackageId,
 } from "../data/site.ts";
@@ -273,8 +273,7 @@ export function bookingDealBody(booking: BitrixBooking, contactId: number) {
   );
   const vehicle = bookingVehicle(booking) || "Fahrzeug laut Anfrage";
   const wish = [booking.preferred_date, booking.preferred_slot].filter(Boolean).join(" ");
-  const pickupKm = city?.km;
-  const pickup = pickupKm == null ? null : pickupFee(pickupKm, booking.package_id as PackageId);
+  const pickup = city?.km == null ? null : cityPickupFee(city, booking.package_id as PackageId);
   const start = booking.work_start_at ? new Date(booking.work_start_at) : null;
   const end = booking.work_end_at ? new Date(booking.work_end_at) : null;
   const hasInterval = start && end && Number.isFinite(start.getTime()) && end > start;
