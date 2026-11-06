@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { DESKTOP_MOTION, useScrollMotion } from "@/lib/scroll-motion";
+import { setupParallax } from "@/lib/studio-motion";
 
 /**
  * Homepage-only "Polished reveal" scroll motion.
@@ -10,26 +11,12 @@ export function HomePolish() {
 
   useScrollMotion(
     DESKTOP_MOTION,
-    ({ gsap, ScrollTrigger }) => {
+    (tools) => {
+      const { ScrollTrigger } = tools;
       const main = document.querySelector<HTMLElement>('[data-home="polish"]');
       if (!main) return;
-      const image = main.querySelector(".workshop-personal .film-chapter-media img");
-      if (image)
-        gsap.fromTo(
-          image,
-          { scale: 1.04, yPercent: 1 },
-          {
-            scale: 1.025,
-            yPercent: -1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: image.closest(".film-chapter"),
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 0.4,
-            },
-          },
-        );
+      // Paketbilder und Werkstattbild gleiten in ihren Rahmen (data-parallax-frame).
+      setupParallax(tools, main);
       // Lazy sections (reviews, booking) change the page height after load.
       let timer = 0;
       const resize = new ResizeObserver(() => {
@@ -43,7 +30,8 @@ export function HomePolish() {
       };
     },
     undefined,
-    ".workshop-personal",
+    // Erster Abschnitt mit Parallaxe (Bento-Pakete): GSAP lädt kurz davor.
+    "#pakete",
   );
 
   useEffect(() => {
@@ -105,30 +93,26 @@ export function HomePolish() {
 
     // Prices and factual statistics remain stable while scrolling.
 
-    /* ---- Process step progressive highlight ---- */
-    const steps = [...main.querySelectorAll<HTMLElement>("[data-process-step]")];
-    if (steps.length) {
-      const setActive = (active: HTMLElement | null) => {
-        for (const step of steps) {
-          step.classList.toggle("is-active", step === active);
-        }
-      };
-      if (reduce) {
-        setActive(steps[0] ?? null);
-      } else {
-        const io = new IntersectionObserver(
-          (entries) => {
-            const visible = entries
-              .filter((e) => e.isIntersecting)
-              .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-            if (visible[0]) setActive(visible[0].target as HTMLElement);
-          },
-          { threshold: [0.35, 0.55, 0.75], rootMargin: "-20% 0px -35% 0px" },
-        );
-        steps.forEach((el) => io.observe(el));
-        setActive(steps[0] ?? null);
-        cleanups.push(() => io.disconnect());
-      }
+    /* ---- Masked line reveals for section headlines (studio.css §6) ---- */
+    // Headlines already on screen are marked first, so nothing that the
+    // visitor has seen is hidden again; only those below the fold rise in.
+    const lines = [...main.querySelectorAll<HTMLElement>("[data-lines]")];
+    if (lines.length && !reduce) {
+      const root = document.documentElement;
+      const fold = window.innerHeight;
+      const pending = lines.filter((el) => {
+        const visible = el.getBoundingClientRect().top < fold;
+        if (visible) el.classList.add("is-in");
+        return !visible;
+      });
+      root.dataset.lines = "armed";
+      onceIn(pending, (el) => el.classList.add("is-in"), {
+        threshold: 0,
+        rootMargin: "0px 0px -12% 0px",
+      });
+      cleanups.push(() => {
+        delete root.dataset.lines;
+      });
     }
 
     /* ---- Page scroll progress (top cue) + hero scroll dim ---- */

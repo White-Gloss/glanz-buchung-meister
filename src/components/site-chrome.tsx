@@ -10,6 +10,8 @@ import { WhatsAppFloat } from "./whatsapp-float";
 import { RouteFocus } from "./route-focus";
 import { InstagramBadge } from "./instagram-badge";
 import { trackCtaInteraction } from "@/lib/googleTag";
+import { useMagnetic } from "@/lib/studio-motion";
+import { SmoothScroll } from "./smooth-scroll";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -52,7 +54,10 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [layer, setLayer] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const bookingRef = useRef<HTMLAnchorElement>(null);
   const closeMenu = useCallback(() => setOpen(false), []);
+  // Magnetischer Termin-CTA im Dock (ab 900 px sichtbar; nur Maus/Trackpad).
+  useMagnetic(bookingRef, 0.25);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hash = useRouterState({ select: (s) => s.location.hash });
 
@@ -119,10 +124,14 @@ export function SiteHeader() {
           <Link to="/leistungen" activeProps={{ "aria-current": "page" }}>Leistungen</Link>
           <Link to="/preise" activeProps={{ "aria-current": "page" }}>Preise</Link>
           <Link to="/galerie" activeProps={{ "aria-current": "page" }}>Ergebnisse</Link>
-          <Link to="/" hash="buchung" className="header-booking-link">Termin</Link>
+          <Link ref={bookingRef} to="/" hash="buchung" className="header-booking-link">Termin</Link>
         </nav>
         <div className="ga-tools flex items-center">
-          {pathname === "/" && <Link to="/" hash="buchung" className="header-film-booking">Termin anfragen</Link>}
+          {pathname === "/" && (
+            <Link to="/" hash="buchung" className="header-film-booking">
+              Termin anfragen
+            </Link>
+          )}
           <button
             ref={toggleRef}
             type="button"
@@ -158,6 +167,8 @@ function FilmMenu({
 }) {
   const [visual, setVisual] = useState<ShotName>("private");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const ctaRef = useRef<HTMLAnchorElement>(null);
+  useMagnetic(ctaRef);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -293,7 +304,7 @@ function FilmMenu({
           })}
         </ul>
         <div className="film-menu-cta">
-          <Link to="/" hash="buchung" className={ctaPrimary} onClick={onClose}>
+          <Link ref={ctaRef} to="/" hash="buchung" className={ctaPrimary} onClick={onClose}>
             Termin anfragen
             <IconArrowRight className="size-4" />
           </Link>
@@ -596,6 +607,7 @@ export function Shell() {
     <div className="relative min-h-dvh bg-bg font-sans text-fg" data-shell="public" onClickCapture={trackLink}>
       <RouteFocus />
       <SkipLink />
+      <SmoothScroll />
       <SiteHeader />
       <FilmScroll />
       <Outlet />

@@ -65,7 +65,11 @@ async function geometry(page) {
     const style = copy && getComputedStyle(copy);
     const video = document.querySelector(".scroll-film video");
     const title = document.querySelector(".scroll-film-copy h1");
-    const titleText = title && [...title.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    // The title is split into masked lines and words: measure its first visible text.
+    const titleWalker = title && document.createTreeWalker(title, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => (node.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP),
+    });
+    const titleText = titleWalker?.nextNode() ?? null;
     let titleStart = null;
     if (titleText) {
       const range = document.createRange();

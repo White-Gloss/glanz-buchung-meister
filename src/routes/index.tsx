@@ -7,11 +7,12 @@ import { Shot } from "@/components/media";
 import {
   cities,
   pickupKeramikNote,
+  pickupPriceText,
   pickupTierSummary,
-  processSteps,
   services,
   site,
 } from "@/data/site";
+import { cityJourneyText, pickupDistanceLabel, pickupStatus } from "@/lib/city-copy";
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { scrollFilmPreloads } from "@/data/scroll-film";
@@ -19,6 +20,8 @@ import { ScrollFilmHero } from "@/components/scroll-film-hero";
 import { HomePolish } from "@/components/home-polish";
 import { PackageShowcase } from "@/components/package-showcase";
 import { ResultsTeaser } from "@/components/results-teaser";
+import { HomeProcess } from "@/components/home-process";
+import { RevealLines } from "@/components/reveal-lines";
 
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
@@ -119,8 +122,8 @@ function Home() {
         aria-labelledby="buchung-heading"
       >
         <p className="kicker">Fahrzeug → Wunschergebnis → Termin und Übergabe</p>
-        <h2 id="buchung-heading" className="heading-2 mt-3">
-          Ihre Aufbereitung.
+        <h2 id="buchung-heading" className="heading-2 mt-3" data-lines>
+          <RevealLines lines={["Ihre Aufbereitung."]} />
         </h2>
         <p className="booking-intro text-muted">
           Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Preis und Zeitaufwand bleiben transparent.
@@ -132,8 +135,8 @@ function Home() {
       <section className="concierge-service" aria-labelledby="concierge-heading">
         <header>
           <p className="kicker">Hol- und Bringservice · digitale Übergabe</p>
-          <h2 id="concierge-heading" className="heading-2">
-            Sie geben uns den Schlüssel.<br />Wir kümmern uns um den Rest.
+          <h2 id="concierge-heading" className="heading-2" data-lines>
+            <RevealLines lines={["Sie geben uns den Schlüssel.", "Wir kümmern uns um den Rest."]} />
           </h2>
           <p>Sie müssen dafür nicht vor Ort sein. Auf Wunsch stimmen wir eine sichere Schlüsselhinterlegung mit Ihnen ab.</p>
         </header>
@@ -150,7 +153,7 @@ function Home() {
       </div>
 
       <section className="film-chapter workshop-personal" aria-labelledby="workshop-title">
-        <div className="film-chapter-media">
+        <div className="film-chapter-media" data-parallax-frame>
           <Shot
             name="atelier"
             alt="Aufbereitetes Kundenfahrzeug vor der Werkstatt von White Gloss in Horb am Neckar"
@@ -162,7 +165,9 @@ function Home() {
         <div className="film-chapter-veil" />
         <div className="film-chapter-copy" data-reveal>
           <p className="kicker">Persönlich in Horb am Neckar</p>
-          <h2 id="workshop-title" className="heading-2 mt-5">Ihr Fahrzeug.<br />In guten Händen.</h2>
+          <h2 id="workshop-title" className="heading-2 mt-5" data-lines>
+            <RevealLines lines={["Ihr Fahrzeug.", "In guten Händen."]} />
+          </h2>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
             Wir stimmen die Pflege von Lack, Leder und Felgen auf den Zustand Ihres Fahrzeugs ab.
             Alle Arbeiten führen wir in unserer Werkstatt in Horb am Neckar aus.
@@ -175,29 +180,7 @@ function Home() {
         </div>
       </section>
 
-      <section
-        className="home-craft mx-auto max-w-7xl px-4 sm:px-6"
-        aria-labelledby="craft-heading"
-      >
-        <header>
-          <p className="kicker">Prozess</p>
-          <h2 id="craft-heading" className="heading-2 mt-4">
-            So läuft’s bei uns.
-          </h2>
-          <Link to="/qualitaet" className="atelier-text-link">
-            Unser Ablauf im Detail <IconArrowRight aria-hidden />
-          </Link>
-        </header>
-        <ol className="home-process">
-          {processSteps.map((step) => (
-            <li key={step.n}>
-              <span>{step.n}</span>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <HomeProcess />
       <nav
         className="home-specialties mx-auto max-w-7xl px-4 sm:px-6"
         aria-label="Weitere Leistungen"
@@ -257,8 +240,8 @@ function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div>
             <p className="kicker">Persönlich vor Ort</p>
-            <h2 id="standort-heading" className="heading-2 mt-4">
-              Werkstatt in {site.city}
+            <h2 id="standort-heading" className="heading-2 mt-4" data-lines>
+              <RevealLines lines={[`Werkstatt in ${site.city}`]} />
             </h2>
             <p>
               {site.street}, {site.postalCode} {site.city}
@@ -275,11 +258,24 @@ function Home() {
             <p>
               {pickupTierSummary()}. {pickupKeramikNote()}. Alle Beträge {site.vatNote}
             </p>
-            <ul className="home-city-links" aria-label="Abholorte">
+            {/* Chips: Name, Entfernung, Abholpreis. Der zugängliche Name beginnt mit dem
+                sichtbaren Ortsnamen (WCAG 2.5.3) und nennt die Plaketten ausgeschrieben. */}
+            <ul className="home-city-links city-chips" aria-label="Abholorte">
               {cities.map((c) => (
                 <li key={c.slug}>
-                  <Link to="/abholservice/$city" params={{ city: c.slug }}>
-                    {c.name}
+                  <Link
+                    to="/abholservice/$city"
+                    params={{ city: c.slug }}
+                    className="city-chip"
+                    aria-label={`${c.name}, ${cityJourneyText(c)}, Abholung ${pickupPriceText(c.km)}`}
+                  >
+                    <span className="city-chip-name">{c.name}</span>
+                    <span className="city-chip-meta" aria-hidden="true">
+                      <span>{pickupDistanceLabel(c)}</span>
+                      <span className="city-chip-status" data-status={pickupStatus(c.km)}>
+                        {pickupPriceText(c.km)}
+                      </span>
+                    </span>
                   </Link>
                 </li>
               ))}
