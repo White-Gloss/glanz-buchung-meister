@@ -106,17 +106,32 @@ Ortsmitte, Auto, vorgeschlagene schnellste Route bei damaliger Verkehrslage.
 | Dornstetten    | 18,5 |   19 | K4760                     | bis 20 km: 50 €         |
 | Dornhan        | 19,3 |   23 | K5508 (Umleitung wegen Sperrung Neunthausen) | bis 20 km: 50 € |
 
-**Nicht übernommen.** `km` und `minutes` bleiben `null`, wie am 07.10.2026
-festgelegt. Gründe:
+**Übernommen am 06.11.2026 auf Anweisung des Betreibers** („Alle 6 eintragen“).
+In `src/data/site.ts` stehen die aufgerundeten Messwerte:
 
-- Ortsmitte ist nicht die Abholadresse. Teilorte (z. B. Wiesenstetten,
-  Marschalkenzimmern, Aach, Hallwangen) können über einer Staffelgrenze liegen.
-- Empfingen (9,8 km) und Schopfloch (10,8 km) liegen direkt an der 10-km-Grenze,
-  Dornhan (19,3 km) und Dornstetten (18,5 km) nahe der 20-km-Grenze.
-- Ein eingetragener Wert wird sofort ein verbindlich angezeigter Preis.
+| Ort            | km eingetragen | Min. | Abholung Basis/Premium | Abholung Keramik |
+| -------------- | -------------: | ---: | ---------------------- | ---------------- |
+| Empfingen      |             10 |   12 | kostenlos              | inklusive        |
+| Schopfloch     |             11 |   11 | **30 €** (Festpreis)   | inklusive        |
+| Sulz am Neckar |             12 |   13 | **30 €** (Festpreis)   | inklusive        |
+| Vöhringen      |             17 |   19 | **30 €** (Festpreis)   | inklusive        |
+| Dornstetten    |             19 |   19 | 50 €                   | inklusive        |
+| Dornhan        |             20 |   23 | 50 €                   | inklusive        |
 
-Entscheidung des Betreibers: Werte je Ort bestätigen oder bewusst bei
-„auf Anfrage“ bleiben.
+- **Festpreis 30 €** für Schopfloch, Sulz am Neckar und Vöhringen auf Anweisung
+  des Betreibers vom 06.11.2026 (`pickupFlat` in `src/data/site.ts`). Er ersetzt
+  dort die 50-€-Stufe; Keramik bleibt inklusive, ein kostenloser Ort bleibt
+  kostenlos. Die Ortsseite nennt den Festpreis ausdrücklich.
+- Die Werte gelten für die **Ortsmitte**, nicht für die Abholadresse. Jede
+  Ortsseite sagt das jetzt im Hinweis zur Übergabe; der Preis wird weiter vor
+  dem Termin bestätigt.
+- Empfingen (9,8 km gemessen) liegt direkt an der 10-km-Grenze, Schopfloch
+  (10,8 km) knapp darüber, Dornstetten (18,5 km) und Dornhan (19,3 km) nahe der
+  20-km-Grenze. Teilorte können auf der anderen Seite einer Grenze liegen.
+- Der Test `src/data/pickup.test.ts` legt diese Werte und die daraus folgenden
+  Preise fest. Ungültige oder unbekannte Entfernungen bleiben „auf Anfrage“.
+- Die Aussage im Dokument vom 07.10.2026, die Werte blieben `null`, ist damit
+  überholt.
 
 ## 4 – Ausfüllhilfe für den Betreiber
 
@@ -150,7 +165,7 @@ Was einen Ort wirklich stärkt, in dieser Reihenfolge:
 2. **Tatsächliche Abholtage** je Region, falls Touren gebündelt werden.
 3. **Konkrete Übergabe**, z. B. am Arbeitsplatz, falls angeboten.
 4. **Echte Kundenfragen** aus dem Ort mit sachlicher Antwort.
-5. **Bestätigte Entfernung** für die sechs offenen Orte (Abschnitt 3).
+5. ~~Bestätigte Entfernung für die sechs Orte~~ erledigt, siehe Abschnitt 3.
 
 Nicht eintragen: Namen, Straßen, Kennzeichen, Telefonnummern, erfundene oder
 umformulierte Bewertungen, allgemeines Lob ohne Ortsbezug, Haltbarkeits- oder

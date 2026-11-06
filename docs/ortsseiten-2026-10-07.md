@@ -21,6 +21,9 @@ Vorhandene Leistungs-Ortsseiten zeigen zusätzlich den bereits freigegebenen
 Arbeitsablauf der jeweiligen Leistung. Dieser Inhalt verbessert die Information
 für direkte Besucher, ersetzt aber keinen örtlichen Nachweis.
 
+> **Überholt am 06.11.2026:** Für die sechs Gebiete sind Entfernungen jetzt eingetragen
+> (Ortsmitte, aufgerundet), siehe [`ortsseiten-ausbau-2026-11-03.md`](ortsseiten-ausbau-2026-11-03.md).
+
 ## Indexierung
 
 Die sechs Orts-Hubs sind für Indexierung vorgesehen: 19 statt 13 Abholorte und

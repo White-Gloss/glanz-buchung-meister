@@ -9,7 +9,7 @@ import {
   packages,
   packageServiceSlug,
   pickupKeramikNote,
-  pickupPriceText,
+  cityPickupPriceText,
   pickupTierSummary,
   services,
   site,
@@ -44,7 +44,7 @@ const steps = [
 export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: string }) {
   const jsonLd = cityJsonLd(city);
   const wa = whatsappForCity(city.name);
-  const pickup = pickupPriceText(city.km);
+  const pickup = cityPickupPriceText(city);
   const copy = citySeoCopy(city);
   const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
   const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
@@ -217,7 +217,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
             {cityJourneyText(city)}. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
-            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.
+            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (Basisreinigung und Reinigung & Politur).` : ""}
           </p>
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">
