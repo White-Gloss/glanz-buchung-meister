@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { pickupFee, pickupPriceText, site, type City } from "../data/site.ts";
-=======
-import { cityPickupPriceText, site, type City } from "../data/site.ts";
->>>>>>> origin/main
+import { cityPickupPriceText, pickupFee, site, type City } from "../data/site.ts";
 
 export function cityJourneyText(city: City) {
   return city.km !== null && city.minutes !== null
