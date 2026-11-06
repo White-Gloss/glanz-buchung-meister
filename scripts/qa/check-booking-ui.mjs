@@ -151,6 +151,28 @@ try {
     results.push("Contact step reachable and reversible without losing the selection");
 
     await page.goto(`${qaBase}/`, { waitUntil: "networkidle" });
+
+    const pickupLinks = page.getByRole("list", { name: "Abholorte", exact: true });
+    for (const [slug, name, expected] of [
+      ["sulz-am-neckar", "Sulz am Neckar", "30 €"],
+      ["voehringen", "Vöhringen", "30 €"],
+      ["schopfloch", "Schopfloch", "30 €"],
+      ["empfingen", "Empfingen", "kostenlos"],
+      ["dornhan", "Dornhan", "50 €"],
+      ["sindelfingen", "Sindelfingen", "auf Anfrage"],
+    ]) {
+      const chip = pickupLinks.locator(`a[href="/abholservice/${slug}"]`);
+      assert.equal(await chip.count(), 1, `${name}: one pickup link`);
+      assert.ok(
+        flat(await chip.getAttribute("aria-label")).endsWith(`Abholung ${expected}`),
+        `${name}: accessible pickup price is ${expected}`,
+      );
+      await chip.scrollIntoViewIfNeeded();
+      const price = chip.locator(".city-chip-status");
+      assert.ok(await price.isVisible(), `${name}: pickup price is visible`);
+      assert.equal(flat(await price.innerText()), expected, `${name}: visible pickup price`);
+    }
+    results.push("Homepage pickup prices: city overrides, free pickup, tier and on-request agree visually and accessibly");
     await page.locator("#pakete").scrollIntoViewIfNeeded();
     await page.waitForTimeout(800);
     assert.ok(
