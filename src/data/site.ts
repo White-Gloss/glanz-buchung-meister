@@ -304,6 +304,8 @@ export type City = {
   /** Null means the exact pickup address still needs a distance/price confirmation. Values are rounded-up Google Maps route distances to the town centre (measured 03.11.2026). */
   km: number | null;
   minutes: number | null;
+  /** Fixed pickup price in EUR set by the operator for this area; replaces the distance tier (package Keramik stays included). */
+  pickupFlat?: number;
   blurb: string;
   pickupNote?: string;
 };
@@ -322,6 +324,7 @@ export const cities: City[] = [
     name: "Sulz am Neckar",
     km: 12,
     minutes: 13,
+    pickupFlat: 30,
     blurb: "Aus Sulz am Neckar zur Aufbereitung nach Horb: Abholung und Rückgabe stimmen wir anhand Ihrer Adresse ab.",
     pickupNote: "Bitte nennen Sie bei der Anfrage auch den Teilort, zum Beispiel Fischingen, Glatt oder Holzhausen. Für die Kernstadt und die Teilorte von Sulz lässt sich die Abholung erst mit der vollständigen Adresse planen. Den Preis bestätigen wir vor dem Termin. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
@@ -338,6 +341,7 @@ export const cities: City[] = [
     name: "Vöhringen",
     km: 17,
     minutes: 19,
+    pickupFlat: 30,
     blurb: "Unser Abholgebiet Vöhringen liegt in Baden-Württemberg. Die Fahrzeugpflege führen wir in unserer Horber Werkstatt aus.",
     pickupNote: "Gemeint ist Vöhringen im Landkreis Rottweil mit Wittershausen. Bitte geben Sie Ortsteil, Straße und Hausnummer für die Übergabe an. So können wir die Abholung eindeutig zuordnen und den Preis vorab bestätigen. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
@@ -362,6 +366,7 @@ export const cities: City[] = [
     name: "Schopfloch",
     km: 11,
     minutes: 11,
+    pickupFlat: 30,
     blurb: "Aus Schopfloch im Landkreis Freudenstadt bereiten wir Fahrzeuge in Horb auf. Den Hol- und Bringservice planen wir nach Ihrer Adresse.",
     pickupNote: "Nennen Sie bei Ihrer Anfrage Schopfloch, Oberiflingen oder Unteriflingen zusammen mit Straße und Hausnummer. Damit lässt sich die Übergabe konkret abstimmen. Einen festen Abholpreis sagen wir erst nach Prüfung dieser Adresse zu. Die Entfernung bezieht sich auf die Ortsmitte; bei Teilorten kann sie abweichen.",
   },
@@ -492,6 +497,25 @@ export function pickupPriceText(km: number | null, packageId?: PackageId) {
   return eur(fee);
 }
 
+type PickupCity = Pick<City, "km" | "pickupFlat">;
+
+/** Pickup price for a city: the operator's fixed price if set, otherwise the distance tier. */
+export function cityPickupFee(city: PickupCity, packageId?: PackageId) {
+  const fee = pickupFee(city.km, packageId);
+  if (fee !== null && fee > 0 && city.pickupFlat !== undefined) return city.pickupFlat;
+  return fee;
+}
+
+export function cityPickupPriceText(city: PickupCity, packageId?: PackageId) {
+  if (city.pickupFlat === undefined) return pickupPriceText(city.km, packageId);
+  if (city.km !== null && packageId === pickupPricing.freeWithPackageId && city.km <= pickupPricing.freeUpToKm) {
+    return pickupPriceText(city.km, packageId);
+  }
+  const fee = cityPickupFee(city, packageId ?? "basis");
+  if (fee === null) return "auf Anfrage";
+  return fee === 0 ? "kostenlos" : eur(fee);
+}
+
 export function pickupTierSummary(): string {
   const parts = [...pickupPricing.tiers]
     .sort((a, b) => a.maxKm - b.maxKm)
@@ -520,7 +544,7 @@ export function quoteTotal(opts: {
     .filter((e) => opts.extraIds.includes(e.id) && !extraIncluded(opts.packageId, e.id))
     .reduce((s, e) => s + e.price, 0);
   const city = opts.citySlug ? cities.find((c) => c.slug === opts.citySlug) : undefined;
-  const pickup = city ? pickupFee(city.km, opts.packageId) : opts.citySlug ? null : 0;
+  const pickup = city ? cityPickupFee(city, opts.packageId) : opts.citySlug ? null : 0;
   const scaled = (pack.price + extrasSum) * klass.factor;
   const pickupValue = pickup === null ? 0 : pickup;
   return {

@@ -2,7 +2,7 @@ import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { cities, packages, pickupFee, pickupKeramikNote, pickupPriceText, services, site } from "@/data/site";
+import { cities, packages, cityPickupFee, cityPickupPriceText, pickupKeramikNote, services, site } from "@/data/site";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { serviceCityHeading, serviceCityTitle } from "@/lib/city-seo";
 import { pageHead } from "@/lib/seo";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/leistungen/$slug/$city")({
     if (!service || !city) return {};
     return pageHead({
       title: serviceCityTitle(service.seoNav, city),
-      description: service.pendingApproval ? service.description : `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${pickupPriceText(city.km)}.`,
+      description: service.pendingApproval ? service.description : `${service.seoNav} mit Hol- und Bringservice aus ${city.name}. Ausführung in der Werkstatt in Horb am Neckar. ${cityPickupPriceText(city)}.`,
       path: `/leistungen/${service.slug}/${city.slug}`,
     });
   },
@@ -37,7 +37,7 @@ function ServiceCityPage() {
   const request = serviceBookingSelection(service.slug, city.slug);
   const otherServices = services.filter((s) => s.slug !== service.slug && !s.pendingApproval);
   const evidence = localSeoEvidence[`${service.slug}/${city.slug}`];
-  const pickup = pickupPriceText(city.km);
+  const pickup = cityPickupPriceText(city);
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -129,9 +129,9 @@ function ServiceCityPage() {
           <p className="text-muted">{city.pickupNote ?? `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte; die genaue Übergabeadresse stimmen wir vorab ab.`}</p>
           <p className="text-sm text-muted">{city.slug === "horb-am-neckar"
             ? `Sie können das Fahrzeug nach Terminvereinbarung direkt zu ${site.street} bringen. Die Uhrzeit der Anfrage bezeichnet die Fahrzeugabgabe.`
-            : pickupFee(city.km, "basis") === null
+            : cityPickupFee(city, "basis") === null
               ? `Für ${city.name} ist die Abholung bei Basisreinigung und Reinigung & Politur nur nach individueller Preisabsprache möglich. Der Rechner zeigt diese Zusatzkosten ausdrücklich als offen an.`
-              : `Bei Basisreinigung und Reinigung & Politur beträgt der Hol- und Bringservice aus ${city.name} ${pickupPriceText(city.km)}. Für Keramikschutz ist die Abholung bis 60 km enthalten.`}</p>
+              : `Bei Basisreinigung und Reinigung & Politur beträgt der Hol- und Bringservice aus ${city.name} ${cityPickupPriceText(city)}. Für Keramikschutz ist die Abholung bis 60 km enthalten.`}</p>
           <p className="text-sm text-muted">Abholort, Übergabezeit und Rückgabe werden persönlich bestätigt. Es gibt keinen zusätzlichen Werkstattstandort in den Abholorten; die Arbeiten erfolgen in {site.city}.</p>
           <Link to="/abholservice/$city" params={{ city: city.slug }} className="inline-flex min-h-11 items-center text-sm underline">Abholbedingungen für {city.name}</Link>
           {evidence && serviceCitySeo(service.slug, city.slug).status === "index" ? <div className="space-y-3">

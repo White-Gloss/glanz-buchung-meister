@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
-import { cities, pickupPriceText, pickupTierSummary, pickupKeramikNote, site } from "@/data/site";
+import { cities, cityPickupPriceText, pickupTierSummary, pickupKeramikNote, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
 
@@ -46,7 +46,7 @@ function AbholIndex() {
               <Link
                 to="/abholservice/$city"
                 params={{ city: c.slug }}
-                aria-label={`${citySeoCopy(c).linkLabel}, ${cityJourneyText(c)}, Abholung ${pickupPriceText(c.km)}`}
+                aria-label={`${citySeoCopy(c).linkLabel}, ${cityJourneyText(c)}, Abholung ${cityPickupPriceText(c)}`}
                 className="flex min-h-16 flex-col items-start gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <span>
@@ -57,7 +57,7 @@ function AbholIndex() {
                     {cityJourneyText(c)}
                   </span>
                 </span>
-                <span className="text-sm text-muted">{pickupPriceText(c.km)}</span>
+                <span className="text-sm text-muted">{cityPickupPriceText(c)}</span>
               </Link>
             </li>
           ))}

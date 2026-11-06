@@ -112,12 +112,16 @@ In `src/data/site.ts` stehen die aufgerundeten Messwerte:
 | Ort            | km eingetragen | Min. | Abholung Basis/Premium | Abholung Keramik |
 | -------------- | -------------: | ---: | ---------------------- | ---------------- |
 | Empfingen      |             10 |   12 | kostenlos              | inklusive        |
-| Schopfloch     |             11 |   11 | 50 €                   | inklusive        |
-| Sulz am Neckar |             12 |   13 | 50 €                   | inklusive        |
-| Vöhringen      |             17 |   19 | 50 €                   | inklusive        |
+| Schopfloch     |             11 |   11 | **30 €** (Festpreis)   | inklusive        |
+| Sulz am Neckar |             12 |   13 | **30 €** (Festpreis)   | inklusive        |
+| Vöhringen      |             17 |   19 | **30 €** (Festpreis)   | inklusive        |
 | Dornstetten    |             19 |   19 | 50 €                   | inklusive        |
 | Dornhan        |             20 |   23 | 50 €                   | inklusive        |
 
+- **Festpreis 30 €** für Schopfloch, Sulz am Neckar und Vöhringen auf Anweisung
+  des Betreibers vom 06.11.2026 (`pickupFlat` in `src/data/site.ts`). Er ersetzt
+  dort die 50-€-Stufe; Keramik bleibt inklusive, ein kostenloser Ort bleibt
+  kostenlos. Die Ortsseite nennt den Festpreis ausdrücklich.
 - Die Werte gelten für die **Ortsmitte**, nicht für die Abholadresse. Jede
   Ortsseite sagt das jetzt im Hinweis zur Übergabe; der Preis wird weiter vor
   dem Termin bestätigt.
