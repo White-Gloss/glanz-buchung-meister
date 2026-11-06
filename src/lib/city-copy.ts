@@ -1,4 +1,4 @@
-import { cityPickupPriceText, site, type City } from "../data/site.ts";
+import { cityPickupPriceText, pickupFee, site, type City } from "../data/site.ts";
 
 export function cityJourneyText(city: City) {
   return city.km !== null && city.minutes !== null
@@ -24,4 +24,20 @@ export function citySeoCopy(city: City) {
       ? "autoaufbereitung abholung horb am neckar"
       : `fahrzeugaufbereitung ${city.name.toLowerCase()}`,
   };
+}
+
+/** Entfernungs-Plakette der Abholort-Chips; Wortlaut wie auf den Ortsseiten. */
+export function pickupDistanceLabel(city: Pick<City, "km">) {
+  if (city.km === null) return "Nach Adresse";
+  if (city.km === 0) return "Standort";
+  return `ca. ${city.km} km`;
+}
+
+export type PickupStatus = "free" | "fixed" | "request";
+
+/** Status-Plakette: dieselbe Preislogik wie pickupPriceText (Basispaket). */
+export function pickupStatus(km: number | null): PickupStatus {
+  const fee = pickupFee(km, "basis");
+  if (fee === null) return "request";
+  return fee === 0 ? "free" : "fixed";
 }

@@ -13,6 +13,7 @@ import "../styles.css";
 import "../styles/refinement.css";
 import "../styles/luxury.css";
 import "../styles/hero-clearance.css";
+import "../styles/studio.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -38,7 +39,7 @@ export const Route = createRootRoute({
           content:
             "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.",
         },
-        { name: "theme-color", content: "#000000" },
+        { name: "theme-color", content: "#090a0d" },
         { name: "robots", content: "index,follow,max-image-preview:large" },
       ],
       links: [

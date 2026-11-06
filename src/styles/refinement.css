@@ -22,7 +22,7 @@
 [data-shell="public"] .scroll-film-stage { top: 84px; min-height: calc(100svh - 84px); height: calc(100svh - 84px); background: var(--color-bg); }
 [data-shell="public"] .scroll-film-media { inset: 0; }
 [data-shell="public"] .scroll-film-media img, [data-shell="public"] .scroll-film-media video { object-fit: cover; object-position: 65% center; }
-[data-shell="public"] .scroll-film-shade { opacity: 1; background: linear-gradient(90deg, #0e1218 0%, #0e1218cc 22%, #0e121820 58%, transparent 76%); }
+[data-shell="public"] .scroll-film-shade { opacity: 1; background: linear-gradient(90deg, #090a0d 0%, #090a0dcc 22%, #090a0d20 58%, transparent 76%); }
 [data-shell="public"] .scroll-film-copy { left: max(5vw, calc((100vw - 1280px) / 2)); max-width: 54%; margin-top: -135px; }
 [data-shell="public"] .scroll-film-eyebrow { font-size: .875rem; letter-spacing: .16em; color: var(--color-muted); margin-bottom: 1.6rem; max-width: 34ch; line-height: 1.6; }
 [data-shell="public"] .scroll-film-copy h1 { font-size: clamp(2.7rem, 4.6vw, 4.6rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.08; }
@@ -91,7 +91,7 @@
   [data-shell="public"] .scroll-film-copy h1 { font-size: clamp(2.15rem, 8.2vw, 3.2rem); }
   [data-shell="public"] .scroll-film-eyebrow { font-size: .75rem; max-width: 32ch; margin-bottom: 1rem; }
   [data-shell="public"] .scroll-film-media img, [data-shell="public"] .scroll-film-media video { object-fit: cover; object-position: center 35%; }
-  [data-shell="public"] .scroll-film-shade { background: linear-gradient(0deg, #0e1218 0%, #0e1218e8 30%, #0e121820 65%, transparent); }
+  [data-shell="public"] .scroll-film-shade { background: linear-gradient(0deg, #090a0d 0%, #090a0de8 30%, #090a0d20 65%, transparent); }
   [data-shell="public"] .scroll-film-cta { font-size: .9375rem; min-height: 48px; padding-inline: 1rem; margin-top: 1.25rem; gap: .75rem; }
   [data-shell="public"] .scroll-film-prices { font-size: .9375rem; padding-inline: .75rem; }
   [data-shell="public"] .scroll-film-bottom { inset: auto 1.25rem 1rem; gap: .5rem; justify-content: space-between; flex-wrap: nowrap; }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
+import { connectScrollTrigger } from "./smooth-scroll";
 
 type Gsap = typeof import("gsap").gsap;
 type ScrollTriggerType = typeof import("gsap/ScrollTrigger").ScrollTrigger;
@@ -13,6 +14,8 @@ export function loadScrollMotion() {
   tools ??= Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
     ([{ gsap }, { ScrollTrigger }]) => {
       gsap.registerPlugin(ScrollTrigger);
+      // Lenis meldet jeden geglätteten Frame direkt an ScrollTrigger.
+      connectScrollTrigger(ScrollTrigger.update);
       return { gsap, ScrollTrigger };
     },
     (error: unknown) => {

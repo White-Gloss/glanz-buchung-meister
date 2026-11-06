@@ -1,12 +1,47 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { IconArrowRight } from "@/components/icons";
 import "./scroll-film-hero.css";
 
 import { scrollFilm } from "@/data/scroll-film";
 import { loadSeekableVideo } from "@/lib/seekable-video";
+import { useMagnetic } from "@/lib/studio-motion";
 type Connection = EventTarget & { saveData?: boolean; effectiveType?: string };
 type DeviceNavigator = Navigator & { connection?: Connection; deviceMemory?: number };
+
+/** Headline in Zeilen; die letzte trägt den Akzent. Wortlaut unverändert. */
+const HERO_LINES = ["Ihr Auto.", "Nicht nur sauber.", "Wieder besonders."];
+
+/**
+ * Maskierter Reveal: jede Zeile ist eine Maske (overflow: hidden), jedes Wort
+ * steigt mit 70 ms Versatz von unten auf (CSS, studio.css Abschnitt 5).
+ * Leerzeichen bleiben echte Textknoten – Screenreader und Suchmaschinen lesen
+ * „Ihr Auto. Nicht nur sauber. Wieder besonders.“
+ */
+function HeroHeadline() {
+  let word = 0;
+  return (
+    <h1>
+      {HERO_LINES.map((line, index) => (
+        <Fragment key={line}>
+          {index > 0 ? " " : null}
+          <span
+            className={index === HERO_LINES.length - 1 ? "hero-line hero-line--accent" : "hero-line"}
+          >
+            {line.split(" ").map((text, position) => (
+              <Fragment key={text}>
+                {position > 0 ? " " : null}
+                <span className="hero-word" style={{ ["--w" as string]: word++ }}>
+                  {text}
+                </span>
+              </Fragment>
+            ))}
+          </span>
+        </Fragment>
+      ))}
+    </h1>
+  );
+}
 
 /** A fixed camera path from the supplied film, driven by native page scrolling. */
 export function ScrollFilmHero() {
@@ -15,9 +50,11 @@ export function ScrollFilmHero() {
   const imageRef = useRef<HTMLImageElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLAnchorElement>(null);
   const pausedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [motion, setMotion] = useState<boolean | null>(null);
+  useMagnetic(ctaRef);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -286,18 +323,12 @@ export function ScrollFilmHero() {
             <p className="scroll-film-eyebrow">
               White-Gloss Detailing · <span className="scroll-film-place">Horb am Neckar</span>
             </p>
-            <h1>
-              Ihr Auto.
-              <br />
-              Nicht nur sauber.
-              <br />
-              <span>Wieder besonders.</span>
-            </h1>
+            <HeroHeadline />
             <p className="scroll-film-service">
               Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft,
               stressfrei abgeholt und digital übergeben.
             </p>
-            <Link to="/" hash="buchung" className="scroll-film-cta">
+            <Link ref={ctaRef} to="/" hash="buchung" className="scroll-film-cta">
               Fahrzeug verwandeln lassen <IconArrowRight className="size-4" aria-hidden />
             </Link>
             <Link to="/preise" className="scroll-film-prices">

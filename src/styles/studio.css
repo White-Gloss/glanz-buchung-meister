@@ -1,0 +1,1011 @@
+/* ==========================================================================
+   White-Gloss Studio – Liquid-Luxury-Designsystem
+   --------------------------------------------------------------------------
+   Letzte Schicht der Kaskade (Import in __root.tsx nach hero-clearance.css).
+   Bewusst ohne @layer: Regeln hier schlagen alle Tailwind-Utilities und die
+   gewachsenen Legacy-Dateien, ohne !important.
+
+   Inhalt
+     1. Tokens (Flächen, Glas, Licht, Motion, Dock)
+     2. Basis-Typografie
+     3. Glas-Komponenten
+     4. Floating-Island-Header (Pill Dock)
+     5. Hero: Vollbild + maskierter Wort-/Zeilen-Reveal
+     6. Abschnitts-Headlines: maskierte Zeilen-Reveals
+     7. Ablauf „So läuft’s bei uns“: Pin + Lichtlinie
+     8. Bento-Pakete
+     9. Abholorte als Chips
+    10. Parallaxe-Rahmen
+    11. Lenis (Smooth Scroll)
+    12. Barrierefreiheit: reduzierte Bewegung, Kontrastmodus
+
+   Regeln
+     - Animiert werden nur transform/translate/scale/opacity (GPU), keine
+       Layout-Eigenschaften. Ausnahme: die Dock-Höhe (fixierter, eigener
+       Layout-Kontext, einmaliger Übergang).
+     - Hover-Effekte nur auf echten Zeigegeräten (hover: hover, pointer: fine),
+       sonst bleiben auf iOS/Android „klebende“ Hover-Zustände nach dem Tippen.
+     - Gedimmte Zustände über Farbe, nie über opacity: Text bleibt ≥ 4,5:1.
+   ========================================================================== */
+
+/* 1. Tokens --------------------------------------------------------------- */
+:root {
+  /* Flächen. Spiegeln die @theme-Werte in styles.css (Tailwind-Klassen
+     bg-bg/bg-surface/bg-elevated nutzen dieselben Farben). */
+  --studio-obsidian: #090a0d;
+  --studio-graphite: #101217;
+  --studio-elevated: #171a21;
+
+  /* Glas: dunkles Rauchglas mit Haarlinie. */
+  --glass-bg: rgba(18, 20, 26, 0.7);
+  --glass-bg-soft: rgba(18, 20, 26, 0.38);
+  --glass-bg-raised: rgba(255, 255, 255, 0.028);
+  --glass-blur: 20px;
+  --glass-saturate: 150%;
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-edge-strong: rgba(255, 255, 255, 0.12);
+  --glass-edge-hover: rgba(255, 255, 255, 0.22);
+  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 42%);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 30px 70px -40px rgba(0, 0, 0, 0.85);
+
+  /* Licht: Klarlack-Kante und Studio-Glow (Chromton aus --chrome-*). */
+  --light-edge: linear-gradient(
+    135deg,
+    rgba(244, 246, 250, 0.75) 0%,
+    rgba(191, 206, 224, 0.22) 24%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(140, 164, 191, 0.18) 76%,
+    rgba(244, 246, 250, 0.55) 100%
+  );
+  --light-glow: 0 0 0 1px rgba(191, 206, 224, 0.05), 0 40px 120px -60px rgba(191, 206, 224, 0.42);
+  --light-glow-hover: 0 0 0 1px rgba(191, 206, 224, 0.1), 0 46px 130px -56px rgba(191, 206, 224, 0.6);
+  --light-rail: linear-gradient(180deg, rgba(244, 246, 250, 0) 0%, #f4f6fa 18%, #bfcee0 62%, #8ca4bf 100%);
+
+  /* Radien: Glas weich, Bedienelemente als Pille. */
+  --radius-glass: 20px;
+  --radius-chip: 14px;
+  --radius-pill: 999px;
+
+  /* Motion. Eigene Namen (studio-), damit Tailwinds --ease-out unberührt bleibt.
+     ease-out:  starkes Ausrollen für Ein-/Ausblenden (Emil-Kowalski-Kurve)
+     in-out:    Bewegung auf der Fläche
+     spring:    gedämpfte Feder, duration 0.5 s / bounce 0.2, ausschwingend
+                bis ~690 ms, 1,5 % Überschwinger (berechnet, nicht geschätzt) */
+  --studio-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --studio-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --studio-ease-spring: linear(0, 0.0403, 0.1364, 0.2593, 0.3896, 0.5146, 0.627, 0.7235, 0.8029, 0.8661, 0.9147, 0.9507, 0.9763, 0.9938, 1.0049, 1.0113, 1.0144, 1.0152, 1.0145, 1.0131, 1.0112, 1.0092, 1.0073, 1.0056, 1.0042, 1.003, 1.002, 1.0013, 1);
+  --studio-dur-press: 140ms;
+  --studio-dur-hover: 240ms;
+  --studio-dur-ui: 300ms;
+  --studio-dur-spring: 700ms;
+  --studio-dur-reveal: 1100ms;
+
+  /* Dock (schwebender Header). Unterkante 14 + 64 = 78 px liegt innerhalb
+     der reservierten --site-header-initial (84 px), Inhalte rutschen nicht. */
+  --dock-top: 14px;
+  --dock-height: 64px;
+  --dock-height-compact: 56px;
+  --dock-lift: -6px;
+  --dock-logo: 44px;
+  --dock-logo-compact: 38px;
+}
+
+/* Browser ohne linear()-Easing (Safari < 17.2, Firefox < 112) erhalten das
+   starke Ausrollen statt der Feder. */
+@supports not (transition-timing-function: linear(0, 1)) {
+  :root {
+    --studio-ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --dock-top: 10px;
+    --dock-height: 56px;
+    --dock-height-compact: 52px;
+    --dock-lift: -4px;
+    --dock-logo: 40px;
+    --dock-logo-compact: 36px;
+  }
+}
+
+/* 2. Basis-Typografie ------------------------------------------------------ */
+[data-shell="public"] {
+  background-color: var(--color-bg);
+  font-kerning: normal;
+}
+
+[data-shell="public"] :is(h1, h2, .heading-2, .heading-page) {
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+/* Preise, Zähler und Schrittnummern: gleich breite Ziffern, keine springenden
+   Spalten beim Vergleich der Pakete. */
+[data-shell="public"] :is(.package-price strong, .home-process li > span, .city-chip-meta, .gd-stats p) {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+[data-shell="public"] ::selection {
+  background: rgba(191, 206, 224, 0.28);
+  color: var(--color-fg);
+}
+
+/* 3. Glas-Komponenten ------------------------------------------------------ */
+.glass {
+  position: relative;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-glass);
+  background: var(--glass-highlight), var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Weichzeichner nur auf großen Bildschirmen: über flachen Flächen ist er
+   unsichtbar, kostet auf Mittelklasse-Smartphones aber pro Frame GPU-Zeit. */
+@media (min-width: 960px) {
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+}
+
+.glass-interactive {
+  transition:
+    border-color var(--studio-dur-hover) ease,
+    box-shadow var(--studio-dur-ui) var(--studio-ease-out),
+    transform var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+.glass-interactive:focus-within {
+  border-color: var(--glass-edge-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass-interactive:hover {
+    border-color: var(--glass-edge-hover);
+    transform: translateY(-4px);
+  }
+}
+
+/* 4. Floating-Island-Header (Pill Dock) ----------------------------------- */
+/* Der volle Header-Balken wird zur unsichtbaren Schiene; nur die Pille ist
+   klickbar, damit die Fläche links/rechts davon den Hero nicht blockiert. */
+[data-shell="public"] .site-header,
+[data-shell="public"] .site-header[data-scrolled="true"],
+body[data-nav="open"] [data-shell="public"] .site-header {
+  padding-top: var(--dock-top);
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+[data-shell="public"] .site-header::after {
+  display: none;
+}
+
+:is([data-shell="public"] .site-header, .film-menu) .gd-header {
+  position: relative;
+  width: min(calc(100% - 2rem), 76rem);
+  max-width: none;
+  min-height: var(--dock-height);
+  margin-inline: auto;
+  padding-inline: 1.15rem 0.45rem;
+  gap: clamp(0.75rem, 2vw, 2rem);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-pill);
+  background-color: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(0px) saturate(100%);
+  backdrop-filter: blur(0px) saturate(100%);
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+  transition:
+    min-height var(--studio-dur-ui) var(--studio-ease-out),
+    background-color var(--studio-dur-ui) ease,
+    border-color var(--studio-dur-ui) ease,
+    box-shadow var(--studio-dur-ui) ease,
+    -webkit-backdrop-filter var(--studio-dur-ui) ease,
+    backdrop-filter var(--studio-dur-ui) ease,
+    transform var(--studio-dur-spring) var(--studio-ease-spring);
+}
+
+/* Gescrollt: Rauchglas an, minimal kompakter, federnd nach oben. */
+[data-shell="public"] .site-header[data-scrolled="true"] .gd-header,
+.film-menu .gd-header {
+  min-height: var(--dock-height-compact);
+  border-color: var(--glass-edge-strong);
+  background-color: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px -24px rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+[data-shell="public"] .site-header[data-scrolled="true"] .gd-header {
+  transform: translate3d(0, var(--dock-lift), 0);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-shell="public"] .site-header[data-scrolled="true"] .gd-header,
+  .film-menu .gd-header {
+    background-color: rgba(16, 18, 23, 0.96);
+  }
+}
+
+.film-menu > .fixed {
+  padding-top: var(--dock-top);
+}
+
+:is([data-shell="public"] .site-header, .film-menu) .ga-logo {
+  width: auto;
+  min-width: 0;
+}
+
+:is([data-shell="public"] .site-header, .film-menu) .ga-logo img,
+[data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img {
+  width: auto;
+  height: var(--dock-logo);
+  filter: none;
+  transition: height var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+[data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img,
+.film-menu .ga-logo img {
+  height: var(--dock-logo-compact);
+}
+
+[data-shell="public"] .site-header .header-quick-nav {
+  position: relative;
+  z-index: 2;
+  gap: clamp(1.25rem, 2.6vw, 2.75rem);
+}
+
+[data-shell="public"] .site-header .header-quick-nav a {
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+}
+
+/* Termin-Schaltflächen und Menü als Pillen innerhalb der Pille. */
+[data-shell="public"] .site-header .header-quick-nav .header-booking-link,
+[data-shell="public"] .site-header .header-film-booking {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.2rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  letter-spacing: 0.12em;
+  transition:
+    background-color var(--studio-dur-hover) ease,
+    border-color var(--studio-dur-hover) ease,
+    box-shadow var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+[data-shell="public"] .site-header .header-quick-nav .header-booking-link::after {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-shell="public"] .site-header .header-quick-nav .header-booking-link:hover,
+  [data-shell="public"] .site-header .header-film-booking:hover {
+    border-color: var(--color-fg);
+    background: var(--color-fg);
+    color: var(--color-accent-fg);
+    box-shadow: 0 10px 30px -12px rgba(244, 246, 250, 0.55);
+  }
+}
+
+:is([data-shell="public"] .site-header, .film-menu) .menu-toggle {
+  min-height: 44px;
+  height: 44px;
+  border: 1px solid var(--glass-edge-strong);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is([data-shell="public"] .site-header, .film-menu) .menu-toggle:hover {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+}
+
+:is([data-shell="public"] .site-header, .film-menu) .menu-toggle:active {
+  transform: scale(0.96);
+  transition-duration: var(--studio-dur-press);
+}
+
+@media (max-width: 639px) {
+  :is([data-shell="public"] .site-header, .film-menu) .gd-header {
+    width: calc(100% - 1.25rem);
+    padding-inline: 0.9rem 0.35rem;
+    gap: 0.5rem;
+  }
+
+  /* Touch-Ziele bleiben 44 px (Projektstandard, in der CI geprüft). */
+  [data-shell="public"] .site-header .header-film-booking {
+    padding-inline: 0.85rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+  }
+
+  :is([data-shell="public"] .site-header, .film-menu) .menu-toggle {
+    min-width: 44px;
+  }
+}
+
+/* 5. Hero: Vollbild unter dem Dock + maskierter Reveal --------------------- */
+/* Der Film läuft jetzt unter die schwebende Pille. Statt die Stage-Regeln der
+   Legacy-Dateien zu überschreiben, werden nur deren Variablen im Hero auf 0
+   gesetzt; Landscape- und Reduced-Motion-Varianten bleiben unverändert gültig. */
+[data-shell="public"] .scroll-film {
+  --site-header-height: 0px;
+  --site-header-initial: 0px;
+}
+
+/* Lesbarkeit der Pille über hellen Bildpartien. */
+[data-shell="public"] .scroll-film-media::after {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 24%;
+  background: linear-gradient(180deg, rgba(9, 10, 13, 0.62) 0%, rgba(9, 10, 13, 0) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+/* Masken: overflow:hidden mit Reserve für Unterlängen und Seitenränder, damit
+   keine Glyphe beschnitten wird; negative Margins halten das Layout identisch. */
+.hero-line,
+.reveal-line {
+  display: block;
+  overflow: hidden;
+  padding: 0 0.05em 0.12em;
+  margin: 0 -0.05em -0.12em;
+}
+
+.hero-word {
+  display: inline-block;
+}
+
+[data-shell="public"] .scroll-film-copy h1 .hero-line {
+  color: var(--color-fg);
+}
+
+[data-shell="public"] .scroll-film-copy h1 .hero-line.hero-line--accent {
+  color: var(--color-accent);
+}
+
+[data-shell="public"] .scroll-film-copy h1 .hero-word {
+  color: inherit;
+}
+
+/* CSS-Animation statt GSAP: startet mit dem ersten Frame (vor der Hydration),
+   läuft außerhalb des Main-Threads und braucht auf Smartphones kein JS.
+   Animiert wird `translate`, nicht `transform`: so bleibt transform frei für
+   den magnetischen Button und die Scroll-Logik des Films.
+   fill-mode backwards: Startzustand während der Verzögerung, danach gelten
+   wieder die normalen Regeln (keine eingefrorenen Endwerte). */
+@keyframes studio-rise {
+  from {
+    translate: 0 112%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes studio-fade-up {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes studio-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-word {
+    animation: studio-rise var(--studio-dur-reveal) var(--studio-ease-out) backwards;
+    animation-delay: calc(140ms + var(--w, 0) * 70ms);
+  }
+
+  [data-shell="public"] .scroll-film-eyebrow {
+    animation: studio-fade-up 800ms var(--studio-ease-out) 40ms backwards;
+  }
+
+  [data-shell="public"] .scroll-film-service {
+    animation: studio-fade-up 800ms var(--studio-ease-out) 520ms backwards;
+  }
+
+  [data-shell="public"] .scroll-film-cta {
+    animation: studio-fade-up 800ms var(--studio-ease-out) 620ms backwards;
+  }
+
+  [data-shell="public"] .scroll-film-prices {
+    animation: studio-fade-up 800ms var(--studio-ease-out) 680ms backwards;
+  }
+
+  /* Nur Deckkraft: die Leiste wird bei offenem Cookie-Hinweis per transform
+     verschoben, das darf keine Animation überdecken. */
+  [data-shell="public"] .scroll-film-bottom {
+    animation: studio-fade 800ms ease 800ms backwards;
+  }
+}
+
+/* Primärer Hero-CTA als Pille mit präzisem Pfeil-Nudge. */
+[data-shell="public"] .scroll-film-cta {
+  border-radius: var(--radius-pill);
+  padding-inline: 1.5rem 1.25rem;
+  transition:
+    background-color var(--studio-dur-hover) ease,
+    border-color var(--studio-dur-hover) ease,
+    color var(--studio-dur-hover) ease,
+    box-shadow var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+[data-shell="public"] .scroll-film-cta svg {
+  transition: translate var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-shell="public"] .scroll-film-cta:hover {
+    box-shadow: 0 16px 40px -18px rgba(244, 246, 250, 0.6);
+  }
+
+  [data-shell="public"] .scroll-film-cta:hover svg {
+    translate: 4px 0;
+  }
+}
+
+[data-shell="public"] .scroll-film-pause {
+  border-color: var(--glass-edge-strong);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg);
+}
+
+/* 6. Abschnitts-Headlines: maskierte Zeilen-Reveals ------------------------- */
+/* Der verdeckte Zustand gilt nur, solange HomePolish die Beobachtung aktiv
+   hält (html[data-lines="armed"]). Ohne JavaScript bleibt alles sichtbar.
+   Bereits sichtbare Headlines markiert das Script vorher als .is-in, damit
+   nichts aufblitzt oder doppelt erscheint. */
+.reveal-line > span {
+  display: block;
+}
+
+html[data-lines="armed"] [data-lines]:not(.is-in) .reveal-line > span {
+  translate: 0 108%;
+}
+
+html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
+  translate: 0 0;
+  transition: translate var(--studio-dur-reveal) var(--studio-ease-out);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* 7. Ablauf „So läuft’s bei uns“: Pin + Lichtlinie -------------------------- */
+/* Grundzustand (Smartphone, Tablet, reduzierte Bewegung, kein JS): statische
+   Zeitleiste, alle Schritte voll lesbar, Lichtlinie komplett gezeichnet. */
+.home-process {
+  --rail-x: 0.3rem;
+  --rail-pad: 2rem;
+  --dot-top: 0.3rem;
+  --process-progress: 1;
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.25rem;
+  padding-left: var(--rail-pad);
+}
+
+/* Schiene und Lichtlinie laufen an beiden Enden weich aus. */
+.home-process::before,
+.home-process::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--rail-x);
+  width: 1px;
+  content: "";
+  pointer-events: none;
+}
+
+.home-process::before {
+  background: linear-gradient(180deg, transparent, var(--glass-edge-hover) 6%, var(--glass-edge) 88%, transparent);
+}
+
+.home-process::after {
+  background: var(--light-rail);
+  box-shadow: 0 0 14px rgba(191, 206, 224, 0.45);
+  -webkit-mask: linear-gradient(180deg, #000 82%, transparent);
+  mask: linear-gradient(180deg, #000 82%, transparent);
+  transform: scaleY(var(--process-progress));
+  transform-origin: top;
+}
+
+[data-shell="public"] .home-process li {
+  position: relative;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Knotenpunkt auf der Lichtlinie, auf Höhe der Schrittnummer. */
+.home-process li::before {
+  position: absolute;
+  top: var(--dot-top);
+  left: calc(var(--rail-x) - var(--rail-pad) - 4px);
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--glass-edge-hover);
+  border-radius: 50%;
+  background: var(--color-bg);
+  content: "";
+  transition:
+    background-color var(--studio-dur-ui) ease,
+    border-color var(--studio-dur-ui) ease,
+    box-shadow var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+.home-process li > span,
+.home-process li h3,
+.home-process li p {
+  transition: color var(--studio-dur-ui) ease;
+}
+
+/* Live-Zustand: GSAP steuert Fortschritt und aktiven Schritt. Inaktiv heißt
+   --color-subtle (≥ 6,2:1 auf allen Flächen), nicht transparent. */
+.home-process[data-live] li > span,
+.home-process[data-live] li h3,
+.home-process[data-live] li p {
+  color: var(--color-subtle);
+}
+
+.home-process[data-live] li.is-active > span,
+.home-process[data-live] li.is-active h3 {
+  color: var(--color-fg);
+}
+
+.home-process[data-live] li.is-active p {
+  color: var(--color-muted);
+}
+
+.home-process li.is-active::before,
+.home-process:not([data-live]) li::before {
+  border-color: #f4f6fa;
+  background: #f4f6fa;
+  box-shadow:
+    0 0 0 4px rgba(191, 206, 224, 0.12),
+    0 0 18px rgba(191, 206, 224, 0.7);
+}
+
+@media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
+  .home-craft {
+    align-items: start;
+  }
+
+  /* Links angepinnt (CSS sticky statt GSAP-Pin: kein Pin-Spacer, kein
+     Sprung, läuft synchron mit Lenis und nativem Scroll). */
+  .home-craft > header {
+    position: sticky;
+    top: calc(var(--site-header-initial) + 3.5rem);
+  }
+
+  .home-process {
+    --rail-x: 1rem;
+    --rail-pad: 3.75rem;
+    --step-pad: 2.25rem;
+    --step-num: clamp(2.5rem, 3.4vw, 3.5rem);
+    --dot-top: calc(var(--step-pad) + var(--step-num) / 2 - 4.5px);
+    gap: 0;
+  }
+
+  /* Jeder Schritt bekommt Scrollweg; währenddessen bleibt links die
+     Überschrift stehen und rechts leuchtet Phase für Phase auf. */
+  [data-shell="public"] .home-process li {
+    min-height: clamp(15rem, 42svh, 24rem);
+    padding-block: var(--step-pad) 2.5rem;
+  }
+
+  [data-shell="public"] .home-process li > span {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--step-num);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  [data-shell="public"] .home-process h3 {
+    margin-top: 1.1rem;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    line-height: 1.2;
+  }
+
+  [data-shell="public"] .home-process p {
+    max-width: 44ch;
+    font-size: 1.0625rem;
+  }
+}
+
+/* 8. Bento-Pakete ------------------------------------------------------------ */
+/* Statisches Studiolicht hinter dem Raster: gibt dem Glas etwas zu brechen,
+   kostet nichts (kein Scroll-Repaint). */
+[data-shell="public"] .atelier-packages {
+  background:
+    radial-gradient(55% 45% at 78% 78%, rgba(191, 206, 224, 0.075), rgba(191, 206, 224, 0) 70%),
+    radial-gradient(40% 35% at 12% 18%, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 70%),
+    var(--color-bg);
+}
+
+.pack-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pack-card-media {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: calc(var(--radius-glass) - 1px) calc(var(--radius-glass) - 1px) 0 0;
+  background: var(--color-surface);
+}
+
+.pack-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pack-card-media figcaption {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2.5rem 1.1rem 0.85rem;
+  background: linear-gradient(0deg, rgba(9, 10, 13, 0.82), rgba(9, 10, 13, 0));
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pack-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: clamp(1.4rem, 2.6vw, 2.25rem);
+}
+
+[data-shell="public"] .pack-card h3 {
+  margin-top: 1.25rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 2.8vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+[data-shell="public"] .pack-card .package-goal {
+  margin-top: 1rem;
+  font-size: 1.0625rem;
+}
+
+[data-shell="public"] .pack-card .package-description {
+  max-width: 44ch;
+  margin-top: 0.85rem;
+  font-size: 1rem;
+}
+
+.pack-card-foot {
+  margin-top: auto;
+  padding-top: 1.75rem;
+}
+
+[data-shell="public"] .pack-card .package-price {
+  margin-top: 0;
+}
+
+[data-shell="public"] .pack-card .package-price strong {
+  font-size: clamp(2.5rem, 3.2vw, 3rem);
+  letter-spacing: -0.02em;
+}
+
+[data-shell="public"] .pack-card .atelier-text-link {
+  margin-top: 1.25rem;
+  gap: 1.5rem;
+  border: 0;
+}
+
+/* „Empfohlen“ als feine Glas-Plakette. */
+[data-shell="public"] .pack-card .package-recommendation {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(191, 206, 224, 0.45);
+  border-radius: var(--radius-pill);
+  background: rgba(191, 206, 224, 0.08);
+  color: var(--color-accent);
+}
+
+/* Paket 02 (Empfohlen): etwas präsentere Kante. */
+.pack-card:nth-child(2) {
+  border-color: var(--glass-edge-strong);
+}
+
+/* Paket 03 (Keramikschutz, 899 €): leuchtende Klarlack-Kante.
+   Ring per Maske (1px), damit der Verlauf nur auf der Kante liegt. */
+.pack-card:nth-child(3) {
+  border-color: transparent;
+  box-shadow: var(--glass-shadow), var(--light-glow);
+}
+
+.pack-card:nth-child(3)::before {
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--light-edge);
+  content: "";
+  opacity: 0.85;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  transition: opacity var(--studio-dur-ui) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pack-card:nth-child(3):hover {
+    border-color: transparent;
+    box-shadow: var(--glass-shadow), var(--light-glow-hover);
+  }
+
+  .pack-card:nth-child(3):hover::before {
+    opacity: 1;
+  }
+
+  .pack-card .atelier-text-link:hover .atelier-arrow {
+    border-color: var(--color-accent);
+  }
+}
+
+@media (min-width: 760px) {
+  .pack-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .pack-card:nth-child(-n + 2) .pack-card-media {
+    aspect-ratio: 16 / 10;
+  }
+
+  /* Finale: Keramikschutz über die volle Breite, Bild links, Text rechts. */
+  .pack-card:nth-child(3) {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .pack-card:nth-child(3) .pack-card-media {
+    aspect-ratio: auto;
+    min-height: 26rem;
+    border-radius: calc(var(--radius-glass) - 1px) 0 0 calc(var(--radius-glass) - 1px);
+  }
+
+  .pack-card:nth-child(3) .pack-card-body {
+    padding: clamp(1.75rem, 3.4vw, 3.25rem);
+  }
+
+  [data-shell="public"] .pack-card:nth-child(3) h3 {
+    font-size: clamp(2.5rem, 3.8vw, 3.75rem);
+  }
+
+  [data-shell="public"] .pack-card:nth-child(3) .package-price strong {
+    font-size: clamp(3rem, 4.2vw, 4rem);
+  }
+}
+
+/* 9. Abholorte als Chips ----------------------------------------------------- */
+[data-shell="public"] .home-location .city-chips {
+  display: grid;
+  /* 8.5rem: ab 320 px zwei Spalten, auf dem Desktop drei bis vier. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.5rem;
+  max-width: none;
+  margin-top: 1.5rem;
+}
+
+[data-shell="public"] .home-location .city-chip {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-height: 4.25rem;
+  height: 100%;
+  margin-top: 0;
+  padding: 0.75rem 0.85rem 0.7rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-chip);
+  background: var(--glass-highlight), var(--glass-bg-raised);
+  color: var(--color-fg);
+  text-decoration: none;
+  transition:
+    border-color var(--studio-dur-hover) ease,
+    background-color var(--studio-dur-hover) ease,
+    transform var(--studio-dur-ui) var(--studio-ease-out);
+}
+
+.city-chip-name {
+  font-size: 0.9375rem;
+  line-height: 1.25;
+}
+
+.city-chip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.city-chip-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.35rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-pill);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Statuspunkt, monochrom: gefüllt = fester Preis, leuchtend = kostenlos,
+   Ring = Preis nach Adresse. Die Bedeutung trägt der Text, nicht die Farbe. */
+.city-chip-status::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  content: "";
+}
+
+.city-chip-status[data-status="free"] {
+  border-color: rgba(191, 206, 224, 0.4);
+  color: var(--color-fg);
+}
+
+.city-chip-status[data-status="free"]::before {
+  background: #f4f6fa;
+  box-shadow: 0 0 8px rgba(191, 206, 224, 0.85);
+}
+
+.city-chip-status[data-status="request"]::before {
+  border: 1px solid var(--color-muted);
+  background: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-shell="public"] .home-location .city-chip:hover {
+    border-color: var(--glass-edge-hover);
+    background-color: rgba(255, 255, 255, 0.04);
+    transform: translateY(-2px);
+  }
+}
+
+/* 10. Parallaxe-Rahmen ------------------------------------------------------- */
+/* Rahmen schneidet zu; das Bild ist 12 % überskaliert, damit ±5 % Versatz nie
+   eine Kante freilegt. Der Startwert steht schon im CSS, damit beim Start von
+   GSAP nichts springt. Nur Desktop (deckungsgleich mit DESKTOP_MOTION). */
+[data-parallax-frame] {
+  overflow: hidden;
+}
+
+@media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
+  [data-parallax-frame] img {
+    transform: scale(1.12);
+    transition: none;
+    will-change: transform;
+  }
+
+  /* Hover-Zoom der Bildkacheln (Tailwind `scale`) abschalten, sonst addiert
+     er sich zur Parallaxe. Eigener Selektor: Lightning CSS würde `scale` in
+     derselben Regel sonst in `transform` verschmelzen und so verwerfen. */
+  [data-parallax-frame] :where(img) {
+    scale: none;
+  }
+}
+
+/* 11. Lenis (Smooth Scroll) – Original-CSS aus lenis@1.3.27/dist/lenis.css ---- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+.lenis.lenis-autoToggle {
+  transition-property: overflow;
+  transition-duration: 1ms;
+  transition-behavior: allow-discrete;
+}
+
+/* Kein scroll-behavior-Override nötig: Lenis 1.3 scrollt explizit mit
+   behavior "instant". Anker-Links bleiben beim Router (scrollIntoView). */
+
+/* 12. Barrierefreiheit ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :is([data-shell="public"] .site-header, .film-menu) .gd-header,
+  :is([data-shell="public"] .site-header, .film-menu) .ga-logo img,
+  .glass-interactive,
+  [data-shell="public"] .home-location .city-chip {
+    transition-property: background-color, border-color, box-shadow, color;
+  }
+
+  [data-shell="public"] .site-header[data-scrolled="true"] .gd-header,
+  .glass-interactive:hover,
+  [data-shell="public"] .home-location .city-chip:hover {
+    transform: none;
+  }
+
+  html[data-lines] [data-lines] .reveal-line > span {
+    translate: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :is([data-shell="public"] .site-header, .film-menu) .gd-header,
+  .glass,
+  [data-shell="public"] .home-location .city-chip {
+    border-color: CanvasText;
+  }
+
+  .home-process::after,
+  .pack-card:nth-child(3)::before {
+    display: none;
+  }
+}

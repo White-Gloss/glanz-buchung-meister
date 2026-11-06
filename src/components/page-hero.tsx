@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { FluidImg, Shot, type ShotName } from "./media";
 import { cn } from "@/lib/utils";
+import { useParallaxFrames } from "@/lib/studio-motion";
 
 export function PageCrumbs({
   items,
@@ -50,9 +51,12 @@ export function PageHero({
   actions?: ReactNode;
   crumbs?: { label: string; to?: string }[];
 }) {
+  const section = useRef<HTMLElement>(null);
+  // Leistungsbilder (z. B. Lackkorrektur, Innenraum) gleiten im Rahmen; nur Desktop.
+  useParallaxFrames(section);
   return (
-    <section className="film-chapter page-hero">
-      <div className="film-chapter-media">
+    <section ref={section} className="film-chapter page-hero">
+      <div className="film-chapter-media" data-parallax-frame>
         {shot ? (
           <Shot
             name={shot}

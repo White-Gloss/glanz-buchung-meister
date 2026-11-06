@@ -1,9 +1,9 @@
 /** WCAG 2.2 relative-luminance helpers. Keep in sync with src/styles.css tokens. */
 
 export const SURFACE = {
-  bg: "#0e1218",
-  surface: "#151d27",
-  elevated: "#202c3a",
+  bg: "#090a0d",
+  surface: "#101217",
+  elevated: "#171a21",
 } as const;
 
 function channel(value: number) {

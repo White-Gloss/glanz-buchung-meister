@@ -7,7 +7,7 @@
 [data-shell="public"] .site-header .header-film-booking { color: var(--color-accent-fg); }
 [data-shell="public"] .scroll-film-eyebrow { font-size: .75rem; letter-spacing: .21em; max-width: 40ch; margin-bottom: 2rem; }
 [data-shell="public"] .scroll-film[data-motion="scroll"], [data-shell="public"] .scroll-film[data-motion="fallback"] { height: 240svh; }
-[data-shell="public"] .scroll-film-shade { background: linear-gradient(90deg,#0e1218e8 0%,#0e1218a0 30%,#0e121810 68%,transparent); }
+[data-shell="public"] .scroll-film-shade { background: linear-gradient(90deg,#090a0de8 0%,#090a0da0 30%,#090a0d10 68%,transparent); }
 [data-shell="public"] .scroll-film-cta { min-height: 54px; margin-top: 2rem; gap: 2rem; }
 [data-shell="public"] .scroll-film-prices { margin-left: .5rem; }
 .scroll-film-signature { position: absolute; left: 6vw; right: 6vw; top: 45%; opacity: clamp(0, calc((var(--film-progress) - .58) * 6), 1); transform: translateY(calc((1 - clamp(0, calc((var(--film-progress) - .58) * 6), 1)) * 24px)); pointer-events: none; }
@@ -27,26 +27,14 @@
 .atelier-text-link svg { width: 18px; height: 18px; flex-shrink: 0; transition: transform .45s cubic-bezier(.22,1,.36,1); }
 .atelier-text-link:hover svg { transform: translateX(4px); }
 .atelier-arrow { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 1px solid var(--color-line-strong); border-radius: 50%; flex-shrink: 0; }
-.package-track { display: grid; grid-template-columns: minmax(0,.95fr) minmax(0,1fr); align-items: start; column-gap: clamp(3rem,7vw,7.5rem); }
-.package-stage { position: sticky; top: calc(var(--site-header-height, 84px) + 20px); width: 100%; height: clamp(400px,calc(100svh - 180px),680px); overflow: hidden; background: var(--color-surface); }
-.package-frame { position: absolute; inset: 0; margin: 0; background: var(--color-bg); }
-.package-frame:not(:first-child) { opacity: 0; }
-.package-frame img { width: 100%; height: calc(100% - 44px); object-fit: cover; }
-.package-frame figcaption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 44px; background: var(--color-surface); color: var(--color-muted); font-size: .6875rem; letter-spacing: .08em; padding-inline: 1rem; text-transform: uppercase; }
-.package-chapter { min-width:0; min-height: clamp(470px,calc(100svh - 100px),780px); display: flex; align-items: center; padding-block: 2.5rem; border-top: 1px solid var(--color-line-strong); }
-.package-chapter:last-child { border-bottom: 1px solid var(--color-line-strong); }
-.package-chapter-inner { width:100%; }
 .package-eyebrow { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; color: var(--color-muted); font-size: .6875rem; text-transform: uppercase; letter-spacing: .14em; }
 .package-eyebrow > span:first-child { color: var(--color-fg); }
 .package-recommendation { color: var(--color-accent); border-bottom: 1px solid var(--color-accent); padding-bottom: .15rem; }
-.package-chapter h3 { font-family: var(--font-display); font-size: clamp(2.8rem,4.8vw,5rem); font-weight: 400; letter-spacing: -.035em; line-height: 1.05; margin-top: 2rem; max-width: 13ch; }
 .package-description { font-size: 1.125rem; line-height: 1.6; color: var(--color-muted); max-width: 33ch; margin-top: 1.3rem; }
 .package-price { display:flex; align-items: baseline; gap: .75rem; margin-top: 2rem; }
 .package-price > span { font-size: .875rem; color: var(--color-muted); }
 .package-price strong { font-family: var(--font-display); font-size: 3.25rem; line-height: 1; font-weight: 400; font-variant-numeric: lining-nums tabular-nums; }
 .package-terms { color: var(--color-muted); font-size: .8125rem; margin-top: .75rem; }
-.package-chapter .atelier-text-link { border:0; margin-top: 1.5rem; gap: 2.5rem; }
-.package-mobile-photo { display: none; }
 .reviews-spotlight { position: relative; display: grid; grid-template-columns: 1.25fr 1fr; align-items:center; gap: clamp(3rem,6vw,7rem); padding: clamp(2rem,6vw,5rem); margin-block: clamp(4rem,8vw,8rem); background: var(--color-surface); border-top:1px solid var(--color-line-strong); border-bottom:1px solid var(--color-line-strong); overflow: hidden; }
 .reviews-spotlight h2 { font-family: var(--font-display); font-size: clamp(2.6rem,4.7vw,5rem); font-weight:400; line-height:1.02; letter-spacing:-.03em; margin-top:1.75rem; }
 .reviews-spotlight-source { border-left:1px solid var(--color-line-strong); padding-left:clamp(2rem,4vw,4rem); }
@@ -64,8 +52,6 @@
 @media (min-width:960px) { [data-home="polish"] .wg-home-results-media .wg-video-grid { gap:2rem; } .wg-home-results-media .wg-video-card:nth-child(2) { padding-top:5rem; } .wg-home-results-media .wg-video-card:nth-child(3) { padding-top:2rem; } }
 @media (max-width:959px) {
   .atelier-heading { align-items:start; flex-direction:column; gap:1.5rem; padding-bottom:3rem; }.atelier-heading h2 { max-width:18ch; }.package-title-break { display:none; }
-  .package-track { display:block; }.package-stage { display:none; }.package-mobile-photo { display:block; width:100%; height:100%; max-height:32rem; object-fit:cover; aspect-ratio:4/3; }
-  .package-chapter { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2rem; padding-block:2rem; min-height:0; }.package-chapter h3 { margin-top:1.5rem; font-size:3.2rem; }
   .reviews-spotlight { gap:2rem; }.reviews-spotlight-source { padding-left:2rem; }
 }
 @media (max-width:639px) {
@@ -76,19 +62,16 @@
   [data-shell="public"] .scroll-film-eyebrow { font-size:.65rem; margin-bottom:1.5rem; max-width:35ch; }
   [data-shell="public"] .scroll-film-cta { margin-top:1.5rem; gap:1rem; min-height:48px; font-size:.875rem; }
   [data-shell="public"] .scroll-film-prices { font-size:.875rem; padding-inline:.6rem; margin-left:0; }
-  [data-shell="public"] .scroll-film-shade { background:linear-gradient(0deg,#0e1218 0%,#0e1218e0 28%,#0e121845 65%,transparent); }
+  [data-shell="public"] .scroll-film-shade { background:linear-gradient(0deg,#090a0d 0%,#090a0de0 28%,#090a0d45 65%,transparent); }
   .scroll-film-signature { left:1.25rem; right:1.25rem; top:50%; }.scroll-film-signature p { font-size:clamp(2.6rem,10.5vw,4rem); }.scroll-film-signature span { font-size:.625rem; }
   [data-home="polish"] .home-intro { padding-block:3rem; gap:1.5rem; }.home-jump-links { gap:1rem; }
   .atelier-packages { padding:2rem 1.25rem 3rem; }.atelier-heading h2 { font-size:2.8rem; line-height:1.07; }.atelier-heading { padding-bottom:1rem; }
-  .package-chapter { grid-template-columns:minmax(0,1fr); gap:0; border-top:0; padding-top:2rem; padding-bottom:3rem; }.package-chapter-inner { padding-top:1.5rem; }.package-mobile-photo { aspect-ratio:4/3; height:auto; max-height:none; }
-  .package-chapter h3 { font-size:3.25rem; max-width:14ch; }.package-price { margin-top:1.5rem; }.package-price strong { font-size:3rem; }.package-description { font-size:1rem; }.package-eyebrow { font-size:.625rem; gap:.5rem 1rem; }
+  .package-price strong { font-size:3rem; }.package-description { font-size:1rem; }.package-eyebrow { font-size:.625rem; gap:.5rem 1rem; }
   .reviews-spotlight { grid-template-columns:minmax(0,1fr); padding:2rem 1.25rem; margin-block:3rem; gap:2rem; }.reviews-spotlight-source { border-left:0; padding-left:0; padding-top:2rem; border-top:1px solid var(--color-line-strong); }.reviews-spotlight h2 { font-size:3.15rem; }.reviews-source-link { margin-top:1rem; }
   [data-home="polish"] .heading-2 { font-size:2.75rem; }.wg-video-copy .heading-3 { font-size:1.5rem; }
 }
 @media (prefers-reduced-motion:reduce) {
   [data-shell="public"] .scroll-film[data-motion] { height:auto; }.scroll-film-signature { display:none; }
-  .package-stage { display:none; }.package-track { display:block; }.package-mobile-photo { display:block; width:100%; max-height:36rem; height:auto; object-fit:cover; aspect-ratio:4/3; }
-  .package-chapter { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem; min-height:0; }
   .atelier-text-link svg,.reviews-source-link svg { transition:none; }
 }
 @media (max-width:900px) { .page-hero { padding-top:72px; } }
@@ -134,7 +117,6 @@
 .reviews-excerpts figcaption { font-size:.875rem; margin-top:auto; }
 .reviews-excerpts figcaption span { display:block; font-size:.6875rem; color:var(--color-muted); margin-top:.5rem; }
 @media(min-width:960px) {
-  .package-chapter { min-height:clamp(470px,calc(100svh - 120px),650px); }
   .wg-home-results-media .wg-video-card:nth-child(2) { padding-top:2.5rem; }
   .wg-home-results-media .wg-video-card:nth-child(3) { padding-top:1rem; }
 }
@@ -171,11 +153,10 @@ html:has([data-shell="public"]) { scroll-padding-top:0; }
 [data-shell="public"] .scroll-film-copy h1 { font-size:clamp(3.2rem,6.2vw,6rem); line-height:1.04; letter-spacing:-.035em; }
 [data-shell="public"] .scroll-film-eyebrow { font-size:.8125rem; margin-bottom:1.5rem; }
 [data-home="polish"] .heading-2,.atelier-heading h2,.reviews-spotlight h2 { font-size:clamp(2.1rem,3.8vw,4rem); line-height:1.12; letter-spacing:-.025em; }
-.package-chapter h3 { font-size:clamp(2.25rem,4vw,4rem); }
 [data-home="polish"] .home-intro { padding-block:clamp(2.5rem,5vw,4.5rem); }
 [data-home="polish"] .home-intro > p { font-size:clamp(1.4rem,2vw,1.9rem); line-height:1.45; }
 .home-process p { font-size:1rem; line-height:1.65; }
-.package-eyebrow,.package-frame figcaption,.reviews-excerpts figcaption span { font-size:.75rem; }
+.package-eyebrow,.reviews-excerpts figcaption span { font-size:.75rem; }
 .package-terms { font-size:.875rem; }
 .workshop-personal .film-chapter-media { min-height:30rem; }
 .workshop-personal .film-chapter-media img { object-position:55% 65%; }
@@ -207,7 +188,6 @@ html:has([data-shell="public"]) { scroll-padding-top:0; }
   [data-shell="public"] .scroll-film-cta,[data-shell="public"] .scroll-film-prices { font-size:.9375rem; }
   [data-shell="public"] .scroll-film[data-motion="scroll"], [data-shell="public"] .scroll-film[data-motion="fallback"] { height:170svh; }
   [data-shell="public"] .scroll-film-signature span { font-size:.75rem; }
-  .package-chapter h3 { font-size:2.65rem; }
   .workshop-personal .film-chapter-copy { padding:2rem 1.25rem; }
   .reviews-spotlight h2 { font-size:2.5rem; }
   [data-home="polish"] .booking-section { padding-top:1rem; }

@@ -107,10 +107,10 @@
 }
 
 @theme {
-  /* White Gloss: ink, porcelain and a precise clearcoat accent. */
-  --color-bg: #0e1218;
-  --color-surface: #151d27;
-  --color-elevated: #202c3a;
+  /* White Gloss: Studio-Obsidian, Graphit und ein präziser Klarlack-Akzent. */
+  --color-bg: #090a0d;
+  --color-surface: #101217;
+  --color-elevated: #171a21;
 
   /* Drei Textstufen. Headlines weiss, Lauftext hellgrau, Meta leiser. */
   --color-fg: #f4f3ed;
@@ -118,12 +118,12 @@
   --color-subtle: #929faf;
 
   /* Haarlinien statt Schatten. Transparent, damit sie auf jeder Fläche tragen. */
-  --color-line: rgba(191, 209, 229, 0.13);
-  --color-line-strong: rgba(191, 209, 229, 0.25);
+  --color-line: rgba(255, 255, 255, 0.1);
+  --color-line-strong: rgba(255, 255, 255, 0.2);
 
   /* Primärfläche: gefülltes Weiß auf Schwarz, Schrift schwarz */
   --color-accent: #bfcee0;
-  --color-accent-fg: #0e1218;
+  --color-accent-fg: #090a0d;
 
   --color-danger: #ed9b82;
   --color-wa: #a9bed6;
