@@ -141,11 +141,12 @@ test("standalone CLI refuses an invalid database target without loading pg or ex
   assert.equal(result.stderr, "");
 });
 
-async function database(beforeWorkflow = false) {
+async function database(beforeWorkflow = false, withoutStudio = false) {
   const pg = new PGlite();
   await pg.exec("create table _migrations(name text primary key)");
   for (const name of expectedMigrations) {
     if (beforeWorkflow && name.startsWith("0007")) break;
+    if (withoutStudio && name === "0025_website_studio.sql") continue;
     await pg.exec(await readFile(new URL(`../migrations/${name}`, import.meta.url), "utf8"));
     await pg.query("insert into _migrations(name) values($1)", [name]);
   }
@@ -205,6 +206,26 @@ test("complete schema inspection uses a read-only snapshot and returns counts wi
     assert.equal(statements.at(-1), "ROLLBACK");
     assert.equal(closed(), true);
     assert.equal((await pg.query("select count(*)::int as n from bookings")).rows[0].n, 1);
+  } finally {
+    await pg.close();
+  }
+});
+
+test("Studio migration is inventoried but only required when the feature is explicitly enabled", async () => {
+  const { pg, pool } = await database(false, true);
+  try {
+    const disabled = await inspectProduction(pool, env);
+    const optional = disabled.migrations.expected.find((entry) => entry.name === "0025_website_studio.sql");
+    assert.deepEqual(optional, { name: "0025_website_studio.sql", applied: false, required: false });
+    assert.equal(disabled.issues.includes("migration_history_incomplete"), false);
+    assert.equal(disabled.migrations.expected.filter((entry) => !entry.required).length, 1);
+    const enabled = await inspectProduction(pool, { ...env, WEBSITE_STUDIO_ENABLED: "true" });
+    assert.equal(enabled.migrations.expected.find((entry) => entry.name === "0025_website_studio.sql").required, true);
+    assert.ok(enabled.issues.includes("migration_history_incomplete"));
+    // A disabled optional feature never makes a missing core migration acceptable.
+    await pg.query("delete from _migrations where name='0006_booking_upload_capability.sql'");
+    const missingCore = await inspectProduction(pool, env);
+    assert.ok(missingCore.issues.includes("migration_history_incomplete"));
   } finally {
     await pg.close();
   }
@@ -302,3 +323,4 @@ test("connection and query failures are sanitized and always release pool resour
     assert.equal(released, !connectionFailure);
   }
 });
+

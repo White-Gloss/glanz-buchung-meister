@@ -4,6 +4,8 @@ import { cities } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { citySeoCopy } from "@/lib/city-copy";
 import { parseBookingSelection } from "@/lib/booking-selection";
+import { loadPublicStudioDocument } from "@/lib/studio-public.functions";
+import { studioHero, studioMetadata } from "@/lib/studio-public";
 
 export const Route = createFileRoute("/abholservice/$city")({
   component: CityPage,
@@ -11,25 +13,26 @@ export const Route = createFileRoute("/abholservice/$city")({
     const { leistung } = parseBookingSelection(search);
     return leistung ? { leistung } : {};
   },
-  loader: ({ params }) => {
+  loader: async ({ params }) => {
     const city = cities.find((c) => c.slug === params.city.toLowerCase());
     if (!city) throw notFound();
-    return city;
+    return { city, document: await loadPublicStudioDocument(`city:${city.slug}`) };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
-    const copy = citySeoCopy(loaderData);
+    const copy = citySeoCopy(loaderData.city);
+    const hero = studioHero(loaderData.document);
     return pageHead({
-      title: copy.title,
-      description: copy.description,
-      path: `/abholservice/${loaderData.slug}`,
-      preloadHero: true,
+      ...studioMetadata(loaderData.document, copy),
+      path: `/abholservice/${loaderData.city.slug}`,
+      ...(hero ? { preloadImage: hero.src, image: hero.src } : { preloadHero: true }),
     });
   },
 });
 
 function CityPage() {
-  const city = Route.useLoaderData();
+  const { city, document } = Route.useLoaderData();
   const { leistung } = Route.useSearch();
-  return <CityLanding city={city} serviceSlug={leistung} />;
+  return <CityLanding city={city} serviceSlug={leistung} editorial={document} />;
 }
+

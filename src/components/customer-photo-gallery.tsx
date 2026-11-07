@@ -1,17 +1,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { customerPhotos, featuredPhotoIds } from "@/data/customer-photos";
+import type { GalleryPhoto } from "@/lib/studio-public";
 import "@/styles/customer-photos.css";
 
-export function CustomerPhotoGallery() {
+export function CustomerPhotoGallery({ photos }: { photos?: readonly GalleryPhoto[] } = {}) {
+  const allPhotos = photos ?? customerPhotos;
   const [category, setCategory] = useState("Auswahl");
   const [active, setActive] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const headingId = useId();
-  const categories = ["Auswahl", "Alle", ...new Set(customerPhotos.map((photo) => photo.category))];
+  const categories = ["Auswahl", "Alle", ...new Set(allPhotos.map((photo) => photo.category))];
   const visible = category === "Auswahl"
-    ? featuredPhotoIds.map((id) => customerPhotos.find((item) => item.id === id)!)
-    : customerPhotos.filter((photo) => category === "Alle" || photo.category === category);
+    ? photos ? allPhotos.slice(0, 6) : featuredPhotoIds.map((id) => customerPhotos.find((item) => item.id === id)!)
+    : allPhotos.filter((photo) => category === "Alle" || photo.category === category);
   // The viewer pages through the photos currently shown, in their displayed order.
   const photo = active === null ? null : (visible[active] ?? null);
 
@@ -47,7 +49,7 @@ export function CustomerPhotoGallery() {
           </button>
         ))}
       </div>
-      <p className="customer-photo-count" role="status">{category === "Auswahl" ? `${visible.length} ausgewählte Motive` : `${visible.length} Kundenbilder`} · Zum Vergrößern auswählen</p>
+      <p className="customer-photo-count" role="status">{visible.length === 0 ? "Aktuell sind hier keine Bilder veröffentlicht." : `${category === "Auswahl" ? `${visible.length} ausgewählte Motive` : `${visible.length} Kundenbilder`} · Zum Vergrößern auswählen`}</p>
       <ul className="customer-photo-grid" data-curated={category === "Auswahl"}>
         {visible.map((item, index) => (
           <li key={item.id}>
@@ -69,7 +71,7 @@ export function CustomerPhotoGallery() {
           </li>
         ))}
       </ul>
-      {category === "Auswahl" && <button type="button" className="customer-photo-all" onClick={() => setCategory("Alle")}>Alle {customerPhotos.length} Bilder ansehen <span aria-hidden>↗</span></button>}
+      {category === "Auswahl" && allPhotos.length > 0 && <button type="button" className="customer-photo-all" onClick={() => setCategory("Alle")}>Alle {allPhotos.length} Bilder ansehen <span aria-hidden>↗</span></button>}
       <dialog
         ref={dialogRef}
         className="customer-photo-dialog"
@@ -103,3 +105,4 @@ export function CustomerPhotoGallery() {
     </>
   );
 }
+

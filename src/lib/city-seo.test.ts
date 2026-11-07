@@ -35,4 +35,16 @@ describe("city landing SEO", () => {
     assert.equal(service.provider.address.addressLocality, site.city);
     assert.deepEqual(service.areaServed, { "@type": "City", name: "Nagold" });
   });
+
+  it("keeps all 19 city canonicals and service areas attached to the single Horb workshop", () => {
+    assert.equal(cities.length, 19);
+    for (const city of cities) {
+      const schema = cityJsonLd(city)["@graph"][0];
+      assert.equal(schema.url, `${site.origin}/abholservice/${city.slug}`, city.slug);
+      assert.equal(schema.provider["@id"], `${site.origin}/#betrieb`, city.slug);
+      assert.equal(schema.provider.address.addressLocality, site.city, city.slug);
+      assert.deepEqual(schema.areaServed, { "@type": "City", name: city.name }, city.slug);
+    }
+  });
 });
+

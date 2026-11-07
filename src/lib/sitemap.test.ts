@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { appendBlogSitemap, blogSitemapUrl, type SitemapBlogRow } from "./sitemap.ts";
-import { createSitemapResponder, loadPublishedSitemapBlogs } from "./sitemap.server.ts";
+import { createSitemapResponder, loadPublishedSitemapBlogs, loadPublishedSitemapPages } from "./sitemap.server.ts";
 import { responseCacheControl } from "../../server/cache-policy.ts";
 import type { Sql } from "./db.ts";
 
@@ -72,6 +72,54 @@ describe("CMS sitemap XML", () => {
 });
 
 describe("CMS sitemap publication query", () => {
+  it("removes About after the Studio switch is disabled while keeping legacy blog discovery", async () => {
+    const config = { enabled: "true", isolatedCi: false };
+    let pageQueries = 0;
+    const sql = ((strings: TemplateStringsArray) => {
+      const statement = strings.join("?");
+      if (statement.includes("studio_key")) {
+        pageQueries += 1;
+        return Promise.resolve([{ path: "/ueber-uns", updated_at: "2026-11-07T10:00:00Z" }]);
+      }
+      return Promise.resolve([row("legacy-blog")]);
+    }) as Sql;
+    const respond = createSitemapResponder({
+      staticXml, origin,
+      loadPublished: () => loadPublishedSitemapBlogs(sql),
+      loadPublishedPages: () => loadPublishedSitemapPages(sql, config),
+    });
+    assert.match(await (await respond()).text(), /\/ueber-uns<\/loc>/);
+    assert.equal(pageQueries, 1);
+    config.enabled = "false";
+    const disabled = await (await respond()).text();
+    assert.doesNotMatch(disabled, /\/ueber-uns<\/loc>/);
+    assert.match(disabled, /\/ratgeber\/legacy-blog<\/loc>/);
+    assert.equal(pageQueries, 1, "A disabled Studio must not query optional Studio tables.");
+  });
+
+  it("reads only the published About revision in its tenant, without exposing draft edit times", async () => {
+    let statement = "";
+    let parameters: unknown[] = [];
+    const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
+      statement = strings.join("?").replace(/\s+/g, " ").trim();
+      parameters = values;
+      return Promise.resolve([{ path: "/ueber-uns", updated_at: "2026-11-07T10:00:00Z" }]);
+    }) as Sql;
+    assert.equal((await loadPublishedSitemapPages(sql, { enabled: "true", isolatedCi: false }))[0].path, "/ueber-uns");
+    assert.deepEqual(parameters, ["white-gloss", "about"]);
+    assert.match(statement, /r\.shop_id = i\.shop_id and r\.item_id = i\.id and r\.id = i\.published_revision_id/);
+    assert.match(statement, /where i\.shop_id = \? and i\.studio_key = \? and i\.published = true and i\.archived_at is null/);
+    assert.match(statement, /r\.created_at as updated_at/);
+    assert.doesNotMatch(statement, /draft_revision_id|i\.updated_at/);
+  });
+
+  it("keeps the old sitemap available before the optional Studio schema exists", async () => {
+    const missingSchema = (() => Promise.reject({ code: "42P01", message: 'relation "cms_revisions" does not exist' })) as unknown as Sql;
+    assert.deepEqual(await loadPublishedSitemapPages(missingSchema, { enabled: "true", isolatedCi: false }), []);
+    const outage = (() => Promise.reject(new Error("database unavailable"))) as unknown as Sql;
+    await assert.rejects(() => loadPublishedSitemapPages(outage, { enabled: "true", isolatedCi: false }), /database unavailable/);
+  });
+
   it("uses the public article tenant, blog filter, publication state and selection order", async () => {
     let statement = "";
     let parameters: unknown[] = [];
@@ -89,6 +137,37 @@ describe("CMS sitemap publication query", () => {
 });
 
 describe("CMS sitemap responses", () => {
+  it("does not leak an old static About entry when the publication read fails", async () => {
+    const inventory = staticXml.replace("</urlset>", `<url><loc>${origin}/ueber-uns</loc></url></urlset>`);
+    const respond = createSitemapResponder({
+      staticXml: inventory, origin,
+      loadPublished: async () => { throw new Error("unavailable"); },
+    });
+    assert.doesNotMatch(await (await respond()).text(), /\/ueber-uns<\/loc>/);
+  });
+
+  it("includes About only while published and never adds editor or arbitrary page URLs", async () => {
+    let pages = [] as { path: string; updated_at: string | Date | null }[];
+    const respond = createSitemapResponder({
+      staticXml, origin,
+      loadPublished: async () => [row("existing-blog")],
+      loadPublishedPages: async () => pages,
+    });
+    assert.doesNotMatch(await (await respond()).text(), /\/ueber-uns<\/loc>/);
+    pages = [
+      { path: "/ueber-uns", updated_at: "2026-11-07T10:00:00Z" },
+      { path: "/admin/studio", updated_at: "2026-11-07T11:00:00Z" },
+      { path: "/ueber-uns?preview=1", updated_at: null },
+      { path: "/unreviewed-location", updated_at: null },
+    ];
+    const published = await (await respond()).text();
+    assert.match(published, /<loc>https:\/\/white-gloss\.de\/ueber-uns<\/loc><lastmod>2026-11-07T10:00:00.000Z<\/lastmod>/);
+    assert.match(published, /\/ratgeber\/existing-blog<\/loc>/);
+    assert.doesNotMatch(published, /admin\/studio|preview=1|unreviewed-location/);
+    pages = [];
+    assert.doesNotMatch(await (await respond()).text(), /\/ueber-uns<\/loc>/);
+  });
+
   it("observes publication and removal on subsequent requests without serving stale CMS entries", async () => {
     let published = [row("published")];
     let calls = 0;
@@ -159,3 +238,4 @@ describe("CMS sitemap responses", () => {
     }
   });
 });
+

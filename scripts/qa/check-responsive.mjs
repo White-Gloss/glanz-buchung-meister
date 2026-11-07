@@ -5,12 +5,14 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { qaBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
 import { cities, services } from "../../src/data/site.ts";
 
 const browser = await chromium.launch({ headless: true });
 const results = [];
 const failures = [];
 let progress = { stage: "starting", completed: 0, updatedAt: new Date().toISOString() };
+let contextSequence = 0;
 async function scrollAndRender(page, top) {
   await page.evaluate((position) => window.scrollTo(0, position), top);
   // The runner clock also works when headless Chromium suspends frame/timer
@@ -18,7 +20,7 @@ async function scrollAndRender(page, top) {
   await new Promise((done) => setTimeout(done, 32));
 }
 async function openPage(viewport) {
-  const context = await browser.newContext({ reducedMotion: "reduce", viewport });
+  const context = await browser.newContext({ reducedMotion: "reduce", viewport, extraHTTPHeaders: qaClientHeaders("responsive", `context-${contextSequence++}`) });
   try {
     // No third-party analytics and no genuine submissions/uploads during QA.
     await context.route("**/*", async (route) => {
@@ -63,6 +65,9 @@ try {
     const { context, page } = await openPage({ width, height: 844 });
     try {
       for (const path of paths) {
+        // Each page/width is an independent crawl case, not one customer making
+        // hundreds of booking-calendar requests in a minute.
+        await context.setExtraHTTPHeaders(qaClientHeaders("responsive", `${width}:${path}`));
         progress = { stage: "navigation", path, width, completed: results.length, updatedAt: new Date().toISOString() };
         await page.goto(qaBase + path, { waitUntil: "networkidle" });
         // content-visibility:auto defers layout below the fold. Exercise the real
@@ -87,6 +92,7 @@ try {
           viewport: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth,
           h1: [...document.querySelectorAll("h1")].map((e) => e.textContent),
+          duplicateMinutePeriod: /\bMin\.\./.test(document.querySelector("main")?.textContent ?? ""),
           horizontalOffenders: [...document.querySelectorAll("main *")]
             .filter((e) => {
               const box = e.getBoundingClientRect();
@@ -107,9 +113,83 @@ try {
           });
         }
         if (state.h1.length !== 1) failures.push(`${path} @${width}: one H1 required`);
+        if (path.startsWith("/abholservice/") && state.duplicateMinutePeriod)
+          failures.push(`${path} @${width}: journey text has a duplicate sentence-ending period`);
         if (state.scroll > state.viewport + 2)
           failures.push(`${path} @${width}: horizontal overflow ${JSON.stringify(state)}`);
       }
+    } finally {
+      await context.close();
+    }
+  }
+  // This independent first visit keeps the crawl cases and their consent state
+  // unchanged, while exercising the real dismiss/reopen controls on a city hub.
+  {
+    const { context, page } = await openPage({ width: 390, height: 844 });
+    try {
+      progress = { stage: "city-consent-overlay", path: "/abholservice/nagold", width: 390, completed: results.length, updatedAt: new Date().toISOString() };
+      await page.goto(qaBase + "/abholservice/nagold", { waitUntil: "networkidle" });
+      const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+      const cityCta = page.locator(".city-wa-bar");
+      await consent.waitFor({ state: "visible" });
+      await page.locator('body[data-consent-banner="open"]').waitFor({ state: "attached" });
+      assert.equal(await cityCta.count(), 1, "The city CTA exists before testing its consent-dependent visibility.");
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), null, "Use a genuine first visit.");
+      await cityCta.waitFor({ state: "hidden" });
+      await scrollAndRender(page, 0);
+      const heading = await page.locator("main h1").boundingBox();
+      const banner = await consent.boundingBox();
+      assert.ok(heading && banner && heading.y + heading.height <= banner.y,
+        `Nagold's full heading remains above consent: ${JSON.stringify({ heading, banner })}`);
+      await page.screenshot({ path: ".qa-output/mobile-390--abholservice-nagold.png", fullPage: false });
+
+      await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+      await consent.waitFor({ state: "hidden" });
+      await cityCta.waitFor({ state: "visible" });
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), "rejected");
+
+      // The footer button is rendered by CookieSettingsButton with this name.
+      await page.getByRole("button", { name: "Cookie-Einstellungen", exact: true }).click();
+      await consent.waitFor({ state: "visible" });
+      await cityCta.waitFor({ state: "hidden" });
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), "rejected",
+        "Reopening settings must not change the stored decision.");
+      results.push({ path: "/abholservice/nagold", width: 390, firstVisit: true, cityCtaHiddenDuringConsent: true, cityCtaVisibleAfterRejection: true, cityCtaHiddenAfterReopen: true });
+    } finally {
+      await context.close();
+    }
+  }
+  // Check both sides of the 900px navigation breakpoint. The final design
+  // stylesheet must not make the mobile booking link visible on desktop too.
+  for (const width of [320, 390, 768, 900, 1024, 1440]) {
+    const { context, page } = await openPage({ width, height: 1000 });
+    try {
+      progress = { stage: "header-navigation", path: "/", width, completed: results.length, updatedAt: new Date().toISOString() };
+      await page.goto(qaBase + "/", { waitUntil: "networkidle" });
+      const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+      if (await consent.isVisible()) {
+        await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+        await consent.waitFor({ state: "hidden" });
+      }
+      const header = page.locator(".site-header");
+      const booking = header.locator(".header-booking-link:visible, .header-film-booking:visible");
+      assert.equal(await booking.count(), 1, `${width}px: show one primary booking link in the header.`);
+      const bounds = await booking.boundingBox();
+      assert.ok(bounds && bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width,
+        `${width}px: the booking link must retain its visible touch target.`);
+      const toggle = header.getByRole("button", { name: "Menü öffnen", exact: true });
+      await toggle.focus();
+      await toggle.press("Enter");
+      const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
+      await menu.waitFor({ state: "visible" });
+      assert.equal(await menu.evaluate((element) => element.contains(document.activeElement)), true,
+        `${width}px: keyboard focus enters the open menu.`);
+      await page.keyboard.press("Escape");
+      await menu.waitFor({ state: "hidden" });
+      assert.equal(await toggle.evaluate((element) => element === document.activeElement), true,
+        `${width}px: closing the menu restores focus to its trigger.`);
+      await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
+      results.push({ path: "/", width, headerBookingLinks: 1, menuKeyboardFocusReturned: true });
     } finally {
       await context.close();
     }
@@ -201,3 +281,4 @@ try {
 }
 assert.equal(failures.length, 0, failures.join("\n"));
 console.log(`${results.length} responsive checks passed; no form or upload submitted.`);
+

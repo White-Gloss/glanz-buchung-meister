@@ -128,7 +128,10 @@ test("recorded migrations cannot hide missing auth or booking tables", async () 
     for (const table of ["account", "verification", "inbox_messages", "cms_items"]) {
       await db.exec("begin");
       try {
-        await db.exec(`drop table ${table}`);
+        // This transaction deliberately simulates missing core schema. Optional
+        // CMS foreign keys must not prevent the fixture from reaching the gate.
+        // ROLLBACK restores both the table and every dependent constraint.
+        await db.exec(`drop table ${table} cascade`);
         assert.ok(
           (await inspect()).some((issue) => issue.includes(`${table}.`)),
           table,
@@ -330,3 +333,4 @@ test("release readiness gate passes without runtime-ensured migrations such as Q
     await db.close();
   }
 });
+

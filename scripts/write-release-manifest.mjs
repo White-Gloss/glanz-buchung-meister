@@ -18,10 +18,17 @@ export const RUNTIME_ENSURED_MIGRATIONS = [
   "0024_qonto_webhook.sql",
 ];
 
+/**
+ * Additive, opt-in features check their own schema before use. These are NOT
+ * runtime-migrated: production DDL still requires separate operator approval.
+ * Keep this exact allowlist; unknown future migrations remain required.
+ */
+export const OPTIONAL_FEATURE_MIGRATIONS = ["0025_website_studio.sql"];
+
 /** @param {string[]} names */
 export function requiredReleaseMigrations(names) {
   return names
-    .filter((name) => name.endsWith(".sql") && !RUNTIME_ENSURED_MIGRATIONS.includes(name))
+    .filter((name) => name.endsWith(".sql") && !RUNTIME_ENSURED_MIGRATIONS.includes(name) && !OPTIONAL_FEATURE_MIGRATIONS.includes(name))
     .sort();
 }
 
@@ -35,3 +42,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   );
   console.log(`[release] ${names.length} erforderliche Migrationen im Build vermerkt.`);
 }
+

@@ -22,6 +22,10 @@ export function responseCacheControl({
   hasSetCookie?: boolean;
 }): string | undefined {
   if (pathname === "/auftragsstatus" || pathname === "/danke") return "private, no-store";
+  // Drafts, authenticated server functions and revocable media must never be
+  // retained by a shared cache, including error responses or pre-existing TTLs.
+  if (/^\/(?:admin|_serverFn|api\/(?:auth|studio-media(?:-upload)?))(?:\/|$)/.test(pathname))
+    return "private, no-store";
   if (/(?:^|,)\s*(?:private|no-store|no-cache)(?:\s|=|,|$)/i.test(existing)) {
     return undefined;
   }
@@ -44,3 +48,4 @@ export function responseCacheControl({
   if (/\.(?:xml|txt)$/i.test(pathname)) return DISCOVERY_CACHE_CONTROL;
   return undefined;
 }
+

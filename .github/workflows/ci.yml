@@ -90,7 +90,7 @@ jobs:
 
   verify:
     runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -103,6 +103,7 @@ jobs:
           cache: npm
 
       - name: Abhängigkeiten installieren
+        id: dependencies
         run: npm ci --ignore-scripts
 
       - name: Produktionsabhängigkeiten prüfen
@@ -123,10 +124,14 @@ jobs:
         run: npm run typecheck:functions
 
       - name: Automatisierte Tests ausführen
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: npm test
 
       - name: SEO-Qualitätsgate ohne Server prüfen
         run: node --test src/lib/seo-policy.test.ts src/lib/seo-intents.test.ts
+
+      - name: Strukturierte Daten aller Abholorte prüfen
+        run: npx vitest run src/lib/city-seo.test.ts
 
       - name: Qualitätsskripte syntaktisch prüfen
         run: |
@@ -138,6 +143,8 @@ jobs:
           node --check scripts/qa/check-lighthouse.mjs
           node --check scripts/qa/lighthouse-digest.mjs
           node --check scripts/qa/check-hero-stability.mjs
+          node --check scripts/qa/check-website-studio.mjs
+          node --check scripts/qa/check-cross-browser.mjs
           node --check lighthouserc.mobile.cjs
           node --check lighthouserc.desktop.cjs
           bash -n scripts/check-migrations.sh
@@ -160,8 +167,12 @@ jobs:
           fi
 
       - name: Isolierte SSR-, Buchungs-, SEO-, Mobil-, Lighthouse- und Heroabläufe prüfen
-        timeout-minutes: 12
+        timeout-minutes: 18
         run: node scripts/qa/run-checks.mjs
+
+      - name: Kompakte visuelle Prüfnachweise ausgeben
+        if: always()
+        run: node scripts/qa/export-review-images.mjs
 
       - name: Isolierte Prüfnachweise sichern
         if: always()
@@ -172,3 +183,72 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
+
+  studio:
+    # Separate ephemeral database and media store: a Studio failure must not
+    # prevent the independent public-site Lighthouse and browser evidence.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+      - name: Produktions-Build erstellen
+        run: npm run build
+      - name: Chromium bereitstellen
+        run: npx playwright install --with-deps chromium
+      - name: Studio mit geschützten Testdaten prüfen
+        timeout-minutes: 5
+        run: node scripts/qa/run-checks.mjs --studio-only
+      - name: Kompakte Studio-Prüfnachweise ausgeben
+        if: always()
+        run: node scripts/qa/export-review-images.mjs
+      - name: Studio-Prüfnachweise sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-qa-results
+          path: .qa-output/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  cross-browser:
+    # Additional engines run on a disposable runner, never install OS packages
+    # on the self-hosted production VPS. Existing verify remains independent.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+      - name: Produktions-Build erstellen
+        run: npm run build
+      - name: Eingecheckten Route-Tree gegen den Build prüfen
+        run: git diff --exit-code -- src/routeTree.gen.ts
+      - name: Firefox und WebKit bereitstellen
+        run: npx playwright install --with-deps firefox webkit
+      - name: Isolierte Browserprüfung
+        run: node scripts/qa/run-checks.mjs --cross-browser-only
+      - name: Browsernachweise sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cross-browser-qa-results
+          path: .qa-output/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+

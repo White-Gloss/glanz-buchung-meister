@@ -19,13 +19,14 @@ export function isIsolatedGithubCi({
   cwd = process.cwd(),
   realpath = realpathSync,
 } = {}) {
+  const workspace = env.GITHUB_WORKSPACE;
   if (platform !== "linux" || env.GITHUB_ACTIONS !== "true" ||
       env.GITHUB_REPOSITORY !== "White-Gloss/glanz-buchung-meister" ||
       env.GITHUB_WORKFLOW !== "CI" || !/^\d+$/.test(env.GITHUB_RUN_ID || "") ||
-      !["github-hosted", "self-hosted"].includes(env.RUNNER_ENVIRONMENT) ||
-      !env.GITHUB_WORKSPACE) return false;
+      !["github-hosted", "self-hosted"].includes(env.RUNNER_ENVIRONMENT || "") ||
+      !workspace) return false;
   try {
-    return realpath(cwd) === realpath(env.GITHUB_WORKSPACE);
+    return realpath(cwd) === realpath(workspace);
   } catch {
     return false;
   }
@@ -35,6 +36,7 @@ export function assertIsolatedGithubCi() {
   if (!isIsolatedGithubCi()) blockLocalHosting();
 }
 
+/** @param {string | URL} entryUrl */
 export function isActiveIonosRelease(entryUrl, {
   platform = process.platform,
   cwd = process.cwd(),
@@ -51,6 +53,8 @@ export function isActiveIonosRelease(entryUrl, {
   }
 }
 
+/** @param {string | URL} entryUrl */
 export function assertProductionHosting(entryUrl) {
   if (!isIsolatedGithubCi() && !isActiveIonosRelease(entryUrl)) blockLocalHosting();
 }
+

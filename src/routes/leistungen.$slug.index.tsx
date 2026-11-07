@@ -19,6 +19,9 @@ import { ServicePriceNote } from "@/components/service-price-note";
 import { pickupAreaLink } from "@/lib/seo-policy";
 import { articles } from "@/data/ratgeber";
 import { articleNavigation } from "@/lib/article-navigation";
+import { WebsiteStudioContent } from "@/components/website-studio-content";
+import { loadPublicStudioDocument } from "@/lib/studio-public.functions";
+import { studioHero, studioMetadata } from "@/lib/studio-public";
 
 export const Route = createFileRoute("/leistungen/$slug/")({
   component: ServicePage,
@@ -26,21 +29,27 @@ export const Route = createFileRoute("/leistungen/$slug/")({
     const { ort } = parseBookingSelection(search);
     return ort ? { ort } : {};
   },
-  loader: ({ params }) => {
+  loader: async ({ params }) => {
     const service = services.find((s) => s.slug === params.slug);
     if (!service) throw notFound();
-    return service;
+    return { service, document: await loadPublicStudioDocument(`service:${service.slug}`) };
   },
   head: ({ loaderData }) =>
     pageHead({
-      title: loaderData?.metaTitle ?? site.name,
-      description: loaderData?.description ?? "",
-      path: `/leistungen/${loaderData?.slug ?? ""}`,
+      ...studioMetadata(loaderData?.document, {
+        title: loaderData?.service.metaTitle ?? site.name,
+        description: loaderData?.service.description ?? "",
+      }),
+      path: `/leistungen/${loaderData?.service.slug ?? ""}`,
+      ...(studioHero(loaderData?.document) ? { preloadImage: studioHero(loaderData?.document)?.src } : {}),
     }),
 });
 
 function ServicePage() {
-  const s = Route.useLoaderData();
+  const { service: s, document } = Route.useLoaderData();
+  const hero = studioHero(document);
+  const title = document?.content.title.trim() || s.title;
+  const lead = document?.content.lead.trim() || s.teaser;
   const { ort } = Route.useSearch();
   const request = serviceBookingSelection(s.slug, ort);
   const pack = packages.find((p) => packageServiceSlug[p.id] === s.slug);
@@ -67,9 +76,9 @@ function ServicePage() {
               {
                 "@type": s.pendingApproval ? "WebPage" : "Service",
                 "@id": `${site.origin}/leistungen/${s.slug}#service`,
-                name: s.title,
+                name: title,
                 url: `${site.origin}/leistungen/${s.slug}`,
-                description: s.description,
+                description: document?.content.metaDescription.trim() || s.description,
                 ...(!s.pendingApproval
                   ? {
                       provider: {
@@ -105,10 +114,11 @@ function ServicePage() {
       />
       <PageHero
         src={s.image}
-        alt={s.imageAlt}
+        alt={hero?.alt ?? s.imageAlt}
+        media={hero ? <img src={hero.src} alt={hero.alt} width={hero.width} height={hero.height} loading="eager" fetchPriority="high" decoding="async" className="size-full object-cover" /> : undefined}
         kicker="Leistung"
-        title={s.title}
-        lead={s.teaser}
+        title={title}
+        lead={lead}
         crumbs={[
           { label: "Startseite", to: "/" },
           { label: "Leistungen", to: "/leistungen" },
@@ -151,7 +161,7 @@ function ServicePage() {
           ))}
         </ul>
         <div className="mt-8 space-y-4 text-muted leading-relaxed">
-          {s.body.map((p) => (
+          {document ? <WebsiteStudioContent content={document.content} assets={document.assets} headingLevel={1} showIntro={false} showHero={false} /> : s.body.map((p) => (
             <p key={p}>{p}</p>
           ))}
         </div>
@@ -313,3 +323,4 @@ function ServicePage() {
     </main>
   );
 }
+

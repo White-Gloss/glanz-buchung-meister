@@ -15,6 +15,63 @@ import {
 } from "./seo-policy.ts";
 
 const inventory = readFileSync(new URL("../data/sitemap-static.xml", import.meta.url), "utf8");
+const robots = readFileSync(new URL("../../public/robots.txt", import.meta.url), "utf8");
+
+// Test the ASCII path rules used by this file, not a general-purpose REP parser.
+// Google: longest matching rule wins, with Allow winning equally specific rules.
+// https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec
+function crawlerAllowed(source: string, path: string) {
+  const rules = [...source.matchAll(/^(Allow|Disallow):\s*(\S+)/gim)]
+    .map(([, directive, rule]) => {
+      const anchored = rule.endsWith("$");
+      const pattern = (anchored ? rule.slice(0, -1) : rule)
+        .split("*")
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join(".*");
+      return {
+        allowed: directive.toLowerCase() === "allow",
+        specificity: rule.replace(/\*+$/, "").length,
+        matches: new RegExp(`^${pattern}${anchored ? "$" : ""}`).test(path),
+      };
+    })
+    .filter((rule) => rule.matches)
+    .sort((a, b) => b.specificity - a.specificity || Number(b.allowed) - Number(a.allowed));
+  return rules[0]?.allowed ?? true;
+}
+
+test("crawler path fixture follows Google's specificity and wildcard examples", () => {
+  assert.equal(crawlerAllowed("Allow: /p\nDisallow: /", "/page"), true);
+  assert.equal(crawlerAllowed("Disallow: /folder\nAllow: /folder", "/folder/page"), true);
+  assert.equal(crawlerAllowed("Allow: /page\nDisallow: /*.htm", "/page.htm"), false);
+  assert.equal(crawlerAllowed("Allow: /page\nDisallow: /*.ph", "/page.php5"), true);
+  assert.equal(crawlerAllowed("Allow: /$\nDisallow: /", "/page.htm"), false);
+  assert.equal(crawlerAllowed("Allow: /$\nDisallow: /", "/"), true);
+});
+
+test("robots allows published Studio images while previews and private APIs remain blocked", () => {
+  // Keep this fixture honest if crawler-specific groups are introduced later.
+  assert.deepEqual([...robots.matchAll(/^User-agent:\s*(\S+)/gim)].map((match) => match[1]), ["*"]);
+  const image = "/api/studio-media/12345678-1234-4123-8123-123456789abc";
+  for (const [path, allowed] of [
+    ["/", true],
+    ["/galerie", true],
+    [image, true],
+    [`${image}?preview=1`, false],
+    [`${image}?version=2&preview=1`, false],
+    [`${image}?download=1`, false],
+    ["/api/studio-media-upload", false],
+    ["/api/operator", false],
+    ["/api/ro-photo?id=private-photo", false],
+    ["/api/availability", false],
+    ["/admin/website-studio", false],
+    ["/login", false],
+  ] as const) {
+    assert.equal(crawlerAllowed(robots, path), allowed, path);
+    // REP precedence must not accidentally depend on directive order.
+    assert.equal(crawlerAllowed(robots.split(/\r?\n/).reverse().join("\n"), path), allowed, path);
+  }
+});
+
 const evidence: LocalSeoEvidence = {
   reviewedOn: "2026-09-27",
   available: true,
@@ -101,3 +158,4 @@ test("sitemap, robots and links agree and cannot override noindex", () => {
     );
   }
 });
+

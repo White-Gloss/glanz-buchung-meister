@@ -32,6 +32,7 @@ import { Route as PreiseRouteImport } from './routes/preise'
 import { Route as QualitaetRouteImport } from './routes/qualitaet'
 import { Route as RatgeberRouteImport } from './routes/ratgeber'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as UeberUnsRouteImport } from './routes/ueber-uns'
 import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AbholserviceIndexRouteImport } from './routes/abholservice.index'
 import { Route as AbholserviceCityRouteImport } from './routes/abholservice.$city'
@@ -49,6 +50,7 @@ import { Route as AdminKundenRouteImport } from './routes/admin.kunden'
 import { Route as AdminLeistungenRouteImport } from './routes/admin.leistungen'
 import { Route as AdminOdooRouteImport } from './routes/admin.odoo'
 import { Route as AdminPosteingangRouteImport } from './routes/admin.posteingang'
+import { Route as AdminStudioRouteImport } from './routes/admin.studio'
 import { Route as AdminUnterlagenRouteImport } from './routes/admin.unterlagen'
 import { Route as AdminZohoRouteImport } from './routes/admin.zoho'
 import { Route as AdminZustandRouteImport } from './routes/admin.zustand'
@@ -62,6 +64,7 @@ import { Route as ApiQontoWebhookRouteImport } from './routes/api/qonto-webhook'
 import { Route as ApiRoCallbackRouteImport } from './routes/api.ro-callback'
 import { Route as ApiRoDiagnosticsRouteImport } from './routes/api.ro-diagnostics'
 import { Route as ApiRoPhotoRouteImport } from './routes/api.ro-photo'
+import { Route as ApiStudioMediaUploadRouteImport } from './routes/api.studio-media-upload'
 import { Route as ApiWhatsappWebhookRouteImport } from './routes/api/whatsapp-webhook'
 import { Route as ApiZohoWebhookRouteImport } from './routes/api.zoho-webhook'
 import { Route as LeistungenIndexRouteImport } from './routes/leistungen.index'
@@ -69,6 +72,7 @@ import { Route as LeistungenSlugRouteImport } from './routes/leistungen.$slug'
 import { Route as RatgeberIndexRouteImport } from './routes/ratgeber.index'
 import { Route as RatgeberSlugRouteImport } from './routes/ratgeber.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiStudioMediaIdRouteImport } from './routes/api.studio-media.$id'
 import { Route as LeistungenSlugIndexRouteImport } from './routes/leistungen.$slug.index'
 import { Route as LeistungenSlugCityRouteImport } from './routes/leistungen.$slug.$city'
 
@@ -187,6 +191,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UeberUnsRoute = UeberUnsRouteImport.update({
+  id: '/ueber-uns',
+  path: '/ueber-uns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WiderrufRoute = WiderrufRouteImport.update({
   id: '/widerruf',
   path: '/widerruf',
@@ -272,6 +281,11 @@ const AdminPosteingangRoute = AdminPosteingangRouteImport.update({
   path: '/posteingang',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStudioRoute = AdminStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUnterlagenRoute = AdminUnterlagenRouteImport.update({
   id: '/unterlagen',
   path: '/unterlagen',
@@ -337,6 +351,11 @@ const ApiRoPhotoRoute = ApiRoPhotoRouteImport.update({
   path: '/api/ro-photo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudioMediaUploadRoute = ApiStudioMediaUploadRouteImport.update({
+  id: '/api/studio-media-upload',
+  path: '/api/studio-media-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
   id: '/api/whatsapp-webhook',
   path: '/api/whatsapp-webhook',
@@ -370,6 +389,11 @@ const RatgeberSlugRoute = RatgeberSlugRouteImport.update({
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudioMediaIdRoute = ApiStudioMediaIdRouteImport.update({
+  id: '/api/studio-media/$id',
+  path: '/api/studio-media/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeistungenSlugIndexRoute = LeistungenSlugIndexRouteImport.update({
@@ -407,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ueber-uns': typeof UeberUnsRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -422,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/admin/leistungen': typeof AdminLeistungenRoute
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/studio': typeof AdminStudioRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -435,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
+  '/api/studio-media-upload': typeof ApiStudioMediaUploadRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
@@ -444,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/leistungen/': typeof LeistungenIndexRoute
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/studio-media/$id': typeof ApiStudioMediaIdRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
   '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
@@ -467,6 +495,7 @@ export interface FileRoutesByTo {
   '/preise': typeof PreiseRoute
   '/qualitaet': typeof QualitaetRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ueber-uns': typeof UeberUnsRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -482,6 +511,7 @@ export interface FileRoutesByTo {
   '/admin/leistungen': typeof AdminLeistungenRoute
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/studio': typeof AdminStudioRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -495,6 +525,7 @@ export interface FileRoutesByTo {
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
+  '/api/studio-media-upload': typeof ApiStudioMediaUploadRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/ratgeber/$slug': typeof RatgeberSlugRoute
@@ -503,6 +534,7 @@ export interface FileRoutesByTo {
   '/leistungen': typeof LeistungenIndexRoute
   '/ratgeber': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/studio-media/$id': typeof ApiStudioMediaIdRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
   '/leistungen/$slug': typeof LeistungenSlugIndexRoute
 }
@@ -531,6 +563,7 @@ export interface FileRoutesById {
   '/qualitaet': typeof QualitaetRoute
   '/ratgeber': typeof RatgeberRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ueber-uns': typeof UeberUnsRoute
   '/widerruf': typeof WiderrufRoute
   '/abholservice/$city': typeof AbholserviceCityRoute
   '/admin/automatisierung': typeof AdminAutomatisierungRoute
@@ -546,6 +579,7 @@ export interface FileRoutesById {
   '/admin/leistungen': typeof AdminLeistungenRoute
   '/admin/odoo': typeof AdminOdooRoute
   '/admin/posteingang': typeof AdminPosteingangRoute
+  '/admin/studio': typeof AdminStudioRoute
   '/admin/unterlagen': typeof AdminUnterlagenRoute
   '/admin/zoho': typeof AdminZohoRoute
   '/admin/zustand': typeof AdminZustandRoute
@@ -559,6 +593,7 @@ export interface FileRoutesById {
   '/api/ro-callback': typeof ApiRoCallbackRoute
   '/api/ro-diagnostics': typeof ApiRoDiagnosticsRoute
   '/api/ro-photo': typeof ApiRoPhotoRoute
+  '/api/studio-media-upload': typeof ApiStudioMediaUploadRoute
   '/api/whatsapp-webhook': typeof ApiWhatsappWebhookRoute
   '/api/zoho-webhook': typeof ApiZohoWebhookRoute
   '/leistungen/$slug': typeof LeistungenSlugRouteWithChildren
@@ -568,6 +603,7 @@ export interface FileRoutesById {
   '/leistungen/': typeof LeistungenIndexRoute
   '/ratgeber/': typeof RatgeberIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/studio-media/$id': typeof ApiStudioMediaIdRoute
   '/leistungen/$slug/$city': typeof LeistungenSlugCityRoute
   '/leistungen/$slug/': typeof LeistungenSlugIndexRoute
 }
@@ -597,6 +633,7 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/ratgeber'
     | '/sitemap.xml'
+    | '/ueber-uns'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -612,6 +649,7 @@ export interface FileRouteTypes {
     | '/admin/leistungen'
     | '/admin/odoo'
     | '/admin/posteingang'
+    | '/admin/studio'
     | '/admin/unterlagen'
     | '/admin/zoho'
     | '/admin/zustand'
@@ -625,6 +663,7 @@ export interface FileRouteTypes {
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
+    | '/api/studio-media-upload'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/leistungen/$slug'
@@ -634,6 +673,7 @@ export interface FileRouteTypes {
     | '/leistungen/'
     | '/ratgeber/'
     | '/api/auth/$'
+    | '/api/studio-media/$id'
     | '/leistungen/$slug/$city'
     | '/leistungen/$slug/'
   fileRoutesByTo: FileRoutesByTo
@@ -657,6 +697,7 @@ export interface FileRouteTypes {
     | '/preise'
     | '/qualitaet'
     | '/sitemap.xml'
+    | '/ueber-uns'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -672,6 +713,7 @@ export interface FileRouteTypes {
     | '/admin/leistungen'
     | '/admin/odoo'
     | '/admin/posteingang'
+    | '/admin/studio'
     | '/admin/unterlagen'
     | '/admin/zoho'
     | '/admin/zustand'
@@ -685,6 +727,7 @@ export interface FileRouteTypes {
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
+    | '/api/studio-media-upload'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/ratgeber/$slug'
@@ -693,6 +736,7 @@ export interface FileRouteTypes {
     | '/leistungen'
     | '/ratgeber'
     | '/api/auth/$'
+    | '/api/studio-media/$id'
     | '/leistungen/$slug/$city'
     | '/leistungen/$slug'
   id:
@@ -720,6 +764,7 @@ export interface FileRouteTypes {
     | '/qualitaet'
     | '/ratgeber'
     | '/sitemap.xml'
+    | '/ueber-uns'
     | '/widerruf'
     | '/abholservice/$city'
     | '/admin/automatisierung'
@@ -735,6 +780,7 @@ export interface FileRouteTypes {
     | '/admin/leistungen'
     | '/admin/odoo'
     | '/admin/posteingang'
+    | '/admin/studio'
     | '/admin/unterlagen'
     | '/admin/zoho'
     | '/admin/zustand'
@@ -748,6 +794,7 @@ export interface FileRouteTypes {
     | '/api/ro-callback'
     | '/api/ro-diagnostics'
     | '/api/ro-photo'
+    | '/api/studio-media-upload'
     | '/api/whatsapp-webhook'
     | '/api/zoho-webhook'
     | '/leistungen/$slug'
@@ -757,6 +804,7 @@ export interface FileRouteTypes {
     | '/leistungen/'
     | '/ratgeber/'
     | '/api/auth/$'
+    | '/api/studio-media/$id'
     | '/leistungen/$slug/$city'
     | '/leistungen/$slug/'
   fileRoutesById: FileRoutesById
@@ -785,6 +833,7 @@ export interface RootRouteChildren {
   QualitaetRoute: typeof QualitaetRoute
   RatgeberRoute: typeof RatgeberRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  UeberUnsRoute: typeof UeberUnsRoute
   WiderrufRoute: typeof WiderrufRoute
   ApiAutomationCronRoute: typeof ApiAutomationCronRoute
   ApiAvailabilityRoute: typeof ApiAvailabilityRoute
@@ -796,9 +845,11 @@ export interface RootRouteChildren {
   ApiRoCallbackRoute: typeof ApiRoCallbackRoute
   ApiRoDiagnosticsRoute: typeof ApiRoDiagnosticsRoute
   ApiRoPhotoRoute: typeof ApiRoPhotoRoute
+  ApiStudioMediaUploadRoute: typeof ApiStudioMediaUploadRoute
   ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
   ApiZohoWebhookRoute: typeof ApiZohoWebhookRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiStudioMediaIdRoute: typeof ApiStudioMediaIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -964,6 +1015,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ueber-uns': {
+      id: '/ueber-uns'
+      path: '/ueber-uns'
+      fullPath: '/ueber-uns'
+      preLoaderRoute: typeof UeberUnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/widerruf': {
       id: '/widerruf'
       path: '/widerruf'
@@ -1083,6 +1141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPosteingangRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/studio': {
+      id: '/admin/studio'
+      path: '/studio'
+      fullPath: '/admin/studio'
+      preLoaderRoute: typeof AdminStudioRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/unterlagen': {
       id: '/admin/unterlagen'
       path: '/unterlagen'
@@ -1174,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRoPhotoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/studio-media-upload': {
+      id: '/api/studio-media-upload'
+      path: '/api/studio-media-upload'
+      fullPath: '/api/studio-media-upload'
+      preLoaderRoute: typeof ApiStudioMediaUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/whatsapp-webhook': {
       id: '/api/whatsapp-webhook'
       path: '/api/whatsapp-webhook'
@@ -1223,6 +1295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/studio-media/$id': {
+      id: '/api/studio-media/$id'
+      path: '/api/studio-media/$id'
+      fullPath: '/api/studio-media/$id'
+      preLoaderRoute: typeof ApiStudioMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leistungen/$slug/': {
       id: '/leistungen/$slug/'
       path: '/'
@@ -1268,6 +1347,7 @@ interface AdminRouteChildren {
   AdminLeistungenRoute: typeof AdminLeistungenRoute
   AdminOdooRoute: typeof AdminOdooRoute
   AdminPosteingangRoute: typeof AdminPosteingangRoute
+  AdminStudioRoute: typeof AdminStudioRoute
   AdminUnterlagenRoute: typeof AdminUnterlagenRoute
   AdminZohoRoute: typeof AdminZohoRoute
   AdminZustandRoute: typeof AdminZustandRoute
@@ -1288,6 +1368,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLeistungenRoute: AdminLeistungenRoute,
   AdminOdooRoute: AdminOdooRoute,
   AdminPosteingangRoute: AdminPosteingangRoute,
+  AdminStudioRoute: AdminStudioRoute,
   AdminUnterlagenRoute: AdminUnterlagenRoute,
   AdminZohoRoute: AdminZohoRoute,
   AdminZustandRoute: AdminZustandRoute,
@@ -1362,6 +1443,7 @@ const rootRouteChildren: RootRouteChildren = {
   QualitaetRoute: QualitaetRoute,
   RatgeberRoute: RatgeberRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  UeberUnsRoute: UeberUnsRoute,
   WiderrufRoute: WiderrufRoute,
   ApiAutomationCronRoute: ApiAutomationCronRoute,
   ApiAvailabilityRoute: ApiAvailabilityRoute,
@@ -1373,9 +1455,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRoCallbackRoute: ApiRoCallbackRoute,
   ApiRoDiagnosticsRoute: ApiRoDiagnosticsRoute,
   ApiRoPhotoRoute: ApiRoPhotoRoute,
+  ApiStudioMediaUploadRoute: ApiStudioMediaUploadRoute,
   ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
   ApiZohoWebhookRoute: ApiZohoWebhookRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiStudioMediaIdRoute: ApiStudioMediaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -7,7 +7,7 @@ import { Shot } from "@/components/media";
 import {
   cities,
   pickupKeramikNote,
-  pickupPriceText,
+  cityPickupPriceText,
   pickupTierSummary,
   services,
   site,
@@ -22,24 +22,39 @@ import { PackageShowcase } from "@/components/package-showcase";
 import { ResultsTeaser } from "@/components/results-teaser";
 import { HomeProcess } from "@/components/home-process";
 import { RevealLines } from "@/components/reveal-lines";
+import { WebsiteStudioContent } from "@/components/website-studio-content";
+import { loadPublicStudioDocument } from "@/lib/studio-public.functions";
+import { studioHero, studioMetadata } from "@/lib/studio-public";
 
 export const Route = createFileRoute("/")({
   validateSearch: parseBookingSelection,
   component: Home,
-  head: () => {
+  loader: async () => {
+    const [document, about] = await Promise.all([
+      loadPublicStudioDocument("home"),
+      loadPublicStudioDocument("about"),
+    ]);
+    return { document, aboutPublished: Boolean(about) };
+  },
+  head: ({ loaderData }) => {
+    const hero = studioHero(loaderData?.document);
     const head = pageHead({
+      ...studioMetadata(loaderData?.document, {
       title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
       description:
         `Autoaufbereitung und Fahrzeugpflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Ab 149 €, Hol- und Bringservice für ${cities.length} Orte.`,
+      }),
       path: "/",
+      ...(hero ? { preloadImage: hero.src, image: hero.src } : {}),
     });
-    return { ...head, links: [...head.links, ...scrollFilmPreloads] };
+    return { ...head, links: [...head.links, ...(hero ? [] : scrollFilmPreloads)] };
   },
 });
 
 function Home() {
   const jsonLd = localBusinessJsonLd();
   const { paket, ort } = Route.useSearch();
+  const { document, aboutPublished } = Route.useLoaderData();
 
   return (
     <main id="main-content" tabIndex={-1} data-home="polish">
@@ -48,7 +63,11 @@ function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
-      <ScrollFilmHero />
+      <ScrollFilmHero
+        title={document?.content.title.trim() || undefined}
+        lead={document?.content.lead.trim() || undefined}
+        heroImage={studioHero(document)}
+      />
 
       <section
         id="nach-dem-film"
@@ -104,9 +123,8 @@ function Home() {
         </ul>
       </section>
       <div className="home-intro mx-auto max-w-7xl px-4 sm:px-6">
-        <p className="mx-auto max-w-2xl py-12 text-center text-sm leading-relaxed text-muted sm:text-base">
-          Für den täglichen Weg zur Arbeit, Ihren Liebhaberwagen oder die Leasingrückgabe: Wir
-          prüfen Ihr Fahrzeug persönlich und stimmen Pflege, Preis und Termin mit Ihnen ab.
+        <p className="mx-auto max-w-2xl whitespace-pre-line py-12 text-center text-sm leading-relaxed text-muted sm:text-base">
+          {document?.content.body.trim() || "Für den täglichen Weg zur Arbeit, Ihren Liebhaberwagen oder die Leasingrückgabe: Wir prüfen Ihr Fahrzeug persönlich und stimmen Pflege, Preis und Termin mit Ihnen ab."}
         </p>
         <nav className="home-jump-links" aria-label="Auf der Startseite">
           <a href="#pakete">Pakete & Preise</a>
@@ -114,6 +132,11 @@ function Home() {
           <a href="#buchung">Termin anfragen</a>
         </nav>
       </div>
+      {document && (document.content.sections.length > 0 || document.content.faqs.length > 0 || document.content.images.some((image) => image.assetId !== document.content.heroAssetId)) && (
+        <section className="section mx-auto max-w-7xl px-4 sm:px-6" aria-label="Aus unserer Werkstatt">
+          <WebsiteStudioContent content={document.content} assets={document.assets} headingLevel={1} showIntro={false} showHero={false} showBody={false} />
+        </section>
+      )}
       <PackageShowcase />
 
       <section
@@ -177,6 +200,7 @@ function Home() {
           </blockquote>
           <div className="workshop-owner"><span>{site.owner}</span><p>Inhaber · White-Gloss Detailing</p></div>
           <Link to="/qualitaet" className="atelier-text-link">So arbeiten wir <IconArrowRight aria-hidden /></Link>
+          {aboutPublished && <Link to="/ueber-uns" className="atelier-text-link mt-4">Über White-Gloss <IconArrowRight aria-hidden /></Link>}
         </div>
       </section>
 
@@ -267,13 +291,13 @@ function Home() {
                     to="/abholservice/$city"
                     params={{ city: c.slug }}
                     className="city-chip"
-                    aria-label={`${c.name}, ${cityJourneyText(c)}, Abholung ${pickupPriceText(c.km)}`}
+                    aria-label={`${c.name}, ${cityJourneyText(c)}, Abholung ${cityPickupPriceText(c)}`}
                   >
                     <span className="city-chip-name">{c.name}</span>
                     <span className="city-chip-meta" aria-hidden="true">
                       <span>{pickupDistanceLabel(c)}</span>
                       <span className="city-chip-status" data-status={pickupStatus(c.km)}>
-                        {pickupPriceText(c.km)}
+                        {cityPickupPriceText(c)}
                       </span>
                     </span>
                   </Link>
@@ -289,3 +313,4 @@ function Home() {
     </main>
   );
 }
+
