@@ -123,6 +123,7 @@ function ensureDataLayer(): void {
   if (typeof window.gtag !== "function") {
     window.gtag = function gtag() {
       // gtag.js command messages use Arguments, not dataLayer method-call arrays.
+      // eslint-disable-next-line prefer-rest-params -- Required by Google's command protocol.
       window.dataLayer?.push(arguments);
     };
   }
