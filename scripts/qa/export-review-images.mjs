@@ -14,6 +14,8 @@ const files = [
   "website-studio/mobile-editor.png",
   "hero-stability/desktop-consent-rejected.png",
   "hero-stability/mobile-consent-rejected.png",
+  "mobile-390--abholservice-nagold.png",
+  "review-results-390.png",
 ];
 const output = resolve(".qa-output/review-images");
 await mkdir(output, { recursive: true });

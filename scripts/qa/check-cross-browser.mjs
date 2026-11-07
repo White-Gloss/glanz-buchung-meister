@@ -8,8 +8,7 @@ import { qaBase, controlBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { displayedPriceEquals } from "./displayed-price.mjs";
-import { observeBrowserAction } from "./browser-action.mjs";
-import { completeSuccessfulRead } from "./read-completion.mjs";
+import { completeSuccessfulRead, observeReadDuringAction } from "./read-completion.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -17,7 +16,7 @@ await mkdir(output, { recursive: true });
 const report = {
   status: "running",
   scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [],
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [],
 };
 const diagnostics = [];
 
@@ -34,27 +33,51 @@ async function verifyHomepageReviews(page, label, action) {
   // Scrolling can trigger the lazy reviews after goto(networkidle) completed.
   // Observe this navigation's real request before starting, deliberately bring
   // its section into view, then await the full body before navigating/closing.
-  const response = await observeBrowserAction(page, (response) => isReviewsRequest(response.request()), async () => {
-    await action();
-    await page.locator("#bewertungen").scrollIntoViewIfNeeded();
-    await page.getByRole("complementary", { name: "Google-Kundenbewertungen", exact: true }).waitFor();
-  });
-  const completion = await completeSuccessfulRead(response);
-  report.reviews.push({ label, endpoint: "/api/google-reviews", ...completion });
+  const state = { label, stage: "navigation/layout" };
+  report.reviewActions.push(state);
+  try {
+    const response = await observeReadDuringAction(page, (response) => isReviewsRequest(response.request()), async () => {
+      await action();
+      state.stage = "scroll-to-reviews";
+      await page.locator("#bewertungen").scrollIntoViewIfNeeded();
+      state.stage = "visible-reviews";
+      await page.getByRole("complementary", { name: "Google-Kundenbewertungen", exact: true }).waitFor();
+      state.stage = "response";
+    });
+    const completion = await completeSuccessfulRead(response);
+    state.stage = "finished";
+    report.reviews.push({ label, endpoint: "/api/google-reviews", ...completion });
+  } catch (error) {
+    state.error = error.message;
+    state.dom = await page.evaluate(() => {
+      const section = document.querySelector("#bewertungen");
+      const rect = section?.getBoundingClientRect();
+      return {
+        path: location.pathname, scrollY, viewportHeight: innerHeight,
+        reviews: section ? { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height, text: section.textContent?.slice(0, 300) } : null,
+        images: [...document.images].filter((image) => { const box = image.getBoundingClientRect(); return box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < innerHeight; }).map((image) => ({ path: new URL(image.currentSrc || image.src).pathname, complete: image.complete, width: image.naturalWidth })),
+      };
+    }).catch((failure) => ({ unavailable: failure.message }));
+    throw error;
+  }
 }
 async function verifyLayout(page, label) {
+  report.lastLayout = { label, stage: "heading" };
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  report.lastLayout.stage = "scroll-layout";
   for (const top of [0, Math.floor(height / 2), height]) {
     await page.evaluate((y) => window.scrollTo(0, y), top);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert.ok(overflow <= 2, `${label}: overflow ${overflow}px at ${top}`);
   }
   await page.evaluate(() => window.scrollTo(0, 0));
+  report.lastLayout.stage = "visible-images";
   await page.waitForFunction(() => [...document.images].filter((image) => {
     const box = image.getBoundingClientRect();
     return box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < innerHeight && getComputedStyle(image).visibility !== "hidden";
   }).every((image) => image.complete && image.naturalWidth > 0));
+  report.lastLayout.stage = "finished";
 }
 
 try {
@@ -177,3 +200,4 @@ try {
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));
+console.log("Cross-browser read evidence: " + JSON.stringify({ status: report.status, failures: report.failures, lastLayout: report.lastLayout, actions: report.reviewActions, reads: report.reviewRequests, errors: report.diagnostics.flatMap((item) => item.errors) }));
