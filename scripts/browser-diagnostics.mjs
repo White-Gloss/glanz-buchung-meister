@@ -8,9 +8,22 @@ function evidenceUrl(value) {
   }
 }
 
+// Match complete, observed Firefox/WebKit messages only. A Report-Only header
+// does not enforce CSP. Keep these visible in reports; enforced violations,
+// unfamiliar wording, page exceptions and failed requests still fail the gate.
+function reportOnlyWarning(text) {
+  if (/^\[JavaScript Error: "Content-Security-Policy: \(Report-Only policy\) The page’s settings would block a script \(script-src-elem\) at https?:\/\/[^\s"<>]+ from being executed because it violates the following directive: “script-src [^”\r\n]+”" \{file: "https?:\/\/[^"\r\n]+" line: \d+\}\]$/.test(text) ||
+      /^\[Report Only\] Refused to load https?:\/\/[^\s"<>]+ because it does not appear in the script-src directive of the Content Security Policy\.$/.test(text))
+    return "csp-report-only-violation";
+  if (/^The Content Security Policy '[^\r\n]+' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect\. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header\.$/.test(text))
+    return "csp-report-only-missing-endpoint";
+  return null;
+}
+
 export function createBrowserDiagnostics({ origin, label = "" }) {
   const allowedOrigin = new URL(origin).origin;
   const errors = [];
+  const warnings = [];
   const blocked = [];
   const ignored = [];
   const abortedRequests = new WeakSet();
@@ -26,13 +39,19 @@ export function createBrowserDiagnostics({ origin, label = "" }) {
       page.on("pageerror", (error) => errors.push(record("pageerror", { message: error.message })));
       page.on("crash", () => errors.push(record("crash", { message: "Browser page crashed" })));
       page.on("console", (message) => {
-        if (message.type() !== "error") return;
+        if (!["error", "warning"].includes(message.type())) return;
         const location = message.location();
         const evidence = record("console", {
           message: message.text(),
           url: evidenceUrl(location.url),
           line: location.lineNumber,
         });
+        const policyWarning = reportOnlyWarning(message.text());
+        if (policyWarning) {
+          warnings.push({ ...evidence, reason: policyWarning });
+          return;
+        }
+        if (message.type() !== "error") return;
         // Never hide a generic resource error without its exact blocked URL.
         if (/^Failed to load resource\b/.test(message.text()) && externalReadUrls.has(location.url))
           ignored.push({ ...evidence, reason: "external-read" });
@@ -58,7 +77,7 @@ export function createBrowserDiagnostics({ origin, label = "" }) {
       else errors.push({ type: "write", ...evidence, message: "Write request prevented" });
       return false;
     },
-    snapshot() { return { errors: [...errors], blocked: [...blocked], ignored: [...ignored] }; },
+    snapshot() { return { errors: [...errors], warnings: [...warnings], blocked: [...blocked], ignored: [...ignored] }; },
   };
 }
 

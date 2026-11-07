@@ -5,6 +5,9 @@ import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { qaBase, controlBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
+import { prepareBrowserFixture } from "./browser-fixture.mjs";
+import { displayedPriceEquals } from "./displayed-price.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -45,13 +48,14 @@ try {
   assert.equal(identity.status, 200);
   assert.equal(identity.headers.get("x-qa-run-id"), process.env.QA_RUN_ID);
   assert.deepEqual(await identity.json(), { isolated: true, database: "in-memory-pglite", externalFetch: "blocked" });
+  report.fixture = await prepareBrowserFixture({ scenario: "cross-browser" });
   const engines = await import("playwright");
   for (const name of ["firefox", "webkit"]) {
     let browser;
     try {
       browser = await engines[name].launch({ headless: true });
       for (const width of [390, 1440]) {
-        const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, hasTouch: width < 700, reducedMotion: "reduce", serviceWorkers: "block" });
+        const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, hasTouch: width < 700, reducedMotion: "reduce", serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("cross-browser", `${name}-${width}`) });
         const diagnostic = createBrowserDiagnostics({ origin: qaBase, label: `${name}-${width}` });
         diagnostics.push(diagnostic);
         await context.route("**/*", (route) => diagnostic.allowRequest(route.request()) ? route.continue() : route.abort());
@@ -108,7 +112,9 @@ try {
           const extras = page.locator("details.booking-extras");
           if (!(await extras.evaluate((element) => element.open))) await extras.locator("summary").click();
           await page.locator("#extra-felgen").check();
-          await page.waitForFunction(() => document.querySelector(".booking-price strong")?.textContent?.includes("468 €"));
+          await page.waitForFunction(displayedPriceEquals, { selector: ".booking-price strong", expected: "468 €" }).catch(async () => {
+            throw new Error(`Expected exact booking total 468 EUR; actual display: ${JSON.stringify(await page.locator(".booking-price strong").textContent())}`);
+          });
           assert.ok((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 2);
           await screenshot(page, `${name}-${width}-booking.png`);
           report.checks.push(`${name} ${width}px: real booking selection totals 468 EUR without submission`);

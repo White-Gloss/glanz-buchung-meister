@@ -55,3 +55,17 @@ export function validateStudioImageBytes(bytes: Uint8Array, declaredType: string
 export function isStudioMediaId(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
 }
+
+export function sanitizeStudioMediaName(name: string): string {
+  return (
+    [...name]
+      .slice(0, 160)
+      .map((character) => {
+        const code = character.charCodeAt(0);
+        return character === "/" || character === "\\" || code < 32 || code === 127
+          ? "_"
+          : character;
+      })
+      .join("") || "Bild"
+  );
+}

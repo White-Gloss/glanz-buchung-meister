@@ -5,12 +5,14 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { qaBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
 import { cities, services } from "../../src/data/site.ts";
 
 const browser = await chromium.launch({ headless: true });
 const results = [];
 const failures = [];
 let progress = { stage: "starting", completed: 0, updatedAt: new Date().toISOString() };
+let contextSequence = 0;
 async function scrollAndRender(page, top) {
   await page.evaluate((position) => window.scrollTo(0, position), top);
   // The runner clock also works when headless Chromium suspends frame/timer
@@ -18,7 +20,7 @@ async function scrollAndRender(page, top) {
   await new Promise((done) => setTimeout(done, 32));
 }
 async function openPage(viewport) {
-  const context = await browser.newContext({ reducedMotion: "reduce", viewport });
+  const context = await browser.newContext({ reducedMotion: "reduce", viewport, extraHTTPHeaders: qaClientHeaders("responsive", `context-${contextSequence++}`) });
   try {
     // No third-party analytics and no genuine submissions/uploads during QA.
     await context.route("**/*", async (route) => {
@@ -63,6 +65,9 @@ try {
     const { context, page } = await openPage({ width, height: 844 });
     try {
       for (const path of paths) {
+        // Each page/width is an independent crawl case, not one customer making
+        // hundreds of booking-calendar requests in a minute.
+        await context.setExtraHTTPHeaders(qaClientHeaders("responsive", `${width}:${path}`));
         progress = { stage: "navigation", path, width, completed: results.length, updatedAt: new Date().toISOString() };
         await page.goto(qaBase + path, { waitUntil: "networkidle" });
         // content-visibility:auto defers layout below the fold. Exercise the real

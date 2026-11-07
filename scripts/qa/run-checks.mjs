@@ -2,6 +2,7 @@
 import { qaBase, controlBase, qaPort, controlPort, tlsPort } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 import { lighthouseDigest } from "./lighthouse-digest.mjs";
+import { prepareBrowserFixture } from "./browser-fixture.mjs";
 assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -257,6 +258,7 @@ try {
   } else {
   await runCheck(server, "frontend-ssr", ["--test", "scripts/frontend-ssr.test.mjs"]);
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
+  await prepareBrowserFixture({ runId, scenario: "browser-suite" });
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
   await runCheck(server, "seo", ["scripts/qa/check-seo.mjs"]);
   // The expanded city list adds 18 full scroll-throughs across three viewports.

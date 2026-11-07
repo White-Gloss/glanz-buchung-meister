@@ -18,13 +18,31 @@ export function moveStudioItem<T>(items: readonly T[], from: number, to: number)
 export function studioCanPublish(input: {
   dirty: boolean;
   busy: boolean;
+  archived?: boolean;
   draftRevisionId: number | null;
   publishedRevisionId: number | null;
 }): boolean {
   return (
     !input.dirty &&
     !input.busy &&
+    !input.archived &&
     input.draftRevisionId !== null &&
     input.draftRevisionId !== input.publishedRevisionId
   );
+}
+
+export function createStudioRequestGate() {
+  let current: { cancelled: boolean } | null = null;
+  return {
+    begin() {
+      const request = { cancelled: false };
+      current = request;
+      return {
+        isCurrent: () => current === request && !request.cancelled,
+        cancel: () => {
+          request.cancelled = true;
+        },
+      };
+    },
+  };
 }

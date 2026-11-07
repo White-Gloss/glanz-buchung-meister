@@ -8,6 +8,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { extras } from "../../src/data/site.ts";
 import { qaBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
+import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = ".qa-output/booking-ui";
@@ -20,7 +22,7 @@ assert.equal(requestable.length, 12, "Twelve bookable extras are expected");
 const browser = await chromium.launch({ headless: true });
 
 async function openContext(options) {
-  const context = await browser.newContext({ ...options, serviceWorkers: "block" });
+  const context = await browser.newContext({ ...options, serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("booking-ui", `context-${diagnostics.length}`) });
   const diagnostic = createBrowserDiagnostics({ origin: qaBase, label: `${options.viewport.width}x${options.viewport.height}` });
   diagnostics.push(diagnostic);
   const assets = [];
@@ -70,6 +72,22 @@ async function overflow(page) {
 }
 
 try {
+  await prepareBrowserFixture({ scenario: "booking-ui" });
+  // Test the real API limit, then give each unrelated browser scenario its own
+  // stable client. Never reset the limiter or hide a 429 in browser diagnostics.
+  const availability = `${qaBase}/api/availability?from=2040-01-01&to=2040-02-01`;
+  const burstHeaders = qaClientHeaders("rate-limit-proof", "burst");
+  for (let request = 1; request <= 8; request++) {
+    const response = await fetch(availability, { headers: burstHeaders });
+    assert.equal(response.status, 200, `Availability request ${request} stays within the production limit`);
+    assert.equal((await response.json()).ok, true);
+  }
+  const ninth = await fetch(availability, { headers: burstHeaders });
+  assert.equal(ninth.status, 429, "The same client is still limited after eight requests");
+  assert.equal((await ninth.json()).error, "rate_limited");
+  const independent = await fetch(availability, { headers: qaClientHeaders("rate-limit-proof", "independent") });
+  assert.equal(independent.status, 200, "An independent client retains its own quota");
+  results.push("Real availability limiter: eight allowed, ninth blocked, independent client unaffected");
   /* ---- Desktop: existing three-step form, prices, package/vehicle changes, pickup ---- */
   {
     const { context, page, assets } = await openContext({ viewport: { width: 1280, height: 900 } });
@@ -307,6 +325,7 @@ try {
       errors: evidence.flatMap((item) => item.errors),
       blocked: evidence.flatMap((item) => item.blocked),
       ignored: evidence.flatMap((item) => item.ignored),
+      warnings: evidence.flatMap((item) => item.warnings),
     }, null, 2),
   );
   await browser.close();

@@ -137,6 +137,7 @@ try {
   report.errors = evidence.flatMap((item) => item.errors);
   report.blocked = evidence.flatMap((item) => item.blocked);
   report.ignored = evidence.flatMap((item) => item.ignored);
+  report.warnings = evidence.flatMap((item) => item.warnings);
   await writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
   await browser?.close();
 }

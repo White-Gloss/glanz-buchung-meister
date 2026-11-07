@@ -21,7 +21,7 @@ import { Button, inputClass } from "./ui";
 import { WebsiteStudioContent } from "./website-studio-content";
 import { WebsiteStudioMedia } from "./website-studio-media";
 import { WebsiteStudioFields } from "./website-studio-fields";
-import { studioCanPublish } from "./website-studio-state";
+import { createStudioRequestGate, studioCanPublish } from "./website-studio-state";
 
 const errorMessage = (error: unknown) =>
   error instanceof Error
@@ -123,7 +123,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   );
   const [newSlug, setNewSlug] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const sequence = useRef(0);
+  const [requests] = useState(createStudioRequestGate);
   const actionLock = useRef(false);
   const navigation = useBlocker({
     shouldBlockFn: () => dirty || busy,
@@ -145,11 +145,13 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
         ...current.filter((asset) => !result.assets!.some((next) => next.id === asset.id)),
         ...result.assets!,
       ]);
-    setContent(result.draft ?? result.published ?? seed(result.key));
+    setContent(
+      result.draft ?? result.published ?? (result.archived ? emptyCmsContent() : seed(result.key)),
+    );
     setDirty(false);
   }, []);
   useEffect(() => {
-    const request = ++sequence.current;
+    const request = requests.begin();
     setLoading(true);
     setError("");
     setStatus("");
@@ -158,32 +160,31 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
     setLoadFailed(false);
     void getCmsStudioDocument({ data: { key } })
       .then((result) => {
-        if (request === sequence.current) apply(result);
+        if (request.isCurrent()) apply(result);
       })
       .catch((error) => {
-        if (request === sequence.current) {
+        if (request.isCurrent()) {
           setLoadFailed(true);
           setError(errorMessage(error));
         }
       })
       .finally(() => {
-        if (request === sequence.current) setLoading(false);
+        if (request.isCurrent()) setLoading(false);
       });
-    return () => {
-      sequence.current++;
-    };
-  }, [key, retry, apply]);
+    return request.cancel;
+  }, [key, retry, apply, requests]);
   useEffect(() => {
     void refreshSummaries().catch((error) => setError(errorMessage(error)));
   }, [refreshSummaries]);
   function edit(patch: Partial<CmsDocumentContent>) {
+    if (actionLock.current || busy || document?.archived) return;
     setContent((current) => ({ ...current, ...patch }));
     setDirty(true);
     setStatus("");
     setConfirm(null);
   }
   function choose(next: CmsDocumentKey) {
-    if (next === key) return;
+    if (next === key || actionLock.current || busy) return;
     if (dirty) setPendingKey(next);
     else {
       setKey(next);
@@ -192,6 +193,12 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   }
   async function action(operation: "save" | "publish" | "archive" | number) {
     if (!document || actionLock.current) return;
+    if (document.archived && typeof operation !== "number") {
+      setError(
+        "Dieser Inhalt ist zurückgezogen. Stellen Sie zuerst unter Fassungen einen Entwurf wieder her.",
+      );
+      return;
+    }
     actionLock.current = true;
     setBusy(true);
     setError("");
@@ -247,6 +254,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
     }
   }
   function selectImage(asset: StudioAsset) {
+    if (actionLock.current || busy || document?.archived) return;
     if (content.images.some((image) => image.assetId === asset.id)) {
       setStatus("Dieses Bild ist bereits auf der Seite ausgewählt.");
       return;
@@ -308,8 +316,9 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
       busy,
       draftRevisionId: document.draftRevisionId,
       publishedRevisionId: document.publishedRevisionId,
+      archived: document.archived,
     });
-  const unavailable = loading || busy || !document;
+  const unavailable = loading || busy || !document || document.archived;
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12" aria-busy={loading || busy}>
       <header className="mb-8 max-w-3xl">
@@ -414,6 +423,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 <input
                   className={inputClass}
                   placeholder="lackpflege-im-winter"
+                  disabled={busy}
                   value={newSlug}
                   onChange={(event) => setNewSlug(event.target.value)}
                   pattern="[a-z0-9]+(-[a-z0-9]+)*"
@@ -470,7 +480,9 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 <Button
                   type="button"
                   variant="ghost"
+                  disabled={busy}
                   onClick={() => {
+                    if (actionLock.current) return;
                     setKey(pendingKey);
                     setPendingKey(null);
                     setDirty(false);
@@ -530,7 +542,27 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
               disabled={unavailable}
             />
           </div>
-          {document && view === "edit" && (
+          {document?.archived && (
+            <section
+              className="space-y-3 rounded-md border border-line p-5"
+              aria-label="Zurückgezogener Inhalt"
+            >
+              <h2 className="font-display text-2xl">Inhalt zurückgezogen</h2>
+              <p className="text-sm text-muted">
+                Diese Seite hat keinen bearbeitbaren Entwurf. Wählen Sie eine frühere Fassung und
+                stellen Sie sie als Entwurf wieder her. Die Website bleibt dabei unverändert.
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => setView("history")}
+              >
+                Fassungen zum Wiederherstellen öffnen
+              </Button>
+            </section>
+          )}
+          {document && view === "edit" && !document.archived && (
             <form
               onSubmit={(event) => {
                 event.preventDefault();

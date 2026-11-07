@@ -4,6 +4,7 @@ assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { qaBase, controlBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
 
 const runId = process.env.QA_RUN_ID;
 assert.ok(runId, "The parent QA runner must supply its run identity.");
@@ -189,7 +190,7 @@ try {
       viewport: { width: viewport.width, height: viewport.height },
       reducedMotion: "no-preference",
       locale: "de-DE",
-      extraHTTPHeaders: { "x-forwarded-host": "white-gloss.de" },
+      extraHTTPHeaders: { "x-forwarded-host": "white-gloss.de", ...qaClientHeaders("hero-stability", viewport.name) },
     });
     try {
       await context.route("**/*", (route) => {

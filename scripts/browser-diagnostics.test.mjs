@@ -14,6 +14,43 @@ function consoleError(text, url = "") {
   return { type: () => "error", text: () => text, location: () => ({ url, lineNumber: 0, columnNumber: 0 }) };
 }
 
+const reportOnlyMessages = [
+  `[JavaScript Error: "Content-Security-Policy: (Report-Only policy) The page’s settings would block a script (script-src-elem) at https://grok.com/grok-app-builder/extensions.js from being executed because it violates the following directive: “script-src 'self' 'nonce-aBcD1234=' https://www.googletagmanager.com”" {file: "http://127.0.0.1:8082/" line: 0}]`,
+  "[Report Only] Refused to load https://grok.com/grok-app-builder/extensions.js because it does not appear in the script-src directive of the Content Security Policy.",
+  "The Content Security Policy 'default-src 'self'; script-src 'self'' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header.",
+];
+
+test("exact browser report-only CSP signatures remain visible warnings, not enforced policy failures", () => {
+  const diagnostic = createBrowserDiagnostics({ origin });
+  const browserPage = page();
+  diagnostic.attach(browserPage);
+  for (const message of reportOnlyMessages) browserPage.emit("console", consoleError(message));
+  assert.doesNotThrow(() => assertBrowserDiagnostics([diagnostic]));
+  assert.deepEqual(diagnostic.snapshot().warnings.map(({ message }) => message), reportOnlyMessages);
+  assert.deepEqual(diagnostic.snapshot().warnings.map(({ reason }) => reason), ["csp-report-only-violation", "csp-report-only-violation", "csp-report-only-missing-endpoint"]);
+});
+
+test("enforced CSP, unknown wording and page exceptions cannot be downgraded to report-only warnings", () => {
+  const diagnostic = createBrowserDiagnostics({ origin });
+  const browserPage = page();
+  diagnostic.attach(browserPage);
+  const enforcedOrUnknown = [
+    reportOnlyMessages[0].replace("(Report-Only policy) ", ""),
+    reportOnlyMessages[1].replace("[Report Only] ", ""),
+    reportOnlyMessages[2].replace("report-only mode", "enforced mode"),
+    "Application failed: " + reportOnlyMessages[1],
+    reportOnlyMessages[1] + " Unexpected failure",
+    "CSP report-only console error: application crashed",
+  ];
+  for (const message of enforcedOrUnknown) browserPage.emit("console", consoleError(message));
+  browserPage.emit("pageerror", new Error(reportOnlyMessages[1]));
+  const failing = request(`${origin}/api/availability`);
+  browserPage.emit("response", { request: () => failing, status: () => 503 });
+  browserPage.emit("requestfailed", failing);
+  assert.equal(diagnostic.snapshot().errors.length, enforcedOrUnknown.length + 3);
+  assert.throws(() => assertBrowserDiagnostics([diagnostic]), /503/);
+});
+
 // A collected JavaScript exception must fail the audit, not merely appear in JSON.
 test("a page exception fails the browser gate with its page and message", () => {
   const diagnostics = createBrowserDiagnostics({ origin, label: "mobile" });

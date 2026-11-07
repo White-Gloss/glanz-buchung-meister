@@ -7,6 +7,7 @@ import { createHash, X509Certificate } from "node:crypto";
 import { mkdir, readFile, readdir, realpath, writeFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { qaBase, controlBase, lighthouseBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
 import { emptyCmsContent } from "../../src/lib/cms.model.ts";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
@@ -69,7 +70,7 @@ async function screenshot(page, name) {
   report.screenshots.push(name);
 }
 async function openStudio(width, cookie = operatorCookie) {
-  const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, reducedMotion: "reduce", serviceWorkers: "block" });
+  const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, reducedMotion: "reduce", serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("website-studio", `context-${diagnostics.length}`) });
   const diagnostic = createBrowserDiagnostics({ origin: lighthouseBase, label: `studio-${width}` });
   diagnostics.push(diagnostic);
   await context.route("**/*", (route) => {
@@ -155,6 +156,7 @@ try {
   assert.match(unpublished.html, /noindex/);
   assert.doesNotMatch(unpublished.html, /QA Studio erster Entwurf/);
   assert.doesNotMatch((await publicPage("/")).html, /href="\/ueber-uns"/);
+  assert.doesNotMatch((await publicPage("/sitemap.xml")).html, /https:\/\/white-gloss\.de\/ueber-uns/);
 
   const desktop = await openStudio(1440);
   await selectAbout(desktop.page);
@@ -224,6 +226,7 @@ try {
   assert.match(published.html, /QA Studio Suchvorschau/);
   assert.ok(published.html.includes(upload.publicUrl));
   assert.match((await publicPage("/")).html, /href="\/ueber-uns"/);
+  assert.match((await publicPage("/sitemap.xml")).html, /https:\/\/white-gloss\.de\/ueber-uns/);
   const publicImage = await fetch(qaBase + upload.publicUrl);
   assert.equal(publicImage.status, 200);
   assert.match(publicImage.headers.get("cache-control"), /no-store/);
@@ -293,6 +296,7 @@ try {
       assert.equal((await publicPage("/ueber-uns")).response.status, 404);
       const restoredHome = (await publicPage("/")).html;
       assert.doesNotMatch(restoredHome, /QA Home nur Entwurf|href="\/ueber-uns"/);
+      assert.doesNotMatch((await publicPage("/sitemap.xml")).html, /https:\/\/white-gloss\.de\/ueber-uns/);
       report.checks.push("QA publication withdrawn; original public fallbacks restored before subsequent checks");
     } catch (error) {
       report.status = "failed";

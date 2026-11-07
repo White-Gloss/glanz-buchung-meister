@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve, sep } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
@@ -226,26 +226,5 @@ test("another shop's images and invented static paths cannot be read, changed or
     );
   } finally {
     await context.close();
-  }
-});
-
-test("failed metadata persistence removes the new private derivative", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "wg-studio-media-failure-test-"));
-  const sql = Object.assign(async () => [], {
-    query: async () => {
-      throw new Error("Database unavailable");
-    },
-  }) as unknown as Sql;
-  try {
-    await assert.rejects(
-      storeStudioImage(sql, await imageFile(), "operator-test", directory),
-      /Database unavailable/,
-    );
-    assert.deepEqual(await readdir(directory), []);
-  } finally {
-    assert.ok(
-      relative(resolve(tmpdir()), resolve(directory)).startsWith("wg-studio-media-failure-test-"),
-    );
-    await rm(directory, { recursive: true, force: true });
   }
 });

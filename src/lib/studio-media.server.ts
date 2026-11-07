@@ -5,6 +5,7 @@ import { customerPhotos } from "../data/customer-photos.ts";
 import type { Sql } from "./db.ts";
 import {
   isStudioMediaId,
+  sanitizeStudioMediaName,
   STUDIO_IMAGE_MAX_BYTES,
   type StudioAsset,
   type StudioMedia,
@@ -191,7 +192,7 @@ export async function storeStudioImage(sql: Sql, file: File, userId: string, dir
     const storage = createStudioMediaStore(directory);
     await storage.put(id, optimized.data);
     try {
-      const safeName = file.name.replace(/[/\\\u0000-\u001f\u007f]/g, "_").slice(0, 160) || "Bild";
+      const safeName = sanitizeStudioMediaName(file.name);
       const [row] = await sql.query<MediaRow>(
         `insert into cms_media(id,shop_id,original_name,width,height,bytes,sha256,created_by)
         values($1,$2,$3,$4,$5,$6,$7,$8) returning ${columns}`,
@@ -213,8 +214,13 @@ export async function storeStudioImage(sql: Sql, file: File, userId: string, dir
       // exact random ID before removing anything. Unknown outcomes stay private.
       let persisted: MediaRow[];
       try {
-        persisted = await sql.query<MediaRow>(`select ${columns} from cms_media where shop_id=$1 and id=$2`, [SHOP, id]);
-      } catch { throw error; }
+        persisted = await sql.query<MediaRow>(
+          `select ${columns} from cms_media where shop_id=$1 and id=$2`,
+          [SHOP, id],
+        );
+      } catch {
+        throw error;
+      }
       if (persisted[0]) return media(persisted[0]);
       await storage.remove(id).catch(() => undefined);
       throw error;

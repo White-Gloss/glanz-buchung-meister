@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { moveStudioItem, studioCanPublish } from "./website-studio-state.ts";
+import {
+  createStudioRequestGate,
+  moveStudioItem,
+  studioCanPublish,
+} from "./website-studio-state.ts";
 
 test("gallery keyboard ordering moves a selected image and preserves all other images", () => {
   const photos = ["front", "interior", "finish"];
@@ -15,6 +19,19 @@ test("publish is available only for a saved draft different from the live versio
   assert.equal(studioCanPublish(ready), true);
   assert.equal(studioCanPublish({ ...ready, dirty: true }), false);
   assert.equal(studioCanPublish({ ...ready, busy: true }), false);
+  assert.equal(studioCanPublish({ ...ready, archived: true }), false);
   assert.equal(studioCanPublish({ ...ready, draftRevisionId: null }), false);
   assert.equal(studioCanPublish({ ...ready, publishedRevisionId: 4 }), false);
+});
+
+test("late cleanup invalidates only its own load and keeps the newer document load active", () => {
+  const requests = createStudioRequestGate();
+  const first = requests.begin();
+  assert.equal(first.isCurrent(), true);
+  const second = requests.begin();
+  assert.equal(first.isCurrent(), false);
+  first.cancel();
+  assert.equal(second.isCurrent(), true);
+  second.cancel();
+  assert.equal(second.isCurrent(), false);
 });

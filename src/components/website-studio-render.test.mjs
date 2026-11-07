@@ -82,3 +82,13 @@ test("unresolved media is not exposed as a broken public image", () => {
   const html = renderToStaticMarkup(createElement(WebsiteStudioContent, { content, assets: [] }));
   assert.doesNotMatch(html, /<img /);
 });
+
+test("embedding below a page hero adds H2 sections and questions without another H1", () => {
+  const html = renderToStaticMarkup(createElement(WebsiteStudioContent, {
+    content: { ...content, sections: [{ id: "work", title: "Arbeitsweise", body: "Sorgfältig geprüft." }], faqs: [{ question: "Wo arbeiten wir?", answer: "In Horb am Neckar." }] },
+    assets, headingLevel: 1, showIntro: false, showHero: false,
+  }));
+  assert.doesNotMatch(html, /<h1(?:\s|>)/);
+  assert.equal((html.match(/<h2(?:\s|>)/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /<h3(?:\s|>)/);
+});

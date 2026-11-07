@@ -151,6 +151,20 @@ createServer(async (req, res) => {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const flags = JSON.parse(Buffer.concat(chunks));
+      if (flags.prepareBrowserFixture === true) {
+        if (req.headers["x-qa-run-id"] !== process.env.QA_RUN_ID) {
+          res.writeHead(403);
+          res.end("QA run identity required");
+          return;
+        }
+        // Legacy flow tests explicitly use Bitrix. Public browser scenarios use
+        // the real panel/request-only path, without a nonexistent CRM webhook.
+        // This guarded test process changes no production setting or limiter.
+        process.env.BOOKING_OPERATIONS = "panel";
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({ ok: true, bookingBackend: "panel", externalFetch: "blocked" }));
+        return;
+      }
       for (const key of ["failMail", "failWhatsApp", "failStorage", "failCms"])
         if (typeof flags[key] === "boolean") state[key] = flags[key];
       if (Number.isInteger(flags.failStorageNth))

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   isStudioMediaId,
+  sanitizeStudioMediaName,
   STUDIO_IMAGE_MAX_BYTES,
   validateStudioImageBytes,
 } from "./studio-media.model.ts";
@@ -42,4 +43,14 @@ test("media IDs cannot address paths, private booking objects or arbitrary URLs"
   ]) {
     assert.equal(isStudioMediaId(value), false, value);
   }
+});
+
+test("original display names replace controls and separators while preserving Unicode", () => {
+  assert.equal(
+    sanitizeStudioMediaName("../kunden\\bild\n\t\u0000\u007f.jpg"),
+    ".._kunden_bild____.jpg",
+  );
+  assert.equal(sanitizeStudioMediaName("Grüße 🚘.jpg"), "Grüße 🚘.jpg");
+  assert.equal(sanitizeStudioMediaName(""), "Bild");
+  assert.equal(sanitizeStudioMediaName("🚘".repeat(161)), "🚘".repeat(160));
 });

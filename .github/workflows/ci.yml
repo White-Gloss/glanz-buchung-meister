@@ -103,6 +103,7 @@ jobs:
           cache: npm
 
       - name: Abhängigkeiten installieren
+        id: dependencies
         run: npm ci --ignore-scripts
 
       - name: Produktionsabhängigkeiten prüfen
@@ -123,6 +124,7 @@ jobs:
         run: npm run typecheck:functions
 
       - name: Automatisierte Tests ausführen
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: npm test
 
       - name: SEO-Qualitätsgate ohne Server prüfen
@@ -168,6 +170,10 @@ jobs:
         timeout-minutes: 18
         run: node scripts/qa/run-checks.mjs
 
+      - name: Kompakte visuelle Prüfnachweise ausgeben
+        if: always()
+        run: node scripts/qa/export-review-images.mjs
+
       - name: Isolierte Prüfnachweise sichern
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2, wie im Lighthouse-Workflow
@@ -193,11 +199,10 @@ jobs:
           cache: npm
       - name: Abhängigkeiten installieren
         run: npm ci --ignore-scripts
-      - name: Route-Tree mit dem installierten Generator erzeugen
-        run: |
-          node --input-type=module -e 'import {Generator,getConfig} from "@tanstack/router-generator"; import fs from "node:fs"; const root=process.cwd(); await new Generator({root,config:getConfig({target:"react",routesDirectory:"./src/routes",generatedRouteTree:"./src/routeTree.gen.ts",quoteStyle:"single",semicolons:false},root)}).run(); console.log("WG_ROUTE_TREE_B64:"+fs.readFileSync("src/routeTree.gen.ts").toString("base64"));'
       - name: Produktions-Build erstellen
         run: npm run build
+      - name: Eingecheckten Route-Tree gegen den Build prüfen
+        run: git diff --exit-code -- src/routeTree.gen.ts
       - name: Firefox und WebKit bereitstellen
         run: npx playwright install --with-deps firefox webkit
       - name: Isolierte Browserprüfung
