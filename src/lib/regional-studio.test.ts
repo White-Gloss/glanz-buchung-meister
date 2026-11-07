@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cities, cityPickupPriceText, services } from "../data/site.ts";
-import { cityJourneyText, citySeoCopy } from "./city-copy.ts";
+import { cities, cityPickupPriceText, services, site } from "../data/site.ts";
+import { cityJourneyText, cityPlanningText, cityLogisticsFaq, citySeoCopy } from "./city-copy.ts";
 import { publicSeo, serviceCitySeo } from "./seo-policy.ts";
 import { studioMetadata } from "./studio-public.ts";
 
@@ -56,4 +56,42 @@ test("all 19 pickup hubs retain distinct metadata, index policy and their confir
   }
   assert.equal(titles.size, 19);
   assert.equal(descriptions.size, 19);
+});
+
+test("all 19 pickup plans add useful information without repeating the introduction or losing local handover notes", () => {
+  const plans = cities.map((city) => cityPlanningText(city));
+  assert.equal(new Set(plans).size, 19);
+  for (const city of cities) {
+    const plan = cityPlanningText(city);
+    assert.ok(plan.length > 100, city.slug);
+    assert.ok(!plan.includes(city.blurb), `${city.slug}: do not repeat the hero introduction`);
+    if (city.pickupNote) assert.equal(plan, city.pickupNote, city.slug);
+    else assert.ok(plan.includes(cityPickupPriceText(city)), city.slug);
+  }
+  assert.equal(cities.filter((city) => city.pickupNote).length, 6);
+  const nagold = cities.find((city) => city.slug === "nagold")!;
+  const changedLogistics = { ...nagold, km: 25, minutes: 32 };
+  const changedPlan = cityPlanningText(changedLogistics);
+  assert.ok(changedPlan.includes(cityJourneyText(changedLogistics)));
+  assert.ok(changedPlan.includes(cityPickupPriceText(changedLogistics)));
+});
+
+test("specific logistics FAQs explain free pickup and radius boundaries without changing package prices", () => {
+  const faqSlugs = cities.filter((city) => cityLogisticsFaq(city)).map((city) => city.slug).sort();
+  assert.deepEqual(faqSlugs, ["boeblingen", "empfingen", "horb-am-neckar", "reutlingen", "sindelfingen"]);
+  for (const slug of faqSlugs) {
+    const city = cities.find((entry) => entry.slug === slug)!;
+    const faq = cityLogisticsFaq(city)!;
+    assert.ok(faq.question.endsWith("?"), slug);
+    assert.ok(faq.answer.includes(cityPickupPriceText(city)), slug);
+    if (["boeblingen", "reutlingen", "sindelfingen"].includes(slug)) {
+      assert.ok(faq.answer.includes(cityPickupPriceText(city, "keramik")), slug);
+      assert.match(faq.answer, /Basisreinigung und Reinigung & Politur/);
+      assert.ok(faq.answer.includes(`${city.km} km`), slug);
+    }
+  }
+  const horb = cities.find((city) => city.slug === "horb-am-neckar")!;
+  assert.ok(cityLogisticsFaq(horb)!.answer.includes(site.street));
+  const empfingen = cities.find((city) => city.slug === "empfingen")!;
+  assert.match(cityLogisticsFaq(empfingen)!.answer, /Wiesenstetten.*Dommelsberg/);
 });

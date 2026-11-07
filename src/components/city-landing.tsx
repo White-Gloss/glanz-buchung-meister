@@ -18,7 +18,7 @@ import {
 import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
 import { serviceAreaLink } from "@/lib/seo-policy";
-import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
+import { cityJourneyText, cityPlanningText, cityLogisticsFaq, citySeoCopy } from "@/lib/city-copy";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { localProofFor } from "@/lib/local-proof";
 import { CityLocalProofSection } from "@/components/city-local-proof";
@@ -48,6 +48,7 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
   const wa = whatsappForCity(city.name);
   const pickup = cityPickupPriceText(city);
   const copy = citySeoCopy(city);
+  const logisticsFaq = cityLogisticsFaq(city);
   const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
   const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
   const proof = localProofFor(city.slug);
@@ -215,7 +216,7 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {editorial?.content.body.trim() || city.pickupNote || `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den Termin stimmen wir vorab ab.`}
+            {editorial?.content.body.trim() || cityPlanningText(city)}
           </p>
           <p className="mt-4 max-w-2xl text-muted">
             Unser einziger Werkstattstandort ist {site.street}, {site.postalCode} {site.city}.{" "}
@@ -224,7 +225,7 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
               : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}
           </p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {cityJourneyText(city).replace(/\.$/, "")}. Politur und Keramik
+            {cityJourneyText(city).replace(/\.$/, "")}. Entfernungen und Fahrzeiten sind Richtwerte. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
             vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (Basisreinigung und Reinigung & Politur).` : ""}
           </p>
@@ -322,6 +323,12 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
                 helfen bei der ersten Einschätzung des Fahrzeugzustands.
               </dd>
             </div>
+            {logisticsFaq ? (
+              <div>
+                <dt className="heading-3">{logisticsFaq.question}</dt>
+                <dd className="mt-3 text-muted">{logisticsFaq.answer}</dd>
+              </div>
+            ) : null}
             {proof?.faqs?.map((faq) => (
               <div key={faq.question}>
                 <dt className="heading-3">{faq.question}</dt>

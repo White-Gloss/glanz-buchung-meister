@@ -9,18 +9,21 @@ import { relative, resolve } from "node:path";
 import { qaBase, controlBase, lighthouseBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { robotsEvidence } from "./robots-evidence.mjs";
+import { observeBrowserAction } from "./browser-action.mjs";
 import { emptyCmsContent } from "../../src/lib/cms.model.ts";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/website-studio");
 await mkdir(output, { recursive: true });
-const report = { status: "running", checks: [], screenshots: [], diagnostics: [], blocked: [] };
+const report = { status: "running", checks: [], screenshots: [], diagnostics: [], blocked: [], serverFunctionTraffic: [], serverFunctions: {} };
 let browser;
 let latest;
 let home;
 let operatorCookie = "";
 const diagnostics = [];
 const ids = {};
+const serverFunctionCandidates = {};
+const pageTraffic = new WeakMap();
 const mutationNames = ["saveCmsDraft", "publishCmsRevision", "restoreCmsRevisionAsDraft", "archiveCmsDocument", "updateCmsMedia", "archiveCmsMedia"];
 let fromCrossJSON;
 let toJSONAsync;
@@ -41,9 +44,7 @@ async function rpc(name, data, cookie = "") {
 }
 async function operation(page, name, action) {
   const path = name === "uploadCmsImage" ? "/api/studio-media-upload" : `/_serverFn/${ids[name]}`;
-  const response = page.waitForResponse((value) => new URL(value.url()).pathname === path && value.request().method() === "POST");
-  await action();
-  const received = await response;
+  const received = await observeBrowserAction(page, (value) => new URL(value.url()).pathname === path && value.request().method() === "POST", action);
   if (name === "uploadCmsImage") {
     assert.equal(received.status(), 201);
     const result = await received.json();
@@ -85,6 +86,18 @@ async function openStudio(width, cookie = operatorCookie) {
   const separator = cookie.indexOf("=");
   await context.addCookies([{ name: cookie.slice(0, separator), value: cookie.slice(separator + 1), url: lighthouseBase, secure: true, httpOnly: true, sameSite: "Lax" }]);
   const page = await context.newPage();
+  const traffic = [];
+  pageTraffic.set(page, traffic);
+  const trace = (request, event, details = {}) => {
+    const path = new URL(request.url()).pathname;
+    if (!path.startsWith("/_serverFn/") || traffic.length >= 200) return;
+    const entry = { label: `studio-${width}-${diagnostics.length}`, event, method: request.method(), path, ...details };
+    traffic.push(entry);
+    report.serverFunctionTraffic.push(entry);
+  };
+  page.on("request", (request) => trace(request, "request"));
+  page.on("response", (response) => trace(response.request(), "response", { status: response.status() }));
+  page.on("requestfailed", (request) => trace(request, "failed", { error: request.failure()?.errorText }));
   diagnostic.attach(page);
   page.setDefaultTimeout(15000);
   await page.goto(`${lighthouseBase}/admin/studio`, { waitUntil: "networkidle" });
@@ -94,9 +107,30 @@ async function openStudio(width, cookie = operatorCookie) {
 }
 async function selectAbout(page) {
   // Wait for this selection's real response, not a field left over from Home.
-  const response = page.waitForResponse((value) => new URL(value.url()).pathname === `/_serverFn/${ids.getCmsStudioDocument}` && value.request().method() === "GET");
-  await page.getByLabel("Seite bearbeiten", { exact: true }).selectOption("about");
-  const result = await decoded(await response);
+  let response;
+  try {
+    response = await observeBrowserAction(page,
+      (value) => new URL(value.url()).pathname === `/_serverFn/${ids.getCmsStudioDocument}` && value.request().method() === "GET",
+      () => page.getByLabel("Seite bearbeiten", { exact: true }).selectOption("about"));
+  } catch (error) {
+    report.lastFailureContext = {
+      action: "selectAbout", expectedReaderId: ids.getCmsStudioDocument,
+      traffic: pageTraffic.get(page)?.slice(-25) ?? [],
+      ui: await page.evaluate(() => ({
+        path: location.pathname,
+        busy: [...document.querySelectorAll("main[aria-busy]")].map((element) => element.getAttribute("aria-busy")),
+        selects: [...document.querySelectorAll("select")].map((element) => ({
+          label: element.closest("label")?.querySelector("span")?.textContent,
+          value: element.value, disabled: element.disabled,
+          options: [...element.options].slice(0, 30).map((option) => option.value),
+        })),
+        inputs: [...document.querySelectorAll("input")].slice(0, 20).map((element) => ({ label: element.closest("label")?.querySelector("span")?.textContent, value: element.value.slice(0, 200), disabled: element.disabled })),
+        alerts: [...document.querySelectorAll('[role="alert"]')].map((element) => element.textContent?.slice(0, 500)),
+      })).catch((failure) => ({ unavailable: failure.message })),
+    };
+    throw new Error(`${error.message}\nStudio selection evidence: ${JSON.stringify(report.lastFailureContext)}`, { cause: error });
+  }
+  const result = await decoded(response);
   assert.ok(result.result && !result.error, JSON.stringify(result.error));
   assert.equal(result.result.key, "about");
   await page.getByLabel("Überschrift", { exact: true }).waitFor();
@@ -127,10 +161,16 @@ try {
   for (const file of await readdir(".output/server/_ssr")) {
     if (!file.endsWith(".mjs") && !file.endsWith(".js")) continue;
     const source = await readFile(resolve(".output/server/_ssr", file), "utf8");
-    for (const match of source.matchAll(/id: "([a-f0-9]+)",\s*name: "(\w+)"/g)) ids[match[2]] = match[1];
+    for (const match of source.matchAll(/id: "([a-f0-9]+)",\s*name: "(\w+)"/g)) {
+      (serverFunctionCandidates[match[2]] ??= []).push({ id: match[1], file });
+      ids[match[2]] = match[1];
+    }
   }
-  for (const name of mutationNames) assert.ok(ids[name], `${name} must exist in this production build`);
-  assert.ok(ids.getCmsStudioDocument, "The Studio document reader must exist in this production build");
+  for (const name of [...mutationNames, "getCmsStudioDocument"]) {
+    const candidates = serverFunctionCandidates[name] ?? [];
+    report.serverFunctions[name] = candidates;
+    assert.equal(new Set(candidates.map(({ id }) => id)).size, 1, `${name} must resolve to exactly one production server-function ID: ${JSON.stringify(candidates)}`);
+  }
 
   // Trust this run's certificate pin, never disable certificate validation globally.
   const transport = JSON.parse(await readFile(".qa-output/lighthouse-transport.json", "utf8"));
@@ -295,6 +335,10 @@ try {
   report.status = "failed";
   report.error = error.stack ?? String(error);
   process.exitCode = 1;
+  for (const [index, context] of (browser?.contexts() ?? []).entries()) {
+    const page = context.pages()[0];
+    if (page) await screenshot(page, `failure-${index}.png`).catch((failure) => { report.screenshotError = failure.message; });
+  }
 } finally {
   for (const [key, document] of [["about", latest], ["home", home]]) {
     if (!document?.id || !operatorCookie) continue;
@@ -321,7 +365,8 @@ try {
     }
   }
   report.diagnostics = diagnostics.map((item) => item.snapshot());
-  await browser?.close();
+  try { await browser?.close(); }
+  catch (error) { report.status = "failed"; report.browserCleanupError = error.message; process.exitCode = 1; }
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));
