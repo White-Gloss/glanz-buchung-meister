@@ -6,7 +6,7 @@ Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehör
 
 ## 1. Getrennte Freigaben
 
-1. **Code:** Den konkreten Commit und seine bestandenen Prüfungen freigeben; anschließend ausschließlich den bestehenden IONOS-Veröffentlichungsweg verwenden. Branch Protection und den bestehenden Buchungs-Releasevertrag beibehalten.
+1. **Code:** Den konkreten Commit und seine bestandenen Prüfungen freigeben; anschließend ausschließlich den bestätigten, bestehenden Veröffentlichungsweg verwenden. Aktives Hostingziel und Releasepfade vorab abgleichen: ältere Betreiberregeln und Skriptnamen nennen IONOS, während ein Hostinger-Workflow vorhanden ist. Daraus allein folgt keine Freigabe für einen Anbieterwechsel. Branch Protection und den bestehenden Buchungs-Releasevertrag beibehalten.
 2. **Einrichtung:** Datenbankziel, Sicherungen, Migration `0025_website_studio.sql`, dauerhaften Bildspeicher und Konfiguration ausdrücklich freigeben. Ein genehmigtes Code-Deployment allein erlaubt diese Änderungen nicht.
 3. **Aktivierung:** `WEBSITE_STUDIO_ENABLED=true` erst nach bestätigter Einrichtung und gesonderter Freigabe setzen.
 4. **Inhalte:** Tatsächliche Texte, Bildrechte und Vorschau prüfen. Erst „Jetzt veröffentlichen“ macht eine gespeicherte Fassung öffentlich. Fehlende persönliche Angaben bleiben unveröffentlichte Entwürfe.
