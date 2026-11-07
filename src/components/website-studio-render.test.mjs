@@ -17,9 +17,13 @@ const compiled = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
   },
 });
+/** @type {{ exports: Partial<typeof import("./website-studio-content.tsx")> }} */
 const module = { exports: {} };
 new Function("require", "exports", "module", compiled.outputText)(require, module.exports, module);
 const { WebsiteStudioContent } = module.exports;
+if (typeof WebsiteStudioContent !== "function") {
+  throw new Error("The production renderer did not export WebsiteStudioContent.");
+}
 const content = {
   title: "Redaktion",
   lead: "Einleitung",
@@ -84,10 +88,19 @@ test("unresolved media is not exposed as a broken public image", () => {
 });
 
 test("embedding below a page hero adds H2 sections and questions without another H1", () => {
-  const html = renderToStaticMarkup(createElement(WebsiteStudioContent, {
-    content: { ...content, sections: [{ id: "work", title: "Arbeitsweise", body: "Sorgfältig geprüft." }], faqs: [{ question: "Wo arbeiten wir?", answer: "In Horb am Neckar." }] },
-    assets, headingLevel: 1, showIntro: false, showHero: false,
-  }));
+  const html = renderToStaticMarkup(
+    createElement(WebsiteStudioContent, {
+      content: {
+        ...content,
+        sections: [{ id: "work", title: "Arbeitsweise", body: "Sorgfältig geprüft." }],
+        faqs: [{ question: "Wo arbeiten wir?", answer: "In Horb am Neckar." }],
+      },
+      assets,
+      headingLevel: 1,
+      showIntro: false,
+      showHero: false,
+    }),
+  );
   assert.doesNotMatch(html, /<h1(?:\s|>)/);
   assert.equal((html.match(/<h2(?:\s|>)/g) ?? []).length, 2);
   assert.doesNotMatch(html, /<h3(?:\s|>)/);

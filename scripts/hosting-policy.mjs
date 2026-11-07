@@ -23,7 +23,7 @@ export function isIsolatedGithubCi({
   if (platform !== "linux" || env.GITHUB_ACTIONS !== "true" ||
       env.GITHUB_REPOSITORY !== "White-Gloss/glanz-buchung-meister" ||
       env.GITHUB_WORKFLOW !== "CI" || !/^\d+$/.test(env.GITHUB_RUN_ID || "") ||
-      !["github-hosted", "self-hosted"].includes(env.RUNNER_ENVIRONMENT) ||
+      !["github-hosted", "self-hosted"].includes(env.RUNNER_ENVIRONMENT || "") ||
       !workspace) return false;
   try {
     return realpath(cwd) === realpath(workspace);

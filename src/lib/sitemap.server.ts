@@ -1,6 +1,8 @@
 import { appendBlogSitemap, appendPublishedPageSitemap, type SitemapBlogRow, type SitemapPageRow } from "./sitemap.ts";
 import type { Sql } from "./db.ts";
 import { isCmsSchemaUnavailable } from "./cms.store.ts";
+import { cmsEnabled } from "./cms.availability.ts";
+import { isIsolatedGithubCi } from "../../scripts/hosting-policy.mjs";
 
 export async function loadPublishedSitemapBlogs(sql: Sql): Promise<SitemapBlogRow[]> {
   // Match listPublishedCms and the first matching row in /ratgeber/$slug.
@@ -12,7 +14,13 @@ export async function loadPublishedSitemapBlogs(sql: Sql): Promise<SitemapBlogRo
   `;
 }
 
-export async function loadPublishedSitemapPages(sql: Sql): Promise<SitemapPageRow[]> {
+export async function loadPublishedSitemapPages(sql: Sql, config = {
+  enabled: process.env.WEBSITE_STUDIO_ENABLED,
+  isolatedCi: isIsolatedGithubCi(),
+}): Promise<SitemapPageRow[]> {
+  // Match the public document loader, including the production rollback switch.
+  // Legacy blog discovery stays independent of this optional Studio feature.
+  if (!cmsEnabled(config)) return [];
   try {
     return await sql<SitemapPageRow>`
       select '/ueber-uns' as path, r.created_at as updated_at

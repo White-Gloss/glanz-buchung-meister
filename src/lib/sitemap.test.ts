@@ -72,6 +72,31 @@ describe("CMS sitemap XML", () => {
 });
 
 describe("CMS sitemap publication query", () => {
+  it("removes About after the Studio switch is disabled while keeping legacy blog discovery", async () => {
+    const config = { enabled: "true", isolatedCi: false };
+    let pageQueries = 0;
+    const sql = ((strings: TemplateStringsArray) => {
+      const statement = strings.join("?");
+      if (statement.includes("studio_key")) {
+        pageQueries += 1;
+        return Promise.resolve([{ path: "/ueber-uns", updated_at: "2026-11-07T10:00:00Z" }]);
+      }
+      return Promise.resolve([row("legacy-blog")]);
+    }) as Sql;
+    const respond = createSitemapResponder({
+      staticXml, origin,
+      loadPublished: () => loadPublishedSitemapBlogs(sql),
+      loadPublishedPages: () => loadPublishedSitemapPages(sql, config),
+    });
+    assert.match(await (await respond()).text(), /\/ueber-uns<\/loc>/);
+    assert.equal(pageQueries, 1);
+    config.enabled = "false";
+    const disabled = await (await respond()).text();
+    assert.doesNotMatch(disabled, /\/ueber-uns<\/loc>/);
+    assert.match(disabled, /\/ratgeber\/legacy-blog<\/loc>/);
+    assert.equal(pageQueries, 1, "A disabled Studio must not query optional Studio tables.");
+  });
+
   it("reads only the published About revision in its tenant, without exposing draft edit times", async () => {
     let statement = "";
     let parameters: unknown[] = [];
@@ -80,7 +105,7 @@ describe("CMS sitemap publication query", () => {
       parameters = values;
       return Promise.resolve([{ path: "/ueber-uns", updated_at: "2026-11-07T10:00:00Z" }]);
     }) as Sql;
-    assert.equal((await loadPublishedSitemapPages(sql))[0].path, "/ueber-uns");
+    assert.equal((await loadPublishedSitemapPages(sql, { enabled: "true", isolatedCi: false }))[0].path, "/ueber-uns");
     assert.deepEqual(parameters, ["white-gloss", "about"]);
     assert.match(statement, /r\.shop_id = i\.shop_id and r\.item_id = i\.id and r\.id = i\.published_revision_id/);
     assert.match(statement, /where i\.shop_id = \? and i\.studio_key = \? and i\.published = true and i\.archived_at is null/);
@@ -90,9 +115,9 @@ describe("CMS sitemap publication query", () => {
 
   it("keeps the old sitemap available before the optional Studio schema exists", async () => {
     const missingSchema = (() => Promise.reject({ code: "42P01", message: 'relation "cms_revisions" does not exist' })) as unknown as Sql;
-    assert.deepEqual(await loadPublishedSitemapPages(missingSchema), []);
+    assert.deepEqual(await loadPublishedSitemapPages(missingSchema, { enabled: "true", isolatedCi: false }), []);
     const outage = (() => Promise.reject(new Error("database unavailable"))) as unknown as Sql;
-    await assert.rejects(() => loadPublishedSitemapPages(outage), /database unavailable/);
+    await assert.rejects(() => loadPublishedSitemapPages(outage, { enabled: "true", isolatedCi: false }), /database unavailable/);
   });
 
   it("uses the public article tenant, blog filter, publication state and selection order", async () => {

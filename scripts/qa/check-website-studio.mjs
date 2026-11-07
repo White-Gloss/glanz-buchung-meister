@@ -92,9 +92,15 @@ async function openStudio(width, cookie = operatorCookie) {
   return { context, page };
 }
 async function selectAbout(page) {
+  // Wait for this selection's real response, not a field left over from Home.
+  const response = page.waitForResponse((value) => new URL(value.url()).pathname === `/_serverFn/${ids.getCmsStudioDocument}` && value.request().method() === "GET");
   await page.getByLabel("Seite bearbeiten", { exact: true }).selectOption("about");
+  const result = await decoded(await response);
+  assert.ok(result.result && !result.error, JSON.stringify(result.error));
+  assert.equal(result.result.key, "about");
   await page.getByLabel("Überschrift", { exact: true }).waitFor();
   await page.waitForFunction(() => document.querySelector("main[aria-busy]")?.getAttribute("aria-busy") === "false");
+  return result.result;
 }
 async function assertNoOverflow(page) {
   const excess = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -123,6 +129,7 @@ try {
     for (const match of source.matchAll(/id: "([a-f0-9]+)",\s*name: "(\w+)"/g)) ids[match[2]] = match[1];
   }
   for (const name of mutationNames) assert.ok(ids[name], `${name} must exist in this production build`);
+  assert.ok(ids.getCmsStudioDocument, "The Studio document reader must exist in this production build");
 
   // Trust this run's certificate pin, never disable certificate validation globally.
   const transport = JSON.parse(await readFile(".qa-output/lighthouse-transport.json", "utf8"));
@@ -250,10 +257,16 @@ try {
   assert.equal((await fetch(qaBase + upload.publicUrl)).status, 404);
   assert.ok(!(await publicPage("/ueber-uns")).html.includes(upload.publicUrl), "Revoked media disappears from public markup");
   const restoreImage = await rpc("restoreCmsRevisionAsDraft", { key: "about", revisionId: latest.draftRevisionId, expectedDraftRevisionId: latest.draftRevisionId }, operatorCookie);
-  assert.ok(restoreImage.result, JSON.stringify(restoreImage.error));
-  latest = restoreImage.result;
+  assert.match(restoreImage.error?.message ?? "", /nicht zur Veröffentlichung freigegeben|entfernt/, "Restore itself must reject revoked media");
+  await desktop.page.reload({ waitUntil: "networkidle" });
+  await desktop.page.getByLabel("Überschrift", { exact: true }).waitFor();
+  const afterDeniedRestore = await selectAbout(desktop.page);
+  assert.equal(afterDeniedRestore.draftRevisionId, latest.draftRevisionId, "Rejected restore must not change the draft pointer");
+  assert.equal(afterDeniedRestore.publishedRevisionId, latest.publishedRevisionId, "Rejected restore must not change the publication pointer");
+  assert.deepEqual(afterDeniedRestore.revisions, latest.revisions, "Rejected restore must not insert a revision");
+  assert.equal((await fetch(qaBase + upload.publicUrl)).status, 404, "Rejected restore leaves media inaccessible");
   const republication = await rpc("publishCmsRevision", { key: "about", revisionId: latest.draftRevisionId, expectedDraftRevisionId: latest.draftRevisionId, expectedPublishedRevisionId: latest.publishedRevisionId }, operatorCookie);
-  assert.ok(republication.error, "Restoring a revision must not reactivate revoked media");
+  assert.match(republication.error?.message ?? "", /nicht zur Veröffentlichung freigegeben|entfernt/, "Publishing the current revision must also reject revoked media");
   report.checks.push("390px editing/preview stay within viewport; revoked images cannot be reactivated through history");
   await desktop.context.close();
 
