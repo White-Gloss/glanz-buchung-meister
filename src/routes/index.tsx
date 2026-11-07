@@ -7,7 +7,7 @@ import { Shot } from "@/components/media";
 import {
   cities,
   pickupKeramikNote,
-  pickupPriceText,
+  cityPickupPriceText,
   pickupTierSummary,
   services,
   site,
@@ -267,13 +267,13 @@ function Home() {
                     to="/abholservice/$city"
                     params={{ city: c.slug }}
                     className="city-chip"
-                    aria-label={`${c.name}, ${cityJourneyText(c)}, Abholung ${pickupPriceText(c.km)}`}
+                    aria-label={`${c.name}, ${cityJourneyText(c)}, Abholung ${cityPickupPriceText(c)}`}
                   >
                     <span className="city-chip-name">{c.name}</span>
                     <span className="city-chip-meta" aria-hidden="true">
                       <span>{pickupDistanceLabel(c)}</span>
                       <span className="city-chip-status" data-status={pickupStatus(c.km)}>
-                        {pickupPriceText(c.km)}
+                        {cityPickupPriceText(c)}
                       </span>
                     </span>
                   </Link>
