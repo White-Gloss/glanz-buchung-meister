@@ -3,6 +3,7 @@ import { qaBase, controlBase, qaPort, controlPort, tlsPort } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 import { lighthouseDigest } from "./lighthouse-digest.mjs";
 import { prepareBrowserFixture } from "./browser-fixture.mjs";
+import { qaCheckMode } from "./check-mode.mjs";
 assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -19,12 +20,13 @@ const outputRoot = resolve(projectRoot, ".qa-output");
 const base = qaBase;
 const identityUrl = controlBase + "/identity";
 const runId = randomUUID();
-const crossBrowserOnly = process.argv.includes("--cross-browser-only");
+const mode = qaCheckMode(process.argv.slice(2));
 const abort = new AbortController();
 const children = [];
 const reservations = [];
 const summary = {
   runId,
+  mode,
   startedAt: new Date().toISOString(),
   status: "running",
   checks: [],
@@ -253,8 +255,11 @@ try {
   log("QA: starting a fresh isolated production server");
   const server = startNode("isolated-server", ["scripts/qa/isolated-server.mjs"]);
   await waitForReady(server);
-  if (crossBrowserOnly) {
+  if (mode === "cross-browser") {
     await runCheck(server, "cross-browser", ["scripts/qa/check-cross-browser.mjs"], 180_000);
+  } else if (mode === "studio") {
+    await prepareBrowserFixture({ runId, scenario: "studio-suite" });
+    await runCheck(server, "website-studio", ["scripts/qa/check-website-studio.mjs"], 180_000);
   } else {
   await runCheck(server, "frontend-ssr", ["--test", "scripts/frontend-ssr.test.mjs"]);
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
@@ -265,7 +270,6 @@ try {
   // Keep every page and assertion; only this stage gets a bounded extra minute.
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
-  await runCheck(server, "website-studio", ["scripts/qa/check-website-studio.mjs"], 180_000);
   const diagnosticFailures = [];
   for (const check of [
     {

@@ -184,6 +184,41 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  studio:
+    # Separate ephemeral database and media store: a Studio failure must not
+    # prevent the independent public-site Lighthouse and browser evidence.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Node.js einrichten
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+      - name: Produktions-Build erstellen
+        run: npm run build
+      - name: Chromium bereitstellen
+        run: npx playwright install --with-deps chromium
+      - name: Studio mit geschützten Testdaten prüfen
+        timeout-minutes: 5
+        run: node scripts/qa/run-checks.mjs --studio-only
+      - name: Kompakte Studio-Prüfnachweise ausgeben
+        if: always()
+        run: node scripts/qa/export-review-images.mjs
+      - name: Studio-Prüfnachweise sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-qa-results
+          path: .qa-output/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
   cross-browser:
     # Additional engines run on a disposable runner, never install OS packages
     # on the self-hosted production VPS. Existing verify remains independent.

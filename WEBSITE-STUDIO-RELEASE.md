@@ -13,6 +13,8 @@ Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehör
 
 Der Code kann zunächst mit deaktiviertem Studio ausgeliefert werden. `0025_website_studio.sql` ist im Release-Manifest ausdrücklich als optionale Erweiterung geführt; unbekannte künftige Migrationen bleiben erforderlich. Die Produktions-Readiness-Prüfung und der PostgreSQL-Zugriff führen diese Studio-Migration nicht automatisch aus.
 
+Die bisherigen CMS-Verwaltungsseiten öffnen denselben neuen Studio-Editor. Bei deaktiviertem Studio ist dort keine redaktionelle Bearbeitung möglich; veröffentlichte Bestandsinhalte bleiben sichtbar. Für unterbrechungsfreie redaktionelle Nutzung müssen Codefreigabe, Einrichtung und Aktivierung deshalb gemeinsam vorbereitet werden. Flag aus ist ein Rückweg für die öffentliche Website, kein Ersatz für einen verfügbaren Editor.
+
 ## 2. Vor der Einrichtung prüfen
 
 | Bereich | Voraussetzung und Nachweis |

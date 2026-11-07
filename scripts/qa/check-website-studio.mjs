@@ -8,6 +8,7 @@ import { mkdir, readFile, readdir, realpath, writeFile } from "node:fs/promises"
 import { relative, resolve } from "node:path";
 import { qaBase, controlBase, lighthouseBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
+import { robotsEvidence } from "./robots-evidence.mjs";
 import { emptyCmsContent } from "../../src/lib/cms.model.ts";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
@@ -160,7 +161,9 @@ try {
   const firstRevision = latest.draftRevisionId;
   const unpublished = await publicPage("/ueber-uns");
   assert.equal(unpublished.response.status, 404, "About stays unpublished until approval");
-  assert.match(unpublished.html, /noindex/);
+  const unpublishedRobots = robotsEvidence(unpublished.html, unpublished.response.headers);
+  assert.ok(unpublishedRobots.meta.some((value) => value.split(/[\s,]+/).includes("noindex")), `Unpublished About must have a real robots noindex meta: ${JSON.stringify(unpublishedRobots)}`);
+  assert.ok(unpublishedRobots.meta.some((value) => value.split(/[\s,]+/).includes("nofollow")), `Unpublished About must have robots nofollow: ${JSON.stringify(unpublishedRobots)}`);
   assert.doesNotMatch(unpublished.html, /QA Studio erster Entwurf/);
   assert.doesNotMatch((await publicPage("/")).html, /href="\/ueber-uns"/);
   assert.doesNotMatch((await publicPage("/sitemap.xml")).html, /https:\/\/white-gloss\.de\/ueber-uns/);
