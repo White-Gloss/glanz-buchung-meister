@@ -9,6 +9,7 @@ import { qaClientHeaders } from "./client-identity.mjs";
 import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { displayedPriceEquals } from "./displayed-price.mjs";
 import { completeSuccessfulRead, observeReadDuringAction } from "./read-completion.mjs";
+import { revealTargetWithWheel } from "./scroll-target.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -29,6 +30,35 @@ async function screenshot(page, name) {
   report.screenshots.push(name);
 }
 const isReviewsRequest = (request) => request.method() === "GET" && request.url() === `${qaBase}/api/google-reviews`;
+async function revealReviews(page, state) {
+  state.scrollEnvironment = await page.evaluate(() => ({
+    reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+    htmlClasses: document.documentElement.className,
+    bodyOverflow: getComputedStyle(document.body).overflow,
+    readyState: document.readyState,
+  }));
+  assert.equal(state.scrollEnvironment.reducedMotion, true, "The cross-browser scenario must keep reduced motion enabled");
+  state.scrollAttempts = [];
+  state.visibleTarget = await revealTargetWithWheel({
+    measure: () => page.locator("#bewertungen").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height, scrollY, viewportHeight: innerHeight, headerBottom: document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0 };
+    }),
+    wheel: async (deltaY) => {
+      const viewport = page.viewportSize();
+      await page.mouse.move(viewport.width / 2, viewport.height / 2);
+      await page.mouse.wheel(0, deltaY);
+    },
+    settle: async (timeout) => {
+      await page.evaluate(() => { window.__qaReviewsWheel = { y: scrollY, since: performance.now() }; });
+      await page.waitForFunction(() => {
+        const probe = window.__qaReviewsWheel;
+        if (Math.abs(scrollY - probe.y) > 0.5) { probe.y = scrollY; probe.since = performance.now(); }
+        return performance.now() - probe.since >= 150;
+      }, undefined, { timeout });
+    },
+  }, { onAttempt: (attempt) => state.scrollAttempts.push(attempt) });
+}
 async function verifyHomepageReviews(page, label, action) {
   // Scrolling can trigger the lazy reviews after goto(networkidle) completed.
   // Observe this navigation's real request before starting, deliberately bring
@@ -39,7 +69,7 @@ async function verifyHomepageReviews(page, label, action) {
     const response = await observeReadDuringAction(page, (response) => isReviewsRequest(response.request()), async () => {
       await action();
       state.stage = "scroll-to-reviews";
-      await page.locator("#bewertungen").scrollIntoViewIfNeeded();
+      await revealReviews(page, state);
       state.stage = "visible-reviews";
       await page.getByRole("complementary", { name: "Google-Kundenbewertungen", exact: true }).waitFor();
       state.stage = "response";

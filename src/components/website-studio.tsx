@@ -320,11 +320,11 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
     });
   const unavailable = loading || busy || !document || document.archived;
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12" aria-busy={loading || busy}>
-      <header className="mb-8 max-w-3xl">
+    <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:py-12" aria-busy={loading || busy}>
+      <header className="mb-5 max-w-3xl sm:mb-8">
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">White-Gloss · Website</p>
-        <h1 className="mt-2 font-display text-4xl sm:text-5xl">Website Studio</h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <h1 className="mt-2 font-display text-3xl sm:text-5xl">Website Studio</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted sm:mt-3">
           Inhalte bearbeiten, in Ruhe ansehen und bewusst veröffentlichen. Preise und Buchungsregeln
           werden hier nicht verändert.
         </p>
@@ -354,8 +354,8 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
           </div>
         </section>
       )}
-      <div className="grid items-start gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="space-y-6 lg:sticky lg:top-20">
+      <div className="grid items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="space-y-3 lg:sticky lg:top-20 lg:space-y-6">
           <label className="block space-y-2 text-sm">
             <span className="font-medium">Seite bearbeiten</span>
             <select
@@ -436,7 +436,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
               </Button>
             </form>
           </details>
-          <div className="space-y-2 border-t border-line pt-5 text-sm">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-line pt-3 text-sm lg:block lg:space-y-2 lg:pt-5">
             <p>
               Entwurf:{" "}
               <strong>
@@ -455,7 +455,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                     : "Standardinhalt / noch unveröffentlicht"}
               </strong>
             </p>
-            <p role="status" className="text-muted">
+            <p role="status" className="col-span-2 text-muted">
               {dirty ? "Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen"}
             </p>
           </div>
@@ -464,7 +464,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
             prüfen. Unbekannte Angaben bleiben leer.
           </p>
         </aside>
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-4 lg:space-y-6">
           {pendingKey && (
             <section
               aria-label="Ungespeicherte Änderungen"

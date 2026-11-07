@@ -298,6 +298,38 @@ try {
 
   const mobile = await openStudio(390);
   await selectAbout(mobile.page);
+  await mobile.page.evaluate(() => document.fonts.ready);
+  const mobileGeometry = [];
+  for (const width of [390, 320]) {
+    await mobile.page.setViewportSize({ width, height: 844 });
+    await mobile.page.evaluate(async () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
+    await assertNoOverflow(mobile.page);
+    const titleField = await mobile.page.getByLabel("Überschrift", { exact: true }).evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        top: rect.top, height: rect.height, viewportHeight: innerHeight, scrollY,
+        visibleHeight: Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0)),
+      };
+    });
+    assert.equal(titleField.scrollY, 0, `${width}px mobile check starts at the top of the page`);
+    if (width === 390) {
+      assert.ok(titleField.top >= 0 && titleField.visibleHeight >= 44,
+        `390px first editor field must offer at least 44px at page start: ${JSON.stringify(titleField)}`);
+    }
+    const fieldTargets = await mobile.page.locator("main select, main textarea, main input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file'])").evaluateAll((elements) => elements
+      .filter((element) => element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden")
+      .map((element) => ({ tag: element.tagName, height: element.getBoundingClientRect().height })));
+    assert.ok(fieldTargets.some((field) => field.tag === "SELECT"), `${width}px page selection stays visible`);
+    assert.ok(fieldTargets.some((field) => field.tag === "TEXTAREA"), `${width}px editor fields stay visible`);
+    for (const field of fieldTargets) assert.ok(field.height >= 44, `${width}px field touch target: ${JSON.stringify(field)}`);
+    mobileGeometry.push({ width, titleField, fieldTargets });
+  }
+  report.mobileGeometry = mobileGeometry;
+  await mobile.page.setViewportSize({ width: 390, height: 844 });
+  await mobile.page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
   await assertNoOverflow(mobile.page);
   await screenshot(mobile.page, "mobile-editor.png");
   await mobile.page.getByRole("button", { name: "Vorschau", exact: true }).click();
@@ -321,7 +353,7 @@ try {
   assert.equal((await fetch(qaBase + upload.publicUrl)).status, 404, "Rejected restore leaves media inaccessible");
   const republication = await rpc("publishCmsRevision", { key: "about", revisionId: latest.draftRevisionId, expectedDraftRevisionId: latest.draftRevisionId, expectedPublishedRevisionId: latest.publishedRevisionId }, operatorCookie);
   assert.match(republication.error?.message ?? "", /nicht zur Veröffentlichung freigegeben|entfernt/, "Publishing the current revision must also reject revoked media");
-  report.checks.push("390px editing/preview stay within viewport; revoked images cannot be reactivated through history");
+  report.checks.push("390px editor begins visibly at page start; 390/320px fields keep 44px touch targets without overflow; revoked images cannot be reactivated through history");
   await desktop.context.close();
 
   // Verify the home consumer separately, then restore its static fallback.
