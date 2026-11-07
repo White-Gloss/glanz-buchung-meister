@@ -238,6 +238,19 @@ describe("booking conversion lifecycle", () => {
   const conversions = () =>
     ((window.dataLayer as unknown[][]) ?? []).filter((row) => row[0] === "event");
 
+  it("sends a GA4 lead once after server success and late consent", () => {
+    const { storage } = installFakeBrowser();
+    storage.clear();
+    queueBookingConversion("WG-123");
+    assert.equal(conversions().length, 0);
+    storage.set("wg-consent", "accepted");
+    loadGoogleTag({ adsId: null, ga4Id: "G-RFX3GFRVBG" });
+    queueBookingConversion("WG-123");
+    loadGoogleTag({ adsId: null, ga4Id: "G-RFX3GFRVBG" });
+    const leads = conversions().filter((row) => row[1] === "generate_lead");
+    assert.deepEqual(leads, [["event", "generate_lead", { send_to: "G-RFX3GFRVBG" }]]);
+  });
+
   it("sends one EUR lead after server success, with a stable transaction ID", () => {
     installFakeBrowser();
     loadGoogleTag();
