@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { CmsDocumentContent } from "@/lib/cms.model";
 import type { StudioAsset } from "@/lib/studio-media.model";
 import { Button, inputClass } from "./ui";
@@ -16,11 +17,15 @@ function TextField({
   maxLength?: number;
   multiline?: boolean;
 }) {
+  const id = useId();
   return (
-    <label className="block space-y-2 text-sm">
-      <span className="font-medium">{label}</span>
+    <div className="block space-y-2 text-sm">
+      <label htmlFor={id} className="font-medium">
+        {label}
+      </label>
       {multiline ? (
         <textarea
+          id={id}
           className={`${inputClass} min-h-28 py-3 leading-relaxed`}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -28,13 +33,14 @@ function TextField({
         />
       ) : (
         <input
+          id={id}
           className={inputClass}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           maxLength={maxLength}
         />
       )}
-    </label>
+    </div>
   );
 }
 
@@ -56,6 +62,7 @@ export function WebsiteStudioFields({
       <div className="space-y-5">
         <TextField
           label="Überschrift"
+          multiline
           value={content.title}
           onChange={(title) => edit({ title })}
         />

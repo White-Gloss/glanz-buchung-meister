@@ -107,11 +107,16 @@ async function openStudio(width, cookie = operatorCookie) {
 }
 async function selectAbout(page) {
   // Wait for this selection's real response, not a field left over from Home.
+  // getByLabel(exact) recursively includes the nested select's option text in
+  // Playwright 1.62. Role lookup uses the control's actual accessible name and
+  // excludes that control when traversing its own wrapping label.
+  const selector = page.getByRole("combobox", { name: "Seite bearbeiten", exact: true });
+  assert.equal(await selector.count(), 1, "Exactly one accessible page selector must be present before waiting for its response");
   let response;
   try {
     response = await observeBrowserAction(page,
       (value) => new URL(value.url()).pathname === `/_serverFn/${ids.getCmsStudioDocument}` && value.request().method() === "GET",
-      () => page.getByLabel("Seite bearbeiten", { exact: true }).selectOption("about"));
+      async () => assert.deepEqual(await selector.selectOption("about"), ["about"]));
   } catch (error) {
     report.lastFailureContext = {
       action: "selectAbout", expectedReaderId: ids.getCmsStudioDocument,
@@ -126,6 +131,8 @@ async function selectAbout(page) {
         })),
         inputs: [...document.querySelectorAll("input")].slice(0, 20).map((element) => ({ label: element.closest("label")?.querySelector("span")?.textContent, value: element.value.slice(0, 200), disabled: element.disabled })),
         alerts: [...document.querySelectorAll('[role="alert"]')].map((element) => element.textContent?.slice(0, 500)),
+        statuses: [...document.querySelectorAll('[role="status"]')].map((element) => element.textContent?.slice(0, 500)),
+        confirmations: [...document.querySelectorAll('section[aria-label="Ungespeicherte Änderungen"], section[aria-label="Studio verlassen"]')].map((element) => element.textContent?.slice(0, 500)),
       })).catch((failure) => ({ unavailable: failure.message })),
     };
     throw new Error(`${error.message}\nStudio selection evidence: ${JSON.stringify(report.lastFailureContext)}`, { cause: error });
@@ -133,6 +140,7 @@ async function selectAbout(page) {
   const result = await decoded(response);
   assert.ok(result.result && !result.error, JSON.stringify(result.error));
   assert.equal(result.result.key, "about");
+  assert.equal(await selector.inputValue(), "about");
   await page.getByLabel("Überschrift", { exact: true }).waitFor();
   await page.waitForFunction(() => document.querySelector("main[aria-busy]")?.getAttribute("aria-busy") === "false");
   return result.result;
@@ -209,6 +217,9 @@ try {
   assert.doesNotMatch((await publicPage("/sitemap.xml")).html, /https:\/\/white-gloss\.de\/ueber-uns/);
 
   const desktop = await openStudio(1440);
+  const initialHomeHeading = desktop.page.getByLabel("Überschrift", { exact: true });
+  assert.equal(await initialHomeHeading.evaluate((element) => element.tagName), "TEXTAREA", "The homepage heading must retain its multiline editor");
+  assert.equal(await initialHomeHeading.inputValue(), "Ihr Auto.\nNicht nur sauber.\nWieder besonders.", "All three homepage heading lines must survive loading into the editor");
   await selectAbout(desktop.page);
   assert.equal(await desktop.page.getByLabel("Überschrift", { exact: true }).inputValue(), firstContent.title);
   assert.match(await desktop.page.locator('meta[name="robots"]').last().getAttribute("content"), /noindex/);
@@ -370,3 +381,11 @@ try {
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));
+// Keep every diagnostic visible in the runner's bounded log tail as well as
+// the full JSON artifact, even when the DOM failure context is long.
+console.log("Studio browser diagnostics: " + JSON.stringify({
+  status: report.status,
+  errors: report.diagnostics.flatMap((item) => item.errors),
+  warnings: report.diagnostics.flatMap((item) => item.warnings),
+  blocked: report.blocked,
+}));

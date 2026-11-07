@@ -72,8 +72,19 @@ test("all 19 pickup plans add useful information without repeating the introduct
   const nagold = cities.find((city) => city.slug === "nagold")!;
   const changedLogistics = { ...nagold, km: 25, minutes: 32 };
   const changedPlan = cityPlanningText(changedLogistics);
-  assert.ok(changedPlan.includes(cityJourneyText(changedLogistics)));
+  assert.ok(changedPlan.includes(`${changedLogistics.km} km`));
+  assert.ok(changedPlan.includes(`${changedLogistics.minutes} Minuten`));
   assert.ok(changedPlan.includes(cityPickupPriceText(changedLogistics)));
+});
+
+test("planning paragraphs and logistics FAQs for all 19 cities have no doubled sentence punctuation", () => {
+  for (const city of cities) {
+    const faq = cityLogisticsFaq(city);
+    for (const text of [cityPlanningText(city), faq?.question, faq?.answer]) {
+      if (text) assert.doesNotMatch(text, /\.\s*\./, city.slug);
+    }
+    assert.match(cityJourneyText(city), /Min\.$/, "Compact distance labels retain their abbreviation");
+  }
 });
 
 test("specific logistics FAQs explain free pickup and radius boundaries without changing package prices", () => {

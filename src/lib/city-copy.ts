@@ -11,7 +11,7 @@ export function cityJourneyText(city: City) {
 export function cityPlanningText(city: City) {
   if (city.pickupNote) return city.pickupNote;
   const price = cityPickupPriceText(city);
-  const journey = cityJourneyText(city);
+  const journey = cityJourneyText(city).replace(/Min\.$/, "Minuten");
   const plans: Record<string, string> = {
     "horb-am-neckar": `In Horb können Sie zwischen eigener Fahrzeugabgabe nach Terminvereinbarung und Abholung wählen. Der Hol- und Bringservice ist ${price}. Nennen Sie bei der Anfrage Ihre gewünschte Übergabeart und was am Fahrzeug gemacht werden soll; den Umfang klären wir anhand des Zustands.`,
     nagold: `Für die Abholung aus Nagold rechnen wir mit ${journey}. Der Hol- und Bringservice kostet ${price}. Wenn Sie Reinigung oder Lackpflege planen, beschreiben Sie die betroffenen Bereiche oder senden Sie Fotos mit. So lassen sich Leistung und Übergabe gemeinsam abstimmen.`,
