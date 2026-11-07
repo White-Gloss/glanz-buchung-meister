@@ -51,7 +51,7 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
     "img-src 'self' data: blob: https://www.google.com https://www.google.de https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com https://*.google-analytics.com",
     "font-src 'self' data:",
     "media-src 'self' blob:",
-    "connect-src 'self' ws: wss: blob: https://grok.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net",
+    "connect-src 'self' ws: wss: blob: https://grok.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.doubleclick.net",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org https://td.doubleclick.net",
@@ -80,7 +80,7 @@ export function securityHeaderEntries(mode: SecurityHeaderMode): [string, string
       .replace("connect-src 'self' ws: wss: blob: https://grok.com", "connect-src 'self'")
       .replace(
         "https://*.google.com https://*.doubleclick.net",
-        "https://www.google.com https://www.google.de https://region1.google-analytics.com https://googleads.g.doubleclick.net",
+        "https://www.google.com https://www.google.de https://googleads.g.doubleclick.net",
       );
     headers.push(["Content-Security-Policy-Report-Only", trial]);
   }
