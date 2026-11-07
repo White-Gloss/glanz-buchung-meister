@@ -8,36 +8,30 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { extras } from "../../src/data/site.ts";
 import { qaBase } from "./ports.mjs";
+import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = ".qa-output/booking-ui";
 await mkdir(output, { recursive: true });
 const results = [];
-const blocked = [];
-const errors = [];
+const diagnostics = [];
 const requestable = extras.filter((extra) => extra.requestable !== false);
 assert.equal(requestable.length, 12, "Twelve bookable extras are expected");
 
 const browser = await chromium.launch({ headless: true });
 
 async function openContext(options) {
-  const context = await browser.newContext(options);
+  const context = await browser.newContext({ ...options, serviceWorkers: "block" });
+  const diagnostic = createBrowserDiagnostics({ origin: qaBase, label: `${options.viewport.width}x${options.viewport.height}` });
+  diagnostics.push(diagnostic);
   const assets = [];
   await context.route("**/*", (route) => {
     const request = route.request();
-    if (new URL(request.url()).origin !== qaBase || !["GET", "HEAD"].includes(request.method())) {
-      blocked.push(`${request.method()} ${request.url()}`);
-      return route.abort();
-    }
+    if (!diagnostic.allowRequest(request)) return route.abort();
     assets.push(new URL(request.url()).pathname);
     return route.continue();
   });
   const page = await context.newPage();
-  page.on("pageerror", (error) => errors.push(`${page.url()}: ${error.message}`));
-  page.on("console", (message) => {
-    // Third-party resources are aborted on purpose; everything else must stay quiet.
-    if (message.type() === "error" && !/Failed to load resource/.test(message.text()))
-      errors.push(`${page.url()}: ${message.text()}`);
-  });
+  diagnostic.attach(page);
   return { context, page, assets };
 }
 
@@ -302,17 +296,20 @@ try {
   assert.doesNotMatch(impressum, /42161-24623|Steuernummer/, "Private tax number stays removed");
   results.push("Imprint keeps the VAT ID and omits the private tax number");
 
-  assert.deepEqual(
-    blocked.filter((entry) => !/^GET /.test(entry)),
-    [],
-    "No form, upload or other write request may leave the browser",
-  );
-  assert.deepEqual(errors, [], "The browser console must stay free of errors");
+  assertBrowserDiagnostics(diagnostics);
 } finally {
+  const evidence = diagnostics.map((item) => item.snapshot());
   await writeFile(
     `${output}/results.json`,
-    JSON.stringify({ passed: results.length, results, errors, blocked }, null, 2),
+    JSON.stringify({
+      passed: results.length,
+      results,
+      errors: evidence.flatMap((item) => item.errors),
+      blocked: evidence.flatMap((item) => item.blocked),
+      ignored: evidence.flatMap((item) => item.ignored),
+    }, null, 2),
   );
   await browser.close();
 }
 console.log(JSON.stringify({ passed: results.length, results }, null, 2));
+
