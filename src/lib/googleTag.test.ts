@@ -231,12 +231,22 @@ describe("loadGoogleTag", () => {
     });
     assert.equal(result, true);
   });
+
+  it("queues Google commands in the documented Arguments format", () => {
+    const { fakeWindow } = installFakeBrowser();
+    loadGoogleTag({ adsId: DEFAULT_GOOGLE_ADS_ID, ga4Id: "G-RFX3GFRVBG" });
+    queueBookingConversion("WG-123");
+    assert.ok((fakeWindow.dataLayer?.length ?? 0) > 0);
+    for (const command of fakeWindow.dataLayer ?? []) {
+      assert.equal(Object.prototype.toString.call(command), "[object Arguments]");
+    }
+  });
 });
 
 describe("booking conversion lifecycle", () => {
   afterEach(uninstallFakeBrowser);
   const conversions = () =>
-    ((window.dataLayer as unknown[][]) ?? []).filter((row) => row[0] === "event");
+    ((window.dataLayer as ArrayLike<unknown>[]) ?? []).map((row) => Array.from(row)).filter((row) => row[0] === "event");
 
   it("sends a GA4 lead once after server success and late consent", () => {
     const { storage } = installFakeBrowser();
