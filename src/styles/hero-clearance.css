@@ -54,7 +54,7 @@ body[data-consent-banner="open"] [data-wa-float] {
   transform: translateY(calc(max(1rem, env(safe-area-inset-bottom)) - 1rem - var(--consent-banner-height, 0px))) translateZ(0);
 }
 body[data-consent-banner="open"] .city-wa-bar {
-  bottom: calc(var(--consent-banner-height, 0px) + max(0.65rem, env(safe-area-inset-bottom)));
+  display: none;
 }
 @media (max-width: 900px) {
   [data-shell="public"] .scroll-film-copy {
@@ -94,3 +94,4 @@ body[data-consent-banner="open"] .city-wa-bar {
     will-change: auto;
   }
 }
+

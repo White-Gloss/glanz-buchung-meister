@@ -122,6 +122,43 @@ try {
       await context.close();
     }
   }
+  // This independent first visit keeps the crawl cases and their consent state
+  // unchanged, while exercising the real dismiss/reopen controls on a city hub.
+  {
+    const { context, page } = await openPage({ width: 390, height: 844 });
+    try {
+      progress = { stage: "city-consent-overlay", path: "/abholservice/nagold", width: 390, completed: results.length, updatedAt: new Date().toISOString() };
+      await page.goto(qaBase + "/abholservice/nagold", { waitUntil: "networkidle" });
+      const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+      const cityCta = page.locator(".city-wa-bar");
+      await consent.waitFor({ state: "visible" });
+      await page.locator('body[data-consent-banner="open"]').waitFor({ state: "attached" });
+      assert.equal(await cityCta.count(), 1, "The city CTA exists before testing its consent-dependent visibility.");
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), null, "Use a genuine first visit.");
+      await cityCta.waitFor({ state: "hidden" });
+      await scrollAndRender(page, 0);
+      const heading = await page.locator("main h1").boundingBox();
+      const banner = await consent.boundingBox();
+      assert.ok(heading && banner && heading.y + heading.height <= banner.y,
+        `Nagold's full heading remains above consent: ${JSON.stringify({ heading, banner })}`);
+      await page.screenshot({ path: ".qa-output/mobile-390--abholservice-nagold.png", fullPage: false });
+
+      await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+      await consent.waitFor({ state: "hidden" });
+      await cityCta.waitFor({ state: "visible" });
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), "rejected");
+
+      // The footer button is rendered by CookieSettingsButton with this name.
+      await page.getByRole("button", { name: "Cookie-Einstellungen", exact: true }).click();
+      await consent.waitFor({ state: "visible" });
+      await cityCta.waitFor({ state: "hidden" });
+      assert.equal(await page.evaluate(() => localStorage.getItem("wg-consent")), "rejected",
+        "Reopening settings must not change the stored decision.");
+      results.push({ path: "/abholservice/nagold", width: 390, firstVisit: true, cityCtaHiddenDuringConsent: true, cityCtaVisibleAfterRejection: true, cityCtaHiddenAfterReopen: true });
+    } finally {
+      await context.close();
+    }
+  }
   // Check both sides of the 900px navigation breakpoint. The final design
   // stylesheet must not make the mobile booking link visible on desktop too.
   for (const width of [320, 390, 768, 900, 1024, 1440]) {

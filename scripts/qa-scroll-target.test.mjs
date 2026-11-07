@@ -12,7 +12,7 @@ test("a completed scroll command is not proof: wheel again after a measured rese
   let resetOnce = true;
   const wheels = [];
   const result = await revealTargetWithWheel({
-    measure: async () => geometry(scrollY),
+    measure: async () => geometry(scrollY, 1000),
     wheel: async (delta) => { pending = delta; wheels.push(delta); },
     settle: async () => {
       if (pending === undefined) return;
@@ -36,4 +36,19 @@ test("already visible targets require no wheel and expired deadlines fail", asyn
   assert.equal(result.attempts, 0);
   let clock = 0;
   await assert.rejects(revealTargetWithWheel({ measure: async () => geometry(0), wheel: async () => {}, settle: async () => { clock = 20; } }, { now: () => clock, timeoutMs: 10 }), /deadline/);
+});
+
+test("Firefox viewport-clamped wheel steps reach a target eight screens away within the same deadline", async () => {
+  let scrollY = 0;
+  let clock = 0;
+  const wheels = [];
+  const result = await revealTargetWithWheel({
+    measure: async () => geometry(scrollY, 7179),
+    wheel: async (delta) => { wheels.push(delta); scrollY += Math.sign(delta) * Math.min(Math.abs(delta), 744); },
+    settle: async () => { clock += 150; },
+  }, { now: () => clock });
+  assert.ok(result.geometry.top >= 96 && result.geometry.bottom <= 828, JSON.stringify(result));
+  assert.ok(wheels.length > 4 && wheels.length <= 13, JSON.stringify(wheels));
+  assert.ok(wheels.every((delta) => Math.abs(delta) <= 744), "Use viewport-sized input instead of relying on uncapped giant wheel deltas");
+  assert.ok(clock < 10000, "The existing ten-second deadline stays unchanged");
 });
