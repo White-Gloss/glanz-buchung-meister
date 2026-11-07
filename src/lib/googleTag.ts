@@ -121,8 +121,9 @@ export function __resetGoogleTagStateForTests(): void {
 function ensureDataLayer(): void {
   window.dataLayer = window.dataLayer || [];
   if (typeof window.gtag !== "function") {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args);
+    window.gtag = function gtag() {
+      // gtag.js command messages use Arguments, not dataLayer method-call arrays.
+      window.dataLayer?.push(arguments);
     };
   }
 }
