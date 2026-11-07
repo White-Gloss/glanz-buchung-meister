@@ -46,3 +46,30 @@ export function createHeroPhaseTracker(result, { now = Date.now, log = console.l
     },
   };
 }
+
+/** Scroll through the active input path. A native scrollTo can be overwritten
+ * by an in-flight smooth-wheel target, so settle, measure, then wheel again. */
+export async function scrollHeroWithWheel(adapter, target, {
+  timeoutMs = 10000, tolerance = 1, maxAttempts = 3, now = Date.now, onAttempt = () => {},
+} = {}) {
+  if (!Number.isFinite(target) || target < 0) throw new Error("A non-negative hero scroll target is required.");
+  const deadline = now() + timeoutMs;
+  const remaining = () => {
+    const budget = deadline - now();
+    if (budget <= 0) throw new Error(`Hero wheel scrolling exceeded its ${timeoutMs}ms deadline.`);
+    return budget;
+  };
+  await adapter.settle(remaining());
+  for (let index = 0; index <= maxAttempts; index++) {
+    remaining();
+    const actual = await adapter.readY();
+    if (Math.abs(actual - target) <= tolerance) return { target, actual, deadline, attempts: index };
+    if (index === maxAttempts) break;
+    const attempt = { before: actual, deltaY: target - actual, target };
+    onAttempt(attempt);
+    await adapter.wheel(attempt.deltaY);
+    await adapter.settle(remaining());
+    attempt.after = await adapter.readY();
+  }
+  throw new Error(`Hero wheel scrolling did not reach ${target}px after ${maxAttempts} attempts.`);
+}

@@ -6,7 +6,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { qaBase, controlBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { createBrowserDiagnostics } from "../browser-diagnostics.mjs";
-import { createHeroPhaseTracker, heroEvidenceUrl, redactHeroEvidence } from "./hero-diagnostics.mjs";
+import { createHeroPhaseTracker, heroEvidenceUrl, redactHeroEvidence, scrollHeroWithWheel } from "./hero-diagnostics.mjs";
 
 const runId = process.env.QA_RUN_ID;
 assert.ok(runId, "The parent QA runner must supply its run identity.");
@@ -209,6 +209,36 @@ async function scrollToVisibleTarget(page, name) {
   return { attempts, geometry: snapshot, failure: visibilityFailure(snapshot, name) };
 }
 
+async function wheelToHeroPosition(page, target, evidence) {
+  return scrollHeroWithWheel({
+    readY: () => page.evaluate(() => window.scrollY),
+    wheel: async (deltaY) => {
+      const viewport = page.viewportSize();
+      await page.mouse.move(viewport.width / 2, viewport.height / 2);
+      await page.mouse.wheel(0, deltaY);
+    },
+    settle: async (timeout) => {
+      await page.evaluate(() => {
+        window.__heroWheelProbe = { y: window.scrollY, since: performance.now() };
+      });
+      await page.waitForFunction(() => {
+        const probe = window.__heroWheelProbe;
+        if (Math.abs(window.scrollY - probe.y) > 0.5) {
+          probe.y = window.scrollY;
+          probe.since = performance.now();
+        }
+        return performance.now() - probe.since >= 150;
+      }, undefined, { timeout });
+    },
+  }, target, { onAttempt: (attempt) => evidence.attempts.push(attempt) });
+}
+
+function remainingScrollBudget(result) {
+  const timeout = result.deadline - Date.now();
+  assert.ok(timeout > 0, "Hero scroll and opacity checks share the existing 10000ms deadline.");
+  return timeout;
+}
+
 try {
   for (const viewport of viewports) {
     const result = { viewport, blockedRequests: [], pageErrors: [], mediaResponses: [], scrollActions: [] };
@@ -374,12 +404,16 @@ try {
 
         // Fading decorative hero copy must not remove the page's only H1 from
         // assistive technology. Only the invisible action links become inert.
-        await phase.run("copy-fade-scroll", () => page.evaluate((scrollDistance) => {
+        const fadeTarget = await page.evaluate((scrollDistance) => {
           const section = document.querySelector(".scroll-film");
           const top = section.getBoundingClientRect().top + window.scrollY;
-          window.scrollTo({ top: top + scrollDistance * 0.8, behavior: "instant" });
-        }, distance));
-        await phase.run("copy-fade-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) < 0.03));
+          return top + scrollDistance * 0.8;
+        }, distance);
+        const fadeEvidence = { phase: "copy-fade-scroll", target: fadeTarget, attempts: [] };
+        result.scrollActions.push(fadeEvidence);
+        const fadeScroll = await phase.run("copy-fade-scroll", () => wheelToHeroPosition(page, fadeTarget, fadeEvidence));
+        await phase.run("copy-fade-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) < 0.03, undefined, { timeout: remainingScrollBudget(fadeScroll) }));
+        result.fadedGeometry = await geometry(page);
         result.fadedSemantics = await page.locator(".scroll-film-copy").evaluate((copy) => ({
           headingAvailable: Boolean(copy.querySelector("h1")) && !copy.querySelector("h1").closest('[inert], [aria-hidden="true"]'),
           hiddenActionsInert: copy.querySelectorAll("a[href]").length === 2
@@ -387,8 +421,11 @@ try {
         }));
         assert.equal(result.fadedSemantics.headingAvailable, true, "Keep the H1 in the accessibility tree after fading.");
         assert.equal(result.fadedSemantics.hiddenActionsInert, true, "Invisible hero links must leave the keyboard sequence.");
-        await phase.run("copy-restore-scroll", () => page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" })));
-        await phase.run("copy-restore-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) > 0.99));
+        const restoreEvidence = { phase: "copy-restore-scroll", target: 0, attempts: [] };
+        result.scrollActions.push(restoreEvidence);
+        const restoreScroll = await phase.run("copy-restore-scroll", () => wheelToHeroPosition(page, 0, restoreEvidence));
+        await phase.run("copy-restore-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) > 0.99, undefined, { timeout: remainingScrollBudget(restoreScroll) }));
+        result.restoredGeometry = await geometry(page);
         assert.equal(await page.locator(".scroll-film-copy a[href]").evaluateAll((links) =>
           links.every((link) => !link.closest("[inert]"))), true, "Restore hero links when the copy becomes visible again.");
       }

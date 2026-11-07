@@ -6,6 +6,8 @@ Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehör
 
 ## 1. Getrennte Freigaben
 
+**Merge kann ein Deployment auslösen:** `.github/workflows/deploy-hostinger.yml` reagiert nach erfolgreicher Push-CI auf `main`, sofern `HOSTINGER_DEPLOY_ENABLED=true` ist. Der aktuelle Wert und die tatsächlichen Freigaberegeln des Environments `production` sind vor einem Merge zu prüfen. Deshalb keinen Merge als rein technische Ablage behandeln: Entweder ist die automatische Auslieferung nachweislich gesperrt, oder die ausdrückliche Freigabe umfasst auch genau dieses Deployment. Eine Änderung dieser Einstellungen benötigt ebenfalls eine konkrete Freigabe; dieser PR verändert sie nicht.
+
 1. **Code:** Den konkreten Commit und seine bestandenen Prüfungen freigeben; anschließend ausschließlich den bestätigten, bestehenden Veröffentlichungsweg verwenden. Aktives Hostingziel und Releasepfade vorab abgleichen: ältere Betreiberregeln und Skriptnamen nennen IONOS, während ein Hostinger-Workflow vorhanden ist. Daraus allein folgt keine Freigabe für einen Anbieterwechsel. Branch Protection und den bestehenden Buchungs-Releasevertrag beibehalten.
 2. **Einrichtung:** Datenbankziel, Sicherungen, Migration `0025_website_studio.sql`, dauerhaften Bildspeicher und Konfiguration ausdrücklich freigeben. Ein genehmigtes Code-Deployment allein erlaubt diese Änderungen nicht.
 3. **Aktivierung:** `WEBSITE_STUDIO_ENABLED=true` erst nach bestätigter Einrichtung und gesonderter Freigabe setzen.

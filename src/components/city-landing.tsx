@@ -18,7 +18,8 @@ import {
 import { money } from "@/lib/utils";
 import { IconMessage } from "@/components/icons";
 import { serviceAreaLink } from "@/lib/seo-policy";
-import { cityJourneyText, cityPlanningText, cityLogisticsFaq, citySeoCopy } from "@/lib/city-copy";
+import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
+import { cityPlanningText, cityLogisticsFaq } from "@/lib/city-logistics";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { localProofFor } from "@/lib/local-proof";
 import { CityLocalProofSection } from "@/components/city-local-proof";

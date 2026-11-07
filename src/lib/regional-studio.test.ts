@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { cities, cityPickupPriceText, services, site } from "../data/site.ts";
-import { cityJourneyText, cityPlanningText, cityLogisticsFaq, citySeoCopy } from "./city-copy.ts";
+import { cityJourneyText, citySeoCopy } from "./city-copy.ts";
+import { cityPlanningText, cityLogisticsFaq } from "./city-logistics.ts";
 import { publicSeo, serviceCitySeo } from "./seo-policy.ts";
 import { studioMetadata } from "./studio-public.ts";
 

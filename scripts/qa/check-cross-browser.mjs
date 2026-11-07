@@ -8,6 +8,8 @@ import { qaBase, controlBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { displayedPriceEquals } from "./displayed-price.mjs";
+import { observeBrowserAction } from "./browser-action.mjs";
+import { completeSuccessfulRead } from "./read-completion.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -15,7 +17,7 @@ await mkdir(output, { recursive: true });
 const report = {
   status: "running",
   scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [],
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [],
 };
 const diagnostics = [];
 
@@ -26,6 +28,19 @@ async function rejectConsent(page) {
 async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
   report.screenshots.push(name);
+}
+const isReviewsRequest = (request) => request.method() === "GET" && request.url() === `${qaBase}/api/google-reviews`;
+async function verifyHomepageReviews(page, label, action) {
+  // Scrolling can trigger the lazy reviews after goto(networkidle) completed.
+  // Observe this navigation's real request before starting, deliberately bring
+  // its section into view, then await the full body before navigating/closing.
+  const response = await observeBrowserAction(page, (response) => isReviewsRequest(response.request()), async () => {
+    await action();
+    await page.locator("#bewertungen").scrollIntoViewIfNeeded();
+    await page.getByRole("complementary", { name: "Google-Kundenbewertungen", exact: true }).waitFor();
+  });
+  const completion = await completeSuccessfulRead(response);
+  report.reviews.push({ label, endpoint: "/api/google-reviews", ...completion });
 }
 async function verifyLayout(page, label) {
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
@@ -60,14 +75,30 @@ try {
         diagnostics.push(diagnostic);
         await context.route("**/*", (route) => diagnostic.allowRequest(route.request()) ? route.continue() : route.abort());
         const page = await context.newPage();
+        let phase = "open";
+        const started = Date.now();
+        const traceReviews = (request, event, details = {}) => {
+          if (isReviewsRequest(request)) report.reviewRequests.push({ label: `${name}-${width}`, phase, event, elapsedMs: Date.now() - started, endpoint: "/api/google-reviews", ...details });
+        };
+        page.on("request", (request) => traceReviews(request, "request"));
+        page.on("response", (response) => traceReviews(response.request(), "response", { status: response.status() }));
+        page.on("requestfinished", (request) => traceReviews(request, "finished"));
+        page.on("requestfailed", (request) => traceReviews(request, "failed", { error: request.failure()?.errorText }));
         page.setDefaultTimeout(15000);
         diagnostic.attach(page);
         try {
           for (const path of ["/", "/abholservice/nagold", "/leistungen/keramikversiegelung", "/galerie"]) {
-            const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
-            assert.equal(response.status(), 200, `${name} ${path}`);
-            await rejectConsent(page);
-            await verifyLayout(page, `${name} ${width} ${path}`);
+            phase = `navigate/layout:${path}`;
+            const visit = async () => {
+              const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
+              assert.equal(response.status(), 200, `${name} ${path}`);
+              await rejectConsent(page);
+              await verifyLayout(page, `${name} ${width} ${path}`);
+            };
+            if (path === "/") {
+              await verifyHomepageReviews(page, `${name}-${width}: before next navigation`, visit);
+              await page.evaluate(() => window.scrollTo(0, 0));
+            } else await visit();
             await screenshot(page, `${name}-${width}-${path.replace(/\W+/g, "-") || "home"}.png`);
             report.checks.push(`${name} ${width}px ${path}: status, H1, visible images and horizontal layout`);
           }
@@ -103,6 +134,8 @@ try {
           assert.equal(await page.evaluate(() => document.activeElement?.id), "main-content");
           report.checks.push(`${name} ${width}px: gallery keys/focus return, menu focus trap/Escape and skip link`);
 
+          phase = "booking";
+          await verifyHomepageReviews(page, `${name}-${width}: before context close`, async () => {
           await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
           await rejectConsent(page);
           await page.locator("form.booking-flow").waitFor();
@@ -118,7 +151,9 @@ try {
           assert.ok((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 2);
           await screenshot(page, `${name}-${width}-booking.png`);
           report.checks.push(`${name} ${width}px: real booking selection totals 468 EUR without submission`);
+          });
         } finally {
+          phase = "context-close";
           await context.close();
         }
       }
@@ -131,6 +166,7 @@ try {
   assertBrowserDiagnostics(diagnostics);
   assert.equal(report.failures.length, 0, JSON.stringify(report.failures, null, 2));
   assert.equal(report.checks.length, 24, "Every engine and viewport must complete all checks");
+  assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
   report.status = "passed";
 } catch (error) {
   report.status = "failed";
