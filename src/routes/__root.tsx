@@ -17,14 +17,8 @@ import "../styles/studio.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
-  head: ({ matches, match }) => {
+  head: ({ matches }) => {
     const home = matches.some((match: AnyRouteMatch) => match.routeId === "/");
-    // A loader's notFound() can render at the root boundary and skip the child
-    // head entirely. Keep the real 404 document out of search results here.
-    const missing =
-      match.globalNotFound ||
-      match.status === "notFound" ||
-      matches.some((route: AnyRouteMatch) => route.globalNotFound || route.status === "notFound");
     // The homepage's first viewport sets type in Barlow 500 and 600. Preloading
     // them starts the requests with the document instead of after the first
     // style pass; Barlow 300 is only used above the fold on the other pages.
@@ -46,10 +40,8 @@ export const Route = createRootRoute({
             "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.",
         },
         { name: "theme-color", content: "#090a0d" },
-        {
-          name: "robots",
-          content: missing ? "noindex,nofollow" : "index,follow,max-image-preview:large",
-        },
+        // Successful pages declare their robots policy through pageHead().
+        // NotFoundComponent supplies noindex when a child loader head is skipped.
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
