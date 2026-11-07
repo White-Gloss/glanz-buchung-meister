@@ -22,6 +22,8 @@ import { cityJourneyText, citySeoCopy } from "@/lib/city-copy";
 import { serviceBookingSelection } from "@/lib/booking-selection";
 import { localProofFor } from "@/lib/local-proof";
 import { CityLocalProofSection } from "@/components/city-local-proof";
+import { WebsiteStudioContent } from "@/components/website-studio-content";
+import { studioHero, type PublishedStudioDocument } from "@/lib/studio-public";
 
 const steps = [
   {
@@ -41,7 +43,7 @@ const steps = [
   },
 ];
 
-export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: string }) {
+export function CityLanding({ city, serviceSlug, editorial }: { city: City; serviceSlug?: string; editorial?: PublishedStudioDocument | null }) {
   const jsonLd = cityJsonLd(city);
   const wa = whatsappForCity(city.name);
   const pickup = cityPickupPriceText(city);
@@ -49,6 +51,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
   const request = serviceBookingSelection(serviceSlug || "fahrzeugaufbereitung", city.slug);
   const selectedService = services.find((s) => s.slug === serviceSlug && !s.pendingApproval);
   const proof = localProofFor(city.slug);
+  const hero = studioHero(editorial);
 
   useEffect(() => {
     document.body.dataset.cityWa = "1";
@@ -66,11 +69,11 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
 
       <section className="film-chapter">
         <div className="film-chapter-media" data-parallax>
-          <HeroMedia
+          {hero ? <img src={hero.src} alt={hero.alt} width={hero.width} height={hero.height} loading="eager" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <HeroMedia
             priority
             alt={`Werkstattfahrzeug von White Gloss – Fahrzeugaufbereitung für Kunden aus ${city.name}`}
             className="absolute inset-0 h-full w-full object-cover"
-          />
+          />}
         </div>
         <div className="film-chapter-veil" />
         <div className="film-chapter-copy" data-reveal>
@@ -82,9 +85,9 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
             ]}
           />
           <p className="kicker mt-5">Mit Hol- und Bringservice</p>
-          <h1 className="heading-page mt-4 max-w-4xl">{copy.heading}</h1>
+          <h1 className="heading-page mt-4 max-w-4xl">{editorial?.content.title.trim() || copy.heading}</h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            {city.blurb} Innenraumreinigung, Lackpflege oder Keramikversiegelung machen wir in
+            {editorial?.content.lead.trim() || city.blurb} Innenraumreinigung, Lackpflege oder Keramikversiegelung machen wir in
             unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -113,6 +116,12 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
           </ul>
         </div>
       </section>
+
+      {editorial && (editorial.content.sections.length > 0 || editorial.content.faqs.length > 0 || editorial.content.images.some((image) => image.assetId !== editorial.content.heroAssetId)) && (
+        <section className="section mx-auto max-w-7xl px-4 sm:px-6" aria-label={`Weitere Informationen für ${city.name}`}>
+          <WebsiteStudioContent content={editorial.content} assets={editorial.assets} headingLevel={1} showIntro={false} showHero={false} showBody={false} />
+        </section>
+      )}
 
       {proof ? <CityLocalProofSection city={city} proof={proof} /> : null}
 
@@ -206,7 +215,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
         <div className="section mx-auto max-w-7xl px-4 sm:px-6">
           <h2 className="heading-2">Warum die Fahrt nach Horb</h2>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {city.pickupNote ?? `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den Termin stimmen wir vorab ab.`}
+            {editorial?.content.body.trim() || city.pickupNote || `${city.blurb} Entfernungen und Fahrzeiten sind Richtwerte. Die Übergabeadresse und den Termin stimmen wir vorab ab.`}
           </p>
           <p className="mt-4 max-w-2xl text-muted">
             Unser einziger Werkstattstandort ist {site.street}, {site.postalCode} {site.city}.{" "}
@@ -215,7 +224,7 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
               : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}
           </p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {cityJourneyText(city)}. Politur und Keramik
+            {cityJourneyText(city).replace(/\.$/, "")}. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
             vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (Basisreinigung und Reinigung & Politur).` : ""}
           </p>
@@ -346,3 +355,4 @@ export function CityLanding({ city, serviceSlug }: { city: City; serviceSlug?: s
     </main>
   );
 }
+

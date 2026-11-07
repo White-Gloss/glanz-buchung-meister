@@ -87,6 +87,7 @@ try {
           viewport: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth,
           h1: [...document.querySelectorAll("h1")].map((e) => e.textContent),
+          duplicateMinutePeriod: /\bMin\.\./.test(document.querySelector("main")?.textContent ?? ""),
           horizontalOffenders: [...document.querySelectorAll("main *")]
             .filter((e) => {
               const box = e.getBoundingClientRect();
@@ -107,9 +108,46 @@ try {
           });
         }
         if (state.h1.length !== 1) failures.push(`${path} @${width}: one H1 required`);
+        if (path.startsWith("/abholservice/") && state.duplicateMinutePeriod)
+          failures.push(`${path} @${width}: journey text has a duplicate sentence-ending period`);
         if (state.scroll > state.viewport + 2)
           failures.push(`${path} @${width}: horizontal overflow ${JSON.stringify(state)}`);
       }
+    } finally {
+      await context.close();
+    }
+  }
+  // Check both sides of the 900px navigation breakpoint. The final design
+  // stylesheet must not make the mobile booking link visible on desktop too.
+  for (const width of [320, 390, 768, 900, 1024, 1440]) {
+    const { context, page } = await openPage({ width, height: 1000 });
+    try {
+      progress = { stage: "header-navigation", path: "/", width, completed: results.length, updatedAt: new Date().toISOString() };
+      await page.goto(qaBase + "/", { waitUntil: "networkidle" });
+      const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+      if (await consent.isVisible()) {
+        await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+        await consent.waitFor({ state: "hidden" });
+      }
+      const header = page.locator(".site-header");
+      const booking = header.locator(".header-booking-link:visible, .header-film-booking:visible");
+      assert.equal(await booking.count(), 1, `${width}px: show one primary booking link in the header.`);
+      const bounds = await booking.boundingBox();
+      assert.ok(bounds && bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width,
+        `${width}px: the booking link must retain its visible touch target.`);
+      const toggle = header.getByRole("button", { name: "Menü öffnen", exact: true });
+      await toggle.focus();
+      await toggle.press("Enter");
+      const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
+      await menu.waitFor({ state: "visible" });
+      assert.equal(await menu.evaluate((element) => element.contains(document.activeElement)), true,
+        `${width}px: keyboard focus enters the open menu.`);
+      await page.keyboard.press("Escape");
+      await menu.waitFor({ state: "hidden" });
+      assert.equal(await toggle.evaluate((element) => element === document.activeElement), true,
+        `${width}px: closing the menu restores focus to its trigger.`);
+      await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
+      results.push({ path: "/", width, headerBookingLinks: 1, menuKeyboardFocusReturned: true });
     } finally {
       await context.close();
     }
@@ -201,3 +239,4 @@ try {
 }
 assert.equal(failures.length, 0, failures.join("\n"));
 console.log(`${results.length} responsive checks passed; no form or upload submitted.`);
+

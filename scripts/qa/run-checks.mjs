@@ -18,6 +18,7 @@ const outputRoot = resolve(projectRoot, ".qa-output");
 const base = qaBase;
 const identityUrl = controlBase + "/identity";
 const runId = randomUUID();
+const crossBrowserOnly = process.argv.includes("--cross-browser-only");
 const abort = new AbortController();
 const children = [];
 const reservations = [];
@@ -251,6 +252,9 @@ try {
   log("QA: starting a fresh isolated production server");
   const server = startNode("isolated-server", ["scripts/qa/isolated-server.mjs"]);
   await waitForReady(server);
+  if (crossBrowserOnly) {
+    await runCheck(server, "cross-browser", ["scripts/qa/check-cross-browser.mjs"], 180_000);
+  } else {
   await runCheck(server, "frontend-ssr", ["--test", "scripts/frontend-ssr.test.mjs"]);
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
@@ -259,6 +263,7 @@ try {
   // Keep every page and assertion; only this stage gets a bounded extra minute.
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
+  await runCheck(server, "website-studio", ["scripts/qa/check-website-studio.mjs"], 180_000);
   const diagnosticFailures = [];
   for (const check of [
     {
@@ -289,6 +294,7 @@ try {
     }
   }
   if (diagnosticFailures.length) throw new Error(diagnosticFailures.join("; "));
+  }
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";
@@ -313,3 +319,4 @@ try {
   process.off("SIGTERM", onTerminate);
 }
 log(`QA: ${summary.status}; logs and results are in .qa-output/.`);
+

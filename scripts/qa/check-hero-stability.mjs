@@ -321,6 +321,26 @@ try {
         await page.waitForFunction((time) => document.querySelector(".scroll-film video")?.currentTime > time + 1 / 24, pausedTime);
         result.filmInteraction = { status: "passed", pausedTime, heldTime, resumed: await geometry(page) };
         await page.screenshot({ path: `${output}/${viewport.name}-film-resumed.png` });
+
+        // Fading decorative hero copy must not remove the page's only H1 from
+        // assistive technology. Only the invisible action links become inert.
+        await page.evaluate((scrollDistance) => {
+          const section = document.querySelector(".scroll-film");
+          const top = section.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top: top + scrollDistance * 0.8, behavior: "instant" });
+        }, distance);
+        await page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) < 0.03);
+        result.fadedSemantics = await page.locator(".scroll-film-copy").evaluate((copy) => ({
+          headingAvailable: Boolean(copy.querySelector("h1")) && !copy.querySelector("h1").closest('[inert], [aria-hidden="true"]'),
+          hiddenActionsInert: copy.querySelectorAll("a[href]").length === 2
+            && [...copy.querySelectorAll("a[href]")].every((link) => Boolean(link.closest("[inert]"))),
+        }));
+        assert.equal(result.fadedSemantics.headingAvailable, true, "Keep the H1 in the accessibility tree after fading.");
+        assert.equal(result.fadedSemantics.hiddenActionsInert, true, "Invisible hero links must leave the keyboard sequence.");
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+        await page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) > 0.99);
+        assert.equal(await page.locator(".scroll-film-copy a[href]").evaluateAll((links) =>
+          links.every((link) => !link.closest("[inert]"))), true, "Restore hero links when the copy becomes visible again.");
       }
       if (result.pageErrors.length) report.failures.push(`${viewport.name}: ${result.pageErrors.join("; ")}`);
     } catch (error) {
@@ -340,3 +360,4 @@ try {
 }
 assert.equal(report.failures.length, 0, report.failures.join("\n"));
 console.log("Three first-visit hero checks passed; no request, message, or upload submitted.");
+

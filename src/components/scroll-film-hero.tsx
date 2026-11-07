@@ -6,6 +6,7 @@ import "./scroll-film-hero.css";
 import { scrollFilm } from "@/data/scroll-film";
 import { loadSeekableVideo } from "@/lib/seekable-video";
 import { useMagnetic } from "@/lib/studio-motion";
+import type { StudioAsset } from "@/lib/studio-media.model";
 type Connection = EventTarget & { saveData?: boolean; effectiveType?: string };
 type DeviceNavigator = Navigator & { connection?: Connection; deviceMemory?: number };
 
@@ -18,18 +19,19 @@ const HERO_LINES = ["Ihr Auto.", "Nicht nur sauber.", "Wieder besonders."];
  * Leerzeichen bleiben echte Textknoten – Screenreader und Suchmaschinen lesen
  * „Ihr Auto. Nicht nur sauber. Wieder besonders.“
  */
-function HeroHeadline() {
+function HeroHeadline({ title }: { title?: string }) {
+  const lines = title ? title.split("\n").map((line) => line.trim()).filter(Boolean) : HERO_LINES;
   let word = 0;
   return (
     <h1>
-      {HERO_LINES.map((line, index) => (
-        <Fragment key={line}>
+      {lines.map((line, index) => (
+        <Fragment key={`${index}-${line}`}>
           {index > 0 ? " " : null}
           <span
-            className={index === HERO_LINES.length - 1 ? "hero-line hero-line--accent" : "hero-line"}
+            className={index === lines.length - 1 ? "hero-line hero-line--accent" : "hero-line"}
           >
             {line.split(" ").map((text, position) => (
-              <Fragment key={text}>
+              <Fragment key={`${position}-${text}`}>
                 {position > 0 ? " " : null}
                 <span className="hero-word" style={{ ["--w" as string]: word++ }}>
                   {text}
@@ -44,7 +46,8 @@ function HeroHeadline() {
 }
 
 /** A fixed camera path from the supplied film, driven by native page scrolling. */
-export function ScrollFilmHero() {
+export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lead?: string; heroImage?: StudioAsset }) {
+  const hasCustomHero = Boolean(heroImage);
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -53,7 +56,7 @@ export function ScrollFilmHero() {
   const ctaRef = useRef<HTMLAnchorElement>(null);
   const pausedRef = useRef(false);
   const [paused, setPaused] = useState(false);
-  const [motion, setMotion] = useState<boolean | null>(null);
+  const [motion, setMotion] = useState<boolean | null>(hasCustomHero ? false : null);
   useMagnetic(ctaRef);
 
   useEffect(() => {
@@ -63,6 +66,12 @@ export function ScrollFilmHero() {
     const poster = imageRef.current;
     const copy = copyRef.current;
     if (!section || !stage || !video || !poster || !copy) return;
+    // Keep the heading and service description in the accessibility tree even
+    // while the film fades them visually. Only hidden actions lose focusability.
+    const copyActions = [...copy.querySelectorAll<HTMLAnchorElement>("a[href]")];
+    const setActionsInert = (inert: boolean) => {
+      for (const action of copyActions) action.inert = inert;
+    };
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mobile = window.matchMedia(scrollFilm.mobileQuery);
@@ -88,6 +97,7 @@ export function ScrollFilmHero() {
     let engaged = window.scrollY > 0 && !directBooking;
 
     const allowed = () =>
+      !hasCustomHero &&
       !directBooking &&
       !reduce.matches &&
       !shortLandscape.matches &&
@@ -127,7 +137,7 @@ export function ScrollFilmHero() {
       copy.style.opacity = String(opacity);
       setCopyTransform(-position * 24);
       // Invisible links must not remain keyboard focus targets.
-      copy.inert = opacity < 0.03;
+      setActionsInert(opacity < 0.03);
       section.style.setProperty("--film-progress", String(position));
       seek();
       if (position !== target) frame = window.requestAnimationFrame(paint);
@@ -204,7 +214,7 @@ export function ScrollFilmHero() {
         releaseVideo?.();
         copy.style.opacity = "1";
         setCopyTransform(0);
-        copy.inert = false;
+        setActionsInert(false);
       }
     };
     const failed = () => {
@@ -215,7 +225,7 @@ export function ScrollFilmHero() {
       delete video.dataset.visible;
       copy.style.opacity = "1";
       setCopyTransform(0);
-      copy.inert = false;
+      setActionsInert(false);
     };
     const visibility = () => {
       if (!document.hidden) {
@@ -274,13 +284,13 @@ export function ScrollFilmHero() {
       video.load();
       releaseVideo?.();
     };
-  }, []);
+  }, [hasCustomHero]);
 
   return (
     <section
       ref={sectionRef}
       className="scroll-film"
-      data-motion={motion === false ? "still" : "scroll"}
+      data-motion={hasCustomHero || motion === false ? "still" : "scroll"}
       aria-label="White Gloss – bis ins Detail"
     >
       <noscript>
@@ -289,19 +299,19 @@ export function ScrollFilmHero() {
       <div ref={stageRef} className="scroll-film-stage">
         <div className="scroll-film-media">
           <picture>
-            <source
+            {!heroImage && <source
               media={scrollFilm.mobileQuery}
               srcSet={scrollFilm.mobilePosters}
               sizes="100vw"
-            />
+            />}
             <img
               ref={imageRef}
-              src={scrollFilm.desktopPoster}
-              srcSet={scrollFilm.desktopPosters}
+              src={heroImage?.src ?? scrollFilm.desktopPoster}
+              srcSet={heroImage ? undefined : scrollFilm.desktopPosters}
               sizes="100vw"
-              width={1920}
-              height={1080}
-              alt="Schwarzer Klassiker mit glänzendem Lack und Chromdetails im dunklen Studio"
+              width={heroImage?.width ?? 1920}
+              height={heroImage?.height ?? 1080}
+              alt={heroImage?.alt ?? "Schwarzer Klassiker mit glänzendem Lack und Chromdetails im dunklen Studio"}
               loading="eager"
               fetchPriority="high"
               decoding="async"
@@ -323,10 +333,9 @@ export function ScrollFilmHero() {
             <p className="scroll-film-eyebrow">
               White-Gloss Detailing · <span className="scroll-film-place">Horb am Neckar</span>
             </p>
-            <HeroHeadline />
+            <HeroHeadline title={title} />
             <p className="scroll-film-service">
-              Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft,
-              stressfrei abgeholt und digital übergeben.
+              {lead ?? "Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft, stressfrei abgeholt und digital übergeben."}
             </p>
             <Link ref={ctaRef} to="/" hash="buchung" className="scroll-film-cta">
               Fahrzeug verwandeln lassen <IconArrowRight className="size-4" aria-hidden />
@@ -375,3 +384,4 @@ export function ScrollFilmHero() {
     </section>
   );
 }
+
