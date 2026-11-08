@@ -409,9 +409,11 @@ try {
       const deniedLegacy = await rpc("saveLegacyCms", { kind: "faq", title: "QA nicht erlaubt", body: "Kein Betreiberzugriff" }, cookie);
       assert.ok(deniedLegacy.error, "Legacy writes still require a current operator session");
     }
+    // Match the actual accessible control name. Playwright 1.62 getByLabel also
+    // includes existing textarea text from a wrapping label when editing.
     const legacy = await openStudio(390, operatorCookie, "/admin/faqs");
     await legacy.page.getByLabel("Titel", { exact: true }).fill("QA Legacy Frage");
-    await legacy.page.getByLabel("Text", { exact: true }).fill("QA Legacy Antwort");
+    await legacy.page.getByRole("textbox", { name: "Text", exact: true }).fill("QA Legacy Antwort");
     await operation(legacy.page, "saveLegacyCms", () => legacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click());
     await legacy.page.getByRole("heading", { name: "QA Legacy Frage", exact: true }).waitFor();
     assert.match((await publicPage("/faq")).html, /QA Legacy Antwort/);
@@ -421,13 +423,13 @@ try {
     await staleRow.getByRole("button", { name: "Bearbeiten", exact: true }).click();
     const row = legacy.page.getByRole("listitem").filter({ has: legacy.page.getByRole("heading", { name: "QA Legacy Frage", exact: true }) });
     await row.getByRole("button", { name: "Bearbeiten", exact: true }).click();
-    await legacy.page.getByLabel("Text", { exact: true }).fill("QA Legacy aktualisiert");
+    await legacy.page.getByRole("textbox", { name: "Text", exact: true }).fill("QA Legacy aktualisiert");
     await operation(legacy.page, "saveLegacyCms", () => legacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click());
     await legacy.page.getByRole("listitem").filter({ hasText: "QA Legacy aktualisiert" }).waitFor();
-    await staleLegacy.page.getByLabel("Text", { exact: true }).fill("QA veraltete Änderung");
+    await staleLegacy.page.getByRole("textbox", { name: "Text", exact: true }).fill("QA veraltete Änderung");
     await staleLegacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click();
     await staleLegacy.page.getByRole("alert").filter({ hasText: "zwischenzeitlich" }).waitFor();
-    assert.equal(await staleLegacy.page.getByLabel("Text", { exact: true }).inputValue(), "QA veraltete Änderung");
+    assert.equal(await staleLegacy.page.getByRole("textbox", { name: "Text", exact: true }).inputValue(), "QA veraltete Änderung");
     assert.match((await publicPage("/faq")).html, /QA Legacy aktualisiert/);
     await staleLegacy.context.close();
     await row.getByRole("button", { name: "Löschen", exact: true }).click();
