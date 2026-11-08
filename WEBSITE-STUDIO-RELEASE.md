@@ -2,7 +2,7 @@
 
 Stand: 8. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichung vor. Sie erteilt keine Freigabe für Merge, Deployment, Datenbankänderungen, Aktivierung oder Veröffentlichung von Inhalten. In diesem Arbeitspaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
 
-Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehören in den Abschlussbericht des Pull Requests. Die folgenden Voraussetzungen sind Abnahmepunkte, keine Behauptung bereits abgeschlossener Prüfungen.
+Die Entwicklungsprüfung für `05f3066f7c86dbe5658835ef86368cb896517f27` ist in [docs/WHITE-GLOSS-HANDOFF.md](docs/WHITE-GLOSS-HANDOFF.md) mit CI 42443407513, Browserartefakten, Labormessungen und Betriebsgrenzen dokumentiert. Die folgenden Voraussetzungen bleiben Abnahmepunkte für eine spätere Produktionseinrichtung; bestandene isolierte CI ist keine Produktionsfreigabe.
 
 ## 1. Getrennte Freigaben
 
