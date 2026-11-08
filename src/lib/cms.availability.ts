@@ -1,5 +1,5 @@
 export function cmsEnabled(config: { enabled?: string; isolatedCi: boolean }): boolean {
-  return config.enabled === "true" || config.isolatedCi;
+  return config.enabled === "true" || (config.enabled !== "false" && config.isolatedCi);
 }
 
 export function createOptionalCmsReader(options: { enabled?: () => boolean | Promise<boolean>; budgetMs?: number; cooldownMs?: number; maxPending?: number; onFailure?: (reason: "timeout" | "unavailable") => void } = {}) {
@@ -34,3 +34,4 @@ export function createOptionalCmsReader(options: { enabled?: () => boolean | Pro
     } finally { if (timer) clearTimeout(timer); }
   };
 }
+

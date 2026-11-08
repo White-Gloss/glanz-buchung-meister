@@ -97,6 +97,45 @@ test("Legacy content remains published while its first Studio change becomes a d
   } finally { await pg.close(); }
 });
 
+test("Unpublished legacy content opens without writes and its first edit retains the original draft", async () => {
+  const { pg, sql, store } = await setup();
+  try {
+    const [row] = await sql<{ id: number }>`insert into cms_items(kind,title,body,extra,published) values('blog','Unveröffentlichter Artikel','Vorhandener Entwurf','{"note":"Vorhandener Kurztext","retained":"metadata"}',false) returning id`;
+    const key = `legacy:${row.id}` as const;
+    const before = await store.getDocument(key);
+    assert.equal(before.draft?.title, "Unveröffentlichter Artikel");
+    assert.equal(before.draft?.body, "Vorhandener Entwurf");
+    assert.equal(before.draft?.lead, "Vorhandener Kurztext");
+    assert.equal(before.published, null);
+    assert.equal(before.revisions.length, 0, "Opening must not create a revision");
+    const changed = await store.saveDraft({ key, expectedDraftRevisionId: null, content: { ...before.draft!, body: "Bearbeiteter Entwurf", lead: "Neuer Kurztext" } });
+    assert.equal(changed.revisions.length, 2);
+    assert.equal(changed.published, null);
+    const originalRevision = changed.revisions.at(-1)!;
+    const restored = await store.restore({ key, revisionId: originalRevision.id, expectedDraftRevisionId: changed.draftRevisionId });
+    assert.equal(restored.draft?.body, "Vorhandener Entwurf");
+    assert.equal(restored.draft?.lead, "Vorhandener Kurztext");
+    assert.equal(await store.getPublished(key), null);
+  } finally { await pg.close(); }
+});
+
+test("Blog short text follows publication and restoration without dropping other metadata", async () => {
+  const { pg, sql, store } = await setup();
+  try {
+    const [row] = await sql<{ id: number }>`insert into cms_items(kind,title,body,extra,published) values('blog','Bestehender Artikel','Bestehender Text','{"note":"Alter Kurztext","retained":"metadata"}',true) returning id`;
+    const key = `legacy:${row.id}` as const;
+    const before = await store.getDocument(key);
+    assert.equal(before.published?.lead, "Alter Kurztext");
+    const changed = await store.saveDraft({ key, expectedDraftRevisionId: null, content: { ...before.published!, lead: "Neuer Kurztext" } });
+    assert.equal(JSON.parse((await sql<{ extra: string }>`select extra from cms_items where id=${row.id}`)[0].extra).note, "Alter Kurztext");
+    const published = await store.publish({ key, revisionId: changed.draftRevisionId!, expectedDraftRevisionId: changed.draftRevisionId, expectedPublishedRevisionId: changed.publishedRevisionId });
+    assert.deepEqual(JSON.parse((await sql<{ extra: string }>`select extra from cms_items where id=${row.id}`)[0].extra), { note: "Neuer Kurztext", retained: "metadata" });
+    const restored = await store.restore({ key, revisionId: changed.publishedRevisionId!, expectedDraftRevisionId: published.draftRevisionId });
+    await store.publish({ key, revisionId: restored.draftRevisionId!, expectedDraftRevisionId: restored.draftRevisionId, expectedPublishedRevisionId: restored.publishedRevisionId });
+    assert.deepEqual(JSON.parse((await sql<{ extra: string }>`select extra from cms_items where id=${row.id}`)[0].extra), { note: "Alter Kurztext", retained: "metadata" });
+  } finally { await pg.close(); }
+});
+
 test("Cross-document revisions, foreign shop rows, unknown IDs and stale archive requests are rejected", async () => {
   const { pg, sql, store } = await setup();
   try {
@@ -175,3 +214,4 @@ test("Studio migration removes inherited anonymous and authenticated table grant
     }
   } finally { await pg.close(); }
 });
+

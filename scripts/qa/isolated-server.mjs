@@ -151,6 +151,12 @@ createServer(async (req, res) => {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const flags = JSON.parse(Buffer.concat(chunks));
+      if (typeof flags.websiteStudioEnabled === "boolean") {
+        if (req.headers["x-qa-run-id"] !== process.env.QA_RUN_ID) {
+          res.writeHead(403); res.end("QA run identity required"); return;
+        }
+        process.env.WEBSITE_STUDIO_ENABLED = String(flags.websiteStudioEnabled);
+      }
       if (flags.prepareBrowserFixture === true) {
         if (req.headers["x-qa-run-id"] !== process.env.QA_RUN_ID) {
           res.writeHead(403);
@@ -349,4 +355,5 @@ await writeFile(resolve(outputRoot, "lighthouse-transport.json"), JSON.stringify
   certificatePath, protocol: "h2",
 }, null, 2));
 await import("../../.output/server/index.mjs");
+
 

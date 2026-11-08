@@ -39,9 +39,16 @@ test("A stale editor cannot overwrite a newer draft or publication", () => {
   assert.throws(() => assertCmsRevision(5, null), /zwischenzeitlich/);
 });
 
+test("Existing blog short texts fit Studio revisions without truncation", () => {
+  const content = { ...emptyCmsContent(), lead: "a".repeat(3989) };
+  assert.equal(parseCmsContent(content).lead, content.lead);
+  assert.throws(() => parseCmsContent({ ...content, lead: "a".repeat(4001) }), /Text/);
+});
+
 test("Document identifiers fit the database and each gallery image appears only once", () => {
   assert.throws(() => parseCmsDocumentKey("legacy:2147483648", []), /Seitenkennung/);
   assert.throws(() => parseCmsDocumentKey(`faq:${"a".repeat(81)}`, []), /Seitenkennung/);
   const image = { assetId: "static:customer-01", alt: "Lackfinish", caption: "" };
   assert.throws(() => parseCmsContent({ ...emptyCmsContent(), images: [image, image] }), /mehrfach/);
 });
+

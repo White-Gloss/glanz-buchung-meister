@@ -7,6 +7,7 @@ import {
 } from "@/lib/studio-media.functions";
 import type { StudioAsset, StudioMedia } from "@/lib/studio-media.model";
 import { Button, inputClass } from "./ui";
+import { createStudioActivityRegistry, type StudioActivity } from "./website-studio-activity";
 
 const errorMessage = (error: unknown) =>
   error instanceof Error
@@ -18,11 +19,13 @@ function MediaDetails({
   onChanged,
   onSelect,
   disabled,
+  onActivityChange,
 }: {
   media: StudioMedia;
   onChanged: () => Promise<void>;
   onSelect: (asset: StudioAsset) => void;
   disabled: boolean;
+  onActivityChange: (id: string, activity: StudioActivity | null) => void;
 }) {
   const [alt, setAlt] = useState(media.alt);
   const [caption, setCaption] = useState(media.caption);
@@ -31,6 +34,10 @@ function MediaDetails({
   const [busy, setBusy] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const unsaved = alt !== media.alt || caption !== media.caption || approved !== media.approved;
+  useEffect(() => {
+    onActivityChange(media.id, { dirty: unsaved, busy });
+  }, [media.id, unsaved, busy, onActivityChange]);
+  useEffect(() => () => onActivityChange(media.id, null), [media.id, onActivityChange]);
   async function save(archive: boolean) {
     setBusy(true);
     setError("");
@@ -157,10 +164,12 @@ function MediaDetails({
 export function WebsiteStudioMedia({
   onSelect,
   onAssetsChanged,
+  onActivityChange,
   disabled = false,
 }: {
   onSelect: (asset: StudioAsset) => void;
   onAssetsChanged: (assets: StudioAsset[]) => void;
+  onActivityChange: (activity: StudioActivity) => void;
   disabled?: boolean;
 }) {
   const [uploads, setUploads] = useState<StudioMedia[]>([]);
@@ -173,6 +182,12 @@ export function WebsiteStudioMedia({
   const input = useRef<HTMLInputElement>(null);
   const onAssets = useRef(onAssetsChanged);
   onAssets.current = onAssetsChanged;
+  const onActivity = useRef(onActivityChange);
+  onActivity.current = onActivityChange;
+  const [activity] = useState(createStudioActivityRegistry);
+  const reportActivity = useCallback((id: string, next: StudioActivity | null) => {
+    onActivity.current(activity.update(id, next));
+  }, [activity]);
   const reload = useCallback(async () => {
     const result = await listCmsMedia();
     setUploads(result.uploads);
@@ -226,6 +241,7 @@ export function WebsiteStudioMedia({
     }
     uploadLock.current = true;
     setUploading(true);
+    reportActivity("upload", { dirty: false, busy: true });
     setError("");
     let completed = 0;
     try {
@@ -250,6 +266,7 @@ export function WebsiteStudioMedia({
       }
       uploadLock.current = false;
       setUploading(false);
+      reportActivity("upload", null);
       if (input.current) input.current.value = "";
     }
   }
@@ -320,6 +337,7 @@ export function WebsiteStudioMedia({
                 media={media}
                 onChanged={reload}
                 onSelect={onSelect}
+                onActivityChange={reportActivity}
                 disabled={disabled || uploading}
               />
             ))}
@@ -358,3 +376,4 @@ export function WebsiteStudioMedia({
     </section>
   );
 }
+

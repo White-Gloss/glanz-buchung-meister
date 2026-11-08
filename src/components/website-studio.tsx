@@ -22,6 +22,7 @@ import { WebsiteStudioContent } from "./website-studio-content";
 import { WebsiteStudioMedia } from "./website-studio-media";
 import { WebsiteStudioFields } from "./website-studio-fields";
 import { createStudioRequestGate, studioCanPublish } from "./website-studio-state";
+import type { StudioActivity } from "./website-studio-activity";
 
 const errorMessage = (error: unknown) =>
   error instanceof Error
@@ -113,6 +114,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [mediaActivity, setMediaActivity] = useState<StudioActivity>({ dirty: false, busy: false });
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [view, setView] = useState<"edit" | "preview" | "media" | "history">("edit");
@@ -125,9 +127,16 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   const [newTitle, setNewTitle] = useState("");
   const [requests] = useState(createStudioRequestGate);
   const actionLock = useRef(false);
+  const hasUnsavedChanges = dirty || mediaActivity.dirty;
+  const hasPendingOperation = busy || mediaActivity.busy;
+  const reportMediaActivity = useCallback((next: StudioActivity) => {
+    setMediaActivity((current) =>
+      current.dirty === next.dirty && current.busy === next.busy ? current : next,
+    );
+  }, []);
   const navigation = useBlocker({
-    shouldBlockFn: () => dirty || busy,
-    enableBeforeUnload: dirty || busy,
+    shouldBlockFn: () => hasUnsavedChanges || hasPendingOperation,
+    enableBeforeUnload: hasUnsavedChanges || hasPendingOperation,
     withResolver: true,
   });
   const activeKey = useRef(key);
@@ -184,7 +193,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
     setConfirm(null);
   }
   function choose(next: CmsDocumentKey) {
-    if (next === key || actionLock.current || busy) return;
+    if (next === key || actionLock.current || hasPendingOperation) return;
     if (dirty) setPendingKey(next);
     else {
       setKey(next);
@@ -312,15 +321,15 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   const canPublish =
     document &&
     studioCanPublish({
-      dirty,
-      busy,
+      dirty: hasUnsavedChanges,
+      busy: hasPendingOperation,
       draftRevisionId: document.draftRevisionId,
       publishedRevisionId: document.publishedRevisionId,
       archived: document.archived,
     });
-  const unavailable = loading || busy || !document || document.archived;
+  const unavailable = loading || hasPendingOperation || !document || document.archived;
   return (
-    <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:py-12" aria-busy={loading || busy}>
+    <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:py-12" aria-busy={loading || hasPendingOperation}>
       <header className="mb-5 max-w-3xl sm:mb-8">
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">White-Gloss · Website</p>
         <h1 className="mt-2 font-display text-3xl sm:text-5xl">Website Studio</h1>
@@ -335,7 +344,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
           className="mb-6 space-y-3 rounded-md border border-accent p-5"
         >
           <p>
-            {busy
+            {hasPendingOperation
               ? "Eine Änderung wird noch gespeichert. Bitte warten Sie auf die Rückmeldung."
               : "Diese Seite enthält ungespeicherte Änderungen."}
           </p>
@@ -346,7 +355,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
             <Button
               type="button"
               variant="ghost"
-              disabled={busy}
+              disabled={hasPendingOperation}
               onClick={() => navigation.proceed?.()}
             >
               Änderungen verwerfen und verlassen
@@ -361,7 +370,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
             <select
               className={inputClass}
               value={key}
-              disabled={busy}
+              disabled={hasPendingOperation}
               onChange={(event) => choose(event.target.value as CmsDocumentKey)}
             >
               {[...new Set(targets.map((item) => item.group))].map((group) => (
@@ -456,7 +465,9 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
               </strong>
             </p>
             <p role="status" className="col-span-2 text-muted">
-              {dirty ? "Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen"}
+              {mediaActivity.dirty
+                ? "Ungespeicherte Bildangaben – bitte in der Bilderverwaltung speichern"
+                : dirty ? "Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen"}
             </p>
           </div>
           <p className="text-xs leading-relaxed text-muted">
@@ -512,7 +523,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
             </div>
           )}
           <p role="status" aria-live="polite" className="text-sm text-muted">
-            {loading ? "Inhalt wird geladen …" : busy ? "Änderung wird geprüft …" : status}
+            {loading ? "Inhalt wird geladen …" : hasPendingOperation ? "Änderung wird geprüft …" : status}
           </p>
           <nav aria-label="Studio-Ansichten" className="flex flex-wrap gap-2">
             {(
@@ -528,7 +539,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 type="button"
                 variant={view === value ? "primary" : "ghost"}
                 aria-pressed={view === value}
-                disabled={loading || busy || (value === "media" && document?.kind !== "page")}
+                disabled={loading || hasPendingOperation || (value === "media" && document?.kind !== "page")}
                 onClick={() => setView(value)}
               >
                 {label}
@@ -539,6 +550,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
             <WebsiteStudioMedia
               onSelect={selectImage}
               onAssetsChanged={setAssets}
+              onActivityChange={reportMediaActivity}
               disabled={unavailable}
             />
           </div>
@@ -577,6 +589,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                   edit={edit}
                   openMedia={() => setView("media")}
                   simple={document.kind !== "page"}
+                  leadLabel={document.kind === "blog" ? "Kurztext" : undefined}
                 />
                 <div className="flex flex-wrap gap-3">
                   <Button type="submit">Entwurf speichern</Button>
@@ -601,7 +614,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 content={
                   document.kind === "page"
                     ? content
-                    : { ...emptyCmsContent(), title: content.title, body: content.body }
+                    : { ...emptyCmsContent(), title: content.title, lead: document.kind === "blog" ? content.lead : "", body: content.body }
                 }
                 assets={assets}
                 preview
@@ -676,9 +689,11 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                   Inhalt zurückziehen
                 </Button>
               </div>
-              {dirty && (
+              {hasUnsavedChanges && (
                 <p className="text-sm text-muted">
-                  Vor der Veröffentlichung bitte den Entwurf speichern.
+                  {mediaActivity.dirty
+                    ? "Vor der Veröffentlichung bitte die geänderten Bildangaben in der Bilderverwaltung speichern."
+                    : "Vor der Veröffentlichung bitte den Entwurf speichern."}
                 </p>
               )}
               {confirm && (
@@ -710,3 +725,4 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
     </main>
   );
 }
+

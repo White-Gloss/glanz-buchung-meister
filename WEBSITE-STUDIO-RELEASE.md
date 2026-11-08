@@ -1,6 +1,6 @@
 # Website Studio: Freigabe und Betrieb
 
-Stand: 7. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichung vor. Sie erteilt keine Freigabe für Merge, Deployment, Datenbankänderungen, Aktivierung oder Veröffentlichung von Inhalten. In diesem Arbeitspaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
+Stand: 8. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichung vor. Sie erteilt keine Freigabe für Merge, Deployment, Datenbankänderungen, Aktivierung oder Veröffentlichung von Inhalten. In diesem Arbeitspaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
 
 Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehören in den Abschlussbericht des Pull Requests. Die folgenden Voraussetzungen sind Abnahmepunkte, keine Behauptung bereits abgeschlossener Prüfungen.
 
@@ -15,7 +15,7 @@ Die endgültige Commit-ID, CI-Ergebnisse, Browserberichte und Screenshots gehör
 
 Der Code kann zunächst mit deaktiviertem Studio ausgeliefert werden. `0025_website_studio.sql` ist im Release-Manifest ausdrücklich als optionale Erweiterung geführt; unbekannte künftige Migrationen bleiben erforderlich. Die Produktions-Readiness-Prüfung und der PostgreSQL-Zugriff führen diese Studio-Migration nicht automatisch aus.
 
-Die bisherigen CMS-Verwaltungsseiten öffnen denselben neuen Studio-Editor. Bei deaktiviertem Studio ist dort keine redaktionelle Bearbeitung möglich; veröffentlichte Bestandsinhalte bleiben sichtbar. Für unterbrechungsfreie redaktionelle Nutzung müssen Codefreigabe, Einrichtung und Aktivierung deshalb gemeinsam vorbereitet werden. Flag aus ist ein Rückweg für die öffentliche Website, kein Ersatz für einen verfügbaren Editor.
+Die bisherigen CMS-Verwaltungsseiten wählen den Editor anhand der serverseitigen Freischaltung. Bei deaktiviertem Studio bleiben unveränderte, noch nicht im Studio versionierte FAQ-, Blog-, Galerie- und Zusatzleistungs-Einträge über die bestehende Bearbeitung verfügbar; Migration 0025 ist dafür nicht erforderlich. Speichern veröffentlicht dort wie bisher unmittelbar und wird ausdrücklich so beschriftet. Betreiberrechte und eine Versionsprüfung schützen die Schreibvorgänge. Bereits versionierte oder archivierte Studio-Inhalte bleiben im Legacy-Editor gesperrt, damit Abschaltung oder alte Browserfenster keine Fassungen umgehen. Deren weitere Bearbeitung benötigt die kontrollierte Reaktivierung des Studios.
 
 ## 2. Vor der Einrichtung prüfen
 
@@ -53,7 +53,7 @@ Nach der genehmigten Migration nur lesend bestätigen:
 ## 4. Sichtbarkeit, Fassungen und Bilder
 
 - **Speichern:** erzeugt einen neuen Entwurf. Öffentliche Seiten verwenden ausschließlich eine veröffentlichte Fassung; vorhandene feste Inhalte bleiben sonst erhalten.
-- **Ältere CMS-Inhalte:** Der erste Studio-Schreibvorgang sichert die bestehende veröffentlichte Textfassung als Ausgangsversion. Das bloße Öffnen des Editors oder ein öffentlicher Seitenaufruf legt keine Fassung an.
+- **Ältere CMS-Inhalte:** Veröffentlichten und unveröffentlichten Altinhalt beim ersten Öffnen unverändert anzeigen. Der erste Studio-Schreibvorgang sichert die vorhandene Textfassung als Ausgangsversion; ein unveröffentlichter Altentwurf wird dadurch nicht veröffentlicht. Das bloße Öffnen des Editors oder ein öffentlicher Seitenaufruf legt keine Fassung an. Blog-Kurztexte werden als Teil der Fassung bearbeitet und erst beim Veröffentlichen auf die bestehende öffentliche Ausgabe übertragen; andere gespeicherte Zusatzfelder bleiben erhalten.
 - **Gleichzeitige Bearbeitung:** Speichern und Veröffentlichen vergleichen Fassungskennungen innerhalb einer Transaktion. Bei einem Konflikt neu laden und Inhalte vergleichen; die Fehlermeldung nicht durch Wiederholen einer veralteten Anfrage umgehen.
 - **Wiederherstellen:** erzeugt einen neuen Entwurf aus einer älteren Fassung. Die aktuelle Veröffentlichung bleibt unverändert. Referenzierte Uploads müssen weiterhin freigegeben und verfügbar sein; entzogene oder archivierte Bilder verhindern die Wiederherstellung dieser Fassung.
 - **Zurückziehen:** entfernt die öffentliche Studio-Fassung und beide aktiven Fassungsverweise. Historie bleibt erhalten. Alte Speicher-/Veröffentlichungsanfragen dürfen den Inhalt nicht reaktivieren; dafür ist zuerst eine bewusste Wiederherstellung als Entwurf notwendig.
@@ -72,7 +72,8 @@ Am endgültigen Commit nachweisen:
 - Lint, Typprüfung, Build, Fassungs-/Parallelitäts-, RLS-, Medien-, Release- und SEO-Regressionen bestehen.
 - Die ausschließlich im dafür zugelassenen Linux-GitHub-CI-Job laufenden Browserprüfungen decken Betreiber, Nichtbetreiber, fehlende/abgelaufene Sitzung, Uploadfehler, Vorschau, Veröffentlichung, Entzug und Wiederherstellung ab. Keine lokale Website starten und keine CI-Umgebung auf dem Entwicklerrechner vortäuschen.
 - Ein Entwurfsbild ist anonym nicht abrufbar; nach Veröffentlichung ist es abrufbar; nach Bild- oder Seitenentzug nicht mehr. Andere private Fotoquellen bleiben unzugänglich.
-- Flag aus und fehlendes Studio-Schema lassen bestehende öffentliche Seiten mit ihren festen Inhalten verfügbar. Über uns bleibt unveröffentlicht; die Sitemap enthält keinen entsprechenden 404-Eintrag.
+- Flag aus und fehlendes Studio-Schema lassen bestehende öffentliche Seiten mit ihren festen Inhalten verfügbar. Die bisherigen CMS-Verwaltungsseiten bleiben für noch nicht Studio-versionierte Inhalte bearbeitbar. Betreiber-, Konflikt- und Versionsgrenzen des Fallbacks sowie unveröffentlichte Altentwürfe und Blog-Kurztexte gesondert prüfen. Über uns bleibt unveröffentlicht; die Sitemap enthält keinen entsprechenden 404-Eintrag.
+- Ungespeicherte Bildangaben und laufende Medienoperationen müssen denselben Navigationsschutz wie Seiteninhalte auslösen; Speichern der Seite darf Bildangaben nicht fälschlich als gespeichert anzeigen.
 - Eine erneute Aktivierung darf vorhandene gespeicherte Veröffentlichungen wieder sichtbar machen. Vorher deshalb deren aktuellen Inhalt und Bildfreigaben prüfen.
 
 Nach einer späteren genehmigten Aktivierung nur die abgesprochenen lesenden Produktionsprüfungen durchführen. Keine Testbuchung, Kunden-E-Mail, Testnachricht oder Kundendatenänderung auslösen. Schreibprüfungen mit synthetischen Daten gehören in die isolierte CI; zusätzliche produktive Studio-Schreibproben benötigen eine konkrete Freigabe.

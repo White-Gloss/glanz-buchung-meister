@@ -20,7 +20,12 @@ function kindForKey(key: CmsDocumentKey): CmsKind {
 }
 
 function legacyContent(item: Item): CmsDocumentContent {
-  return { ...emptyCmsContent(), title: item.title, body: item.body };
+  let lead = "";
+  if (item.kind === "blog") {
+    try { const metadata = JSON.parse(item.extra); if (typeof metadata?.note === "string") lead = metadata.note; }
+    catch { /* Older free-form metadata must not prevent reading the article. */ }
+  }
+  return { ...emptyCmsContent(), title: item.title, body: item.body, lead };
 }
 
 function iso(value: string | Date): string { return value instanceof Date ? value.toISOString() : value; }
@@ -72,7 +77,7 @@ export function createCmsStore(sql: Sql, options: {
       id: item.id, key, kind: item.kind,
       draftRevisionId: item.draft_revision_id,
       publishedRevisionId: item.published_revision_id,
-      draft: draft?.content ?? published,
+      draft: draft?.content ?? published ?? (!item.studio_key && !item.archived_at && rows.length === 0 ? legacyContent(item) : null),
       published,
       revisions: rows.map((row) => ({ id: row.id, createdAt: iso(row.created_at), createdBy: row.created_by, restoredFromRevisionId: row.restored_from_revision_id })),
       archived: Boolean(item.archived_at),
@@ -85,10 +90,14 @@ export function createCmsStore(sql: Sql, options: {
   }
 
   async function preserveLegacyBaseline(tx: Sql, item: Item): Promise<void> {
-    if (item.published && !item.published_revision_id) {
+    if (!item.studio_key && !item.draft_revision_id && !item.published_revision_id && !item.archived_at) {
+      const history = await tx<{ id: number }>`select id from cms_revisions where shop_id=${SHOP} and item_id=${item.id} limit 1`;
+      if (history.length) return;
       const baseline = await addRevision(tx, item, legacyContent(item));
-      await tx`update cms_items set published_revision_id=${baseline} where shop_id=${SHOP} and id=${item.id}`;
-      item.published_revision_id = baseline;
+      if (item.published) {
+        await tx`update cms_items set published_revision_id=${baseline} where shop_id=${SHOP} and id=${item.id}`;
+        item.published_revision_id = baseline;
+      }
     }
   }
 
@@ -132,6 +141,14 @@ export function createCmsStore(sql: Sql, options: {
       if (content.title.trim().length < 2) throw new Error("Bitte vor der Veröffentlichung einen Titel ergänzen.");
       if (content.images.some((image) => !image.alt.trim())) throw new Error("Bitte für jedes Bild einen beschreibenden Alt-Text ergänzen.");
       await options.validateAssets(tx, content);
+      if (item.kind === "blog") {
+        let metadata: Record<string, unknown> = {};
+        try {
+          const existing: unknown = JSON.parse(item.extra);
+          if (existing && typeof existing === "object" && !Array.isArray(existing)) metadata = existing as Record<string, unknown>;
+        } catch { /* Legacy non-JSON extras have no named metadata fields. */ }
+        await tx`update cms_items set extra=${JSON.stringify({ ...metadata, note: content.lead })} where shop_id=${SHOP} and id=${item.id}`;
+      }
       await tx`update cms_items set title=${content.title},body=${content.body},published=true,published_revision_id=${input.revisionId},archived_at=null,updated_at=now() where shop_id=${SHOP} and id=${item.id}`;
       return readDocument(tx, key);
     });
@@ -180,3 +197,4 @@ export function createCmsStore(sql: Sql, options: {
 
   return { getDocument: (key: CmsDocumentKey) => readDocument(sql, keyOf(key)), getPublished, listDocuments, saveDraft, publish, restore, archive };
 }
+

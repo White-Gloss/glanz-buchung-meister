@@ -24,7 +24,7 @@ const diagnostics = [];
 const ids = {};
 const serverFunctionCandidates = {};
 const pageTraffic = new WeakMap();
-const mutationNames = ["saveCmsDraft", "publishCmsRevision", "restoreCmsRevisionAsDraft", "archiveCmsDocument", "updateCmsMedia", "archiveCmsMedia"];
+const mutationNames = ["saveCmsDraft", "publishCmsRevision", "restoreCmsRevisionAsDraft", "archiveCmsDocument", "updateCmsMedia", "archiveCmsMedia", "saveLegacyCms", "deleteLegacyCms"];
 let fromCrossJSON;
 let toJSONAsync;
 let defaultSerovalPlugins;
@@ -71,7 +71,7 @@ async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
   report.screenshots.push(name);
 }
-async function openStudio(width, cookie = operatorCookie) {
+async function openStudio(width, cookie = operatorCookie, path = "/admin/studio") {
   const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, reducedMotion: "reduce", serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("website-studio", `context-${diagnostics.length}`) });
   const diagnostic = createBrowserDiagnostics({ origin: lighthouseBase, label: `studio-${width}` });
   diagnostics.push(diagnostic);
@@ -100,9 +100,13 @@ async function openStudio(width, cookie = operatorCookie) {
   page.on("requestfailed", (request) => trace(request, "failed", { error: request.failure()?.errorText }));
   diagnostic.attach(page);
   page.setDefaultTimeout(15000);
-  await page.goto(`${lighthouseBase}/admin/studio`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "Website Studio", exact: true }).waitFor();
-  await page.getByLabel("Überschrift", { exact: true }).waitFor();
+  await page.goto(`${lighthouseBase}${path}`, { waitUntil: "networkidle" });
+  if (path === "/admin/studio") {
+    await page.getByRole("heading", { name: "Website Studio", exact: true }).waitFor();
+    await page.getByLabel("Überschrift", { exact: true }).waitFor();
+  } else {
+    await page.getByLabel("Titel", { exact: true }).waitFor();
+  }
   return { context, page };
 }
 async function selectAbout(page) {
@@ -258,7 +262,23 @@ try {
   await input.setInputFiles({ name: "untrusted.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>') });
   await desktop.page.getByRole("alert").filter({ hasText: "Erlaubt sind JPEG" }).waitFor();
   const sourceImage = await readFile("public/media/hero-720.webp");
-  const upload = await operation(desktop.page, "uploadCmsImage", () => input.setInputFiles({ name: "qa-studio.webp", mimeType: "image/webp", buffer: sourceImage }));
+  let releaseUpload;
+  const heldUpload = new Promise((resolve) => { releaseUpload = resolve; });
+  const holdUpload = async (route) => { await heldUpload; await route.continue(); };
+  await desktop.page.route("**/api/studio-media-upload", holdUpload);
+  const pendingUpload = operation(desktop.page, "uploadCmsImage", () => input.setInputFiles({ name: "qa-studio.webp", mimeType: "image/webp", buffer: sourceImage }));
+  void pendingUpload.catch(() => {});
+  try {
+    await desktop.page.getByRole("button", { name: "Bilder werden verarbeitet …", exact: true }).waitFor();
+    await desktop.page.locator("header").getByRole("link", { name: "Website", exact: true }).click();
+    const uploadLeave = desktop.page.getByRole("region", { name: "Studio verlassen", exact: true });
+    await uploadLeave.waitFor();
+    assert.equal(new URL(desktop.page.url()).pathname, "/admin/studio");
+    assert.equal(await uploadLeave.getByRole("button", { name: "Änderungen verwerfen und verlassen", exact: true }).isDisabled(), true);
+    await uploadLeave.getByRole("button", { name: "Im Studio bleiben", exact: true }).click();
+  } finally { releaseUpload(); }
+  const upload = await pendingUpload;
+  await desktop.page.unroute("**/api/studio-media-upload", holdUpload);
   assert.equal(upload.approved, false);
   assert.ok(upload.width <= 2400 && upload.height <= 2400);
   assert.equal((await fetch(qaBase + upload.publicUrl)).status, 404);
@@ -273,6 +293,13 @@ try {
   assert.match(privateImage.headers.get("content-type"), /image\/webp/);
   const card = desktop.page.getByRole("listitem").filter({ hasText: "qa-studio.webp" });
   await card.getByLabel("Bildbeschreibung (Alt-Text)", { exact: true }).fill("Isoliertes QA-Bild aus dem öffentlichen Motivbestand");
+  await desktop.page.locator("header").getByRole("link", { name: "Website", exact: true }).click();
+  const mediaLeave = desktop.page.getByRole("region", { name: "Studio verlassen", exact: true });
+  await mediaLeave.waitFor();
+  assert.equal(new URL(desktop.page.url()).pathname, "/admin/studio");
+  assert.match(await mediaLeave.textContent(), /ungespeicherte Änderungen/);
+  await mediaLeave.getByRole("button", { name: "Im Studio bleiben", exact: true }).click();
+  assert.equal(await card.getByLabel("Bildbeschreibung (Alt-Text)", { exact: true }).inputValue(), "Isoliertes QA-Bild aus dem öffentlichen Motivbestand");
   await card.getByRole("checkbox", { name: /Ich darf dieses Bild öffentlich verwenden/ }).check();
   const approved = await operation(desktop.page, "updateCmsMedia", () => card.getByRole("button", { name: "Bildangaben speichern", exact: true }).click());
   assert.equal((await fetch(qaBase + upload.publicUrl)).status, 404, "Approval alone does not publish an image");
@@ -368,6 +395,50 @@ try {
   assert.match(homeHtml, /QA Home nur Entwurf/);
   assert.match(homeHtml, /QA Home Suchvorschau/);
   report.checks.push("Homepage title and metadata consume only the explicitly published revision");
+  // Real flag-off requests must retain the pre-Studio CMS without granting a
+  // route around private revisions. This control exists only in the CI process.
+  async function studioFlag(enabled) {
+    const response = await fetch(controlBase + "/control", { method: "POST", headers: { "x-qa-run-id": process.env.QA_RUN_ID }, body: JSON.stringify({ websiteStudioEnabled: enabled }) });
+    assert.equal(response.status, 200);
+  }
+  await studioFlag(false);
+  try {
+    const deniedDraft = await rpc("saveCmsDraft", { key: "about", expectedDraftRevisionId: latest.draftRevisionId, content: firstContent }, operatorCookie);
+    assert.match(deniedDraft.error?.message ?? "", /nicht freigeschaltet/);
+    for (const cookie of ["", outsiderCookie, expiredCookie]) {
+      const deniedLegacy = await rpc("saveLegacyCms", { kind: "faq", title: "QA nicht erlaubt", body: "Kein Betreiberzugriff" }, cookie);
+      assert.ok(deniedLegacy.error, "Legacy writes still require a current operator session");
+    }
+    const legacy = await openStudio(390, operatorCookie, "/admin/faqs");
+    await legacy.page.getByLabel("Titel", { exact: true }).fill("QA Legacy Frage");
+    await legacy.page.getByLabel("Text", { exact: true }).fill("QA Legacy Antwort");
+    await operation(legacy.page, "saveLegacyCms", () => legacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click());
+    await legacy.page.getByRole("heading", { name: "QA Legacy Frage", exact: true }).waitFor();
+    assert.match((await publicPage("/faq")).html, /QA Legacy Antwort/);
+    await assertNoOverflow(legacy.page);
+    const staleLegacy = await openStudio(390, operatorCookie, "/admin/faqs");
+    const staleRow = staleLegacy.page.getByRole("listitem").filter({ has: staleLegacy.page.getByRole("heading", { name: "QA Legacy Frage", exact: true }) });
+    await staleRow.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+    const row = legacy.page.getByRole("listitem").filter({ has: legacy.page.getByRole("heading", { name: "QA Legacy Frage", exact: true }) });
+    await row.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+    await legacy.page.getByLabel("Text", { exact: true }).fill("QA Legacy aktualisiert");
+    await operation(legacy.page, "saveLegacyCms", () => legacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click());
+    await legacy.page.getByRole("listitem").filter({ hasText: "QA Legacy aktualisiert" }).waitFor();
+    await staleLegacy.page.getByLabel("Text", { exact: true }).fill("QA veraltete Änderung");
+    await staleLegacy.page.getByRole("button", { name: "Speichern und veröffentlichen", exact: true }).click();
+    await staleLegacy.page.getByRole("alert").filter({ hasText: "zwischenzeitlich" }).waitFor();
+    assert.equal(await staleLegacy.page.getByLabel("Text", { exact: true }).inputValue(), "QA veraltete Änderung");
+    assert.match((await publicPage("/faq")).html, /QA Legacy aktualisiert/);
+    await staleLegacy.context.close();
+    await row.getByRole("button", { name: "Löschen", exact: true }).click();
+    await operation(legacy.page, "deleteLegacyCms", () => legacy.page.getByRole("button", { name: "Jetzt löschen", exact: true }).click());
+    assert.doesNotMatch((await publicPage("/faq")).html, /QA Legacy aktualisiert/);
+    await screenshot(legacy.page, "mobile-legacy-editor.png");
+    await legacy.context.close();
+    report.checks.push("Flag off retains real mobile CMS create/edit/delete and public updates; stale writes and non-operators remain denied");
+  } finally { await studioFlag(true); }
+  const activeLegacy = await rpc("saveLegacyCms", { kind: "faq", title: "QA alte Anfrage", body: "Studio hat jetzt Vorrang" }, operatorCookie);
+  assert.match(activeLegacy.error?.message ?? "", /Website Studio ist aktiv/);
   const after = await (await fetch(controlBase + "/evidence")).json();
   assert.deepEqual(after.tables, before.tables, "Studio changes must not change bookings, customers or messages");
   for (const key of ["mails", "whatsapp", "uploads", "objects", "blocked"]) assert.deepEqual(after[key], before[key], key);
@@ -421,3 +492,4 @@ console.log("Studio browser diagnostics: " + JSON.stringify({
   warnings: report.diagnostics.flatMap((item) => item.warnings),
   blocked: report.blocked,
 }));
+

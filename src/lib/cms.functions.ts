@@ -7,6 +7,7 @@ import { cities, services } from "@/data/site";
 import { emptyCmsContent, parseCmsContent, parseCmsDocumentKey, type CmsDocumentKey } from "./cms.model";
 import { createCmsStore, isCmsSchemaUnavailable, type CmsStudioDocument } from "./cms.store";
 import { cmsEnabled, createOptionalCmsReader } from "./cms.availability";
+import { createLegacyCmsStore } from "./cms-legacy.store";
 
 export type { CmsDocumentContent, CmsDocumentKey } from "./cms.model";
 export type { CmsKind, CmsStudioDocument, CmsStudioSummary } from "./cms.store";
@@ -26,6 +27,38 @@ async function studioEnabled() {
   const { isIsolatedGithubCi } = await import("../../scripts/hosting-policy.mjs");
   return cmsEnabled({ enabled: process.env.WEBSITE_STUDIO_ENABLED, isolatedCi: isIsolatedGithubCi() });
 }
+
+export const getCmsEditorMode = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .handler(async () => ({ studio: await studioEnabled() }));
+
+async function legacyStore() {
+  if (await studioEnabled()) throw new Error("Website Studio ist aktiv. Bitte die Seite neu laden und dort Entwürfe bearbeiten.");
+  return createLegacyCmsStore(await getSql());
+}
+
+export const listLegacyCms = createServerFn({ method: "GET" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({ kind: kindSchema }).strict().parse(input))
+  .handler(async ({ data }) => (await legacyStore()).list(data.kind));
+
+export const saveLegacyCms = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({
+    id: z.number().int().positive().optional(), kind: kindSchema,
+    expectedVersion: z.string().min(1).max(100).optional(),
+    slug: z.string().max(80).optional(), title: z.string().trim().min(2).max(200),
+    body: z.string().max(20000), extra: z.string().max(4000).optional(),
+  }).strict().parse(input))
+  .handler(async ({ data }) => (await legacyStore()).save(data));
+
+export const deleteLegacyCms = createServerFn({ method: "POST" })
+  .middleware([authMiddleware, operatorMiddleware])
+  .validator((input: unknown) => z.object({
+    id: z.number().int().positive(), kind: kindSchema,
+    expectedVersion: z.string().min(1).max(100),
+  }).strict().parse(input))
+  .handler(async ({ data }) => (await legacyStore()).remove(data));
 
 export type CmsRow = {
   id: number; kind: string; slug: string | null; title: string; body: string; extra: string;
@@ -168,4 +201,5 @@ export const deleteCms = createServerFn({ method: "POST" })
     await store.archive({ key: `legacy:${data.id}`, expectedDraftRevisionId: data.expectedDraftRevisionId, expectedPublishedRevisionId: data.expectedPublishedRevisionId });
     return { ok: true as const };
   }));
+
 

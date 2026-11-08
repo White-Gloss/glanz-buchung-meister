@@ -63,7 +63,7 @@ export function parseCmsContent(input: unknown): CmsDocumentContent {
   const imageIds = new Set<string>();
   const content: CmsDocumentContent = {
     title: text(row.title, 200),
-    lead: text(row.lead, 1200),
+    lead: text(row.lead, 4000),
     body: text(row.body, 20000),
     metaTitle: text(row.metaTitle, 160),
     metaDescription: text(row.metaDescription, 320),
@@ -90,3 +90,4 @@ export function parseCmsContent(input: unknown): CmsDocumentContent {
   if (JSON.stringify(content).length > 100000) throw new Error("Der Inhalt ist zu umfangreich. Bitte auf mehrere Seiten verteilen.");
   return content;
 }
+

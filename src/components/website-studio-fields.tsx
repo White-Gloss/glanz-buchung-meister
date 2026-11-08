@@ -50,12 +50,14 @@ export function WebsiteStudioFields({
   edit,
   openMedia,
   simple = false,
+  leadLabel,
 }: {
   content: CmsDocumentContent;
   assets: StudioAsset[];
   edit: (patch: Partial<CmsDocumentContent>) => void;
   openMedia: () => void;
   simple?: boolean;
+  leadLabel?: string;
 }) {
   return (
     <div className="space-y-8">
@@ -66,12 +68,12 @@ export function WebsiteStudioFields({
           value={content.title}
           onChange={(title) => edit({ title })}
         />
-        {!simple && (
+        {(!simple || leadLabel) && (
           <TextField
-            label="Kurze Einleitung"
+            label={leadLabel ?? "Kurze Einleitung"}
             value={content.lead}
             onChange={(lead) => edit({ lead })}
-            maxLength={1200}
+            maxLength={leadLabel ? 4000 : 1200}
             multiline
           />
         )}
@@ -341,3 +343,4 @@ export function WebsiteStudioFields({
     </div>
   );
 }
+

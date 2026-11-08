@@ -8,6 +8,7 @@ test("Studio stays disabled without the explicit flag or the existing strict CI 
   assert.equal(cmsEnabled({ enabled: "1", isolatedCi: false }), false);
   assert.equal(cmsEnabled({ enabled: "true", isolatedCi: false }), true);
   assert.equal(cmsEnabled({ isolatedCi: true }), true);
+  assert.equal(cmsEnabled({ enabled: "false", isolatedCi: true }), false);
 });
 
 test("A disabled optional reader never invokes the database callback", async () => {
@@ -48,3 +49,4 @@ test("Hanging public reads have a budget, deduplicate in-flight work and never c
   assert.equal(await read("home", async () => "Fresh publication"), "Fresh publication");
   assert.equal(await read("home", async () => "Next publication"), "Next publication");
 });
+

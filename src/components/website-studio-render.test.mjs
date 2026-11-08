@@ -24,6 +24,23 @@ const { WebsiteStudioContent } = module.exports;
 if (typeof WebsiteStudioContent !== "function") {
   throw new Error("The production renderer did not export WebsiteStudioContent.");
 }
+const fieldsSource = readFileSync(new URL("./website-studio-fields.tsx", import.meta.url), "utf8");
+const compiledFields = ts.transpileModule(fieldsSource, {
+  compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+    jsx: ts.JsxEmit.ReactJSX,
+    target: ts.ScriptTarget.ES2022,
+  },
+});
+const fieldsModule = { exports: {} };
+const fieldsRequire = (name) => {
+  if (name === "./ui") return { Button: (props) => createElement("button", props), inputClass: "field" };
+  // Ordering callbacks are not invoked while rendering an empty simple editor.
+  if (name === "./website-studio-state") return {};
+  return require(name);
+};
+new Function("require", "exports", "module", compiledFields.outputText)(fieldsRequire, fieldsModule.exports, fieldsModule);
+const { WebsiteStudioFields } = fieldsModule.exports;
 const content = {
   title: "Redaktion",
   lead: "Einleitung",
@@ -46,6 +63,16 @@ const assets = [
     height: 800,
   },
 ];
+
+test("the simple blog editor exposes its existing short text and keeps FAQ forms unchanged", () => {
+  const props = { content: { ...content, lead: "Pflegehinweise vor dem Winter." }, assets: [], simple: true, edit() {}, openMedia() {} };
+  const blog = renderToStaticMarkup(createElement(WebsiteStudioFields, { ...props, leadLabel: "Kurztext" }));
+  assert.match(blog, /Kurztext<\/label>/);
+  assert.match(blog, /maxlength="4000"/i);
+  assert.match(blog, /<textarea[^>]*>Pflegehinweise vor dem Winter\.<\/textarea>/);
+  const faq = renderToStaticMarkup(createElement(WebsiteStudioFields, props));
+  assert.doesNotMatch(faq, /Kurztext|Pflegehinweise vor dem Winter/);
+});
 
 test("public rendering escapes editorial HTML and never selects the private preview URL", () => {
   const html = renderToStaticMarkup(createElement(WebsiteStudioContent, { content, assets }));
@@ -105,3 +132,4 @@ test("embedding below a page hero adds H2 sections and questions without another
   assert.equal((html.match(/<h2(?:\s|>)/g) ?? []).length, 2);
   assert.doesNotMatch(html, /<h3(?:\s|>)/);
 });
+
