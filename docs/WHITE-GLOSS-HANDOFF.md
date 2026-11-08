@@ -74,3 +74,11 @@ Serverlose Nachweise: 30 Tracking-/Consent-Tests, 11 Model-/Availability-Tests u
 Der erste Integrationslauf [42441978157](https://github.com/White-Gloss/glanz-buchung-meister/actions/runs/42441978157) hat schema, studio und cross-browser bereits bestanden; verify war bei Erstellung dieses Checkpoints noch im Browserlauf. Diese Ergebnisse gelten für `d340d89ad1be61068fe9a382798db3592a0ebf8e`, nicht automatisch für das Korrekturpaket.
 
 Die aktuellen vollständigen Prüfläufe und deren genaue Head-Zuordnung sind im [Draft-PR #323](https://github.com/White-Gloss/glanz-buchung-meister/pull/323/checks) verknüpft. Vor Abnahme deren endgültiges Ergebnis prüfen. Nächster Schritt: neue vollständige CI auswerten, Fehler beheben, Screenshots und Labormessungen prüfen und abschließende Nachweise ergänzen.
+
+## Prüfkorrekturen nach dem Korrekturpaket
+
+- Lauf 42442534022: neue Legacy-Browserprüfung scheiterte an einem mehrdeutigen Label; Hauptprüfung meldete drei fehlende JS-Testtypen und eine alte Erwartung, die eine ausdrückliche Studio-Abschaltung im isolierten CI ignorierte. Alle Ursachen korrigiert, keine Tests entfernt.
+- Commit `1d418d7e3da20be71e53c0044431014feb0dbce5`: Studio-Browserprüfung und Schema in Lauf 42442757728 erfolgreich.
+- Commit `dafd325bd189c6a07c189eff05e60a4eb38dfb2e`: Studio und Schema erneut erfolgreich. Cross-browser scheiterte ausschließlich am durch den Test selbst abgebrochenen Vollbild customer-16 in Firefox. Der Dialog wurde unmittelbar nach Sichtbarkeit weitergeschaltet und geschlossen; ein dekodiertes Bild war bisher nicht abgewartet.
+- Galerieprüfung wartet jetzt vor Weiterblättern und Schließen auf genau das angeforderte, erfolgreich dekodierte Bild. Acht Bildnachweise für beide Engines/Breiten sind obligatorisch; Netzwerkfehler bleiben unverändert Fehler. Vier neue und acht bestehende serverlose Diagnostiktests bestanden.
+- Der vorhandene mobile Legacy-Screenshot wird zusätzlich zur visuellen Prüfung im CI-Log exportiert. Vollständiger Browsernachweis der neuen Wartelogik steht vor dem abschließenden CI noch aus.

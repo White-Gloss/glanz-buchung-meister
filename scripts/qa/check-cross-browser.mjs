@@ -10,6 +10,7 @@ import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { displayedPriceEquals } from "./displayed-price.mjs";
 import { completeSuccessfulRead, observeReadDuringAction } from "./read-completion.mjs";
 import { revealTargetWithWheel } from "./scroll-target.mjs";
+import { decodedGalleryImage } from "./gallery-image.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -17,7 +18,7 @@ await mkdir(output, { recursive: true });
 const report = {
   status: "running",
   scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [],
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [],
 };
 const diagnostics = [];
 
@@ -160,8 +161,15 @@ try {
           await trigger.click();
           const viewer = page.locator("dialog.customer-photo-dialog");
           await viewer.waitFor({ state: "visible" });
+          const viewerImage = viewer.locator(".customer-photo-viewer > img");
+          const gallerySources = await page.locator(".customer-photo-trigger > img").evaluateAll((images) => images.map((image) => image.src));
+          assert.ok(gallerySources.length >= 2, "The keyboard scenario needs two gallery images");
+          // Wait for the full-size image before replacing/removing its <img>.
+          // Otherwise this test can cancel its own download (Firefox NS_BINDING_ABORTED).
+          report.galleryImages.push({ label: `${name}-${width}`, index: 1, ...await viewerImage.evaluate(decodedGalleryImage, gallerySources[0]) });
           await page.keyboard.press("ArrowRight");
           await page.waitForFunction(() => document.querySelector("dialog.customer-photo-dialog .kicker")?.textContent?.includes("Bild 2 von"));
+          report.galleryImages.push({ label: `${name}-${width}`, index: 2, ...await viewerImage.evaluate(decodedGalleryImage, gallerySources[1]) });
           assert.equal(await viewer.locator(".customer-photo-viewer > img").evaluate((image) => getComputedStyle(image).objectFit), "contain");
           await page.keyboard.press("Escape");
           await viewer.waitFor({ state: "hidden" });
@@ -220,6 +228,7 @@ try {
   assert.equal(report.failures.length, 0, JSON.stringify(report.failures, null, 2));
   assert.equal(report.checks.length, 24, "Every engine and viewport must complete all checks");
   assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
+  assert.equal(report.galleryImages.length, 8, "Both full-size gallery images must decode before switching/closing for every engine and viewport");
   report.status = "passed";
 } catch (error) {
   report.status = "failed";
@@ -230,4 +239,5 @@ try {
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));
-console.log("Cross-browser read evidence: " + JSON.stringify({ status: report.status, failures: report.failures, lastLayout: report.lastLayout, actions: report.reviewActions, reads: report.reviewRequests, errors: report.diagnostics.flatMap((item) => item.errors) }));
+console.log("Cross-browser read evidence: " + JSON.stringify({ status: report.status, failures: report.failures, lastLayout: report.lastLayout, actions: report.reviewActions, reads: report.reviewRequests, gallery: report.galleryImages, errors: report.diagnostics.flatMap((item) => item.errors) }));
+

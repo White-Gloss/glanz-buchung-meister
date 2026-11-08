@@ -12,6 +12,7 @@ const files = [
   "website-studio/desktop-preview.png",
   "website-studio/desktop-media.png",
   "website-studio/mobile-editor.png",
+  "website-studio/mobile-legacy-editor.png",
   "hero-stability/desktop-consent-rejected.png",
   "hero-stability/mobile-consent-rejected.png",
   "mobile-390--abholservice-nagold.png",
@@ -31,3 +32,4 @@ for (const file of files) {
   await writeFile(resolve(output, name), data);
   console.log("WG_REVIEW_IMAGE:" + JSON.stringify({ name, width: info.width, height: info.height, sha256: createHash("sha256").update(data).digest("hex"), data: data.toString("base64") }));
 }
+
