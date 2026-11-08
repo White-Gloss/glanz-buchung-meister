@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { bookingMeasurement } from "@/lib/openai-measurement";
 import {
   cities,
   paymentNote,
@@ -75,6 +76,7 @@ export function Configurator({
   );
   const [privacy, setPrivacy] = useBookingDraft("privacy", false);
   const [reviewEmailConsent, setReviewEmailConsent] = useBookingDraft("reviewEmailConsent", false);
+  const [openAiConsent, setOpenAiConsent] = useState(false);
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -241,6 +243,7 @@ export function Configurator({
             kind: "booking",
             privacy: true as const,
             reviewEmailConsent,
+            openAiMeasurement: bookingMeasurement(openAiConsent, () => window.location.search),
             website,
           },
         }));
@@ -794,6 +797,22 @@ export function Configurator({
           <input
             type="checkbox"
             className="mt-1"
+            disabled={pending || savedReference !== null}
+            checked={openAiConsent}
+            onChange={(e) => setOpenAiConsent(e.target.checked)}
+          />
+          <span>
+            Ich willige freiwillig ein, dass White Gloss diese erfolgreiche Anfrage zur
+            Anzeigenmessung an OpenAI meldet: Zeitpunkt, zufällige Ereigniskennung und eine
+            vorhandene Anzeigen-Klickkennung. Keine Kontakt- oder Fahrzeugdaten. Dies gilt nur
+            für diese Anfrage; vor dem Absenden kann ich das Häkchen entfernen.{" "}
+            <Link to="/datenschutz" className="underline hover:text-fg">Datenschutzhinweise</Link>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            className="mt-1"
             checked={reviewEmailConsent}
             onChange={(e) => setReviewEmailConsent(e.target.checked)}
           />
@@ -816,6 +835,7 @@ export function Configurator({
                 saved.current = null;
                 setSavedReference(null);
                 bookingRequestId.clear();
+                setOpenAiConsent(false);
                 setError("");
               }}
             >

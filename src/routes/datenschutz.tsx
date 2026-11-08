@@ -150,8 +150,8 @@ function PrivacyPage() {
             Übermittlungen auf Standardvertragsklauseln der EU-Kommission.
           </p>
           <p>
-            Darüber hinaus findet im öffentlich zugänglichen Bereich keine werbliche
-            Reichweitenmessung statt (kein Meta-Pixel).
+            Es wird kein Meta-Pixel geladen. Die gesonderte OpenAI-Anzeigenmessung ist
+            nachfolgend beschrieben.
           </p>
           <p>
             Technisch notwendige Speicherung kann im geschützten Betriebspanel zur Anmeldung und
@@ -166,6 +166,29 @@ function PrivacyPage() {
             Button „Google Maps“ öffnet Google in einem neuen Tab. Vor dem Klick stellt Ihr Browser
             keine Verbindung zu Google her. Rechtsgrundlage nach dem Klick ist Art. 6 Abs. 1 lit. a
             DSGVO.
+          </p>
+        </section>
+
+        <section>
+          <h2>6a. Freiwillige OpenAI-Anzeigenmessung</h2>
+          <p>
+            Wenn Sie das gesonderte, freiwillige Häkchen in der Terminanfrage setzen, darf
+            unser Server die erfolgreich gespeicherte Anfrage zur Erfolgsmessung unserer
+            Anzeigen an OpenAI übermitteln. Übermittelt werden Ereignisart, Zeitpunkt, eine
+            nicht im Klartext auf Ihre Anfrage verweisende Ereigniskennung, unsere Website-Adresse
+            ohne Zusatzparameter und eine gegebenenfalls in der aktuellen Seitenadresse vorhandene
+            Anzeigen-Klickkennung. Wir übermitteln dafür keine Kontakt- oder Fahrzeugangaben,
+            Nachrichten, Kunden-IP-Adressen oder Browserkennungen und auch keine Hashwerte Ihrer
+            Kontaktdaten. Wir laden kein OpenAI-Tracking-Skript in Ihren Browser.
+          </p>
+          <p>
+            Ihre Auswahl gilt nur für diese Anfrage und wird nicht im Browser gespeichert.
+            Ohne das Häkchen erfolgt diese Übermittlung nicht; die Anfrage bleibt möglich.
+            Sie können das Häkchen vor dem Absenden entfernen. Für Fragen oder einen späteren
+            Widerruf erreichen Sie uns über die oben genannten Kontaktdaten. Die Rechtmäßigkeit
+            der Verarbeitung vor dem Widerruf bleibt unberührt. Informationen zur Verarbeitung
+            durch OpenAI finden Sie in der{" "}
+            <a href="https://openai.com/policies/privacy-policy/">OpenAI-Datenschutzerklärung</a>.
           </p>
         </section>
 
