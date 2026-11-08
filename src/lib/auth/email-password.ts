@@ -13,3 +13,9 @@
  */
 export const emailAndPasswordEnabled = true;
 export const emailSignUpEnabled = false;
+
+/** Shared with the real server and isolated auth boundary regression tests. */
+export const emailPasswordOptions = {
+  enabled: emailAndPasswordEnabled,
+  disableSignUp: false,
+};
