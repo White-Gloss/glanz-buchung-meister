@@ -21,21 +21,12 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [mode, setMode] = useState<"signin" | "bootstrap">("signin");
 
   async function onEmail(e: FormEvent) {
     e.preventDefault();
     setError("");
     setPending(true);
     try {
-      if (mode === "bootstrap") {
-        const { error: signUpErr } = await authClient.signUp.email({
-          email,
-          password,
-          name: "Betrieb",
-        });
-        if (signUpErr) throw new Error(signUpErr.message);
-      }
       const { error: err } = await authClient.signIn.email({
         email,
         password,
@@ -93,9 +84,7 @@ function Login() {
             {emailAndPasswordEnabled ? (
               <form onSubmit={onEmail} className="space-y-3 border-t border-line pt-5">
                 <p className="text-xs text-subtle">
-                  {mode === "bootstrap"
-                    ? "Erstes Betriebskonto (E-Mail @white-gloss.de, Passwort mindestens 10 Zeichen)."
-                    : "Oder mit E-Mail und Passwort."}
+                  Oder mit E-Mail und Passwort.
                 </p>
                 <Field id="email" label="E-Mail">
                   <input
@@ -112,26 +101,17 @@ function Login() {
                   <input
                     id="password"
                     type="password"
-                    autoComplete={mode === "bootstrap" ? "new-password" : "current-password"}
+                    autoComplete="current-password"
                     className={inputClass}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    minLength={mode === "bootstrap" ? 10 : 8}
+                    minLength={8}
                     required
                   />
                 </Field>
                 <Button type="submit" className="w-full" disabled={pending}>
-                  {mode === "bootstrap" ? "Erstes Betriebskonto einrichten" : "Mit E-Mail anmelden"}
+                  Mit E-Mail anmelden
                 </Button>
-                {mode === "signin" ? (
-                  <button
-                    type="button"
-                    className="w-full min-h-11 text-center text-xs text-muted hover:text-fg"
-                    onClick={() => setMode("bootstrap")}
-                  >
-                    Noch kein Betriebskonto? Erstes Konto einrichten
-                  </button>
-                ) : null}
               </form>
             ) : null}
           </>

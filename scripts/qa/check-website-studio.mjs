@@ -71,6 +71,43 @@ async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
   report.screenshots.push(name);
 }
+async function checkAnonymousLogin() {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 }, reducedMotion: "reduce", serviceWorkers: "block",
+    extraHTTPHeaders: qaClientHeaders("website-studio", `context-${diagnostics.length}`),
+  });
+  const diagnostic = createBrowserDiagnostics({ origin: lighthouseBase, label: "anonymous-login" });
+  diagnostics.push(diagnostic);
+  await context.route("**/*", (route) => {
+    const request = route.request();
+    if (diagnostic.allowRequest(request)) return route.continue();
+    if (!["GET", "HEAD"].includes(request.method())) {
+      const url = new URL(request.url());
+      report.blocked.push(`${request.method()} ${url.origin}${url.pathname}`);
+    }
+    return route.abort();
+  });
+  assert.deepEqual(await context.cookies(), [], "Login is checked without an operator session");
+  const page = await context.newPage();
+  diagnostic.attach(page);
+  page.setDefaultTimeout(15000);
+  await page.goto(`${lighthouseBase}/login`, { waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: "Betrieb", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Weiter mit Google", exact: true }).waitFor();
+  await page.getByLabel("E-Mail", { exact: true }).waitFor();
+  const password = page.getByLabel("Passwort", { exact: true });
+  await password.waitFor();
+  assert.equal(await password.getAttribute("autocomplete"), "current-password");
+  await page.getByRole("button", { name: "Mit E-Mail anmelden", exact: true }).waitFor();
+  for (const name of ["Noch kein Betriebskonto? Erstes Konto einrichten", "Erstes Betriebskonto einrichten"]) {
+    assert.equal(await page.getByRole("button", { name, exact: true }).count(), 0, "Public account creation must not be offered");
+  }
+  await assertNoOverflow(page);
+  await screenshot(page, "mobile-login.png");
+  report.checks.push("Anonymous mobile login retains Google and existing-password sign-in without public account creation");
+  await context.close();
+}
+
 async function openStudio(width, cookie = operatorCookie, path = "/admin/studio") {
   const context = await browser.newContext({ viewport: { width, height: width < 700 ? 844 : 1000 }, reducedMotion: "reduce", serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("website-studio", `context-${diagnostics.length}`) });
   const diagnostic = createBrowserDiagnostics({ origin: lighthouseBase, label: `studio-${width}` });
@@ -195,6 +232,7 @@ try {
   assert.equal(pin, transport.spkiPin);
   const { chromium } = await import("playwright");
   browser = await chromium.launch({ headless: true, args: [`--ignore-certificate-errors-spki-list=${pin}`] });
+  await checkAnonymousLogin();
   operatorCookie = await session("operator");
   const outsiderCookie = await session("outsider");
   const expiredCookie = await session("expired-operator");

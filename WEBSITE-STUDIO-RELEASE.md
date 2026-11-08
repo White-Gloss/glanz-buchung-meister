@@ -2,7 +2,7 @@
 
 Stand: 8. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichung vor. Sie erteilt keine Freigabe für Merge, Deployment, Datenbankänderungen, Aktivierung oder Veröffentlichung von Inhalten. In diesem Arbeitspaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
 
-Die Entwicklungsprüfung für `05f3066f7c86dbe5658835ef86368cb896517f27` ist in [docs/WHITE-GLOSS-HANDOFF.md](docs/WHITE-GLOSS-HANDOFF.md) mit CI 42443407513, Browserartefakten, Labormessungen und Betriebsgrenzen dokumentiert. Die folgenden Voraussetzungen bleiben Abnahmepunkte für eine spätere Produktionseinrichtung; bestandene isolierte CI ist keine Produktionsfreigabe.
+Die vorausgehende Entwicklungsprüfung für `05f3066f7c86dbe5658835ef86368cb896517f27` sowie die aktuelle Recovery mit fehlgeschlagenem Lighthouse-Gate, reproduzierter Registrierungslücke und deren Branch-Korrektur sind in [docs/WHITE-GLOSS-HANDOFF.md](docs/WHITE-GLOSS-HANDOFF.md) dokumentiert. Maßgeblich für die Freigabe sind der endgültige PR-Head und seine vollständigen Checks; der frühere grüne Lauf allein genügt nicht. Die folgenden Voraussetzungen bleiben Abnahmepunkte für eine spätere Produktionseinrichtung; bestandene isolierte CI ist keine Produktionsfreigabe.
 
 ## 1. Getrennte Freigaben
 
@@ -24,7 +24,7 @@ Die bisherigen CMS-Verwaltungsseiten wählen den Editor anhand der serverseitige
 | Datenbank | Tatsächliches produktives PostgreSQL-Ziel und Schema bestätigen. Keine neue Datenbank und kein PGlite-Ersatz für den Betrieb. `_migrations` und die noch ausstehenden Dateien vorab nur lesen. |
 | Sicherung | Konsistente Datenbanksicherung einschließlich `cms_items`, Authentifizierung und Buchungsdaten; später zusätzlich `cms_revisions` und `cms_media`. Sicherungszeitpunkt, Aufbewahrung, Zugriffsschutz und Wiederherstellungsweg dokumentieren. Wiederherstellung in einer getrennten Umgebung nachweisen. |
 | Bildspeicher | Separates, dauerhaftes Verzeichnis, das weder Releasewechsel noch Bereinigung alter Releases löschen. Sicherung der WebP-Dateien zusammen mit der zugehörigen Datenbank planen. |
-| Zugriff | Bestehende Betreiber-Anmeldung mit gültiger Sitzung prüfen. Nichtbetreiber und abgelaufene Sitzungen müssen weiter abgewiesen werden. `OPERATOR_ENFORCE=0` und produktive Entwicklungsanmeldung sind unzulässig. |
+| Zugriff | Öffentliche Passwortregistrierung muss serverseitig gesperrt sein. Bestehende Betreiberkonten und Sitzungen lesend gegen freigegebene Identitäten abgleichen; die Sperre neuer Registrierungen bereinigt keine vorhandenen Konten. Bestehende Betreiber-Anmeldung mit gültiger Sitzung prüfen. Nichtbetreiber und abgelaufene Sitzungen müssen weiter abgewiesen werden. `OPERATOR_ENFORCE=0` und produktive Entwicklungsanmeldung sind unzulässig. |
 | Laufzeit | Vorhandene Node-/Sharp-Abhängigkeiten und das gebaute Artefakt prüfen. Keine neue Bibliothek oder Systeminstallation allein wegen dieser Anleitung. |
 | Rückweg | Aktuellen und letzten kompatiblen Release-Commit notieren. Beim späteren Wechsel den tatsächlich erwarteten aktuellen Commit und die geprüfte Artefakt-Prüfsumme verwenden. |
 

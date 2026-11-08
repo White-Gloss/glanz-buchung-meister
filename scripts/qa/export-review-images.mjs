@@ -13,6 +13,7 @@ const files = [
   "website-studio/desktop-media.png",
   "website-studio/mobile-editor.png",
   "website-studio/mobile-legacy-editor.png",
+  "website-studio/mobile-login.png",
   "hero-stability/desktop-consent-rejected.png",
   "hero-stability/mobile-consent-rejected.png",
   "mobile-390--abholservice-nagold.png",

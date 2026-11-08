@@ -35,6 +35,7 @@ async function fixture() {
     telemetry: { enabled: false },
     logger: { disabled: true },
   });
+  /** @param {string} path @param {Record<string, unknown>} body */
   const post = (path, body) => auth.handler(new Request(origin + "/api/auth" + path, {
     method: "POST",
     headers: { "Content-Type": "application/json", Origin: origin },

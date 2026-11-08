@@ -264,8 +264,8 @@ export const auth = betterAuth({
     },
   },
 
-  // E-Mail-Passwort: Sign-up-API offen, aber nur Betriebs-E-Mails (databaseHooks).
-  // Die Login-Seite zeigt keine öffentliche Registrierung.
+  // Existing operator accounts may sign in; public password signup is closed.
+  // The server and regression tests share the same email/password options.
   ...(emailAndPasswordEnabled
     ? { emailAndPassword: emailPasswordOptions }
     : {}),
