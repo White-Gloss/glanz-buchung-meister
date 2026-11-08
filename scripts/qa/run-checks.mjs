@@ -2,6 +2,8 @@
 import { qaBase, controlBase, qaPort, controlPort, tlsPort } from "./ports.mjs";
 import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 import { lighthouseDigest } from "./lighthouse-digest.mjs";
+import { prepareBrowserFixture } from "./browser-fixture.mjs";
+import { qaCheckMode } from "./check-mode.mjs";
 assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -18,11 +20,13 @@ const outputRoot = resolve(projectRoot, ".qa-output");
 const base = qaBase;
 const identityUrl = controlBase + "/identity";
 const runId = randomUUID();
+const mode = qaCheckMode(process.argv.slice(2));
 const abort = new AbortController();
 const children = [];
 const reservations = [];
 const summary = {
   runId,
+  mode,
   startedAt: new Date().toISOString(),
   status: "running",
   checks: [],
@@ -251,8 +255,15 @@ try {
   log("QA: starting a fresh isolated production server");
   const server = startNode("isolated-server", ["scripts/qa/isolated-server.mjs"]);
   await waitForReady(server);
+  if (mode === "cross-browser") {
+    await runCheck(server, "cross-browser", ["scripts/qa/check-cross-browser.mjs"], 180_000);
+  } else if (mode === "studio") {
+    await prepareBrowserFixture({ runId, scenario: "studio-suite" });
+    await runCheck(server, "website-studio", ["scripts/qa/check-website-studio.mjs"], 180_000);
+  } else {
   await runCheck(server, "frontend-ssr", ["--test", "scripts/frontend-ssr.test.mjs"]);
   await runCheck(server, "flows", ["scripts/qa/check-flows.mjs"]);
+  await prepareBrowserFixture({ runId, scenario: "browser-suite" });
   await runCheck(server, "sitemap", ["scripts/qa/check-sitemap.mjs"]);
   await runCheck(server, "seo", ["scripts/qa/check-seo.mjs"]);
   // The expanded city list adds 18 full scroll-throughs across three viewports.
@@ -289,6 +300,7 @@ try {
     }
   }
   if (diagnosticFailures.length) throw new Error(diagnosticFailures.join("; "));
+  }
   summary.status = "passed";
 } catch (error) {
   summary.status = "failed";
@@ -313,3 +325,4 @@ try {
   process.off("SIGTERM", onTerminate);
 }
 log(`QA: ${summary.status}; logs and results are in .qa-output/.`);
+

@@ -111,7 +111,13 @@ export function pageHead(opts: {
       { property: "og:description", content: opts.description },
       { property: "og:url", content: canonical },
       { property: "og:image", content: ogImage },
-      { property: "og:image:type", content: opts.image?.endsWith(".webp") ? "image/webp" : "image/jpeg" },
+      {
+        property: "og:image:type",
+        content:
+          opts.image?.endsWith(".webp") || opts.image?.startsWith("/api/studio-media/")
+            ? "image/webp"
+            : "image/jpeg",
+      },
       ...(!opts.image ? [
         { property: "og:image:width", content: "1600" },
         { property: "og:image:height", content: "907" },
@@ -258,3 +264,4 @@ export function localBusinessJsonLd() {
     ],
   };
 }
+

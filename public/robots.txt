@@ -4,5 +4,8 @@ Disallow: /admin
 Disallow: /login
 Disallow: /danke
 Disallow: /api/
+Allow: /api/studio-media/
+Disallow: /api/studio-media/*?
 
 Sitemap: https://white-gloss.de/sitemap.xml
+

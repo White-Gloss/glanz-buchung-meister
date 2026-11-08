@@ -40,7 +40,8 @@ export const Route = createRootRoute({
             "Premium-Fahrzeugaufbereitung in Horb am Neckar: Innenreinigung, Lackkorrektur, Keramikversiegelung und Hol- und Bringservice. Termin anfragen.",
         },
         { name: "theme-color", content: "#090a0d" },
-        { name: "robots", content: "index,follow,max-image-preview:large" },
+        // Successful pages declare their robots policy through pageHead().
+        // NotFoundComponent supplies noindex when a child loader head is skipped.
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -88,3 +89,4 @@ export const Route = createRootRoute({
     );
   },
 });
+

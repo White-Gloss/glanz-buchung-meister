@@ -36,6 +36,7 @@ export const expectedMigrations = [
   "0022_roapp_account_scope.sql",
   "0023_roapp_invoices.sql",
   "0024_qonto_webhook.sql",
+  "0025_website_studio.sql",
 ];
 const tables = [
   "_migrations",
@@ -275,6 +276,10 @@ export async function inspectProduction(pool, env = process.env) {
   const configuration = inspectConfiguration(env);
   /** @type {Record<string, any>} */
   const report = { mode: "read_only", configuration, issues: [...configuration.issues] };
+  // Inventory includes every root migration. Only this reviewed opt-in feature
+  // may be absent while disabled; existing business/auth migrations stay required.
+  /** @param {string} name */
+  const migrationRequired = (name) => name !== "0025_website_studio.sql" || env.WEBSITE_STUDIO_ENABLED === "true";
   let client;
   try {
     client = await pool.connect();
@@ -327,7 +332,7 @@ export async function inspectProduction(pool, env = process.env) {
       has("session", "userId", "text");
     report.migrations = {
       registryPresent: has("_migrations", "name", "text"),
-      expected: expectedMigrations.map((name) => ({ name, applied: false })),
+      expected: expectedMigrations.map((name) => ({ name, applied: false, required: migrationRequired(name) })),
     };
     if (report.migrations.registryPresent) {
       const applied = (
@@ -339,6 +344,7 @@ export async function inspectProduction(pool, env = process.env) {
       report.migrations.expected = expectedMigrations.map((name) => ({
         name,
         applied: applied.some((row) => row.name === name),
+        required: migrationRequired(name),
       }));
       report.migrations.unrecognizedEntries = Number(
         (
@@ -349,7 +355,7 @@ export async function inspectProduction(pool, env = process.env) {
         ).rows[0].count,
       );
     }
-    if (report.migrations.expected.some((entry) => !entry.applied))
+    if (report.migrations.expected.some((entry) => entry.required && !entry.applied))
       report.issues.push("migration_history_incomplete");
     // Exact counts only. No customer, message body, token, email or account IDs leave the database.
     report.counts = {};
@@ -479,6 +485,7 @@ export function inspectionSummary(report) {
   const db = config?.database;
   const expected = report.migrations?.expected ?? [];
   const absent = expected.filter((entry) => !entry.applied);
+  const absentRequired = absent.filter((entry) => entry.required !== false);
   const counts = report.counts ?? {};
   const owner = report.owner ?? {};
   const fields = config?.fields ?? {};
@@ -486,7 +493,7 @@ export function inspectionSummary(report) {
     `Inspection: ${report.completed ? "complete" : "incomplete"}; read-only=${report.transactionReadOnly === true}`,
     `Database: ${db?.valid ? `${db.protocol} | ${db.host} | ${db.database}` : "missing/invalid"}`,
     `Schema: ${report.schema ?? "not checked"}; compatible=${report.applicationModelCompatible === true}`,
-    `Migrations: ${expected.length - absent.length}/${expected.length} expected applied; unknown=${report.migrations?.unrecognizedEntries ?? "not checked"}`,
+    `Migrations: ${expected.length - absent.length}/${expected.length} inventoried applied; required missing=${absentRequired.length}; optional pending=${absent.length - absentRequired.length}; unknown=${report.migrations?.unrecognizedEntries ?? "not checked"}`,
     `Tables: ${report.tables?.filter((entry) => entry.present).length ?? 0}/${tables.length}; missing/incompatible columns=${report.missingOrIncompatibleColumns?.length ?? "not checked"}`,
     `Rows: bookings=${counts.bookings ?? "?"}; customers=${counts.customers ?? "?"}; photos=${counts.booking_photos ?? "?"}`,
     `Rows: events=${counts.booking_events ?? "?"}; outbox=${counts.outbound_queue ?? "?"}; users=${counts.user ?? "?"}`,
@@ -545,3 +552,4 @@ export async function main(args = process.argv.slice(2)) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+

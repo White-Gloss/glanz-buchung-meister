@@ -3,6 +3,7 @@ import { readdir } from "node:fs/promises";
 import { test } from "node:test";
 import {
   RUNTIME_ENSURED_MIGRATIONS,
+  OPTIONAL_FEATURE_MIGRATIONS,
   requiredReleaseMigrations,
 } from "./write-release-manifest.mjs";
 
@@ -24,6 +25,22 @@ test("release gate does not require SQL applied by runtime-ensured integrations"
   );
   assert.deepEqual(
     required,
-    onDisk.filter((name) => !RUNTIME_ENSURED_MIGRATIONS.includes(name)),
+    onDisk.filter((name) => !RUNTIME_ENSURED_MIGRATIONS.includes(name) && !OPTIONAL_FEATURE_MIGRATIONS.includes(name)),
   );
 });
+
+test("unconfigured Website Studio cannot block the existing public website", () => {
+  const required = requiredReleaseMigrations([
+    "0013_roapp_sync.sql",
+    "0014_booking_photo_recovery.sql",
+    "0025_website_studio.sql",
+    "0026_future_required_feature.sql",
+  ]);
+  assert.deepEqual(required, [
+    "0013_roapp_sync.sql",
+    "0014_booking_photo_recovery.sql",
+    "0026_future_required_feature.sql",
+  ]);
+  assert.deepEqual(OPTIONAL_FEATURE_MIGRATIONS, ["0025_website_studio.sql"]);
+});
+

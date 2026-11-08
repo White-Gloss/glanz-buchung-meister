@@ -7,31 +7,40 @@ import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { CustomerVideoGallery } from "@/components/customer-video-gallery";
 import { customerVideos } from "@/components/results-teaser";
+import { WebsiteStudioContent } from "@/components/website-studio-content";
+import { loadPublicStudioDocument } from "@/lib/studio-public.functions";
+import { studioGalleryPhotos, studioHero, studioMetadata } from "@/lib/studio-public";
 
 export const Route = createFileRoute("/galerie")({
   component: GaleriePage,
-  head: () =>
+  loader: () => loadPublicStudioDocument("gallery"),
+  head: ({ loaderData }) =>
     pageHead({
+      ...studioMetadata(loaderData, {
       title: `Echte Ergebnisse | ${site.name}`,
       description:
         "Einblicke in die Werkstatt von White Gloss in Horb am Neckar: Politur, Lackfinish, Innenraum- und Felgenpflege an einem freigegebenen Kundenfahrzeug.",
+      }),
       path: "/galerie",
-      preloadShot: "atelier",
+      ...(studioHero(loaderData) ? { preloadImage: studioHero(loaderData)?.src } : { preloadShot: "atelier" as const }),
     }),
 });
 
 function GaleriePage() {
+  const document = Route.useLoaderData();
+  const hero = studioHero(document);
+  const photos = studioGalleryPhotos(document);
   return (
     <main id="main-content" tabIndex={-1} data-gallery="curated">
       <section className="gallery-intro mx-auto max-w-7xl px-4 sm:px-6">
         <nav aria-label="Brotkrumen" className="gallery-crumbs"><Link to="/">Startseite</Link><span aria-hidden>/</span><span aria-current="page">Ergebnisse</span></nav>
         <div className="gallery-intro-heading">
-          <div><p className="kicker">White Gloss · Kundenauftrag</p><h1 className="heading-page">Echte Ergebnisse aus unserer Werkstatt.</h1></div>
-          <div><p>Lack, Leder, Felgen. Entdecken Sie unsere Arbeit an einem echten Kundenfahrzeug – in Bildern und kurzen Filmen.</p><Link to="/" hash="buchung" className={ctaPrimary}>Termin anfragen</Link></div>
+          <div><p className="kicker">White Gloss · Kundenauftrag</p><h1 className="heading-page">{document?.content.title.trim() || "Echte Ergebnisse aus unserer Werkstatt."}</h1></div>
+          <div><p>{document?.content.lead.trim() || "Lack, Leder, Felgen. Entdecken Sie unsere Arbeit an einem echten Kundenfahrzeug – in Bildern und kurzen Filmen."}</p><Link to="/" hash="buchung" className={ctaPrimary}>Termin anfragen</Link></div>
         </div>
         <figure className="gallery-cover">
-          <Shot name="atelier" alt="Aufbereiteter schwarzer BMW im Seitenprofil vor der Werkstatt" priority framed={false} sizes="(min-width: 1280px) 1200px, 95vw" />
-          <figcaption><span>BMW · Außenaufbereitung</span><span>White Gloss · Horb am Neckar</span></figcaption>
+          {hero ? <img src={hero.src} alt={hero.alt} width={hero.width} height={hero.height} loading="eager" fetchPriority="high" decoding="async" className="size-full object-cover" /> : <Shot name="atelier" alt="Aufbereiteter schwarzer BMW im Seitenprofil vor der Werkstatt" priority framed={false} sizes="(min-width: 1280px) 1200px, 95vw" />}
+          <figcaption><span>{hero ? hero.caption : "BMW · Außenaufbereitung"}</span><span>White Gloss · Horb am Neckar</span></figcaption>
         </figure>
       </section>
       <CustomerProjectStory />
@@ -39,7 +48,8 @@ function GaleriePage() {
         <p className="kicker">Aus echten Kundenaufträgen</p>
         <h2 id="kundenbilder-heading" className="heading-2 mt-4">Unsere Arbeit in Bildern.</h2>
         <p className="mt-5 max-w-2xl text-muted">Ausgewählte Perspektiven auf Lackfinish, Innenraum und das fertige Fahrzeug.</p>
-        <CustomerPhotoGallery />
+        {document && <div className="my-8"><WebsiteStudioContent content={document.content} assets={document.assets} headingLevel={1} showIntro={false} showHero={false} showImages={false} /></div>}
+        <CustomerPhotoGallery key={document ? `${document.revisionId}:${photos?.map((photo) => photo.id).join(",")}` : "catalog"} photos={photos} />
         <p className="gallery-permission-note">Originalaufnahmen, mit Zustimmung veröffentlicht. Sichtbare Kennzeichen wurden unkenntlich gemacht.</p>
       </section>
       <section id="kundenbeispiele" className="border-t border-line bg-surface">
@@ -57,3 +67,4 @@ function GaleriePage() {
     </main>
   );
 }
+

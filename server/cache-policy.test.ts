@@ -65,9 +65,18 @@ describe("responseCacheControl", () => {
 
   it("leaves dynamic API response caching to the endpoint", () => {
     assert.equal(
-      responseCacheControl({ pathname: "/api/auth/get-session", contentType: "application/json" }),
+      responseCacheControl({ pathname: "/api/availability", contentType: "application/json" }),
       undefined,
     );
+  });
+
+  it("never exposes admin, session, draft, or revocable media responses to shared caches", () => {
+    for (const pathname of ["/admin", "/admin/studio", "/_serverFn/studio-document", "/api/auth/get-session", "/api/studio-media/image.webp", "/api/studio-media-upload"]) {
+      for (const method of ["GET", "HEAD", "POST"]) {
+        assert.equal(responseCacheControl({ pathname, method, contentType: "text/html", existing: "public, max-age=3600" }), "private, no-store");
+      }
+    }
+    assert.equal(responseCacheControl({ pathname: "/admin-guide", contentType: "text/html" }), REVALIDATE_CACHE_CONTROL);
   });
 
   it("revalidates HTML even if its URL resembles an asset", () => {
@@ -80,3 +89,4 @@ describe("responseCacheControl", () => {
     );
   });
 });
+

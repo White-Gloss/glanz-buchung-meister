@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import staticXml from "@/data/sitemap-static.xml?raw";
 import { site } from "@/data/site";
 import { filterIndexableSitemap } from "@/lib/seo-policy";
-import { createSitemapResponder, loadPublishedSitemapBlogs } from "@/lib/sitemap.server";
+import { createSitemapResponder, loadPublishedSitemapBlogs, loadPublishedSitemapPages } from "@/lib/sitemap.server";
 
 const respond = createSitemapResponder({
   staticXml: filterIndexableSitemap(staticXml),
@@ -10,6 +10,10 @@ const respond = createSitemapResponder({
   loadPublished: async () => {
     const { getSql } = await import("@/lib/db");
     return loadPublishedSitemapBlogs(await getSql());
+  },
+  loadPublishedPages: async () => {
+    const { getSql } = await import("@/lib/db");
+    return loadPublishedSitemapPages(await getSql());
   },
   onFallback: () => console.warn("[sitemap] CMS unavailable; serving the static sitemap."),
 });
@@ -25,3 +29,4 @@ export const Route = createFileRoute("/sitemap.xml")({
     },
   },
 });
+

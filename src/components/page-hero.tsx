@@ -40,6 +40,7 @@ export function PageHero({
   priority = true,
   actions,
   crumbs,
+  media,
 }: {
   kicker?: string;
   title: string;
@@ -50,6 +51,7 @@ export function PageHero({
   priority?: boolean;
   actions?: ReactNode;
   crumbs?: { label: string; to?: string }[];
+  media?: ReactNode;
 }) {
   const section = useRef<HTMLElement>(null);
   // Leistungsbilder (z. B. Lackkorrektur, Innenraum) gleiten im Rahmen; nur Desktop.
@@ -57,7 +59,7 @@ export function PageHero({
   return (
     <section ref={section} className="film-chapter page-hero">
       <div className="film-chapter-media" data-parallax-frame>
-        {shot ? (
+        {media ?? (shot ? (
           <Shot
             name={shot}
             alt={alt}
@@ -74,7 +76,7 @@ export function PageHero({
             className="size-full object-cover"
             sizes="100vw"
           />
-        )}
+        ))}
       </div>
       <div className="film-chapter-veil" />
       <div className="film-chapter-copy" data-reveal>
@@ -137,3 +139,4 @@ export function MediaTile({
     </div>
   );
 }
+

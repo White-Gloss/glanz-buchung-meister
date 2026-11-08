@@ -22,6 +22,9 @@ function fakePage({ readyState = "loading", images = [] as FakeImage[] } = {}) {
     head: { appendChild: (node: Record<string, string>) => inserted.push(node) },
     addEventListener: (type: string, listener: Listener) =>
       (documentListeners[type] ??= []).push(listener),
+    removeEventListener: (type: string, listener: Listener) => {
+      documentListeners[type] = (documentListeners[type] ??= []).filter((entry) => entry !== listener);
+    },
     querySelectorAll: (query: string) => {
       selector = query;
       return images;
@@ -46,6 +49,7 @@ function fakePage({ readyState = "loading", images = [] as FakeImage[] } = {}) {
     frames,
     timers,
     selector: () => selector,
+    listenerCount: (type: string) => documentListeners[type]?.length ?? 0,
     fire: (type: string) => documentListeners[type]?.forEach((listener) => listener()),
     nextFrame: () => frames.splice(0).forEach((callback) => callback()),
   };
@@ -138,6 +142,40 @@ test("the fallback timer hydrates when frames never run", () => {
   assert.equal(page.inserted.length, 2);
 });
 
+for (const intent of ["pointerdown", "keydown", "focusin"]) {
+  test(`early ${intent} starts the client without waiting for the hero image`, async () => {
+    const hero = new FakeImage(false);
+    const page = fakePage({ readyState: "interactive", images: [hero] });
+    page.run(source);
+
+    page.fire(intent);
+    assert.equal(page.inserted.length, 2, "Interaction intent should start the client immediately.");
+    assert.equal(hero.decoded, false, "The unfinished image must not delay interaction readiness.");
+    for (const event of ["pointerdown", "keydown", "focusin"]) {
+      assert.equal(page.listenerCount(event), 0, "Release every intent listener once loading starts.");
+      page.fire(event);
+    }
+    hero.emit("load");
+    await settle();
+    page.nextFrame();
+    page.nextFrame();
+    page.timers[0].callback();
+    assert.equal(page.inserted.length, 2, "Image completion, later intent and fallback share one bootstrap.");
+  });
+}
+
+test("normal image loading also removes the interaction listeners", async () => {
+  const page = fakePage({ readyState: "interactive" });
+  page.run(source);
+  assert.equal(page.listenerCount("pointerdown"), 1);
+  await settle();
+  page.nextFrame();
+  page.nextFrame();
+  for (const intent of ["pointerdown", "keydown", "focusin"]) {
+    assert.equal(page.listenerCount(intent), 0);
+  }
+});
+
 test("asset lists cannot close the inline script", () => {
   const hostile = deferredBootstrapSource(["/assets/a.js</script><script>alert(1)//"], []);
   assert.doesNotMatch(hostile, /<\/script/i);
@@ -151,3 +189,4 @@ test("only Start's module entry and module preloads are deferred", () => {
   assert.ok(isModulePreload({ tag: "link", attrs: { rel: "modulepreload", href: "/a.js" } }));
   assert.ok(!isModulePreload({ tag: "link", attrs: { rel: "preload", href: "/a.woff2" } }));
 });
+

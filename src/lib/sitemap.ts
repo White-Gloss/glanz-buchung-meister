@@ -4,6 +4,11 @@ export type SitemapBlogRow = {
   updated_at: string | Date | null;
 };
 
+export type SitemapPageRow = {
+  path: string;
+  updated_at: string | Date | null;
+};
+
 function escapeXml(value: string) {
   return value.replace(/[&<>"']/g, (character) => {
     const entities: Record<string, string> = {
@@ -66,3 +71,23 @@ export function appendBlogSitemap(
   if (added.length === 0) return staticXml;
   return staticXml.replace(/<\/urlset>\s*$/, `${added.join("\n")}\n</urlset>\n`);
 }
+
+/** About is the only new editorial route. Its URL follows the live publication
+ * state even if it is accidentally added to the static inventory later. */
+export function appendPublishedPageSitemap(
+  staticXml: string,
+  rows: readonly SitemapPageRow[],
+  origin: string,
+): string {
+  const aboutUrl = new URL("/ueber-uns", origin).href;
+  const base = staticXml.replace(/\s*<url>\s*[\s\S]*?<\/url>/g, (entry) => {
+    const location = /<loc>([^<]+)<\/loc>/.exec(entry)?.[1];
+    return location && unescapeXml(location.trim()) === aboutUrl ? "" : entry;
+  });
+  const about = rows.find((row) => row.path === "/ueber-uns");
+  if (!about) return base;
+  const lastmod = sitemapDate(about.updated_at);
+  const entry = `  <url><loc>${escapeXml(aboutUrl)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;
+  return base.replace(/<\/urlset>\s*$/, `${entry}\n</urlset>\n`);
+}
+
