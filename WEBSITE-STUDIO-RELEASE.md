@@ -4,6 +4,14 @@ Stand: 8. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichun
 
 Die vorausgehende Entwicklungsprüfung für `05f3066f7c86dbe5658835ef86368cb896517f27` sowie die aktuelle Recovery mit fehlgeschlagenem Lighthouse-Gate, reproduzierter Registrierungslücke und deren Branch-Korrektur sind in [docs/WHITE-GLOSS-HANDOFF.md](docs/WHITE-GLOSS-HANDOFF.md) dokumentiert. Maßgeblich für die Freigabe sind der endgültige PR-Head und seine vollständigen Checks; der frühere grüne Lauf allein genügt nicht. Die folgenden Voraussetzungen bleiben Abnahmepunkte für eine spätere Produktionseinrichtung; bestandene isolierte CI ist keine Produktionsfreigabe.
 
+## Frisch gelesener Produktionsstand
+
+Am 8. November 2026 lesend bestätigt: aktiver Release `d20a8e1`, Dienstnutzer `deploy`, Studio-Flag und `CMS_MEDIA_DIR` nicht gesetzt. Effektiv erlaubt die mit `ProtectSystem=strict` gehärtete Unit nur Schreibzugriffe auf `/srv/white-gloss-current`. Ein Medienordner außerhalb der Releases braucht deshalb zusätzlich zu 0700/0600 eine konkret genehmigte systemd-Schreibfreigabe; die Härtung nicht pauschal abschalten.
+
+Die tatsächliche App-Datenbankrolle ist kein Superuser und hat kein BYPASSRLS; sie besitzt die Legacy-CMS-Tabelle. Registry bis 0022, keine Studio-Tabellen; 0023/0024/0025 nicht registriert. 0023/0024 sind im Release-Manifest runtime-ensured und 0025 optional. Dennoch verarbeitet `db:migrate` alle drei fehlenden Dateien; die Einrichtung ist daher kein pauschal freigegebener Einzelschritt.
+
+`HOSTINGER_DEPLOY_ENABLED=true` ist tatsächlich gesetzt. Environment production verlangt weder Reviewer noch Wartezeit; keine Branch-/Tagbeschränkung. Der aktive main-Ruleset verlangt weder PR noch Statuschecks noch Force-Push-Schutz. Diese Einstellungen wurden nicht verändert. Konsistentes Websitebackup, isolierter Restore und der Abgleich bestehender Betreiberidentitäten bleiben offen. Vollständige Nachweise und erfolgreiche Code-CI: [Übergabe](docs/WHITE-GLOSS-HANDOFF.md).
+
 ## 1. Getrennte Freigaben
 
 **Merge kann ein Deployment auslösen:** `.github/workflows/deploy-hostinger.yml` reagiert nach erfolgreicher Push-CI auf `main`, sofern `HOSTINGER_DEPLOY_ENABLED=true` ist. Der aktuelle Wert und die tatsächlichen Freigaberegeln des Environments `production` sind vor einem Merge zu prüfen. Deshalb keinen Merge als rein technische Ablage behandeln: Entweder ist die automatische Auslieferung nachweislich gesperrt, oder die ausdrückliche Freigabe umfasst auch genau dieses Deployment. Eine Änderung dieser Einstellungen benötigt ebenfalls eine konkrete Freigabe; dieser PR verändert sie nicht.
@@ -36,6 +44,7 @@ Keine Produktionsgeheimnisse in Repository, Tickets, Screenshots oder Protokolle
 | --- | --- |
 | `DATABASE_URL` | Bereits bestätigte persistente Anwendungsdatenbank, ausschließlich serverseitig. Datenbankrolle und Tabellenbesitz vor Aktivierung prüfen. Die neue RLS-Konfiguration ist auf den bisherigen serverseitigen Datenbankzugriff ausgelegt. |
 | `CMS_MEDIA_DIR` | Absoluter Pfad außerhalb des Anwendungs-Checkouts, sämtlicher Deployment-Releases und aller öffentlich ausgelieferten Web-Verzeichnisse. Keine Webserver-Aliasregel und kein Symlink darf das Verzeichnis öffentlich machen. |
+| Dienst-Sandbox | Effektive Unit einschließlich Drop-ins prüfen: Der private externe Medienpfad muss gezielt in `ReadWritePaths` erlaubt sein. Bestehendes `ProtectSystem=strict` erhalten; keine breite Schreibfreigabe auf `/srv` oder `/var`. |
 | Dateirechte | Nur der notwendige Laufzeitbenutzer und die gesicherte Administration dürfen zugreifen. Der Code erzeugt neue Verzeichnisse mit `0700`, Dateien mit `0600`; bestehende Verzeichnisrechte werden dadurch nicht automatisch korrigiert. |
 | `WEBSITE_STUDIO_ENABLED` | Zunächst `false`. Aktivierung nur mit dem exakten Wert `true`; den Dienst anschließend über den vorhandenen freigegebenen Betriebsweg neu starten. |
 
