@@ -32,15 +32,20 @@ const compiledFields = ts.transpileModule(fieldsSource, {
     target: ts.ScriptTarget.ES2022,
   },
 });
+/** @type {{ exports: Partial<typeof import("./website-studio-fields.tsx")> }} */
 const fieldsModule = { exports: {} };
+/** @param {string} name */
 const fieldsRequire = (name) => {
-  if (name === "./ui") return { Button: (props) => createElement("button", props), inputClass: "field" };
+  if (name === "./ui") return { Button: /** @param {import("react").ComponentProps<"button">} props */ (props) => createElement("button", props), inputClass: "field" };
   // Ordering callbacks are not invoked while rendering an empty simple editor.
   if (name === "./website-studio-state") return {};
   return require(name);
 };
 new Function("require", "exports", "module", compiledFields.outputText)(fieldsRequire, fieldsModule.exports, fieldsModule);
 const { WebsiteStudioFields } = fieldsModule.exports;
+if (typeof WebsiteStudioFields !== "function") {
+  throw new Error("The production fields did not export WebsiteStudioFields.");
+}
 const content = {
   title: "Redaktion",
   lead: "Einleitung",

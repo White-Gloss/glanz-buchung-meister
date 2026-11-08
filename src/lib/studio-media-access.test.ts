@@ -10,8 +10,10 @@ test("media access follows the same explicit rollout gate as Website Studio", ()
     for (const disabled of [undefined, "false", "1", "TRUE"]) {
       if (disabled === undefined) delete process.env.WEBSITE_STUDIO_ENABLED;
       else process.env.WEBSITE_STUDIO_ENABLED = disabled;
-      assert.equal(studioMediaEnabled(), isIsolatedGithubCi());
-      if (!isIsolatedGithubCi())
+      // An explicit off switch also disables media in the isolated CI process.
+      const expected = disabled === "false" ? false : isIsolatedGithubCi();
+      assert.equal(studioMediaEnabled(), expected);
+      if (!expected)
         assert.throws(() => assertStudioMediaEnabled(), /nicht freigeschaltet/);
     }
     process.env.WEBSITE_STUDIO_ENABLED = "true";
