@@ -23,7 +23,7 @@ export const articles: Article[] = [
   {
     slug: "keramikversiegelung-langzeitschutz",
     seoExcerpt:
-      "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket Keramik steckt, und was die Schicht nicht kann.",
+      "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket White-Gloss Ceramic steckt, und was die Schicht nicht kann.",
     title: "Keramikversiegelung: wie lange der Schutz wirklich hält",
     excerpt:
       "Wie Produkt und Pflege die Haltbarkeit beeinflussen, was das Paket White-Gloss Ceramic enthält und welche Grenzen die Beschichtung hat.",
@@ -151,7 +151,7 @@ export const articles: Article[] = [
   },
   {
     slug: "hol-und-bringservice",
-    seoExcerpt: `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
+    seoExcerpt: `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket White-Gloss Ceramic inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
     title: "Hol- und Bringservice: So funktioniert die Abholung um Horb",
     excerpt: `Kostenlose Abholung bis 10 km, weitere Entfernungen nach Preistabelle. Im Paket White-Gloss Ceramic ist der Service bis 60 km enthalten.`,
     date: "2026-06-22",
