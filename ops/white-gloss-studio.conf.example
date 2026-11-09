@@ -1,0 +1,15 @@
+# Vorlage, nicht automatisch installiert oder aktiviert.
+# Nach Freigabe als /etc/systemd/system/white-gloss.service.d/studio.conf
+# installieren. Effektive Unit und vorhandene Drop-ins zuvor prüfen.
+#
+# Voraussetzung: /var/lib/white-gloss/studio-media ist ein eigenständiger,
+# dauerhafter Ordner (deploy:deploy, 0700; Dateien 0600), ohne Symlinks oder
+# öffentliche Webserver-Aliase. In der bestehenden geschützten Konfiguration
+# CMS_MEDIA_DIR=/var/lib/white-gloss/studio-media setzen; Studio bleibt false.
+# Backup/Restore und Medienpfad separat prüfen, dann kontrolliert neu starten.
+# Diese Vorlage führt keine Migration aus und aktiviert das Studio nicht.
+[Service]
+# Ergänzt die vorhandenen ReadWritePaths; niemals zuerst eine leere Zuweisung
+# setzen oder ProtectSystem=strict entfernen.
+ReadWritePaths=/var/lib/white-gloss/studio-media
+UMask=0077

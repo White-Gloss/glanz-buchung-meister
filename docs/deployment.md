@@ -232,16 +232,25 @@ nicht als gesund bestätigen. Eine negative Prüfung wird frühestens nach fünf
 Sekunden wiederholt. Es wird weder eine Datenbank angelegt noch ein Schema
 automatisch umgeschrieben.
 
-Der Workflow `.github/workflows/deploy-hostinger.yml` reagiert auf einen
-erfolgreichen `push`-Lauf von `CI` für den aktuellen `main`-Commit. Ein manueller
-Lauf ist erst nach einem bestätigten erfolgreichen CI-Lauf desselben Commits
-zulässig. Der Workflow reproduziert den Build, verifiziert Archiv und
+Der Workflow `.github/workflows/deploy-hostinger.yml` wird ausschließlich
+manuell auf `main` ausgelöst. Der freigegebene vollständige Commit und der
+erwartete bisherige Produktionscommit müssen ausdrücklich angegeben werden.
+Ein Merge oder erfolgreicher CI-Lauf startet keine neue Auslieferung.
+Vor der Aktivierung werden aktuelle main-Zugehörigkeit, vollständige erfolgreiche
+CI desselben Commits und der erwartete Produktionsstand geprüft. Ein neuerer
+main- oder Produktionsstand erfordert eine neue bewusste Releaseauswahl.
+Der Workflow reproduziert den Build, verifiziert Archiv und
 Server-Helfer per SHA-256 und prüft zusätzlich die versionierte systemd-Unit auf
 Konfigurationsdrift. Untätige PostgreSQL-Verbindungen halten den Prozess nach dem
 Schließen des HTTP-Servers nicht mehr offen; zusätzlich bleibt der
 Produktionsneustart auf 15 Sekunden begrenzt. Danach führt der Workflow den
 Produktions-Smoke-Test aus. Ohne die explizite Repository-Variable
 `HOSTINGER_DEPLOY_ENABLED=true` wird der Deployment-Job vollständig übersprungen.
+
+Diese Workflowregel ersetzt keine GitHub-Berechtigungen: erforderliche
+Produktionsreviewer, Branchbeschränkung auf main und verpflichtende CI-Checks
+im Branchschutz müssen separat eingerichtet und lesend bestätigt werden.
+Auch `HOSTINGER_DEPLOY_ENABLED=false` beendet keine bereits laufende Aktivierung.
 
 ## Rollback-Grundsatz
 
@@ -293,6 +302,6 @@ Rollback-Schritt und darf neue Buchungen nicht unbemerkt verwerfen.
    und Start, Live-Smoke sowie Buchungsberechtigungen prüfen. Den neuen
    Benachrichtigungs-Runner separat installieren und erst dann dessen Timer
    aktivieren; siehe [Betriebsanleitung](booking-workflow-operations.md).
-6. Nach erfolgreicher Kontrolle regulären Zugriff und automatische Deployments
+6. Nach erfolgreicher Kontrolle regulären Zugriff und manuelle Deployments
    wieder freigeben. Bei Nutzung des CI-Aktivierungspfads nur den gezielt
    ausgewählten aktuellen `main`-Stand freigeben, nachdem alte Läufe beendet sind.
