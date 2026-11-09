@@ -1,6 +1,28 @@
 # White-Gloss Website – Recovery und Release Readiness
 
-Stand: 8. November 2026. PR #323 bleibt ein Entwicklungsentwurf; kein Merge, Deployment, keine produktive Migration oder Studio-Aktivierung.
+Stand: 9. November 2026. **PR #323 wurde inzwischen gemergt.** Die Aussage „bleibt Draft“ unten beschreibt ausschließlich den früheren Prüfstand vom 8. November.
+
+## Reparatur nach dem Merge – 9. November 2026
+
+GitHub und der frisch abgerufene `origin/main` bestätigen Merge-Commit `e4d5fcaf0a0383154db04a95e10b935221976750`; PR #323 wurde am 9. November um 04:15 Uhr MEZ geschlossen und gemergt. Sein letzter Head war `302c442ee446fac422fc8dbc4743677cda1328d3`, nach Einbindung von main einschließlich #324. Die CI dieses Heads ([42555346299](https://github.com/White-Gloss/glanz-buchung-meister/actions/runs/42555346299)) ist erfolgreich. Das belegt weder den heute laufenden Produktionscommit noch eine Studio-Aktivierung.
+
+Die folgende Reparatur baut auf diesem main auf:
+
+- Der Hostinger-Workflow erhält einen ausschließlich manuellen Auslöser mit ausdrücklicher Auswahl des freizugebenden Commits und des erwarteten bisherigen Produktionscommits. Er prüft aktuelle main-Zugehörigkeit und erfolgreiche CI vor der Aktivierung. Damit soll ein späterer Merge allein keine Veröffentlichung mehr auslösen.
+- `db:migrate -- --dry-run` zeigt ausstehende Dateien ohne Schemaänderung. `--only=…` verlangt zusätzlich die vollständige geprüfte Liste `--expect-pending=…`; Abweichungen und unbekannte Optionen werden vor DDL abgewiesen.
+- Der Studio-Bildspeicher weist bekannte Release-/Webrootpfade, Symlinks und unzureichend geschützte vorhandene Verzeichnisse/Dateien ab. Eine gesonderte systemd-Drop-in-Vorlage beschreibt die enge Schreibfreigabe für einen dauerhaften Privatpfad.
+
+**Hostinger-Login bestätigt, Befehlsausführung nicht verfügbar:** Der verbundene Opera-Browser ist bereits angemeldet. VPS-Betriebsstatus und vorhandene Providerbackups wurden im Panel lesend geprüft. Die konkreten Infrastruktur- und Backup-Metadaten werden hier nicht erneut veröffentlicht. Diese Panelprüfung ist kein Nachweis eines aktuellen anwendungskonsistenten Backups oder eines erfolgreichen Restores.
+
+Die in dieser Sitzung verfügbare Opera-Anbindung erlaubt Lesen und Navigation, aber weder Klicks noch Terminaleingaben. Die Webkonsole ist sichtbar; es wurde kein Befehl darin ausgeführt. Der separate Automationsbrowser hat diesen Login nicht und landet auf der Anmeldeseite. Es fehlen somit ausführbarer Zugriff auf den bestehenden Server sowie die Bestätigung von aktuellem Servercommit, isoliertem Restore, Betreiberidentitäten, effektiven Medienrechten und GitHub-Reviewer-/Branchschutz. Die früheren Shell-/Datenbankbefunde unten wurden heute nicht erneut erhoben. Keine produktiven Konfigurationen, Datenbanken oder Konten wurden verändert; kein Deployment ausgelöst. Die Workflowkorrektur wirkt erst nach Übernahme auf main und beendet keine bereits laufende Auslieferung.
+
+**Repository-Prüfung:** `npm test` besteht mit 865 Fällen: 864 bestanden, 0 Fehler, 1 bestehender Skip. Lint besteht mit vier bestehenden Warnungen; TypeScript und Produktionsbuild bestehen. Die lokal durch den JSR-Abruf blockierte Funktions-Typprüfung ist im GitHub-Lauf [42557150983](https://github.com/White-Gloss/glanz-buchung-meister/actions/runs/42557150983) erfolgreich. Die vollständigen CI-Ergebnisse und Zuordnung zum endgültigen Head stehen in [PR #325](https://github.com/White-Gloss/glanz-buchung-meister/pull/325); kein alter Lauf ersetzt dessen Checks.
+
+Ein `pg_restore --list` aus dem vorhandenen Backupskript bestätigt nur die Lesbarkeit des DB-Archivs. Es ist **kein Restorebeleg und kein Medienbackup**. Konkrete Reihenfolge und Nachweise: [WEBSITE-STUDIO-RELEASE.md](../WEBSITE-STUDIO-RELEASE.md).
+
+## Historischer Recovery-Stand – 8. November 2026
+
+Die folgenden Abschnitte einschließlich Draft-/Produktionsangaben sind historische Nachweise. Für den GitHub-Status gilt der Abschnitt vom 9. November oben.
 
 ## Aktueller Recovery-Abschnitt
 

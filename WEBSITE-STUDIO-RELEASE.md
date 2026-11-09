@@ -1,10 +1,10 @@
 # Website Studio: Freigabe und Betrieb
 
-Stand: 8. November 2026. Diese Anleitung bereitet eine spätere Veröffentlichung vor. Sie erteilt keine Freigabe für Merge, Deployment, Datenbankänderungen, Aktivierung oder Veröffentlichung von Inhalten. In diesem Arbeitspaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
+Stand: 9. November 2026. PR #323 wurde inzwischen als `e4d5fca` gemergt; der heutige Produktionscommit ist nicht erneut bestätigt. Der bestehende Hostinger-Login und laufende VPS sind im verbundenen Opera-Browser lesend belegt, dessen verfügbare Anbindung jedoch keine Terminaleingaben ermöglicht. Der Prüfstatus steht in der [Übergabe](docs/WHITE-GLOSS-HANDOFF.md). Diese Anleitung beschreibt die noch nachzuweisende Einrichtung. Ein GitHub-Merge belegt weder Backup/Restore noch Migration oder Studio-Aktivierung. In diesem Reparaturpaket werden keine produktiven Buchungen, Nachrichten oder Kundendaten verändert.
 
 Die vorausgehende Entwicklungsprüfung für `05f3066f7c86dbe5658835ef86368cb896517f27` sowie die aktuelle Recovery mit fehlgeschlagenem Lighthouse-Gate, reproduzierter Registrierungslücke und deren Branch-Korrektur sind in [docs/WHITE-GLOSS-HANDOFF.md](docs/WHITE-GLOSS-HANDOFF.md) dokumentiert. Maßgeblich für die Freigabe sind der endgültige PR-Head und seine vollständigen Checks; der frühere grüne Lauf allein genügt nicht. Die folgenden Voraussetzungen bleiben Abnahmepunkte für eine spätere Produktionseinrichtung; bestandene isolierte CI ist keine Produktionsfreigabe.
 
-## Frisch gelesener Produktionsstand
+## Zuletzt gelesener Produktionsstand – 8. November 2026
 
 Am 8. November 2026 lesend bestätigt: aktiver Release `d20a8e1`, Dienstnutzer `deploy`, Studio-Flag und `CMS_MEDIA_DIR` nicht gesetzt. Effektiv erlaubt die mit `ProtectSystem=strict` gehärtete Unit nur Schreibzugriffe auf `/srv/white-gloss-current`. Ein Medienordner außerhalb der Releases braucht deshalb zusätzlich zu 0700/0600 eine konkret genehmigte systemd-Schreibfreigabe; die Härtung nicht pauschal abschalten.
 
@@ -14,7 +14,7 @@ Die tatsächliche App-Datenbankrolle ist kein Superuser und hat kein BYPASSRLS; 
 
 ## 1. Getrennte Freigaben
 
-**Merge kann ein Deployment auslösen:** `.github/workflows/deploy-hostinger.yml` reagiert nach erfolgreicher Push-CI auf `main`, sofern `HOSTINGER_DEPLOY_ENABLED=true` ist. Der aktuelle Wert und die tatsächlichen Freigaberegeln des Environments `production` sind vor einem Merge zu prüfen. Deshalb keinen Merge als rein technische Ablage behandeln: Entweder ist die automatische Auslieferung nachweislich gesperrt, oder die ausdrückliche Freigabe umfasst auch genau dieses Deployment. Eine Änderung dieser Einstellungen benötigt ebenfalls eine konkrete Freigabe; dieser PR verändert sie nicht.
+**Freigabeweg repariert, produktive Übernahme noch offen:** Die neue Fassung von `.github/workflows/deploy-hostinger.yml` entfernt den automatischen `workflow_run`-Auslöser. Auslieferung erfolgt ausschließlich manuell auf main mit vollständigem freigegebenem Commit und erwartetem bisherigen Produktionscommit, nach erfolgreicher CI. Bis diese Fassung auf main liegt, gilt der alte Automatismus weiter; bereits gestartete Jobs werden dadurch nicht beendet. Aktuelle Jobs, `HOSTINGER_DEPLOY_ENABLED` und tatsächliche Freigaberegeln des Environments `production` vor der Übernahme prüfen. Erforderliche Reviewer und verpflichtende Branchchecks sind externe Einstellungen und werden durch diese Codeänderung nicht eingerichtet.
 
 1. **Code:** Den konkreten Commit und seine bestandenen Prüfungen freigeben; anschließend ausschließlich den bestätigten, bestehenden Veröffentlichungsweg verwenden. Aktives Hostingziel und Releasepfade vorab abgleichen: ältere Betreiberregeln und Skriptnamen nennen IONOS, während ein Hostinger-Workflow vorhanden ist. Daraus allein folgt keine Freigabe für einen Anbieterwechsel. Branch Protection und den bestehenden Buchungs-Releasevertrag beibehalten.
 2. **Einrichtung:** Datenbankziel, Sicherungen, Migration `0025_website_studio.sql`, dauerhaften Bildspeicher und Konfiguration ausdrücklich freigeben. Ein genehmigtes Code-Deployment allein erlaubt diese Änderungen nicht.
@@ -38,6 +38,19 @@ Die bisherigen CMS-Verwaltungsseiten wählen den Editor anhand der serverseitige
 
 Keine Produktionsgeheimnisse in Repository, Tickets, Screenshots oder Protokolle übernehmen. Die vorhandene Panel-, Buchungs-, Preis-, E-Mail- und Storage-Konfiguration nicht aus `.env.example` überschreiben; die Vorlage enthält auch historische Integrationsbeispiele.
 
+### Sicherung und Wiederherstellung tatsächlich belegen
+
+Das bestehende `scripts/backup-production.mjs` erstellt einen konsistenten PostgreSQL-Dump, schützt ihn vor Überschreiben und gibt Prüfsumme und Archivlesbarkeit aus. Sein `archiveListValid: true` bedeutet nur, dass `pg_restore --list` funktioniert hat. Das Skript sichert keine Studio-Dateien und führt keinen Restore aus.
+
+Vor Einrichtung oder Aktivierung werden deshalb diese zusammengehörigen Nachweise benötigt:
+
+1. Tatsächlichen DB-Host, Datenbanknamen, Schema, Toolversion und Sicherungsziel im geschützten Serverkontext bestätigen. Dump, Prüfsumme, Zeitpunkt und Servercommit festhalten; keine Zugangsdaten oder Inhalte in die Übergabe kopieren.
+2. Bereits vorhandene Studio-Dateien einschließlich Prüfsummen und Dateirechten gemeinsam mit dem DB-Stand sichern. Dazu ein abgestimmtes Snapshotverfahren oder eine bestätigte Schreibpause verwenden; voneinander unabhängige Kopien bei laufenden Änderungen sind kein Konsistenznachweis. Falls noch kein Studio-Bestand existiert, das ausdrücklich lesend bestätigen.
+3. Das Backup in ein **vorher bestätigtes separates, leeres Restoreziel** wiederherstellen. Niemals die produktive `DATABASE_URL` verwenden, kein `--clean` gegen Produktion und keine Website, Timer, Mail- oder Buchungsworker im Restoreziel starten. `pg_restore --exit-on-error --single-transaction` muss erfolgreich enden; erforderliche Eigentümer/Rollen vorab separat abbilden.
+4. Registry, Schema, Constraints/Sequenzen und tabellenweise Bestandszahlen sowie bei vorhandenen Medien sämtliche DB-Dateiverweise und Prüfsummen am wiederhergestellten Stand vergleichen. Ergebnis, Zielidentität, Backup-Prüfsumme und Zeitpunkt dokumentieren. Erst dieser Durchlauf belegt Wiederherstellbarkeit.
+
+Der Betreiberabgleich muss alle gemäß aktueller Betreiberregel berechtigten Konten und aktiven Sitzungen umfassen. Die reine OWNER-Zusammenfassung in `inspect-production.mjs` ist dafür nicht vollständig. Keine Kennwörter oder Sitzungstokens ausgeben; keine unbekannten Konten automatisch löschen oder Sitzungen widerrufen. Die freigegebenen Identitäten und ein funktionierender vorhandener Zugang müssen tatsächlich bestätigt werden.
+
 ## 3. Konfiguration und Migration
 
 | Einstellung | Vorgabe |
@@ -48,9 +61,25 @@ Keine Produktionsgeheimnisse in Repository, Tickets, Screenshots oder Protokolle
 | Dateirechte | Nur der notwendige Laufzeitbenutzer und die gesicherte Administration dürfen zugreifen. Der Code erzeugt neue Verzeichnisse mit `0700`, Dateien mit `0600`; bestehende Verzeichnisrechte werden dadurch nicht automatisch korrigiert. |
 | `WEBSITE_STUDIO_ENABLED` | Zunächst `false`. Aktivierung nur mit dem exakten Wert `true`; den Dienst anschließend über den vorhandenen freigegebenen Betriebsweg neu starten. |
 
+Die vorbereitete Vorlage [`ops/white-gloss-studio.conf.example`](ops/white-gloss-studio.conf.example) ergänzt ausschließlich `ReadWritePaths=/var/lib/white-gloss/studio-media` und `UMask=0077`. Sie wird nicht automatisch installiert. Vor Verwendung muss genau dieser Pfad samt Dienstnutzer bestätigt sein; Verzeichnis `deploy:deploy` mit 0700, Dateien mit 0600. Die Vorlage ersetzt weder die Basis-Unit noch andere Drop-ins und setzt das Studio-Flag nicht. Effektive Rechte nach einem kontrollierten Neustart erneut prüfen; die Konfiguration allein beweist keine Schreibbarkeit im Dienst.
+
+Der Bildspeicher lehnt bekannte Release-/Stagingbäume, gängige Webroots und Symlinkpfade auch bei bereits vorhandenem Verzeichnis ab. Eigentümer sowie 0700/0600 werden vor Zugriff kontrolliert, unsichere Rechte nicht automatisch verändert. Benutzerdefinierte Webserver-Aliase oder Bind-Mounts können daraus nicht zuverlässig erkannt werden und müssen weiterhin am Server geprüft werden.
+
 `0025_website_studio.sql` ergänzt die bestehenden CMS-Einträge um Dokumentkennungen, Fassungsverweise und Archivstatus. Hinzu kommen private Tabellen für Fassungen und Medien. Es werden keine Buchungstabellen migriert und keine Kundenfotos übernommen.
 
-Vor einer genehmigten Ausführung alle ausstehenden Migrationen vergleichen: `npm run db:migrate` verarbeitet **alle** noch ausstehenden Dateien, nicht ausschließlich `0025`. Bei zusätzlichen unerwarteten Dateien stoppen und den tatsächlichen Umfang erneut prüfen. Die bestehende Migrationsroutine führt jede Datei mit ihrem Eintrag in `_migrations` in einer Transaktion aus. Keine SQL-Ausschnitte mehrfach manuell anwenden und keine Migrationshistorie fingieren.
+Vor einer Ausführung den Plan im bestätigten Serverkontext mit vorhandener geschützter Datenbankkonfiguration lesen:
+
+```sh
+npm run db:migrate -- --dry-run
+```
+
+Nur wenn der frisch gelesene Plan tatsächlich genau die drei am 8. November festgestellten Dateien enthält und ausschließlich Studio freigegeben ist:
+
+```sh
+npm run db:migrate -- --only=0025_website_studio.sql --expect-pending=0023_roapp_invoices.sql,0024_qonto_webhook.sql,0025_website_studio.sql
+```
+
+`--expect-pending` wird unter der Migrationssperre gegen die vollständige ausstehende Dateiliste geprüft. Bei Abweichung, bereits angewandter Auswahl oder unbekannter Option stoppt der Befehl vor DDL. Die zurückgestellten 0023/0024 werden nicht mit ausgeführt. Abhängigkeiten der freigegebenen Datei müssen weiterhin fachlich geprüft sein. Ohne Auswahl verarbeitet `npm run db:migrate` aus Kompatibilitätsgründen weiterhin **alle** ausstehenden Dateien. Jede ausgeführte Datei wird mit ihrem Registry-Eintrag in einer Transaktion angewendet; vorher erfolgreich ausgeführte Dateien werden bei einem späteren Fehler nicht zurückgerollt. Keine SQL-Ausschnitte mehrfach manuell anwenden und keine Migrationshistorie fingieren.
 
 Nach der genehmigten Migration nur lesend bestätigen:
 
