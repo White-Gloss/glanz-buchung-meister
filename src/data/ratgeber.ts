@@ -26,7 +26,7 @@ export const articles: Article[] = [
       "Standzeit laut Produkt und Pflege – nicht als Werbejahre. Was im Paket Keramik steckt, und was die Schicht nicht kann.",
     title: "Keramikversiegelung: wie lange der Schutz wirklich hält",
     excerpt:
-      "Wie Produkt und Pflege die Haltbarkeit beeinflussen, was das Paket Keramikschutz enthält und welche Grenzen die Beschichtung hat.",
+      "Wie Produkt und Pflege die Haltbarkeit beeinflussen, was das Paket White-Gloss Ceramic enthält und welche Grenzen die Beschichtung hat.",
     date: "2026-08-20",
     image: "/media/keramik.webp",
     minutes: 6,
@@ -34,7 +34,7 @@ export const articles: Article[] = [
       {
         heading: "Wovon die Haltbarkeit abhängt",
         paragraphs: [
-          "Die Haltbarkeit einer Keramikversiegelung hängt vom Produkt und der anschließenden Pflege ab. Das Paket Keramikschutz ab 899 € enthält die Lackvorbereitung und die Beschichtung.",
+          "Die Haltbarkeit einer Keramikversiegelung hängt vom Produkt und der anschließenden Pflege ab. Das Paket White-Gloss Ceramic ab 899 € enthält die Lackvorbereitung und die Beschichtung.",
           "Eine feste Haltbarkeit von 5 Jahren sagen wir nicht pauschal zu. Zusätzliche Keramikschichten sind nach Prüfung des Lacks auf Anfrage möglich.",
         ],
       },
@@ -42,7 +42,7 @@ export const articles: Article[] = [
         heading: "Was die Schicht leistet",
         paragraphs: [
           "Eine gut vorbereitete Keramik lässt Wasser abperlen, hält den Glanz länger und erleichtert die Wäsche. Sie ist kein Kratzschutz. Steinschläge, Waschstraßenbürsten und grobe Verschmutzung gehen trotzdem ins Material.",
-          "Im Paket Keramikschutz gehört die mehrstufige Lackkorrektur zur Vorbereitung. Welche Korrektur am Fahrzeug sinnvoll und möglich ist, prüfen wir am Lack. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
+          "Im Paket White-Gloss Ceramic gehört die mehrstufige Lackkorrektur zur Vorbereitung. Welche Korrektur am Fahrzeug sinnvoll und möglich ist, prüfen wir am Lack. Rechnen Sie mit rund zwei Tagen in der Werkstatt in Horb am Neckar.",
         ],
       },
       {
@@ -56,7 +56,7 @@ export const articles: Article[] = [
         heading: "Pflege danach",
         paragraphs: [
           "Die erste Wäsche und der Kontakt mit Wasser richten sich nach den Produktvorgaben. Beachten Sie die Pflegehinweise, die Sie bei der Übergabe erhalten. Danach empfiehlt sich eine schonende Handwäsche mit geeignetem Shampoo. Bürstenanlagen erzeugen neue feine Waschkratzer in der Keramik genauso wie im Klarlack.",
-          "Der Hol- und Bringservice bis 60 km ist im Paket Keramikschutz enthalten. Wir holen Ihr Fahrzeug in Horb, Nagold, Tübingen und den weiteren Abholorten ab. Die Aufbereitung erfolgt in unserer Werkstatt.",
+          "Der Hol- und Bringservice bis 60 km ist im Paket White-Gloss Ceramic enthalten. Wir holen Ihr Fahrzeug in Horb, Nagold, Tübingen und den weiteren Abholorten ab. Die Aufbereitung erfolgt in unserer Werkstatt.",
         ],
       },
     ],
@@ -75,7 +75,7 @@ export const articles: Article[] = [
       {
         heading: "Der Startpreis ist kein Endpreis",
         paragraphs: [
-          "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Dieser Betrag gilt für die Kompaktklasse bei einem Lackzustand, der die notwendige Vorbereitung zulässt.",
+          "Bei White Gloss beginnt die Keramikversiegelung im Paket White-Gloss Ceramic ab 899 €. Dieser Betrag gilt für die Kompaktklasse bei einem Lackzustand, der die notwendige Vorbereitung zulässt.",
           "SUV, Limousine und Transporter werden mit einem festen Faktor kalkuliert. Entscheidend bleibt der Zustand: ausgeprägte feine Waschkratzer, alte Wachsschichten oder Steinschläge verlängern die Korrektur – und damit die Arbeitszeit.",
         ],
       },
@@ -116,8 +116,8 @@ export const articles: Article[] = [
       {
         heading: "Einstufig oder mehrstufig",
         paragraphs: [
-          "Eine einstufige Politur gehört zum Paket Reinigung & Politur und reicht oft, wenn der Lack gepflegt und nur leicht verkratzt ist.",
-          "Mehrstufige Korrektur ist Teil des Pakets Keramikschutz. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht das, was sie verspricht.",
+          "Eine einstufige Politur gehört zum Paket White-Gloss Signature und reicht oft, wenn der Lack gepflegt und nur leicht verkratzt ist.",
+          "Mehrstufige Korrektur ist Teil des Pakets White-Gloss Ceramic. Sie ist aufwendiger, weil grobe Kratzer zuerst nivelliert und anschließend fein nachpoliert werden. Ohne diese Vorbereitung hält eine Keramik nicht das, was sie verspricht.",
         ],
       },
     ],
@@ -153,7 +153,7 @@ export const articles: Article[] = [
     slug: "hol-und-bringservice",
     seoExcerpt: `Kostenlos bis zur ersten Staffel, klare Preise laut aktueller Abholtabelle, Paket Keramik inklusive. Ausführung immer in der Werkstatt in Horb am Neckar.`,
     title: "Hol- und Bringservice: So funktioniert die Abholung um Horb",
-    excerpt: `Kostenlose Abholung bis 10 km, weitere Entfernungen nach Preistabelle. Im Paket Keramikschutz ist der Service bis 60 km enthalten.`,
+    excerpt: `Kostenlose Abholung bis 10 km, weitere Entfernungen nach Preistabelle. Im Paket White-Gloss Ceramic ist der Service bis 60 km enthalten.`,
     date: "2026-06-22",
     image: "/media/hero.webp",
     minutes: 4,
@@ -243,7 +243,7 @@ export const articles: Article[] = [
         heading: "Was Politur kann – und wo sie endet",
         paragraphs: [
           "Feine Waschkratzer, auch Swirls genannt, liegen im Klarlack. Eine kontrollierte Politur trägt so wenig Material ab, dass das Licht wieder gleichmäßig reflektiert. Tiefe Kratzer bis zur Grundierung oder ins Blech schließt sie nicht.",
-          "Bei White Gloss gehört die einstufige Lackpolitur zum Paket Reinigung & Politur ab 349 €. Mehrstufige Korrektur ist Teil des Pakets Keramikschutz ab 899 €. Der Faktor SUV/Limousine beträgt 1,25, Transporter 1,55.",
+          "Bei White Gloss gehört die einstufige Lackpolitur zum Paket White-Gloss Signature ab 349 €. Mehrstufige Korrektur ist Teil des Pakets White-Gloss Ceramic ab 899 €. Der Faktor SUV/Limousine beträgt 1,25, Transporter 1,55.",
         ],
       },
       {
@@ -269,8 +269,8 @@ export const articles: Article[] = [
       {
         heading: "Der Ablauf der Innenraumreinigung",
         paragraphs: [
-          "Die Basisreinigung umfasst Aussaugen und Entstauben. Eine textile Tiefenreinigung gehört zum Paket Reinigung & Politur; dafür werden die textilen Flächen nach der Entfernung des groben Schmutzes behandelt. Lederpflege und Geruchsbehandlung sind getrennt zu betrachten.",
-          `Das Paket Basisreinigung enthält Aussaugen und Entstauben. Das Paket Reinigung & Politur ergänzt die Tiefenreinigung von Textilien. Lederpflege ist ab ${extraEuro("leder")} zusätzlich erhältlich, Geruchsbehandlung mit Ozon ab ${extraEuro("ozon")}. Die Einstiegspreise gelten für die Kompaktklasse und enthalten die Mehrwertsteuer.`,
+          "Das Paket White-Gloss Classic umfasst Aussaugen und Entstauben. Eine textile Tiefenreinigung gehört zum Paket White-Gloss Signature; dafür werden die textilen Flächen nach der Entfernung des groben Schmutzes behandelt. Lederpflege und Geruchsbehandlung sind getrennt zu betrachten.",
+          `Das Paket White-Gloss Classic enthält Aussaugen und Entstauben. Das Paket White-Gloss Signature ergänzt die Tiefenreinigung von Textilien. Lederpflege ist ab ${extraEuro("leder")} zusätzlich erhältlich, Geruchsbehandlung mit Ozon ab ${extraEuro("ozon")}. Die Einstiegspreise gelten für die Kompaktklasse und enthalten die Mehrwertsteuer.`,
         ],
       },
       {
@@ -304,7 +304,7 @@ export const articles: Article[] = [
         heading: "Wie wir in Horb entscheiden",
         paragraphs: [
           "Dellen und Hagelschäden begutachten wir zuerst – oft per Foto, verbindlich erst am Fahrzeug. Es gibt keinen Katalogpreis, weil Zugänglichkeit und Lackzustand den Aufwand bestimmen.",
-          "Feine Waschkratzer behandeln wir im Paket Reinigung & Politur ab 349 € oder mit der mehrstufigen Lackkorrektur im Paket Keramikschutz ab 899 €. Beides lässt sich kombinieren, wenn Einzelschäden und Flächenbild zusammenkommen.",
+          "Feine Waschkratzer behandeln wir im Paket White-Gloss Signature ab 349 € oder mit der mehrstufigen Lackkorrektur im Paket White-Gloss Ceramic ab 899 €. Beides lässt sich kombinieren, wenn Einzelschäden und Flächenbild zusammenkommen.",
         ],
       },
     ],
@@ -330,7 +330,7 @@ export const articles: Article[] = [
       {
         heading: "Paketwahl vor der Rückgabe",
         paragraphs: [
-          "Das Paket Reinigung & Politur ab 349 € umfasst die Innenraumreinigung und eine einstufige Lackpolitur. Das Paket Keramikschutz lohnt sich nur, wenn das Fahrzeug danach noch länger bleibt.",
+          "Das Paket White-Gloss Signature ab 349 € umfasst die Innenraumreinigung und eine einstufige Lackpolitur. Das Paket White-Gloss Ceramic lohnt sich nur, wenn das Fahrzeug danach noch länger bleibt.",
           "Für Autohäuser und Flotten kalkulieren wir nach Fahrzeuganzahl und Zustand. Für Privatkunden aus Horb, Nagold, Rottenburg und Freudenstadt bieten wir den Hol- und Bringservice nach unserer Entfernungstabelle an.",
         ],
       },
@@ -357,7 +357,7 @@ export const articles: Article[] = [
       {
         heading: "Drei Pakete, ein Inhaber",
         paragraphs: [
-          "Basisreinigung ab 149 €, Reinigung & Politur ab 349 €, Keramikschutz ab 899 €. Inhaber Lars Hägele, Arnistal 27, 72160 Horb am Neckar.",
+          "White-Gloss Classic ab 149 €, White-Gloss Signature ab 349 €, White-Gloss Ceramic ab 899 €. Inhaber Lars Hägele, Arnistal 27, 72160 Horb am Neckar.",
           "Anfragen über den Konfigurator, telefonisch unter 0152 33540284 oder per WhatsApp. Unverbindlich, Endpreis nach Begutachtung, wenn der Zustand mehr verlangt.",
         ],
       },
@@ -377,7 +377,7 @@ export const articles: Article[] = [
       {
         heading: "Warum die Lackvorbereitung wichtig ist",
         paragraphs: [
-          "Keramik verbindet sich mit sauberem, gleichmäßigem Klarlack. Deshalb gehört mehrstufige Korrektur ins Paket Keramikschutz ab 899 €, nicht nur das Auftragen der Schicht.",
+          "Keramik verbindet sich mit sauberem, gleichmäßigem Klarlack. Deshalb gehört mehrstufige Korrektur ins Paket White-Gloss Ceramic ab 899 €, nicht nur das Auftragen der Schicht.",
           `Rechnen Sie mit rund zwei Tagen. Glas- und Felgenversiegelung sowie Lederpflege sind enthalten. ${pickupKeramikNote()}.`,
         ],
       },

@@ -222,7 +222,7 @@ test("deal payload keeps website catalog, WG id and class factor", () => {
   const body = bookingDealBody(booking, 9);
   assert.match(String(body.title), /WG-17/);
   assert.match(String(body.comments), /white-gloss.de\/#buchung/);
-  assert.equal(body.ufCrmWgPackage, "Reinigung & Politur");
+  assert.equal(body.ufCrmWgPackage, "White-Gloss Signature");
   assert.match(String(body.ufCrmWgExtras), /Felgenreinigung/);
   assert.equal(body.ufCrmWgClass, "SUV / Limousine");
   assert.equal(body.ufCrmWgCity, "Nagold");
@@ -260,7 +260,7 @@ test("Bitrix sync creates contact, deal and products from a website booking", as
   assert.equal(api.contacts.length, 1);
   assert.equal(api.deals.length, 1);
   assert.match(String(api.deals[0].title), /WG-/);
-  assert.equal(api.deals[0].ufCrmWgPackage, "Reinigung & Politur");
+  assert.equal(api.deals[0].ufCrmWgPackage, "White-Gloss Signature");
   assert.ok((api.products[api.deals[0].id] || []).length >= 2);
   const queued = await sql<{ status: string; bitrix_deal_id: number }>`
     select status, bitrix_deal_id from bitrix_sync_queue where booking_id=${row.id}`;

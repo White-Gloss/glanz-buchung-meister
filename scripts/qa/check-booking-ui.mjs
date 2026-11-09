@@ -119,10 +119,10 @@ try {
     await step(2);
     await page.selectOption("#city", "horb-am-neckar");
     await page.locator("#extra-felgen").check();
-    await expectText(page, total, "468 €", "Kompakt · Reinigung & Politur + Felgen");
+    await expectText(page, total, "468 €", "Kompakt · White-Gloss Signature + Felgen");
     await step(1);
     await page.locator('input[name="klasse"][value="suv"]').check();
-    await expectText(page, total, "585 €", "SUV · Reinigung & Politur + Felgen");
+    await expectText(page, total, "585 €", "SUV · White-Gloss Signature + Felgen");
     await page.screenshot({ path: `${output}/desktop-1280-auswahl.png` });
 
     await step(2);
@@ -135,12 +135,12 @@ try {
       assert.ok(await page.locator(`#extra-${id}`).isChecked(), `${id} shown as included`);
       assert.ok(await page.locator(`#extra-${id}`).isDisabled(), `${id} not selectable twice`);
     }
-    await expectText(page, total, "1.272,50 €", "SUV · Keramikschutz + Felgen, Leder inklusive");
+    await expectText(page, total, "1.272,50 €", "SUV · White-Gloss Ceramic + Felgen, Leder inklusive");
     await step(1);
     await page.locator('input[name="paket"][value="premium"]').check();
     await step(2);
     assert.equal(await page.locator("#extra-leder").isChecked(), false, "Included extra dropped");
-    await expectText(page, total, "585 €", "Back to Reinigung & Politur without leftover extras");
+    await expectText(page, total, "585 €", "Back to White-Gloss Signature without leftover extras");
 
     await step(1);
     await page.locator('input[name="klasse"][value="kompakt"]').check();
@@ -152,7 +152,7 @@ try {
     await expectText(page, ".booking-price", "zzgl. Abholung nach Absprache", "Pickup on request");
     await step(1);
     await page.locator('input[name="paket"][value="keramik"]').check();
-    await expectText(page, total, "1.018 €", "Keramikschutz includes pickup up to 60 km");
+    await expectText(page, total, "1.018 €", "White-Gloss Ceramic includes pickup up to 60 km");
 
     await step(3);
     await page.locator("#name").waitFor({ state: "visible" });

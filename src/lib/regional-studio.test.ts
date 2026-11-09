@@ -98,7 +98,7 @@ test("specific logistics FAQs explain free pickup and radius boundaries without 
     assert.ok(faq.answer.includes(cityPickupPriceText(city)), slug);
     if (["boeblingen", "reutlingen", "sindelfingen"].includes(slug)) {
       assert.ok(faq.answer.includes(cityPickupPriceText(city, "keramik")), slug);
-      assert.match(faq.answer, /Basisreinigung und Reinigung & Politur/);
+      assert.match(faq.answer, /White-Gloss Classic und White-Gloss Signature/);
       assert.ok(faq.answer.includes(`${city.km} km`), slug);
     }
   }
