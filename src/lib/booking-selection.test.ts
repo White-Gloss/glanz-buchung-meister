@@ -31,6 +31,14 @@ test("direct and malformed inputs do not override the customer's selection", () 
     assert.deepEqual(parseBookingSelection(raw), {});
   }
   assert.deepEqual(parseBookingSelection({ paket: "Pur" }), { paket: "basis" });
+  for (const [name, id] of [
+    ["Classic", "basis"], ["White-Gloss Classic", "basis"],
+    ["Signature", "premium"], ["White-Gloss Signature", "premium"],
+    ["Ceramic", "keramik"], ["White-Gloss Ceramic", "keramik"],
+    ["Basisreinigung", "basis"], ["Reinigung & Politur", "premium"], ["Keramikschutz", "keramik"],
+  ]) {
+    assert.deepEqual(parseBookingSelection({ paket: name }), { paket: id });
+  }
   const current = {
     packageId: "keramik" as const,
     citySlug: "nagold",

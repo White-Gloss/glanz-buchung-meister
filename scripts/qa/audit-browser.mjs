@@ -138,7 +138,7 @@ try {
   await select.selectOption("nagold");
   await page.getByRole("button", { name: "Weiter zu Kontakt & Anfrage" }).click();
   const summary = await page.getByRole("region", { name: "Zusammenfassung Ihrer Anfrage" }).innerText();
-  assert.match(summary, /Keramikschutz/);
+  assert.match(summary, /White-Gloss Ceramic/);
   assert.match(summary, /SUV \/ Limousine/);
   assert.match(summary, /Nagold/);
   assert.match(summary, /1\.123,75/);

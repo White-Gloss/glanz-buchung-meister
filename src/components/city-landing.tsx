@@ -228,7 +228,7 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
             {cityJourneyText(city).replace(/\.$/, "")}. Entfernungen und Fahrzeiten sind Richtwerte. Politur und Keramik
             brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
-            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (Basisreinigung und Reinigung & Politur).` : ""}
+            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (White-Gloss Classic und White-Gloss Signature).` : ""}
           </p>
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">

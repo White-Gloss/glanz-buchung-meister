@@ -18,9 +18,9 @@ export function cityPlanningText(city: City) {
     calw: `Für die Strecke aus Calw gelten ${journey} als Richtwert. Der Hol- und Bringservice kostet ${price}. Alternativ können Sie das Fahrzeug nach Terminvereinbarung selbst nach Horb bringen. Nennen Sie bei der Anfrage Ihre gewünschte Übergabeart; Zustand, Leistungsumfang und Rückgabe klären wir anschließend mit Ihnen.`,
     balingen: `Wenn Sie eine Aufbereitung vor Verkauf oder Leasingrückgabe planen, nennen Sie uns den gewünschten Fertigstellungstermin und zeigen Sie die betroffenen Stellen. Für die Abholung aus Balingen rechnen wir mit ${journey}; der Hol- und Bringservice kostet ${price}. Welche Gebrauchsspuren sich behandeln lassen, klären wir anhand Ihres Fahrzeugs.`,
     rottweil: `Für Fahrzeuge aus Rottweil beträgt der Richtwert ${journey}; der Hol- und Bringservice kostet ${price}. Beschreiben Sie bei der Anfrage, ob eine Reinigung genügt oder ob Sie auch Lackkorrektur wünschen. Das vereinbarte Ergebnis und der Fahrzeugzustand bestimmen den Umfang, nicht die Entfernung zur Werkstatt.`,
-    boeblingen: `Böblingen liegt mit ca. ${city.km} km am Rand des festen Abholradius. Für Basisreinigung und Reinigung & Politur kostet der Hol- und Bringservice ${price}; beim Paket Keramikschutz ist er ${cityPickupPriceText(city, "keramik")}. Bitte nennen Sie die genaue Übergabeadresse, damit wir die Konditionen vor dem Termin bestätigen können.`,
-    reutlingen: `Für die Abholung aus Reutlingen rechnen wir mit ${journey}. Bei Basisreinigung und Reinigung & Politur kostet der Hol- und Bringservice ${price}; beim Paket Keramikschutz ist er ${cityPickupPriceText(city, "keramik")}. Beschreiben Sie die Verschmutzung im Innenraum oder die betroffenen Lackstellen, damit wir die gewünschte Leistung und Rückgabe abstimmen können.`,
-    sindelfingen: `Sindelfingen liegt mit ca. ${city.km} km außerhalb des festen Abholradius für Basisreinigung und Reinigung & Politur: Hier erfolgt der Hol- und Bringservice ${price}. Beim Paket Keramikschutz ist er ${cityPickupPriceText(city, "keramik")}. Nennen Sie deshalb bei der Anfrage sowohl Ihre Übergabeadresse als auch das gewünschte Paket.`,
+    boeblingen: `Böblingen liegt mit ca. ${city.km} km am Rand des festen Abholradius. Für White-Gloss Classic und White-Gloss Signature kostet der Hol- und Bringservice ${price}; beim Paket White-Gloss Ceramic ist er ${cityPickupPriceText(city, "keramik")}. Bitte nennen Sie die genaue Übergabeadresse, damit wir die Konditionen vor dem Termin bestätigen können.`,
+    reutlingen: `Für die Abholung aus Reutlingen rechnen wir mit ${journey}. Bei White-Gloss Classic und White-Gloss Signature kostet der Hol- und Bringservice ${price}; beim Paket White-Gloss Ceramic ist er ${cityPickupPriceText(city, "keramik")}. Beschreiben Sie die Verschmutzung im Innenraum oder die betroffenen Lackstellen, damit wir die gewünschte Leistung und Rückgabe abstimmen können.`,
+    sindelfingen: `Sindelfingen liegt mit ca. ${city.km} km außerhalb des festen Abholradius für White-Gloss Classic und White-Gloss Signature: Hier erfolgt der Hol- und Bringservice ${price}. Beim Paket White-Gloss Ceramic ist er ${cityPickupPriceText(city, "keramik")}. Nennen Sie deshalb bei der Anfrage sowohl Ihre Übergabeadresse als auch das gewünschte Paket.`,
   };
   return plans[city.slug] ?? `Für ${city.name} beträgt der Richtwert ${journey}. Hol- und Bringservice: ${price}. Bitte nennen Sie die vollständige Übergabeadresse und beschreiben Sie den Fahrzeugzustand. Leistungsumfang, Preis und Rückgabe stimmen wir vor dem Termin ab.`;
 }
@@ -43,17 +43,17 @@ export function cityLogisticsFaq(city: City): { question: string; answer: string
     case "boeblingen":
       return {
         question: "Welche Abholkonditionen gelten für Böblingen am Rand des Abholradius?",
-        answer: `Böblingen liegt ca. ${city.km} km von unserer Werkstatt in Horb entfernt. Für Basisreinigung und Reinigung & Politur kostet der Hol- und Bringservice ${price}. Beim Paket Keramikschutz ist er ${keramik}. Maßgeblich für die Abstimmung ist Ihre tatsächliche Übergabeadresse.`,
+        answer: `Böblingen liegt ca. ${city.km} km von unserer Werkstatt in Horb entfernt. Für White-Gloss Classic und White-Gloss Signature kostet der Hol- und Bringservice ${price}. Beim Paket White-Gloss Ceramic ist er ${keramik}. Maßgeblich für die Abstimmung ist Ihre tatsächliche Übergabeadresse.`,
       };
     case "reutlingen":
       return {
         question: "Ist die Abholung aus Reutlingen bei jedem Paket enthalten?",
-        answer: `Die Strecke von Reutlingen nach Horb beträgt als Richtwert ca. ${city.km} km. Bei Basisreinigung und Reinigung & Politur kostet der Hol- und Bringservice ${price}; beim Paket Keramikschutz ist er ${keramik}. Wählen Sie das gewünschte Paket und geben Sie die genaue Adresse an, damit wir die Konditionen bestätigen können.`,
+        answer: `Die Strecke von Reutlingen nach Horb beträgt als Richtwert ca. ${city.km} km. Bei White-Gloss Classic und White-Gloss Signature kostet der Hol- und Bringservice ${price}; beim Paket White-Gloss Ceramic ist er ${keramik}. Wählen Sie das gewünschte Paket und geben Sie die genaue Adresse an, damit wir die Konditionen bestätigen können.`,
       };
     case "sindelfingen":
       return {
-        question: "Warum steht für Sindelfingen „auf Anfrage“, obwohl Keramikschutz Abholung enthält?",
-        answer: `Der Richtwert für Sindelfingen beträgt ca. ${city.km} km. Für Basisreinigung und Reinigung & Politur erfolgt die Abholung ${price}. Beim Paket Keramikschutz ist der Hol- und Bringservice dagegen ${keramik}. Paket und tatsächliche Übergabeadresse klären wir deshalb vor der Zusage gemeinsam.`,
+        question: "Warum steht für Sindelfingen „auf Anfrage“, obwohl White-Gloss Ceramic Abholung enthält?",
+        answer: `Der Richtwert für Sindelfingen beträgt ca. ${city.km} km. Für White-Gloss Classic und White-Gloss Signature erfolgt die Abholung ${price}. Beim Paket White-Gloss Ceramic ist der Hol- und Bringservice dagegen ${keramik}. Paket und tatsächliche Übergabeadresse klären wir deshalb vor der Zusage gemeinsam.`,
       };
     default:
       return undefined;

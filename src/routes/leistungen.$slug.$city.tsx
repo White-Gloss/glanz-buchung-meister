@@ -130,8 +130,8 @@ function ServiceCityPage() {
           <p className="text-sm text-muted">{city.slug === "horb-am-neckar"
             ? `Sie können das Fahrzeug nach Terminvereinbarung direkt zu ${site.street} bringen. Die Uhrzeit der Anfrage bezeichnet die Fahrzeugabgabe.`
             : cityPickupFee(city, "basis") === null
-              ? `Für ${city.name} ist die Abholung bei Basisreinigung und Reinigung & Politur nur nach individueller Preisabsprache möglich. Der Rechner zeigt diese Zusatzkosten ausdrücklich als offen an.`
-              : `Bei Basisreinigung und Reinigung & Politur beträgt der Hol- und Bringservice aus ${city.name} ${cityPickupPriceText(city)}. Für Keramikschutz ist die Abholung bis 60 km enthalten.`}</p>
+              ? `Für ${city.name} ist die Abholung bei White-Gloss Classic und White-Gloss Signature nur nach individueller Preisabsprache möglich. Der Rechner zeigt diese Zusatzkosten ausdrücklich als offen an.`
+              : `Bei White-Gloss Classic und White-Gloss Signature beträgt der Hol- und Bringservice aus ${city.name} ${cityPickupPriceText(city)}. Für White-Gloss Ceramic ist die Abholung bis 60 km enthalten.`}</p>
           <p className="text-sm text-muted">Abholort, Übergabezeit und Rückgabe werden persönlich bestätigt. Es gibt keinen zusätzlichen Werkstattstandort in den Abholorten; die Arbeiten erfolgen in {site.city}.</p>
           <Link to="/abholservice/$city" params={{ city: city.slug }} className="inline-flex min-h-11 items-center text-sm underline">Abholbedingungen für {city.name}</Link>
           {evidence && serviceCitySeo(service.slug, city.slug).status === "index" ? <div className="space-y-3">
@@ -181,7 +181,7 @@ function ServiceCityPage() {
         ) : null}
         {service.slug === "keramikversiegelung" ? (
           <p className="mt-8 text-sm">
-            Paket Keramikschutz ab {eur(packages[2].price)} {site.vatNote} {pickupKeramikNote()}.
+            Paket White-Gloss Ceramic ab {eur(packages[2].price)} {site.vatNote} {pickupKeramikNote()}.
           </p>
         ) : null}
         {service.pendingApproval ? null : <Link

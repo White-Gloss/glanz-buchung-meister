@@ -102,10 +102,10 @@ export type Package = {
 export const packages: Package[] = [
   {
     id: "basis",
-    kicker: "Handwäsche und Innenraumreinigung",
-    name: "Basisreinigung",
+    kicker: "Innen- und Außenreinigung",
+    name: "White-Gloss Classic",
     searchLabel: "Reinigung innen und außen",
-    seoName: "Basisreinigung – Innenraum- und Außenreinigung in Horb am Neckar",
+    seoName: "White-Gloss Classic – Innenraum- und Außenreinigung in Horb am Neckar",
     body: "Für ein gepflegtes Auto im Alltag: Wir waschen Ihr Fahrzeug von Hand und reinigen Innenraum, Felgen, Reifen und Scheiben. Eine Sprühversiegelung rundet die Pflege ab. Ohne Lackpolitur; ab 149 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 3 Std.",
     price: 149,
     duration: "ca. 3 Std.",
@@ -119,16 +119,16 @@ export const packages: Package[] = [
   },
   {
     id: "premium",
-    kicker: "Innenraum-Tiefenreinigung und einstufige Lackpolitur",
-    name: "Reinigung & Politur",
+    kicker: "Tiefenreinigung & Lackpolitur – ideal zur Leasingrückgabe",
+    name: "White-Gloss Signature",
     searchLabel: "Reinigung und Lackpflege",
-    seoName: "Reinigung & Politur – Lackpolitur und Innenraumreinigung Horb",
-    body: "Wenn Innenraum und Lack mehr Zuwendung brauchen: Zur Basisreinigung kommen eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend tragen wir Wachs auf. Ab 349 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 6 Std.",
+    seoName: "White-Gloss Signature – Lackpolitur und Innenraumreinigung Horb",
+    body: "Wenn Innenraum und Lack mehr Zuwendung brauchen: Zu den Leistungen von White-Gloss Classic kommen eine gründliche Lackreinigung, eine einstufige Politur und die Tiefenreinigung von Innenraum und Textilien. Anschließend tragen wir Wachs auf. Ab 349 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 6 Std.",
     price: 349,
     duration: "ca. 6 Std.",
     featured: true,
     items: [
-      "Alle Leistungen des Pakets Basisreinigung",
+      "Alle Leistungen des Pakets White-Gloss Classic",
       "Entfernung von Lackablagerungen mit Reinigungsknete und Eisenentferner",
       "Einstufige Lackpolitur für gleichmäßigen Glanz",
       "Tiefenreinigung von Innenraum und Textilien",
@@ -137,16 +137,16 @@ export const packages: Package[] = [
   },
   {
     id: "keramik",
-    kicker: "Mehrstufige Lackkorrektur und Keramikversiegelung",
-    name: "Keramikschutz",
+    kicker: "Alle Leistungen aus Signature inklusive mehrstufiger Lackkorrektur & Keramikversiegelung",
+    name: "White-Gloss Ceramic",
     searchLabel: "Lackkorrektur und Versiegelung",
-    seoName: "Keramikschutz – Keramikversiegelung inkl. Lackkorrektur in Horb",
+    seoName: "White-Gloss Ceramic – Keramikversiegelung inkl. Lackkorrektur in Horb",
     body: "Sorgfältig vorbereiteter Lack, anschließend mit Keramik versiegelt: Das Paket umfasst eine mehrstufige Lackkorrektur, Glas- und Felgenversiegelung sowie Lederpflege. Der Hol- und Bringservice bis 60 km ist inklusive. Standzeit und Pflege richten sich nach der verwendeten Beschichtung und der Fahrzeugnutzung. Ab 899 € inkl. MwSt. für die Kompaktklasse, Dauer ca. 2 Tage.",
     price: 899,
     duration: "ca. 2 Tage",
     includesPickup: true,
     items: [
-      "Reinigung und Innenraumpflege wie im Paket Reinigung & Politur; Keramikversiegelung ersetzt den Wachsauftrag",
+      "Reinigung und Innenraumpflege wie im Paket White-Gloss Signature; Keramikversiegelung ersetzt den Wachsauftrag",
       "Mehrstufige Lackkorrektur zur Reduzierung feiner Waschkratzer und Hologramme, soweit der Lackzustand es zulässt",
       "Keramikversiegelung mit Abperleffekt und passenden Pflegehinweisen",
       "Glas- und Felgenversiegelung für Rundumschutz",
@@ -158,14 +158,19 @@ export const packages: Package[] = [
 
 export const packageSearchAlias: Record<string, PackageId> = {
   basis: "basis",
+  classic: "basis",
+  "white-gloss classic": "basis",
   pur: "basis",
   basisreinigung: "basis",
   premium: "premium",
   signature: "premium",
+  "white-gloss signature": "premium",
   "reinigung & politur": "premium",
   "reinigung-politur": "premium",
   glanz: "premium",
   keramik: "keramik",
+  ceramic: "keramik",
+  "white-gloss ceramic": "keramik",
   keramikschutz: "keramik",
   "high-end": "keramik",
   highend: "keramik",
@@ -525,7 +530,7 @@ export function pickupTierSummary(): string {
 }
 
 export function pickupKeramikNote(): string {
-  return `Im Paket Keramikschutz ist die Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
+  return `Im Paket White-Gloss Ceramic ist die Abholung bis ${pickupPricing.freeUpToKm} km enthalten`;
 }
 
 export function extraIncluded(packageId: PackageId, extraId: string) {
@@ -654,7 +659,7 @@ export const services: ServicePage[] = [
       },
       {
         title: "Umfang",
-        text: "Wir wählen mit Ihnen das passende Paket: Basisreinigung, Reinigung & Politur oder Keramikschutz.",
+        text: "Wir wählen mit Ihnen das passende Paket: White-Gloss Classic, White-Gloss Signature oder White-Gloss Ceramic.",
       },
       {
         title: "Werkstatt",
@@ -674,20 +679,20 @@ export const services: ServicePage[] = [
     metaTitle: "Innenraumreinigung Auto Horb | White Gloss",
     description:
       "Innenraumreinigung in Horb: Sitze, Teppiche, Kunststoffe. Gegen Gerüche optional Ozon. Materialgerechte Reinigung und Pflege.",
-    teaser: "Basisreinigung des Innenraums; textile Tiefenreinigung im Paket Reinigung & Politur.",
+    teaser: "Basisreinigung des Innenraums; textile Tiefenreinigung im Paket White-Gloss Signature.",
     group: "atelier",
     fromPrice: 149,
     image: "/media/leder.webp",
     imageAlt: "Ledersitze nach der Innenraumreinigung",
     bullets: [
-      "Basisreinigung: Innenraum saugen und Oberflächen abwischen",
+      "White-Gloss Classic: Innenraum saugen und Oberflächen abwischen",
       "Kunststoff und Verkleidungen passend zum Material",
-      "Textile Tiefenreinigung im Paket Reinigung & Politur ab 349 €",
+      "Textile Tiefenreinigung im Paket White-Gloss Signature ab 349 €",
       "Prüfung der Geruchsursache; Ozonbehandlung optional ab 99 €",
     ],
     body: [
       "Die Auto-Innenreinigung umfasst Fußräume und Teppiche, Sitze, Armaturen, Mittelkonsole und Verkleidungen sowie die Scheiben von innen. Dachhimmel, Alcantara- und Lederflächen sowie die Entfernung von Tierhaaren bieten wir als Zusatzleistungen an.",
-      "Die Basisreinigung ab 149 € umfasst das Saugen des Innenraums und Abwischen der Oberflächen. Die textile Tiefenreinigung von Sitzen und Teppichen gehört zum Paket Reinigung & Politur ab 349 €. Beide Einstiegspreise gelten für die Kompaktklasse inklusive Mehrwertsteuer.",
+      "Das Paket White-Gloss Classic ab 149 € umfasst das Saugen des Innenraums und Abwischen der Oberflächen. Die textile Tiefenreinigung von Sitzen und Teppichen gehört zum Paket White-Gloss Signature ab 349 €. Beide Einstiegspreise gelten für die Kompaktklasse inklusive Mehrwertsteuer.",
       "Bei Gerüchen behandeln wir zuerst die Ursache. Falls nötig, kann eine zusätzliche Ozonbehandlung geruchsbildende Moleküle abbauen.",
     ],
     suitedFor: [
@@ -751,7 +756,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Nicht jeder Kratzer lässt sich auspolieren. Wir prüfen den Lack vorab und erklären Ihnen die Möglichkeiten und Grenzen der Behandlung.",
-      "Das Paket Reinigung & Politur enthält eine einstufige Lackpolitur. Im Paket Keramikschutz ist eine mehrstufige Lackkorrektur enthalten, sofern die Lackschicht dafür geeignet ist.",
+      "Das Paket White-Gloss Signature enthält eine einstufige Lackpolitur. Im Paket White-Gloss Ceramic ist eine mehrstufige Lackkorrektur enthalten, sofern die Lackschicht dafür geeignet ist.",
     ],
     suitedFor: [
       "Lack mit feinen Waschkratzern, Hologrammen oder Polierschleiern",
@@ -787,7 +792,7 @@ export const services: ServicePage[] = [
       },
       {
         title: "Schutz",
-        text: "Das Paket Reinigung & Politur enthält Wachs. Eine Keramikversiegelung ist besonders für Fahrzeuge sinnvoll, die Sie länger nutzen möchten.",
+        text: "Das Paket White-Gloss Signature enthält Wachs. Eine Keramikversiegelung ist besonders für Fahrzeuge sinnvoll, die Sie länger nutzen möchten.",
       },
     ],
   },
@@ -840,7 +845,7 @@ export const services: ServicePage[] = [
     outcome:
       "Eine Keramikversiegelung macht den Lack nicht kratzfest und ersetzt keine regelmäßige Wäsche. Sie lässt Wasser abperlen, erleichtert die Pflege und ergänzt den Schutz vor Umwelteinflüssen. Wie lange die Wirkung anhält, hängt von Beschichtung, Fahrleistung, Witterung und Pflege ab; eine pauschale Laufzeit sagen wir nicht zu.",
     beforeBooking: [
-      "Steht ein Verkauf oder eine Leasingrückgabe bald an, reicht oft das Paket Reinigung & Politur.",
+      "Steht ein Verkauf oder eine Leasingrückgabe bald an, reicht oft das Paket White-Gloss Signature.",
       "Die Beschichtung muss nach dem Auftrag geschützt aushärten. Wann die erste Wäsche möglich ist, erklären wir bei der Übergabe.",
       "Bürstenwaschanlagen können feine Kratzer verursachen. Wir empfehlen Handwäsche mit pH-neutralem Shampoo oder eine berührungslose Anlage.",
       "Den verbindlichen Preis nennen wir nach der Prüfung von Fahrzeugklasse und Lackzustand.",
@@ -891,7 +896,7 @@ export const services: ServicePage[] = [
     ],
     body: [
       "Leder braucht die richtige Pflege, keine aggressive Chemie. Wir reinigen zuerst gründlich und lassen die Pflege danach einziehen.",
-      "Die Lederpflege ab 149 € umfasst Tiefenreinigung und Imprägnierung. Sie ist als Zusatzleistung erhältlich. Das Paket Keramikschutz enthält ebenfalls Lederpflege.",
+      "Die Lederpflege ab 149 € umfasst Tiefenreinigung und Imprägnierung. Sie ist als Zusatzleistung erhältlich. Das Paket White-Gloss Ceramic enthält ebenfalls Lederpflege.",
     ],
   },
   {
@@ -1064,7 +1069,7 @@ export const faqs = [
   {
     group: "Kosten",
     q: "Was kostet eine Keramikversiegelung?",
-    a: "Bei White Gloss beginnt die Keramikversiegelung im Paket Keramikschutz ab 899 €. Der endgültige Preis hängt von der Fahrzeugklasse und vom Zustand des Lacks ab. Den verbindlichen Preis nennen wir Ihnen, nachdem wir das Fahrzeug gesehen haben.",
+    a: "Bei White Gloss beginnt die Keramikversiegelung im Paket White-Gloss Ceramic ab 899 €. Der endgültige Preis hängt von der Fahrzeugklasse und vom Zustand des Lacks ab. Den verbindlichen Preis nennen wir Ihnen, nachdem wir das Fahrzeug gesehen haben.",
   },
   {
     group: "Dauer",
@@ -1074,7 +1079,7 @@ export const faqs = [
   {
     group: "Dauer",
     q: "Wie lange dauert eine komplette Fahrzeugaufbereitung?",
-    a: "Basisreinigung: ca. 3 Std.; Reinigung & Politur: ca. 6 Std.; Keramikschutz: ca. 2 Tage. Bei starker Verschmutzung oder Gerüchen kann mehr Zeit nötig sein.",
+    a: "White-Gloss Classic: ca. 3 Std.; White-Gloss Signature: ca. 6 Std.; White-Gloss Ceramic: ca. 2 Tage. Bei starker Verschmutzung oder Gerüchen kann mehr Zeit nötig sein.",
   },
   {
     group: "Keramikversiegelung",
