@@ -75,6 +75,7 @@ export function resolveGa4MeasurementId(raw?: string | null): string | null {
 }
 
 let googleTagLoaded = false;
+let activeGa4Id: string | null = null;
 // No browser storage before consent. Pending requests live only in this page session.
 const pendingConversions = new Set<string>();
 const sentConversions = new Set<string>();
@@ -94,7 +95,15 @@ export function clearPendingBookingConversions(): void {
 function flushBookingConversions(): void {
   if (!googleTagLoaded || getStoredConsent() !== "accepted") return;
   for (const reference of pendingConversions) {
-    if (trackGoogleAdsConversion({ transactionId: reference })) {
+    let measured = false;
+    if (activeGa4Id) {
+      try {
+        window.gtag?.("event", "generate_lead", { send_to: activeGa4Id });
+        measured = true;
+      } catch { /* Measurement must not interrupt a saved booking. */ }
+    }
+    const adsMeasured = trackGoogleAdsConversion({ transactionId: reference });
+    if (measured || adsMeasured) {
       pendingConversions.delete(reference);
       sentConversions.add(reference);
     }
@@ -104,6 +113,7 @@ function flushBookingConversions(): void {
 /** Nur für Tests: setzt den internen Ladezustand zurück. */
 export function __resetGoogleTagStateForTests(): void {
   googleTagLoaded = false;
+  activeGa4Id = null;
   pendingConversions.clear();
   sentConversions.clear();
 }
@@ -111,8 +121,10 @@ export function __resetGoogleTagStateForTests(): void {
 function ensureDataLayer(): void {
   window.dataLayer = window.dataLayer || [];
   if (typeof window.gtag !== "function") {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args);
+    window.gtag = function gtag() {
+      // gtag.js command messages use Arguments, not dataLayer method-call arrays.
+      // eslint-disable-next-line prefer-rest-params -- Required by Google's command protocol.
+      window.dataLayer?.push(arguments);
     };
   }
 }
@@ -167,6 +179,7 @@ export function loadGoogleTag(options?: { adsId?: string | null; ga4Id?: string 
   });
   if (adsId) window.gtag?.("config", adsId);
   if (ga4Id) window.gtag?.("config", ga4Id);
+  activeGa4Id = ga4Id;
 
   googleTagLoaded = true;
   flushBookingConversions();

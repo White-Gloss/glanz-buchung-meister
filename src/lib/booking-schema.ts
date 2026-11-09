@@ -3,6 +3,7 @@ import { berlinCalendarDate } from "./calendar-date.ts";
 import { isEmailAddress } from "./utils.ts";
 import { isCalendarDate } from "./calendar-date.ts";
 import { extras, timeSlots } from "../data/site.ts";
+import { OPENAI_CONSENT_VERSION } from "./openai-measurement.ts";
 
 /**
  * Shared validation for the public booking form. Enforced on the server in
@@ -64,6 +65,10 @@ const bookingFields = z.object({
 
 /** Online requests need an e-mail and a billing address; see public-form-validation. */
 export const publicBookingSchema = bookingFields.extend({
+  openAiMeasurement: z.object({
+    consent: z.literal(OPENAI_CONSENT_VERSION),
+    oppref: z.string().min(1).max(2048).refine((value) => value.trim().length > 0).optional(),
+  }).optional(),
   email: z
     .string()
     .trim()

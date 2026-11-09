@@ -231,12 +231,35 @@ describe("loadGoogleTag", () => {
     });
     assert.equal(result, true);
   });
+
+  it("queues Google commands in the documented Arguments format", () => {
+    const { fakeWindow } = installFakeBrowser();
+    loadGoogleTag({ adsId: DEFAULT_GOOGLE_ADS_ID, ga4Id: "G-RFX3GFRVBG" });
+    queueBookingConversion("WG-123");
+    assert.ok((fakeWindow.dataLayer?.length ?? 0) > 0);
+    for (const command of fakeWindow.dataLayer ?? []) {
+      assert.equal(Object.prototype.toString.call(command), "[object Arguments]");
+    }
+  });
 });
 
 describe("booking conversion lifecycle", () => {
   afterEach(uninstallFakeBrowser);
   const conversions = () =>
-    ((window.dataLayer as unknown[][]) ?? []).filter((row) => row[0] === "event");
+    ((window.dataLayer as ArrayLike<unknown>[]) ?? []).map((row) => Array.from(row)).filter((row) => row[0] === "event");
+
+  it("sends a GA4 lead once after server success and late consent", () => {
+    const { storage } = installFakeBrowser();
+    storage.clear();
+    queueBookingConversion("WG-123");
+    assert.equal(conversions().length, 0);
+    storage.set("wg-consent", "accepted");
+    loadGoogleTag({ adsId: null, ga4Id: "G-RFX3GFRVBG" });
+    queueBookingConversion("WG-123");
+    loadGoogleTag({ adsId: null, ga4Id: "G-RFX3GFRVBG" });
+    const leads = conversions().filter((row) => row[1] === "generate_lead");
+    assert.deepEqual(leads, [["event", "generate_lead", { send_to: "G-RFX3GFRVBG" }]]);
+  });
 
   it("sends one EUR lead after server success, with a stable transaction ID", () => {
     installFakeBrowser();

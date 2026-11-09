@@ -58,6 +58,8 @@ test("production script policy requires nonce/hash, retains required media and t
     assert.ok(!scriptSrc.includes("'unsafe-inline'"));
     assert.ok(scriptSrc.includes(`'nonce-${nonce}'`));
     assert.ok(scriptSrc.includes("https://www.googletagmanager.com"));
+    const connectSrc = csp.split(";").find((part) => part.trim().startsWith("connect-src"));
+    assert.ok(connectSrc.split(/\s+/).includes("https://region1.google-analytics.com"));
     assert.match(csp, /media-src 'self' blob:/);
     assert.match(csp, /worker-src 'self' blob:/);
     assert.match(csp, /style-src 'self' 'unsafe-inline'/);

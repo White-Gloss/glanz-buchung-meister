@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { kickBookingDelivery } from "@/lib/booking-delivery";
 import { saveBookingRequest } from "@/lib/booking-workflow";
+import { reportOpenAiLead } from "@/lib/openai-conversions.server";
 import { assertPublicPostLimit } from "@/lib/rate-limit";
 import { assertSameSiteRequest } from "@/lib/auth/isolation.server";
 import { publicBookingSchema } from "@/lib/booking-schema";
@@ -33,12 +34,17 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     assertPublicPostLimit("booking");
     const sql = await getSql();
     const capability = createRequestUploadCapability(data.idempotencyKey);
-    const result = await saveBookingRequest(sql, data, capability);
+    const { openAiMeasurement, ...bookingData } = data;
+    const result = await saveBookingRequest(sql, bookingData, capability);
     const expires = result.booking.upload_token_expires_at;
     if (expires) capability.expiresAt = new Date(expires).toISOString();
     setBookingUploadCookie(result.booking.id, capability);
     // Provider failures never roll back the committed request or its durable outbox.
     kickBookingDelivery(sql);
+    if (!result.replayed) {
+      const measurementStatus = await reportOpenAiLead(data.idempotencyKey, openAiMeasurement);
+      if (measurementStatus === "failed") console.warn("OpenAI conversion delivery failed");
+    }
     return {
       id: result.booking.id,
       reference: `WG-${result.booking.id}`,

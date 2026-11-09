@@ -2,6 +2,19 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { publicBookingSchema } from "./booking-schema.ts";
 import { berlinCalendarDate } from "./ops.ts";
+import { OPENAI_CONSENT_VERSION } from "./openai-measurement.ts";
+
+it("requires a separate versioned measurement opt-in and strips unrelated measurement fields", () => {
+  const input = bookingInput();
+  assert.equal(publicBookingSchema.parse(input).openAiMeasurement, undefined);
+  assert.equal(publicBookingSchema.safeParse({ ...input, openAiMeasurement: { consent: true } }).success, false);
+  assert.deepEqual(publicBookingSchema.parse({
+    ...input, openAiMeasurement: { consent: OPENAI_CONSENT_VERSION, oppref: "click", email: "private@example.com" },
+  }).openAiMeasurement, { consent: OPENAI_CONSENT_VERSION, oppref: "click" });
+  assert.equal(publicBookingSchema.safeParse({
+    ...input, openAiMeasurement: { consent: OPENAI_CONSENT_VERSION, oppref: "x".repeat(2049) },
+  }).success, false);
+});
 
 function bookingInput(date?: string) {
   return {
