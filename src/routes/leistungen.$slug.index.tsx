@@ -58,7 +58,7 @@ function ServicePage() {
     : articles.filter((article) => articleNavigation[article.slug]?.service === s.slug).slice(0, 3);
   const resultService =
     s.slug === "keramikversiegelung"
-      ? "Keramikschutz"
+      ? "White-Gloss Ceramic"
       : s.slug === "innenraumreinigung" || s.slug === "lederpflege"
         ? "Innenraum"
         : s.slug === "lackkorrektur"

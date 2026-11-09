@@ -220,7 +220,7 @@ try {
       await page.getByRole("form", { name: "Ihre Aufbereitung." }).waitFor({ state: "visible", timeout: 15_000 });
       await page.locator("#buchung").screenshot({ path: `.qa-output/review-request-${width}.png` });
       await page.locator("#kundenergebnisse").scrollIntoViewIfNeeded();
-      const video = page.getByRole("button", { name: "Video abspielen: Hydrophober Lackschutz Keramikschutz 0:11 Min.", exact: true });
+      const video = page.getByRole("button", { name: "Video abspielen: Hydrophober Lackschutz White-Gloss Ceramic 0:11 Min.", exact: true });
       await video.focus();
       await video.press("Enter");
       await page.getByRole("dialog", { name: "Hydrophober Lackschutz", exact: true }).waitFor({ state: "visible" });
