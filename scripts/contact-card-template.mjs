@@ -123,6 +123,18 @@ export function renderContactCard(contact) {
       detail: c.instagramHandle || "Profil öffnen",
       iconName: "instagram",
     },
+    {
+      href: new URL("/b2b", c.website).href,
+      label: "B2B / Geschäftskunden",
+      detail: "Fuhrpark, Leasing und Autohäuser",
+      iconName: "contact",
+    },
+    {
+      href: new URL("/luxusfahrzeuge", c.website).href,
+      label: "Premium / Luxusfahrzeuge",
+      detail: "Sportwagen, Klassiker und Sammlerfahrzeuge",
+      iconName: "globe",
+    },
     ...(c.facebook
       ? [
           {
