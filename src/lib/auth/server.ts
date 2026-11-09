@@ -36,7 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
-import { emailAndPasswordEnabled } from "./email-password";
+import { emailAndPasswordEnabled, emailPasswordOptions } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
@@ -264,10 +264,10 @@ export const auth = betterAuth({
     },
   },
 
-  // E-Mail-Passwort: Sign-up-API offen, aber nur Betriebs-E-Mails (databaseHooks).
-  // Die Login-Seite zeigt keine öffentliche Registrierung.
+  // Existing operator accounts may sign in; public password signup is closed.
+  // The server and regression tests share the same email/password options.
   ...(emailAndPasswordEnabled
-    ? { emailAndPassword: { enabled: true, disableSignUp: false } }
+    ? { emailAndPassword: emailPasswordOptions }
     : {}),
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that

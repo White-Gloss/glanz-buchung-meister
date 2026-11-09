@@ -3,6 +3,8 @@ import { assertIsolatedGithubCi } from "../hosting-policy.mjs";
 assertIsolatedGithubCi();
 // Isolated local verification only; this file is not imported by the application.
 import { dirname, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 process.chdir(projectRoot);
@@ -28,6 +30,12 @@ process.env.HUB_SYNC_TOKEN = "isolated-qa-hub-sync-token-32-characters";
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
 process.env.BETTER_AUTH_URL = qaBase;
 process.env.QA_RUN_ID ||= randomUUID();
+// Studio media belongs to this ephemeral QA process, never a release or customer store.
+const studioMediaDirectory = await mkdtemp(resolve(tmpdir(), "wg-studio-qa-"));
+process.env.CMS_MEDIA_DIR = studioMediaDirectory;
+process.once("exit", () => rmSync(studioMediaDirectory, { recursive: true, force: true }));
+process.once("SIGTERM", () => process.exit(143));
+process.once("SIGINT", () => process.exit(130));
 process.env.PORT = String(qaPort);
 process.env.HOST = "127.0.0.1";
 process.env.SUPABASE_URL = controlBase;
@@ -143,6 +151,26 @@ createServer(async (req, res) => {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const flags = JSON.parse(Buffer.concat(chunks));
+      if (typeof flags.websiteStudioEnabled === "boolean") {
+        if (req.headers["x-qa-run-id"] !== process.env.QA_RUN_ID) {
+          res.writeHead(403); res.end("QA run identity required"); return;
+        }
+        process.env.WEBSITE_STUDIO_ENABLED = String(flags.websiteStudioEnabled);
+      }
+      if (flags.prepareBrowserFixture === true) {
+        if (req.headers["x-qa-run-id"] !== process.env.QA_RUN_ID) {
+          res.writeHead(403);
+          res.end("QA run identity required");
+          return;
+        }
+        // Legacy flow tests explicitly use Bitrix. Public browser scenarios use
+        // the real panel/request-only path, without a nonexistent CRM webhook.
+        // This guarded test process changes no production setting or limiter.
+        process.env.BOOKING_OPERATIONS = "panel";
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({ ok: true, bookingBackend: "panel", externalFetch: "blocked" }));
+        return;
+      }
       for (const key of ["failMail", "failWhatsApp", "failStorage", "failCms"])
         if (typeof flags[key] === "boolean") state[key] = flags[key];
       if (Number.isInteger(flags.failStorageNth))
@@ -159,6 +187,7 @@ createServer(async (req, res) => {
         const fixtures = {
           owner: { id: "qa-owner", email: "owner@example.invalid" },
           operator: { id: "qa-operator", email: "operator@example.invalid" },
+          "expired-operator": { id: "qa-operator", email: "operator@example.invalid" },
           outsider: { id: "qa-outsider", email: "outsider@example.invalid" },
         };
         const fixture = fixtures[flags.createSession];
@@ -169,8 +198,8 @@ createServer(async (req, res) => {
         );
         const token = randomBytes(32).toString("base64url");
         await pg.query(
-          'insert into "session" (id,"expiresAt",token,"userId","createdAt","updatedAt") values ($1,now()+interval \'1 hour\',$2,$3,now(),now())',
-          [randomUUID(), token, fixture.id],
+          'insert into "session" (id,"expiresAt",token,"userId","createdAt","updatedAt") values ($1,$4,$2,$3,now(),now())',
+          [randomUUID(), token, fixture.id, new Date(Date.now() + (flags.createSession === "expired-operator" ? -1 : 1) * 3_600_000).toISOString()],
         );
         // Same signature format as installed better-call/crypto; verified by Better Auth.
         const signature = createHmac("sha256", process.env.BETTER_AUTH_SECRET)
@@ -326,3 +355,5 @@ await writeFile(resolve(outputRoot, "lighthouse-transport.json"), JSON.stringify
   certificatePath, protocol: "h2",
 }, null, 2));
 await import("../../.output/server/index.mjs");
+
+

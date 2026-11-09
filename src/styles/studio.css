@@ -292,6 +292,14 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   display: none;
 }
 
+/* The desktop navigation already owns the booking action. Match its breakpoint
+   and this stylesheet's specificity so the mobile action cannot appear twice. */
+@media (min-width: 900px) {
+  [data-shell="public"] .site-header .header-film-booking {
+    display: none;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   [data-shell="public"] .site-header .header-quick-nav .header-booking-link:hover,
   [data-shell="public"] .site-header .header-film-booking:hover {
@@ -1009,3 +1017,4 @@ html.lenis body {
     display: none;
   }
 }
+

@@ -8,36 +8,32 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { extras } from "../../src/data/site.ts";
 import { qaBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
+import { prepareBrowserFixture } from "./browser-fixture.mjs";
+import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = ".qa-output/booking-ui";
 await mkdir(output, { recursive: true });
 const results = [];
-const blocked = [];
-const errors = [];
+const diagnostics = [];
 const requestable = extras.filter((extra) => extra.requestable !== false);
 assert.equal(requestable.length, 12, "Twelve bookable extras are expected");
 
 const browser = await chromium.launch({ headless: true });
 
 async function openContext(options) {
-  const context = await browser.newContext(options);
+  const context = await browser.newContext({ ...options, serviceWorkers: "block", extraHTTPHeaders: qaClientHeaders("booking-ui", `context-${diagnostics.length}`) });
+  const diagnostic = createBrowserDiagnostics({ origin: qaBase, label: `${options.viewport.width}x${options.viewport.height}` });
+  diagnostics.push(diagnostic);
   const assets = [];
   await context.route("**/*", (route) => {
     const request = route.request();
-    if (new URL(request.url()).origin !== qaBase || !["GET", "HEAD"].includes(request.method())) {
-      blocked.push(`${request.method()} ${request.url()}`);
-      return route.abort();
-    }
+    if (!diagnostic.allowRequest(request)) return route.abort();
     assets.push(new URL(request.url()).pathname);
     return route.continue();
   });
   const page = await context.newPage();
-  page.on("pageerror", (error) => errors.push(`${page.url()}: ${error.message}`));
-  page.on("console", (message) => {
-    // Third-party resources are aborted on purpose; everything else must stay quiet.
-    if (message.type() === "error" && !/Failed to load resource/.test(message.text()))
-      errors.push(`${page.url()}: ${message.text()}`);
-  });
+  diagnostic.attach(page);
   return { context, page, assets };
 }
 
@@ -76,6 +72,22 @@ async function overflow(page) {
 }
 
 try {
+  await prepareBrowserFixture({ scenario: "booking-ui" });
+  // Test the real API limit, then give each unrelated browser scenario its own
+  // stable client. Never reset the limiter or hide a 429 in browser diagnostics.
+  const availability = `${qaBase}/api/availability?from=2040-01-01&to=2040-02-01`;
+  const burstHeaders = qaClientHeaders("rate-limit-proof", "burst");
+  for (let request = 1; request <= 8; request++) {
+    const response = await fetch(availability, { headers: burstHeaders });
+    assert.equal(response.status, 200, `Availability request ${request} stays within the production limit`);
+    assert.equal((await response.json()).ok, true);
+  }
+  const ninth = await fetch(availability, { headers: burstHeaders });
+  assert.equal(ninth.status, 429, "The same client is still limited after eight requests");
+  assert.equal((await ninth.json()).error, "rate_limited");
+  const independent = await fetch(availability, { headers: qaClientHeaders("rate-limit-proof", "independent") });
+  assert.equal(independent.status, 200, "An independent client retains its own quota");
+  results.push("Real availability limiter: eight allowed, ninth blocked, independent client unaffected");
   /* ---- Desktop: existing three-step form, prices, package/vehicle changes, pickup ---- */
   {
     const { context, page, assets } = await openContext({ viewport: { width: 1280, height: 900 } });
@@ -151,6 +163,28 @@ try {
     results.push("Contact step reachable and reversible without losing the selection");
 
     await page.goto(`${qaBase}/`, { waitUntil: "networkidle" });
+
+    const pickupLinks = page.getByRole("list", { name: "Abholorte", exact: true });
+    for (const [slug, name, expected] of [
+      ["sulz-am-neckar", "Sulz am Neckar", "30 €"],
+      ["voehringen", "Vöhringen", "30 €"],
+      ["schopfloch", "Schopfloch", "30 €"],
+      ["empfingen", "Empfingen", "kostenlos"],
+      ["dornhan", "Dornhan", "50 €"],
+      ["sindelfingen", "Sindelfingen", "auf Anfrage"],
+    ]) {
+      const chip = pickupLinks.locator(`a[href="/abholservice/${slug}"]`);
+      assert.equal(await chip.count(), 1, `${name}: one pickup link`);
+      assert.ok(
+        flat(await chip.getAttribute("aria-label")).endsWith(`Abholung ${expected}`),
+        `${name}: accessible pickup price is ${expected}`,
+      );
+      await chip.scrollIntoViewIfNeeded();
+      const price = chip.locator(".city-chip-status");
+      assert.ok(await price.isVisible(), `${name}: pickup price is visible`);
+      assert.equal(flat(await price.innerText()), expected, `${name}: visible pickup price`);
+    }
+    results.push("Homepage pickup prices: city overrides, free pickup, tier and on-request agree visually and accessibly");
     await page.locator("#pakete").scrollIntoViewIfNeeded();
     await page.waitForTimeout(800);
     assert.ok(
@@ -280,17 +314,21 @@ try {
   assert.doesNotMatch(impressum, /42161-24623|Steuernummer/, "Private tax number stays removed");
   results.push("Imprint keeps the VAT ID and omits the private tax number");
 
-  assert.deepEqual(
-    blocked.filter((entry) => !/^GET /.test(entry)),
-    [],
-    "No form, upload or other write request may leave the browser",
-  );
-  assert.deepEqual(errors, [], "The browser console must stay free of errors");
+  assertBrowserDiagnostics(diagnostics);
 } finally {
+  const evidence = diagnostics.map((item) => item.snapshot());
   await writeFile(
     `${output}/results.json`,
-    JSON.stringify({ passed: results.length, results, errors, blocked }, null, 2),
+    JSON.stringify({
+      passed: results.length,
+      results,
+      errors: evidence.flatMap((item) => item.errors),
+      blocked: evidence.flatMap((item) => item.blocked),
+      ignored: evidence.flatMap((item) => item.ignored),
+      warnings: evidence.flatMap((item) => item.warnings),
+    }, null, 2),
   );
   await browser.close();
 }
 console.log(JSON.stringify({ passed: results.length, results }, null, 2));
+

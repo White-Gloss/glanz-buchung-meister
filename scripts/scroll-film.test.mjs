@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import test from "node:test";
 import ts from "typescript";
+import * as React from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import { renderToStaticMarkup } from "react-dom/server";
 import { scrollFilm } from "../src/data/scroll-film.ts";
 
 // Execute the production effect with media/DOM event doubles. These tests do
@@ -26,6 +29,27 @@ const code = ts.transpileModule(`(${effect.getText(source)})`, {
   compilerOptions: { target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
+// Render the real component as React SSR. The router and decorative animation
+// dependencies are boundary doubles; SSR must never invoke the media loader.
+const ssrModule = { exports: {} };
+runInNewContext(ts.transpileModule(source.getFullText(), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+}).outputText, {
+  exports: ssrModule.exports,
+  require(name) {
+    if (name === "react") return React;
+    if (name === "react/jsx-runtime") return jsxRuntime;
+    if (name === "@tanstack/react-router") return { Link: ({ to, hash, children, ...props }) => React.createElement("a", { ...props, href: `${to}${hash ? `#${hash}` : ""}` }, children) };
+    if (name === "@/components/icons") return { IconArrowRight: (props) => React.createElement("svg", props) };
+    if (name === "@/data/scroll-film") return { scrollFilm };
+    if (name === "@/lib/seekable-video") return { loadSeekableVideo() { throw new Error("SSR must not load video."); } };
+    if (name === "@/lib/studio-motion") return { useMagnetic() {} };
+    if (name === "./scroll-film-hero.css") return {};
+    throw new Error(`Unexpected SSR dependency: ${name}`);
+  },
+});
+const renderHero = (props = {}) => renderToStaticMarkup(React.createElement(ssrModule.exports.ScrollFilmHero, props));
+
 function harness({
   reduced = false,
   saveData = false,
@@ -37,6 +61,7 @@ function harness({
   posterReady = true,
   hash = "",
   engaged = true,
+  hasCustomHero = false,
 } = {}) {
   const window = Object.assign(new EventTarget(), { scrollY: engaged ? 1 : 0, location: { hash } });
   const document = Object.assign(new EventTarget(), { hidden: false });
@@ -67,7 +92,15 @@ function harness({
     getBoundingClientRect: () => ({ top: -window.scrollY }),
   });
   const stage = { offsetHeight: 1000 };
-  const copy = { style: style(), inert: false };
+  const actions = [{ tagName: "A", href: "/#buchung", inert: false }, { tagName: "A", href: "/preise", inert: false }];
+  const copy = {
+    style: style(),
+    inert: false,
+    querySelectorAll(selector) {
+      assert.equal(selector, "a[href]", "Only the hero's action links may become inert.");
+      return actions;
+    },
+  };
   const poster = Object.assign(new EventTarget(), {
     complete: posterReady,
     currentSrc: "/poster.webp",
@@ -113,6 +146,7 @@ function harness({
     document,
     navigator: { connection, deviceMemory: memory, hardwareConcurrency: cores },
     scrollFilm,
+    hasCustomHero,
     loadSeekableVideo(video, url) {
       video.src = url;
       video.load();
@@ -162,6 +196,7 @@ function harness({
     connection,
     section,
     copy,
+    actions,
     poster,
     pending,
     pausedRef,
@@ -199,21 +234,33 @@ test("poster is displayed before any video download; small screens choose the sm
   h.cleanup();
 });
 test("SSR reserves the scroll-film height before hydration without affecting no-script users", () => {
-  const component = readFileSync(
-    new URL("../src/components/scroll-film-hero.tsx", import.meta.url),
-    "utf8",
-  );
+  const html = renderHero();
   const styles = readFileSync(
     new URL("../src/components/scroll-film-hero.css", import.meta.url),
     "utf8",
   );
-  assert.match(component, /useState<boolean \| null>\(null\)/);
-  assert.match(component, /data-motion=\{motion === false \? "still" : "scroll"\}/);
+  assert.match(html, /data-motion="scroll"/);
+  assert.equal((html.match(/<h1(?:\s|>)/g) ?? []).length, 1);
+  assert.ok(html.includes(scrollFilm.desktopPoster), "SSR must include the real film poster before hydration.");
+  assert.doesNotMatch(html, /<video[^>]*\ssrc=/, "SSR must not start a video download.");
   assert.match(
-    component,
-    /<noscript>\s*<style>\{`\.scroll-film\[data-motion="scroll"\] \{ height: auto; \}`\}<\/style>\s*<\/noscript>/,
+    html,
+    /<noscript><style>\.scroll-film\[data-motion="scroll"\] \{ height: auto; \}<\/style><\/noscript>/,
   );
   assert.match(styles, /html:has\(#buchung:target\) \.scroll-film\[data-motion="scroll"\]\s*\{\s*height: auto;/);
+});
+
+test("a published hero image starts as a correctly sized still image in SSR", () => {
+  const heroImage = { id: "approved", src: "/api/studio-media/approved", previewSrc: "/api/studio-media/approved?preview=1", width: 1600, height: 900, alt: "Lack im Werkstattlicht", caption: "" };
+  const html = renderHero({ title: "Unsere Arbeit", lead: "Persönlich geprüft.", heroImage });
+  assert.match(html, /data-motion="still"/);
+  assert.match(html, /src="\/api\/studio-media\/approved"/);
+  assert.match(html, /width="1600" height="900"/);
+  assert.match(html.replace(/<[^>]+>/g, ""), /Unsere Arbeit/);
+  assert.match(html, /Lack im Werkstattlicht/);
+  assert.equal((html.match(/<h1(?:\s|>)/g) ?? []).length, 1);
+  assert.equal(html.includes(scrollFilm.desktopPoster), false);
+  assert.doesNotMatch(html, /preview=1|<video[^>]*\ssrc=/);
 });
 test("initial view downloads no video until the visitor scrolls", () => {
   const h = harness({ engaged: false });
@@ -231,6 +278,7 @@ for (const options of [
   { memory: 2 },
   { cores: 2 },
   { hash: "#buchung" },
+  { hasCustomHero: true },
 ]) {
   test(`static fallback avoids all video traffic: ${JSON.stringify(options)}`, () => {
     const h = harness(options);
@@ -247,14 +295,19 @@ test("forward and reverse scroll reach matching times, with no overlapping seeks
   assert.ok(Math.abs(h.video.currentTime - 3.979) < 0.03);
   // The shortened introduction keeps readable links available halfway through.
   assert.equal(h.copy.inert, false);
+  assert.ok(h.actions.every((action) => !action.inert), "Readable action links remain focusable halfway through.");
   h.scroll(720);
   assert.ok(Math.abs(h.video.currentTime - 1.592) < 0.03);
   h.scroll(0);
   assert.ok(h.video.currentTime < 0.03);
   assert.equal(h.copy.inert, false);
+  assert.ok(h.actions.every((action) => !action.inert));
   h.scroll(6000);
   assert.ok(Math.abs(h.video.currentTime - 7.958) < 0.03);
-  assert.equal(h.copy.inert, true);
+  assert.equal(h.copy.inert, false, "The only H1 and its description must remain available to assistive technology.");
+  assert.ok(h.actions.every((action) => action.inert), "Invisible action links must leave the focus order.");
+  h.scroll(0);
+  assert.ok(h.actions.every((action) => !action.inert), "Reverse scrolling restores both links.");
   h.cleanup();
 });
 test("pause holds the decoded frame and resume seeks to the current scroll position", () => {
@@ -312,7 +365,8 @@ test("rotation into short landscape stops motion; rotating back restores it and 
   h.scroll(300);
   h.load();
   h.scroll(3000);
-  assert.equal(h.copy.inert, true);
+  assert.equal(h.copy.inert, false);
+  assert.ok(h.actions.every((action) => action.inert));
   h.landscapeMedia.matches = true;
   h.landscapeMedia.dispatchEvent(new Event("change"));
   assert.equal(h.section.dataset.motion, "still");
@@ -368,3 +422,4 @@ test("crossing the mobile breakpoint changes the film while preserving scroll pr
   assert.ok(Math.abs(h.video.currentTime - 3.979) < 0.03);
   h.cleanup();
 });
+

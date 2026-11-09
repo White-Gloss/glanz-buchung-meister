@@ -4,6 +4,9 @@ assertIsolatedGithubCi();
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { qaBase, controlBase } from "./ports.mjs";
+import { qaClientHeaders } from "./client-identity.mjs";
+import { createBrowserDiagnostics } from "../browser-diagnostics.mjs";
+import { createHeroPhaseTracker, heroEvidenceUrl, redactHeroEvidence, scrollHeroWithWheel } from "./hero-diagnostics.mjs";
 
 const runId = process.env.QA_RUN_ID;
 assert.ok(runId, "The parent QA runner must supply its run identity.");
@@ -55,7 +58,7 @@ function overlap(a, b) {
 }
 
 async function geometry(page) {
-  return page.evaluate(() => {
+  const snapshot = await page.evaluate(() => {
     const rect = (selector) => {
       const element = document.querySelector(selector);
       return element ? element.getBoundingClientRect().toJSON() : null;
@@ -64,6 +67,8 @@ async function geometry(page) {
     const pause = document.querySelector(".scroll-film-pause");
     const style = copy && getComputedStyle(copy);
     const video = document.querySelector(".scroll-film video");
+    const poster = document.querySelector(".scroll-film img");
+    const ranges = (value) => Array.from({ length: value.length }, (_, index) => [value.start(index), value.end(index)]);
     const title = document.querySelector(".scroll-film-copy h1");
     // The title is split into masked lines and words: measure its first visible text.
     const titleWalker = title && document.createTreeWalker(title, NodeFilter.SHOW_TEXT, {
@@ -105,10 +110,22 @@ async function geometry(page) {
     return {
       viewport: { width: innerWidth, height: innerHeight },
       scrollY,
+      documentState: {
+        visibility: document.visibilityState,
+        readyState: document.readyState,
+        bodyOverflow: getComputedStyle(document.body).overflow,
+        htmlClasses: document.documentElement.className,
+        activeElement: document.activeElement?.tagName,
+        reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+        connection: { saveData: navigator.connection?.saveData, effectiveType: navigator.connection?.effectiveType },
+        hardwareConcurrency: navigator.hardwareConcurrency,
+        deviceMemory: navigator.deviceMemory,
+      },
       shortLandscape: matchMedia("(max-height: 600px) and (orientation: landscape)").matches,
       copy: rect(".scroll-film-copy-inner"),
       reservedCopy: rect(".scroll-film-copy"),
       stage: rect(".scroll-film-stage"),
+      section: rect(".scroll-film"),
       header: rect(".site-header"),
       titleStart,
       titleStartHit: Boolean(titleHit && title?.contains(titleHit)),
@@ -145,9 +162,20 @@ async function geometry(page) {
         tabIndex: pause.tabIndex,
         text: pause.textContent.trim(),
       },
-      video: video && { source: video.currentSrc, readyState: video.readyState, time: video.currentTime },
+      video: video && {
+        source: video.currentSrc, srcAttribute: video.getAttribute("src"),
+        readyState: video.readyState, networkState: video.networkState,
+        time: video.currentTime, duration: video.duration, seeking: video.seeking,
+        paused: video.paused, ended: video.ended, preload: video.preload,
+        visible: video.dataset.visible, opacity: getComputedStyle(video).opacity,
+        buffered: ranges(video.buffered), seekable: ranges(video.seekable),
+        error: video.error && { code: video.error.code, message: video.error.message },
+      },
+      poster: poster && { complete: poster.complete, width: poster.naturalWidth, height: poster.naturalHeight, source: poster.currentSrc },
+      mediaEvents: window.__heroMediaEvents ?? [],
     };
   });
+  return redactHeroEvidence(snapshot);
 }
 
 function visibilityFailure(snapshot, name) {
@@ -181,26 +209,68 @@ async function scrollToVisibleTarget(page, name) {
   return { attempts, geometry: snapshot, failure: visibilityFailure(snapshot, name) };
 }
 
+async function wheelToHeroPosition(page, target, evidence) {
+  return scrollHeroWithWheel({
+    readY: () => page.evaluate(() => window.scrollY),
+    wheel: async (deltaY) => {
+      const viewport = page.viewportSize();
+      await page.mouse.move(viewport.width / 2, viewport.height / 2);
+      await page.mouse.wheel(0, deltaY);
+    },
+    settle: async (timeout) => {
+      await page.evaluate(() => {
+        window.__heroWheelProbe = { y: window.scrollY, since: performance.now() };
+      });
+      await page.waitForFunction(() => {
+        const probe = window.__heroWheelProbe;
+        if (Math.abs(window.scrollY - probe.y) > 0.5) {
+          probe.y = window.scrollY;
+          probe.since = performance.now();
+        }
+        return performance.now() - probe.since >= 150;
+      }, undefined, { timeout });
+    },
+  }, target, { onAttempt: (attempt) => evidence.attempts.push(attempt) });
+}
+
+function remainingScrollBudget(result) {
+  const timeout = result.deadline - Date.now();
+  assert.ok(timeout > 0, "Hero scroll and opacity checks share the existing 10000ms deadline.");
+  return timeout;
+}
+
 try {
   for (const viewport of viewports) {
-    const result = { viewport, blockedRequests: [], pageErrors: [] };
+    const result = { viewport, blockedRequests: [], pageErrors: [], mediaResponses: [], scrollActions: [] };
+    const phase = createHeroPhaseTracker(result);
+    const browserDiagnostics = createBrowserDiagnostics({ origin: qaBase, label: `hero-${viewport.name}` });
     report.results.push(result);
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
       reducedMotion: "no-preference",
       locale: "de-DE",
-      extraHTTPHeaders: { "x-forwarded-host": "white-gloss.de" },
+      extraHTTPHeaders: { "x-forwarded-host": "white-gloss.de", ...qaClientHeaders("hero-stability", viewport.name) },
     });
     try {
       await context.route("**/*", (route) => {
         const request = route.request();
+        browserDiagnostics.allowRequest(request);
         if (new URL(request.url()).origin !== qaBase || !["GET", "HEAD"].includes(request.method())) {
-          result.blockedRequests.push(`${request.method()} ${request.url()}`);
+          result.blockedRequests.push(`${request.method()} ${heroEvidenceUrl(request.url())}`);
           return route.abort();
         }
         return route.continue();
       });
       await context.addInitScript(() => {
+        window.__heroMediaEvents = [];
+        for (const type of ["loadstart", "loadedmetadata", "loadeddata", "canplay", "seeking", "seeked", "stalled", "suspend", "abort", "emptied", "error"]) {
+          document.addEventListener(type, (event) => {
+            const video = event.target;
+            if (!video.matches?.(".scroll-film video")) return;
+            window.__heroMediaEvents.push({ type, at: performance.now(), readyState: video.readyState, networkState: video.networkState, time: video.currentTime, errorCode: video.error?.code });
+            if (window.__heroMediaEvents.length > 80) window.__heroMediaEvents.shift();
+          }, true);
+        }
         const shifts = [];
         const supported = PerformanceObserver.supportedEntryTypes.includes("layout-shift");
         const record = (entries) => {
@@ -232,14 +302,20 @@ try {
       });
       const page = await context.newPage();
       page.setDefaultTimeout(10000);
-      page.on("pageerror", (error) => result.pageErrors.push(error.message));
-      await page.goto(`${qaBase}/`, { waitUntil: "networkidle", timeout: 30000 });
+      browserDiagnostics.attach(page);
+      page.on("pageerror", (error) => result.pageErrors.push(redactHeroEvidence(error.message)));
+      page.on("response", (response) => {
+        if (!new URL(response.url()).pathname.startsWith("/media/scroll-film/")) return;
+        const headers = response.headers();
+        result.mediaResponses.push({ url: heroEvidenceUrl(response.url()), status: response.status(), contentType: headers["content-type"], contentLength: headers["content-length"], acceptRanges: headers["accept-ranges"] });
+      });
+      await phase.run("navigation", () => page.goto(`${qaBase}/`, { waitUntil: "networkidle", timeout: 30000 }));
       const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
-      await consent.waitFor({ state: "visible" });
+      await phase.run("consent-visible", () => consent.waitFor({ state: "visible" }));
       // Allow hydration, font decoding and the ResizeObserver to settle naturally.
       await page.waitForTimeout(1200);
       await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-      result.initial = await geometry(page);
+      result.initial = await phase.run("first-visit-geometry", () => geometry(page));
       result.observerSupported = await page.evaluate(() => window.__heroStability.supported);
       result.layoutShifts = await page.evaluate(() => window.__heroStability.finish());
       result.cls = cls(result.layoutShifts);
@@ -282,7 +358,7 @@ try {
         result.reachability = {};
         try {
           for (const name of ["cta", "prices", "controls"]) {
-            result.reachability[name] = await scrollToVisibleTarget(page, name);
+            result.reachability[name] = await phase.run(`landscape-${name}-reachability`, () => scrollToVisibleTarget(page, name));
             if (result.reachability[name].failure)
               report.failures.push(`${viewport.name}: ${name} ${result.reachability[name].failure} after native page scrolling`);
             await page.screenshot({ path: `${output}/${viewport.name}-${name}-reachable.png` });
@@ -296,8 +372,8 @@ try {
       }
 
       // Interactions follow the completed first-visit measurement, never alter it.
-      await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
-      await consent.waitFor({ state: "hidden" });
+      await phase.run("consent-reject", () => consent.getByRole("button", { name: "Ablehnen", exact: true }).click());
+      await phase.run("consent-hidden", () => consent.waitFor({ state: "hidden" }));
       result.afterRejection = await geometry(page);
       assert.equal(result.afterRejection.storedConsent, "rejected", "Rejecting must preserve the real consent decision.");
       await page.screenshot({ path: `${output}/${viewport.name}-consent-rejected.png` });
@@ -309,26 +385,64 @@ try {
       } else {
         const distance = result.afterRejection.scrollDistance;
         assert.ok(distance > 1, "Enabled motion must have a usable native scrolling range.");
-        await page.mouse.wheel(0, Math.min(80, distance * 0.2));
-        await page.waitForFunction(() => document.querySelector(".scroll-film video")?.readyState >= 2);
-        await page.getByRole("button", { name: "Bewegung pausieren", exact: true }).click();
+        result.scrollActions.push({ phase: "film-engage-wheel", before: result.afterRejection.scrollY, deltaY: Math.min(80, distance * 0.2), distance });
+        await phase.run("film-engage-wheel", () => page.mouse.wheel(0, Math.min(80, distance * 0.2)));
+        await phase.run("video-readiness", () => page.waitForFunction(() => document.querySelector(".scroll-film video")?.readyState >= 2));
+        result.beforePause = await geometry(page);
+        await phase.run("film-pause-click", () => page.getByRole("button", { name: "Bewegung pausieren", exact: true }).click());
         const pausedTime = await page.locator(".scroll-film video").evaluate((video) => video.currentTime);
-        await page.mouse.wheel(0, Math.min(120, distance * 0.2));
+        result.scrollActions.push({ phase: "film-paused-wheel", before: await page.evaluate(() => scrollY), deltaY: Math.min(120, distance * 0.2), distance, pausedTime });
+        await phase.run("film-paused-wheel", () => page.mouse.wheel(0, Math.min(120, distance * 0.2)));
         await page.waitForTimeout(350);
         const heldTime = await page.locator(".scroll-film video").evaluate((video) => video.currentTime);
         assert.ok(Math.abs(heldTime - pausedTime) < 1 / 24, "Pausing must hold the original film while scrolling.");
-        await page.getByRole("button", { name: "Bewegung fortsetzen", exact: true }).click();
-        await page.waitForFunction((time) => document.querySelector(".scroll-film video")?.currentTime > time + 1 / 24, pausedTime);
+        result.beforeResume = await geometry(page);
+        await phase.run("film-resume-click", () => page.getByRole("button", { name: "Bewegung fortsetzen", exact: true }).click());
+        await phase.run("film-resume-time", () => page.waitForFunction((time) => document.querySelector(".scroll-film video")?.currentTime > time + 1 / 24, pausedTime));
         result.filmInteraction = { status: "passed", pausedTime, heldTime, resumed: await geometry(page) };
         await page.screenshot({ path: `${output}/${viewport.name}-film-resumed.png` });
+
+        // Fading decorative hero copy must not remove the page's only H1 from
+        // assistive technology. Only the invisible action links become inert.
+        const fadeTarget = await page.evaluate((scrollDistance) => {
+          const section = document.querySelector(".scroll-film");
+          const top = section.getBoundingClientRect().top + window.scrollY;
+          return top + scrollDistance * 0.8;
+        }, distance);
+        const fadeEvidence = { phase: "copy-fade-scroll", target: fadeTarget, attempts: [] };
+        result.scrollActions.push(fadeEvidence);
+        const fadeScroll = await phase.run("copy-fade-scroll", () => wheelToHeroPosition(page, fadeTarget, fadeEvidence));
+        await phase.run("copy-fade-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) < 0.03, undefined, { timeout: remainingScrollBudget(fadeScroll) }));
+        result.fadedGeometry = await geometry(page);
+        result.fadedSemantics = await page.locator(".scroll-film-copy").evaluate((copy) => ({
+          headingAvailable: Boolean(copy.querySelector("h1")) && !copy.querySelector("h1").closest('[inert], [aria-hidden="true"]'),
+          hiddenActionsInert: copy.querySelectorAll("a[href]").length === 2
+            && [...copy.querySelectorAll("a[href]")].every((link) => Boolean(link.closest("[inert]"))),
+        }));
+        assert.equal(result.fadedSemantics.headingAvailable, true, "Keep the H1 in the accessibility tree after fading.");
+        assert.equal(result.fadedSemantics.hiddenActionsInert, true, "Invisible hero links must leave the keyboard sequence.");
+        const restoreEvidence = { phase: "copy-restore-scroll", target: 0, attempts: [] };
+        result.scrollActions.push(restoreEvidence);
+        const restoreScroll = await phase.run("copy-restore-scroll", () => wheelToHeroPosition(page, 0, restoreEvidence));
+        await phase.run("copy-restore-opacity", () => page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".scroll-film-copy")).opacity) > 0.99, undefined, { timeout: remainingScrollBudget(restoreScroll) }));
+        result.restoredGeometry = await geometry(page);
+        assert.equal(await page.locator(".scroll-film-copy a[href]").evaluateAll((links) =>
+          links.every((link) => !link.closest("[inert]"))), true, "Restore hero links when the copy becomes visible again.");
       }
       if (result.pageErrors.length) report.failures.push(`${viewport.name}: ${result.pageErrors.join("; ")}`);
     } catch (error) {
-      result.error = error.message;
-      report.failures.push(`${viewport.name}: ${error.message}`);
+      result.error = redactHeroEvidence(error.message);
+      result.errorDetails = redactHeroEvidence({ name: error.name, message: error.message, stack: error.stack });
+      report.failures.push(`${viewport.name} [${result.phase ?? "setup"}]: ${result.error}`);
       const page = context.pages()[0];
-      if (page) await page.screenshot({ path: `${output}/${viewport.name}-failure.png` }).catch(() => {});
+      if (page) {
+        result.failureGeometry = await geometry(page).catch((snapshotError) => ({ error: redactHeroEvidence(snapshotError.message) }));
+        await page.screenshot({ path: `${output}/${viewport.name}-failure.png` }).catch(() => {});
+      }
+      // Keep decisive evidence in decoded job logs as well as the ZIP artifact.
+      console.error("HERO_FAILURE:" + JSON.stringify(redactHeroEvidence({ viewport, phase: result.phase, error: result.errorDetails, phases: result.phases, geometry: result.failureGeometry, beforePause: result.beforePause, beforeResume: result.beforeResume, scrollActions: result.scrollActions, mediaResponses: result.mediaResponses, browser: browserDiagnostics.snapshot() })));
     } finally {
+      result.browserDiagnostics = redactHeroEvidence(browserDiagnostics.snapshot());
       report.blockedRequests.push(...result.blockedRequests);
       report.pageErrors.push(...result.pageErrors);
       await context.close();
@@ -340,3 +454,4 @@ try {
 }
 assert.equal(report.failures.length, 0, report.failures.join("\n"));
 console.log("Three first-visit hero checks passed; no request, message, or upload submitted.");
+

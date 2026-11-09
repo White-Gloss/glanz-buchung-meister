@@ -13,6 +13,7 @@ on:
       - "package-lock.json"
       - "lighthouserc.mobile.cjs"
       - "lighthouserc.desktop.cjs"
+      - "scripts/lighthouse-summary*"
       - ".github/workflows/lighthouse-audit.yml"
   push:
     branches:
@@ -27,6 +28,7 @@ on:
       - "package-lock.json"
       - "lighthouserc.mobile.cjs"
       - "lighthouserc.desktop.cjs"
+      - "scripts/lighthouse-summary*"
       - ".github/workflows/lighthouse-audit.yml"
   schedule:
     - cron: "17 4 * * 1"
@@ -54,6 +56,7 @@ jobs:
           cache: npm
 
       - name: Abhängigkeiten installieren
+        id: dependencies
         run: npm ci --ignore-scripts
 
       - name: Mobile Lighthouse
@@ -62,9 +65,14 @@ jobs:
           LHCI_BASE_URL: https://white-gloss.de
 
       - name: Desktop Lighthouse
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: npm run lighthouse:desktop
         env:
           LHCI_BASE_URL: https://white-gloss.de
+
+      - name: Tatsächliche Messwerte und Prüflücken zusammenfassen
+        if: always()
+        run: node scripts/lighthouse-summary.mjs
 
       - name: Lighthouse-Berichte speichern
         if: always()
@@ -74,5 +82,8 @@ jobs:
           path: |
             .lighthouseci/mobile/
             .lighthouseci/desktop/
+            .lighthouseci/summary.json
+            .lighthouseci/summary.md
           include-hidden-files: true
           if-no-files-found: warn
+

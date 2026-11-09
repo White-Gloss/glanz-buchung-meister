@@ -41,3 +41,4 @@ export function pickupStatus(km: number | null): PickupStatus {
   if (fee === null) return "request";
   return fee === 0 ? "free" : "fixed";
 }
+

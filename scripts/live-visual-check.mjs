@@ -1,38 +1,33 @@
-// Read-only browser check of the published IONOS site (GitHub runner only).
+// Read-only browser check of the published site (GitHub runner only).
 // Starts no server. Only same-origin GET/HEAD requests are allowed, the consent
 // banner is declined, and no form, upload or message is ever submitted.
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import { assertBrowserDiagnostics, createBrowserDiagnostics } from "./browser-diagnostics.mjs";
 
 const base = "https://white-gloss.de";
 const output = ".live-check";
 await mkdir(output, { recursive: true });
-const report = { base, checkedAt: new Date().toISOString(), pages: [], booking: [], errors: [] };
-const blocked = [];
-const flat = (value) => (value ?? "").replace(/\s+/g, " ").trim();
+const report = { base, checkedAt: new Date().toISOString(), status: "running", pages: [], booking: [], errors: [] };
+const diagnostics = [];
 
-const browser = await chromium.launch({ headless: true });
+let browser;
 
 async function openContext(viewport, mobile = false) {
-  const context = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile });
+  const context = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, serviceWorkers: "block" });
+  const diagnostic = createBrowserDiagnostics({ origin: base, label: `${viewport.width}x${viewport.height}` });
+  diagnostics.push(diagnostic);
   const assets = [];
   await context.route("**/*", (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (url.origin !== base || !["GET", "HEAD"].includes(request.method())) {
-      if (!["GET", "HEAD"].includes(request.method())) blocked.push(`${request.method()} ${url}`);
-      return route.abort();
-    }
+    if (!diagnostic.allowRequest(request)) return route.abort();
     assets.push(url.pathname);
     return route.continue();
   });
   const page = await context.newPage();
-  page.on("pageerror", (error) => report.errors.push(`${page.url()}: ${error.message}`));
-  page.on("console", (message) => {
-    if (message.type() === "error" && !/Failed to load resource/.test(message.text()))
-      report.errors.push(`${page.url()}: ${message.text()}`);
-  });
+  diagnostic.attach(page);
   return { context, page, assets };
 }
 
@@ -54,6 +49,7 @@ async function total(page, selector, expected) {
 }
 
 try {
+  browser = await chromium.launch({ headless: true });
   const viewports = [
     { name: "mobil-375", viewport: { width: 375, height: 812 }, mobile: true },
     { name: "mobil-390", viewport: { width: 390, height: 844 }, mobile: true },
@@ -130,11 +126,20 @@ try {
     assert.equal(extras, 12, "Twelve bookable extras");
     await context.close();
   }
-  assert.deepEqual(blocked, [], "No write request may leave the browser");
+  assertBrowserDiagnostics(diagnostics);
+  report.status = "passed";
+} catch (error) {
+  report.status = "failed";
+  report.failure = error.message;
+  throw error;
 } finally {
-  report.blocked = blocked;
+  const evidence = diagnostics.map((item) => item.snapshot());
+  report.errors = evidence.flatMap((item) => item.errors);
+  report.blocked = evidence.flatMap((item) => item.blocked);
+  report.ignored = evidence.flatMap((item) => item.ignored);
+  report.warnings = evidence.flatMap((item) => item.warnings);
   await writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
-  await browser.close();
+  await browser?.close();
 }
 console.log(
   JSON.stringify(
@@ -143,3 +148,4 @@ console.log(
     2,
   ),
 );
+
