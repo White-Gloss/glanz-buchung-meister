@@ -37,7 +37,7 @@ function ThanksPage() {
     [
       "01",
       "Anfrage eingegangen",
-      "Ihre Angaben und ausgewählten Fotos sind bei uns eingegangen. Preis und Wunschtermin sind noch nicht verbindlich bestätigt.",
+      "Ihre Anfrage ist gespeichert. Falls noch Fotos fehlen, können Sie diese hier nachreichen. Preis und Wunschtermin sind noch nicht verbindlich bestätigt.",
     ],
     [
       "02",
@@ -46,8 +46,8 @@ function ThanksPage() {
     ],
     [
       "03",
-      "Auftrag abstimmen",
-      "Wir stimmen die Leistungen, den verbindlichen Preis und den Termin mit Ihnen ab. Erst nach Ihrer Zustimmung wird der Auftrag verbindlich bestätigt.",
+      "Angebot und Termin bestätigen",
+      "Sie erhalten Ihr persönliches Angebot mit Leistungen, Preis und Termin. Mit Ihrer Unterschrift bestätigen Sie das Angebot und den darin genannten Termin gemeinsam.",
     ],
     [
       "04",
@@ -63,7 +63,7 @@ function ThanksPage() {
         alt="Werkstatt von White Gloss in Horb am Neckar"
         kicker="Anfrage eingegangen"
         title="Danke. Anfrage erhalten."
-        lead="Ihre Anfrage ist eingegangen. Wir prüfen jetzt Ihre Angaben und Fotos. Den Fixpreis und den Termin bestätigen wir nach der Begutachtung."
+        lead="Vielen Dank für Ihre Anfrage. Ich prüfe Ihre Angaben und die eingegangenen Fotos. Danach erhalten Sie Ihr persönliches Angebot mit Preis und Terminvorschlag."
         crumbs={[{ label: "Startseite", to: "/" }, { label: "Danke" }]}
         actions={
           <>

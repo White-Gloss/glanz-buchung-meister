@@ -875,7 +875,7 @@ export function Configurator({
             : savedReference
               ? media.length
                 ? "Übrige Fotos erneut senden"
-                : "Weiter zur Bestätigung"
+                : "Zur Eingangsbestätigung"
               : "Unverbindliche Anfrage prüfen"}
         </Button>
         <a
