@@ -47,6 +47,7 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .scroll-film-copy .hero-line {
   display: inline-block;
   vertical-align: top;
+  margin-inline: 0;
 }
 [data-shell="public"] .scroll-film-copy .hero-line:last-child {
   display: block;
@@ -390,6 +391,8 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   display: flex;
   justify-content: center;
   margin-top: 2.5rem;
+  margin-inline: auto;
+  align-self: center;
 }
 .film-menu > .fixed {
   border-bottom: 0;
