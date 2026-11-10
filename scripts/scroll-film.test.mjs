@@ -7,6 +7,7 @@ import * as React from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import { scrollFilm } from "../src/data/scroll-film.ts";
+import { focusBookingHeading } from "../src/lib/booking-anchor-focus.ts";
 
 // Execute the production effect with media/DOM event doubles. These tests do
 // not substitute for browser rendering or actual decoder performance checks.
@@ -44,6 +45,7 @@ runInNewContext(ts.transpileModule(source.getFullText(), {
     if (name === "@/data/scroll-film") return { scrollFilm };
     if (name === "@/lib/seekable-video") return { loadSeekableVideo() { throw new Error("SSR must not load video."); } };
     if (name === "@/lib/studio-motion") return { useMagnetic() {} };
+    if (name === "@/lib/booking-anchor-focus") return { focusBookingHeading };
     if (name === "./scroll-film-hero.css") return {};
     throw new Error(`Unexpected SSR dependency: ${name}`);
   },
