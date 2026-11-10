@@ -39,8 +39,18 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}$ && "$EXPECTED_CURRENT_RELEASE" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$RELEASE_ID" == "$GITHUB_SHA" && "$RELEASE_ID" != "$EXPECTED_CURRENT_RELEASE" ]]
+          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}$ && "$EXPECTED_CURRENT_RELEASE" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::Release und erwarteter Produktionsstand brauchen vollständige 40-stellige Commit-IDs."
+            exit 1
+          }
+          [[ "$RELEASE_ID" == "$GITHUB_SHA" ]] || {
+            echo "::error::release_sha stimmt nicht mit dem beim Dispatch ausgewählten main-Commit überein. Aktuellen main-Stand und CI erneut prüfen und eine neue Freigabe erstellen."
+            exit 1
+          }
+          [[ "$RELEASE_ID" != "$EXPECTED_CURRENT_RELEASE" ]] || {
+            echo "::error::Release und bestätigter aktiver Produktionsstand müssen verschieden sein."
+            exit 1
+          }
       - name: Freigegebenen main-Stand auschecken
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
