@@ -1,0 +1,384 @@
+/* The public configurator shares the editorial palette, but its controls stay
+   still. All selectors are scoped so the operator's forms are unaffected. */
+[data-shell="public"] .booking-editorial {
+  width: 100%;
+  max-width: none;
+  margin-top: clamp(2rem, 4vw, 4rem);
+  gap: 1.75rem;
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  color-scheme: dark;
+}
+
+[data-shell="public"] .booking-editorial > * {
+  min-width: 0;
+}
+
+[data-shell="public"] .booking-editorial .booking-steps {
+  gap: 1.25rem;
+  padding-bottom: 0.5rem;
+}
+
+[data-shell="public"] .booking-editorial .booking-steps button {
+  min-height: 5rem;
+  padding: 0.5rem 0 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--color-line-strong);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
+[data-shell="public"] .booking-editorial .booking-steps button span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-shell="public"] .booking-editorial .booking-steps button[aria-current="step"] {
+  border-bottom-color: var(--color-fg);
+  box-shadow: 0 1px 0 var(--color-fg);
+  color: var(--color-fg);
+}
+
+[data-shell="public"] .booking-editorial .booking-price {
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border: 0;
+  border-block: 1px solid var(--color-line-strong);
+  background: transparent;
+}
+
+[data-shell="public"] .booking-editorial .booking-price > span {
+  max-width: 22ch;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+[data-shell="public"] .booking-editorial .booking-price small {
+  margin-top: 0.35rem;
+  font-size: 0.6875rem;
+}
+
+[data-shell="public"] .booking-editorial .booking-price strong {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+[data-shell="public"] .booking-editorial .booking-step-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+[data-shell="public"] .booking-editorial .booking-step-panel {
+  min-width: 0;
+}
+
+[data-shell="public"] .booking-editorial legend {
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  letter-spacing: 0.16em;
+}
+
+[data-shell="public"] .booking-editorial fieldset {
+  min-width: 0;
+}
+
+[data-shell="public"] .booking-editorial .booking-package-options {
+  gap: 0;
+  border-top: 1px solid var(--color-line-strong);
+}
+
+[data-shell="public"] .booking-editorial .booking-choice {
+  min-width: 0;
+  padding: 1.35rem 1rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: transparent;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+[data-shell="public"] .booking-editorial .booking-package-options .booking-choice {
+  padding-block: 1.5rem;
+  border-width: 0 0 1px;
+}
+
+[data-shell="public"] .booking-editorial .booking-choice.border-accent,
+[data-shell="public"] .booking-editorial .booking-extra-choice:has(input:checked) {
+  border-color: var(--color-fg);
+  background: var(--color-elevated);
+}
+
+[data-shell="public"] .booking-editorial .booking-package-options .booking-choice > span > .font-medium {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 1.15;
+  margin-bottom: 0.5rem;
+}
+
+[data-shell="public"] .booking-editorial .booking-choice > span {
+  min-width: 0;
+}
+
+[data-shell="public"] .booking-editorial .booking-vehicle-options {
+  gap: 0.75rem;
+}
+
+[data-shell="public"] .booking-editorial input:is([type="radio"], [type="checkbox"]) {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-fg);
+}
+
+[data-shell="public"] .booking-editorial .booking-extras > summary,
+[data-shell="public"] .booking-editorial .booking-contact details > summary {
+  min-height: 3.5rem;
+  padding: 1rem 0;
+  border: 0;
+  border-block: 1px solid var(--color-line-strong);
+  color: var(--color-fg);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+[data-shell="public"] .booking-editorial details[open] > summary {
+  margin-bottom: 1.5rem;
+}
+
+[data-shell="public"] .booking-editorial .booking-extra-choice {
+  border-radius: 0;
+  padding: 1rem;
+  background: transparent;
+}
+
+[data-shell="public"] .booking-editorial .booking-contact {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+[data-shell="public"] .booking-editorial .booking-contact > .font-display {
+  font-size: 2.75rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+[data-shell="public"] .booking-editorial label[for] {
+  line-height: 1.6;
+}
+
+[data-shell="public"] .booking-editorial .input-line {
+  min-width: 0;
+  min-height: 3.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+[data-shell="public"] .booking-editorial textarea.input-line {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+[data-shell="public"] .booking-editorial .input-line:focus {
+  border-color: var(--color-fg);
+}
+
+[data-shell="public"] .booking-editorial :is(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  outline-color: var(--color-danger);
+}
+
+[data-shell="public"] .booking-editorial .booking-contact :is([role="status"], [role="alert"]) {
+  padding: 1rem;
+  border-left: 2px solid currentColor;
+  background: var(--color-surface);
+  line-height: 1.65;
+}
+
+[data-shell="public"] .booking-editorial .booking-summary {
+  gap: 1rem;
+  line-height: 1.65;
+}
+
+[data-shell="public"] .booking-editorial .booking-summary :is(dt, dd) {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-shell="public"] .booking-editorial .booking-contact section[aria-label="Optionale Fahrzeugfotos"] {
+  padding: 1.25rem;
+  border-color: var(--color-line-strong);
+  border-radius: 0;
+}
+
+[data-shell="public"] .booking-editorial input[type="file"] {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+[data-shell="public"] .booking-editorial input[type="file"]::file-selector-button {
+  max-width: 100%;
+  margin: 0.25rem 0.75rem 0.25rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: var(--color-elevated);
+  color: var(--color-fg);
+  font: inherit;
+}
+
+[data-shell="public"] .booking-editorial .booking-actions {
+  align-items: center;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--color-line-strong);
+}
+
+[data-shell="public"] .booking-editorial .btn,
+[data-shell="public"] .booking-editorial .btn:is(:hover, :active, :focus-visible) {
+  max-width: 100%;
+  min-height: 3.25rem;
+  border-radius: 0;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.5;
+  transform: none;
+  translate: none;
+  scale: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+[data-shell="public"] .booking-editorial .cta-shine::after {
+  display: none;
+}
+
+[data-shell="public"] .booking-editorial :focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 4px;
+}
+
+[data-shell="public"] .booking-editorial :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+@media (min-width: 960px) {
+  [data-shell="public"] .booking-editorial {
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.38fr);
+    column-gap: clamp(2.5rem, 6vw, 6rem);
+    row-gap: 2rem;
+    align-items: start;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-steps {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-bottom: 1rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-price {
+    position: sticky;
+    top: 7.5rem;
+    grid-column: 2;
+    grid-row: 2 / 5;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-block: 2rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-price strong {
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    overflow-wrap: anywhere;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-step-title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-step-panel {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-actions {
+    grid-column: 1;
+    grid-row: 4;
+  }
+}
+
+@media (max-width: 639px) {
+  [data-shell="public"] .booking-editorial {
+    gap: 1.5rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-steps {
+    gap: 0.75rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-steps button {
+    font-size: 0.6875rem;
+    overflow-wrap: anywhere;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-price {
+    gap: 1rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-price > span {
+    max-width: 18ch;
+    font-size: 0.6875rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-price strong {
+    font-size: 2.2rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-vehicle-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-shell="public"] .booking-editorial .booking-actions > .btn:last-child {
+    flex: 1 1 12rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  [data-shell="public"] .booking-editorial .booking-summary dd {
+    margin-bottom: 0.75rem;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shell="public"] .booking-editorial :is(.booking-choice, .btn, .input-line) {
+    transition: none;
+  }
+}

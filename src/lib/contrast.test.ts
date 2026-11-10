@@ -14,6 +14,22 @@ function token(name: string) {
 }
 
 describe("public text contrast WCAG 2.2 AA", () => {
+  it("keeps the editorial public palette readable on every public surface", () => {
+    const css = readFileSync(new URL("../styles/studio.css", import.meta.url), "utf8");
+    const publicToken = (name: string) => {
+      const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`));
+      assert.ok(match, `Public CSS token ${name} missing`);
+      return match[1];
+    };
+    for (const name of ["fg", "muted", "subtle"]) {
+      for (const surface of ["bg", "surface", "elevated"]) {
+        assert.ok(contrastRatio(publicToken(name), publicToken(surface)) >= 4.5,
+          `${name} must remain readable on ${surface}`);
+      }
+    }
+    assert.ok(contrastRatio(publicToken("accent-fg"), publicToken("accent")) >= 4.5);
+  });
+
   it("keeps danger, muted and subtle above 4.5:1 on all dark surfaces", () => {
     const fg = {
       danger: token("danger"),

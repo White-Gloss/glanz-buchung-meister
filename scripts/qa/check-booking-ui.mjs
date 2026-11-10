@@ -46,6 +46,7 @@ async function openBooking(page) {
   await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
   await dismissConsent(page);
   await page.locator("form.booking-flow").waitFor();
+  await placeBelowHeader(page, "form.booking-flow");
 }
 
 const flat = (value) => (value ?? "").replace(/\s+/g, " ").trim();
@@ -71,6 +72,114 @@ async function overflow(page) {
   );
 }
 
+async function placeBelowHeader(page, selector) {
+  const target = page.locator(selector).first();
+  await target.waitFor({ state: "visible" });
+  await page.evaluate(() => document.fonts.ready);
+  let geometry;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await target.evaluate((element) => {
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - headerBottom - 16, behavior: "instant" });
+      window.__qaBookingViewport = { top: element.getBoundingClientRect().top, headerBottom, since: performance.now() };
+    });
+    // Lazy content and fonts can change the position after the URL fragment was
+    // resolved. Confirm the real viewport position, not just display:visible.
+    await page.waitForFunction((target) => {
+      const element = document.querySelector(target);
+      if (!element) return false;
+      const top = element.getBoundingClientRect().top;
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      const probe = window.__qaBookingViewport;
+      if (Math.abs(top - probe.top) > 0.5 || Math.abs(headerBottom - probe.headerBottom) > 0.5) {
+        probe.top = top;
+        probe.headerBottom = headerBottom;
+        probe.since = performance.now();
+      }
+      return performance.now() - probe.since >= 200;
+    }, selector, { timeout: 5000 });
+    geometry = await target.evaluate((element) => ({
+      top: element.getBoundingClientRect().top,
+      headerBottom: document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0,
+      viewportHeight: innerHeight,
+    }));
+    if (Math.abs(geometry.top - geometry.headerBottom - 16) <= 2 && geometry.top < geometry.viewportHeight) return;
+  }
+  assert.fail(`${selector}: could not establish a stable position below the header: ${JSON.stringify(geometry)}`);
+}
+
+async function captureBookingStep(page, filename, { includeSteps = false } = {}) {
+  await placeBelowHeader(page, includeSteps ? "form.booking-flow" : ".booking-step-title");
+  const state = await page.locator("form.booking-flow").evaluate((form) => {
+    const title = form.querySelector(".booking-step-title");
+    const panel = form.querySelector(".booking-step-panel:not([hidden])");
+    const current = form.querySelector('.booking-steps button[aria-current="step"]');
+    const titleBox = title.getBoundingClientRect();
+    return {
+      title: title.textContent.replace(/\s+/g, " ").trim(),
+      current: current.textContent.replace(/^\s*\d+\.\s*/, "").replace(/\s+/g, " ").trim(),
+      titleVisible: titleBox.top >= (document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0) && titleBox.bottom < innerHeight,
+      panelVisible: panel.getBoundingClientRect().top < innerHeight,
+    };
+  });
+  assert.equal(state.title, state.current, "The screenshot must show the current booking step");
+  assert.ok(state.titleVisible && state.panelVisible,
+    `The current step heading and its form content must be in the screenshot: ${JSON.stringify(state)}`);
+  await page.screenshot({ path: `${output}/${filename}` });
+}
+
+async function bookingLayout(page, desktop) {
+  const geometry = await page.locator("form.booking-flow").evaluate((form) => {
+    const price = form.querySelector(".booking-price");
+    const panel = form.querySelector(".booking-step-panel:not([hidden])");
+    const title = form.querySelector(".booking-step-title");
+    return {
+      price: price.getBoundingClientRect().toJSON(),
+      panel: panel.getBoundingClientRect().toJSON(),
+      title: title.getBoundingClientRect().toJSON(),
+      pricePosition: getComputedStyle(price).position,
+    };
+  });
+  if (desktop) {
+    assert.equal(geometry.pricePosition, "sticky", "Desktop keeps the live price in its side column");
+    assert.ok(geometry.price.left >= geometry.panel.right,
+      "The desktop price summary must not cover the active form step");
+  } else {
+    assert.notEqual(geometry.pricePosition, "fixed", "The mobile price must not cover form controls");
+    assert.ok(geometry.price.bottom <= geometry.title.top + 1,
+      "The compact mobile price stays above the active step heading");
+  }
+  results.push(`${desktop ? "Desktop" : "Mobile"} price summary does not overlap the active form`);
+}
+
+async function capturePackageChapters(page) {
+  const section = page.locator("#pakete");
+  await page.waitForFunction(() => document.querySelector("#pakete")?.dataset.packageMotion === "scroll");
+  assert.equal(await section.locator(".package-editorial-body").count(), 3);
+  // Capture forward progression and then exercise reverse scrolling. All text
+  // stays in the document; only the matching image should occupy the stage.
+  for (const [position, index] of [0, 1, 2, 1].entries()) {
+    await section.locator(".package-editorial-body").nth(index).evaluate((body) => {
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      window.scrollTo({ top: window.scrollY + body.getBoundingClientRect().top - headerBottom - 16, behavior: "instant" });
+    });
+    await page.waitForFunction((activeIndex) => {
+      const pictures = [...document.querySelectorAll("#pakete .package-editorial-media")];
+      return pictures.length === 3 && pictures.every((picture, pictureIndex) => {
+        const opacity = Number(getComputedStyle(picture).opacity);
+        if (pictureIndex !== activeIndex) return picture.dataset.active === "false" && opacity < 0.01;
+        const image = picture.querySelector("img");
+        return picture.dataset.active === "true" && opacity > 0.99 && image?.complete && image.naturalWidth > 0;
+      });
+    }, index, { timeout: 10_000 });
+    const picture = section.locator(".package-editorial-media").nth(index);
+    assert.equal(await picture.evaluate((element) => getComputedStyle(element).position), "sticky");
+    assert.ok((await overflow(page)) <= 2, `Package chapter ${index + 1}: no horizontal overflow`);
+    await page.screenshot({ path: `${output}/desktop-package-${index + 1}${position === 3 ? "-reverse" : ""}.png` });
+  }
+  results.push("Package stages: three loaded images, correct forward/reverse selection, sticky desktop framing");
+}
+
 try {
   await prepareBrowserFixture({ scenario: "booking-ui" });
   // Test the real API limit, then give each unrelated browser scenario its own
@@ -92,6 +201,7 @@ try {
   {
     const { context, page, assets } = await openContext({ viewport: { width: 1280, height: 900 } });
     await openBooking(page);
+    await bookingLayout(page, true);
     const ids = await page
       .locator('input[type=checkbox][id^="extra-"]')
       .evaluateAll((inputs) => inputs.map((input) => input.id));
@@ -123,7 +233,7 @@ try {
     await step(1);
     await page.locator('input[name="klasse"][value="suv"]').check();
     await expectText(page, total, "585 €", "SUV · White-Gloss Signature + Felgen");
-    await page.screenshot({ path: `${output}/desktop-1280-auswahl.png` });
+    await captureBookingStep(page, "desktop-1280-auswahl.png", { includeSteps: true });
 
     await step(2);
     await page.locator("#extra-leder").check();
@@ -157,7 +267,7 @@ try {
     await step(3);
     await page.locator("#name").waitFor({ state: "visible" });
     assert.ok(await page.locator('button[type="submit"]').isVisible());
-    await page.screenshot({ path: `${output}/desktop-1280-kontakt.png` });
+    await captureBookingStep(page, "desktop-1280-kontakt.png");
     await step(2);
     assert.equal(await page.locator("#extra-felgen").isChecked(), true, "Selection is kept");
     results.push("Contact step reachable and reversible without losing the selection");
@@ -192,6 +302,7 @@ try {
       "Desktop motion loads GSAP on demand",
     );
     results.push("Desktop loads the scroll-motion chunk on demand");
+    await capturePackageChapters(page);
     await context.close();
   }
 
@@ -203,6 +314,8 @@ try {
       hasTouch: true,
     });
     await openBooking(page);
+    await bookingLayout(page, false);
+    await captureBookingStep(page, "mobile-390-auswahl.png", { includeSteps: true });
     await page.locator(".booking-steps button").nth(1).click();
     const extrasBox = page.locator("details.booking-extras");
     if (!(await extrasBox.evaluate((details) => details.open)))
@@ -211,18 +324,18 @@ try {
     await page.locator("#extra-leder").check();
     await expectText(page, ".booking-price strong", "597 €", "Mobile total");
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the extras step");
-    await page.locator("form.booking-flow").evaluate((form) => form.scrollIntoView());
+    await placeBelowHeader(page, "form.booking-flow");
     await page.waitForFunction(
       () => document.querySelector("[data-wa-float]")?.getAttribute("aria-hidden") === "true",
       undefined,
       { timeout: 5000 },
     );
     results.push("WhatsApp button hides over the lazily loaded booking form");
-    await page.screenshot({ path: `${output}/mobile-390-extras.png` });
+    await captureBookingStep(page, "mobile-390-extras.png");
     await page.locator(".booking-steps button").nth(2).click();
     await page.locator("#name").waitFor({ state: "visible" });
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the contact step");
-    await page.screenshot({ path: `${output}/mobile-390-kontakt.png` });
+    await captureBookingStep(page, "mobile-390-kontakt.png");
     assert.ok(
       !assets.some((path) => /\/assets\/(gsap|ScrollTrigger)-/.test(path)),
       "Phones never download the desktop motion chunk",
@@ -300,11 +413,32 @@ try {
         await page.screenshot({
           path: `${output}/${path === "/" ? "home" : "galerie"}-${width}.png`,
         });
+      if (path === "/") {
+        const packages = page.locator("#pakete");
+        assert.equal(await packages.getAttribute("data-package-motion"), null,
+          `Reduced motion @${width}: do not pin or crossfade the package chapters`);
+        const imageStates = await packages.locator(".package-editorial-media").evaluateAll((pictures) =>
+          pictures.map((picture) => ({ opacity: Number(getComputedStyle(picture).opacity), position: getComputedStyle(picture).position })),
+        );
+        assert.equal(imageStates.length, 3, `Reduced motion @${width}: retain all three package images`);
+        assert.ok(imageStates.every((image) => image.opacity === 1 && image.position !== "sticky"),
+          `Reduced motion @${width}: every package image remains visible in the normal document flow`);
+        for (const index of [0, 1, 2]) {
+          await packages.locator(".package-editorial-media").nth(index).scrollIntoViewIfNeeded();
+          await page.waitForFunction((imageIndex) => {
+            const image = document.querySelectorAll("#pakete .package-editorial-media img")[imageIndex];
+            return image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+          }, index, { timeout: 10_000 });
+        }
+        results.push(`Reduced motion @${width}: all three static package images loaded successfully`);
+        if (width === 1280) {
+          await placeBelowHeader(page, "#pakete .package-editorial-body");
+          await page.screenshot({ path: `${output}/desktop-packages-reduced-motion.png` });
+        }
+      }
     }
-    await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
-    await page.locator("form.booking-flow").waitFor();
-    await page.locator("form.booking-flow").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${output}/buchung-${width}.png` });
+    await openBooking(page);
+    await captureBookingStep(page, `buchung-${width}.png`, { includeSteps: true });
     results.push(`No horizontal overflow at ${width}px on ${paths.join(", ")}`);
     await context.close();
   }

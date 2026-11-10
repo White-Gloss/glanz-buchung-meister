@@ -25,8 +25,7 @@
 
 /* The animation control pauses the decorative CSS motion along with the video. */
 [data-motion-paused]::after,
-[data-motion-paused] .hero-image,
-[data-motion-paused] .scroll-hint span {
+[data-motion-paused] .hero-image {
   animation-play-state: paused !important;
 }
 
@@ -791,10 +790,6 @@
         "lede lede lede fini fini fini";
     }
   }
-
-  .ga-hero {
-    grid-area: hero;
-  }
   .ga-cera {
     grid-area: cera;
   }
@@ -891,55 +886,6 @@
       #0c1110;
   }
 
-  .campaign-hero {
-    background: #0c1110;
-  }
-
-  .campaign-hero::before {
-    position: absolute;
-    inset: 1rem;
-    z-index: 2;
-    border: 1px solid rgb(191 206 224 / 0.2);
-    content: "";
-    pointer-events: none;
-    mix-blend-mode: screen;
-  }
-
-  .campaign-hero-title {
-    max-width: 11ch;
-    font-size: clamp(3.15rem, 8.8vw, 8.3rem);
-    font-weight: 300;
-    letter-spacing: -0.065em;
-    line-height: 0.89;
-    text-transform: none;
-  }
-
-  .campaign-hero-title::first-line { color: var(--color-fg); }
-
-  .campaign-hero-brand {
-    color: var(--color-accent);
-    font-family: var(--font-display);
-    letter-spacing: 0.02em;
-  }
-
-  .hero-stage-media {
-    filter: contrast(1.08) saturate(0.58) brightness(0.64);
-  }
-
-  .hero-stage-veil {
-    background:
-      linear-gradient(90deg, rgb(12 17 16 / 0.84), rgb(12 17 16 / 0.18) 64%, rgb(12 17 16 / 0.5)),
-      linear-gradient(0deg, rgb(12 17 16 / 0.72), transparent 46%, rgb(12 17 16 / 0.22));
-  }
-
-  .hero-stage-veil::before {
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(115deg, transparent 0 9rem, rgb(191 206 224 / 0.035) 9.05rem 9.1rem);
-    content: "";
-    opacity: 0.5;
-  }
-
   .hero-follow {
     background: var(--color-surface);
     border-color: var(--color-line-strong);
@@ -1006,15 +952,10 @@
   }
 
   @media (max-width: 639px) {
-    .campaign-hero::before { inset: 0.65rem; }
-    .campaign-hero-copy { padding-bottom: 3.25rem; }
-    .campaign-hero-title { max-width: 9ch; }
     .gd-pack:hover { padding-inline: 0.25rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .campaign-hero::before,
-    .hero-stage-veil::before { display: none; }
     .hero-follow li:hover,
     .gd-pack:hover { transform: none; }
     .home-scroll-progress { transform: scaleX(0); }
@@ -1282,190 +1223,6 @@
     z-index: 1;
   }
 
-  .scroll-hint {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    z-index: 3;
-    display: grid;
-    place-items: center;
-    width: 1.7rem;
-    height: 2.55rem;
-    border: 1px solid rgb(255 255 255 / 0.42);
-    border-radius: 999px;
-    transform: translateX(-50%);
-    pointer-events: none;
-  }
-
-  .scroll-hint span {
-    display: block;
-    width: 3px;
-    height: 7px;
-    margin-top: -0.55rem;
-    border-radius: 999px;
-    background: #fff;
-    animation: scroll-dot 1.7s var(--ease-out-quart) infinite;
-  }
-
-  .hero-stage {
-    position: relative;
-    min-height: 100svh;
-    overflow: hidden;
-  }
-
-  .hero-stage-media {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: -10%;
-    height: 120%;
-    width: 100%;
-    will-change: transform;
-    filter: contrast(1.12) saturate(0.72) brightness(0.72);
-    transform: translate3d(0, calc(var(--scroll-p, 0) * 18%), 0)
-      scale(calc(1 + var(--scroll-p, 0) * 0.16));
-  }
-
-  .hero-stage-media > .hero-image {
-    animation: hero-ken 8.5s var(--ease-out-quart) both;
-    transform-origin: 62% 50%;
-  }
-
-  .hero-stage-veil {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background:
-      linear-gradient(90deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.18) 58%, rgb(0 0 0 / 0.38) 100%),
-      linear-gradient(0deg, rgb(0 0 0 / 0.48) 0%, transparent 44%, rgb(0 0 0 / 0.28) 100%);
-    pointer-events: none;
-  }
-
-  .hero-stage-veil::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: #000;
-    opacity: calc(var(--scroll-p, 0) * 0.62);
-  }
-
-  .hero-stage-copy {
-    position: relative;
-    z-index: 2;
-    will-change: opacity, transform;
-    opacity: calc(1 - var(--scroll-p, 0) * 1.45);
-    transform: translate3d(0, calc(var(--scroll-p, 0) * -2.75rem), 0)
-      scale(calc(1 - var(--scroll-p, 0) * 0.035));
-  }
-
-  .campaign-hero-copy {
-    display: flex;
-    min-height: 100svh;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding: 7rem 1.5rem clamp(4rem, 8vh, 6.5rem);
-    text-align: left;
-  }
-
-  .campaign-hero-title {
-    max-width: 14ch;
-    color: #fff;
-    font-family: var(--font-sans);
-    font-size: clamp(2.65rem, 6.25vw, 6.4rem);
-    font-weight: 500;
-    letter-spacing: -0.045em;
-    line-height: 0.96;
-    text-transform: uppercase;
-  }
-
-  .campaign-hero-meta {
-    margin-top: clamp(2.5rem, 6vh, 4.5rem);
-  }
-
-  .campaign-hero-brand {
-    color: #fff;
-    font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-
-  .campaign-hero-location {
-    margin-top: 0.5rem;
-    color: rgb(255 255 255 / 0.76);
-    font-size: 0.875rem;
-    font-weight: 400;
-  }
-
-  .campaign-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .campaign-hero-copy {
-      padding-right: 7vw;
-      padding-bottom: clamp(4.5rem, 10vh, 7.5rem);
-      padding-left: clamp(4rem, 7vw, 8rem);
-    }
-  }
-
-  @media (max-width: 639px) {
-    .campaign-hero-title {
-      font-size: clamp(2.4rem, 12vw, 3.8rem);
-    }
-
-    .campaign-hero-actions {
-      width: 100%;
-    }
-
-    .campaign-hero-actions > a {
-      flex: 1 1 10rem;
-    }
-  }
-
-  .hero-stage .scroll-hint {
-    opacity: calc(1 - var(--scroll-p, 0) * 3.2);
-  }
-
-  .hero-rule {
-    display: block;
-    width: 2.4rem;
-    height: 1px;
-    margin: 1.7rem auto 0;
-    background: rgb(255 255 255 / 0.38);
-  }
-
-  .hero-in {
-    animation: hero-in 1.15s var(--ease-out-quart) both;
-    animation-delay: calc(var(--d, 0) * 110ms + 180ms);
-  }
-
-  @keyframes hero-in {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 26px, 0);
-      filter: blur(12px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-      filter: none;
-    }
-  }
-
-  @keyframes hero-ken {
-    from {
-      transform: scale(1.12);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
-
-  .hero-stage::after,
   .film-chapter::after {
     content: "";
     position: absolute;
@@ -1478,10 +1235,6 @@
     background-size: 180px 180px;
     /* Brief decorative motion, then a still texture on pages without a video control. */
     animation: grain-shift 0.85s steps(2) 5;
-  }
-
-  .film-grain {
-    display: none;
   }
 
   .film-chapter {
@@ -1561,7 +1314,6 @@
     }
   }
 
-  .hero-stage::before,
   .film-chapter::before {
     content: "";
     position: absolute;
@@ -1578,7 +1330,6 @@
     );
   }
 
-  main > .hero-stage + *,
   main > .film-chapter + * {
     position: relative;
     z-index: 4;
@@ -1599,34 +1350,6 @@
       }
 
       @supports (animation-timeline: scroll()) {
-        .hero-stage-media {
-          transform: none;
-          animation: hero-media-pan linear both;
-          animation-timeline: scroll();
-          animation-range: 0vh 100vh;
-        }
-
-        .hero-stage-copy {
-          opacity: 1;
-          transform: none;
-          animation: hero-copy-out linear both;
-          animation-timeline: scroll();
-          animation-range: 0vh 72vh;
-        }
-
-        .hero-stage-veil::after {
-          opacity: 0;
-          animation: hero-veil-out linear both;
-          animation-timeline: scroll();
-          animation-range: 0vh 90vh;
-        }
-
-        .hero-stage .scroll-hint {
-          opacity: 1;
-          animation: hero-hint-out linear both;
-          animation-timeline: scroll();
-          animation-range: 0vh 28vh;
-        }
 
         .hero-follow {
           animation: hero-follow-in linear both;
@@ -1634,37 +1357,6 @@
           animation-range: 8vh 58vh;
         }
       }
-    }
-  }
-
-  @keyframes hero-media-pan {
-    from {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    to {
-      transform: translate3d(0, 16%, 0) scale(1.14);
-    }
-  }
-
-  @keyframes hero-copy-out {
-    to {
-      opacity: 0;
-      transform: translate3d(0, -2.75rem, 0) scale(0.97);
-    }
-  }
-
-  @keyframes hero-veil-out {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 0.7;
-    }
-  }
-
-  @keyframes hero-hint-out {
-    to {
-      opacity: 0;
     }
   }
 
@@ -1857,20 +1549,6 @@
     }
   }
 
-  @keyframes scroll-dot {
-    0% {
-      opacity: 0.2;
-      transform: translateY(0);
-    }
-    40% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-  }
-
   .nav-link {
     position: relative;
     display: inline-flex;
@@ -2057,36 +1735,15 @@
   /* Phones: skip cinematic cost (grain, ken-burns, delayed copy, filters)
      so LCP is the still hero/shot instead of a late-fading headline. */
   @media (max-width: 767px) {
-    .hero-stage::after,
-    .film-chapter::after,
-    .film-grain {
+    .film-chapter::after {
       display: none;
     }
 
-    .hero-in {
-      animation: none;
-      opacity: 1;
-      filter: none;
-      transform: none;
-    }
-
-    .hero-stage-media > .hero-image {
-      animation: none;
-    }
-
-    .hero-stage-media,
     .film-chapter-media {
       top: 0;
       height: 100%;
       will-change: auto;
       filter: none;
-      transform: none;
-    }
-
-    .hero-stage-copy {
-      will-change: auto;
-      filter: none;
-      opacity: 1;
       transform: none;
     }
 
@@ -2112,7 +1769,6 @@
       animation: none;
     }
 
-    .scroll-hint span,
     .film-menu-shot {
       animation: none;
       transition: none;
@@ -2126,23 +1782,14 @@
       transition: none;
     }
 
-    .hero-in,
-    .hero-stage::after,
     .film-chapter::after,
-    .film-grain,
     .site-header {
       animation: none;
       opacity: 1;
       filter: none;
     }
 
-    .hero-stage-media > .hero-image {
-      animation: none;
-    }
-
-    .hero-stage-media,
-    .film-chapter-media,
-    .hero-stage-copy {
+    .film-chapter-media {
       transform: none !important;
       opacity: 1 !important;
       will-change: auto;
@@ -2431,37 +2078,6 @@
   }
 }
 
-[data-home="polish"] .campaign-hero {
-  min-height: 100svh;
-}
-
-[data-home="polish"] .campaign-hero .campaign-hero-copy {
-  min-height: 100svh;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 7rem 1.5rem clamp(4rem, 8vh, 6.5rem);
-  text-align: left;
-}
-
-[data-shell="public"] .campaign-hero-title {
-  width: min(20ch, 100%);
-  max-width: none;
-  font-size: clamp(2.5rem, 4.15vw, 5rem);
-  overflow-wrap: normal;
-  hyphens: none;
-  text-align: left;
-  text-wrap: wrap;
-  word-break: keep-all;
-}
-
-@media (min-width: 768px) {
-  [data-home="polish"] .campaign-hero .campaign-hero-copy {
-    padding-right: 7vw;
-    padding-bottom: clamp(4.5rem, 10vh, 7.5rem);
-    padding-left: clamp(4rem, 7vw, 8rem);
-  }
-}
-
 /* German service names must wrap inside narrow cards and navigation columns. */
 [data-shell="public"]
   :is(
@@ -2485,34 +2101,7 @@
 
 /* Focused homepage entry and request flow. The price stays in document flow so
    the mobile keyboard and controls never have to compete with a bottom bar. */
-.hero-intro {
-  min-height: auto;
-}
-.hero-intro .hero-stage-copy {
-  min-height: min(42rem, 85svh);
-  z-index: 4;
-}
 /* Non-polish pages keep the static hero follow-up. Homepage polish overrides below. */
-main:not([data-home="polish"]) > .hero-intro + .hero-follow {
-  margin-top: 0;
-  opacity: 1;
-  transform: none;
-  animation: none;
-}
-main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
-  opacity: 1;
-  transform: none;
-  animation: none;
-}
-.hero-title {
-  font-size: clamp(2rem, 5vw, 4rem);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}
-.hero-intro .hero-stage-veil {
-  background: linear-gradient(#0009, #0008 55%, #000);
-}
 .booking-flow {
   display: grid;
   gap: 1.5rem;
@@ -2596,11 +2185,6 @@ main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
   overflow-wrap: anywhere;
 }
 @media (max-width: 639px) {
-  .hero-intro .hero-stage-copy {
-    min-height: auto;
-    padding-top: 7rem;
-    padding-bottom: 5rem;
-  }
   .booking-steps button {
     font-size: 0.875rem;
   }
@@ -2666,10 +2250,6 @@ main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
 /* Prefer JS --home-hero-p over CSS scroll-timeline hero pans on the homepage. */
 @media (min-width: 768px) {
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    [data-home="polish"] .hero-intro .hero-stage-media,
-    [data-home="polish"] .hero-intro .hero-stage-copy,
-    [data-home="polish"] .hero-intro .hero-stage-veil::after,
-    [data-home="polish"] .hero-intro .scroll-hint,
     [data-home="polish"] > .hero-follow {
       animation: none;
     }
@@ -2679,27 +2259,6 @@ main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
 /* Hero scroll: gentle dim + scale as the next chapter arrives. */
 @media (min-width: 768px) {
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    [data-home="polish"] .hero-intro .hero-stage-media[data-parallax] {
-      transform: translate3d(0, calc(var(--home-hero-p, 0) * 12%), 0)
-        scale(calc(1 + var(--home-hero-p, 0) * 0.06));
-      will-change: transform;
-    }
-
-    [data-home="polish"] .hero-intro .hero-stage-copy {
-      opacity: calc(1 - var(--home-hero-p, 0) * 0.72);
-      transform: translate3d(0, calc(var(--home-hero-p, 0) * -1.6rem), 0)
-        scale(calc(1 - var(--home-hero-p, 0) * 0.02));
-      will-change: opacity, transform;
-      /* Keep entrance visible until scroll starts; entrance sets children. */
-    }
-
-    [data-home="polish"] .hero-intro .hero-stage-veil {
-      opacity: calc(1 + var(--home-hero-p, 0) * 0.25);
-    }
-
-    [data-home="polish"] .hero-intro .scroll-hint {
-      opacity: calc(1 - var(--home-hero-p, 0) * 1.4);
-    }
 
     [data-home="polish"] > .hero-follow {
       margin-top: 0;
@@ -2829,8 +2388,6 @@ main:not([data-home="polish"]) .hero-intro .hero-stage-copy {
     filter: none !important;
   }
 
-  [data-home="polish"] .hero-intro .hero-stage-media[data-parallax],
-  [data-home="polish"] .hero-intro .hero-stage-copy,
   [data-home="polish"] > .hero-follow {
     opacity: 1 !important;
     transform: none !important;

@@ -228,7 +228,7 @@ test("poster is displayed before any video download; small screens choose the sm
   assert.equal(h.downloads.length, 0);
   h.poster.complete = true;
   h.poster.dispatchEvent(new Event("load"));
-  assert.deepEqual(h.downloads, ["/media/scroll-film/classic-mobile-540.mp4"]);
+  assert.deepEqual(h.downloads, [scrollFilm.mobileVideo]);
   h.load();
   assert.equal(h.video.dataset.visible, "true");
   h.cleanup();

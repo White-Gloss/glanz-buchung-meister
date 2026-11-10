@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { packageServiceSlug, packages, site } from "@/data/site";
 import { customerPhotos } from "@/data/customer-photos";
 import { money } from "@/lib/utils";
 import { IconArrowRight } from "./icons";
 import { RevealLines } from "./reveal-lines";
+import "@/styles/package-editorial.css";
 
 const photos = ["customer-14", "customer-05", "customer-09"].map((id) =>
   customerPhotos.find((photo) => photo.id === id)!,
@@ -14,23 +16,90 @@ const packageGoals = [
   "Der spürbare Unterschied – für deutlich mehr Glanz und ein rundum gepflegtes Fahrzeug.",
   "Langfristig besonders – für anspruchsvolle Lackkorrektur und dauerhaften Schutz.",
 ];
-// Bento-Breiten aus studio.css: Container min(90vw, 1380px), ab 760 px zwei
-// Spalten (Abstand 1.25rem), Keramikschutz über die volle Breite mit 1.15/2.15
-// Bildanteil. Die 12 % Parallaxe-Überskalierung ist eingerechnet.
-const cardPhotoSizes =
-  "(min-width: 760px) calc((min(90vw, 1380px) - 1.25rem) / 2 * 1.12), calc(100vw - 2.5rem)";
-const featurePhotoSizes =
-  "(min-width: 760px) calc(min(90vw, 1380px) * 0.6), calc(100vw - 2.5rem)";
+const photoSizes =
+  "(min-width: 960px) min(46vw, 736px), (min-width: 640px) 90vw, calc(100vw - 2.5rem)";
 
 /**
- * Drei Pakete als Bento: 01 und 02 nebeneinander, 03 (Keramikschutz) als
- * breite Abschlusskarte mit Lichtkante. Die DOM-Reihenfolge bleibt 01 → 03,
- * damit Tastatur und Screenreader der Preisstaffel folgen. Die Bildparallaxe
- * steuert HomePolish über `data-parallax-frame`.
+ * Each package keeps its own image and complete copy in DOM order. Desktop
+ * progressively places those same images in one sticky stage; no duplicated
+ * content, scroll hijacking or animation dependency is needed. Without JS,
+ * on mobile and with reduced motion, all three chapters remain static.
  */
 export function PackageShowcase() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const media = window.matchMedia(
+      "(min-width: 960px) and (prefers-reduced-motion: no-preference)",
+    );
+    const chapters = [...section.querySelectorAll<HTMLElement>(".package-editorial-body")];
+    const pictures = [...section.querySelectorAll<HTMLElement>(".package-editorial-media")];
+    let frame = 0;
+    let nearby = true;
+    let current = -1;
+
+    const paint = () => {
+      frame = 0;
+      if (!media.matches || !nearby) return;
+      const readingLine = window.innerHeight * 0.55;
+      let next = 0;
+      chapters.forEach((chapter, index) => {
+        if (chapter.getBoundingClientRect().top <= readingLine) next = index;
+      });
+      if (current === next) return;
+      current = next;
+      pictures.forEach((picture, index) => {
+        picture.dataset.active = String(index === current);
+      });
+    };
+    const schedule = () => {
+      if (!frame && nearby && media.matches) frame = window.requestAnimationFrame(paint);
+    };
+    const syncMotion = () => {
+      current = -1;
+      if (media.matches) {
+        section.dataset.packageMotion = "scroll";
+        paint();
+      } else {
+        delete section.dataset.packageMotion;
+        pictures.forEach((picture) => delete picture.dataset.active);
+      }
+    };
+    const visibility = new IntersectionObserver(
+      ([entry]) => {
+        nearby = entry.isIntersecting;
+        if (nearby) schedule();
+      },
+      { rootMargin: "100% 0px" },
+    );
+    visibility.observe(section);
+    const resize = new ResizeObserver(schedule);
+    resize.observe(section);
+    syncMotion();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    media.addEventListener("change", syncMotion);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      media.removeEventListener("change", syncMotion);
+      visibility.disconnect();
+      resize.disconnect();
+      delete section.dataset.packageMotion;
+      pictures.forEach((picture) => delete picture.dataset.active);
+    };
+  }, []);
+
   return (
-    <section id="pakete" className="atelier-packages" aria-labelledby="packages-title">
+    <section
+      ref={sectionRef}
+      id="pakete"
+      className="atelier-packages package-editorial"
+      aria-labelledby="packages-title"
+    >
       <header className="atelier-heading">
         <div>
           <p className="kicker">Pakete</p>
@@ -49,18 +118,17 @@ export function PackageShowcase() {
           Preise und Zusatzleistungen <IconArrowRight aria-hidden />
         </Link>
       </header>
-      <div className="pack-bento">
+      <div className="package-editorial-track">
         {packages.map((pack, index) => {
           const photo = photos[index];
-          const feature = index === packages.length - 1;
           return (
-            <article className="pack-card glass glass-interactive" key={pack.id}>
-              <figure className="pack-card-media" data-parallax-frame>
+            <article className="package-editorial-chapter" key={pack.id}>
+              <figure className="package-editorial-media">
                 <img
                   style={{ objectPosition: focalPoints[index] }}
                   src={photo.src}
                   srcSet={photo.srcSet}
-                  sizes={feature ? featurePhotoSizes : cardPhotoSizes}
+                  sizes={photoSizes}
                   alt={photo.alt}
                   width={photo.width}
                   height={photo.height}
@@ -72,7 +140,7 @@ export function PackageShowcase() {
                   <span>{String(index + 1).padStart(2, "0")} / 03</span>
                 </figcaption>
               </figure>
-              <div className="pack-card-body">
+              <div className="package-editorial-body">
                 <div className="package-eyebrow">
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <span>{pack.searchLabel}</span>
@@ -81,7 +149,7 @@ export function PackageShowcase() {
                 <h3>{pack.name}</h3>
                 <p className="package-goal">{packageGoals[index]}</p>
                 <p className="package-description">{pack.kicker}</p>
-                <div className="pack-card-foot">
+                <div className="package-editorial-foot">
                   <div className="package-price">
                     <span>ab</span>
                     <strong>{money(pack.price)} €</strong>
