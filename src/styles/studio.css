@@ -328,7 +328,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .hero-follow li { padding-block: 2.4rem; }
 [data-shell="public"] .hero-follow .font-display { font-size: clamp(1.6rem, 2.5vw, 2.6rem); }
 
-
 [data-shell="public"] .home-jump-links { justify-self: end; }
 [data-shell="public"] .home-jump-links a { font-size: .8125rem; }
 [data-shell="public"] .workshop-personal { margin: 0; background: var(--color-bg); border-block: 1px solid var(--color-line); }
@@ -415,8 +414,7 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   [data-shell="public"] .page-hero .film-chapter-media { grid-column: 1; grid-row: 2; min-height: 0; aspect-ratio: 16 / 10; }
   [data-shell="public"] .workshop-personal .film-chapter-media { min-height: 0; aspect-ratio: 16 / 10; }
   [data-shell="public"] .workshop-personal .film-chapter-copy { padding: 3.5rem 1.5rem; }
-  
-  
+
   [data-shell="public"] .home-jump-links { justify-self: start; }
 }
 @media (max-width: 639px) {
@@ -429,23 +427,17 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   [data-shell="public"] .scroll-film[data-motion="scroll"],
   [data-shell="public"] .scroll-film[data-motion="fallback"] { height: 180svh; }
   [data-shell="public"] .scroll-film-stage { min-height: 660px; }
-  
-  
-  
-  
+
   [data-shell="public"] .scroll-film-cta { margin-top: 1.25rem; gap: 1rem; }
   [data-shell="public"] .scroll-film-prices { font-size: .6875rem; padding-inline: .6rem; margin-left: 0; }
-  
-  
+
   [data-shell="public"] .scroll-film-bottom { gap: .7rem; }
   [data-shell="public"] :is(.scroll-film-skip, .scroll-film-pause) { font-size: .5625rem; letter-spacing: .02em; }
-  
-  
+
   [data-shell="public"] .hero-follow .gd-stats { padding-inline: 0; }
   [data-shell="public"] .hero-follow li { padding: 1.6rem 1.25rem; }
   [data-shell="public"] .hero-follow .font-display { font-size: 1.7rem; }
-  
-  
+
   [data-shell="public"] .home-jump-links { width: 100%; }
   [data-shell="public"] .home-jump-links a { width: 100%; }
   [data-shell="public"] .wg-home-results-media .wg-video-card:nth-child(n) { padding-top: 0; }
@@ -460,23 +452,19 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   [data-shell="public"] .scroll-film-stage { height: 42rem; min-height: 42rem; }
   /* This deliberately taller stage scrolls natively. Start the copy below the
    * fixed header so its first line is visible before the visitor scrolls. */
-  
-  
+
 }
 /* Keep the complete first-visit title/actions above the consent bar on laptops.
  * Viewport-only sizing avoids a font-size shift when consent is hydrated. */
 @media (min-width: 960px) and (max-height: 800px) {
-  
-  
-  
-  
+
   [data-shell="public"] .scroll-film-cta { margin-top: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-shell="public"] .scroll-film[data-motion] { height: auto; }
   [data-shell="public"] .scroll-film-stage { position: relative; }
   .hero-word { animation: none; }
-  
+
 }
 
 /* 6. Abschnitts-Headlines: maskierte Zeilen-Reveals ------------------------- */
