@@ -67,7 +67,8 @@ export function PackageShowcase() {
       } else {
         delete section.dataset.packageMotion;
         pictures.forEach((picture) => delete picture.dataset.active);
-      atmosphere.forEach((picture) => delete picture.dataset.active);
+
+        atmosphere.forEach((picture) => delete picture.dataset.active);
       }
     };
     const visibility = new IntersectionObserver(
@@ -93,7 +94,8 @@ export function PackageShowcase() {
       resize.disconnect();
       delete section.dataset.packageMotion;
       pictures.forEach((picture) => delete picture.dataset.active);
-        atmosphere.forEach((picture) => delete picture.dataset.active);
+
+      atmosphere.forEach((picture) => delete picture.dataset.active);
     };
   }, []);
 
