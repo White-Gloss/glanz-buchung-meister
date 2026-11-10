@@ -52,6 +52,69 @@ test("the guard preserves repeated copy occurrences, not merely unique words", (
   });
 });
 
+const approvedCtas = [
+  { file: "src/components/site-chrome.tsx", className: "header-film-booking", oldLabel: "Termin anfragen" },
+  { file: "src/components/scroll-film-hero.tsx", className: "scroll-film-cta", oldLabel: "Fahrzeug verwandeln lassen" },
+];
+function ctaFixture({ file, className, oldLabel }) {
+  const originalLink = `<Link to="/" hash="buchung" className="${className}">${oldLabel}<IconArrowRight aria-hidden /></Link>`;
+  const approvedLink = originalLink.replace(oldLabel, "Jetzt Termin anfragen");
+  const before = fixture.replace("<LazyGoogleReviews />", `${originalLink}<LazyGoogleReviews />`);
+  const after = before.replace(originalLink, approvedLink);
+  const compare = (current, original = before) => compareSource(original, current, file, { approvedCtaLabels: true });
+  return { before, after, originalLink, approvedLink, compare };
+}
+
+test("exactly the two approved CTA literals are replaced without changing source baselines", () => {
+  for (const approval of approvedCtas) {
+    const { before, after, compare } = ctaFixture(approval);
+    assert.deepEqual(compare(after), []);
+    assert.ok(compareSource(before, after, approval.file).some((entry) => entry.kind === "text"), "An ordinary/custom-base comparison still uses its own original text.");
+    assert.ok(compareSource(before, after, "src/routes/index.tsx", { approvedCtaLabels: true }).some((entry) => entry.kind === "text"), "No other file inherits the CTA approval.");
+  }
+});
+
+test("approved CTA labels must remain on their original controls", () => {
+  for (const approval of approvedCtas) {
+    const { before, after, originalLink, approvedLink, compare } = ctaFixture(approval);
+    for (const current of [
+      before,
+      after.replace(approvedLink, ""),
+      after.replace("Jetzt Termin anfragen", "Termin auswählen"),
+      after.replace(approvedLink, originalLink).replace(">Termin anfragen</Link>", ">Jetzt Termin anfragen</Link>"),
+    ]) assert.ok(compare(current).some((entry) => entry.kind === "approved-cta"), "Deletion, reversion and a label moved to another control must fail.");
+    assert.ok(compare(after.replace("Jetzt Termin anfragen", "")).some((entry) => entry.kind === "text" && entry.value === "Jetzt Termin anfragen"));
+    assert.ok(compare(after, after).some((entry) => entry.kind === "approved-cta"), "A missing original literal must fail closed, not silently become a new baseline.");
+  }
+});
+
+test("CTA approval preserves other occurrences, marketing copy, SEO and links", () => {
+  for (const approval of approvedCtas) {
+    const { after, compare } = ctaFixture(approval);
+    for (const [oldText, newText, kind] of [
+      [">Termin anfragen</Link>", ">Jetzt Termin anfragen</Link>", "text"],
+      ["Persönlich geprüft.", "Neue Werbeaussage.", "text"],
+      ["Fahrzeugpflege in Horb", "Geänderte Beschreibung", "seo"],
+      ['paket: "premium"', 'paket: "basis"', "links"],
+    ]) assert.ok(compare(after.replace(oldText, newText)).some((entry) => entry.kind === kind));
+  }
+});
+
+test("CTA scope rejects ambiguous classes, duplicated controls, extra copy and swapped link destinations", () => {
+  for (const approval of approvedCtas) {
+    const { after, approvedLink, compare } = ctaFixture(approval);
+    for (const current of [
+      after.replace(`className="${approval.className}"`, `className="${approval.className}-other"`),
+      after.replace(approvedLink, approvedLink + approvedLink),
+      after.replace(approvedLink, `${approvedLink}<Link to="/" hash="buchung" className="${approval.className}" />`),
+      after.replace("Jetzt Termin anfragen", "Jetzt Termin anfragen<span>Anderer CTA</span>"),
+      after.replace(approvedLink, approvedLink.replaceAll("Link", "div")),
+      after.replace('to="/preise"', 'to="/"').replace(`to="/" hash="buchung" className="${approval.className}"`, `to="/preise" hash="buchung" className="${approval.className}"`),
+    ]) assert.ok(compare(current).some((entry) => entry.kind === "approved-cta"));
+    assert.deepEqual(compare(after.replace(`className="${approval.className}"`, `className="button ${approval.className} large"`)), []);
+  }
+});
+
 test("heading levels and dynamic heading expressions are protected", () => {
   assert.ok(differences(fixture.replace("<h2>Unsere Pakete</h2>", "<h3>Unsere Pakete</h3>")).some((entry) => entry.kind === "headings"));
   const before = "const Page = () => <h1>{service.title}</h1>;";
