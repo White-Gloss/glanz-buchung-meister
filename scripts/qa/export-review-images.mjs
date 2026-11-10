@@ -12,12 +12,16 @@ const files = [
   "hero-stability/desktop-consent-rejected.png",
   "hero-stability/compact-desktop-consent-rejected.png",
   "hero-stability/mobile-consent-rejected.png",
+  "hero-stability/landscape-first-visit.png",
   "booking-ui/desktop-package-1.png",
   "booking-ui/desktop-package-2.png",
   "booking-ui/desktop-package-3.png",
   "booking-ui/desktop-packages-reduced-motion.png",
+  "booking-ui/desktop-1280-auswahl.png",
+  "booking-ui/desktop-1280-kontakt.png",
   "booking-ui/mobile-390-auswahl.png",
-  "review-header-390.png",
+  "booking-ui/mobile-390-extras.png",
+  "booking-ui/mobile-390-kontakt.png",
   "mobile-390--abholservice-nagold.png",
   // The independent Studio job produces only these fixtures. Keep its existing
   // evidence available without adding another five images to the public run.
@@ -31,7 +35,7 @@ const output = resolve(".qa-output/review-images");
 await mkdir(output, { recursive: true });
 let exported = 0;
 for (const file of files) {
-  if (exported >= 10) break;
+  if (exported >= 14) break;
   let source;
   try { source = await readFile(resolve(".qa-output", file)); }
   catch (error) {

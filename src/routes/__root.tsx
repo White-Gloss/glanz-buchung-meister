@@ -21,11 +21,13 @@ export const Route = createRootRoute({
     const app = matches.some((match: AnyRouteMatch) =>
       /^\/(admin|login)(\/|$)/.test(match.routeId),
     );
-    // Two small, self-hosted variable fonts cover the public typography.
+    // The public first viewport uses Cormorant 400 and Geist's UI weights.
+    // Other Cormorant weights remain available on demand, without preloading
+    // the larger variable file alongside the exact regular face.
     // Operational screens retain their existing Barlow family.
     const fontPreloads = (app
       ? ["barlow-400", "barlow-300"]
-      : ["cormorant-garamond-latin-variable", "geist-latin-variable"]
+      : ["cormorant-garamond-latin-400", "geist-latin-variable"]
     ).map((name) => ({
       rel: "preload",
       href: `/fonts/${name}.woff2`,

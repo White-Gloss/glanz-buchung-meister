@@ -10,6 +10,15 @@
   font-display: swap;
   src: url("/fonts/cormorant-garamond-latin-variable.woff2") format("woff2");
 }
+/* Prefer the smaller exact regular face; keep other weights available when
+ * requested by a page. This face follows the overlapping variable range. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-400.woff2") format("woff2");
+}
 @font-face {
   font-family: "Geist";
   font-style: normal;
@@ -63,6 +72,9 @@
   text-wrap: balance;
   font-feature-settings: "kern" 1, "liga" 1;
 }
+/* The inherited Barlow utility defaults to 600. Public serif labels use the
+ * same regular weight as their headings, including the first-viewport stats. */
+[data-shell="public"] .font-display { font-weight: 400; }
 [data-shell="public"] :is(.heading-page, .page-hero .heading-page) {
   font-size: clamp(3.1rem, 6.4vw, 6.4rem);
   line-height: 1.02;
@@ -83,7 +95,9 @@
   letter-spacing: .18em;
   line-height: 1.7;
 }
-[data-shell="public"] p { text-wrap: pretty; }
+/* Keep paragraph optimisation off interactive overlays and forms: the
+ * consent copy is rendered during hydration and should wrap in one pass. */
+[data-shell="public"] :is(.home-intro > p, .workshop-quote, .prose p) { text-wrap: pretty; }
 [data-shell="public"] :is(.package-price, .city-chip-meta, .gd-stats, input) {
   font-variant-numeric: lining-nums tabular-nums;
 }
@@ -465,7 +479,9 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 @media (max-height: 600px) and (orientation: landscape) {
   [data-shell="public"] .scroll-film[data-motion] { height: auto; }
   [data-shell="public"] .scroll-film-stage { height: 42rem; min-height: 42rem; }
-  [data-shell="public"] .scroll-film-copy { padding-top: 110px; padding-bottom: 6rem; }
+  /* This deliberately taller stage scrolls natively. Start the copy below the
+   * fixed header so its first line is visible before the visitor scrolls. */
+  [data-shell="public"] .scroll-film-copy { align-items: flex-start; padding-top: 110px; padding-bottom: 6rem; }
   [data-shell="public"] .scroll-film-copy h1 { font-size: 3.4rem; }
 }
 /* Keep the complete first-visit title/actions above the consent bar on laptops.

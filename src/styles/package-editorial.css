@@ -98,6 +98,7 @@
   line-height: 1;
   letter-spacing: -0.035em;
   overflow-wrap: normal;
+  text-wrap: wrap;
 }
 
 .package-editorial .package-goal {

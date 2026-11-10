@@ -46,6 +46,7 @@ async function openBooking(page) {
   await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
   await dismissConsent(page);
   await page.locator("form.booking-flow").waitFor();
+  await placeBelowHeader(page, "form.booking-flow");
 }
 
 const flat = (value) => (value ?? "").replace(/\s+/g, " ").trim();
@@ -69,6 +70,62 @@ async function overflow(page) {
   return page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
+}
+
+async function placeBelowHeader(page, selector) {
+  const target = page.locator(selector).first();
+  await target.waitFor({ state: "visible" });
+  await page.evaluate(() => document.fonts.ready);
+  let geometry;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await target.evaluate((element) => {
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - headerBottom - 16, behavior: "instant" });
+      window.__qaBookingViewport = { top: element.getBoundingClientRect().top, headerBottom, since: performance.now() };
+    });
+    // Lazy content and fonts can change the position after the URL fragment was
+    // resolved. Confirm the real viewport position, not just display:visible.
+    await page.waitForFunction((target) => {
+      const element = document.querySelector(target);
+      if (!element) return false;
+      const top = element.getBoundingClientRect().top;
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      const probe = window.__qaBookingViewport;
+      if (Math.abs(top - probe.top) > 0.5 || Math.abs(headerBottom - probe.headerBottom) > 0.5) {
+        probe.top = top;
+        probe.headerBottom = headerBottom;
+        probe.since = performance.now();
+      }
+      return performance.now() - probe.since >= 200;
+    }, selector, { timeout: 5000 });
+    geometry = await target.evaluate((element) => ({
+      top: element.getBoundingClientRect().top,
+      headerBottom: document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0,
+      viewportHeight: innerHeight,
+    }));
+    if (Math.abs(geometry.top - geometry.headerBottom - 16) <= 2 && geometry.top < geometry.viewportHeight) return;
+  }
+  assert.fail(`${selector}: could not establish a stable position below the header: ${JSON.stringify(geometry)}`);
+}
+
+async function captureBookingStep(page, filename, { includeSteps = false } = {}) {
+  await placeBelowHeader(page, includeSteps ? "form.booking-flow" : ".booking-step-title");
+  const state = await page.locator("form.booking-flow").evaluate((form) => {
+    const title = form.querySelector(".booking-step-title");
+    const panel = form.querySelector(".booking-step-panel:not([hidden])");
+    const current = form.querySelector('.booking-steps button[aria-current="step"]');
+    const titleBox = title.getBoundingClientRect();
+    return {
+      title: title.textContent.replace(/\s+/g, " ").trim(),
+      current: current.textContent.replace(/^\s*\d+\.\s*/, "").replace(/\s+/g, " ").trim(),
+      titleVisible: titleBox.top >= (document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0) && titleBox.bottom < innerHeight,
+      panelVisible: panel.getBoundingClientRect().top < innerHeight,
+    };
+  });
+  assert.equal(state.title, state.current, "The screenshot must show the current booking step");
+  assert.ok(state.titleVisible && state.panelVisible,
+    `The current step heading and its form content must be in the screenshot: ${JSON.stringify(state)}`);
+  await page.screenshot({ path: `${output}/${filename}` });
 }
 
 async function bookingLayout(page, desktop) {
@@ -176,7 +233,7 @@ try {
     await step(1);
     await page.locator('input[name="klasse"][value="suv"]').check();
     await expectText(page, total, "585 €", "SUV · White-Gloss Signature + Felgen");
-    await page.screenshot({ path: `${output}/desktop-1280-auswahl.png` });
+    await captureBookingStep(page, "desktop-1280-auswahl.png", { includeSteps: true });
 
     await step(2);
     await page.locator("#extra-leder").check();
@@ -210,7 +267,7 @@ try {
     await step(3);
     await page.locator("#name").waitFor({ state: "visible" });
     assert.ok(await page.locator('button[type="submit"]').isVisible());
-    await page.screenshot({ path: `${output}/desktop-1280-kontakt.png` });
+    await captureBookingStep(page, "desktop-1280-kontakt.png");
     await step(2);
     assert.equal(await page.locator("#extra-felgen").isChecked(), true, "Selection is kept");
     results.push("Contact step reachable and reversible without losing the selection");
@@ -258,7 +315,7 @@ try {
     });
     await openBooking(page);
     await bookingLayout(page, false);
-    await page.screenshot({ path: `${output}/mobile-390-auswahl.png` });
+    await captureBookingStep(page, "mobile-390-auswahl.png", { includeSteps: true });
     await page.locator(".booking-steps button").nth(1).click();
     const extrasBox = page.locator("details.booking-extras");
     if (!(await extrasBox.evaluate((details) => details.open)))
@@ -267,18 +324,18 @@ try {
     await page.locator("#extra-leder").check();
     await expectText(page, ".booking-price strong", "597 €", "Mobile total");
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the extras step");
-    await page.locator("form.booking-flow").evaluate((form) => form.scrollIntoView());
+    await placeBelowHeader(page, "form.booking-flow");
     await page.waitForFunction(
       () => document.querySelector("[data-wa-float]")?.getAttribute("aria-hidden") === "true",
       undefined,
       { timeout: 5000 },
     );
     results.push("WhatsApp button hides over the lazily loaded booking form");
-    await page.screenshot({ path: `${output}/mobile-390-extras.png` });
+    await captureBookingStep(page, "mobile-390-extras.png");
     await page.locator(".booking-steps button").nth(2).click();
     await page.locator("#name").waitFor({ state: "visible" });
     assert.ok((await overflow(page)) <= 2, "No horizontal overflow in the contact step");
-    await page.screenshot({ path: `${output}/mobile-390-kontakt.png` });
+    await captureBookingStep(page, "mobile-390-kontakt.png");
     assert.ok(
       !assets.some((path) => /\/assets\/(gsap|ScrollTrigger)-/.test(path)),
       "Phones never download the desktop motion chunk",
@@ -366,16 +423,22 @@ try {
         assert.equal(imageStates.length, 3, `Reduced motion @${width}: retain all three package images`);
         assert.ok(imageStates.every((image) => image.opacity === 1 && image.position !== "sticky"),
           `Reduced motion @${width}: every package image remains visible in the normal document flow`);
+        for (const index of [0, 1, 2]) {
+          await packages.locator(".package-editorial-media").nth(index).scrollIntoViewIfNeeded();
+          await page.waitForFunction((imageIndex) => {
+            const image = document.querySelectorAll("#pakete .package-editorial-media img")[imageIndex];
+            return image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+          }, index, { timeout: 10_000 });
+        }
+        results.push(`Reduced motion @${width}: all three static package images loaded successfully`);
         if (width === 1280) {
-          await packages.locator(".package-editorial-body").first().scrollIntoViewIfNeeded();
+          await placeBelowHeader(page, "#pakete .package-editorial-body");
           await page.screenshot({ path: `${output}/desktop-packages-reduced-motion.png` });
         }
       }
     }
-    await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
-    await page.locator("form.booking-flow").waitFor();
-    await page.locator("form.booking-flow").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${output}/buchung-${width}.png` });
+    await openBooking(page);
+    await captureBookingStep(page, `buchung-${width}.png`, { includeSteps: true });
     results.push(`No horizontal overflow at ${width}px on ${paths.join(", ")}`);
     await context.close();
   }
