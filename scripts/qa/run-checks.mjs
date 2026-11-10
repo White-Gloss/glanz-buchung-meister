@@ -270,6 +270,7 @@ try {
   // Keep every page and assertion; only this stage gets a bounded extra minute.
   await runCheck(server, "responsive", ["scripts/qa/check-responsive.mjs"], 180_000);
   await runCheck(server, "booking-ui", ["scripts/qa/check-booking-ui.mjs"]);
+  await runCheck(server, "booking-recovery", ["scripts/qa/check-booking-recovery.mjs"]);
   const diagnosticFailures = [];
   for (const check of [
     {

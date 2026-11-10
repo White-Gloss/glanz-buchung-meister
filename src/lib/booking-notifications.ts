@@ -144,8 +144,18 @@ export async function queueBookingEvent(
   const attachments: { filename: string; content: string; content_type: string }[] | undefined =
     undefined;
   const targets: QueueTarget[] = [];
+  const notifyCustomer =
+    options.notifyCustomer !== false &&
+    isEmailAddress(booking.email) &&
+    !["booking.completed", "booking.no_show", "booking.confirmed"].includes(event);
   if (owner.whatsapp) targets.push({ channel: "whatsapp", to: owner.whatsapp });
-  if (owner.email) targets.push({ channel: "email", to: owner.email });
+  // A customer using the workshop address needs one receipt, not a second
+  // email for the owner role. Keep owner-only events and other channels.
+  if (
+    owner.email &&
+    !(notifyCustomer && owner.email.trim().toLowerCase() === booking.email?.trim().toLowerCase())
+  )
+    targets.push({ channel: "email", to: owner.email });
   if (owner.telegram) targets.push({ channel: "telegram", to: owner.telegram });
   for (const target of targets) {
     await enqueueNotification(sql, {
@@ -159,11 +169,7 @@ export async function queueBookingEvent(
       attachments: target.channel === "email" ? attachments : undefined,
     });
   }
-  if (
-    options.notifyCustomer !== false &&
-    isEmailAddress(booking.email) &&
-    !["booking.completed", "booking.no_show", "booking.confirmed"].includes(event)
-  ) {
+  if (notifyCustomer && isEmailAddress(booking.email)) {
     const when =
       `${booking.preferred_date?.slice(0, 10) || "noch offen"} ${booking.preferred_slot || ""}`.trim();
     const body =

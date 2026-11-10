@@ -188,6 +188,29 @@ export function Configurator({
     setExtraIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  async function finishSavedRequest(reference: string) {
+    await navigate({ to: "/danke", search: { vorgang: reference } });
+    clearBookingDraft();
+    bookingRequestId.clear();
+  }
+
+  async function continueWithoutPhotos() {
+    if (submitting.current || !saved.current) return;
+    submitting.current = true;
+    setPending(true);
+    setError("");
+    try {
+      await finishSavedRequest(saved.current.reference);
+    } catch {
+      setError(
+        `Ihre Anfrage ${saved.current.reference} ist bereits gespeichert. Die Bestätigungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.`,
+      );
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting.current) return;
@@ -219,6 +242,7 @@ export function Configurator({
     }
     submitting.current = true;
     setPending(true);
+    let uploading = false;
     try {
       const created =
         saved.current ??
@@ -252,6 +276,7 @@ export function Configurator({
       setSavedReference(created.reference);
       queueBookingConversion(created.reference);
       const remaining = [...media];
+      uploading = media.length > 0;
       for (const [index, file] of media.entries()) {
         setUploadProgress(`Aufnahme ${index + 1} von ${media.length} wird übertragen …`);
         await attachBookingPhotos({
@@ -266,18 +291,14 @@ export function Configurator({
         setMedia([...remaining]);
       }
       setUploadProgress("");
-      clearBookingDraft();
-      await navigate({
-        to: "/danke",
-        search: {
-          vorgang: created.reference,
-        },
-      });
-      bookingRequestId.clear();
+      uploading = false;
+      await finishSavedRequest(created.reference);
     } catch {
       setError(
         saved.current
-          ? `Ihre Anfrage ${saved.current.reference} ist gespeichert. Die übrigen Fotos konnten nicht übertragen werden. Bitte erneut versuchen oder die Fotoauswahl entfernen, um ohne weitere Fotos fortzufahren.`
+          ? uploading
+            ? `Ihre Anfrage ${saved.current.reference} ist angekommen. Nur die übrigen Fotos konnten wir noch nicht übernehmen. Sie können diese erneut senden oder später nachreichen. Eine neue Anfrage ist nicht nötig.`
+            : `Ihre Anfrage ${saved.current.reference} ist bereits gespeichert. Die Bestätigungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.`
           : "Wir konnten den Eingang Ihrer Anfrage nicht bestätigen. Sie können dieselbe Anfrage erneut senden oder uns telefonisch bzw. per WhatsApp kontaktieren.",
       );
       setUploadProgress("");
@@ -805,9 +826,11 @@ export function Configurator({
           <span>
             Ich willige freiwillig ein, dass White Gloss diese erfolgreiche Anfrage zur
             Anzeigenmessung an OpenAI meldet: Zeitpunkt, zufällige Ereigniskennung und eine
-            vorhandene Anzeigen-Klickkennung. Keine Kontakt- oder Fahrzeugdaten. Dies gilt nur
-            für diese Anfrage; vor dem Absenden kann ich das Häkchen entfernen.{" "}
-            <Link to="/datenschutz" className="underline hover:text-fg">Datenschutzhinweise</Link>
+            vorhandene Anzeigen-Klickkennung. Keine Kontakt- oder Fahrzeugdaten. Dies gilt nur für
+            diese Anfrage; vor dem Absenden kann ich das Häkchen entfernen.{" "}
+            <Link to="/datenschutz" className="underline hover:text-fg">
+              Datenschutzhinweise
+            </Link>
           </span>
         </label>
         <label className="flex items-start gap-2 text-sm text-muted">
@@ -815,6 +838,7 @@ export function Configurator({
             type="checkbox"
             className="mt-1"
             checked={reviewEmailConsent}
+            disabled={pending || savedReference !== null}
             onChange={(e) => setReviewEmailConsent(e.target.checked)}
           />
           <span>
@@ -827,21 +851,17 @@ export function Configurator({
             <p className="text-sm text-danger" role="alert">
               {error}
             </p>
-            <Button
-              tone="public"
-              variant="line"
-              type="button"
-              disabled={pending}
-              onClick={() => {
-                saved.current = null;
-                setSavedReference(null);
-                bookingRequestId.clear();
-                setOpenAiConsent(false);
-                setError("");
-              }}
-            >
-              Neue Anfrage beginnen
-            </Button>
+            {savedReference ? (
+              <Button
+                tone="public"
+                variant="line"
+                type="button"
+                disabled={pending}
+                onClick={() => void continueWithoutPhotos()}
+              >
+                {media.length ? "Fotos später nachreichen" : "Zur Bestätigungsseite"}
+              </Button>
+            ) : null}
           </div>
         ) : null}
         <Button
@@ -856,7 +876,7 @@ export function Configurator({
             : savedReference
               ? media.length
                 ? "Übrige Fotos erneut senden"
-                : "Weiter zur Bestätigung"
+                : "Zur Eingangsbestätigung"
               : "Unverbindliche Anfrage prüfen"}
         </Button>
         <a

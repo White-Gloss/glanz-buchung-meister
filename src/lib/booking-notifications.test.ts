@@ -151,9 +151,9 @@ test("booking notifications persist against all production migrations", async (t
     });
 
     await t.test(
-      "one event stays idempotent and leaves both equal-address recipient roles intact",
+      "one event sends only the receipt when customer and owner share an email address",
       async () => {
-        const row = await booking(sql, { email: "buchung@white-gloss.de" });
+        const row = await booking(sql, { email: "Buchung@white-gloss.de" });
         const id = await event(sql, row, "booking.created");
         await sql.transaction(async (tx) => {
           await queueBookingEvent(tx, row, "booking.created", id, "notification-test-owner");
@@ -161,23 +161,48 @@ test("booking notifications persist against all production migrations", async (t
         });
         const messages =
           await sql<Message>`select * from outbound_queue where booking_id=${row.id}`;
-        assert.equal(messages.length, 3);
-        assert.equal(messages.filter((m) => m.channel === "email").length, 2);
+        assert.equal(messages.length, 2);
+        assert.equal(messages.filter((m) => m.channel === "email").length, 1);
         assert.ok(
           messages
             .filter((m) => m.channel === "email")
             .every(
               (m) =>
-                m.to_addr === "buchung@white-gloss.de" &&
+                m.to_addr.toLowerCase() === "buchung@white-gloss.de" &&
                 m.from_addr === "White-Gloss Detailing <buchung@white-gloss.de>",
             ),
         );
-        assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 2);
+        assert.equal(messages.filter((m) => m.event_key.includes(":owner:")).length, 1);
         const customer = messages.find((m) => m.event_key.includes(":customer-v2:"));
         assert.ok(customer);
         assert.match(customer.body, /noch nicht verbindlich bestätigt/);
         assert.ok(messages.every((m) => m.attachments.length === 0));
         assert.equal(fetchMock.mock.callCount(), 0);
+      },
+    );
+
+    await t.test(
+      "distinct customer and owner each receive one message; owner-only notices survive",
+      async () => {
+        const row = await booking(sql);
+        const id = await event(sql, row, "booking.created");
+        await queueBookingEvent(sql, row, "booking.created", id, "notification-test-owner");
+        await queueBookingEvent(sql, row, "booking.created", id, "notification-test-owner");
+        const messages =
+          await sql<Message>`select * from outbound_queue where booking_id=${row.id} and channel='email'`;
+        assert.equal(messages.length, 2);
+        assert.equal(messages.filter((m) => m.to_addr === row.email).length, 1);
+        assert.equal(messages.filter((m) => m.to_addr === "buchung@white-gloss.de").length, 1);
+
+        const own = await booking(sql, { email: "buchung@white-gloss.de" });
+        const ownId = await event(sql, own, "booking.created");
+        await queueBookingEvent(sql, own, "booking.created", ownId, "notification-test-owner", {
+          notifyCustomer: false,
+        });
+        const ownerOnly =
+          await sql<Message>`select * from outbound_queue where booking_id=${own.id} and channel='email'`;
+        assert.equal(ownerOnly.length, 1);
+        assert.match(ownerOnly[0].event_key, /:owner:/);
       },
     );
 
