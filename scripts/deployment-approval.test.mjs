@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { verifyDeploymentApproval } from "./deployment-approval.mjs";
@@ -142,4 +143,26 @@ test("production workflow requires manual input and rechecks evidence before act
   assert.equal(workflow.match(/run: node scripts\/deployment-approval\.mjs/g)?.length, 2);
   assert.match(workflow, /\[\[ "\$expected_release" == "\$EXPECTED_CURRENT_RELEASE" \]\]/);
   assert.match(workflow, /if: always\(\) && steps\.ssh\.outcome == 'success'/);
+});
+
+test("workflow input validation explains stale or invalid approvals and fails closed", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/deploy-hostinger.yml", import.meta.url), "utf8");
+  const match = workflow.match(/- name: Eindeutige Releasefreigabe validieren\n\s+shell: bash\n\s+run: \|\n((?: {10}.+\n)+)/);
+  assert.ok(match, "approval validation step must exist");
+  const script = match[1].replace(/^ {10}/gm, "");
+  const validate = (change) => spawnSync("bash", ["-c", script], {
+    env: { ...process.env, ...environment, ...change },
+    encoding: "utf8",
+  });
+  assert.equal(validate({}).status, 0);
+  for (const [change, message] of [
+    [{ RELEASE_ID: previous }, /release_sha stimmt nicht/],
+    [{ RELEASE_ID: "main" }, /40-stellige Commit-IDs/],
+    [{ EXPECTED_CURRENT_RELEASE: "" }, /40-stellige Commit-IDs/],
+    [{ EXPECTED_CURRENT_RELEASE: sha }, /müssen verschieden sein/],
+  ]) {
+    const result = validate(change);
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, message);
+  }
 });
