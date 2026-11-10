@@ -223,7 +223,7 @@ function Home() {
         aria-labelledby="buchung-heading"
       >
         <p className="kicker">Fahrzeug → Wunschergebnis → Termin und Übergabe</p>
-        <h2 id="buchung-heading" className="heading-2 mt-3" data-lines>
+        <h2 id="buchung-heading" className="heading-2 mt-3" tabIndex={-1} data-lines>
           <RevealLines lines={["Ihre Aufbereitung."]} />
         </h2>
         <p className="booking-intro text-muted">

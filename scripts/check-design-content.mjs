@@ -25,6 +25,16 @@ export const APPROVED_SOURCE_BASELINES = Object.freeze({
   "src/components/configurator.tsx": approvedBookingBaseline,
   "src/routes/danke.tsx": approvedBookingBaseline,
 });
+// Explicitly approved CTA wording; these replace one literal each, not the
+// file's source baseline. Other occurrences and all SEO/link checks remain.
+export const APPROVED_CTA_LABELS = Object.freeze({
+  "src/components/site-chrome.tsx": Object.freeze({
+    className: "header-film-booking", before: "Termin anfragen", after: "Jetzt Termin anfragen",
+  }),
+  "src/components/scroll-film-hero.tsx": Object.freeze({
+    className: "scroll-film-cta", before: "Fahrzeug verwandeln lassen", after: "Jetzt Termin anfragen",
+  }),
+});
 const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind.LineFeed });
 const normalize = (value) => value.replace(/\s+/gu, " ").trim();
 const protectedProps = new Set([
@@ -176,12 +186,55 @@ export function extractContent(source, filename = "fixture.tsx") {
   return result;
 }
 
-export function compareSource(before, after, filename) {
-  const original = extractContent(before, filename);
+function ctaTextNode(source, filename, className) {
+  const file = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const matches = [];
+  const literalAttribute = (node, name) => {
+    const opening = ts.isJsxElement(node) ? node.openingElement : node;
+    const attribute = opening.attributes.properties.find((property) =>
+      ts.isJsxAttribute(property) && property.name.getText(file) === name,
+    );
+    return attribute?.initializer && ts.isStringLiteral(attribute.initializer) ? attribute.initializer.text : undefined;
+  };
+  function visit(node) {
+    if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node))
+      && literalAttribute(node, "className")?.split(/\s+/u).includes(className)) matches.push(node);
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  if (matches.length !== 1) return null;
+  const target = matches[0];
+  if (!ts.isJsxElement(target) || target.openingElement.tagName.getText(file) !== "Link"
+    || literalAttribute(target, "to") !== "/" || literalAttribute(target, "hash") !== "buchung") return null;
+  // Both approved controls use direct JSX text and an optional decorative arrow.
+  // Extra nested copy cannot turn an otherwise valid label into another CTA.
+  if (target.children.some((child) => !ts.isJsxText(child)
+    && !(ts.isJsxSelfClosingElement(child) && child.tagName.getText(file) === "IconArrowRight"))) return null;
+  const text = target.children.filter((child) => ts.isJsxText(child) && normalize(child.text));
+  return text.length === 1 ? text[0] : null;
+}
+
+export function compareSource(before, after, filename, { approvedCtaLabels = false } = {}) {
+  let expected = before;
+  const failures = [];
+  const approved = approvedCtaLabels ? APPROVED_CTA_LABELS[filename] : undefined;
+  if (approved) {
+    const originalLabel = ctaTextNode(before, filename, approved.className);
+    const currentLabel = ctaTextNode(after, filename, approved.className);
+    if (!originalLabel || normalize(originalLabel.text) !== approved.before) {
+      failures.push({ file: filename, kind: "approved-cta", value: `Unique original ${approved.className} label: ${approved.before}`, count: 1 });
+    } else {
+      expected = before.slice(0, originalLabel.pos) + ` ${approved.after} ` + before.slice(originalLabel.end);
+    }
+    if (!currentLabel || normalize(currentLabel.text) !== approved.after) {
+      failures.push({ file: filename, kind: "approved-cta", value: `Unique approved ${approved.className} label: ${approved.after}`, count: 1 });
+    }
+  }
+  const original = extractContent(expected, filename);
   const changed = extractContent(after, filename);
-  return Object.keys(original).flatMap((kind) =>
+  return failures.concat(Object.keys(original).flatMap((kind) =>
     missing(original[kind], changed[kind]).map((entry) => ({ file: filename, kind, ...entry })),
-  );
+  ));
 }
 
 export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), sourceBaselines } = {}) {
@@ -234,7 +287,7 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), 
     headingEntries += total("headings");
     linkEntries += total("links");
     seoEntries += total("seo");
-    failures.push(...compareSource(before, after, name));
+    failures.push(...compareSource(before, after, name, { approvedCtaLabels: commit === DESIGN_BASE }));
   }
   const protectedPresent = protectedFiles.filter((name) => names.includes(name));
   for (const name of protectedPresent) {
@@ -245,6 +298,7 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), 
     }
   }
   return { base: commit, sourceBaselines: actualSourceBaselines, protectedBase: commit,
+    approvedCtaLabels: commit === DESIGN_BASE ? APPROVED_CTA_LABELS : {},
     sourceFiles: sources.length, protectedFiles: protectedPresent.length,
     textEntries, headingEntries, linkEntries, seoEntries, failures, passed: failures.length === 0 };
 }
@@ -267,6 +321,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
           console.log(`Source baseline: ${file} -> ${baseline.commit}${baseline.pullRequest === undefined ? "" : ` (approved PR #${baseline.pullRequest}: ${baseline.pullRequestUrl})`}`);
         }
         console.log(`Protected data/SEO baseline: ${result.protectedBase}`);
+        for (const [file, label] of Object.entries(result.approvedCtaLabels)) {
+          console.log(`Approved CTA label: ${file} .${label.className}: ${JSON.stringify(label.before)} -> ${JSON.stringify(label.after)} (exactly one)`);
+        }
         console.log(`${result.sourceFiles} source files, ${result.protectedFiles} protected data/SEO files; ${result.textEntries} text entries, ${result.headingEntries} headings, ${result.linkEntries} links/anchors, ${result.seoEntries} SEO definitions.`);
         for (const failure of result.failures) console.error(`${failure.file} [${failure.kind}] missing ${failure.count} × ${failure.value}`);
       }

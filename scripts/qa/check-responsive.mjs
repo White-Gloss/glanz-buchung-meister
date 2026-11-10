@@ -19,8 +19,8 @@ async function scrollAndRender(page, top) {
   // promises. The subsequent geometry reads still force the actual layout.
   await new Promise((done) => setTimeout(done, 32));
 }
-async function openPage(viewport) {
-  const context = await browser.newContext({ reducedMotion: "reduce", viewport, extraHTTPHeaders: qaClientHeaders("responsive", `context-${contextSequence++}`) });
+async function openPage(viewport, reducedMotion = "reduce") {
+  const context = await browser.newContext({ reducedMotion, viewport, extraHTTPHeaders: qaClientHeaders("responsive", `context-${contextSequence++}`) });
   try {
     // No third-party analytics and no genuine submissions/uploads during QA.
     await context.route("**/*", async (route) => {
@@ -39,6 +39,96 @@ async function openPage(viewport) {
     await context.close();
     throw error;
   }
+}
+const bookingCtaName = "Jetzt Termin anfragen";
+async function assertBookingArrival(page, label) {
+  try {
+    await page.waitForFunction(() => {
+      const heading = document.getElementById("buchung-heading");
+      const box = heading?.getBoundingClientRect();
+      const header = document.querySelector(".site-header")?.getBoundingClientRect();
+      const hit = box && document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return location.pathname === "/" && location.hash === "#buchung" &&
+        heading?.tabIndex === -1 && document.activeElement === heading &&
+        box && header && box.width > 0 && box.height > 0 &&
+        box.top >= header.bottom - 1 && box.bottom <= innerHeight &&
+        box.left >= 0 && box.right <= innerWidth && heading.contains(hit);
+    }, undefined, { timeout: 10_000 });
+  } catch (error) {
+    const state = await page.evaluate(() => {
+      const heading = document.getElementById("buchung-heading");
+      return {
+        url: location.pathname + location.hash,
+        activeElement: document.activeElement?.id || document.activeElement?.tagName,
+        tabIndex: heading?.tabIndex,
+        heading: heading?.getBoundingClientRect().toJSON(),
+        header: document.querySelector(".site-header")?.getBoundingClientRect().toJSON(),
+        viewport: { width: innerWidth, height: innerHeight },
+      };
+    });
+    throw new Error(`${label}: booking heading must receive focus and remain fully visible below the header: ${JSON.stringify(state)}`, { cause: error });
+  }
+}
+async function verifyBookingActivation(page, width, reducedMotion) {
+  const headerCta = page.locator(".site-header .header-film-booking");
+  const heroCta = page.locator(".scroll-film-cta");
+  await headerCta.click();
+  await assertBookingArrival(page, `${width}px ${reducedMotion}, first header click`);
+  const form = page.locator("#buchung .booking-flow");
+  await form.waitFor({ state: "visible" });
+  // Exercise existing client-side inputs only. The context still blocks every
+  // write request, and no submit button, consent or file picker is activated.
+  await form.locator('input[name="paket"][value="keramik"]').check();
+  await form.locator('input[name="klasse"][value="suv"]').check();
+  await form.locator(".booking-steps button").nth(1).click();
+  await form.locator("#city").selectOption("nagold");
+  await form.locator(".booking-steps button").nth(2).click();
+  await form.locator("#note").fill("Synthetische CI-Notiz: nur Navigation prüfen, keine Anfrage senden.");
+  const readDraft = () => form.evaluate((element) => ({
+    package: element.querySelector('input[name="paket"]:checked')?.value,
+    vehicleClass: element.querySelector('input[name="klasse"]:checked')?.value,
+    city: element.querySelector("#city")?.value,
+    note: element.querySelector("#note")?.value,
+    step: element.querySelector('.booking-steps [aria-current="step"]')?.textContent,
+  }));
+  const draft = await readDraft();
+  for (const [source, link] of [["header", headerCta], ["hero", heroCta]]) {
+    for (const activation of ["mouse", "Enter"]) {
+      progress = { stage: "booking-cta", path: "/", width, reducedMotion, source, activation, completed: results.length, updatedAt: new Date().toISOString() };
+      // Keep #buchung in the URL while leaving the destination. This catches
+      // handlers that only react to a changed hash or retain the old focus.
+      await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+      await page.waitForFunction(() => window.scrollY <= 1);
+      if (source === "hero") {
+        // With motion enabled, the real film eases its copy back in after
+        // scrollY reaches zero. Wait for that visible, interactive state before
+        // moving keyboard focus; do not disable the production inert behavior.
+        await page.waitForFunction(() => {
+          const link = document.querySelector(".scroll-film-cta");
+          const copy = link?.closest(".scroll-film-copy");
+          return link && !link.closest("[inert]") && copy &&
+            Number(getComputedStyle(copy).opacity) >= 0.99;
+        }, undefined, { timeout: 5_000 });
+      }
+      await link.focus();
+      assert.equal(await link.evaluate((element) => element === document.activeElement), true,
+        `${width}px ${source}: move focus away from the booking heading before reactivation.`);
+      assert.equal(new URL(page.url()).hash, "#buchung", "Exercise repeated activation of the same hash.");
+      if (activation === "mouse") await link.click();
+      else await link.press("Enter");
+      await assertBookingArrival(page, `${width}px ${reducedMotion}, ${source} ${activation}`);
+      assert.deepEqual(await readDraft(), draft,
+        `${width}px ${reducedMotion}, ${source} ${activation}: preserve entered fields, selection and current form step.`);
+      assert.equal(await page.evaluate(() => document.querySelectorAll("#buchung").length), 1,
+        "CTA navigation must retain the single existing request flow.");
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      assert.ok(overflow <= 2, `${width}px ${source}: booking destination overflows by ${overflow}px.`);
+    }
+  }
+  if (reducedMotion === "reduce" && [390, 1440].includes(width)) {
+    await page.screenshot({ path: `.qa-output/review-booking-target-${width}.png`, fullPage: false });
+  }
+  return { sameHashActivations: 4, bookingHeadingFocusedAndVisible: true, draftPreserved: true };
 }
 const paths = [
   ...new Set([
@@ -159,10 +249,13 @@ try {
       await context.close();
     }
   }
-  // Check both sides of the navigation breakpoint. The final design stylesheet
-  // must keep one booking link and enough room for the centered logo and menu.
-  for (const width of [320, 390, 768, 900, 1024, 1440]) {
-    const { context, page } = await openPage({ width, height: 1000 });
+  // Keep the explicit primary CTA at every width, alongside the existing
+  // desktop Termin link. Exercise the exact 959/960px navigation boundary.
+  const headerCases = [320, 390, 768, 900, 959, 960, 1024, 1440]
+    .map((width) => ({ width, reducedMotion: "reduce" }));
+  headerCases.push(...[390, 1440].map((width) => ({ width, reducedMotion: "no-preference" })));
+  for (const { width, reducedMotion } of headerCases) {
+    const { context, page } = await openPage({ width, height: width <= 390 ? 844 : 1000 }, reducedMotion);
     try {
       progress = { stage: "header-navigation", path: "/", width, completed: results.length, updatedAt: new Date().toISOString() };
       await page.goto(qaBase + "/", { waitUntil: "networkidle" });
@@ -172,19 +265,53 @@ try {
         await consent.waitFor({ state: "hidden" });
       }
       const header = page.locator(".site-header");
-      const booking = header.locator(".header-booking-link:visible, .header-film-booking:visible");
-      assert.equal(await booking.count(), 1, `${width}px: show one primary booking link in the header.`);
+      const booking = header.locator(".header-film-booking");
+      assert.equal(await booking.count(), 1, `${width}px: retain the primary header CTA.`);
+      assert.equal(await header.getByRole("link", { name: bookingCtaName, exact: true }).count(), 1,
+        `${width}px: the primary header CTA has the exact accessible name.`);
+      assert.equal(await booking.isVisible(), true, `${width}px: keep the primary header CTA visible.`);
+      assert.equal(await booking.getAttribute("href"), "/#buchung");
+      const navBooking = header.locator(".header-booking-link");
+      assert.equal(await navBooking.count(), 1, "Keep the existing desktop Termin navigation link.");
+      assert.equal((await navBooking.textContent()).trim(), "Termin");
+      assert.equal(await navBooking.getAttribute("href"), "/#buchung");
+      assert.equal(await navBooking.isVisible(), width >= 960,
+        `${width}px: the existing Termin navigation follows the desktop breakpoint.`);
+      if (width >= 960) {
+        const navBounds = await navBooking.boundingBox();
+        assert.ok(navBounds && navBounds.height >= 44,
+          `${width}px: retain the existing Termin navigation touch-target height.`);
+      }
+      const heroBooking = page.locator(".scroll-film-cta");
+      assert.equal(await page.locator(".scroll-film").getByRole("link", { name: bookingCtaName, exact: true }).count(), 1,
+        `${width}px: the hero CTA uses the same exact accessible name.`);
+      assert.equal(await heroBooking.getAttribute("href"), "/#buchung");
+      assert.equal(await heroBooking.isVisible(), true, `${width}px: the hero CTA remains visible.`);
       const bounds = await booking.boundingBox();
-      assert.ok(bounds && bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width,
+      assert.ok(bounds && bounds.height >= 44 && bounds.width >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width,
         `${width}px: the booking link must retain its visible touch target.`);
+      const heroBounds = await heroBooking.boundingBox();
+      assert.ok(heroBounds && heroBounds.height >= 44 && heroBounds.width >= 44 && heroBounds.x >= 0 && heroBounds.x + heroBounds.width <= width,
+        `${width}px: the hero CTA must retain its visible touch target.`);
       const toggle = header.getByRole("button", { name: "Menü öffnen", exact: true });
       const logoBounds = await header.locator(".ga-logo").boundingBox();
-      const toggleBounds = await toggle.boundingBox();
       assert.ok(logoBounds && Math.abs(logoBounds.x + logoBounds.width / 2 - width / 2) <= 2,
         `${width}px: the White-Gloss logo stays centered.`);
-      const disjoint = (a, b) => a.x + a.width <= b.x + 1 || b.x + b.width <= a.x + 1;
-      assert.ok(toggleBounds && disjoint(bounds, logoBounds) && disjoint(toggleBounds, logoBounds) && disjoint(bounds, toggleBounds),
-        `${width}px: logo, booking link and menu must not overlap.`);
+      const controls = await header.locator(".ga-logo, .menu-toggle, .header-film-booking, .header-quick-nav a").evaluateAll((elements) => elements
+        .map((element) => ({ name: element.getAttribute("aria-label") || element.textContent.trim(), ...element.getBoundingClientRect().toJSON() }))
+        .filter((box) => box.width > 0 && box.height > 0));
+      const headerBounds = await header.boundingBox();
+      const disjoint = (a, b) => a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1;
+      for (const [index, control] of controls.entries()) {
+        assert.ok(headerBounds && control.left >= 0 && control.right <= width && control.top >= headerBounds.y - 1 && control.bottom <= headerBounds.y + headerBounds.height + 1,
+          `${width}px: header control stays inside the viewport/header: ${JSON.stringify(control)}`);
+        for (const other of controls.slice(index + 1)) {
+          assert.ok(disjoint(control, other), `${width}px: header controls overlap: ${JSON.stringify({ control, other })}`);
+        }
+      }
+      assert.equal(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), reducedMotion === "reduce");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 2),
+        `${width}px: the header and hero must not introduce horizontal overflow.`);
       await toggle.focus();
       await toggle.press("Enter");
       const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
@@ -195,8 +322,9 @@ try {
       await menu.waitFor({ state: "hidden" });
       assert.equal(await toggle.evaluate((element) => element === document.activeElement), true,
         `${width}px: closing the menu restores focus to its trigger.`);
-      await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
-      results.push({ path: "/", width, headerBookingLinks: 1, menuKeyboardFocusReturned: true });
+      if (reducedMotion === "reduce") await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
+      const activation = await verifyBookingActivation(page, width, reducedMotion);
+      results.push({ path: "/", width, reducedMotion, primaryHeaderBookingLinks: 1, desktopTerminVisible: width >= 960, menuKeyboardFocusReturned: true, ...activation });
     } finally {
       await context.close();
     }

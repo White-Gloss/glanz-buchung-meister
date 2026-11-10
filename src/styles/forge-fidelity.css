@@ -69,7 +69,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   padding-inline: 1.75rem;
   font-size: .6875rem;
   letter-spacing: .13em;
-  background: rgb(8 8 8 / .2);
 }
 [data-shell="public"] .scroll-film-bottom {
   left: 2vw;
