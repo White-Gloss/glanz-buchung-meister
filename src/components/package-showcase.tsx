@@ -17,7 +17,7 @@ const packageGoals = [
   "Langfristig besonders – für anspruchsvolle Lackkorrektur und dauerhaften Schutz.",
 ];
 const photoSizes =
-  "(min-width: 960px) min(46vw, 736px), (min-width: 640px) 90vw, calc(100vw - 2.5rem)";
+  "(min-width: 960px) min(36vw, 640px), (min-width: 640px) 90vw, calc(100vw - 2.5rem)";
 
 /**
  * Each package keeps its own image and complete copy in DOM order. Desktop
@@ -32,10 +32,11 @@ export function PackageShowcase() {
     const section = sectionRef.current;
     if (!section) return;
     const media = window.matchMedia(
-      "(min-width: 960px) and (prefers-reduced-motion: no-preference)",
+      "(min-width: 960px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)",
     );
     const chapters = [...section.querySelectorAll<HTMLElement>(".package-editorial-body")];
     const pictures = [...section.querySelectorAll<HTMLElement>(".package-editorial-media")];
+    const atmosphere = [...section.querySelectorAll<HTMLElement>(".package-editorial-atmosphere img")];
     let frame = 0;
     let nearby = true;
     let current = -1;
@@ -52,6 +53,7 @@ export function PackageShowcase() {
       current = next;
       pictures.forEach((picture, index) => {
         picture.dataset.active = String(index === current);
+        if (atmosphere[index]) atmosphere[index].dataset.active = String(index === current);
       });
     };
     const schedule = () => {
@@ -65,6 +67,7 @@ export function PackageShowcase() {
       } else {
         delete section.dataset.packageMotion;
         pictures.forEach((picture) => delete picture.dataset.active);
+        atmosphere.forEach((picture) => delete picture.dataset.active);
       }
     };
     const visibility = new IntersectionObserver(
@@ -90,6 +93,7 @@ export function PackageShowcase() {
       resize.disconnect();
       delete section.dataset.packageMotion;
       pictures.forEach((picture) => delete picture.dataset.active);
+        atmosphere.forEach((picture) => delete picture.dataset.active);
     };
   }, []);
 
@@ -118,6 +122,21 @@ export function PackageShowcase() {
           Preise und Zusatzleistungen <IconArrowRight aria-hidden />
         </Link>
       </header>
+      <div className="package-editorial-atmosphere" aria-hidden="true">
+        {photos.map((photo) => (
+          <img
+            key={photo.id}
+            src={photo.src}
+            srcSet={photo.srcSet}
+            sizes="480px"
+            alt=""
+            width={photo.width}
+            height={photo.height}
+            loading="lazy"
+            decoding="async"
+          />
+        ))}
+      </div>
       <div className="package-editorial-track">
         {packages.map((pack, index) => {
           const photo = photos[index];
