@@ -31,6 +31,8 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   width: 90%;
   max-width: none;
   align-items: center;
+  --fidelity-stage-floor: 680px;
+  --fidelity-copy-insets: 15rem;
   padding-top: 7rem;
   padding-bottom: 8rem;
 }
@@ -277,6 +279,8 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 }
 @media (max-width: 639px) {
   [data-shell="public"] .scroll-film .scroll-film-copy {
+    --fidelity-stage-floor: 660px;
+    --fidelity-copy-insets: 14.5rem;
     padding-top: 6rem;
     padding-bottom: 8.5rem;
   }
@@ -319,6 +323,7 @@ body[data-nav="open"] [data-shell="public"] .site-header {
  */
 @media (max-height: 800px) and (min-width: 960px) {
   [data-shell="public"] .scroll-film .scroll-film-copy {
+    --fidelity-copy-insets: 13.5rem;
     padding-top: 7rem;
     padding-bottom: 6.5rem;
   }
@@ -411,17 +416,18 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   .film-menu .film-menu-cta { flex-wrap: wrap; }
 }
 
-/* Center in the usable area, not above it. Keep the full-height reservation
- * and the controller's transform variable while the consent bar is open. */
+/* Shift within the reserved stage without changing layout when consent mounts.
+ * The content-height clamp keeps the first line below the header. The parent
+ * transform remains exclusively owned by the film scroll controller. */
 body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
   --film-copy-offset: 0px;
-  align-items: safe center;
-  padding-bottom: calc(var(--consent-banner-height, 0px) + 8.5rem);
 }
-@media (min-width: 640px) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
-    padding-bottom: calc(var(--consent-banner-height, 0px) + 6rem);
-  }
+body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy-inner {
+  transform-box: border-box;
+  transform: translateY(max(
+    calc(-.5 * var(--consent-banner-height, 0px)),
+    calc((100% - max(100svh, var(--fidelity-stage-floor)) + var(--fidelity-copy-insets)) / 2)
+  ));
 }
 /* Very narrow/short portrait windows use the same native reading fallback as
  * landscape. The complete title, actions and film controls stay reachable. */
@@ -439,9 +445,9 @@ body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
     transform: none;
   }
 }
-@media (max-height: 600px) and (orientation: landscape) {
-  body[data-consent-banner="open"] [data-shell="public"] .scroll-film .scroll-film-copy {
-    align-items: flex-start;
-    padding-bottom: 6rem;
+@media (max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait),
+  (max-height: 600px) and (orientation: landscape) {
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy-inner {
+    transform: none;
   }
 }
