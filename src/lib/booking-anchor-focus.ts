@@ -13,9 +13,12 @@ export function focusBookingHeading(event: MouseEvent<HTMLAnchorElement>) {
   if (!heading) return;
   heading.focus({ preventScroll: true });
 
-  // A repeated same-fragment click still returns to the form. Keep the same
-  // section and CSS scroll margins as the router, without changing form state.
-  if (window.location.hash === "#buchung") {
-    document.getElementById("buchung")?.scrollIntoView({ block: "start" });
+  // The same URL needs one scroll command: navigating again would make
+  // the router issue a competing smooth scroll after its redundant reload.
+  // Keep the existing section, CSS scroll margins, URL and entered form state.
+  const section = document.getElementById("buchung");
+  if (section && window.location.hash === "#buchung" && link.href === window.location.href) {
+    event.preventDefault();
+    section.scrollIntoView({ block: "start", behavior: "instant" });
   }
 }
