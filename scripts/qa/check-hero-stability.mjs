@@ -77,12 +77,27 @@ async function geometry(page) {
     });
     const titleText = titleWalker?.nextNode() ?? null;
     let titleStart = null;
+    let titleFontBounds = null;
+    let titleMaskBounds = null;
     if (titleText) {
       const range = document.createRange();
       range.selectNodeContents(titleText);
-      titleStart = range.getClientRects()[0]?.toJSON() ?? null;
+      titleFontBounds = range.getClientRects()[0]?.toJSON() ?? null;
+      titleMaskBounds = titleText.parentElement?.closest(".hero-line")?.getBoundingClientRect().toJSON() ?? null;
+      // A serif's font box can extend beyond the clipped line, even while its
+      // glyphs are fully visible. Hit-test the actual intersection of text and
+      // line mask, not an off-mask corner of the font's typographic bounds.
+      if (titleFontBounds) {
+        const mask = titleMaskBounds ?? titleFontBounds;
+        const left = Math.max(titleFontBounds.left, mask.left);
+        const right = Math.min(titleFontBounds.right, mask.right);
+        const top = Math.max(titleFontBounds.top, mask.top);
+        const bottom = Math.min(titleFontBounds.bottom, mask.bottom);
+        if (right > left && bottom > top)
+          titleStart = { left, right, top, bottom, width: right - left, height: bottom - top };
+      }
     }
-    const titleHit = titleStart && document.elementFromPoint(titleStart.left + Math.min(4, titleStart.width / 2), titleStart.top + Math.min(4, titleStart.height / 2));
+    const titleHit = titleStart && document.elementFromPoint(titleStart.left + titleStart.width / 2, titleStart.top + titleStart.height / 2);
     const inspect = (selector) => {
       const element = document.querySelector(selector);
       if (!element) return null;
@@ -129,6 +144,9 @@ async function geometry(page) {
       section: rect(".scroll-film"),
       header: rect(".site-header"),
       titleStart,
+      titleFontBounds,
+      titleMaskBounds,
+      titleHitElement: titleHit && { tag: titleHit.tagName, className: titleHit.className },
       titleStartHit: Boolean(titleHit && title?.contains(titleHit)),
       controls: rect(".scroll-film-bottom"),
       cta: rect(".scroll-film-cta"),
@@ -334,7 +352,7 @@ try {
         );
       if (scrollLayout && (!titleStart || titleStart.top < header.bottom - 1 || titleStart.top >= banner.top - 1
         || !result.initial.titleStartHit || Number(result.initial.copyCss?.opacity) < 0.99 || result.initial.copyCss?.inert))
-        report.failures.push(`${viewport.name}: the start of the hero title is not initially visible`);
+        report.failures.push(`${viewport.name}: the start of the hero title is not initially visible ${JSON.stringify({ titleStart, titleFontBounds: result.initial.titleFontBounds, titleMaskBounds: result.initial.titleMaskBounds, titleHitElement: result.initial.titleHitElement, header, banner, copyCss: result.initial.copyCss })}`);
       if (!reservedCopy || !stage || reservedCopy.width <= 0 || Math.abs(reservedCopy.height - stage.height) > 1)
         report.failures.push(`${viewport.name}: copy space is not reserved for the full stage height`);
       if (!controls || controls.top < stage.top - 1 || controls.bottom > (scrollLayout ? stage.bottom : banner.top) + 1)

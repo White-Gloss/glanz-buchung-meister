@@ -11,8 +11,8 @@ und Login-Layout behält seine bisherigen Tokens.
 - Textstufen `#bcb8b0` und `#a6a198`; der Kontrasttest liest diese tatsächlichen
   öffentlichen CSS-Tokens und prüft alle Flächen auf mindestens 4,5:1.
 - Lokal geladene Cormorant Garamond für Überschriften und variable Geist für
-  Fließtext/Formulare. Die zwei Preloads umfassen 52.276 Bytes; weitere
-  Cormorant-Gewichte laden bei Bedarf. Lizenzen und Quellen unter
+  Fließtext/Formulare. Cormorant ist ausschließlich als regulärer 400er-Schnitt
+  eingebunden; beide öffentlichen Fontdateien umfassen 52.276 Bytes. Lizenzen und Quellen unter
   `public/fonts/EDITORIAL-FONTS.md`.
 - Fixer Header mit zentralem Logo, stabiler Höhe, bestehenden Links und
   genau einem sichtbaren Buchungszugang; Bildmenü mit erhaltenem Dialogfokus.

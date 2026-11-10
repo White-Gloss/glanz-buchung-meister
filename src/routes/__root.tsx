@@ -22,8 +22,7 @@ export const Route = createRootRoute({
       /^\/(admin|login)(\/|$)/.test(match.routeId),
     );
     // The public first viewport uses Cormorant 400 and Geist's UI weights.
-    // Other Cormorant weights remain available on demand, without preloading
-    // the larger variable file alongside the exact regular face.
+    // Cormorant has one regular face; Geist supplies all UI weights.
     // Operational screens retain their existing Barlow family.
     const fontPreloads = (app
       ? ["barlow-400", "barlow-300"]
