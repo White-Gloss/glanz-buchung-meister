@@ -10,8 +10,9 @@ type ScriptAsset = RouterManagedTag & { preventScriptHoist?: boolean };
 /**
  * Server-side counterpart of Start's `<Scripts />`: renders every body script
  * unchanged except the module entry, which moves into the deferred bootstrap
- * together with the module preloads the head would have rendered. Low-priority
- * preloads can download early while execution waits for the hero to paint.
+ * together with the module preloads the head would have rendered. The
+ * server-rendered document is complete without JavaScript, so hydration no
+ * longer competes with the hero image and fonts for the first bytes.
  */
 function ServerDeferredScripts() {
   const router = useRouter();
