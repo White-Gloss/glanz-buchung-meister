@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { DESKTOP_MOTION, useScrollMotion } from "@/lib/scroll-motion";
 import { setupParallax } from "@/lib/studio-motion";
+import "@/styles/concierge-editorial.css";
 
 /**
  * Homepage-only "Polished reveal" scroll motion.
@@ -15,8 +16,52 @@ export function HomePolish() {
       const { ScrollTrigger } = tools;
       const main = document.querySelector<HTMLElement>('[data-home="polish"]');
       if (!main) return;
-      // Paketbilder und Werkstattbild gleiten in ihren Rahmen (data-parallax-frame).
+      // Only explicitly marked frames get parallax; package chapters own their stage.
       setupParallax(tools, main);
+
+      const concierge = main.querySelector<HTMLElement>(".concierge-service");
+      const conciergeHeader = concierge?.querySelector<HTMLElement>("header");
+      const conciergeSteps = concierge
+        ? [...concierge.querySelectorAll<HTMLElement>("ol > li")]
+        : [];
+      let conciergeResize: ResizeObserver | undefined;
+      const syncConciergeLayout = () => {
+        if (!concierge || !conciergeHeader) return;
+        // Long copy, zoom and short laptop viewports must never trap content
+        // inside a sticky column that is taller than the available viewport.
+        const fits =
+          window.innerHeight >= 760 &&
+          conciergeHeader.getBoundingClientRect().height <= window.innerHeight - 144;
+        if (fits) concierge.dataset.conciergeMotion = "scroll";
+        else {
+          delete concierge.dataset.conciergeMotion;
+          concierge.dataset.conciergeActive = "0";
+        }
+      };
+      const syncConciergeImage = () => {
+        if (!concierge || concierge.dataset.conciergeMotion !== "scroll") return;
+        let active = 0;
+        conciergeSteps.forEach((step, index) => {
+          if (step.getBoundingClientRect().top <= window.innerHeight * 0.55) active = index;
+        });
+        concierge.dataset.conciergeActive = String(active);
+      };
+      if (concierge && conciergeHeader && conciergeSteps.length === 3) {
+        concierge.dataset.conciergeActive = "0";
+        syncConciergeLayout();
+        syncConciergeImage();
+        ScrollTrigger.create({
+          trigger: concierge,
+          start: "top bottom",
+          end: "bottom top",
+          onUpdate: syncConciergeImage,
+          onRefresh: syncConciergeImage,
+        });
+        conciergeResize = new ResizeObserver(syncConciergeLayout);
+        conciergeResize.observe(conciergeHeader);
+        window.addEventListener("resize", syncConciergeLayout, { passive: true });
+      }
+
       // Lazy sections (reviews, booking) change the page height after load.
       let timer = 0;
       const resize = new ResizeObserver(() => {
@@ -27,10 +72,16 @@ export function HomePolish() {
       return () => {
         resize.disconnect();
         window.clearTimeout(timer);
+        conciergeResize?.disconnect();
+        window.removeEventListener("resize", syncConciergeLayout);
+        if (concierge) {
+          delete concierge.dataset.conciergeMotion;
+          delete concierge.dataset.conciergeActive;
+        }
       };
     },
     undefined,
-    // Erster Abschnitt mit Parallaxe (Bento-Pakete): GSAP lädt kurz davor.
+    // Defer desktop motion until the package story approaches the viewport.
     "#pakete",
   );
 
@@ -64,25 +115,26 @@ export function HomePolish() {
         nodes.forEach(onIn);
         return;
       }
-      const io = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          onIn(entry.target as HTMLElement);
-          io.unobserve(entry.target);
-        }
-      }, opts ?? { threshold: 0.12, rootMargin: "10% 0px -8% 0px" });
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            onIn(entry.target as HTMLElement);
+            io.unobserve(entry.target);
+          }
+        },
+        opts ?? { threshold: 0.12, rootMargin: "10% 0px -8% 0px" },
+      );
       nodes.forEach((el) => io.observe(el));
       cleanups.push(() => io.disconnect());
     };
 
-    onceIn(
-      [...main.querySelectorAll<HTMLElement>("[data-reveal]")],
-      (el) => el.classList.add("is-in"),
+    onceIn([...main.querySelectorAll<HTMLElement>("[data-reveal]")], (el) =>
+      el.classList.add("is-in"),
     );
 
-    onceIn(
-      [...main.querySelectorAll<HTMLElement>("[data-stagger]")],
-      (el) => el.classList.add("is-in"),
+    onceIn([...main.querySelectorAll<HTMLElement>("[data-stagger]")], (el) =>
+      el.classList.add("is-in"),
     );
 
     onceIn(
@@ -166,11 +218,6 @@ export function HomePolish() {
   }, []);
 
   return (
-    <div
-      ref={progressRef}
-      className="home-scroll-progress"
-      data-scroll-progress
-      aria-hidden
-    />
+    <div ref={progressRef} className="home-scroll-progress" data-scroll-progress aria-hidden />
   );
 }

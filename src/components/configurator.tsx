@@ -27,6 +27,7 @@ import { BookingMediaPicker, mediaBase64 } from "./booking-media-picker";
 import { Button, Field, inputLine } from "./ui";
 import { useBookingDraft, clearBookingDraft, appliedBookingEntries } from "./booking-draft";
 import { berlinWallToUtc, defaultWorkEnd, rangesOverlap } from "@/lib/booking-time";
+import "@/styles/booking-editorial.css";
 
 export function Configurator({
   initialPackage,
@@ -292,7 +293,7 @@ export function Configurator({
       data-hide-whatsapp
       aria-labelledby="buchung-heading"
       aria-label="Unverbindliche Terminanfrage"
-      className="booking-flow"
+      className="booking-flow booking-editorial"
     >
       <nav aria-label="Schritte der Terminanfrage" className="booking-steps">
         {["Fahrzeug & Paket", "Extras & Abholung", "Kontakt & Anfrage"].map((label, index) => (
@@ -318,19 +319,19 @@ export function Configurator({
       <h3
         ref={stepHeading}
         tabIndex={-1}
-        className="font-display text-2xl"
+        className="booking-step-title font-display text-2xl"
         style={{ scrollMarginTop: "6rem" }}
       >
         {step === 1 ? "Fahrzeug & Paket" : step === 2 ? "Extras & Abholung" : "Kontakt & Anfrage"}
       </h3>
-      <div hidden={step !== 1} className="space-y-8">
+      <div hidden={step !== 1} className="booking-step-panel space-y-8">
         <fieldset>
           <legend className="text-xs uppercase tracking-[0.16em] text-subtle">Paket</legend>
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="booking-package-options mt-3 flex flex-col gap-3">
             {packages.map((p) => (
               <label
                 key={p.id}
-                className={`lift flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
+                className={`booking-choice flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
                   packageId === p.id ? "border-accent bg-elevated" : "border-line bg-surface"
                 }`}
               >
@@ -362,11 +363,11 @@ export function Configurator({
           <legend className="text-xs uppercase tracking-[0.16em] text-subtle">
             Fahrzeugklasse
           </legend>
-          <div className="gd-tiles gd-tiles-3 mt-3">
+          <div className="booking-vehicle-options gd-tiles gd-tiles-3 mt-3">
             {vehicleClasses.map((c) => (
               <label
                 key={c.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
+                className={`booking-choice flex cursor-pointer items-start gap-3 rounded-card border p-4 ${
                   classId === c.id ? "border-accent bg-elevated" : "border-line bg-surface"
                 }`}
               >
@@ -388,7 +389,7 @@ export function Configurator({
           </div>
         </fieldset>
       </div>
-      <div hidden={step !== 2} className="space-y-6">
+      <div hidden={step !== 2} className="booking-step-panel space-y-6">
         <details
           className="booking-extras"
           open={extrasOpen}
@@ -410,7 +411,7 @@ export function Configurator({
                     .map((ex) => (
                       <label
                         key={ex.id}
-                        className="flex flex-col items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 sm:flex-row"
+                        className="booking-extra-choice flex flex-col items-start justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 sm:flex-row"
                       >
                         <span className="flex min-w-0 items-start">
                           <input
@@ -469,7 +470,7 @@ export function Configurator({
 
       <div
         hidden={step !== 3}
-        className="space-y-5 rounded-card border border-line bg-elevated p-5"
+        className="booking-step-panel booking-contact space-y-5"
       >
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">Unverbindliche Anfrage</p>
         <p className="font-display text-3xl text-fg" aria-live="polite">
@@ -867,7 +868,7 @@ export function Configurator({
           Oder per WhatsApp schreiben
         </a>
       </div>
-      <div className="flex flex-wrap justify-between gap-3">
+      <div className="booking-actions flex flex-wrap justify-between gap-3">
         {step > 1 && !savedReference ? (
           <Button
             tone="public"

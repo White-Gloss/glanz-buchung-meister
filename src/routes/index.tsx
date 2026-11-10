@@ -16,6 +16,7 @@ import { cityJourneyText, pickupDistanceLabel, pickupStatus } from "@/lib/city-c
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { scrollFilmPreloads } from "@/data/scroll-film";
+import { customerPhotos } from "@/data/customer-photos";
 import { ScrollFilmHero } from "@/components/scroll-film-hero";
 import { HomePolish } from "@/components/home-polish";
 import { PackageShowcase } from "@/components/package-showcase";
@@ -137,44 +138,6 @@ function Home() {
           <WebsiteStudioContent content={document.content} assets={document.assets} headingLevel={1} showIntro={false} showHero={false} showBody={false} />
         </section>
       )}
-      <PackageShowcase />
-
-      <section
-        id="buchung"
-        className="section booking-section mx-auto max-w-7xl px-4 sm:px-6"
-        aria-labelledby="buchung-heading"
-      >
-        <p className="kicker">Fahrzeug → Wunschergebnis → Termin und Übergabe</p>
-        <h2 id="buchung-heading" className="heading-2 mt-3" data-lines>
-          <RevealLines lines={["Ihre Aufbereitung."]} />
-        </h2>
-        <p className="booking-intro text-muted">
-          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Preis und Zeitaufwand bleiben transparent.
-          Danach stimmen wir Termin, Abholung und digitale Übergabe mit Ihnen ab – unverbindlich.
-        </p>
-        <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
-      </section>
-
-      <section className="concierge-service" aria-labelledby="concierge-heading">
-        <header>
-          <p className="kicker">Hol- und Bringservice · digitale Übergabe</p>
-          <h2 id="concierge-heading" className="heading-2" data-lines>
-            <RevealLines lines={["Sie geben uns den Schlüssel.", "Wir kümmern uns um den Rest."]} />
-          </h2>
-          <p>Sie müssen dafür nicht vor Ort sein. Auf Wunsch stimmen wir eine sichere Schlüsselhinterlegung mit Ihnen ab.</p>
-        </header>
-        <ol>
-          <li><span>01</span><h3>Wir holen ab</h3><p>Zum vereinbarten Zeitpunkt – persönlich oder mit abgestimmter Schlüsselhinterlegung.</p></li>
-          <li><span>02</span><h3>Wir bereiten auf</h3><p>Ihr Fahrzeug ist in unserer Werkstatt in guten Händen. Umfang und Preis werden vorher mit Ihnen abgestimmt.</p></li>
-          <li><span>03</span><h3>Wir bringen zurück</h3><p>Stressfrei und ohne Wartezeit. Die digitale Übergabe dokumentiert das Ergebnis für Sie.</p></li>
-        </ol>
-      </section>
-
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <ResultsTeaser />
-        <LazyGoogleReviews id="bewertungen" compact />
-      </div>
-
       <section className="film-chapter workshop-personal" aria-labelledby="workshop-title">
         <div className="film-chapter-media" data-parallax-frame>
           <Shot
@@ -204,7 +167,64 @@ function Home() {
         </div>
       </section>
 
+      <PackageShowcase />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <ResultsTeaser />
+        <LazyGoogleReviews id="bewertungen" compact />
+      </div>
+
       <HomeProcess />
+
+      <section className="concierge-service" aria-labelledby="concierge-heading">
+        <header>
+          <p className="kicker">Hol- und Bringservice · digitale Übergabe</p>
+          <h2 id="concierge-heading" className="heading-2" data-lines>
+            <RevealLines lines={["Sie geben uns den Schlüssel.", "Wir kümmern uns um den Rest."]} />
+          </h2>
+          <p>Sie müssen dafür nicht vor Ort sein. Auf Wunsch stimmen wir eine sichere Schlüsselhinterlegung mit Ihnen ab.</p>
+          <div className="concierge-media" aria-hidden="true">
+            {["customer-16", "customer-11", "customer-18"].map((id) => {
+              const photo = customerPhotos.find((item) => item.id === id)!;
+              return (
+                <img
+                  key={id}
+                  src={photo.src}
+                  srcSet={photo.srcSet}
+                  sizes="(min-width: 960px) 38vw, 90vw"
+                  width={photo.width}
+                  height={photo.height}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              );
+            })}
+          </div>
+        </header>
+        <ol>
+          <li><span>01</span><h3>Wir holen ab</h3><p>Zum vereinbarten Zeitpunkt – persönlich oder mit abgestimmter Schlüsselhinterlegung.</p></li>
+          <li><span>02</span><h3>Wir bereiten auf</h3><p>Ihr Fahrzeug ist in unserer Werkstatt in guten Händen. Umfang und Preis werden vorher mit Ihnen abgestimmt.</p></li>
+          <li><span>03</span><h3>Wir bringen zurück</h3><p>Stressfrei und ohne Wartezeit. Die digitale Übergabe dokumentiert das Ergebnis für Sie.</p></li>
+        </ol>
+      </section>
+
+      <section
+        id="buchung"
+        className="section booking-section mx-auto max-w-7xl px-4 sm:px-6"
+        aria-labelledby="buchung-heading"
+      >
+        <p className="kicker">Fahrzeug → Wunschergebnis → Termin und Übergabe</p>
+        <h2 id="buchung-heading" className="heading-2 mt-3" data-lines>
+          <RevealLines lines={["Ihre Aufbereitung."]} />
+        </h2>
+        <p className="booking-intro text-muted">
+          Wählen Sie Fahrzeug, Paket und Zusatzleistungen. Preis und Zeitaufwand bleiben transparent.
+          Danach stimmen wir Termin, Abholung und digitale Übergabe mit Ihnen ab – unverbindlich.
+        </p>
+        <LazyConfigurator eager={Boolean(paket || ort)} initialPackage={paket} initialCity={ort} />
+      </section>
+
       <nav
         className="home-specialties mx-auto max-w-7xl px-4 sm:px-6"
         aria-label="Weitere Leistungen"

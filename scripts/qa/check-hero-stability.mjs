@@ -31,6 +31,7 @@ const viewports = [
   { name: "mobile", width: 390, height: 844 },
   { name: "landscape", width: 844, height: 390 },
   { name: "desktop", width: 1440, height: 900 },
+  { name: "compact-desktop", width: 1280, height: 720 },
 ];
 
 function cls(shifts) {

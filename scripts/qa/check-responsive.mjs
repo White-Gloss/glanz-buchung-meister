@@ -159,8 +159,8 @@ try {
       await context.close();
     }
   }
-  // Check both sides of the 900px navigation breakpoint. The final design
-  // stylesheet must not make the mobile booking link visible on desktop too.
+  // Check both sides of the navigation breakpoint. The final design stylesheet
+  // must keep one booking link and enough room for the centered logo and menu.
   for (const width of [320, 390, 768, 900, 1024, 1440]) {
     const { context, page } = await openPage({ width, height: 1000 });
     try {
@@ -178,6 +178,13 @@ try {
       assert.ok(bounds && bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width,
         `${width}px: the booking link must retain its visible touch target.`);
       const toggle = header.getByRole("button", { name: "Menü öffnen", exact: true });
+      const logoBounds = await header.locator(".ga-logo").boundingBox();
+      const toggleBounds = await toggle.boundingBox();
+      assert.ok(logoBounds && Math.abs(logoBounds.x + logoBounds.width / 2 - width / 2) <= 2,
+        `${width}px: the White-Gloss logo stays centered.`);
+      const disjoint = (a, b) => a.x + a.width <= b.x + 1 || b.x + b.width <= a.x + 1;
+      assert.ok(toggleBounds && disjoint(bounds, logoBounds) && disjoint(toggleBounds, logoBounds) && disjoint(bounds, toggleBounds),
+        `${width}px: logo, booking link and menu must not overlap.`);
       await toggle.focus();
       await toggle.press("Enter");
       const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
@@ -207,17 +214,27 @@ try {
         await consent.waitFor({ state: "hidden" });
       }
       const order = await page.evaluate(() => {
-        const packages = document.getElementById("pakete");
-        const booking = document.getElementById("buchung");
+        const selectors = [".workshop-personal", "#pakete", "#kundenergebnisse", ".home-craft", ".concierge-service", "#buchung"];
+        const sections = selectors.map((selector) => document.querySelector(selector));
         return {
-          immediatelyAfterPackages: packages?.nextElementSibling === booking,
+          sectionsPresent: sections.every(Boolean),
+          editorialOrder: sections.every((section, index) => Boolean(section) && (index === 0 || Boolean(
+            sections[index - 1]?.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ))),
           bookingCount: document.querySelectorAll("#buchung").length,
         };
       });
-      assert.equal(order.immediatelyAfterPackages, true, "The request should follow the packages.");
+      assert.equal(order.sectionsPresent, true, "Retain workshop, packages, results, process, pickup and booking content.");
+      assert.equal(order.editorialOrder, true, "Keep the approved editorial sequence before the request.");
       assert.equal(order.bookingCount, 1, "Keep one request flow and stable incoming anchor links.");
       await page.locator(".home-jump-links").getByRole("link", { name: "Termin anfragen", exact: true }).click();
       await page.getByRole("form", { name: "Ihre Aufbereitung." }).waitFor({ state: "visible", timeout: 15_000 });
+      assert.equal(new URL(page.url()).hash, "#buchung", "The existing jump link still targets the booking anchor.");
+      await page.waitForFunction(() => {
+        const heading = document.getElementById("buchung-heading")?.getBoundingClientRect();
+        const header = document.querySelector(".site-header")?.getBoundingClientRect();
+        return heading && header && heading.top >= header.bottom - 1 && heading.top < innerHeight;
+      }, undefined, { timeout: 5000 });
       await page.locator("#buchung").screenshot({ path: `.qa-output/review-request-${width}.png` });
       await page.locator("#kundenergebnisse").scrollIntoViewIfNeeded();
       const video = page.getByRole("button", { name: "Video abspielen: Hydrophober Lackschutz White-Gloss Ceramic 0:11 Min.", exact: true });

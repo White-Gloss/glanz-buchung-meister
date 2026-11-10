@@ -71,6 +71,58 @@ async function overflow(page) {
   );
 }
 
+async function bookingLayout(page, desktop) {
+  const geometry = await page.locator("form.booking-flow").evaluate((form) => {
+    const price = form.querySelector(".booking-price");
+    const panel = form.querySelector(".booking-step-panel:not([hidden])");
+    const title = form.querySelector(".booking-step-title");
+    return {
+      price: price.getBoundingClientRect().toJSON(),
+      panel: panel.getBoundingClientRect().toJSON(),
+      title: title.getBoundingClientRect().toJSON(),
+      pricePosition: getComputedStyle(price).position,
+    };
+  });
+  if (desktop) {
+    assert.equal(geometry.pricePosition, "sticky", "Desktop keeps the live price in its side column");
+    assert.ok(geometry.price.left >= geometry.panel.right,
+      "The desktop price summary must not cover the active form step");
+  } else {
+    assert.notEqual(geometry.pricePosition, "fixed", "The mobile price must not cover form controls");
+    assert.ok(geometry.price.bottom <= geometry.title.top + 1,
+      "The compact mobile price stays above the active step heading");
+  }
+  results.push(`${desktop ? "Desktop" : "Mobile"} price summary does not overlap the active form`);
+}
+
+async function capturePackageChapters(page) {
+  const section = page.locator("#pakete");
+  await page.waitForFunction(() => document.querySelector("#pakete")?.dataset.packageMotion === "scroll");
+  assert.equal(await section.locator(".package-editorial-body").count(), 3);
+  // Capture forward progression and then exercise reverse scrolling. All text
+  // stays in the document; only the matching image should occupy the stage.
+  for (const [position, index] of [0, 1, 2, 1].entries()) {
+    await section.locator(".package-editorial-body").nth(index).evaluate((body) => {
+      const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+      window.scrollTo({ top: window.scrollY + body.getBoundingClientRect().top - headerBottom - 16, behavior: "instant" });
+    });
+    await page.waitForFunction((activeIndex) => {
+      const pictures = [...document.querySelectorAll("#pakete .package-editorial-media")];
+      return pictures.length === 3 && pictures.every((picture, pictureIndex) => {
+        const opacity = Number(getComputedStyle(picture).opacity);
+        if (pictureIndex !== activeIndex) return picture.dataset.active === "false" && opacity < 0.01;
+        const image = picture.querySelector("img");
+        return picture.dataset.active === "true" && opacity > 0.99 && image?.complete && image.naturalWidth > 0;
+      });
+    }, index, { timeout: 10_000 });
+    const picture = section.locator(".package-editorial-media").nth(index);
+    assert.equal(await picture.evaluate((element) => getComputedStyle(element).position), "sticky");
+    assert.ok((await overflow(page)) <= 2, `Package chapter ${index + 1}: no horizontal overflow`);
+    await page.screenshot({ path: `${output}/desktop-package-${index + 1}${position === 3 ? "-reverse" : ""}.png` });
+  }
+  results.push("Package stages: three loaded images, correct forward/reverse selection, sticky desktop framing");
+}
+
 try {
   await prepareBrowserFixture({ scenario: "booking-ui" });
   // Test the real API limit, then give each unrelated browser scenario its own
@@ -92,6 +144,7 @@ try {
   {
     const { context, page, assets } = await openContext({ viewport: { width: 1280, height: 900 } });
     await openBooking(page);
+    await bookingLayout(page, true);
     const ids = await page
       .locator('input[type=checkbox][id^="extra-"]')
       .evaluateAll((inputs) => inputs.map((input) => input.id));
@@ -192,6 +245,7 @@ try {
       "Desktop motion loads GSAP on demand",
     );
     results.push("Desktop loads the scroll-motion chunk on demand");
+    await capturePackageChapters(page);
     await context.close();
   }
 
@@ -203,6 +257,8 @@ try {
       hasTouch: true,
     });
     await openBooking(page);
+    await bookingLayout(page, false);
+    await page.screenshot({ path: `${output}/mobile-390-auswahl.png` });
     await page.locator(".booking-steps button").nth(1).click();
     const extrasBox = page.locator("details.booking-extras");
     if (!(await extrasBox.evaluate((details) => details.open)))
@@ -300,6 +356,21 @@ try {
         await page.screenshot({
           path: `${output}/${path === "/" ? "home" : "galerie"}-${width}.png`,
         });
+      if (path === "/") {
+        const packages = page.locator("#pakete");
+        assert.equal(await packages.getAttribute("data-package-motion"), null,
+          `Reduced motion @${width}: do not pin or crossfade the package chapters`);
+        const imageStates = await packages.locator(".package-editorial-media").evaluateAll((pictures) =>
+          pictures.map((picture) => ({ opacity: Number(getComputedStyle(picture).opacity), position: getComputedStyle(picture).position })),
+        );
+        assert.equal(imageStates.length, 3, `Reduced motion @${width}: retain all three package images`);
+        assert.ok(imageStates.every((image) => image.opacity === 1 && image.position !== "sticky"),
+          `Reduced motion @${width}: every package image remains visible in the normal document flow`);
+        if (width === 1280) {
+          await packages.locator(".package-editorial-body").first().scrollIntoViewIfNeeded();
+          await page.screenshot({ path: `${output}/desktop-packages-reduced-motion.png` });
+        }
+      }
     }
     await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
     await page.locator("form.booking-flow").waitFor();

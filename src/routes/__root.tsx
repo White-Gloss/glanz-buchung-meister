@@ -18,13 +18,17 @@ import "../styles/studio.css";
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
   head: ({ matches }) => {
-    const home = matches.some((match: AnyRouteMatch) => match.routeId === "/");
-    // The homepage's first viewport sets type in Barlow 500 and 600. Preloading
-    // them starts the requests with the document instead of after the first
-    // style pass; Barlow 300 is only used above the fold on the other pages.
-    const fontPreloads = (home ? [400, 500, 600] : [400, 300]).map((weight) => ({
+    const app = matches.some((match: AnyRouteMatch) =>
+      /^\/(admin|login)(\/|$)/.test(match.routeId),
+    );
+    // Two small, self-hosted variable fonts cover the public typography.
+    // Operational screens retain their existing Barlow family.
+    const fontPreloads = (app
+      ? ["barlow-400", "barlow-300"]
+      : ["cormorant-garamond-latin-variable", "geist-latin-variable"]
+    ).map((name) => ({
       rel: "preload",
-      href: `/fonts/barlow-${weight}.woff2`,
+      href: `/fonts/${name}.woff2`,
       as: "font",
       type: "font/woff2",
       crossOrigin: "anonymous" as const,

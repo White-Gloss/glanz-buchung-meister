@@ -1,0 +1,290 @@
+/* Package chapters own their layout; the former bento/card rules do not apply. */
+[data-shell="public"] .package-editorial {
+  width: min(90%, 92rem);
+  max-width: none;
+  margin-inline: auto;
+  padding: clamp(4rem, 8vw, 9rem) 0;
+  background: var(--color-bg);
+}
+
+.package-editorial .atelier-heading {
+  align-items: end;
+  gap: 2rem;
+  padding-bottom: clamp(3rem, 6vw, 6rem);
+}
+
+.package-editorial .atelier-heading h2 {
+  max-width: 17ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 5.8vw, 6rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.package-editorial-track {
+  min-width: 0;
+}
+
+.package-editorial-chapter {
+  min-width: 0;
+}
+
+.package-editorial-media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  background: var(--color-surface);
+}
+
+.package-editorial-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.package-editorial-media figcaption {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(8, 8, 8, 0.82);
+  color: #f3f0e8;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.package-editorial-body {
+  min-width: 0;
+  padding-block: 2.5rem 4.5rem;
+}
+
+.package-editorial .package-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  font-family: var(--font-sans);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.package-editorial .package-recommendation {
+  padding: 0 0 0.15rem;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg);
+}
+
+[data-shell="public"] .package-editorial h3 {
+  max-width: 14ch;
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 5vw, 5.4rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  overflow-wrap: normal;
+}
+
+.package-editorial .package-goal {
+  max-width: 36ch;
+  margin-top: 1.5rem;
+  color: var(--color-fg);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.package-editorial .package-description {
+  max-width: 38ch;
+  margin-top: 1rem;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  line-height: 1.8;
+}
+
+.package-editorial-foot {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.package-editorial .package-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: 0;
+}
+
+.package-editorial .package-price strong {
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 4.5vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.package-editorial .package-terms {
+  margin-top: 0.75rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.package-editorial .atelier-text-link {
+  width: fit-content;
+  min-height: 3rem;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  border-bottom: 1px solid var(--color-line-strong);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+}
+
+.package-editorial .atelier-heading .atelier-text-link {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.package-editorial .atelier-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+}
+
+@media (min-width: 960px) {
+  .package-editorial-chapter {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+    column-gap: clamp(3rem, 7vw, 8rem);
+  }
+
+  .package-editorial-media {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: min(74svh, 50rem);
+    min-height: 27rem;
+    aspect-ratio: auto;
+  }
+
+  .package-editorial-body {
+    display: flex;
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-height: max(45rem, calc(100svh - 6rem));
+    padding-block: 4rem;
+  }
+
+  .package-editorial-foot {
+    max-width: 26rem;
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-track {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    column-gap: clamp(3rem, 7vw, 8rem);
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-chapter {
+    display: contents;
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-body {
+    grid-row: auto;
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-media {
+    position: sticky;
+    top: max(7rem, calc((100svh - min(74svh, 50rem)) / 2));
+    grid-row: 1 / span 3;
+    align-self: start;
+    margin-block: 4rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-media img {
+    transform: scale(1.035);
+    transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .package-editorial[data-package-motion="scroll"] .package-editorial-media[data-active="true"] {
+    opacity: 1;
+  }
+
+  .package-editorial[data-package-motion="scroll"]
+    .package-editorial-media[data-active="true"]
+    img {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 959px) {
+  .package-editorial .atelier-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .package-editorial-chapter + .package-editorial-chapter {
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+@media (max-width: 639px) {
+  [data-shell="public"] .package-editorial {
+    width: calc(100% - 2.5rem);
+    padding-block: 3.5rem 1rem;
+  }
+
+  .package-editorial .atelier-heading h2 {
+    font-size: clamp(2.75rem, 10vw, 3.75rem);
+  }
+
+  [data-shell="public"] .package-editorial h3 {
+    font-size: clamp(2.75rem, 10.5vw, 4rem);
+  }
+
+  .package-editorial-media {
+    aspect-ratio: 4 / 5;
+  }
+
+  .package-editorial-media figcaption {
+    padding-inline: 0.9rem;
+    font-size: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .package-editorial-media,
+  .package-editorial-media img,
+  .package-editorial .atelier-text-link svg {
+    transform: none;
+    transition: none;
+  }
+}

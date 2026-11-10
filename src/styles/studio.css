@@ -1,493 +1,487 @@
-/* ==========================================================================
-   White-Gloss Studio – Liquid-Luxury-Designsystem
-   --------------------------------------------------------------------------
-   Letzte Schicht der Kaskade (Import in __root.tsx nach hero-clearance.css).
-   Bewusst ohne @layer: Regeln hier schlagen alle Tailwind-Utilities und die
-   gewachsenen Legacy-Dateien, ohne !important.
-
-   Inhalt
-     1. Tokens (Flächen, Glas, Licht, Motion, Dock)
-     2. Basis-Typografie
-     3. Glas-Komponenten
-     4. Floating-Island-Header (Pill Dock)
-     5. Hero: Vollbild + maskierter Wort-/Zeilen-Reveal
-     6. Abschnitts-Headlines: maskierte Zeilen-Reveals
-     7. Ablauf „So läuft’s bei uns“: Pin + Lichtlinie
-     8. Bento-Pakete
-     9. Abholorte als Chips
-    10. Parallaxe-Rahmen
-    11. Lenis (Smooth Scroll)
-    12. Barrierefreiheit: reduzierte Bewegung, Kontrastmodus
-
-   Regeln
-     - Animiert werden nur transform/translate/scale/opacity (GPU), keine
-       Layout-Eigenschaften. Ausnahme: die Dock-Höhe (fixierter, eigener
-       Layout-Kontext, einmaliger Übergang).
-     - Hover-Effekte nur auf echten Zeigegeräten (hover: hover, pointer: fine),
-       sonst bleiben auf iOS/Android „klebende“ Hover-Zustände nach dem Tippen.
-     - Gedimmte Zustände über Farbe, nie über opacity: Text bleibt ≥ 4,5:1.
-   ========================================================================== */
-
-/* 1. Tokens --------------------------------------------------------------- */
-:root {
-  /* Flächen. Spiegeln die @theme-Werte in styles.css (Tailwind-Klassen
-     bg-bg/bg-surface/bg-elevated nutzen dieselben Farben). */
-  --studio-obsidian: #090a0d;
-  --studio-graphite: #101217;
-  --studio-elevated: #171a21;
-
-  /* Glas: dunkles Rauchglas mit Haarlinie. */
-  --glass-bg: rgba(18, 20, 26, 0.7);
-  --glass-bg-soft: rgba(18, 20, 26, 0.38);
-  --glass-bg-raised: rgba(255, 255, 255, 0.028);
-  --glass-blur: 20px;
-  --glass-saturate: 150%;
-  --glass-edge: rgba(255, 255, 255, 0.08);
-  --glass-edge-strong: rgba(255, 255, 255, 0.12);
-  --glass-edge-hover: rgba(255, 255, 255, 0.22);
-  --glass-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 42%);
-  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 30px 70px -40px rgba(0, 0, 0, 0.85);
-
-  /* Licht: Klarlack-Kante und Studio-Glow (Chromton aus --chrome-*). */
-  --light-edge: linear-gradient(
-    135deg,
-    rgba(244, 246, 250, 0.75) 0%,
-    rgba(191, 206, 224, 0.22) 24%,
-    rgba(255, 255, 255, 0) 50%,
-    rgba(140, 164, 191, 0.18) 76%,
-    rgba(244, 246, 250, 0.55) 100%
-  );
-  --light-glow: 0 0 0 1px rgba(191, 206, 224, 0.05), 0 40px 120px -60px rgba(191, 206, 224, 0.42);
-  --light-glow-hover: 0 0 0 1px rgba(191, 206, 224, 0.1), 0 46px 130px -56px rgba(191, 206, 224, 0.6);
-  --light-rail: linear-gradient(180deg, rgba(244, 246, 250, 0) 0%, #f4f6fa 18%, #bfcee0 62%, #8ca4bf 100%);
-
-  /* Radien: Glas weich, Bedienelemente als Pille. */
-  --radius-glass: 20px;
-  --radius-chip: 14px;
-  --radius-pill: 999px;
-
-  /* Motion. Eigene Namen (studio-), damit Tailwinds --ease-out unberührt bleibt.
-     ease-out:  starkes Ausrollen für Ein-/Ausblenden (Emil-Kowalski-Kurve)
-     in-out:    Bewegung auf der Fläche
-     spring:    gedämpfte Feder, duration 0.5 s / bounce 0.2, ausschwingend
-                bis ~690 ms, 1,5 % Überschwinger (berechnet, nicht geschätzt) */
-  --studio-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --studio-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  --studio-ease-spring: linear(0, 0.0403, 0.1364, 0.2593, 0.3896, 0.5146, 0.627, 0.7235, 0.8029, 0.8661, 0.9147, 0.9507, 0.9763, 0.9938, 1.0049, 1.0113, 1.0144, 1.0152, 1.0145, 1.0131, 1.0112, 1.0092, 1.0073, 1.0056, 1.0042, 1.003, 1.002, 1.0013, 1);
-  --studio-dur-press: 140ms;
-  --studio-dur-hover: 240ms;
+/* White Gloss · editorial public design.
+ * One public design layer replaces the previous floating dock/Bento system.
+ * Content, semantic headings and application-shell tokens are unchanged.
+ * Component-owned layouts: package-editorial.css and booking-editorial.css.
+ */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/geist-latin-variable.woff2") format("woff2");
+}
+/* Portalled public dialogs receive the same palette and typography. */
+:is([data-shell="public"], .film-menu, .wg-video-dialog, .customer-photo-dialog) {
+  --color-bg: #080808;
+  --color-surface: #111111;
+  --color-elevated: #1c1b19;
+  --color-fg: #f3f0e8;
+  --color-muted: #bcb8b0;
+  --color-subtle: #a6a198;
+  --color-accent: #f3f0e8;
+  --color-accent-fg: #080808;
+  --color-wa: #d2ccc0;
+  --color-line: rgba(243, 240, 232, .16);
+  --color-line-strong: rgba(243, 240, 232, .3);
+  --font-sans: "Geist", Arial, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --chrome-solid: #f3f0e8;
+  --chrome-dim: #bcb8b0;
+  --radius-control: 0px;
+  --radius-card: 0px;
+  --radius-glass: 0px;
+  --radius-chip: 0px;
+  --radius-pill: 0px;
+  --glass-bg: #111111;
+  --glass-bg-raised: transparent;
+  --glass-highlight: none;
+  --glass-edge: rgba(243, 240, 232, .16);
+  --glass-edge-strong: rgba(243, 240, 232, .3);
+  --glass-edge-hover: rgba(243, 240, 232, .55);
+  --light-rail: #f3f0e8;
+  --studio-ease-out: cubic-bezier(.22, 1, .36, 1);
   --studio-dur-ui: 300ms;
-  --studio-dur-spring: 700ms;
-  --studio-dur-reveal: 1100ms;
-
-  /* Dock (schwebender Header). Unterkante 14 + 64 = 78 px liegt innerhalb
-     der reservierten --site-header-initial (84 px), Inhalte rutschen nicht. */
-  --dock-top: 14px;
-  --dock-height: 64px;
-  --dock-height-compact: 56px;
-  --dock-lift: -6px;
-  --dock-logo: 44px;
-  --dock-logo-compact: 38px;
-}
-
-/* Browser ohne linear()-Easing (Safari < 17.2, Firefox < 112) erhalten das
-   starke Ausrollen statt der Feder. */
-@supports not (transition-timing-function: linear(0, 1)) {
-  :root {
-    --studio-ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
-  }
-}
-
-@media (max-width: 639px) {
-  :root {
-    --dock-top: 10px;
-    --dock-height: 56px;
-    --dock-height-compact: 52px;
-    --dock-lift: -4px;
-    --dock-logo: 40px;
-    --dock-logo-compact: 36px;
-  }
-}
-
-/* 2. Basis-Typografie ------------------------------------------------------ */
-[data-shell="public"] {
-  background-color: var(--color-bg);
+  --studio-dur-hover: 240ms;
+  --studio-dur-reveal: 950ms;
+  --site-header-initial: 96px;
+  --site-header-height: 96px;
+  font-family: var(--font-sans);
+  color: var(--color-fg);
+  background: var(--color-bg);
   font-kerning: normal;
 }
-
-[data-shell="public"] :is(h1, h2, .heading-2, .heading-page) {
-  text-rendering: optimizeLegibility;
+[data-shell="public"] :is(h1, h2, h3, .heading-page, .heading-2, .heading-3) {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-wrap: balance;
   font-feature-settings: "kern" 1, "liga" 1;
 }
-
-/* Preise, Zähler und Schrittnummern: gleich breite Ziffern, keine springenden
-   Spalten beim Vergleich der Pakete. */
-[data-shell="public"] :is(.package-price strong, .home-process li > span, .city-chip-meta, .gd-stats p) {
+[data-shell="public"] :is(.heading-page, .page-hero .heading-page) {
+  font-size: clamp(3.1rem, 6.4vw, 6.4rem);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+}
+[data-shell="public"] :is(.heading-2, .atelier-heading h2, .reviews-spotlight h2) {
+  font-size: clamp(2.8rem, 5vw, 5.2rem);
+  line-height: 1.06;
+  letter-spacing: -.025em;
+}
+[data-shell="public"] .heading-3 {
+  font-size: clamp(1.8rem, 2.7vw, 2.65rem);
+  line-height: 1.15;
+}
+[data-shell="public"] :is(.kicker, .package-eyebrow) {
+  font-family: var(--font-sans);
+  font-size: .6875rem;
+  letter-spacing: .18em;
+  line-height: 1.7;
+}
+[data-shell="public"] p { text-wrap: pretty; }
+[data-shell="public"] :is(.package-price, .city-chip-meta, .gd-stats, input) {
   font-variant-numeric: lining-nums tabular-nums;
 }
-
-[data-shell="public"] ::selection {
-  background: rgba(191, 206, 224, 0.28);
+[data-shell="public"] ::selection { background: #f3f0e8; color: #080808; }
+[data-shell="public"] :is(main, section, [id]) { scroll-margin-top: 7.5rem; }
+[data-shell="public"] :is(a, button, input, select, textarea, summary):focus-visible,
+.film-menu :is(a, button):focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 5px;
+}
+/* Public controls: quiet outlines, crisp edges, no coloured glow. */
+:is([data-shell="public"], .film-menu) .btn {
+  min-height: 50px;
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: .75rem;
+  font-weight: 400;
+  letter-spacing: .1em;
+  box-shadow: none;
+}
+:is([data-shell="public"], .film-menu) .btn-primary {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border: 1px solid var(--color-fg);
+}
+:is([data-shell="public"], .film-menu) .btn-secondary {
+  background: transparent;
   color: var(--color-fg);
+  border: 1px solid var(--color-line-strong);
 }
-
-/* 3. Glas-Komponenten ------------------------------------------------------ */
-.glass {
-  position: relative;
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--radius-glass);
-  background: var(--glass-highlight), var(--glass-bg);
-  box-shadow: var(--glass-shadow);
+:is([data-shell="public"], .film-menu) .cta-shine::after { display: none; }
+[data-shell="public"] :is(.atelier-text-link, .reviews-source-link) {
+  font-family: var(--font-sans);
+  font-size: .8125rem;
+  letter-spacing: .035em;
+  min-height: 48px;
 }
-
-/* Weichzeichner nur auf großen Bildschirmen: über flachen Flächen ist er
-   unsichtbar, kostet auf Mittelklasse-Smartphones aber pro Frame GPU-Zeit. */
-@media (min-width: 960px) {
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass {
-      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    }
-  }
+[data-shell="public"] .atelier-arrow { border-radius: 0; }
+[data-shell="public"] .glass {
+  border: 1px solid var(--color-line);
+  border-radius: 0;
+  background: var(--color-surface);
+  box-shadow: none;
 }
-
-.glass-interactive {
-  transition:
-    border-color var(--studio-dur-hover) ease,
-    box-shadow var(--studio-dur-ui) var(--studio-ease-out),
-    transform var(--studio-dur-ui) var(--studio-ease-out);
-}
-
-.glass-interactive:focus-within {
-  border-color: var(--glass-edge-hover);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .glass-interactive:hover {
-    border-color: var(--glass-edge-hover);
-    transform: translateY(-4px);
-  }
-}
-
-/* 4. Floating-Island-Header (Pill Dock) ----------------------------------- */
-/* Der volle Header-Balken wird zur unsichtbaren Schiene; nur die Pille ist
-   klickbar, damit die Fläche links/rechts davon den Hero nicht blockiert. */
+/* Header stays the same height on scroll: no layout shift and stable anchors. */
 [data-shell="public"] .site-header,
 [data-shell="public"] .site-header[data-scrolled="true"],
 body[data-nav="open"] [data-shell="public"] .site-header {
-  padding-top: var(--dock-top);
+  padding: 0;
   border: 0;
-  background: transparent;
-  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--color-line);
+  background: rgba(8, 8, 8, .93);
   backdrop-filter: none;
-  pointer-events: none;
-}
-
-[data-shell="public"] .site-header::after {
-  display: none;
-}
-
-:is([data-shell="public"] .site-header, .film-menu) .gd-header {
-  position: relative;
-  width: min(calc(100% - 2rem), 76rem);
-  max-width: none;
-  min-height: var(--dock-height);
-  margin-inline: auto;
-  padding-inline: 1.15rem 0.45rem;
-  gap: clamp(0.75rem, 2vw, 2rem);
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--radius-pill);
-  background-color: var(--glass-bg-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  -webkit-backdrop-filter: blur(0px) saturate(100%);
-  backdrop-filter: blur(0px) saturate(100%);
   pointer-events: auto;
-  transform: translate3d(0, 0, 0);
-  transition:
-    min-height var(--studio-dur-ui) var(--studio-ease-out),
-    background-color var(--studio-dur-ui) ease,
-    border-color var(--studio-dur-ui) ease,
-    box-shadow var(--studio-dur-ui) ease,
-    -webkit-backdrop-filter var(--studio-dur-ui) ease,
-    backdrop-filter var(--studio-dur-ui) ease,
-    transform var(--studio-dur-spring) var(--studio-ease-spring);
 }
-
-/* Gescrollt: Rauchglas an, minimal kompakter, federnd nach oben. */
-[data-shell="public"] .site-header[data-scrolled="true"] .gd-header,
-.film-menu .gd-header {
-  min-height: var(--dock-height-compact);
-  border-color: var(--glass-edge-strong);
-  background-color: var(--glass-bg);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 18px 50px -24px rgba(0, 0, 0, 0.8);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+[data-shell="public"] .site-header::after { display: none; }
+:is([data-shell="public"] .site-header, .film-menu) .gd-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr);
+  grid-template-areas: "navigation logo tools";
+  width: 100%;
+  max-width: none;
+  height: 96px;
+  min-height: 96px;
+  padding: 0 clamp(1.25rem, 3vw, 3.5rem);
+  gap: 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition: none;
 }
-
-[data-shell="public"] .site-header[data-scrolled="true"] .gd-header {
-  transform: translate3d(0, var(--dock-lift), 0);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  [data-shell="public"] .site-header[data-scrolled="true"] .gd-header,
-  .film-menu .gd-header {
-    background-color: rgba(16, 18, 23, 0.96);
-  }
-}
-
-.film-menu > .fixed {
-  padding-top: var(--dock-top);
-}
-
+[data-shell="public"] .site-header[data-scrolled="true"] .gd-header { min-height: 96px; }
 :is([data-shell="public"] .site-header, .film-menu) .ga-logo {
+  grid-area: logo;
+  justify-self: center;
+  justify-content: center;
   width: auto;
   min-width: 0;
 }
-
 :is([data-shell="public"] .site-header, .film-menu) .ga-logo img,
 [data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img {
   width: auto;
-  height: var(--dock-logo);
+  height: 62px;
+  max-width: 120px;
+  object-fit: contain;
   filter: none;
-  transition: height var(--studio-dur-ui) var(--studio-ease-out);
+  transition: opacity .3s;
 }
-
-[data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img,
-.film-menu .ga-logo img {
-  height: var(--dock-logo-compact);
-}
-
 [data-shell="public"] .site-header .header-quick-nav {
-  position: relative;
-  z-index: 2;
-  gap: clamp(1.25rem, 2.6vw, 2.75rem);
+  justify-content: flex-start;
+  gap: clamp(.9rem, 1.5vw, 1.75rem);
 }
-
 [data-shell="public"] .site-header .header-quick-nav a {
-  font-size: 0.8125rem;
-  letter-spacing: 0.14em;
-}
-
-/* Termin-Schaltflächen und Menü als Pillen innerhalb der Pille. */
-[data-shell="public"] .site-header .header-quick-nav .header-booking-link,
-[data-shell="public"] .site-header .header-film-booking {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 1.2rem;
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
-  letter-spacing: 0.12em;
-  transition:
-    background-color var(--studio-dur-hover) ease,
-    border-color var(--studio-dur-hover) ease,
-    box-shadow var(--studio-dur-ui) var(--studio-ease-out);
-}
-
-[data-shell="public"] .site-header .header-quick-nav .header-booking-link::after {
-  display: none;
-}
-
-/* The desktop navigation already owns the booking action. Match its breakpoint
-   and this stylesheet's specificity so the mobile action cannot appear twice. */
-@media (min-width: 900px) {
-  [data-shell="public"] .site-header .header-film-booking {
-    display: none;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  [data-shell="public"] .site-header .header-quick-nav .header-booking-link:hover,
-  [data-shell="public"] .site-header .header-film-booking:hover {
-    border-color: var(--color-fg);
-    background: var(--color-fg);
-    color: var(--color-accent-fg);
-    box-shadow: 0 10px 30px -12px rgba(244, 246, 250, 0.55);
-  }
-}
-
-:is([data-shell="public"] .site-header, .film-menu) .menu-toggle {
-  min-height: 44px;
-  height: 44px;
-  border: 1px solid var(--glass-edge-strong);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  :is([data-shell="public"] .site-header, .film-menu) .menu-toggle:hover {
-    border-color: var(--color-accent);
-    background: var(--color-accent);
-    color: var(--color-accent-fg);
-  }
-}
-
-:is([data-shell="public"] .site-header, .film-menu) .menu-toggle:active {
-  transform: scale(0.96);
-  transition-duration: var(--studio-dur-press);
-}
-
-@media (max-width: 639px) {
-  :is([data-shell="public"] .site-header, .film-menu) .gd-header {
-    width: calc(100% - 1.25rem);
-    padding-inline: 0.9rem 0.35rem;
-    gap: 0.5rem;
-  }
-
-  /* Touch-Ziele bleiben 44 px (Projektstandard, in der CI geprüft). */
-  [data-shell="public"] .site-header .header-film-booking {
-    padding-inline: 0.85rem;
-    font-size: 0.8125rem;
-    letter-spacing: 0.04em;
-  }
-
-  :is([data-shell="public"] .site-header, .film-menu) .menu-toggle {
-    min-width: 44px;
-  }
-}
-
-/* 5. Hero: Vollbild unter dem Dock + maskierter Reveal --------------------- */
-/* Der Film läuft jetzt unter die schwebende Pille. Statt die Stage-Regeln der
-   Legacy-Dateien zu überschreiben, werden nur deren Variablen im Hero auf 0
-   gesetzt; Landscape- und Reduced-Motion-Varianten bleiben unverändert gültig. */
-[data-shell="public"] .scroll-film {
-  --site-header-height: 0px;
-  --site-header-initial: 0px;
-}
-
-/* Lesbarkeit der Pille über hellen Bildpartien. */
-[data-shell="public"] .scroll-film-media::after {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 24%;
-  background: linear-gradient(180deg, rgba(9, 10, 13, 0.62) 0%, rgba(9, 10, 13, 0) 100%);
-  content: "";
-  pointer-events: none;
-}
-
-/* Masken: overflow:hidden mit Reserve für Unterlängen und Seitenränder, damit
-   keine Glyphe beschnitten wird; negative Margins halten das Layout identisch. */
-.hero-line,
-.reveal-line {
-  display: block;
-  overflow: hidden;
-  padding: 0 0.05em 0.12em;
-  margin: 0 -0.05em -0.12em;
-}
-
-.hero-word {
-  display: inline-block;
-}
-
-[data-shell="public"] .scroll-film-copy h1 .hero-line {
+  padding: .75rem 0;
+  font-size: .625rem;
+  font-weight: 400;
+  letter-spacing: .12em;
   color: var(--color-fg);
 }
-
-[data-shell="public"] .scroll-film-copy h1 .hero-line.hero-line--accent {
-  color: var(--color-accent);
+[data-shell="public"] .site-header .header-quick-nav .header-booking-link {
+  min-height: 44px;
+  padding: .75rem 0;
+  background: transparent;
+  color: var(--color-fg);
 }
-
-[data-shell="public"] .scroll-film-copy h1 .hero-word {
-  color: inherit;
+[data-shell="public"] .site-header .ga-tools { gap: 1.5rem; }
+[data-shell="public"] .site-header .header-film-booking {
+  display: inline-flex;
+  min-height: 46px;
+  padding-inline: 1.1rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font-size: .6875rem;
+  letter-spacing: .08em;
 }
-
-/* CSS-Animation statt GSAP: startet mit dem ersten Frame (vor der Hydration),
-   läuft außerhalb des Main-Threads und braucht auf Smartphones kein JS.
-   Animiert wird `translate`, nicht `transform`: so bleibt transform frei für
-   den magnetischen Button und die Scroll-Logik des Films.
-   fill-mode backwards: Startzustand während der Verzögerung, danach gelten
-   wieder die normalen Regeln (keine eingefrorenen Endwerte). */
-@keyframes studio-rise {
-  from {
-    translate: 0 112%;
-  }
-  to {
-    translate: 0 0;
-  }
+@media (min-width: 960px) {
+  [data-shell="public"] .site-header .header-film-booking { display: none; }
 }
-
-@keyframes studio-fade-up {
-  from {
-    opacity: 0;
-    translate: 0 14px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
+:is([data-shell="public"] .site-header, .film-menu) .menu-toggle,
+[data-shell="public"] .site-header[data-scrolled="true"] .menu-toggle {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg);
 }
-
-@keyframes studio-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+:is([data-shell="public"] .site-header, .film-menu) .menu-toggle-label {
+  font-size: .625rem;
+  letter-spacing: .15em;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .hero-word {
-    animation: studio-rise var(--studio-dur-reveal) var(--studio-ease-out) backwards;
-    animation-delay: calc(140ms + var(--w, 0) * 70ms);
-  }
-
-  [data-shell="public"] .scroll-film-eyebrow {
-    animation: studio-fade-up 800ms var(--studio-ease-out) 40ms backwards;
-  }
-
-  [data-shell="public"] .scroll-film-service {
-    animation: studio-fade-up 800ms var(--studio-ease-out) 520ms backwards;
-  }
-
-  [data-shell="public"] .scroll-film-cta {
-    animation: studio-fade-up 800ms var(--studio-ease-out) 620ms backwards;
-  }
-
-  [data-shell="public"] .scroll-film-prices {
-    animation: studio-fade-up 800ms var(--studio-ease-out) 680ms backwards;
-  }
-
-  /* Nur Deckkraft: die Leiste wird bei offenem Cookie-Hinweis per transform
-     verschoben, das darf keine Animation überdecken. */
-  [data-shell="public"] .scroll-film-bottom {
-    animation: studio-fade 800ms ease 800ms backwards;
-  }
+.film-menu { grid-template-columns: 44% minmax(0, 1fr); }
+.film-menu > .fixed { background: #080808; border-bottom: 1px solid var(--color-line); }
+.film-menu .film-menu-visual { background: #080808; }
+.film-menu .film-menu-visual::after { background: none; }
+.film-menu .film-menu-panel { padding: 8rem clamp(2rem, 5vw, 6rem) 3rem; }
+.film-menu .film-menu-link {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.3vw, 3.3rem);
+  line-height: 1.12;
+  letter-spacing: -.02em;
+  text-transform: none;
+  opacity: 1;
+  color: var(--color-muted);
+  transition: color .3s;
 }
-
-/* Primärer Hero-CTA als Pille mit präzisem Pfeil-Nudge. */
+.film-menu .film-menu-link:is(:hover, :focus-visible, [aria-current="page"]) {
+  color: var(--color-fg);
+  letter-spacing: -.02em;
+}
+/* Full-bleed hero. Its measured-height video controller and consent clearance
+ * retain ownership of playback, seeking, focus and the copy transform. */
+[data-shell="public"] .scroll-film {
+  --site-header-initial: 0px;
+  --site-header-height: 0px;
+  padding-top: 0;
+  background: var(--color-bg);
+}
+[data-shell="public"] .scroll-film[data-motion="scroll"],
+[data-shell="public"] .scroll-film[data-motion="fallback"] { height: 240svh; }
+[data-shell="public"] .scroll-film-stage {
+  top: 0;
+  height: 100svh;
+  min-height: 680px;
+}
+[data-shell="public"] .scroll-film-media {
+  --film-frame: clamp(0, calc((var(--film-progress) - .5) * 2.5), 1);
+  inset: 0;
+  clip-path: inset(calc(var(--film-frame) * 7svh) calc(var(--film-frame) * 4vw));
+}
+[data-shell="public"] .scroll-film-media :is(img, video) {
+  object-fit: cover;
+  object-position: 62% 45%;
+}
+[data-shell="public"] .scroll-film-shade {
+  background: linear-gradient(90deg, rgba(8,8,8,.82), rgba(8,8,8,.32) 58%, rgba(8,8,8,.1)),
+    linear-gradient(0deg, #080808, transparent 28%, transparent 80%, rgba(8,8,8,.55));
+}
+[data-shell="public"] .scroll-film-copy {
+  inset: 0 auto auto 6vw;
+  width: 70%;
+  max-width: 1020px;
+  height: 100%;
+  margin: 0;
+  padding-top: 120px;
+  padding-bottom: clamp(7.5rem, 13svh, 9rem);
+  align-items: flex-end;
+}
+[data-shell="public"] .scroll-film-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 7.4vw, 7.3rem);
+  font-weight: 400;
+  line-height: .98;
+  letter-spacing: -.035em;
+}
+[data-shell="public"] .scroll-film-copy h1 :is(span, .hero-line--accent) { color: var(--color-fg); }
+[data-shell="public"] .scroll-film-eyebrow {
+  max-width: none;
+  margin-bottom: 1.8rem;
+  font-size: .6875rem;
+  letter-spacing: .19em;
+  color: var(--color-fg);
+}
+[data-shell="public"] .scroll-film-service {
+  max-width: 49ch;
+  margin-top: 1.5rem;
+  font-size: .9375rem;
+  line-height: 1.65;
+  color: var(--color-fg);
+}
 [data-shell="public"] .scroll-film-cta {
-  border-radius: var(--radius-pill);
-  padding-inline: 1.5rem 1.25rem;
-  transition:
-    background-color var(--studio-dur-hover) ease,
-    border-color var(--studio-dur-hover) ease,
-    color var(--studio-dur-hover) ease,
-    box-shadow var(--studio-dur-ui) var(--studio-ease-out);
+  min-height: 50px;
+  margin-top: 1.65rem;
+  padding: 0 1.4rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: rgba(8,8,8,.48);
+  color: var(--color-fg);
+  font-size: .75rem;
+  letter-spacing: .04em;
+  box-shadow: none;
 }
-
-[data-shell="public"] .scroll-film-cta svg {
-  transition: translate var(--studio-dur-ui) var(--studio-ease-out);
+[data-shell="public"] .scroll-film-cta:hover { background: var(--color-fg); color: var(--color-bg); }
+[data-shell="public"] .scroll-film-prices { font-size: .75rem; margin-left: .5rem; }
+[data-shell="public"] .scroll-film-bottom { bottom: 1.5rem; left: 6vw; right: 6vw; }
+[data-shell="public"] :is(.scroll-film-skip, .scroll-film-pause) {
+  font-size: .625rem;
+  color: var(--color-fg);
+  letter-spacing: .1em;
 }
-
-@media (hover: hover) and (pointer: fine) {
-  [data-shell="public"] .scroll-film-cta:hover {
-    box-shadow: 0 16px 40px -18px rgba(244, 246, 250, 0.6);
+[data-shell="public"] .scroll-film-pause { border: 1px solid var(--color-line); background: rgba(8,8,8,.65); border-radius: 0; }
+[data-shell="public"] .scroll-film-signature { left: 6vw; top: 40%; }
+[data-shell="public"] .scroll-film-signature p { font-size: clamp(3.5rem, 7.5vw, 8rem); max-width: 14ch; line-height: 1; }
+/* The masks only move the words; the semantic H1 stays in the SSR document. */
+.hero-line, .reveal-line { display: block; overflow: hidden; padding: .03em .08em .2em; margin: -.03em -.08em -.2em; }
+.hero-word { display: inline-block; }
+@keyframes studio-rise { from { translate: 0 110%; } to { translate: 0 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-word { animation: studio-rise 1s var(--studio-ease-out) backwards; animation-delay: calc(120ms + var(--w, 0) * 65ms); }
+}
+/* Existing content now has an editorial rhythm instead of stacked panels. */
+[data-shell="public"] .hero-follow { background: var(--color-bg); }
+[data-shell="public"] .hero-follow .gd-stats { max-width: none; padding-inline: 4vw; }
+[data-shell="public"] .hero-follow li { padding-block: 2.4rem; }
+[data-shell="public"] .hero-follow .font-display { font-size: clamp(1.6rem, 2.5vw, 2.6rem); }
+[data-shell="public"] .home-intro { padding-block: clamp(4rem, 9vw, 9rem); gap: 5vw; }
+[data-shell="public"] .home-intro > p { font-size: clamp(2rem, 3.4vw, 3.5rem); line-height: 1.2; max-width: 28ch; }
+[data-shell="public"] .home-jump-links { flex-direction: column; align-items: flex-start; justify-self: end; gap: 1rem; }
+[data-shell="public"] .home-jump-links a { font-size: .8125rem; min-width: 12rem; }
+[data-shell="public"] .workshop-personal { margin: 0; background: var(--color-bg); border-block: 1px solid var(--color-line); }
+[data-shell="public"] .workshop-personal .film-chapter-media { min-height: 46rem; }
+[data-shell="public"] .workshop-personal .film-chapter-copy { padding: clamp(2rem, 5vw, 6rem); }
+[data-shell="public"] .workshop-quote { font-family: var(--font-display); font-size: clamp(1.9rem, 2.8vw, 2.8rem); line-height: 1.25; }
+[data-shell="public"] .workshop-owner > span { font-size: .9375rem; }
+[data-shell="public"] .workshop-owner > p { font-size: .75rem; }
+[data-shell="public"] .wg-results-teaser { margin-block: clamp(5rem, 10vw, 10rem); }
+[data-shell="public"] .wg-results-teaser-head { align-items: end; gap: 2rem; padding-bottom: 3rem; }
+[data-shell="public"] .wg-video-card { background: transparent; border: 0; border-radius: 0; }
+[data-shell="public"] .wg-video-thumb { border-radius: 0; }
+[data-shell="public"] .wg-video-meta { padding-inline: 0; background: transparent; border-bottom: 1px solid var(--color-line); }
+[data-shell="public"] .wg-home-results-media .wg-video-grid { gap: 2rem; }
+[data-shell="public"] .wg-home-results-media .wg-video-card:nth-child(2) { padding-top: 5rem; }
+[data-shell="public"] .wg-home-results-media .wg-video-card:nth-child(3) { padding-top: 2rem; }
+[data-shell="public"] .reviews-spotlight { background: transparent; padding-inline: 0; padding-block: 5rem; }
+[data-shell="public"] .reviews-excerpts blockquote { font-size: clamp(1.9rem, 3vw, 3rem); }
+[data-shell="public"] .home-craft { padding-block: clamp(5rem, 10vw, 10rem); }
+[data-shell="public"] .home-specialties { padding-block: 5rem; }
+[data-shell="public"] .home-specialties a { padding-block: 2.4rem; }
+[data-shell="public"] .home-specialties a > span:nth-child(2) { font-size: clamp(2rem, 4.5vw, 4.5rem); }
+[data-shell="public"] .home-directory { padding-block: 5rem; }
+[data-shell="public"] .home-directory .heading-2 { font-size: 1.8rem; letter-spacing: -.01em; }
+[data-shell="public"] .home-directory header > p:not(.kicker) { font-size: .875rem; line-height: 1.7; }
+[data-shell="public"] .home-location { padding-block: 6rem; background: var(--color-bg); }
+[data-shell="public"] .concierge-service { background: var(--color-bg); padding-block: 7rem; }
+[data-shell="public"] .concierge-service h3 { font-size: clamp(2rem, 3.4vw, 3.4rem); }
+[data-shell="public"] .concierge-service li { padding-block: 2.5rem; }
+[data-shell="public"] .booking-section { padding-block: 7rem; border-top: 1px solid var(--color-line); }
+[data-shell="public"] .booking-section .heading-2 { font-size: clamp(3rem, 5vw, 5.2rem); }
+/* All existing public page templates share the type and image framing. */
+[data-shell="public"] .page-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding-top: 96px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-line);
+}
+[data-shell="public"] .page-hero .film-chapter-media {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: min(76svh, 850px);
+  height: 100%;
+}
+[data-shell="public"] .page-hero .film-chapter-copy {
+  grid-column: 1;
+  grid-row: 1;
+  padding: clamp(2rem, 5vw, 6rem);
+}
+[data-shell="public"] .page-hero .film-chapter-copy > p { line-height: 1.75; }
+[data-shell="public"] .page-hero nav { font-size: .625rem; line-height: 1.9; }
+[data-shell="public"] main > header { padding-top: 10rem; padding-bottom: 4rem; }
+[data-shell="public"] .section { padding-block: clamp(3.5rem, 6vw, 6rem); }
+[data-shell="public"] :is(.prose, .legal-content, .article-body) { line-height: 1.8; }
+[data-shell="public"] :is(.prose, .legal-content, .article-body) h2 { margin-top: 2em; }
+[data-shell="public"] footer { border-top: 1px solid var(--color-line); }
+[data-shell="public"] .gd-footer { max-width: 1440px; gap: 4rem; padding-block: 6rem; }
+[data-shell="public"] footer .chrome-rule { display: none; }
+[data-shell="public"] .gd-footer .kicker { color: var(--color-fg); }
+[data-shell="public"] .gd-footer :is(p, li, address, a) { line-height: 1.7; }
+[data-shell="public"] .instagram-badge { border-radius: 0; background: transparent; }
+@media (max-width: 1023px) {
+  .film-menu { grid-template-columns: minmax(0, 1fr); }
+  .film-menu .film-menu-panel { padding-top: 8rem; }
+}
+@media (max-width: 959px) {
+  :is([data-shell="public"], .film-menu) { --site-header-initial: 76px; --site-header-height: 76px; }
+  :is([data-shell="public"] .site-header, .film-menu) .gd-header {
+    grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr);
+    grid-template-areas: "tools logo navigation";
+    height: 76px;
+    min-height: 76px;
+    gap: .5rem;
   }
-
-  [data-shell="public"] .scroll-film-cta:hover svg {
-    translate: 4px 0;
-  }
+  [data-shell="public"] .site-header[data-scrolled="true"] .gd-header { min-height: 76px; }
+  [data-shell="public"] .site-header .header-quick-nav { display: none; }
+  :is([data-shell="public"] .site-header, .film-menu) .ga-tools { display: contents; }
+  :is([data-shell="public"] .site-header, .film-menu) .menu-toggle { grid-column: 1; grid-row: 1; justify-self: start; }
+  [data-shell="public"] .site-header .header-film-booking { grid-column: 3; grid-row: 1; justify-self: end; padding-inline: .7rem; font-size: .625rem; }
+  :is([data-shell="public"] .site-header, .film-menu) .ga-logo img,
+  [data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img { height: 52px; max-width: 100px; }
+  [data-shell="public"] .page-hero { grid-template-columns: 1fr; padding-top: 76px; }
+  [data-shell="public"] .page-hero .film-chapter-copy { grid-column: 1; grid-row: 1; padding: 3.5rem 1.5rem; }
+  [data-shell="public"] .page-hero .film-chapter-media { grid-column: 1; grid-row: 2; min-height: 0; aspect-ratio: 16 / 10; }
+  [data-shell="public"] .workshop-personal .film-chapter-media { min-height: 0; aspect-ratio: 16 / 10; }
+  [data-shell="public"] .workshop-personal .film-chapter-copy { padding: 3.5rem 1.5rem; }
+  [data-shell="public"] .scroll-film-copy { width: 82%; }
+  [data-shell="public"] .home-intro { gap: 3rem; }
+  [data-shell="public"] .home-jump-links { justify-self: start; }
 }
-
-[data-shell="public"] .scroll-film-pause {
-  border-color: var(--glass-edge-strong);
-  border-radius: var(--radius-pill);
-  background: var(--glass-bg);
+@media (max-width: 639px) {
+  :is([data-shell="public"] .site-header, .film-menu) .gd-header { padding-inline: 1rem; grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr); }
+  :is([data-shell="public"] .site-header, .film-menu) .ga-logo img,
+  [data-shell="public"] .site-header[data-scrolled="true"] .ga-logo img { max-width: 76px; height: 46px; }
+  [data-shell="public"] .site-header .header-film-booking { font-size: .6rem; padding-inline: .45rem; letter-spacing: 0; }
+  .film-menu .film-menu-link { font-size: 2rem; }
+  .film-menu .film-menu-panel { padding: 6.5rem 1.5rem 2rem; }
+  [data-shell="public"] .scroll-film[data-motion="scroll"],
+  [data-shell="public"] .scroll-film[data-motion="fallback"] { height: 180svh; }
+  [data-shell="public"] .scroll-film-stage { min-height: 660px; }
+  [data-shell="public"] .scroll-film-copy { left: 1.25rem; right: 1.25rem; width: auto; max-width: none; padding-top: 90px; padding-bottom: 8.5rem; }
+  [data-shell="public"] .scroll-film-copy h1 { font-size: clamp(2.7rem, 11.8vw, 4.5rem); line-height: 1; letter-spacing: -.035em; }
+  [data-shell="public"] .scroll-film-eyebrow { margin-bottom: 1.2rem; font-size: .5625rem; letter-spacing: .12em; }
+  [data-shell="public"] .scroll-film-service { font-size: .8125rem; line-height: 1.5; max-width: 38ch; margin-top: 1.2rem; }
+  [data-shell="public"] .scroll-film-cta { font-size: .6875rem; min-height: 48px; padding-inline: .9rem; margin-top: 1.25rem; gap: 1rem; }
+  [data-shell="public"] .scroll-film-prices { font-size: .6875rem; padding-inline: .6rem; margin-left: 0; }
+  [data-shell="public"] .scroll-film-media :is(img, video) { object-position: center 35%; }
+  [data-shell="public"] .scroll-film-shade { background: linear-gradient(0deg, #080808 0%, rgba(8,8,8,.8) 34%, rgba(8,8,8,.05) 78%, rgba(8,8,8,.4)); }
+  [data-shell="public"] .scroll-film-bottom { left: 1.25rem; right: 1.25rem; bottom: 1.25rem; gap: .7rem; }
+  [data-shell="public"] :is(.scroll-film-skip, .scroll-film-pause) { font-size: .5625rem; letter-spacing: .02em; }
+  [data-shell="public"] .scroll-film-signature { left: 1.25rem; right: 1.25rem; }
+  [data-shell="public"] .scroll-film-signature p { font-size: 3.5rem; }
+  [data-shell="public"] .hero-follow .gd-stats { padding-inline: 0; }
+  [data-shell="public"] .hero-follow li { padding: 1.6rem 1.25rem; }
+  [data-shell="public"] .hero-follow .font-display { font-size: 1.7rem; }
+  [data-shell="public"] .home-intro { padding-block: 4rem; }
+  [data-shell="public"] .home-intro > p { font-size: 2.15rem; }
+  [data-shell="public"] .home-jump-links { width: 100%; }
+  [data-shell="public"] .home-jump-links a { width: 100%; }
+  [data-shell="public"] .wg-home-results-media .wg-video-card:nth-child(n) { padding-top: 0; }
+  [data-shell="public"] .wg-results-teaser-head { align-items: start; gap: 1.5rem; padding-bottom: 1.5rem; }
+  [data-shell="public"] .reviews-spotlight { padding-block: 3rem; }
+  [data-shell="public"] :is(.home-craft, .home-specialties, .home-directory, .home-location, .concierge-service, .booking-section) { padding-block: 4rem; }
+  [data-shell="public"] .home-directory { grid-template-columns: 1fr; }
+  [data-shell="public"] .gd-footer { padding-block: 4rem; gap: 3rem; }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  [data-shell="public"] .scroll-film[data-motion] { height: auto; }
+  [data-shell="public"] .scroll-film-stage { height: 42rem; min-height: 42rem; }
+  [data-shell="public"] .scroll-film-copy { padding-top: 110px; padding-bottom: 6rem; }
+  [data-shell="public"] .scroll-film-copy h1 { font-size: 3.4rem; }
+}
+/* Keep the complete first-visit title/actions above the consent bar on laptops.
+ * Viewport-only sizing avoids a font-size shift when consent is hydrated. */
+@media (min-width: 960px) and (max-height: 800px) {
+  [data-shell="public"] .scroll-film-copy { padding-bottom: 6.25rem; }
+  [data-shell="public"] .scroll-film-copy h1 { font-size: clamp(3rem, min(5.4vw, 8svh), 4.5rem); }
+  [data-shell="public"] .scroll-film-eyebrow { margin-bottom: 1rem; }
+  [data-shell="public"] .scroll-film-service { margin-top: 1rem; font-size: .8125rem; line-height: 1.5; }
+  [data-shell="public"] .scroll-film-cta { margin-top: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-shell="public"] .scroll-film[data-motion] { height: auto; }
+  [data-shell="public"] .scroll-film-stage { position: relative; }
+  .hero-word { animation: none; }
+  [data-shell="public"] .scroll-film-media { clip-path: none; }
 }
 
 /* 6. Abschnitts-Headlines: maskierte Zeilen-Reveals ------------------------- */
@@ -541,7 +535,7 @@ html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
 
 .home-process::after {
   background: var(--light-rail);
-  box-shadow: 0 0 14px rgba(191, 206, 224, 0.45);
+  box-shadow: 0 0 14px rgba(243, 240, 232, 0.45);
   -webkit-mask: linear-gradient(180deg, #000 82%, transparent);
   mask: linear-gradient(180deg, #000 82%, transparent);
   transform: scaleY(var(--process-progress));
@@ -596,11 +590,11 @@ html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
 
 .home-process li.is-active::before,
 .home-process:not([data-live]) li::before {
-  border-color: #f4f6fa;
-  background: #f4f6fa;
+  border-color: #f3f0e8;
+  background: #f3f0e8;
   box-shadow:
-    0 0 0 4px rgba(191, 206, 224, 0.12),
-    0 0 18px rgba(191, 206, 224, 0.7);
+    0 0 0 4px rgba(243, 240, 232, 0.12),
+    0 0 18px rgba(243, 240, 232, 0.7);
 }
 
 @media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
@@ -648,196 +642,6 @@ html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
   [data-shell="public"] .home-process p {
     max-width: 44ch;
     font-size: 1.0625rem;
-  }
-}
-
-/* 8. Bento-Pakete ------------------------------------------------------------ */
-/* Statisches Studiolicht hinter dem Raster: gibt dem Glas etwas zu brechen,
-   kostet nichts (kein Scroll-Repaint). */
-[data-shell="public"] .atelier-packages {
-  background:
-    radial-gradient(55% 45% at 78% 78%, rgba(191, 206, 224, 0.075), rgba(191, 206, 224, 0) 70%),
-    radial-gradient(40% 35% at 12% 18%, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 70%),
-    var(--color-bg);
-}
-
-.pack-bento {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.pack-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.pack-card-media {
-  position: relative;
-  margin: 0;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: calc(var(--radius-glass) - 1px) calc(var(--radius-glass) - 1px) 0 0;
-  background: var(--color-surface);
-}
-
-.pack-card-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.pack-card-media figcaption {
-  position: absolute;
-  inset: auto 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 2.5rem 1.1rem 0.85rem;
-  background: linear-gradient(0deg, rgba(9, 10, 13, 0.82), rgba(9, 10, 13, 0));
-  color: var(--color-muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.pack-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: clamp(1.4rem, 2.6vw, 2.25rem);
-}
-
-[data-shell="public"] .pack-card h3 {
-  margin-top: 1.25rem;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 2.8vw, 2.75rem);
-  font-weight: 400;
-  line-height: 1.06;
-  letter-spacing: -0.03em;
-}
-
-[data-shell="public"] .pack-card .package-goal {
-  margin-top: 1rem;
-  font-size: 1.0625rem;
-}
-
-[data-shell="public"] .pack-card .package-description {
-  max-width: 44ch;
-  margin-top: 0.85rem;
-  font-size: 1rem;
-}
-
-.pack-card-foot {
-  margin-top: auto;
-  padding-top: 1.75rem;
-}
-
-[data-shell="public"] .pack-card .package-price {
-  margin-top: 0;
-}
-
-[data-shell="public"] .pack-card .package-price strong {
-  font-size: clamp(2.5rem, 3.2vw, 3rem);
-  letter-spacing: -0.02em;
-}
-
-[data-shell="public"] .pack-card .atelier-text-link {
-  margin-top: 1.25rem;
-  gap: 1.5rem;
-  border: 0;
-}
-
-/* „Empfohlen“ als feine Glas-Plakette. */
-[data-shell="public"] .pack-card .package-recommendation {
-  padding: 0.3rem 0.7rem;
-  border: 1px solid rgba(191, 206, 224, 0.45);
-  border-radius: var(--radius-pill);
-  background: rgba(191, 206, 224, 0.08);
-  color: var(--color-accent);
-}
-
-/* Paket 02 (Empfohlen): etwas präsentere Kante. */
-.pack-card:nth-child(2) {
-  border-color: var(--glass-edge-strong);
-}
-
-/* Paket 03 (Keramikschutz, 899 €): leuchtende Klarlack-Kante.
-   Ring per Maske (1px), damit der Verlauf nur auf der Kante liegt. */
-.pack-card:nth-child(3) {
-  border-color: transparent;
-  box-shadow: var(--glass-shadow), var(--light-glow);
-}
-
-.pack-card:nth-child(3)::before {
-  position: absolute;
-  inset: -1px;
-  padding: 1px;
-  border-radius: inherit;
-  background: var(--light-edge);
-  content: "";
-  opacity: 0.85;
-  pointer-events: none;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box exclude,
-    linear-gradient(#000 0 0);
-  transition: opacity var(--studio-dur-ui) ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .pack-card:nth-child(3):hover {
-    border-color: transparent;
-    box-shadow: var(--glass-shadow), var(--light-glow-hover);
-  }
-
-  .pack-card:nth-child(3):hover::before {
-    opacity: 1;
-  }
-
-  .pack-card .atelier-text-link:hover .atelier-arrow {
-    border-color: var(--color-accent);
-  }
-}
-
-@media (min-width: 760px) {
-  .pack-bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem;
-  }
-
-  .pack-card:nth-child(-n + 2) .pack-card-media {
-    aspect-ratio: 16 / 10;
-  }
-
-  /* Finale: Keramikschutz über die volle Breite, Bild links, Text rechts. */
-  .pack-card:nth-child(3) {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  }
-
-  .pack-card:nth-child(3) .pack-card-media {
-    aspect-ratio: auto;
-    min-height: 26rem;
-    border-radius: calc(var(--radius-glass) - 1px) 0 0 calc(var(--radius-glass) - 1px);
-  }
-
-  .pack-card:nth-child(3) .pack-card-body {
-    padding: clamp(1.75rem, 3.4vw, 3.25rem);
-  }
-
-  [data-shell="public"] .pack-card:nth-child(3) h3 {
-    font-size: clamp(2.5rem, 3.8vw, 3.75rem);
-  }
-
-  [data-shell="public"] .pack-card:nth-child(3) .package-price strong {
-    font-size: clamp(3rem, 4.2vw, 4rem);
   }
 }
 
@@ -908,13 +712,13 @@ html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
 }
 
 .city-chip-status[data-status="free"] {
-  border-color: rgba(191, 206, 224, 0.4);
+  border-color: rgba(243, 240, 232, 0.4);
   color: var(--color-fg);
 }
 
 .city-chip-status[data-status="free"]::before {
-  background: #f4f6fa;
-  box-shadow: 0 0 8px rgba(191, 206, 224, 0.85);
+  background: #f3f0e8;
+  box-shadow: 0 0 8px rgba(243, 240, 232, 0.85);
 }
 
 .city-chip-status[data-status="request"]::before {

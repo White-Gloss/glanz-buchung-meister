@@ -1,53 +1,57 @@
-# Studio-Designsystem („Liquid Luxury“)
+# Öffentliches Designsystem: Editorial Automotive
 
-Stand: 6. November 2026. Visuelles Upgrade der öffentlichen Website ohne
-Textänderungen. Quelle der Wahrheit: `src/styles/studio.css` (letzte Schicht
-der Kaskade, ohne `@layer`).
+Stand: 10. November 2026. Visueller Relaunch nach Forge Automotive bei
+unveränderten Texten, Preisen, URLs, Überschriften und SEO-Daten.
+Die öffentliche Gestaltung liegt in `src/styles/studio.css`; das Betreiber-
+und Login-Layout behält seine bisherigen Tokens.
 
-## Tokens
+## Gestaltung
 
-| Zweck | Token | Wert |
-| --- | --- | --- |
-| Hintergrund | `--color-bg` / `--studio-obsidian` | `#090a0d` |
-| Sektionen | `--color-surface` / `--studio-graphite` | `#101217` |
-| Erhöht | `--color-elevated` / `--studio-elevated` | `#171a21` |
-| Glas | `--glass-bg` | `rgba(18, 20, 26, 0.7)` + `blur(20px)` |
-| Glaskante | `--glass-edge` / `--glass-edge-hover` | `rgba(255,255,255,.08)` / `.22` |
-| Lichtkante | `--light-edge`, `--light-glow` | Klarlack-Verlauf, nur Keramikschutz |
+- Schwarz `#080808`, Flächen `#111111` / `#1c1b19`, warmes Weiß `#f3f0e8`.
+- Textstufen `#bcb8b0` und `#a6a198`; der Kontrasttest liest diese tatsächlichen
+  öffentlichen CSS-Tokens und prüft alle Flächen auf mindestens 4,5:1.
+- Lokal geladene variable Cormorant Garamond für Überschriften und Geist für
+  Fließtext/Formulare. Zusammen 67.040 Bytes; Lizenzen und Quellen unter
+  `public/fonts/EDITORIAL-FONTS.md`.
+- Fixer Header mit zentralem Logo, stabiler Höhe, bestehenden Links und
+  genau einem sichtbaren Buchungszugang; Bildmenü mit erhaltenem Dialogfokus.
+- Klare Kanten, zurückhaltende Linien und große Bildflächen ersetzen den
+  schwebenden Glasheader und das Bento-Paketraster. Die vorhandenen
+  Inhaltslayouts in refinement.css/luxury.css bleiben als Grundlage erhalten;
+  studio.css ersetzt ihre öffentliche Typografie und visuelle Ausarbeitung.
 
-Die drei Flächen stehen zusätzlich in `@theme` (`src/styles.css`) und in
-`src/lib/contrast.ts`; `src/lib/contrast.test.ts` prüft WCAG AA für alle
-Textstufen auf allen Flächen (Minimum aktuell 6,26 : 1).
+## Komponenten und Bewegung
 
-## Klassen
+- Hero: vorhandene, bedarfsgeladene Scrollfilm-Wiedergabe mit Poster,
+  Pausieren, Rückwärtsscrollen und Daten-/Bewegungs-Fallback. Im zweiten
+  Abschnitt verkleinert eine Bildmaske den Ausschnitt innerhalb der Stage.
+- Pakete: `package-editorial.css`; ab 960 px eine gemeinsame CSS-Sticky-
+  Bildfläche mit drei vollständigen Textkapiteln. Native Scrollposition
+  bestimmt Bildwechsel und vorhandenen Zähler. Ohne JavaScript bzw. mit
+  reduzierter Bewegung sind alle drei Bild-/Textpaare statisch sichtbar.
+- Abholservice: `concierge-editorial.css`; bestehende drei Schritte mit
+  dekorativem Bildwechsel im vorhandenen GSAP-Kontext. Sticky nur, wenn
+  die unveränderte Überschrift samt Bild tatsächlich in den Viewport passt.
+- Buchung: `booking-editorial.css`; dieselben drei Schritte, Desktop mit
+  haftender Preisübersicht, mobil kompakte Preiszeile. Keine Animation oder
+  Verschiebung von Formularfeldern und Aktionen.
+- Bestehende Bildparallaxe, Prozessmarkierung und bedarfsgeladenes Lenis
+  bleiben erhalten. Kein zweiter globaler Scrollcontroller.
 
-- `.glass` – Rauchglas-Karte. Weichzeichner erst ab 960 px (auf Smartphones
-  über flachen Flächen unsichtbar, aber teuer).
-- `.glass-interactive` – Hover: Kante `.22`, 4 px Lift; nur bei
-  `(hover: hover) and (pointer: fine)`.
-- `data-parallax-frame` – Rahmen, dessen `img` scrollgekoppelt gleitet
-  (±5 % bei 12 % Überskalierung, nur Desktop).
-- `data-lines` + `<RevealLines>` – maskierter Zeilen-Reveal für Headlines.
+## Inhalte und Medien
 
-## Motion
+`npm run check:design-content` vergleicht gegen Commit
+`db305e3c190cf53a0213c90ea3e788625ece091d`. Details und Grenzen stehen in
+`docs/forge-content-preservation.md`. Vorhandene Kundenbilder bleiben echte
+Referenzen; optionale neue Atmosphärenbilder und Higgsfield-Prompts stehen
+in `docs/forge-media-brief.md`.
 
-| Was | Werkzeug | Warum |
-| --- | --- | --- |
-| Smooth Scroll | Lenis 1.3 (`src/lib/smooth-scroll.ts`) | nur Maus/Trackpad; Touch bleibt nativ |
-| Hero-Headline | CSS-Keyframes (`translate`) | startet vor der Hydration, kein JS auf Smartphones |
-| Section-Headlines | IntersectionObserver + CSS-Transition | einmalig, auch mobil, ohne GSAP |
-| Parallaxe, Lichtlinie | GSAP ScrollTrigger (scrub) | an Scrollposition gekoppelt |
-| Ablauf-Pin | CSS `position: sticky` | kein Pin-Spacer, ruckelfrei mit Lenis |
-| Magnet-CTA | GSAP `quickTo` + `elastic.out(1, 0.75)` | Feder mit ~10 % Überschwinger |
-| Dock | CSS `linear()`-Feder (bounce 0.2) | berechnet, Fallback starkes ease-out |
+## Prüfung und Veröffentlichung
 
-Regeln: nur `transform`/`translate`/`opacity` animieren; jede Bewegung hat eine
-`prefers-reduced-motion`-Variante; gedimmte Zustände über Farbe, nie über
-Deckkraft. GSAP und Lenis laden nur auf Desktop bzw. Zeigegeräten nach.
-
-## Prüfung
-
-Lokal ohne Website-Server: `npm run lint`, `npm run typecheck`, `npm test`,
-`npm run build`. Browserprüfung ausschließlich im Linux-CI-Job
-(`scripts/qa/run-checks.mjs`, Artefakt `isolated-qa-results`) und nach dem
-Deployment auf der veröffentlichten Website (Workflow „Live Visual Check“).
+Lokal sind nur Build, Lint, Typprüfung und Tests ohne Website-Server erlaubt.
+Browserprüfungen und Screenshots laufen in der bestehenden Linux-GitHub-CI.
+Die Prüfungen erfassen Paketwechsel vorwärts/rückwärts, reduzierte Bewegung,
+Headerüberlappung, Buchungsübersicht, Formularfunktionen und Sprungziele.
+Der bestehende Hostinger-Releaseweg benötigt einen manuellen Dispatch für
+exakten geprüften main-Commit und bestätigten Produktionsvorgänger; ein PR,
+Merge oder erfolgreicher Build allein ist keine Veröffentlichung.
