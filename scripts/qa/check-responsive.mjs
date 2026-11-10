@@ -99,6 +99,17 @@ async function verifyBookingActivation(page, width, reducedMotion) {
       // handlers that only react to a changed hash or retain the old focus.
       await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
       await page.waitForFunction(() => window.scrollY <= 1);
+      if (source === "hero") {
+        // With motion enabled, the real film eases its copy back in after
+        // scrollY reaches zero. Wait for that visible, interactive state before
+        // moving keyboard focus; do not disable the production inert behavior.
+        await page.waitForFunction(() => {
+          const link = document.querySelector(".scroll-film-cta");
+          const copy = link?.closest(".scroll-film-copy");
+          return link && !link.closest("[inert]") && copy &&
+            Number(getComputedStyle(copy).opacity) >= 0.99;
+        }, undefined, { timeout: 5_000 });
+      }
       await link.focus();
       assert.equal(await link.evaluate((element) => element === document.activeElement), true,
         `${width}px ${source}: move focus away from the booking heading before reactivation.`);
