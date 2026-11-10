@@ -1,4 +1,4 @@
-import { createRootRoute, type AnyRouteMatch } from "@tanstack/react-router";
+import { createRootRoute, useRouter, type AnyRouteMatch } from "@tanstack/react-router";
 import { DeferredScripts } from "@/components/deferred-scripts";
 import { PrioritizedHeadContent } from "@/components/prioritized-head-content";
 import { AuthProvider } from "@/lib/auth/provider";
@@ -7,6 +7,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Shell } from "@/components/site-chrome";
 import { site } from "@/data/site";
 import { googleSiteVerificationMeta } from "@/lib/googleSiteVerification";
+import { CONSENT_VISIBILITY_SCRIPT } from "@/lib/consent";
 // Start collects the complete stylesheets for SSR in this cascade order.
 // Side-effect imports also keep styles available during client navigation.
 import "../styles.css";
@@ -57,7 +58,8 @@ export const Route = createRootRoute({
       ],
     };
   },
-  component: () => {
+  component: function RootDocument() {
+    const nonce = useRouter().options.ssr?.nonce;
     return (
       <html lang="de" className="antialiased" suppressHydrationWarning>
         <head>
@@ -82,6 +84,7 @@ export const Route = createRootRoute({
           {googleSiteVerificationMeta(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION).map((tag) => (
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: CONSENT_VISIBILITY_SCRIPT }} />
           <PrioritizedHeadContent />
         </head>
         <body className="bg-bg text-fg">
@@ -95,4 +98,3 @@ export const Route = createRootRoute({
     );
   },
 });
-

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import {
   CONSENT_STORAGE_KEY,
+  CONSENT_VISIBILITY_SCRIPT,
   getStoredConsent,
   onConsentChange,
   setStoredConsent,
@@ -51,6 +52,26 @@ function uninstallFakeWindow() {
 describe("getStoredConsent / setStoredConsent", () => {
   afterEach(() => {
     uninstallFakeWindow();
+  });
+
+  it("hides the server-rendered notice only for a valid stored choice", () => {
+    for (const [choice, hidden] of [
+      ["accepted", true],
+      ["rejected", true],
+      ["maybe", false],
+      [null, false],
+    ] as const) {
+      const attributes = new Map<string, string>();
+      new Function("localStorage", "document", CONSENT_VISIBILITY_SCRIPT)(
+        { getItem: (key: string) => key === CONSENT_STORAGE_KEY ? choice : null },
+        { documentElement: { setAttribute: (key: string, value: string) => attributes.set(key, value) } },
+      );
+      assert.equal(attributes.has("data-consent-stored"), hidden);
+    }
+    assert.doesNotThrow(() => new Function("localStorage", "document", CONSENT_VISIBILITY_SCRIPT)(
+      { getItem: () => { throw new Error("storage unavailable"); } },
+      {},
+    ));
   });
 
   it("liefert null ohne window (z. B. beim serverseitigen Rendern)", () => {

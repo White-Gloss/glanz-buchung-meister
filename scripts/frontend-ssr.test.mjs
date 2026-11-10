@@ -86,6 +86,7 @@ test("service index and city routes render distinct content with one canonical",
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);
+    assert.match(html, /id="consent-text"/, `${path} renders the consent notice before hydration`);
     const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
     assert.equal(h1, heading, `${path} must render its own heading`);
     assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);

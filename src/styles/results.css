@@ -7,6 +7,10 @@
   box-shadow: 0 -12px 36px rgb(0 0 0 / 0.24);
 }
 
+html[data-consent-stored] .consent-banner {
+  display: none;
+}
+
 .consent-banner .cta-primary,
 .consent-banner .cta-ghost {
   min-width: 7.75rem;

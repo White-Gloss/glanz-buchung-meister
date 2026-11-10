@@ -15,7 +15,8 @@ export function CookieSettingsButton() {
  * die Website keine Verbindung zu Google her.
  */
 export function ConsentBanner() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [ready, setReady] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const rejectRef = useRef<HTMLButtonElement>(null);
@@ -26,9 +27,9 @@ export function ConsentBanner() {
     setAccepted(existing === "accepted");
     if (existing === "accepted") {
       loadGoogleTag();
-    } else if (existing === null) {
-      setVisible(true);
     }
+    setVisible(existing === null);
+    setReady(true);
     const openSettings = () => setVisible(true);
     window.addEventListener(CONSENT_SETTINGS_EVENT, openSettings);
     const unsubscribe = onConsentChange((choice) => {
@@ -43,6 +44,8 @@ export function ConsentBanner() {
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
+    document.documentElement.removeAttribute("data-consent-stored");
     if (!visible) return;
     document.body.dataset.consentBanner = "open";
     const banner = bannerRef.current;
@@ -64,7 +67,7 @@ export function ConsentBanner() {
       document.documentElement.style.removeProperty("--consent-banner-height");
       delete document.body.dataset.consentBanner;
     };
-  }, [visible]);
+  }, [ready, visible]);
 
   if (!visible) return null;
 

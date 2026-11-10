@@ -11,6 +11,10 @@ export type ConsentChoice = "accepted" | "rejected";
 
 export const CONSENT_STORAGE_KEY = "wg-consent";
 
+export const CONSENT_VISIBILITY_SCRIPT =
+  `(function(){try{var c=localStorage.getItem(${JSON.stringify(CONSENT_STORAGE_KEY)});` +
+  'if(c==="accepted"||c==="rejected")document.documentElement.setAttribute("data-consent-stored","")}catch(e){}})()';
+
 const CONSENT_CHANGE_EVENT = "wg-consent-change";
 export const CONSENT_SETTINGS_EVENT = "wg-consent-settings";
 let failedStorageChoice: { owner: Window; choice: ConsentChoice } | undefined;
