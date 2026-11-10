@@ -97,9 +97,16 @@ test("the client entry starts only after eager hero images loaded, decoded and p
   const page = fakePage({ images: [hero] });
   page.run(source);
   assert.equal(page.timers[0]?.delay, DEFERRED_BOOTSTRAP_FALLBACK_MS);
+  assert.deepEqual(
+    page.inserted.map(({ tag, rel, href, ...attributes }) => ({ tag, rel, href, priority: attributes["@fetchpriority"] })),
+    [
+      { tag: "link", rel: "modulepreload", href: "/assets/index-a.js", priority: "low" },
+      { tag: "link", rel: "modulepreload", href: "/assets/routes-b.js", priority: "low" },
+    ],
+  );
 
   await settle();
-  assert.equal(page.inserted.length, 0, "nothing loads while the document is parsed");
+  assert.equal(page.inserted.length, 2, "the entry does not execute while the document is parsed");
   page.fire("DOMContentLoaded");
   assert.equal(page.selector(), 'img[fetchpriority="high"]:not([loading="lazy"])');
   await settle();
@@ -109,19 +116,20 @@ test("the client entry starts only after eager hero images loaded, decoded and p
   await settle();
   assert.ok(hero.decoded, "the hero image is decoded before it counts as painted");
   page.nextFrame();
-  assert.equal(page.inserted.length, 0, "the first frame paints the hero image");
+  assert.equal(page.inserted.length, 2, "the first frame paints the hero image");
   page.nextFrame();
   assert.deepEqual(
     page.inserted.map(({ tag, rel, href, type, src }) => ({ tag, rel, href, type, src })),
     [
+      { tag: "link", rel: "modulepreload", href: "/assets/index-a.js", type: undefined, src: undefined },
       { tag: "link", rel: "modulepreload", href: "/assets/routes-b.js", type: undefined, src: undefined },
       { tag: "script", rel: undefined, href: undefined, type: "module", src: "/assets/index-a.js" },
     ],
   );
-  assert.equal(page.inserted[1]["@async"], "", "React finds the entry as an async script resource");
+  assert.equal(page.inserted[2]["@async"], "", "React finds the entry as an async script resource");
 
   page.timers[0].callback();
-  assert.equal(page.inserted.length, 2, "the fallback never inserts a second entry");
+  assert.equal(page.inserted.length, 3, "the fallback never inserts a second entry");
 });
 
 test("a failed hero image or a parsed document does not hold hydration back", async () => {
@@ -132,12 +140,20 @@ test("a failed hero image or a parsed document does not hold hydration back", as
   await settle();
   page.nextFrame();
   page.nextFrame();
-  assert.equal(page.inserted.length, 2);
+  assert.equal(page.inserted.length, 3);
 });
 
 test("the fallback timer hydrates when frames never run", () => {
   const page = fakePage({ images: [new FakeImage(false)] });
   page.run(source);
+  page.timers[0].callback();
+  assert.equal(page.inserted.length, 3);
+});
+
+test("overlapping entry and preload URLs are requested only once", () => {
+  const page = fakePage();
+  page.run(deferredBootstrapSource(["/assets/index-a.js"], ["/assets/index-a.js"]));
+  assert.equal(page.inserted.length, 1);
   page.timers[0].callback();
   assert.equal(page.inserted.length, 2);
 });
@@ -149,7 +165,7 @@ for (const intent of ["pointerdown", "keydown", "focusin"]) {
     page.run(source);
 
     page.fire(intent);
-    assert.equal(page.inserted.length, 2, "Interaction intent should start the client immediately.");
+    assert.equal(page.inserted.length, 3, "Interaction intent should start the client immediately.");
     assert.equal(hero.decoded, false, "The unfinished image must not delay interaction readiness.");
     for (const event of ["pointerdown", "keydown", "focusin"]) {
       assert.equal(page.listenerCount(event), 0, "Release every intent listener once loading starts.");
@@ -160,7 +176,7 @@ for (const intent of ["pointerdown", "keydown", "focusin"]) {
     page.nextFrame();
     page.nextFrame();
     page.timers[0].callback();
-    assert.equal(page.inserted.length, 2, "Image completion, later intent and fallback share one bootstrap.");
+    assert.equal(page.inserted.length, 3, "Image completion, later intent and fallback share one bootstrap.");
   });
 }
 
@@ -189,4 +205,3 @@ test("only Start's module entry and module preloads are deferred", () => {
   assert.ok(isModulePreload({ tag: "link", attrs: { rel: "modulepreload", href: "/a.js" } }));
   assert.ok(!isModulePreload({ tag: "link", attrs: { rel: "preload", href: "/a.woff2" } }));
 });
-

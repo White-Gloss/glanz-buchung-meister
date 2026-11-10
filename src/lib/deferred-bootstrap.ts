@@ -25,8 +25,8 @@ function serialize(value: readonly string[]) {
  * Inline script that starts the client bundle after the first viewport has
  * painted. It waits for the document to be parsed and for every eager
  * `fetchpriority="high"` image to load and decode, lets two frames pass so
- * those images are on screen, then inserts the module preloads and entries
- * exactly as Start would have rendered them. A timer guarantees hydration
+ * those images are on screen, then inserts the module entries. Low-priority
+ * preloads start the downloads earlier without executing the client. A timer guarantees hydration
  * when frames are paused, e.g. in a background tab. Pointer, keyboard or focus
  * intent starts loading immediately instead of waiting for image decoding.
  * Events are neither cancelled nor replayed, so native links remain native.
@@ -34,8 +34,8 @@ function serialize(value: readonly string[]) {
 export function deferredBootstrapSource(entries: readonly string[], preloads: readonly string[]) {
   return (
     '(function(d,w,e,p){var s=0,x=["pointerdown","keydown","focusin"];' +
+    'Array.from(new Set(e.concat(p))).forEach(function(h){var l=d.createElement("link");l.rel="modulepreload";l.setAttribute("fetchpriority","low");l.href=h;d.head.appendChild(l)});' +
     "function g(){if(s)return;s=1;x.forEach(function(n){d.removeEventListener(n,g,true)});" +
-    'p.forEach(function(h){var l=d.createElement("link");l.rel="modulepreload";l.href=h;d.head.appendChild(l)});' +
     'e.forEach(function(h){var t=d.createElement("script");t.type="module";t.setAttribute("async","");t.src=h;d.head.appendChild(t)})}' +
     "function f(){w.requestAnimationFrame(function(){w.requestAnimationFrame(g)})}" +
     "function r(){var a=[];" +
@@ -68,4 +68,3 @@ export function isModulePreload(tag: RouterManagedTag) {
     typeof tag.attrs?.href === "string"
   );
 }
-
