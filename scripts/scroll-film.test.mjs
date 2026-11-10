@@ -40,7 +40,7 @@ runInNewContext(ts.transpileModule(source.getFullText(), {
   require(name) {
     if (name === "react") return React;
     if (name === "react/jsx-runtime") return jsxRuntime;
-    if (name === "@tanstack/react-router") return { Link: ({ to, hash, children, ...props }) => React.createElement("a", { ...props, href: `${to}${hash ? `#${hash}` : ""}` }, children) };
+    if (name === "@tanstack/react-router") return { Link: ({ to, hash, hashScrollIntoView: _hashScrollIntoView, children, ...props }) => React.createElement("a", { ...props, href: `${to}${hash ? `#${hash}` : ""}` }, children) };
     if (name === "@/components/icons") return { IconArrowRight: (props) => React.createElement("svg", props) };
     if (name === "@/data/scroll-film") return { scrollFilm };
     if (name === "@/lib/seekable-video") return { loadSeekableVideo() { throw new Error("SSR must not load video."); } };

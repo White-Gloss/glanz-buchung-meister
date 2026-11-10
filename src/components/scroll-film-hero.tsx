@@ -338,7 +338,7 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
             <p className="scroll-film-service">
               {lead ?? "Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft, stressfrei abgeholt und digital übergeben."}
             </p>
-            <Link ref={ctaRef} to="/" hash="buchung" className="scroll-film-cta" onClick={focusBookingHeading}>
+            <Link ref={ctaRef} to="/" hash="buchung" hashScrollIntoView={{ block: "start", behavior: "instant" }} className="scroll-film-cta" onClick={focusBookingHeading}>
               Jetzt Termin anfragen <IconArrowRight className="size-4" aria-hidden />
             </Link>
             <Link to="/preise" className="scroll-film-prices">

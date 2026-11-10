@@ -129,7 +129,7 @@ export function SiteHeader() {
         </nav>
         <div className="ga-tools flex items-center">
           {pathname === "/" && (
-            <Link to="/" hash="buchung" className="header-film-booking" onClick={focusBookingHeading}>
+            <Link to="/" hash="buchung" hashScrollIntoView={{ block: "start", behavior: "instant" }} className="header-film-booking" onClick={focusBookingHeading}>
               Jetzt Termin anfragen
             </Link>
           )}
