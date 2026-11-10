@@ -130,9 +130,10 @@ jobs:
       - name: SEO-Qualitätsgate ohne Server prüfen
         run: node --test src/lib/seo-policy.test.ts src/lib/seo-intents.test.ts
 
-      - name: Texte und SEO gegen den freigegebenen Design-Ausgangsstand prüfen
+      - name: Texte und SEO gegen die freigegebenen Inhaltsstände prüfen
         run: |
           git fetch --no-tags --depth=1 origin db305e3c190cf53a0213c90ea3e788625ece091d
+          git fetch --no-tags --depth=1 origin 6daf3fc01834e94720ef4834f36e0534dfc93aaa
           npm run check:design-content
 
       - name: Strukturierte Daten aller Abholorte prüfen

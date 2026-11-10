@@ -34,6 +34,37 @@ Layout-Wrapper, die Reihenfolge vollständiger Abschnitte und Font-Preloads
 können sich ändern. Neue Bilddateien und passend geänderte Alternativtexte
 werden gesondert visuell und auf Zugänglichkeit geprüft.
 
+## Nachträglich übernommene Buchungskorrektur
+
+Nach dem visuellen Relaunch wurde [PR #327](https://github.com/White-Gloss/glanz-buchung-meister/pull/327)
+in `main` übernommen. Diese fachliche Änderung verhindert doppelte Anfragen bei
+einer Foto-Wiederholung und korrigiert die Bestätigung nach übersprungenem Upload.
+Die dazugehörigen neuen Texte sind Teil der bereits geprüften und gemergten
+Buchungskorrektur; der Relaunch darf nicht wieder zur falschen Aussage zurückkehren,
+alle ausgewählten Fotos seien bereits eingegangen.
+
+Für genau zwei Dateien verwendet der Inhaltsvergleich daher zusätzlich den
+unveränderlich festgelegten, geprüften PR-Stand
+`6daf3fc01834e94720ef4834f36e0534dfc93aaa`:
+
+| Datei | Geschützte fachliche Änderung |
+| --- | --- |
+| `src/components/configurator.tsx` | Bereits gespeicherte Anfrage fortsetzen, übrige Fotos erneut senden oder später nachreichen. |
+| `src/routes/danke.tsx` | Tatsächlichen Eingang bestätigen und fehlende Fotos sowie Angebot und Termin zutreffend erklären. |
+
+Alle anderen Quelldateien und sämtliche 22 geschützten Daten-/SEO-Dateien werden
+weiter gegen `db305e3` verglichen. Es werden keine Fehler ausgeblendet; auch die
+neu freigegebenen Texte müssen erhalten bleiben. Die beiden Referenzen werden
+in der CI explizit geladen, die verwendeten Dateireferenzen im Prüfbericht
+ausgegeben. Fehlende Referenzstände führen zu einem Fehler.
+
+Die Bestandszahlen oben dokumentieren die ursprüngliche Design-Abnahme. Der
+aktuelle Prüfbericht berücksichtigt zusätzlich die Texte der Buchungskorrektur
+und direkt gesetzte Fehlermeldungen aus `setError(...)`, einschließlich
+Template- und bedingter Meldungen. Er umfasst damit 1.442 Texteinträge; die
+Zahlen für Überschriften, Links, SEO-Definitionen und geschützte Dateien bleiben
+unverändert.
+
 ## Aussagegrenze
 
 Dieser Quellvergleich belegt die Erhaltung des vorhandenen Quellinhalts;

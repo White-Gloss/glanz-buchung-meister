@@ -13,6 +13,18 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 export const DESIGN_BASE = "db305e3c190cf53a0213c90ea3e788625ece091d";
+// PR #327 was approved and merged after the visual redesign. Its immutable
+// source snapshot replaces the copy baseline for exactly these two files;
+// it is not an exemption from comparing their new content and metadata.
+const approvedBookingBaseline = Object.freeze({
+  commit: "6daf3fc01834e94720ef4834f36e0534dfc93aaa",
+  pullRequest: 327,
+  pullRequestUrl: "https://github.com/White-Gloss/glanz-buchung-meister/pull/327",
+});
+export const APPROVED_SOURCE_BASELINES = Object.freeze({
+  "src/components/configurator.tsx": approvedBookingBaseline,
+  "src/routes/danke.tsx": approvedBookingBaseline,
+});
 const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind.LineFeed });
 const normalize = (value) => value.replace(/\s+/gu, " ").trim();
 const protectedProps = new Set([
@@ -146,6 +158,10 @@ export function extractContent(source, filename = "fixture.tsx") {
     }
     if (ts.isCallExpression(node)) {
       const name = nameOf(node.expression);
+      // Request errors are rendered through state rather than JSX literals.
+      // Preserve their literal/template copy as well as the visible controls.
+      if (name === "setError")
+        for (const argument of node.arguments) expressionText(argument, result.text, false);
       if (/^(pageHead|serializeJsonLd|localBusinessJsonLd|redirect|createFileRoute)$/.test(name)) {
         add(result.seo, `${name}(${node.arguments.map(printed).join(", ")})`);
       }
@@ -168,8 +184,8 @@ export function compareSource(before, after, filename) {
   );
 }
 
-export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd() } = {}) {
-  const git = (args) => execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), sourceBaselines } = {}) {
+  const git = (args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 16 * 1024 * 1024 });
   // Resolve once to reject unknown revisions before inspecting any content.
   const commit = git(["rev-parse", "--verify", `${base}^{commit}`]).trim();
   const names = git(["ls-tree", "-r", "--name-only", commit]).split("\n").filter(Boolean);
@@ -177,13 +193,38 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd() }
     /^(src\/components\/.*|src\/routes\/(?!admin(?:\.|\/)|api\.|login\.).*)\.tsx$/.test(name)
     && !/\.test\./.test(name),
   );
+  // Custom fixture/repository bases remain self-contained. Only the actual
+  // redesign base selects the repository's explicit approved source pins.
+  const overrides = sourceBaselines === undefined
+    ? (commit === DESIGN_BASE ? APPROVED_SOURCE_BASELINES : {})
+    : sourceBaselines;
+  if (!overrides || typeof overrides !== "object" || Array.isArray(overrides))
+    throw new Error("sourceBaselines must be a map of public source files to immutable commits.");
+  const actualSourceBaselines = Object.fromEntries(sources.map((name) => [name, { commit }]));
+  for (const [name, baseline] of Object.entries(overrides)) {
+    if (!sources.includes(name) || protectedFiles.includes(name))
+      throw new Error(`Source baseline must name an unprotected public TSX source: ${name}`);
+    if (!baseline || !/^[a-f0-9]{40}$/.test(baseline.commit))
+      throw new Error(`Source baseline must use an immutable full commit SHA: ${name}`);
+    let resolved;
+    try { resolved = git(["rev-parse", "--verify", `${baseline.commit}^{commit}`]).trim(); }
+    catch { throw new Error(`Source baseline unavailable for ${name}: ${baseline.commit}. Fetch this exact commit before running the guard.`); }
+    actualSourceBaselines[name] = {
+      commit: resolved,
+      ...(baseline.pullRequest === undefined ? {} : { pullRequest: baseline.pullRequest }),
+      ...(baseline.pullRequestUrl === undefined ? {} : { pullRequestUrl: baseline.pullRequestUrl }),
+    };
+  }
   const failures = [];
   let textEntries = 0;
   let headingEntries = 0;
   let linkEntries = 0;
   let seoEntries = 0;
   for (const name of sources) {
-    const before = git(["show", `${commit}:${name}`]);
+    const sourceCommit = actualSourceBaselines[name].commit;
+    let before;
+    try { before = git(["show", `${sourceCommit}:${name}`]); }
+    catch { throw new Error(`Source baseline file unavailable: ${sourceCommit}:${name}`); }
     let after;
     try { after = readFileSync(resolve(cwd, name), "utf8"); }
     catch { failures.push({ file: name, kind: "file", value: "Existing source file removed", count: 1 }); continue; }
@@ -203,7 +244,8 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd() }
       failures.push({ file: name, kind: "protected-source", value: "Content/SEO source differs from baseline", count: 1 });
     }
   }
-  return { base: commit, sourceFiles: sources.length, protectedFiles: protectedPresent.length,
+  return { base: commit, sourceBaselines: actualSourceBaselines, protectedBase: commit,
+    sourceFiles: sources.length, protectedFiles: protectedPresent.length,
     textEntries, headingEntries, linkEntries, seoEntries, failures, passed: failures.length === 0 };
 }
 
@@ -220,6 +262,11 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       if (args.includes("--json")) console.log(JSON.stringify(result, null, 2));
       else {
         console.log(`Design content guard: ${result.passed ? "PASS" : "FAIL"} against ${result.base}`);
+        for (const [file, baseline] of Object.entries(result.sourceBaselines)) {
+          if (baseline.commit === result.base && baseline.pullRequest === undefined) continue;
+          console.log(`Source baseline: ${file} -> ${baseline.commit}${baseline.pullRequest === undefined ? "" : ` (approved PR #${baseline.pullRequest}: ${baseline.pullRequestUrl})`}`);
+        }
+        console.log(`Protected data/SEO baseline: ${result.protectedBase}`);
         console.log(`${result.sourceFiles} source files, ${result.protectedFiles} protected data/SEO files; ${result.textEntries} text entries, ${result.headingEntries} headings, ${result.linkEntries} links/anchors, ${result.seoEntries} SEO definitions.`);
         for (const failure of result.failures) console.error(`${failure.file} [${failure.kind}] missing ${failure.count} × ${failure.value}`);
       }
