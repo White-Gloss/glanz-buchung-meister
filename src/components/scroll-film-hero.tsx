@@ -76,7 +76,7 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mobile = window.matchMedia(scrollFilm.mobileQuery);
-    const shortLandscape = window.matchMedia("(max-height: 600px) and (orientation: landscape)");
+    const shortLandscape = window.matchMedia("(max-height: 600px) and (orientation: landscape), (max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait)");
     const device = navigator as DeviceNavigator;
     const connection = device.connection;
     let disposed = false;

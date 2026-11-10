@@ -1,0 +1,459 @@
+/* Forge reference refinement, 2026-11-10.
+ * Visual layer only: existing copy, links, media and form behavior stay owned
+ * by their components. Native scrolling and reduced-motion fallbacks remain.
+ */
+[data-shell="public"]:has([data-home="polish"]) .site-header,
+[data-shell="public"]:has([data-home="polish"]) .site-header[data-scrolled="true"] {
+  background: linear-gradient(180deg, rgb(0 0 0 / .65), rgb(0 0 0 / .18) 65%, transparent);
+  border-bottom-color: transparent;
+}
+body[data-nav="open"] [data-shell="public"] .site-header {
+  background: #080808;
+}
+[data-shell="public"] .site-header .gd-header {
+  padding-inline: clamp(1.25rem, 2vw, 2.5rem);
+}
+[data-shell="public"] .site-header .menu-toggle-label {
+  letter-spacing: .22em;
+}
+[data-shell="public"] .scroll-film-media {
+  clip-path: none;
+}
+[data-shell="public"] .scroll-film-media :is(img, video) {
+  object-position: center;
+}
+[data-shell="public"] .scroll-film-shade {
+  background: linear-gradient(180deg, rgb(0 0 0 / .34), rgb(0 0 0 / .42) 40%, rgb(0 0 0 / .54) 78%, #080808);
+}
+[data-shell="public"] .scroll-film .scroll-film-copy {
+  left: 5%;
+  right: 5%;
+  width: 90%;
+  max-width: none;
+  align-items: center;
+  --fidelity-stage-floor: 680px;
+  --fidelity-copy-insets: 15rem;
+  padding-top: 7rem;
+  padding-bottom: 8rem;
+}
+[data-shell="public"] .scroll-film-copy-inner {
+  text-align: center;
+}
+[data-shell="public"] .scroll-film-copy h1 {
+  max-width: 26ch;
+  margin-inline: auto;
+  font-size: clamp(3.5rem, 5.5vw, 6.5rem);
+  line-height: 1.06;
+  letter-spacing: -.04em;
+}
+[data-shell="public"] .scroll-film-copy .hero-line {
+  display: inline-block;
+  vertical-align: top;
+  margin-inline: 0;
+}
+[data-shell="public"] .scroll-film-copy .hero-line:last-child {
+  display: block;
+}
+[data-shell="public"] .scroll-film-eyebrow {
+  margin-bottom: 1.5rem;
+  font-size: .625rem;
+  letter-spacing: .23em;
+}
+[data-shell="public"] .scroll-film .scroll-film-service {
+  max-width: 54ch;
+  margin: 1.5rem auto 0;
+  color: #f3f0e8;
+  font-size: .9375rem;
+  line-height: 1.65;
+}
+[data-shell="public"] .scroll-film-cta {
+  min-height: 3.5rem;
+  padding-inline: 1.75rem;
+  font-size: .6875rem;
+  letter-spacing: .13em;
+}
+[data-shell="public"] .scroll-film-bottom {
+  left: 2vw;
+  right: 2vw;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+[data-shell="public"] .scroll-film-track {
+  max-width: none;
+}
+/* Keep the pause button clear of the fixed WhatsApp action. */
+@media (min-width: 640px) {
+  [data-shell="public"] .scroll-film-bottom {
+    right: max(6rem, calc(2vw + 4.5rem));
+  }
+}
+[data-shell="public"] .scroll-film-signature {
+  left: 8%;
+  right: 8%;
+  text-align: center;
+}
+[data-shell="public"] .scroll-film-signature p {
+  max-width: 20ch;
+  margin-inline: auto;
+  font-size: clamp(3.5rem, 6.5vw, 7.5rem);
+  line-height: 1.03;
+}
+[data-shell="public"] .scroll-film-signature span {
+  display: block;
+  margin-top: 1.5rem;
+  letter-spacing: .2em;
+}
+/* A viewport-wide chapter opens into the compact factual strip. */
+[data-shell="public"] .hero-follow {
+  background: #080808;
+}
+[data-shell="public"] .home-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  padding-block: clamp(5rem, 12vw, 12rem);
+}
+[data-shell="public"] .home-intro > p {
+  max-width: 34ch;
+  padding-block: 0;
+  text-align: center;
+  font-size: clamp(2rem, 3.1vw, 3.75rem);
+  line-height: 1.12;
+  letter-spacing: -.03em;
+}
+/* Match the reference's image-left / copy-right square compositions.
+ * Atmosphere is decorative; the original figure and alt remain the content.
+ */
+.package-editorial-atmosphere {
+  display: none;
+}
+@media (min-width: 960px) {
+  [data-shell="public"] .package-editorial {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    padding-bottom: 0;
+  }
+  [data-shell="public"] .package-editorial > .atelier-heading {
+    width: min(82%, 92rem);
+    margin-inline: auto;
+    padding-bottom: clamp(4rem, 8vw, 8rem);
+  }
+  [data-shell="public"] .package-editorial-track {
+    position: relative;
+    width: min(78%, 86rem);
+    margin-inline: auto;
+  }
+  [data-shell="public"] .package-editorial-chapter,
+  [data-shell="public"] .package-editorial[data-package-motion="scroll"] .package-editorial-track {
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+    column-gap: clamp(4rem, 10vw, 11rem);
+  }
+  [data-shell="public"] .package-editorial-media {
+    grid-column: 1;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+  }
+  [data-shell="public"] .package-editorial-body {
+    grid-column: 2;
+    min-height: max(48rem, 100svh);
+    padding-block: 7rem 5rem;
+  }
+  [data-shell="public"] .package-editorial h3 {
+    font-size: clamp(3.4rem, 4.7vw, 5.75rem);
+    line-height: .98;
+    letter-spacing: -.045em;
+  }
+  [data-shell="public"] .package-editorial .package-goal {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  [data-shell="public"] .package-editorial .package-description {
+    color: #d1cdc5;
+    line-height: 1.6;
+  }
+  [data-shell="public"] .package-editorial-foot {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link {
+    border: 1px solid rgb(243 240 232 / .35);
+    padding: .8rem 1.15rem;
+    min-height: 3.5rem;
+    font-size: .6875rem;
+    letter-spacing: .1em;
+    transition: background-color 250ms, color 250ms;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link:hover {
+    color: #080808;
+    background: #f3f0e8;
+  }
+  [data-shell="public"] .package-editorial .atelier-heading .atelier-text-link {
+    border-width: 0 0 1px;
+    padding-inline: 0;
+  }
+}
+@media (min-width: 960px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
+  .package-editorial[data-package-motion="scroll"] .package-editorial-atmosphere {
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100svh;
+    margin-bottom: -100svh;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .package-editorial-atmosphere img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(30px);
+    transform: scale(1.12);
+    opacity: 0;
+    transition: opacity 850ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .package-editorial-atmosphere img[data-active="true"] {
+    opacity: .28;
+  }
+  .package-editorial-atmosphere::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(90deg, rgb(8 8 8 / .05), rgb(8 8 8 / .5)),
+      linear-gradient(180deg, #080808, transparent 15%, transparent 85%, #080808);
+  }
+  [data-shell="public"] .package-editorial[data-package-motion="scroll"] .package-editorial-media {
+    top: max(7rem, calc((100svh - min(36vw, 40rem)) / 2));
+    margin-block: 6rem;
+    width: 100%;
+    max-height: calc(100svh - 10rem);
+    transition: opacity 850ms cubic-bezier(.22, 1, .36, 1);
+  }
+}
+@media (min-width: 960px) {
+  [data-shell="public"] .workshop-personal {
+    min-height: 100svh;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-block: 0;
+  }
+  [data-shell="public"] .workshop-personal .film-chapter-media {
+    min-height: 100svh;
+  }
+  [data-shell="public"] .workshop-personal .film-chapter-copy {
+    padding: clamp(3rem, 6vw, 7rem);
+  }
+  [data-shell="public"] .workshop-personal .heading-2 {
+    font-size: clamp(3rem, 5vw, 6rem);
+    line-height: 1.02;
+  }
+  [data-shell="public"] .workshop-quote {
+    font-size: clamp(1.8rem, 2.3vw, 2.7rem);
+  }
+}
+/* The reference's fine progress rail belongs at the bottom of the viewport. */
+[data-shell="public"] .home-scroll-progress {
+  top: auto;
+  bottom: 0;
+  height: 1px;
+  box-shadow: none;
+}
+@media (max-width: 959px) {
+  [data-shell="public"] .scroll-film .scroll-film-copy {
+    left: 6%;
+    right: 6%;
+    width: 88%;
+    padding-bottom: 8rem;
+  }
+  [data-shell="public"] .scroll-film-copy h1 {
+    font-size: clamp(3rem, 7.5vw, 5rem);
+  }
+  [data-shell="public"] .scroll-film-copy .hero-line {
+    display: block;
+  }
+  [data-shell="public"] .scroll-film .scroll-film-service {
+    max-width: 40ch;
+  }
+  [data-shell="public"] .scroll-film-bottom {
+    left: 1.25rem;
+  }
+}
+@media (max-width: 639px) {
+  [data-shell="public"] .scroll-film-bottom { right: 1.25rem; }
+  [data-shell="public"] .scroll-film .scroll-film-copy {
+    --fidelity-stage-floor: 660px;
+    --fidelity-copy-insets: 14.5rem;
+    padding-top: 6rem;
+    padding-bottom: 8.5rem;
+  }
+  [data-shell="public"] .scroll-film-copy h1 {
+    font-size: clamp(2.75rem, 11.5vw, 4.25rem);
+    line-height: 1.02;
+  }
+  [data-shell="public"] .scroll-film-eyebrow {
+    font-size: .5625rem;
+    letter-spacing: .12em;
+    margin-bottom: 1.25rem;
+  }
+  [data-shell="public"] .scroll-film .scroll-film-service {
+    margin-top: 1.25rem;
+    font-size: .8125rem;
+    line-height: 1.5;
+  }
+  [data-shell="public"] .scroll-film-cta {
+    min-height: 3rem;
+    padding-inline: .9rem;
+    font-size: .625rem;
+    letter-spacing: .04em;
+  }
+  [data-shell="public"] .scroll-film-signature p {
+    font-size: clamp(2.75rem, 12vw, 4rem);
+  }
+  [data-shell="public"] .scroll-film-signature span {
+    font-size: .5625rem;
+    letter-spacing: .14em;
+  }
+  [data-shell="public"] .home-intro {
+    padding-block: 4.5rem;
+  }
+  [data-shell="public"] .home-intro > p {
+    font-size: 2.25rem;
+  }
+}
+/* Consent clearance keeps the original transform contract. In short windows
+ * left-aligned copy stays in native flow rather than becoming a clipped scene.
+ */
+@media (max-height: 800px) and (min-width: 960px) {
+  [data-shell="public"] .scroll-film .scroll-film-copy {
+    --fidelity-copy-insets: 13.5rem;
+    padding-top: 7rem;
+    padding-bottom: 6.5rem;
+  }
+  [data-shell="public"] .scroll-film-copy h1 {
+    font-size: clamp(3rem, min(5.2vw, 8svh), 4.5rem);
+  }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  [data-shell="public"] .scroll-film .scroll-film-copy {
+    align-items: flex-start;
+    padding-top: 7rem;
+  }
+  [data-shell="public"] .scroll-film-copy h1 {
+    font-size: 3rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .package-editorial-atmosphere {
+    display: none;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link {
+    transition: none;
+  }
+}
+
+/* Center the complete existing navigation; no destinations are removed.
+ * Two columns accommodate the larger White-Gloss menu without shrinking type.
+ */
+[data-shell="public"] .home-jump-links {
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2.5rem;
+}
+[data-shell="public"] .home-jump-links a { min-width: 0; }
+.film-menu { grid-template-columns: minmax(0, 1fr); isolation: isolate; }
+.film-menu .film-menu-visual {
+  position: absolute;
+  inset: 0;
+  opacity: .12;
+  pointer-events: none;
+  z-index: -1;
+}
+.film-menu .film-menu-panel {
+  position: relative;
+  grid-column: 1;
+  width: min(100%, 80rem);
+  margin: auto;
+  padding: 8rem 3rem 3rem;
+  background: transparent;
+  text-align: center;
+}
+.film-menu .film-menu-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem 3rem;
+}
+.film-menu .film-menu-link {
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(1.8rem, 2.6vw, 3rem);
+  line-height: 1.16;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+  padding: .25rem 0;
+}
+.film-menu .film-menu-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+  margin-inline: auto;
+  align-self: center;
+}
+.film-menu > .fixed {
+  border-bottom: 0;
+  background: linear-gradient(#080808, rgb(8 8 8 / .7), transparent);
+}
+@media (max-width: 639px) {
+  [data-shell="public"] .home-intro > p { font-size: 2.15rem; }
+  [data-shell="public"] .home-jump-links {
+    width: 100%;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  [data-shell="public"] .home-jump-links a { width: auto; }
+  .film-menu .film-menu-panel { padding: 6.5rem 1.25rem 2.5rem; }
+  .film-menu .film-menu-list { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+  .film-menu .film-menu-link { font-size: 1.6rem; min-height: 44px; }
+  .film-menu .film-menu-cta { flex-wrap: wrap; }
+}
+
+/* Shift within the reserved stage without changing layout when consent mounts.
+ * The content-height clamp keeps the first line below the header. The parent
+ * transform remains exclusively owned by the film scroll controller. */
+body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
+  --film-copy-offset: 0px;
+}
+body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy-inner {
+  transform-box: border-box;
+  transform: translateY(max(
+    calc(-.5 * var(--consent-banner-height, 0px)),
+    calc((100% - max(100svh, var(--fidelity-stage-floor)) + var(--fidelity-copy-insets)) / 2)
+  ));
+}
+/* Very narrow/short portrait windows use the same native reading fallback as
+ * landscape. The complete title, actions and film controls stay reachable. */
+@media (max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait) {
+  [data-shell="public"] .scroll-film[data-motion] { height: auto; }
+  [data-shell="public"] .scroll-film-stage { position: relative; height: 48rem; min-height: 48rem; }
+  [data-shell="public"] .scroll-film .scroll-film-copy,
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film .scroll-film-copy {
+    --film-copy-offset: 0px;
+    align-items: flex-start;
+    padding-top: 6rem;
+    padding-bottom: 8.5rem;
+  }
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
+    transform: none;
+  }
+}
+@media (max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait),
+  (max-height: 600px) and (orientation: landscape) {
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy-inner {
+    transform: none;
+  }
+}

@@ -29,6 +29,7 @@ const report = { runId, base: qaBase, results: [], failures: [], blockedRequests
 const browser = await chromium.launch({ headless: true });
 const viewports = [
   { name: "mobile", width: 390, height: 844 },
+  { name: "narrow-mobile", width: 320, height: 740 },
   { name: "landscape", width: 844, height: 390 },
   { name: "desktop", width: 1440, height: 900 },
   { name: "compact-desktop", width: 1280, height: 720 },
@@ -138,6 +139,7 @@ async function geometry(page) {
         deviceMemory: navigator.deviceMemory,
       },
       shortLandscape: matchMedia("(max-height: 600px) and (orientation: landscape)").matches,
+      compactPortrait: matchMedia("(max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait)").matches,
       copy: rect(".scroll-film-copy-inner"),
       reservedCopy: rect(".scroll-film-copy"),
       stage: rect(".scroll-film-stage"),
@@ -149,6 +151,7 @@ async function geometry(page) {
       titleHitElement: titleHit && { tag: titleHit.tagName, className: titleHit.className },
       titleStartHit: Boolean(titleHit && title?.contains(titleHit)),
       controls: rect(".scroll-film-bottom"),
+      whatsapp: rect('[data-wa-float]:not([aria-hidden="true"])'),
       cta: rect(".scroll-film-cta"),
       prices: rect(".scroll-film-prices"),
       banner: rect(".consent-banner"),
@@ -474,7 +477,7 @@ try {
       assert.equal(result.observerSupported, true, "Layout-shift observation must be supported.");
       assert.ok(result.initial.banner && result.initial.banner.width > 0 && result.initial.banner.height > 0, "The visible consent banner must have measurable bounds.");
       const { copy, reservedCopy, stage, banner, controls, header, titleStart } = result.initial;
-      const scrollLayout = result.initial.shortLandscape && stage && header && stage.height > viewport.height - header.bottom + 1;
+      const scrollLayout = (result.initial.shortLandscape || result.initial.compactPortrait) && stage && header && stage.height > viewport.height - header.bottom + 1;
       result.intentionalScrollLayout = Boolean(scrollLayout);
       if (!copy || !stage || copy.top < stage.top - 1 || copy.bottom > (scrollLayout ? stage.bottom : banner.top) + 1
         || (scrollLayout && (copy.left < stage.left - 1 || copy.right > stage.right + 1)))
@@ -526,6 +529,11 @@ try {
       await phase.run("consent-hidden", () => consent.waitFor({ state: "hidden" }));
       result.afterRejection = await geometry(page);
       assert.equal(result.afterRejection.storedConsent, "rejected", "Rejecting must preserve the real consent decision.");
+      for (const [state, snapshot] of [["first visit", result.initial], ["consent rejected", result.afterRejection]]) {
+        if (snapshot.pause?.visibility === "visible" && Number(snapshot.pause.opacity) > 0
+          && overlap(snapshot.pause.rect, snapshot.whatsapp)?.area > 1)
+          report.failures.push(`${viewport.name}: WhatsApp overlaps the film pause button (${state})`);
+      }
       await page.screenshot({ path: `${output}/${viewport.name}-consent-rejected.png` });
       if (result.initial.motion !== "scroll") {
         result.filmInteraction = {

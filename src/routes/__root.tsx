@@ -14,6 +14,7 @@ import "../styles/refinement.css";
 import "../styles/luxury.css";
 import "../styles/hero-clearance.css";
 import "../styles/studio.css";
+import "../styles/forge-fidelity.css";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
