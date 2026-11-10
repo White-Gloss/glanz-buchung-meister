@@ -9,6 +9,15 @@ assertIsolatedGithubCi();
 // Original PNGs remain in the normal artifact; compact copies also travel in the
 // decoded job log when an audit client cannot download binary ZIP artifacts.
 const files = [
+  "hero-stability/desktop-film-forward-25.png",
+  "hero-stability/desktop-film-forward-75.png",
+  "hero-stability/desktop-film-reverse-25.png",
+  "hero-stability/mobile-film-forward-25.png",
+  "hero-stability/mobile-film-forward-75.png",
+  "hero-stability/mobile-film-reverse-25.png",
+  "hero-stability/desktop-concierge-1.png",
+  "hero-stability/desktop-concierge-2.png",
+  "hero-stability/mobile-concierge-1.png",
   "hero-stability/desktop-consent-rejected.png",
   "hero-stability/compact-desktop-consent-rejected.png",
   "hero-stability/mobile-consent-rejected.png",
@@ -17,10 +26,8 @@ const files = [
   "booking-ui/desktop-package-2.png",
   "booking-ui/desktop-package-3.png",
   "booking-ui/desktop-packages-reduced-motion.png",
-  "booking-ui/desktop-1280-auswahl.png",
   "booking-ui/desktop-1280-kontakt.png",
   "booking-ui/mobile-390-auswahl.png",
-  "booking-ui/mobile-390-extras.png",
   "booking-ui/mobile-390-kontakt.png",
   "mobile-390--abholservice-nagold.png",
   // The independent Studio job produces only these fixtures. Keep its existing
@@ -35,7 +42,7 @@ const output = resolve(".qa-output/review-images");
 await mkdir(output, { recursive: true });
 let exported = 0;
 for (const file of files) {
-  if (exported >= 14) break;
+  if (exported >= 21) break;
   let source;
   try { source = await readFile(resolve(".qa-output", file)); }
   catch (error) {

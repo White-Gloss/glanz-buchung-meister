@@ -451,7 +451,7 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   [data-shell="public"] .scroll-film-cta { font-size: .6875rem; min-height: 48px; padding-inline: .9rem; margin-top: 1.25rem; gap: 1rem; }
   [data-shell="public"] .scroll-film-prices { font-size: .6875rem; padding-inline: .6rem; margin-left: 0; }
   [data-shell="public"] .scroll-film-media :is(img, video) { object-position: center 35%; }
-  [data-shell="public"] .scroll-film-shade { background: linear-gradient(0deg, #080808 0%, rgba(8,8,8,.8) 34%, rgba(8,8,8,.05) 78%, rgba(8,8,8,.4)); }
+  [data-shell="public"] .scroll-film-shade { background: linear-gradient(0deg, #080808 0%, rgba(8,8,8,.8) 34%, rgba(8,8,8,.05) 70%, rgba(8,8,8,.78)); }
   [data-shell="public"] .scroll-film-bottom { left: 1.25rem; right: 1.25rem; bottom: 1.25rem; gap: .7rem; }
   [data-shell="public"] :is(.scroll-film-skip, .scroll-film-pause) { font-size: .5625rem; letter-spacing: .02em; }
   [data-shell="public"] .scroll-film-signature { left: 1.25rem; right: 1.25rem; }

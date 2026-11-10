@@ -1,9 +1,10 @@
 # Medienbrief für die neue White-Gloss-Gestaltung
 
 Stand: 10. November 2026. Dieses Dokument bereitet optionale neue Bildmotive vor.
-Es wurden keine Medien gekauft oder mit Higgsfield generiert. Die erste Umsetzung
-nutzt vorhandene Dateien. Texte, Angebote und SEO-Angaben werden durch dieses
-Medienbriefing nicht verändert.
+Es wurden keine Medien gekauft oder neue Generierungen beauftragt. Zusätzlich
+zum vorhandenen Material hat der Inhaber zwei selbst erstellte Clips bereitgestellt
+und deren Schnitt sowie Verwendung auf der Website freigegeben. Texte, Angebote
+und SEO-Angaben werden dadurch nicht verändert.
 
 ## Bildsprache und vorhandenes Material
 
@@ -13,7 +14,8 @@ Keine eingebrannten Überschriften, fremden Logos oder Wasserzeichen.
 
 | Einsatz | Bereits vorhandenes Material | Verwendung |
 | --- | --- | --- |
-| Filmischer Einstieg | `public/media/scroll-film/classic-desktop-1280.mp4`, `classic-mobile-540.mp4` und jeweilige Poster | Eigener 8-Sekunden-Film: schwarzer Klassiker, Heckpartie → Tür → Innenraum. Desktop und Mobil haben eigene Bildausschnitte. |
+| Filmischer Einstieg | `public/media/scroll-film/studio-journey/` | Neuer 8-Sekunden-Schnitt aus beiden bereitgestellten Clips: Gesamtansicht → Annäherung an den Lack → Leder und Cockpit. Desktop und Mobil haben eigene Bildausschnitte; Herkunft und Schnitt unter `HERKUNFT.md`. |
+| Abholservice, dekorative Bildkapitel | `public/media/atmosphere/` | Drei Standbilder aus den freigegebenen Clips: Gesamtansicht, Innenraum, Lack. Scharfes Bild vor weichem Hintergrund; responsive und verzögert geladen. Kein weiterer Videodownload und keine Darstellung als Kundenreferenz. |
 | Lack und Gesamtansicht | Kundenfotos `customer-05`, `customer-11`, `customer-16` | Echte Ergebnisse am schwarzen BMW; die bestehende Zuordnung und Bildbeschreibung bleiben erhalten. |
 | Felgen und Innenraum | Kundenfotos `customer-09`, `customer-14`, `customer-18` | Echte Detailaufnahmen, responsive Varianten unter `public/media/customer-photos/`. |
 | Pflegearbeit als Atmosphäre | `public/media/sequenz-still-{800,1200,1600}.webp` | Bereits lizenzierte Adobe-Stock-Aufnahme, Asset 311366899. Nur in einem Kontext verwenden, der keine eigene Werkstatt oder Kundenarbeit behauptet; Herkunft unter `public/media/sequenz/HERKUNFT.md`. |
@@ -119,5 +121,6 @@ Wischbewegung; Hand, Tuch und Fahrzeuggeometrie bleiben durchgehend stabil.
 - Neue Bildbeschreibungen beschreiben das tatsächlich sichtbare Motiv.
   Atmosphärenbilder werden niemals nachträglich als Kundenreferenz bezeichnet.
 
-Die neuen Medienplätze sind optional. Solange kein geeignetes freigegebenes
-Motiv vorliegt, bleiben die vorhandenen Dateien eingebunden.
+Die zusätzlichen Generierungsvorlagen sind optional. Der aktuelle Schnitt und
+die dekorativen Bildkapitel verwenden ausschließlich die freigegebenen Dateien;
+die bisherigen Kunden- und Werkstattnachweise bleiben erhalten.

@@ -16,7 +16,7 @@ import { cityJourneyText, pickupDistanceLabel, pickupStatus } from "@/lib/city-c
 import { localBusinessJsonLd, pageHead } from "@/lib/seo";
 import { parseBookingSelection } from "@/lib/booking-selection";
 import { scrollFilmPreloads } from "@/data/scroll-film";
-import { customerPhotos } from "@/data/customer-photos";
+import { conciergeAtmosphere } from "@/data/atmosphere-media";
 import { ScrollFilmHero } from "@/components/scroll-film-hero";
 import { HomePolish } from "@/components/home-polish";
 import { PackageShowcase } from "@/components/package-showcase";
@@ -184,22 +184,30 @@ function Home() {
           </h2>
           <p>Sie müssen dafür nicht vor Ort sein. Auf Wunsch stimmen wir eine sichere Schlüsselhinterlegung mit Ihnen ab.</p>
           <div className="concierge-media" aria-hidden="true">
-            {["customer-16", "customer-11", "customer-18"].map((id) => {
-              const photo = customerPhotos.find((item) => item.id === id)!;
-              return (
+            {conciergeAtmosphere.map((photo) => (
+              <div className="concierge-frame" key={photo.id}>
                 <img
-                  key={id}
+                  className="concierge-media-backdrop"
+                  src={photo.backdrop}
+                  width={384}
+                  height={216}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+                <img
+                  className="concierge-media-sharp"
                   src={photo.src}
                   srcSet={photo.srcSet}
-                  sizes="(min-width: 960px) 38vw, 90vw"
+                  sizes="(min-width: 960px) 33vh, 72vw"
                   width={photo.width}
                   height={photo.height}
                   alt=""
                   loading="lazy"
                   decoding="async"
                 />
-              );
-            })}
+              </div>
+            ))}
           </div>
         </header>
         <ol>

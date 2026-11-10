@@ -1,4 +1,5 @@
-const base = "/media/scroll-film";
+// A separate media version keeps cached posters and scroll frames in sync.
+const base = "/media/scroll-film/studio-journey";
 export const scrollFilm = {
   mobileQuery: "(max-width: 767px)",
   desktopVideo: `${base}/classic-desktop-1280.mp4`,

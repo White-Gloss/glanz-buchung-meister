@@ -192,6 +192,7 @@ async function geometry(page) {
       },
       poster: poster && { complete: poster.complete, width: poster.naturalWidth, height: poster.naturalHeight, source: poster.currentSrc },
       mediaEvents: window.__heroMediaEvents ?? [],
+      decodedFrame: window.__heroDecodedFrame && { count: window.__heroDecodedFrame.count, last: window.__heroDecodedFrame.last },
     };
   });
   return redactHeroEvidence(snapshot);
@@ -256,6 +257,136 @@ function remainingScrollBudget(result) {
   const timeout = result.deadline - Date.now();
   assert.ok(timeout > 0, "Hero scroll and opacity checks share the existing 10000ms deadline.");
   return timeout;
+}
+
+async function verifyDecodedFilmSeeks(page, result, phase) {
+  // Observe frames presented by the real decoder, not only currentTime being
+  // assigned by the controller. A stale poster or stale frame must fail too.
+  await page.evaluate(() => {
+    const video = document.querySelector(".scroll-film video");
+    if (typeof video?.requestVideoFrameCallback !== "function")
+      throw new Error("The isolated Chromium film check requires decoded-frame callbacks.");
+    const probe = { count: 0, last: null, callback: 0 };
+    window.__heroDecodedFrame = probe;
+    const record = (_now, metadata) => {
+      probe.count++;
+      probe.last = { mediaTime: metadata.mediaTime, width: metadata.width, height: metadata.height };
+      probe.callback = video.requestVideoFrameCallback(record);
+    };
+    probe.callback = video.requestVideoFrameCallback(record);
+  });
+  result.filmSeeks = [];
+  try {
+    for (const checkpoint of [
+      { name: "forward-25", progress: 0.25, direction: 1 },
+      { name: "forward-75", progress: 0.75, direction: 1 },
+      { name: "reverse-25", progress: 0.25, direction: -1 },
+    ]) {
+      const before = await page.evaluate((progress) => {
+        const section = document.querySelector(".scroll-film");
+        const video = section.querySelector("video");
+        const stage = section.querySelector(".scroll-film-stage");
+        return {
+          target: section.getBoundingClientRect().top + scrollY + (section.offsetHeight - stage.offsetHeight) * progress,
+          time: video.currentTime,
+          decodedFrames: window.__heroDecodedFrame.count,
+        };
+      }, checkpoint.progress);
+      const evidence = { phase: `film-${checkpoint.name}`, progress: checkpoint.progress, ...before, attempts: [] };
+      result.scrollActions.push(evidence);
+      const scroll = await phase.run(`${evidence.phase}-wheel`, () => wheelToHeroPosition(page, before.target, evidence));
+      await phase.run(`${evidence.phase}-decoded`, () => page.waitForFunction(({ progress, decodedFrames }) => {
+        const video = document.querySelector(".scroll-film video");
+        const probe = window.__heroDecodedFrame;
+        if (!video || !Number.isFinite(video.duration) || video.duration <= 0 || video.seeking || video.readyState < 2)
+          return false;
+        const expected = progress * (video.duration - 1 / 24);
+        const tolerance = 2 / 24;
+        return video.dataset.visible === "true" && Number(getComputedStyle(video).opacity) > 0.99
+          && probe.count > decodedFrames && probe.last?.width > 0 && probe.last?.height > 0
+          && Math.abs(video.currentTime - expected) <= tolerance
+          && Math.abs(probe.last.mediaTime - expected) <= tolerance;
+      }, { progress: checkpoint.progress, decodedFrames: before.decodedFrames }, { timeout: remainingScrollBudget(scroll) }));
+      const decoded = await page.evaluate(() => {
+        const video = document.querySelector(".scroll-film video");
+        return { time: video.currentTime, duration: video.duration, frame: window.__heroDecodedFrame.last,
+          decodedFrames: window.__heroDecodedFrame.count, scrollY };
+      });
+      assert.ok((decoded.time - before.time) * checkpoint.direction > 1 / 24,
+        `${checkpoint.name}: the decoded film must move in the scroll direction.`);
+      const screenshot = `${result.viewport.name}-film-${checkpoint.name}.png`;
+      await page.screenshot({ path: `${output}/${screenshot}` });
+      result.filmSeeks.push({ checkpoint: checkpoint.name, progress: checkpoint.progress,
+        expected: checkpoint.progress * (decoded.duration - 1 / 24), ...decoded, screenshot });
+    }
+    console.log("HERO_SEEKS:" + JSON.stringify({ viewport: result.viewport.name, checkpoints: result.filmSeeks }));
+  } finally {
+    await page.evaluate(() => {
+      const video = document.querySelector(".scroll-film video");
+      if (video && window.__heroDecodedFrame)
+        video.cancelVideoFrameCallback(window.__heroDecodedFrame.callback);
+    });
+  }
+}
+
+async function verifyConciergeMedia(page, result, phase) {
+  const scrollTo = async (selector, offset) => {
+    const target = await page.locator(selector).evaluate((element, topOffset) =>
+      Math.max(0, scrollY + element.getBoundingClientRect().top - topOffset), offset);
+    const evidence = { phase: "concierge-scroll", target, attempts: [] };
+    result.scrollActions.push(evidence);
+    await wheelToHeroPosition(page, target, evidence);
+  };
+  if (result.viewport.name === "desktop") {
+    // Enter the real lazy-motion trigger before inspecting its fit decision.
+    await scrollTo("#pakete", 120);
+    await page.waitForFunction(() => document.querySelector(".concierge-service")?.dataset.conciergeActive !== undefined);
+  }
+  const header = page.locator(".concierge-service > header");
+  // The section is a stable anchor; a sticky header would still report 112px
+  // after overshooting into another chapter during a lazy layout change.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const padding = await page.locator(".concierge-service").evaluate((element) => parseFloat(getComputedStyle(element).paddingTop));
+    await scrollTo(".concierge-service", 112 - padding);
+    if (await page.locator(".concierge-service").evaluate((element) =>
+      Math.abs(element.getBoundingClientRect().top + parseFloat(getComputedStyle(element).paddingTop) - 112) <= 2)) break;
+  }
+  result.conciergeMedia = [];
+  const sticky = await header.evaluate((element) => getComputedStyle(element).position === "sticky");
+  if (!sticky && await header.evaluate((element) => element.getBoundingClientRect().height > innerHeight - 128))
+    await scrollTo(".concierge-media", 112);
+  for (const index of sticky ? [0, 1] : [0]) {
+    if (index) await scrollTo(`.concierge-service > ol > li:nth-child(${index + 1})`, result.viewport.height * 0.5);
+    await phase.run(`concierge-${index + 1}-decoded`, () => page.waitForFunction((frameIndex) => {
+      const section = document.querySelector(".concierge-service");
+      const frame = section.querySelectorAll(".concierge-frame")[frameIndex];
+      if (!frame || (section.dataset.conciergeMotion === "scroll" && Number(section.dataset.conciergeActive) !== frameIndex)) return false;
+      const css = getComputedStyle(frame);
+      const images = [...frame.querySelectorAll("img")];
+      return css.display !== "none" && Number(css.opacity) >= 0.99
+        && (css.transform === "none" || new DOMMatrixReadOnly(css.transform).a <= 1.001)
+        && images.length === 2 && images.every((image) => image.complete && image.naturalWidth > 0);
+    }, index));
+    const frame = page.locator(".concierge-frame").nth(index);
+    await frame.locator("img").evaluateAll((images) => Promise.all(images.map((image) => image.decode())));
+    const evidence = await frame.evaluate((element) => {
+      const media = element.parentElement.getBoundingClientRect();
+      const sharp = element.querySelector(".concierge-media-sharp").getBoundingClientRect();
+      const header = document.querySelector(".site-header").getBoundingClientRect();
+      return { media: media.toJSON(), sharp: sharp.toJSON(),
+        visible: media.width > 0 && media.top >= header.bottom && media.bottom <= innerHeight,
+        inset: sharp.width > 0 && sharp.left > media.left && sharp.right < media.right
+          && sharp.top > media.top && sharp.bottom < media.bottom,
+        images: [...element.querySelectorAll("img")].map((image) => ({ src: image.currentSrc,
+          width: image.naturalWidth, height: image.naturalHeight })) };
+    });
+    assert.ok(evidence.visible && evidence.inset, "Show the decoded concierge backdrop and sharp inset within the viewport.");
+    assert.equal(await header.locator("#concierge-heading").isVisible(), true);
+    const screenshot = `${result.viewport.name}-concierge-${index + 1}.png`;
+    await header.screenshot({ path: `${output}/${screenshot}` });
+    result.conciergeMedia.push({ index, sticky, screenshot, ...redactHeroEvidence(evidence) });
+  }
+  console.log("CONCIERGE_MEDIA:" + JSON.stringify({ viewport: result.viewport.name, frames: result.conciergeMedia }));
 }
 
 try {
@@ -447,7 +578,11 @@ try {
         result.restoredGeometry = await geometry(page);
         assert.equal(await page.locator(".scroll-film-copy a[href]").evaluateAll((links) =>
           links.every((link) => !link.closest("[inert]"))), true, "Restore hero links when the copy becomes visible again.");
+        if (["mobile", "desktop"].includes(viewport.name))
+          await verifyDecodedFilmSeeks(page, result, phase);
       }
+      if (["mobile", "desktop"].includes(viewport.name))
+        await phase.run("concierge-media", () => verifyConciergeMedia(page, result, phase));
       if (result.pageErrors.length) report.failures.push(`${viewport.name}: ${result.pageErrors.join("; ")}`);
     } catch (error) {
       result.error = redactHeroEvidence(error.message);
@@ -472,5 +607,5 @@ try {
   await browser.close();
 }
 assert.equal(report.failures.length, 0, report.failures.join("\n"));
-console.log("Three first-visit hero checks passed; no request, message, or upload submitted.");
+console.log(`${viewports.length} first-visit hero checks passed; decoded forward/reverse film seeks checked on mobile and desktop when motion is enabled; no request, message, or upload submitted.`);
 
