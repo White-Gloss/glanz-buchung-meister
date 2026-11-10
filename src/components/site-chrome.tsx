@@ -13,6 +13,7 @@ import { trackCtaInteraction } from "@/lib/googleTag";
 import { useMagnetic } from "@/lib/studio-motion";
 import { SmoothScroll } from "./smooth-scroll";
 import { focusBookingHeading } from "@/lib/booking-anchor-focus";
+import forgeMenuCss from "../styles/forge-menu.css?inline";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -227,6 +228,7 @@ function FilmMenu({
         color: "inherit",
       }}
     >
+      <style>{forgeMenuCss}</style>
       <div className="fixed inset-x-0 top-0 z-[110]">
         <div className="gd-header mx-auto max-w-7xl px-4 sm:px-6 xl:max-w-[90rem] xl:px-10">
           <Link
