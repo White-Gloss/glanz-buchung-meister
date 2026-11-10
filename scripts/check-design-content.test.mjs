@@ -116,3 +116,111 @@ test("repository comparison includes public routes and immutable source data", (
     rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+function withApprovedSourceFixture(check) {
+  const cwd = mkdtempSync(join(tmpdir(), "white-gloss-approved-content-"));
+  const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const write = (name, text) => writeFileSync(join(cwd, name), text);
+  const commit = (message) => {
+    git("add", ".");
+    git("-c", "user.name=Content Test", "-c", "user.email=test@example.invalid", "commit", "-qm", message);
+    return git("rev-parse", "HEAD").trim();
+  };
+  try {
+    for (const dir of ["src/routes", "src/components", "src/data"])
+      mkdirSync(join(cwd, dir), { recursive: true });
+    const approvedFiles = ["src/components/configurator.tsx", "src/routes/danke.tsx"];
+    for (const name of [...approvedFiles, "src/routes/index.tsx"]) write(name, fixture);
+    write("src/data/site.ts", "export const price = 149;\n");
+    git("init", "-q");
+    const base = commit("Original content and prices");
+    const approved = fixture
+      .replace("Persönlich geprüft.", "Fotos können Sie später nachreichen. Eine neue Anfrage ist nicht nötig.")
+      .replace("function Page()", 'function onSubmit() { setError("Ihre Anfrage ist bereits gespeichert."); }\nfunction Page()');
+    for (const name of approvedFiles) write(name, approved);
+    // Even a price change in the newer commit must not change the global
+    // protected-data baseline when only two source files are approved.
+    write("src/data/site.ts", "export const price = 199;\n");
+    const sourceCommit = commit("Approved request copy and unrelated price edit");
+    write("src/data/site.ts", "export const price = 149;\n");
+    const sourceBaselines = Object.fromEntries(approvedFiles.map((name) => [name, {
+      commit: sourceCommit, pullRequest: 327,
+      pullRequestUrl: "https://github.com/White-Gloss/glanz-buchung-meister/pull/327",
+    }]));
+    check({ cwd, base, sourceCommit, sourceBaselines, approved, write, git });
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+}
+
+test("explicit source pins accept the exact approved copy and report every actual baseline", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceCommit, sourceBaselines }) => {
+    assert.equal(inspectDesignContent({ cwd, base }).passed, false, "Custom bases must not inherit repository-specific approvals.");
+    const result = inspectDesignContent({ cwd, base, sourceBaselines });
+    assert.equal(result.passed, true);
+    assert.equal(result.protectedBase, base);
+    assert.deepEqual(result.sourceBaselines["src/routes/index.tsx"], { commit: base });
+    for (const name of Object.keys(sourceBaselines)) {
+      assert.equal(result.sourceBaselines[name].commit, sourceCommit);
+      assert.equal(result.sourceBaselines[name].pullRequest, 327);
+      assert.equal(result.sourceBaselines[name].pullRequestUrl, sourceBaselines[name].pullRequestUrl);
+    }
+  });
+});
+
+test("removing newly approved copy fails instead of exempting the pinned file", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceBaselines, approved, write }) => {
+    write("src/routes/danke.tsx", approved.replace(" Eine neue Anfrage ist nicht nötig.", ""));
+    const result = inspectDesignContent({ cwd, base, sourceBaselines });
+    assert.equal(result.passed, false);
+    assert.ok(result.failures.some((entry) => entry.file === "src/routes/danke.tsx" && entry.kind === "text" && entry.value.includes("Eine neue Anfrage ist nicht nötig.")));
+  });
+});
+
+test("approved error messages rendered through state cannot be removed", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceBaselines, approved, write }) => {
+    write("src/components/configurator.tsx", approved.replace('setError("Ihre Anfrage ist bereits gespeichert.");', ""));
+    const result = inspectDesignContent({ cwd, base, sourceBaselines });
+    assert.equal(result.passed, false);
+    assert.ok(result.failures.some((entry) => entry.file === "src/components/configurator.tsx" && entry.kind === "text" && entry.value === "Ihre Anfrage ist bereits gespeichert."));
+  });
+});
+
+test("the same copy change remains forbidden in a file without an explicit pin", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceBaselines, approved, write }) => {
+    write("src/routes/index.tsx", approved);
+    const result = inspectDesignContent({ cwd, base, sourceBaselines });
+    assert.equal(result.passed, false);
+    assert.ok(result.failures.some((entry) => entry.file === "src/routes/index.tsx" && entry.kind === "text" && entry.value === "Persönlich geprüft."));
+  });
+});
+
+test("approved source pins still reject SEO edits and retain the original protected prices", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceBaselines, approved, write }) => {
+    write("src/routes/danke.tsx", approved.replace("Fahrzeugpflege in Horb", "Geänderte Beschreibung"));
+    write("src/data/site.ts", "export const price = 199;\n");
+    const result = inspectDesignContent({ cwd, base, sourceBaselines });
+    assert.equal(result.passed, false);
+    assert.ok(result.failures.some((entry) => entry.file === "src/routes/danke.tsx" && entry.kind === "seo"));
+    assert.ok(result.failures.some((entry) => entry.file === "src/data/site.ts" && entry.kind === "protected-source"));
+  });
+});
+
+test("unavailable or mutable source baselines and missing baseline files fail closed", () => {
+  withApprovedSourceFixture(({ cwd, base, sourceBaselines, write, git }) => {
+    const name = "src/routes/danke.tsx";
+    for (const [commit, error] of [["1".repeat(40), /Source baseline unavailable/], ["HEAD", /immutable full commit SHA/]]) {
+      assert.throws(() => inspectDesignContent({ cwd, base, sourceBaselines: { ...sourceBaselines, [name]: { commit } } }), error);
+    }
+    rmSync(join(cwd, name));
+    git("add", ".");
+    git("-c", "user.name=Content Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "A commit without the approved file");
+    write(name, fixture);
+    assert.throws(() => inspectDesignContent({ cwd, base, sourceBaselines: {
+      ...sourceBaselines, [name]: { commit: git("rev-parse", "HEAD").trim() },
+    } }), /Source baseline file unavailable/);
+    assert.throws(() => inspectDesignContent({ cwd, base, sourceBaselines: {
+      "src/data/site.ts": { commit: base },
+    } }), /unprotected public TSX source/);
+  });
+});
