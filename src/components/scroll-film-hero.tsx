@@ -6,6 +6,7 @@ import "./scroll-film-hero.css";
 import { scrollFilm } from "@/data/scroll-film";
 import { loadSeekableVideo } from "@/lib/seekable-video";
 import { useMagnetic } from "@/lib/studio-motion";
+import { focusBookingHeading } from "@/lib/booking-anchor-focus";
 import type { StudioAsset } from "@/lib/studio-media.model";
 type Connection = EventTarget & { saveData?: boolean; effectiveType?: string };
 type DeviceNavigator = Navigator & { connection?: Connection; deviceMemory?: number };
@@ -337,8 +338,8 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
             <p className="scroll-film-service">
               {lead ?? "Fahrzeugaufbereitung, Lackkorrektur und Keramikschutz in Horb – persönlich geprüft, stressfrei abgeholt und digital übergeben."}
             </p>
-            <Link ref={ctaRef} to="/" hash="buchung" className="scroll-film-cta">
-              Fahrzeug verwandeln lassen <IconArrowRight className="size-4" aria-hidden />
+            <Link ref={ctaRef} to="/" hash="buchung" className="scroll-film-cta" onClick={focusBookingHeading}>
+              Jetzt Termin anfragen <IconArrowRight className="size-4" aria-hidden />
             </Link>
             <Link to="/preise" className="scroll-film-prices">
               Pakete & Preise

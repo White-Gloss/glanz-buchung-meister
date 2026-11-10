@@ -12,6 +12,7 @@ import { InstagramBadge } from "./instagram-badge";
 import { trackCtaInteraction } from "@/lib/googleTag";
 import { useMagnetic } from "@/lib/studio-motion";
 import { SmoothScroll } from "./smooth-scroll";
+import { focusBookingHeading } from "@/lib/booking-anchor-focus";
 
 export function SkipLink() {
   function onClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -128,8 +129,8 @@ export function SiteHeader() {
         </nav>
         <div className="ga-tools flex items-center">
           {pathname === "/" && (
-            <Link to="/" hash="buchung" className="header-film-booking">
-              Termin anfragen
+            <Link to="/" hash="buchung" className="header-film-booking" onClick={focusBookingHeading}>
+              Jetzt Termin anfragen
             </Link>
           )}
           <button

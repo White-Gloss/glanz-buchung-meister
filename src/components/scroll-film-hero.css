@@ -160,11 +160,6 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
   color: #f2f1ed;
   white-space: nowrap;
 }
-@media (min-width: 900px) {
-  .header-film-booking {
-    display: none;
-  }
-}
 @media (max-width: 767px) {
   .scroll-film[data-motion="scroll"],
   .scroll-film[data-motion="fallback"] {

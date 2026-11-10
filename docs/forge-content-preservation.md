@@ -65,6 +65,31 @@ Template- und bedingter Meldungen. Er umfasst damit 1.442 Texteinträge; die
 Zahlen für Überschriften, Links, SEO-Definitionen und geschützte Dateien bleiben
 unverändert.
 
+## Ausdrücklich freigegebene CTA-Beschriftungen
+
+Für den anschließenden Buchungs-CTA-Auftrag hat der Nutzer genau diese beiden
+sichtbaren Textersetzungen freigegeben:
+
+| Datei und vorhandener Link | Bisher | Neu |
+| --- | --- | --- |
+| `src/components/site-chrome.tsx`, `.header-film-booking` | Termin anfragen | Jetzt Termin anfragen |
+| `src/components/scroll-film-hero.tsx`, `.scroll-film-cta` | Fahrzeug verwandeln lassen | Jetzt Termin anfragen |
+
+Der Guard ersetzt dafür ausschließlich den erwarteten Textknoten des jeweiligen
+eindeutigen Links im Vergleichsinventar. Beide Links müssen weiterhin auf
+`/` mit dem Anker `buchung` verweisen und genau die neue direkte Beschriftung
+tragen. Fehlende, doppelte oder an andere Stellen verschobene Beschriftungen
+führen zu einem Fehler. Weitere Vorkommen von „Termin anfragen“, alle anderen
+Texte sowie sämtliche Überschriften-, Link- und SEO-Prüfungen bleiben geschützt.
+
+Es gibt dafür weder neue Datei-Baselines noch ausgenommene Quellen. Die oben
+festgelegten Commit-Referenzen und die 22 bytegenauen Daten-/SEO-Vergleiche
+bleiben unverändert. CLI- und JSON-Bericht nennen die beiden erlaubten
+Textersetzungen ausdrücklich. Vergleiche mit einer eigenen `--base` verwenden
+weiterhin deren unveränderte Texte; die zwei Freigaben gelten für die feste
+Redesign-Referenz. Die Prüftests decken auch das Entfernen neuer Beschriftungen,
+eine Änderung weiterer Textvorkommen und unverwandte SEO-/Linkänderungen ab.
+
 ## Aussagegrenze
 
 Dieser Quellvergleich belegt die Erhaltung des vorhandenen Quellinhalts;
