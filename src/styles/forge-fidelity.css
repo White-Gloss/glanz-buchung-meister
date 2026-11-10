@@ -45,7 +45,8 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   letter-spacing: -.04em;
 }
 [data-shell="public"] .scroll-film-copy .hero-line {
-  display: inline;
+  display: inline-block;
+  vertical-align: top;
 }
 [data-shell="public"] .scroll-film-copy .hero-line:last-child {
   display: block;
@@ -406,4 +407,39 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   .film-menu .film-menu-list { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
   .film-menu .film-menu-link { font-size: 1.6rem; min-height: 44px; }
   .film-menu .film-menu-cta { flex-wrap: wrap; }
+}
+
+/* Center in the usable area, not above it. Keep the full-height reservation
+ * and the controller's transform variable while the consent bar is open. */
+body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
+  --film-copy-offset: 0px;
+  align-items: safe center;
+  padding-bottom: calc(var(--consent-banner-height, 0px) + 8.5rem);
+}
+@media (min-width: 640px) {
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-copy {
+    padding-bottom: calc(var(--consent-banner-height, 0px) + 6rem);
+  }
+}
+/* Very narrow/short portrait windows use the same native reading fallback as
+ * landscape. The complete title, actions and film controls stay reachable. */
+@media (max-width: 359px), (max-width: 959px) and (max-height: 700px) and (orientation: portrait) {
+  [data-shell="public"] .scroll-film[data-motion] { height: auto; }
+  [data-shell="public"] .scroll-film-stage { position: relative; height: 48rem; min-height: 48rem; }
+  [data-shell="public"] .scroll-film .scroll-film-copy,
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film .scroll-film-copy {
+    --film-copy-offset: 0px;
+    align-items: flex-start;
+    padding-top: 6rem;
+    padding-bottom: 8.5rem;
+  }
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film-bottom {
+    transform: none;
+  }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  body[data-consent-banner="open"] [data-shell="public"] .scroll-film .scroll-film-copy {
+    align-items: flex-start;
+    padding-bottom: 6rem;
+  }
 }
