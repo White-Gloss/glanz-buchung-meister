@@ -199,6 +199,8 @@ test("Node serves compressed build assets and revalidates mutable media", async 
     source.includes("--color-bg:") && source.includes("@font-face"),
   );
   assert.equal(globals.length, 1, "the build must contain one complete global stylesheet");
+  const desktopStyles = stylesheets.filter(({ name }) => /^forge-desktop-[\w-]+\.css$/.test(name));
+  assert.equal(desktopStyles.length, 1, "the desktop composition must have one fingerprinted stylesheet");
   for (const path of [
     "/",
     "/preise",
@@ -221,11 +223,15 @@ test("Node serves compressed build assets and revalidates mutable media", async 
       inlineCss.includes(globals[0].source.trim()),
       `${path} must inline the complete generated global CSS before the body, also without JavaScript`,
     );
-    assert.doesNotMatch(
-      head,
-      /<link\b[^>]*rel="stylesheet"/,
-      `${path} must inline its initial route styles through Start`,
-    );
+    const cssLinks = [...head.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(([tag]) => tag);
+    assert.equal(cssLinks.length, 1, `${path} permits only the desktop composition outside the inline CSS`);
+    assert.equal(cssLinks[0].match(/href="([^"]+)"/)?.[1], `/assets/${desktopStyles[0].name}`);
+    assert.equal(cssLinks[0].match(/media="([^"]+)"/)?.[1], "(min-width: 960px)",
+      `${path} must not block a phone's first paint on desktop-only styles`);
+    assert.ok(head.indexOf(cssLinks[0]) > head.lastIndexOf("</style>"),
+      `${path} must preserve the desktop overrides after the complete inline cascade`);
+    assert.ok(!inlineCss.includes(desktopStyles[0].source.trim()),
+      `${path} must not duplicate the external desktop stylesheet inline`);
     assert.doesNotMatch(
       head,
       /<link\b[^>]*rel="modulepreload"/,
@@ -258,6 +264,13 @@ test("Node serves compressed build assets and revalidates mutable media", async 
   assert.equal(response.headers.get("content-encoding"), "gzip");
   assert.match(response.headers.get("cache-control") || "", /immutable/);
   assert.ok(stylesheet.length > 1000, "the compressed stylesheet must decode successfully");
+  const desktopCssPath = `/assets/${desktopStyles[0].name}`;
+  const { response: desktopResponse, html: desktopCss } = await get(desktopCssPath, { "accept-encoding": "gzip" });
+  assert.equal(desktopResponse.status, 200, desktopCssPath);
+  assert.equal(desktopResponse.headers.get("content-encoding"), "gzip");
+  assert.match(desktopResponse.headers.get("content-type") || "", /text\/css/);
+  assert.match(desktopResponse.headers.get("cache-control") || "", /immutable/);
+  assert.equal(desktopCss, desktopStyles[0].source, "the desktop stylesheet must decode to the built source");
   for (const path of ["/media/lack-1200.avif", "/fonts/barlow-300.woff2"]) {
     const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(15000) });
     assert.equal(response.status, 200, path);
