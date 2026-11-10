@@ -98,10 +98,17 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   background: #080808;
 }
 [data-shell="public"] .home-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
   padding-block: clamp(5rem, 12vw, 12rem);
 }
 [data-shell="public"] .home-intro > p {
-  font-size: clamp(2.5rem, 3.8vw, 4.25rem);
+  max-width: 34ch;
+  padding-block: 0;
+  text-align: center;
+  font-size: clamp(2rem, 3.1vw, 3.75rem);
   line-height: 1.12;
   letter-spacing: -.03em;
 }
@@ -334,4 +341,69 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   [data-shell="public"] .package-editorial .atelier-text-link {
     transition: none;
   }
+}
+
+/* Center the complete existing navigation; no destinations are removed.
+ * Two columns accommodate the larger White-Gloss menu without shrinking type.
+ */
+[data-shell="public"] .home-jump-links {
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2.5rem;
+}
+[data-shell="public"] .home-jump-links a { min-width: 0; }
+.film-menu { grid-template-columns: minmax(0, 1fr); isolation: isolate; }
+.film-menu .film-menu-visual {
+  position: absolute;
+  inset: 0;
+  opacity: .12;
+  pointer-events: none;
+  z-index: -1;
+}
+.film-menu .film-menu-panel {
+  position: relative;
+  grid-column: 1;
+  width: min(100%, 80rem);
+  margin: auto;
+  padding: 8rem 3rem 3rem;
+  background: transparent;
+  text-align: center;
+}
+.film-menu .film-menu-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem 3rem;
+}
+.film-menu .film-menu-link {
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(1.8rem, 2.6vw, 3rem);
+  line-height: 1.16;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+  padding: .25rem 0;
+}
+.film-menu .film-menu-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+.film-menu > .fixed {
+  border-bottom: 0;
+  background: linear-gradient(#080808, rgb(8 8 8 / .7), transparent);
+}
+@media (max-width: 639px) {
+  [data-shell="public"] .home-intro > p { font-size: 2.15rem; }
+  [data-shell="public"] .home-jump-links {
+    width: 100%;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  [data-shell="public"] .home-jump-links a { width: auto; }
+  .film-menu .film-menu-panel { padding: 6.5rem 1.25rem 2.5rem; }
+  .film-menu .film-menu-list { grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+  .film-menu .film-menu-link { font-size: 1.6rem; min-height: 44px; }
+  .film-menu .film-menu-cta { flex-wrap: wrap; }
 }
