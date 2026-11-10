@@ -220,6 +220,12 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 }
 
 
+@media (prefers-reduced-motion: reduce) {
+  [data-shell="public"] .package-editorial .atelier-text-link {
+    transition: none;
+  }
+}
+
 /* Center the complete existing navigation; no destinations are removed.
  * Two columns accommodate the larger White-Gloss menu without shrinking type.
  */
