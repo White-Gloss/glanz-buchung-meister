@@ -1,0 +1,137 @@
+@media (min-width: 960px) {
+  [data-shell="public"] .package-editorial {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    padding-bottom: 0;
+  }
+  [data-shell="public"] .package-editorial > .atelier-heading {
+    width: min(82%, 92rem);
+    margin-inline: auto;
+    padding-bottom: clamp(4rem, 8vw, 8rem);
+  }
+  [data-shell="public"] .package-editorial-track {
+    position: relative;
+    width: min(78%, 86rem);
+    margin-inline: auto;
+  }
+  [data-shell="public"] .package-editorial-chapter,
+  [data-shell="public"] .package-editorial[data-package-motion="scroll"] .package-editorial-track {
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+    column-gap: clamp(4rem, 10vw, 11rem);
+  }
+  [data-shell="public"] .package-editorial-media {
+    grid-column: 1;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+  }
+  [data-shell="public"] .package-editorial-body {
+    grid-column: 2;
+    min-height: max(48rem, 100svh);
+    padding-block: 7rem 5rem;
+  }
+  [data-shell="public"] .package-editorial h3 {
+    font-size: clamp(3.4rem, 4.7vw, 5.75rem);
+    line-height: .98;
+    letter-spacing: -.045em;
+  }
+  [data-shell="public"] .package-editorial .package-goal {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  [data-shell="public"] .package-editorial .package-description {
+    color: #d1cdc5;
+    line-height: 1.6;
+  }
+  [data-shell="public"] .package-editorial-foot {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link {
+    border: 1px solid rgb(243 240 232 / .35);
+    padding: .8rem 1.15rem;
+    min-height: 3.5rem;
+    font-size: .6875rem;
+    letter-spacing: .1em;
+    transition: background-color 250ms, color 250ms;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link:hover {
+    color: #080808;
+    background: #f3f0e8;
+  }
+  [data-shell="public"] .package-editorial .atelier-heading .atelier-text-link {
+    border-width: 0 0 1px;
+    padding-inline: 0;
+  }
+}
+@media (min-width: 960px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
+  .package-editorial[data-package-motion="scroll"] .package-editorial-atmosphere {
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100svh;
+    margin-bottom: -100svh;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .package-editorial-atmosphere img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(30px);
+    transform: scale(1.12);
+    opacity: 0;
+    transition: opacity 850ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .package-editorial-atmosphere img[data-active="true"] {
+    opacity: .28;
+  }
+  .package-editorial-atmosphere::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(90deg, rgb(8 8 8 / .05), rgb(8 8 8 / .5)),
+      linear-gradient(180deg, #080808, transparent 15%, transparent 85%, #080808);
+  }
+  [data-shell="public"] .package-editorial[data-package-motion="scroll"] .package-editorial-media {
+    top: max(7rem, calc((100svh - min(36vw, 40rem)) / 2));
+    margin-block: 6rem;
+    width: 100%;
+    max-height: calc(100svh - 10rem);
+    transition: opacity 850ms cubic-bezier(.22, 1, .36, 1);
+  }
+}
+@media (min-width: 960px) {
+  [data-shell="public"] .workshop-personal {
+    min-height: 100svh;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-block: 0;
+  }
+  [data-shell="public"] .workshop-personal .film-chapter-media {
+    min-height: 100svh;
+  }
+  [data-shell="public"] .workshop-personal .film-chapter-copy {
+    padding: clamp(3rem, 6vw, 7rem);
+  }
+  [data-shell="public"] .workshop-personal .heading-2 {
+    font-size: clamp(3rem, 5vw, 6rem);
+    line-height: 1.02;
+  }
+  [data-shell="public"] .workshop-quote {
+    font-size: clamp(1.8rem, 2.3vw, 2.7rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .package-editorial-atmosphere {
+    display: none;
+  }
+  [data-shell="public"] .package-editorial .atelier-text-link {
+    transition: none;
+  }
+}

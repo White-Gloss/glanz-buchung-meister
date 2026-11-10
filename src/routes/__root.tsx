@@ -15,6 +15,7 @@ import "../styles/luxury.css";
 import "../styles/hero-clearance.css";
 import "../styles/studio.css";
 import "../styles/forge-fidelity.css";
+import forgeDesktopCss from "../styles/forge-desktop.css?url";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
@@ -83,6 +84,7 @@ export const Route = createRootRoute({
             <meta key={tag.content} name={tag.name} content={tag.content} />
           ))}
           <PrioritizedHeadContent />
+          <link rel="stylesheet" href={forgeDesktopCss} media="(min-width: 960px)" />
         </head>
         <body className="bg-bg text-fg">
           <PreviewHostBridge />
