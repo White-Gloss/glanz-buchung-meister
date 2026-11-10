@@ -151,6 +151,7 @@ async function geometry(page) {
       titleHitElement: titleHit && { tag: titleHit.tagName, className: titleHit.className },
       titleStartHit: Boolean(titleHit && title?.contains(titleHit)),
       controls: rect(".scroll-film-bottom"),
+      whatsapp: rect('[data-wa-float]:not([aria-hidden="true"])'),
       cta: rect(".scroll-film-cta"),
       prices: rect(".scroll-film-prices"),
       banner: rect(".consent-banner"),
@@ -528,6 +529,11 @@ try {
       await phase.run("consent-hidden", () => consent.waitFor({ state: "hidden" }));
       result.afterRejection = await geometry(page);
       assert.equal(result.afterRejection.storedConsent, "rejected", "Rejecting must preserve the real consent decision.");
+      for (const [state, snapshot] of [["first visit", result.initial], ["consent rejected", result.afterRejection]]) {
+        if (snapshot.pause?.visibility === "visible" && Number(snapshot.pause.opacity) > 0
+          && overlap(snapshot.pause.rect, snapshot.whatsapp)?.area > 1)
+          report.failures.push(`${viewport.name}: WhatsApp overlaps the film pause button (${state})`);
+      }
       await page.screenshot({ path: `${output}/${viewport.name}-consent-rejected.png` });
       if (result.initial.motion !== "scroll") {
         result.filmInteraction = {

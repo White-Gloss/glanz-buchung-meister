@@ -80,6 +80,12 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .scroll-film-track {
   max-width: none;
 }
+/* Keep the pause button clear of the fixed WhatsApp action. */
+@media (min-width: 640px) {
+  [data-shell="public"] .scroll-film-bottom {
+    right: max(6rem, calc(2vw + 4.5rem));
+  }
+}
 [data-shell="public"] .scroll-film-signature {
   left: 8%;
   right: 8%;
@@ -274,10 +280,10 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   }
   [data-shell="public"] .scroll-film-bottom {
     left: 1.25rem;
-    right: 1.25rem;
   }
 }
 @media (max-width: 639px) {
+  [data-shell="public"] .scroll-film-bottom { right: 1.25rem; }
   [data-shell="public"] .scroll-film .scroll-film-copy {
     --fidelity-stage-floor: 660px;
     --fidelity-copy-insets: 14.5rem;
