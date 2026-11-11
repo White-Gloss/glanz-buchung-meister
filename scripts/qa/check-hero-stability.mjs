@@ -393,6 +393,18 @@ async function verifyConciergeMedia(page, result, phase) {
 }
 
 
+async function decodeAutomotiveImage(photo) {
+  await photo.evaluate((image) => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(
+      "Automotive image did not decode: " + JSON.stringify({
+        src: image.currentSrc, complete: image.complete, width: image.naturalWidth,
+        top: image.getBoundingClientRect().top, scrollY: window.scrollY,
+      }))), 8000);
+    image.decode().then(() => { clearTimeout(timer); resolve(); },
+      (error) => { clearTimeout(timer); reject(error); });
+  }));
+}
+
 async function verifyAutomotiveJourney(page, result, phase) {
   const section = page.locator(".automotive-journey");
   const images = section.locator("img");
@@ -424,7 +436,7 @@ async function verifyAutomotiveJourney(page, result, phase) {
       assert.ok(Math.abs(measured.progress - point.progress) < 0.035,
         `Native image progress must follow the measured section: ${JSON.stringify({ expected: point.progress, measured })}`);
       const photo = images.nth(point.name === "second" ? 1 : 0);
-      await photo.evaluate(async (image) => { await image.decode(); });
+      await decodeAutomotiveImage(photo);
       const geometry = await section.evaluate((element) => {
         const stage = element.firstElementChild;
         const frames = [...element.querySelectorAll(".automotive-journey-frame")];
@@ -443,8 +455,15 @@ async function verifyAutomotiveJourney(page, result, phase) {
   } else {
     assert.equal(await section.locator(".automotive-journey-stage").evaluate((element) => getComputedStyle(element).position), "relative");
     for (let i = 0; i < 2; i++) {
-      await images.nth(i).scrollIntoViewIfNeeded();
-      await images.nth(i).evaluate(async (image) => { await image.decode(); });
+      const photo = images.nth(i);
+      const target = await photo.evaluate((element) =>
+        element.getBoundingClientRect().top + window.scrollY - (window.innerHeight - element.clientHeight) / 2);
+      const evidence = { phase: "automotive-mobile-" + i, target, attempts: [] };
+      result.scrollActions.push(evidence);
+      // Use the same native wheel path as visitors. scrollIntoView can race
+      // the still-settling smooth scroll and leave a lazy image off-screen.
+      await wheelToHeroPosition(page, target, evidence);
+      await decodeAutomotiveImage(photo);
     }
     await section.screenshot({ path: `${output}/mobile-automotive.png` });
   }
