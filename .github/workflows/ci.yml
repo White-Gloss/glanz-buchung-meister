@@ -48,6 +48,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
+      - name: Paketquellen des GitHub-Runners vorbereiten
+        if: ${{ runner.environment == 'github-hosted' }}
+        env:
+          WG_CI_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: bash scripts/prepare-github-apt.sh
+
       - name: PostgreSQL-Client bereitstellen
         # Auf dem eigenen Runner ist der Client vorinstalliert (scripts/setup-ci-runner.sh).
         run: |
@@ -95,6 +101,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Paketquellen des GitHub-Runners vorbereiten
+        if: ${{ runner.environment == 'github-hosted' }}
+        env:
+          WG_CI_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: bash scripts/prepare-github-apt.sh
 
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -198,6 +210,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Paketquellen des GitHub-Runners vorbereiten
+        if: ${{ runner.environment == 'github-hosted' }}
+        env:
+          WG_CI_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: bash scripts/prepare-github-apt.sh
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -233,6 +250,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Paketquellen des GitHub-Runners vorbereiten
+        if: ${{ runner.environment == 'github-hosted' }}
+        env:
+          WG_CI_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: bash scripts/prepare-github-apt.sh
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
