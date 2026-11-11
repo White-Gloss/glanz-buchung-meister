@@ -328,6 +328,11 @@ try {
       await toggle.press("Enter");
       const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
       await menu.waitFor({ state: "visible" });
+      await menu.evaluate((element) => new Promise((resolve) => {
+        const deadline = performance.now() + 2000;
+        const check = () => (element.contains(document.activeElement) || performance.now() > deadline ? resolve() : requestAnimationFrame(check));
+        check();
+      }));
       assert.equal(await menu.evaluate((element) => element.contains(document.activeElement)), true,
         `${width}px: keyboard focus enters the open menu.`);
       await page.keyboard.press("Escape");
