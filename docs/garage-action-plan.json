@@ -1,5 +1,5 @@
 {
-  "status": "Blocked: video submissions rejected before job creation because of insufficient Higgsfield credits. Do not substitute the first quiet garage film.",
+  "status": "Drive scene generated and visually verified. First rotation rejected for a rear/front jump cut; one corrected continuous-rotation generation is in progress. Website remains unpublished pending film and CI.",
   "direction": "Forward muddy driving with visible tyre splashes → garage entrance → high-gloss reveal → physical turntable rotation, controlled forward/backward by native page scrolling.",
   "keyframes": [
     {
@@ -63,5 +63,40 @@
     }
   ],
   "quotedCredits": 30,
-  "existingFilm": "Keep the currently published studio-journey film until the requested action version is generated and visually verified."
+  "existingFilm": "Keep the currently published studio-journey film until the requested action version is generated and visually verified.",
+  "jobs": [
+    {
+      "index": 0,
+      "job_id": "2a985e45-7a0f-422a-be0d-a24d92c3cc00",
+      "status": "completed",
+      "type": "video",
+      "model": "minimax_h3",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_053225_2a985e45-7a0f-422a-be0d-a24d92c3cc00.mp4"
+    },
+    {
+      "index": 1,
+      "job_id": "f90300c0-9a4a-49b2-b7fa-56a9b486dedb",
+      "status": "completed",
+      "type": "video",
+      "model": "minimax_h3",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_053225_f90300c0-9a4a-49b2-b7fa-56a9b486dedb.mp4"
+    }
+  ],
+  "rotationCorrection": {
+    "job_id": "fc9a16a2-7fa8-4d58-af00-e7885159aa50",
+    "params": {
+      "model": "minimax_h3",
+      "aspect_ratio": "16:9",
+      "resolution": "2K",
+      "duration": 10,
+      "count": 1,
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+        }
+      ],
+      "prompt": "ONE UNBROKEN TEN-SECOND SHOT, fixed camera in the exact garage from the starting image. A motorized circular turntable smoothly rotates this same rigid black classic coupe at a steady slow speed. The FRONT NOSE at image right gradually swings TOWARD the camera; the REAR BUMPER at image left moves AWAY from the camera. The middle of the shot MUST pass through a complete SIDE PROFILE, where both wheels on the visible side are equally distant from the lens. Continue a little further into a front three-quarter angle. Never turn the rear bumper directly toward the camera. Show EVERY intermediate angle of the real three-dimensional car continuously, with a constant unhurried angular speed. The car is one solid object rotating around its centre on the flush floor turntable; its wheels do not roll. Fixed ceiling lights and walls remain perfectly stationary. Identical grille, tail, cabin, wire wheels, chrome, whitewalls and body proportions throughout. Deep flawless black mirror gloss and bright clean white strip reflections sliding over the rotating body. Locked tripod camera, full car visible, no zoom. No shot changes, no jump cuts, no crossfade, no rear transforming into front, no warping. This is a continuous product turntable presentation, not an edit montage. Ease gently to a stop at the end."
+    }
+  }
 }

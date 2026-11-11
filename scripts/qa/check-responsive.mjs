@@ -98,7 +98,19 @@ async function verifyBookingActivation(page, width, reducedMotion) {
       // Keep #buchung in the URL while leaving the destination. This catches
       // handlers that only react to a changed hash or retain the old focus.
       await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
-      await page.waitForFunction(() => window.scrollY <= 1);
+      try {
+        await page.waitForFunction(() => window.scrollY <= 1);
+      } catch (error) {
+        const geometry = await page.evaluate(() => ({
+          scrollY, hash: location.hash,
+          activeElement: document.activeElement?.id || document.activeElement?.tagName,
+          htmlClasses: document.documentElement.className,
+          hero: document.querySelector(".scroll-film")?.getBoundingClientRect().toJSON(),
+          heading: document.getElementById("buchung-heading")?.getBoundingClientRect().toJSON(),
+        }));
+        console.error("BOOKING_RESET_FAILURE:" + JSON.stringify({ ...progress, geometry }));
+        throw error;
+      }
       if (source === "hero") {
         // With motion enabled, the real film eases its copy back in after
         // scrollY reaches zero. Wait for that visible, interactive state before
@@ -417,6 +429,7 @@ try {
   }
 } catch (error) {
   failures.push(error.message);
+  console.error("RESPONSIVE_FAILURE:" + JSON.stringify({ progress, failures }));
   throw error;
 } finally {
   await writeFile(".qa-output/responsive-progress.json", JSON.stringify(progress, null, 2));
