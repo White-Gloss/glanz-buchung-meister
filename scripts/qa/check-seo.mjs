@@ -97,7 +97,8 @@ await Promise.all(
             .filter((tag) => attr(tag, "name") === key || attr(tag, "property") === key)
             .map((tag) => attr(tag, "content"));
         const titles = [...html.matchAll(/<title>([\s\S]*?)<\/title>/g)].map((m) => decode(m[1]));
-        const h1 = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => plain(m[1]));
+        const headings = [...html.matchAll(/<h1\b([^>]*)>([\s\S]*?)<\/h1>/g)];
+        const h1 = headings.map((m) => plain(m[2]));
         const canonical = [...html.matchAll(/<link\b[^>]*>/g)]
           .filter((m) => attr(m[0], "rel") === "canonical")
           .map((m) => attr(m[0], "href"));
@@ -127,7 +128,12 @@ await Promise.all(
         if (city) {
           const copy = citySeoCopy(city);
           check(titles[0] === copy.title, `${path}: local vehicle-detailing title missing`);
-          check(h1[0] === copy.heading, `${path}: local vehicle-detailing H1 missing`);
+          check(h1[0]?.replaceAll("\u00ad", "") === copy.heading, `${path}: local vehicle-detailing H1 missing`);
+          // Discretionary breaks may only accompany the exact original name.
+          // Unformatted live headings continue to use the existing comparison.
+          if (h1[0]?.includes("\u00ad")) {
+            check(attr(headings[0][1], "aria-label") === copy.heading, `${path}: original vehicle-detailing H1 name missing`);
+          }
           check(meta("description")[0] === copy.description, `${path}: city description mismatch`);
         }
         if (path === "/abholservice") {

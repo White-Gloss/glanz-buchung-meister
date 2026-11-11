@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { test } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDict, PDFDocument, PDFName, StandardFonts } from "pdf-lib";
 import { documentFontData } from "../src/lib/document-font-data.generated.ts";
@@ -25,14 +27,20 @@ test("hero compounds keep their original wording and gain only controlled option
     assert.equal(title.props.children, expected);
     assert.equal(title.props.children.replaceAll("\u00ad", ""), original);
     assert.equal(title.props["aria-hidden"], true, "The parent heading exposes the unmodified accessible title");
-    assert.equal(HeroTitle({ children: expected }).props.children, expected, "Optional breaks are not duplicated");
+    assert.equal(HeroTitle({ children: expected }), expected, "Optional breaks are not duplicated");
   }
 });
 
 test("hero formatting leaves all other words, customer names and larger compounds unchanged", () => {
   for (const original of ["", "Müller · Şahin · Иванов", "Fahrzeugpflegeprodukte", "Langzeitschutzwirkung", "Keramikversiegelungslack", "Vorfahrzeugaufbereitung", "Fahrzeugpflegeöl"]) {
-    assert.equal(HeroTitle({ children: original }).props.children, original);
+    assert.equal(HeroTitle({ children: original }), original);
   }
+});
+
+test("unformatted CMS titles retain the real SSR text node required by the sitemap publication check", () => {
+  const title = "QA Sitemap Test";
+  const html = renderToStaticMarkup(createElement("h1", { "aria-label": title }, createElement(HeroTitle, { children: title })));
+  assert.match(html, /<h1[^>]*>QA Sitemap Test<\/h1>/);
 });
 
 test("local web fonts match their licensed sources and cover German text without another subset", async () => {

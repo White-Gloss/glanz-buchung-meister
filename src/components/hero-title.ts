@@ -14,6 +14,8 @@ export function HeroTitle({ children }: { children: string }) {
     /(^|[^\p{L}\p{N}])(Fahrzeugpflege|Fahrzeugaufbereitung|Keramikversiegelung|Langzeitschutz)(?=$|[^\p{L}\p{N}])/gu,
     (_, prefix: string, word: string) => prefix + breaks[word],
   );
+  // Unchanged titles retain their original text-node markup as well as copy.
+  if (visual === children) return children;
   // PageHero provides the unchanged title as the heading's accessible name.
   return createElement("span", { "aria-hidden": true }, visual);
 }
