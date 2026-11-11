@@ -72,12 +72,14 @@ async function verifyRatgeber(page, path, width) {
     }
     return {
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      stylesheetLoaded: Boolean(getComputedStyle(main).getPropertyValue("--ratgeber-gutter").trim()),
       cards: main.querySelectorAll(".ratgeber-card").length,
       sections: main.querySelectorAll(".ratgeber-article-section").length,
       checkedTexts: texts.length,
       clipped,
     };
   });
+  assert.ok(state.stylesheetLoaded, `${path} @${width}: the route stylesheet must be applied`);
   assert.ok(state.overflow <= 2, `${path} @${width}: horizontal overflow ${state.overflow}px`);
   assert.ok((kind === "index" ? state.cards : state.sections) > 0 && state.checkedTexts > 0,
     `${path} @${width}: render the guide content before testing clipping`);
@@ -235,6 +237,13 @@ try {
         await context.setExtraHTTPHeaders(qaClientHeaders("responsive", `${width}:${path}`));
         progress = { stage: "navigation", path, width, completed: results.length, updatedAt: new Date().toISOString() };
         await page.goto(qaBase + path, { waitUntil: "networkidle" });
+        if (path === "/" && width === 320) {
+          // A fresh home visit must not download/inline the guide's stylesheet.
+          const guideStylesInHome = await page.evaluate(() => [...document.styleSheets]
+            .some((sheet) => [...sheet.cssRules].some((rule) => rule.cssText.includes("--ratgeber-gutter"))));
+          assert.equal(guideStylesInHome, false, "Keep Ratgeber styles out of the initial homepage CSS.");
+          results.push({ path, width, ratgeberStylesExcluded: true });
+        }
         // content-visibility:auto defers layout below the fold. Exercise the real
         // scroll path before judging overflow; do not disable production styles.
         for (
