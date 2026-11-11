@@ -36,6 +36,42 @@
       "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/e85b1e02-6185-4675-b5f0-26a27da2db92.webp",
       "bytes": 120318,
       "sha256": "deb567166cca7af5c412de701c62eafa11bd7988221525fcc6eae332a7737d84"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/poster-desktop-1280.webp",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/1a8fbaab-6455-4150-be47-41c86c429ab9.webp",
+      "bytes": 93722,
+      "sha256": "42706d770fc72c4c7d3d0126be43975f365e22babc7a92a7d001f32270d1ea6d"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/poster-desktop-1920.webp",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/727849a8-d66d-4fc7-bbd7-2169d2f53b83.webp",
+      "bytes": 138758,
+      "sha256": "0758549877dec9268016a2487e958dc7164e27f3bdd8559b5bef0ade43f6723d"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/poster-mobile-540.webp",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/5890f662-8f8f-438b-9277-ed2ce79ecd57.webp",
+      "bytes": 32448,
+      "sha256": "db39d51a65d59cd2dd726393d816e1067c0f4b40a6d681d06d667c00e8960e58"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/poster-mobile-720.webp",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/98e07b28-e490-43c2-a08a-7c42e8ba5399.webp",
+      "bytes": 44514,
+      "sha256": "a769269c17309445322e914ff6378f9b4eac4f52cf006cb6c226ce19d74c0bc0"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/classic-desktop-1280.mp4",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/32d0004c-3361-42e9-9e30-731cbaa28a56.mp4",
+      "bytes": 8879708,
+      "sha256": "d9c5572fa9898c62817281ffd90c520f8a1fd6cbbbbb668e60fe7f48771df60b"
+    },
+    {
+      "path": "media/scroll-film/garage-journey/classic-mobile-540.mp4",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/172e1cc1-8f73-45b2-9053-3430854f3227.mp4",
+      "bytes": 4314520,
+      "sha256": "f7289e41f5130f43b85143a1cd9e3af72b7f4e51ef75ec41d4fc275618e83a03"
     }
   ]
 }

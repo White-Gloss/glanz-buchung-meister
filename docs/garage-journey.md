@@ -1,27 +1,23 @@
-# Automotive imagery and scroll follow-up
+# Automotive action film and scroll chapter
 
-Visual-only follow-up. Existing visible copy, prices, customer results, real workshop photography, booking flow and CMS overrides are preserved.
+Visual-only change. Visible copy, prices, real workshop and customer evidence, booking rules and CMS overrides remain unchanged.
 
-## Current implementation
+## Hero
 
-- Two generated decorative automotive images after HomeProcess: polished black classic and modern black grand tourer. They are atmospheric brand visuals, never evidence of customer work.
-- Desktop stage stays pinned while the second image moves upward over the first; reverse scrolling reverses it. Mobile, short screens and reduced motion remain static.
-- Native requestAnimationFrame is intersection-gated; no extra animation dependency. A main-height observer accounts for lazy sections changing the chapter position.
-- Hero scroll range extended from 240/180 svh to 420/320 svh. Existing pause, skip, low-memory/data-saver and reduced-motion policies stay intact.
-- The CURRENTLY PUBLISHED studio-journey movie remains the hero source. The first newly generated quiet garage movie is NOT selected.
+18-second silent film: forward muddy driving and tyre splashes, garage entry, bodywork wipe into mirror-gloss finish, then continuous turntable rotation through the side into a front three-quarter view. The initial generated rotation was rejected for a jump cut. The corrected shot and the concatenation boundary were visually reviewed before integration.
 
-## Action film revision — blocked, not substituted
+Native scroll scrubs the film forward and backward over the extended 420/320 svh desktop/mobile range. Existing pause, skip, reduced-motion, short-screen, low-memory and data-saver policies remain. The film downloads only after engagement. Mobile uses a separate 540x960 crop that follows the car's front during rotation. Its first poster matches that crop.
 
-The owner requested more action: actual forward driving through mud with visible splashes, entry into the garage, high-gloss reveal and physical rotation of the car. Three new matching keyframes have been generated and visually reviewed. Both video submissions failed before job creation due to insufficient Higgsfield credits. Exact prompts, generation parameters and reference IDs are in garage-action-plan.json. Replace the movie only after that version exists and passes visual review.
+Sources, prompts, review and encoding details: garage-action-plan.json. The film remains staged AI brand imagery, never proof of customer work or the actual premises.
 
-The earlier quiet movie (not active) is generation ad8e67de-cff6-4cc8-811c-c958c19b0e84. It must not be mistaken for the requested action revision.
+## Image chapter
 
-## Image sources and delivery
+Two decorative car images follow HomeProcess. Desktop pins the stage while the next image moves upward; reverse scrolling restores the first. Mobile, short displays and reduced motion show static images. Animation is native RAF and intersection-gated.
 
-Higgsfield image jobs: classic 6316bfcc-4f23-42af-8bce-af3eaa7d0366 and grand tourer b058d4fa-329b-43c0-b810-bcf141fa5903 (2026-11-11). The classic references the existing owner-approved classic coupe poster.
+## Delivery and verification
 
-scripts/automotive-media.json pins the exact bytes and SHA-256 of six responsive WebP files. The build downloads and verifies them into public/media/automotive-journey; Vite includes them in the existing Hostinger release. Visitors only request these media from the website's own origin. Missing or changed upstream files fail the build; verified files can be reused offline.
+Twelve responsive media assets have exact byte counts and SHA-256 in scripts/automotive-media.json. The build fetches and verifies them; visitors request same-origin assets. Verified local inputs are reusable; missing or changed upstream files fail closed.
 
-## Verification
+Required isolated Linux CI checks cover film decoding while scrubbing forward/reverse, image movement, mobile/reduced-motion fallbacks, unchanged visible copy and booking behavior. No local website server is started. Consent banner height writes are deferred outside ResizeObserver delivery to address the WebKit loop diagnostic.
 
-Existing isolated Linux CI gates remain required. New checks exercise forward/reverse image movement, decoding, same-origin delivery, static mobile and reduced-motion fallbacks. Loader checks reject bad hashes, failed downloads and invalid manifest paths. Existing decoded film seeking and the no-content-change guard stay enabled. No local website server is used.
+Candidate publication remains pending fresh CI. Prior failures were a WebKit ResizeObserver diagnostic and a responsive booking test timing out while returning to page top; the latter now records exact geometry on failure.

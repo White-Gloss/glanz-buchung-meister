@@ -1,5 +1,5 @@
 {
-  "status": "Drive scene generated and visually verified. First rotation rejected for a rear/front jump cut; one corrected continuous-rotation generation is in progress. Website remains unpublished pending film and CI.",
+  "status": "Completed: drive and corrected continuous turntable scenes visually reviewed, concatenated into an 18-second silent responsive scroll film. Candidate integrated; CI and publication pending.",
   "direction": "Forward muddy driving with visible tyre splashes → garage entrance → high-gloss reveal → physical turntable rotation, controlled forward/backward by native page scrolling.",
   "keyframes": [
     {
@@ -63,7 +63,7 @@
     }
   ],
   "quotedCredits": 30,
-  "existingFilm": "Keep the currently published studio-journey film until the requested action version is generated and visually verified.",
+  "existingFilm": "The candidate now selects the completed action film; production stays unchanged until CI succeeds and the guarded deployment completes.",
   "jobs": [
     {
       "index": 0,
@@ -82,8 +82,10 @@
       "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_053225_f90300c0-9a4a-49b2-b7fa-56a9b486dedb.mp4"
     }
   ],
+  "rejectedRotation": "f90300c0-9a4a-49b2-b7fa-56a9b486dedb: rejected because the rear abruptly changes to the front around 3.7 seconds.",
   "rotationCorrection": {
     "job_id": "fc9a16a2-7fa8-4d58-af00-e7885159aa50",
+    "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_054005_fc9a16a2-7fa8-4d58-af00-e7885159aa50.mp4",
     "params": {
       "model": "minimax_h3",
       "aspect_ratio": "16:9",
@@ -97,6 +99,23 @@
         }
       ],
       "prompt": "ONE UNBROKEN TEN-SECOND SHOT, fixed camera in the exact garage from the starting image. A motorized circular turntable smoothly rotates this same rigid black classic coupe at a steady slow speed. The FRONT NOSE at image right gradually swings TOWARD the camera; the REAR BUMPER at image left moves AWAY from the camera. The middle of the shot MUST pass through a complete SIDE PROFILE, where both wheels on the visible side are equally distant from the lens. Continue a little further into a front three-quarter angle. Never turn the rear bumper directly toward the camera. Show EVERY intermediate angle of the real three-dimensional car continuously, with a constant unhurried angular speed. The car is one solid object rotating around its centre on the flush floor turntable; its wheels do not roll. Fixed ceiling lights and walls remain perfectly stationary. Identical grille, tail, cabin, wire wheels, chrome, whitewalls and body proportions throughout. Deep flawless black mirror gloss and bright clean white strip reflections sliding over the rotating body. Locked tripod camera, full car visible, no zoom. No shot changes, no jump cuts, no crossfade, no rear transforming into front, no warping. This is a continuous product turntable presentation, not an edit montage. Ease gently to a stop at the end."
-    }
+    },
+    "review": "Continuous rear-to-side-to-front turntable movement; fixed garage; no jump cut. Small framing limits at the widest side profile. Reviewed at one-second intervals and concatenation boundary."
+  },
+  "delivery": {
+    "durationSeconds": 18,
+    "desktop": {
+      "name": "classic-desktop-1280.mp4",
+      "bytes": 8879708,
+      "sha256": "d9c5572fa9898c62817281ffd90c520f8a1fd6cbbbbb668e60fe7f48771df60b",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/32d0004c-3361-42e9-9e30-731cbaa28a56.mp4"
+    },
+    "mobile": {
+      "name": "classic-mobile-540.mp4",
+      "bytes": 4314520,
+      "sha256": "f7289e41f5130f43b85143a1cd9e3af72b7f4e51ef75ec41d4fc275618e83a03",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/172e1cc1-8f73-45b2-9053-3430854f3227.mp4"
+    },
+    "encoding": "H.264/yuv420p, 24 fps, GOP 6, no B frames, faststart, silent. Desktop 1280x720 CRF25; mobile 540x960 CRF26. Mobile crop tracks from x=0.43 to x=0.85 during rotation. hqdn3d 2:2:4:4."
   }
 }
