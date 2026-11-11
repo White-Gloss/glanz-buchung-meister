@@ -8,7 +8,12 @@ assertIsolatedGithubCi();
 // Only screenshots of this run's synthetic fixtures/public website are exported.
 // Original PNGs remain in the normal artifact; compact copies also travel in the
 // decoded job log when an audit client cannot download binary ZIP artifacts.
+const ratgeberImages = [320, 390, 768, 1440].flatMap((width) => [
+  `review-ratgeber-index-${width}.png`,
+  `review-ratgeber-article-${width}.png`,
+]);
 const files = [
+  ...ratgeberImages,
   "hero-stability/desktop-failure.png",
   "hero-stability/desktop-automotive-first.png",
   "hero-stability/desktop-automotive-second.png",
@@ -48,7 +53,8 @@ const output = resolve(".qa-output/review-images");
 await mkdir(output, { recursive: true });
 let exported = 0;
 for (const file of files) {
-  if (exported >= 35) break;
+  // Preserve the previous evidence budget alongside the eight guide images.
+  if (exported >= 35 + ratgeberImages.length) break;
   let source;
   try { source = await readFile(resolve(".qa-output", file)); }
   catch (error) {

@@ -1,6 +1,7 @@
 import { serializeJsonLd } from "@/lib/json-ld";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHero } from "@/components/page-hero";
+import { IconArrowRight } from "@/components/icons";
 import { ctaPrimary } from "@/components/ui";
 import { articles, getArticle, type Article } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
@@ -37,7 +38,9 @@ export const Route = createFileRoute("/ratgeber/$slug")({
   loader: async ({ params }) => loadArticle(params.slug),
   head: ({ loaderData }) =>
     pageHead({
-      title: articleNavigation[loaderData?.slug ?? ""]?.title ?? `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
+      title:
+        articleNavigation[loaderData?.slug ?? ""]?.title ??
+        `${loaderData?.title ?? "Ratgeber"} | ${site.name}`,
       description: loaderData?.excerpt ?? "",
       path: `/ratgeber/${loaderData?.slug ?? ""}`,
       image: loaderData?.image,
@@ -50,29 +53,52 @@ function ArticlePage() {
   const guide = articleNavigation[a.slug];
   const request = articleBookingSelection(a.slug);
   const service = services.find((s) => s.slug === guide?.service);
-  const others = guide ? guide.related.flatMap((slug) => articles.filter((x) => x.slug === slug)) : articles.filter((x) => x.slug !== a.slug).slice(0, 3);
+  const others = guide
+    ? guide.related.flatMap((slug) => articles.filter((x) => x.slug === slug))
+    : articles.filter((x) => x.slug !== a.slug).slice(0, 3);
   const jsonLd = {
     "@context": "https://schema.org",
-    "@graph": [{
-    "@type": "Article",
-    "@id": `${site.origin}/ratgeber/${a.slug}#article`,
-    mainEntityOfPage: `${site.origin}/ratgeber/${a.slug}`,
-    inLanguage: "de-DE",
-    headline: a.title,
-    datePublished: a.date,
-    author: { "@type": "Organization", "@id": `${site.origin}/#betrieb`, name: site.legalName, url: site.origin },
-    publisher: { "@type": "Organization", "@id": `${site.origin}/#betrieb`, name: site.legalName, url: site.origin },
-    image: `${site.origin}${a.image}`,
-    description: a.excerpt,
-    }, { "@type": "BreadcrumbList", itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
-      { "@type": "ListItem", position: 2, name: "Ratgeber", item: `${site.origin}/ratgeber` },
-      { "@type": "ListItem", position: 3, name: a.title, item: `${site.origin}/ratgeber/${a.slug}` },
-    ] }],
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": `${site.origin}/ratgeber/${a.slug}#article`,
+        mainEntityOfPage: `${site.origin}/ratgeber/${a.slug}`,
+        inLanguage: "de-DE",
+        headline: a.title,
+        datePublished: a.date,
+        author: {
+          "@type": "Organization",
+          "@id": `${site.origin}/#betrieb`,
+          name: site.legalName,
+          url: site.origin,
+        },
+        publisher: {
+          "@type": "Organization",
+          "@id": `${site.origin}/#betrieb`,
+          name: site.legalName,
+          url: site.origin,
+        },
+        image: `${site.origin}${a.image}`,
+        description: a.excerpt,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+          { "@type": "ListItem", position: 2, name: "Ratgeber", item: `${site.origin}/ratgeber` },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: a.title,
+            item: `${site.origin}/ratgeber/${a.slug}`,
+          },
+        ],
+      },
+    ],
   };
 
   return (
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} data-ratgeber="article">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -89,51 +115,92 @@ function ArticlePage() {
           { label: a.title },
         ]}
         actions={
-          <Link to={request.leistung ? "/fahrzeug-zustand" : "/"} search={request} hash="buchung" className={ctaPrimary}>
+          <Link
+            to={request.leistung ? "/fahrzeug-zustand" : "/"}
+            search={request}
+            hash="buchung"
+            className={ctaPrimary}
+          >
             Termin anfragen
           </Link>
         }
       />
-      <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        {guide ? <p className="mb-6 text-lg text-fg">{guide.question}</p> : null}
-        <p className="text-sm text-muted">Alle genannten Einstiegspreise gelten für die Kompaktklasse und verstehen sich {site.vatNote} Fahrzeuggröße und Zustand bestimmen den Aufwand; den verbindlichen Preis stimmen wir vor Beginn mit Ihnen ab.</p>
-        {a.sections.map((s) => (
-          <section key={s.heading} className="mt-10">
-            <h2 className="font-display text-2xl">{s.heading}</h2>
-            {s.paragraphs.map((p) => (
-              <p key={p} className="mt-3 leading-relaxed text-muted">
-                {p}
-              </p>
+      <div className="ratgeber-reading-layout">
+        <nav className="ratgeber-contents" aria-label="Inhaltsverzeichnis">
+          <p className="ratgeber-meta">In diesem Beitrag</p>
+          <ol>
+            {a.sections.map((s, index) => (
+              <li key={s.heading}>
+                <a href={`#abschnitt-${index + 1}`}>
+                  <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <span>{s.heading}</span>
+                </a>
+              </li>
             ))}
-          </section>
-        ))}
-        {service ? <p className="mt-8 leading-relaxed text-muted">
-          Leistungsumfang und Grenzen finden Sie unter <Link to="/leistungen/$slug" params={{ slug: service.slug }} className="underline underline-offset-4">{service.nav}</Link>.
-          {" "}{request.paket || request.leistung ? "Die Anfrage übernimmt das zugehörige Paket oder Ihr Interesse an dieser individuellen Leistung." : "Wählen Sie in der Anfrage das passende Paket und Ihren Abholort aus."}
-        </p> : null}
-        <Link
-          to={request.leistung ? "/fahrzeug-zustand" : "/"}
-          search={request}
-          hash="buchung"
-          className="mt-12 inline-flex min-h-11 items-center rounded-sm bg-accent px-5 text-sm font-medium text-accent-fg"
-        >
-          Termin anfragen
-        </Link>
-        <h2 className="mt-16 font-display text-2xl">Weitere Beiträge</h2>
-        <ul className="mt-4 space-y-2">
-          {others.map((o) => (
-            <li key={o.slug}>
-              <Link
-                to="/ratgeber/$slug"
-                params={{ slug: o.slug }}
-                className="text-sm text-muted hover:text-fg"
-              >
-                {o.title}
-              </Link>
-            </li>
+          </ol>
+        </nav>
+        <article className="ratgeber-article-body">
+          {guide ? <p className="ratgeber-question">{guide.question}</p> : null}
+          <p className="ratgeber-price-note">
+            Alle genannten Einstiegspreise gelten für die Kompaktklasse und verstehen sich{" "}
+            {site.vatNote} Fahrzeuggröße und Zustand bestimmen den Aufwand; den verbindlichen Preis
+            stimmen wir vor Beginn mit Ihnen ab.
+          </p>
+          {a.sections.map((s, index) => (
+            <section
+              key={s.heading}
+              id={`abschnitt-${index + 1}`}
+              className="ratgeber-article-section"
+            >
+              <h2 className="ratgeber-section-title">{s.heading}</h2>
+              {s.paragraphs.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </section>
           ))}
-        </ul>
-      </article>
+          {service ? (
+            <p className="ratgeber-service-note">
+              Leistungsumfang und Grenzen finden Sie unter{" "}
+              <Link
+                to="/leistungen/$slug"
+                params={{ slug: service.slug }}
+                className="underline underline-offset-4"
+              >
+                {service.nav}
+              </Link>
+              .{" "}
+              {request.paket || request.leistung
+                ? "Die Anfrage übernimmt das zugehörige Paket oder Ihr Interesse an dieser individuellen Leistung."
+                : "Wählen Sie in der Anfrage das passende Paket und Ihren Abholort aus."}
+            </p>
+          ) : null}
+          <Link
+            to={request.leistung ? "/fahrzeug-zustand" : "/"}
+            search={request}
+            hash="buchung"
+            className={`${ctaPrimary} ratgeber-request`}
+          >
+            Termin anfragen
+          </Link>
+          <div className="ratgeber-related">
+            <h2 className="ratgeber-section-title">Weitere Beiträge</h2>
+            <ul>
+              {others.map((o) => (
+                <li key={o.slug}>
+                  <Link
+                    to="/ratgeber/$slug"
+                    params={{ slug: o.slug }}
+                    className="ratgeber-related-link"
+                  >
+                    <span>{o.title}</span>
+                    <IconArrowRight className="size-5 shrink-0" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      </div>
     </main>
   );
 }

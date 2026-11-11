@@ -40,6 +40,71 @@ async function openPage(viewport, reducedMotion = "reduce") {
     throw error;
   }
 }
+const ratgeberPaths = ["/ratgeber", "/ratgeber/keramikversiegelung-langzeitschutz"];
+async function verifyRatgeber(page, path, width) {
+  const kind = path === "/ratgeber" ? "index" : "article";
+  await page.locator(`main[data-ratgeber="${kind}"]`).waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.fonts.status === "loaded");
+  const state = await page.evaluate(() => {
+    const main = document.querySelector("main[data-ratgeber]");
+    const clipped = [];
+    const texts = [...main.querySelectorAll(".ratgeber-card-title, .ratgeber-card p, .ratgeber-article-section h2, .ratgeber-article-section p")]
+      .filter((element) => element.textContent.trim());
+    for (const element of texts) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const text = range.getBoundingClientRect();
+      if (!text.width || !text.height) {
+        clipped.push({ text: element.textContent.trim().slice(0, 100), reason: "Text has no rendered area" });
+        continue;
+      }
+      for (let ancestor = element; ancestor && ancestor !== main; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        const box = ancestor.getBoundingClientRect();
+        const clipsX = /^(hidden|clip|auto|scroll)$/.test(style.overflowX);
+        const clipsY = /^(hidden|clip|auto|scroll)$/.test(style.overflowY);
+        if ((clipsX && (text.left < box.left - 2 || text.right > box.right + 2)) ||
+            (clipsY && (text.top < box.top - 2 || text.bottom > box.bottom + 2))) {
+          clipped.push({ text: element.textContent.trim().slice(0, 100), ancestor: ancestor.className });
+          break;
+        }
+      }
+    }
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      stylesheetLoaded: Boolean(getComputedStyle(main).getPropertyValue("--ratgeber-gutter").trim()),
+      cards: main.querySelectorAll(".ratgeber-card").length,
+      sections: main.querySelectorAll(".ratgeber-article-section").length,
+      checkedTexts: texts.length,
+      clipped,
+    };
+  });
+  assert.ok(state.stylesheetLoaded, `${path} @${width}: the route stylesheet must be applied`);
+  assert.ok(state.overflow <= 2, `${path} @${width}: horizontal overflow ${state.overflow}px`);
+  assert.ok((kind === "index" ? state.cards : state.sections) > 0 && state.checkedTexts > 0,
+    `${path} @${width}: render the guide content before testing clipping`);
+  assert.deepEqual(state.clipped, [], `${path} @${width}: guide titles and text must remain fully readable`);
+  results.push({ path, width, ratgeber: true, ...state });
+  if (![320, 390, 768, 1440].includes(width)) return;
+  const consent = page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true });
+  if (await consent.isVisible()) {
+    await consent.getByRole("button", { name: "Ablehnen", exact: true }).click();
+    await consent.waitFor({ state: "hidden" });
+  }
+  await scrollAndRender(page, 0);
+  await page.screenshot({ path: `.qa-output/review-ratgeber-${kind}-hero-${width}.png` });
+  const target = kind === "index" ? ".ratgeber-grid" : ".ratgeber-article-body";
+  const top = await page.locator(target).evaluate((element) => {
+    const header = document.querySelector(".site-header")?.getBoundingClientRect().height ?? 0;
+    return element.getBoundingClientRect().top + scrollY - header - 16;
+  });
+  await scrollAndRender(page, top);
+  await page.waitForFunction(() => [...document.images].filter((image) => {
+    const box = image.getBoundingClientRect();
+    return box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < innerHeight;
+  }).every((image) => image.complete && image.naturalWidth > 0));
+  await page.screenshot({ path: `.qa-output/review-ratgeber-${kind}-${width}.png` });
+}
 const bookingCtaName = "Jetzt Termin anfragen";
 async function assertBookingArrival(page, label) {
   try {
@@ -152,7 +217,7 @@ const paths = [
     "/abholservice",
     "/abholservice/nagold",
     "/abholservice/sindelfingen",
-    "/ratgeber/keramikversiegelung-langzeitschutz",
+    ...ratgeberPaths,
     "/kontakt",
     "/fahrzeug-zustand",
     "/dellen-hagelschaden",
@@ -172,6 +237,13 @@ try {
         await context.setExtraHTTPHeaders(qaClientHeaders("responsive", `${width}:${path}`));
         progress = { stage: "navigation", path, width, completed: results.length, updatedAt: new Date().toISOString() };
         await page.goto(qaBase + path, { waitUntil: "networkidle" });
+        if (path === "/" && width === 320) {
+          // A fresh home visit must not download/inline the guide's stylesheet.
+          const guideStylesInHome = await page.evaluate(() => [...document.styleSheets]
+            .some((sheet) => [...sheet.cssRules].some((rule) => rule.cssText.includes("--ratgeber-gutter"))));
+          assert.equal(guideStylesInHome, false, "Keep Ratgeber styles out of the initial homepage CSS.");
+          results.push({ path, width, ratgeberStylesExcluded: true });
+        }
         // content-visibility:auto defers layout below the fold. Exercise the real
         // scroll path before judging overflow; do not disable production styles.
         for (
@@ -219,6 +291,7 @@ try {
           failures.push(`${path} @${width}: journey text has a duplicate sentence-ending period`);
         if (state.scroll > state.viewport + 2)
           failures.push(`${path} @${width}: horizontal overflow ${JSON.stringify(state)}`);
+        if (ratgeberPaths.includes(path)) await verifyRatgeber(page, path, width);
       }
     } finally {
       await context.close();
@@ -343,6 +416,17 @@ try {
       if (reducedMotion === "reduce") await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
       const activation = await verifyBookingActivation(page, width, reducedMotion);
       results.push({ path: "/", width, reducedMotion, primaryHeaderBookingLinks: 1, desktopTerminVisible: width >= 960, menuKeyboardFocusReturned: true, ...activation });
+      // Reuse the existing tablet/desktop browser contexts. Phone guides were
+      // already exercised by the complete responsive crawl above.
+      if (reducedMotion === "reduce" && [768, 1440].includes(width)) {
+        for (const path of ratgeberPaths) {
+          progress = { stage: "ratgeber-review", path, width, completed: results.length, updatedAt: new Date().toISOString() };
+          await context.setExtraHTTPHeaders(qaClientHeaders("responsive", `${width}:${path}`));
+          const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
+          assert.equal(response.status(), 200, `${path} @${width}`);
+          await verifyRatgeber(page, path, width);
+        }
+      }
     } finally {
       await context.close();
     }
