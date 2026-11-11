@@ -525,7 +525,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
           <p role="status" aria-live="polite" className="text-sm text-muted">
             {loading ? "Inhalt wird geladen …" : hasPendingOperation ? "Änderung wird geprüft …" : status}
           </p>
-          <nav aria-label="Studio-Ansichten" className="flex flex-wrap gap-2">
+          <nav aria-label="Studio-Ansichten" className="flex flex-wrap gap-2 max-[359px]:gap-1">
             {(
               [
                 ["edit", "Inhalt"],
@@ -538,7 +538,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 key={value}
                 type="button"
                 variant={view === value ? "primary" : "ghost"}
-                className="px-2.5 sm:px-5"
+                className="px-2.5 max-[359px]:px-0.5 sm:px-5"
                 aria-pressed={view === value}
                 disabled={loading || hasPendingOperation || (value === "media" && document?.kind !== "page")}
                 onClick={() => setView(value)}

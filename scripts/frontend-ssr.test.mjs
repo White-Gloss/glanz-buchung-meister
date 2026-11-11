@@ -21,6 +21,31 @@ function canonicalLinks(html) {
   );
 }
 
+function assertHeroHeading(html, expected, path) {
+  const heading = html.match(/<h1\b([^>]*)>([\s\S]*?)<\/h1>/);
+  assert.ok(heading, `${path} must render its own heading`);
+  // Only discretionary hyphens are presentational. The unchanged original
+  // title must independently remain the heading's accessible name.
+  assert.equal(heading[2].replace(/<[^>]*>/g, "").replaceAll("\u00ad", ""), expected,
+    `${path} must render its own heading`);
+  assert.equal(heading[1].match(/\baria-label="([^"]*)"/)?.[1], expected,
+    `${path} must expose its unchanged original heading`);
+}
+
+test("SSR hero heading comparison ignores only discretionary hyphens and keeps the original accessible name", () => {
+  const original = "Keramikversiegelung &amp; Langzeitschutz in Horb";
+  const visible = "Keramik\u00adver\u00adsiegelung &amp; Langzeit\u00adschutz in Horb";
+  const html = `<h1 aria-label="${original}"><span aria-hidden="true">${visible}</span></h1>`;
+  assert.doesNotThrow(() => assertHeroHeading(html, original, "fixture"));
+  for (const changed of [
+    html.replace(`aria-label="${original}"`, ""),
+    html.replace(`aria-label="${original}"`, 'aria-label="Anderer Titel"'),
+    html.replace(visible, visible.replace("Horb", "Nagold")),
+    html.replaceAll("\u00ad", "\u200b"),
+    html.replaceAll("\u00ad", "-"),
+  ]) assert.throws(() => assertHeroHeading(changed, original, "fixture"));
+});
+
 function executableInlineScripts(html) {
   return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)]
     .filter(([, attributes, source]) => {
@@ -83,11 +108,11 @@ test("service index and city routes render distinct content with one canonical",
       "/leistungen/keramikversiegelung/horb-am-neckar",
       "Keramikversiegelung mit Abholung in Horb am Neckar",
     ],
+    ["/abholservice/nagold", "Fahrzeugaufbereitung für Nagold"],
   ]) {
     const { response, html } = await get(path);
     assert.equal(response.status, 200, path);
-    const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
-    assert.equal(h1, heading, `${path} must render its own heading`);
+    assertHeroHeading(html, heading, path);
     assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     assert.match(html, /<html[^>]*lang="de"/);
     assert.ok(html.includes(`property="og:url" content="https://white-gloss.de${path}"`));
@@ -107,12 +132,11 @@ test("all published service/city combinations render their own route", async () 
         continue;
       }
       assert.equal(response.status, 200, path);
-      const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]*>/g, "");
       const expectedHeading =
         city.slug === "horb-am-neckar"
           ? `${service.seoNav} mit Abholung in ${city.name}`
           : `${service.seoNav} für Fahrzeuge aus ${city.name}`;
-      assert.equal(h1, expectedHeading, path);
+      assertHeroHeading(html, expectedHeading, path);
       assert.deepEqual(canonicalLinks(html), [`https://white-gloss.de${path}`], path);
     }
   }

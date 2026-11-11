@@ -191,6 +191,19 @@ async function selectAbout(page) {
 }
 async function assertNoOverflow(page) {
   const excess = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (excess > 2) {
+    report.lastOverflow = await page.evaluate(() => ({
+      viewportWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      elements: [...document.querySelectorAll("header *, main *")].filter((element) => {
+        const box = element.getBoundingClientRect();
+        return box.width > 0 && (box.left < -2 || box.right > document.documentElement.clientWidth + 2);
+      }).slice(0, 15).map((element) => ({
+        tag: element.tagName, className: element.className,
+        text: element.textContent.trim().slice(0, 120), box: element.getBoundingClientRect().toJSON(),
+      })),
+    }));
+  }
   assert.ok(excess <= 2, `Studio horizontal overflow: ${excess}px`);
 }
 async function saved(page, title, body) {
@@ -368,6 +381,7 @@ try {
   await selectAbout(mobile.page);
   await mobile.page.evaluate(() => document.fonts.ready);
   const mobileGeometry = [];
+  report.mobileGeometry = mobileGeometry;
   for (const width of [390, 320]) {
     await mobile.page.setViewportSize({ width, height: 844 });
     await mobile.page.evaluate(async () => {
@@ -375,6 +389,10 @@ try {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
     await assertNoOverflow(mobile.page);
+    const signOut = mobile.page.locator("header").getByRole("button", { name: "Sign out", exact: true });
+    const signOutBox = await signOut.boundingBox();
+    assert.ok(signOutBox && signOutBox.x >= 0 && signOutBox.x + signOutBox.width <= width,
+      `${width}px account name must leave the complete sign-out control within the header`);
     report.typography.push(await verifyTypography(mobile.page, `studio-mobile-${width}`));
     const titleField = await mobile.page.getByLabel("Überschrift", { exact: true }).evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -395,8 +413,8 @@ try {
     assert.ok(fieldTargets.some((field) => field.tag === "TEXTAREA"), `${width}px editor fields stay visible`);
     for (const field of fieldTargets) assert.ok(field.height >= 44, `${width}px field touch target: ${JSON.stringify(field)}`);
     mobileGeometry.push({ width, titleField, fieldTargets });
+    if (width === 320) await screenshot(mobile.page, "mobile-editor-320.png");
   }
-  report.mobileGeometry = mobileGeometry;
   await mobile.page.setViewportSize({ width: 390, height: 844 });
   await mobile.page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
   await assertNoOverflow(mobile.page);

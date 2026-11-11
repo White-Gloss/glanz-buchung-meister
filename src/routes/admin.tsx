@@ -80,11 +80,11 @@ function AdminShell() {
             <BrandMark variant="header" alt="White Gloss Administration" />
             <p className="text-xs uppercase tracking-[0.16em] text-subtle">Betrieb</p>
           </div>
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex min-w-0 max-w-full items-center gap-4">
             <Link to="/" className="text-sm text-muted hover:text-fg">
               Website
             </Link>
-            <div className="border-l border-line pl-4">
+            <div className="min-w-0 border-l border-line pl-4">
               <UserButton />
             </div>
           </div>

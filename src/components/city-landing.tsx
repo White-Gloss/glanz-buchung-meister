@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { HeroMedia, Shot } from "@/components/media";
 import { PageCrumbs } from "@/components/page-hero";
+import { HeroTitle } from "@/components/hero-title";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { cityJsonLd, whatsappForCity } from "@/lib/city-seo";
 import {
@@ -87,7 +88,9 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
             ]}
           />
           <p className="kicker mt-5">Mit Hol- und Bringservice</p>
-          <h1 className="heading-page mt-4 max-w-4xl">{editorial?.content.title.trim() || copy.heading}</h1>
+          <h1 className="heading-page mt-4 max-w-4xl" aria-label={editorial?.content.title.trim() || copy.heading}>
+            <HeroTitle>{editorial?.content.title.trim() || copy.heading}</HeroTitle>
+          </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
             {editorial?.content.lead.trim() || city.blurb} Innenraumreinigung, Lackpflege oder Keramikversiegelung machen wir in
             unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.

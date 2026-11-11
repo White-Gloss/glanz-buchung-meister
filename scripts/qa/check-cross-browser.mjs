@@ -170,7 +170,7 @@ async function verifyLayout(page, label) {
   report.typography.push(await verifyTypography(page, label));
   report.lastLayout.stage = "heading";
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
-  const heroTitle = page.locator(".page-hero h1");
+  const heroTitle = page.locator(".film-chapter h1.heading-page");
   if (await heroTitle.count()) {
     const originalTitle = await heroTitle.getAttribute("aria-label");
     assert.ok(originalTitle, `${label}: preserve the original hero title as its accessible name`);
