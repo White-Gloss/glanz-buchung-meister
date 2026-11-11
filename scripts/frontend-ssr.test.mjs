@@ -271,7 +271,7 @@ test("Node serves compressed build assets and revalidates mutable media", async 
   assert.match(desktopResponse.headers.get("content-type") || "", /text\/css/);
   assert.match(desktopResponse.headers.get("cache-control") || "", /immutable/);
   assert.equal(desktopCss, desktopStyles[0].source, "the desktop stylesheet must decode to the built source");
-  for (const path of ["/media/lack-1200.avif", "/fonts/barlow-300.woff2"]) {
+  for (const path of ["/media/lack-1200.avif", "/fonts/syne-latin-variable.woff2", "/fonts/plus-jakarta-sans-latin-variable.woff2"]) {
     const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(15000) });
     assert.equal(response.status, 200, path);
     assert.doesNotMatch(response.headers.get("cache-control") || "", /immutable/, path);

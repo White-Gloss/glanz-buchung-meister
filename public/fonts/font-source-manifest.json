@@ -1,0 +1,118 @@
+{
+  "googleFontsCommit": "c30b221beb0c1da59d563feb91ec8656a1fa972a",
+  "fontToolsVersion": "4.61.1",
+  "files": {
+    "syne-variable.ttf": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/syne/Syne%5Bwght%5D.ttf",
+      "sha256": "ce5ac77142a65cab2248a1a2ebb740b1d4d9c20b52488877d3ff664d1356104a",
+      "bytes": 146980,
+      "headModified": 3729081430
+    },
+    "syne-OFL.txt": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/syne/OFL.txt",
+      "sha256": "cc43cdce6f91c57989af8459341c276655e34224e954fa69c2ad700831a742d8",
+      "bytes": 4402
+    },
+    "syne-METADATA.pb": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/syne/METADATA.pb",
+      "sha256": "ed8e42eac65f684ca698aaa4f918b3985c932a7a12d57e55183184fe8dcaadb7",
+      "bytes": 924
+    },
+    "syne-700.ttf": {
+      "derivedFrom": "syne-variable.ttf",
+      "weight": 700,
+      "sha256": "828b08a1bada0118fcff388362cdd3b1c8f7d349449b641df1a338e8fc33b2a6",
+      "bytes": 70008,
+      "postScriptName": "Syne-Bold",
+      "updateFontNames": true,
+      "headModified": 3877251772
+    },
+    "syne-800.ttf": {
+      "derivedFrom": "syne-variable.ttf",
+      "weight": 800,
+      "sha256": "e97365a6da005eeeb955ecc075c666374aa0e3449a9822bc8686da19969f01dd",
+      "bytes": 70132,
+      "postScriptName": "Syne-ExtraBold",
+      "updateFontNames": true,
+      "headModified": 3877251777
+    },
+    "plus-jakarta-sans-variable.ttf": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf",
+      "sha256": "89b3fb38aa0d275d7a731d0d817a4f1622b316b4d7fbdedcf02ee9099ff68bc8",
+      "bytes": 176288,
+      "headModified": 3769078620
+    },
+    "plus-jakarta-sans-OFL.txt": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/plusjakartasans/OFL.txt",
+      "sha256": "995c7199cab65954f545996326755daee7b63cc6b42b06c13da1f9502ab08a99",
+      "bytes": 4402
+    },
+    "plus-jakarta-sans-METADATA.pb": {
+      "source": "https://raw.githubusercontent.com/google/fonts/c30b221beb0c1da59d563feb91ec8656a1fa972a/ofl/plusjakartasans/METADATA.pb",
+      "sha256": "e7953d66e52a1e09235d75fc7aef7139c2733c0b5507afcf6e9afbe0fcef1de6",
+      "bytes": 1396
+    },
+    "plus-jakarta-sans-400.ttf": {
+      "derivedFrom": "plus-jakarta-sans-variable.ttf",
+      "weight": 400,
+      "sha256": "e95ab7d34d39526b395d11fd10dde35d11d29b2a49500cf66e4518f05822788c",
+      "bytes": 96572,
+      "postScriptName": "PlusJakartaSans-Regular",
+      "updateFontNames": true,
+      "headModified": 3877251785
+    },
+    "plus-jakarta-sans-500.ttf": {
+      "derivedFrom": "plus-jakarta-sans-variable.ttf",
+      "weight": 500,
+      "sha256": "bec925575d45b577f0d44bcb9e8e3ee0b0b64ea391529846b2202001108aa6f3",
+      "bytes": 96600,
+      "postScriptName": "PlusJakartaSans-Medium",
+      "updateFontNames": true,
+      "headModified": 3877251787
+    },
+    "syne-latin-variable.woff2": {
+      "derivedFrom": "syne-variable.ttf",
+      "subset": "latin",
+      "unicodeRange": "U+D,U+20,U+21,U+22,U+23,U+24,U+25,U+26,U+27,U+28,U+29,U+2A,U+2B,U+2C,U+2D,U+2E,U+2F,U+30,U+31,U+32,U+33,U+34,U+35,U+36,U+37,U+38,U+39,U+3A,U+3B,U+3C,U+3D,U+3E,U+3F,U+40,U+41,U+42,U+43,U+44,U+45,U+46,U+47,U+48,U+49,U+4A,U+4B,U+4C,U+4D,U+4E,U+4F,U+50,U+51,U+52,U+53,U+54,U+55,U+56,U+57,U+58,U+59,U+5A,U+5B,U+5C,U+5D,U+5E,U+5F,U+60,U+61,U+62,U+63,U+64,U+65,U+66,U+67,U+68,U+69,U+6A,U+6B,U+6C,U+6D,U+6E,U+6F,U+70,U+71,U+72,U+73,U+74,U+75,U+76,U+77,U+78,U+79,U+7A,U+7B,U+7C,U+7D,U+7E,U+A0,U+A1,U+A2,U+A3,U+A4,U+A5,U+A6,U+A7,U+A8,U+A9,U+AA,U+AB,U+AC,U+AD,U+AE,U+AF,U+B0,U+B1,U+B2,U+B3,U+B4,U+B5,U+B6,U+B7,U+B8,U+B9,U+BA,U+BB,U+BC,U+BD,U+BE,U+BF,U+C0,U+C1,U+C2,U+C3,U+C4,U+C5,U+C6,U+C7,U+C8,U+C9,U+CA,U+CB,U+CC,U+CD,U+CE,U+CF,U+D0,U+D1,U+D2,U+D3,U+D4,U+D5,U+D6,U+D7,U+D8,U+D9,U+DA,U+DB,U+DC,U+DD,U+DE,U+DF,U+E0,U+E1,U+E2,U+E3,U+E4,U+E5,U+E6,U+E7,U+E8,U+E9,U+EA,U+EB,U+EC,U+ED,U+EE,U+EF,U+F0,U+F1,U+F2,U+F3,U+F4,U+F5,U+F6,U+F7,U+F8,U+F9,U+FA,U+FB,U+FC,U+FD,U+FE,U+FF,U+131,U+152,U+153,U+2C6,U+2DA,U+2DC,U+304,U+308,U+2013,U+2014,U+2018,U+2019,U+201A,U+201C,U+201D,U+201E,U+2020,U+2021,U+2022,U+2026,U+2030,U+2039,U+203A,U+2044,U+20AC,U+2122,U+2190,U+2191,U+2192,U+2193,U+2194,U+2195,U+2196,U+2197,U+2198,U+2199,U+2212,U+2215",
+      "headModified": 3729081430,
+      "sha256": "7ba004eae3289310cec207b30648ddcebb8864281e4c4eb949fe3a626b91f4c9",
+      "bytes": 39640
+    },
+    "syne-latin-ext-variable.woff2": {
+      "derivedFrom": "syne-variable.ttf",
+      "subset": "latin-ext",
+      "unicodeRange": "U+100,U+101,U+102,U+103,U+104,U+105,U+106,U+107,U+10A,U+10B,U+10C,U+10D,U+10E,U+10F,U+110,U+111,U+112,U+113,U+116,U+117,U+118,U+119,U+11A,U+11B,U+11E,U+11F,U+120,U+121,U+122,U+123,U+126,U+127,U+12A,U+12B,U+12E,U+12F,U+130,U+132,U+133,U+136,U+137,U+139,U+13A,U+13B,U+13C,U+13D,U+13E,U+13F,U+140,U+141,U+142,U+143,U+144,U+145,U+146,U+147,U+148,U+14A,U+14B,U+14C,U+14D,U+150,U+151,U+154,U+155,U+156,U+157,U+158,U+159,U+15A,U+15B,U+15E,U+15F,U+160,U+161,U+162,U+163,U+164,U+165,U+166,U+167,U+16A,U+16B,U+16E,U+16F,U+170,U+171,U+172,U+173,U+174,U+175,U+176,U+177,U+178,U+179,U+17A,U+17B,U+17C,U+17D,U+17E,U+192,U+218,U+219,U+21A,U+21B,U+22E,U+2C7,U+2D8,U+2D9,U+2DB,U+2DD,U+300,U+301,U+302,U+303,U+306,U+307,U+30A,U+30B,U+30C,U+312,U+326,U+327,U+328,U+335,U+336,U+337,U+338,U+37E,U+384,U+385,U+386,U+387,U+388,U+389,U+38A,U+38C,U+38E,U+38F,U+390,U+391,U+392,U+393,U+394,U+395,U+396,U+397,U+398,U+399,U+39A,U+39B,U+39C,U+39D,U+39E,U+39F,U+3A0,U+3A1,U+3A3,U+3A4,U+3A5,U+3A6,U+3A7,U+3A8,U+3A9,U+3AA,U+3AB,U+3AC,U+3AD,U+3AE,U+3AF,U+3B0,U+3B1,U+3B2,U+3B3,U+3B4,U+3B5,U+3B6,U+3B7,U+3B8,U+3B9,U+3BA,U+3BB,U+3BC,U+3BD,U+3BE,U+3BF,U+3C0,U+3C1,U+3C2,U+3C3,U+3C4,U+3C5,U+3C6,U+3C7,U+3C8,U+3C9,U+3CA,U+3CB,U+3CC,U+3CD,U+3CE,U+1E80,U+1E81,U+1E82,U+1E83,U+1E84,U+1E85,U+1EF2,U+1EF3,U+2074,U+2150,U+2151,U+2152,U+2153,U+2154,U+2155,U+2156,U+2157,U+2158,U+2159,U+215A,U+215B,U+215C,U+215D,U+215E,U+2189,U+2202,U+2205,U+220F,U+2211,U+221A,U+221E,U+222B,U+2248,U+2260,U+2264,U+2265,U+25CA,U+F8FF,U+FB01",
+      "headModified": 3729081430,
+      "sha256": "f1eaeb5d50c8bdc649930021fd8483b083484f264706335cf8ac1703c84c5623",
+      "bytes": 31740
+    },
+    "plus-jakarta-sans-latin-variable.woff2": {
+      "derivedFrom": "plus-jakarta-sans-variable.ttf",
+      "subset": "latin",
+      "unicodeRange": "U+D,U+20,U+21,U+22,U+23,U+24,U+25,U+26,U+27,U+28,U+29,U+2A,U+2B,U+2C,U+2D,U+2E,U+2F,U+30,U+31,U+32,U+33,U+34,U+35,U+36,U+37,U+38,U+39,U+3A,U+3B,U+3C,U+3D,U+3E,U+3F,U+40,U+41,U+42,U+43,U+44,U+45,U+46,U+47,U+48,U+49,U+4A,U+4B,U+4C,U+4D,U+4E,U+4F,U+50,U+51,U+52,U+53,U+54,U+55,U+56,U+57,U+58,U+59,U+5A,U+5B,U+5C,U+5D,U+5E,U+5F,U+60,U+61,U+62,U+63,U+64,U+65,U+66,U+67,U+68,U+69,U+6A,U+6B,U+6C,U+6D,U+6E,U+6F,U+70,U+71,U+72,U+73,U+74,U+75,U+76,U+77,U+78,U+79,U+7A,U+7B,U+7C,U+7D,U+7E,U+A0,U+A1,U+A2,U+A3,U+A4,U+A5,U+A6,U+A7,U+A8,U+A9,U+AA,U+AB,U+AC,U+AE,U+AF,U+B0,U+B1,U+B2,U+B3,U+B4,U+B5,U+B6,U+B7,U+B8,U+B9,U+BA,U+BB,U+BC,U+BD,U+BE,U+BF,U+C0,U+C1,U+C2,U+C3,U+C4,U+C5,U+C6,U+C7,U+C8,U+C9,U+CA,U+CB,U+CC,U+CD,U+CE,U+CF,U+D0,U+D1,U+D2,U+D3,U+D4,U+D5,U+D6,U+D7,U+D8,U+D9,U+DA,U+DB,U+DC,U+DD,U+DE,U+DF,U+E0,U+E1,U+E2,U+E3,U+E4,U+E5,U+E6,U+E7,U+E8,U+E9,U+EA,U+EB,U+EC,U+ED,U+EE,U+EF,U+F0,U+F1,U+F2,U+F3,U+F4,U+F5,U+F6,U+F7,U+F8,U+F9,U+FA,U+FB,U+FC,U+FD,U+FE,U+FF,U+131,U+152,U+153,U+2C6,U+2DA,U+2DC,U+304,U+308,U+2002,U+2003,U+2007,U+2008,U+2009,U+200A,U+200B,U+2010,U+2012,U+2013,U+2014,U+2015,U+2018,U+2019,U+201A,U+201C,U+201D,U+201E,U+2020,U+2021,U+2022,U+2026,U+2030,U+2032,U+2033,U+2039,U+203A,U+2044,U+20A1,U+20A3,U+20A4,U+20A6,U+20A7,U+20A8,U+20A9,U+20AA,U+20AB,U+20AC,U+20AD,U+20AE,U+20B1,U+20B2,U+20B3,U+20B4,U+20B5,U+20B8,U+20B9,U+20BA,U+20BC,U+20BD,U+20BE,U+20BF,U+2113,U+2122,U+2190,U+2191,U+2192,U+2193,U+2194,U+2195,U+2196,U+2197,U+2198,U+2199,U+2212,U+2215",
+      "headModified": 3769078620,
+      "sha256": "319dcdec279d0204e1558ca0e44adf3258c7ce3ca88489439c113885310d376a",
+      "bytes": 36656
+    },
+    "plus-jakarta-sans-latin-ext-variable.woff2": {
+      "derivedFrom": "plus-jakarta-sans-variable.ttf",
+      "subset": "latin-ext",
+      "unicodeRange": "U+100,U+101,U+102,U+103,U+104,U+105,U+106,U+107,U+108,U+109,U+10A,U+10B,U+10C,U+10D,U+10E,U+10F,U+110,U+111,U+112,U+113,U+114,U+115,U+116,U+117,U+118,U+119,U+11A,U+11B,U+11C,U+11D,U+11E,U+11F,U+120,U+121,U+122,U+123,U+124,U+125,U+126,U+127,U+128,U+129,U+12A,U+12B,U+12C,U+12D,U+12E,U+12F,U+130,U+132,U+133,U+134,U+135,U+136,U+137,U+138,U+139,U+13A,U+13B,U+13C,U+13D,U+13E,U+13F,U+140,U+141,U+142,U+143,U+144,U+145,U+146,U+147,U+148,U+14A,U+14B,U+14C,U+14D,U+14E,U+14F,U+150,U+151,U+154,U+155,U+156,U+157,U+158,U+159,U+15A,U+15B,U+15C,U+15D,U+15E,U+15F,U+160,U+161,U+162,U+163,U+164,U+165,U+166,U+167,U+168,U+169,U+16A,U+16B,U+16C,U+16D,U+16E,U+16F,U+170,U+171,U+172,U+173,U+174,U+175,U+176,U+177,U+178,U+179,U+17A,U+17B,U+17C,U+17D,U+17E,U+18F,U+192,U+1A0,U+1A1,U+1AF,U+1B0,U+1C4,U+1C5,U+1C6,U+1C7,U+1C8,U+1C9,U+1CA,U+1CB,U+1CC,U+1E6,U+1E7,U+1EA,U+1EB,U+1FA,U+1FB,U+1FC,U+1FD,U+1FE,U+1FF,U+200,U+201,U+202,U+203,U+204,U+205,U+206,U+207,U+208,U+209,U+20A,U+20B,U+20C,U+20D,U+20E,U+20F,U+210,U+211,U+212,U+213,U+214,U+215,U+216,U+217,U+218,U+219,U+21A,U+21B,U+22A,U+22B,U+22C,U+22D,U+230,U+231,U+232,U+233,U+237,U+259,U+2C7,U+2D8,U+2D9,U+2DB,U+2DD,U+300,U+301,U+302,U+303,U+306,U+307,U+309,U+30A,U+30B,U+30C,U+30F,U+311,U+312,U+31B,U+323,U+324,U+326,U+327,U+328,U+32E,U+331,U+394,U+3A9,U+3C0,U+E3F,U+1E08,U+1E09,U+1E0C,U+1E0D,U+1E0E,U+1E0F,U+1E14,U+1E15,U+1E16,U+1E17,U+1E1C,U+1E1D,U+1E20,U+1E21,U+1E24,U+1E25,U+1E2A,U+1E2B,U+1E2E,U+1E2F,U+1E36,U+1E37,U+1E3A,U+1E3B,U+1E42,U+1E43,U+1E44,U+1E45,U+1E46,U+1E47,U+1E48,U+1E49,U+1E4C,U+1E4D,U+1E4E,U+1E4F,U+1E50,U+1E51,U+1E52,U+1E53,U+1E5A,U+1E5B,U+1E5E,U+1E5F,U+1E60,U+1E61,U+1E62,U+1E63,U+1E64,U+1E65,U+1E66,U+1E67,U+1E68,U+1E69,U+1E6C,U+1E6D,U+1E6E,U+1E6F,U+1E78,U+1E79,U+1E7A,U+1E7B,U+1E80,U+1E81,U+1E82,U+1E83,U+1E84,U+1E85,U+1E8E,U+1E8F,U+1E92,U+1E93,U+1E97,U+1E9E,U+1EA0,U+1EA1,U+1EA2,U+1EA3,U+1EA4,U+1EA5,U+1EA6,U+1EA7,U+1EA8,U+1EA9,U+1EAA,U+1EAB,U+1EAC,U+1EAD,U+1EAE,U+1EAF,U+1EB0,U+1EB1,U+1EB2,U+1EB3,U+1EB4,U+1EB5,U+1EB6,U+1EB7,U+1EB8,U+1EB9,U+1EBA,U+1EBB,U+1EBC,U+1EBD,U+1EBE,U+1EBF,U+1EC0,U+1EC1,U+1EC2,U+1EC3,U+1EC4,U+1EC5,U+1EC6,U+1EC7,U+1EC8,U+1EC9,U+1ECA,U+1ECB,U+1ECC,U+1ECD,U+1ECE,U+1ECF,U+1ED0,U+1ED1,U+1ED2,U+1ED3,U+1ED4,U+1ED5,U+1ED6,U+1ED7,U+1ED8,U+1ED9,U+1EDA,U+1EDB,U+1EDC,U+1EDD,U+1EDE,U+1EDF,U+1EE0,U+1EE1,U+1EE2,U+1EE3,U+1EE4,U+1EE5,U+1EE6,U+1EE7,U+1EE8,U+1EE9,U+1EEA,U+1EEB,U+1EEC,U+1EED,U+1EEE,U+1EEF,U+1EF0,U+1EF1,U+1EF2,U+1EF3,U+1EF4,U+1EF5,U+1EF6,U+1EF7,U+1EF8,U+1EF9,U+2070,U+2074,U+2075,U+2076,U+2077,U+2078,U+2079,U+207A,U+207B,U+207C,U+207D,U+207E,U+2080,U+2081,U+2082,U+2083,U+2084,U+2085,U+2086,U+2087,U+2088,U+2089,U+208A,U+208B,U+208C,U+208D,U+208E,U+2116,U+2126,U+212E,U+2153,U+2154,U+215B,U+215C,U+215D,U+215E,U+21A9,U+21AA,U+21B0,U+21B1,U+21B2,U+21B3,U+2202,U+2205,U+2206,U+220F,U+2211,U+2219,U+221A,U+221E,U+222B,U+2248,U+2260,U+2264,U+2265,U+25A0,U+25A1,U+25B2,U+25B3,U+25B6,U+25B7,U+25BC,U+25BD,U+25C0,U+25C1,U+25C6,U+25C7,U+25CA,U+25CB,U+25CF,U+2605,U+2606,U+2B0E,U+2B10,U+FB01,U+FB02",
+      "headModified": 3769078620,
+      "sha256": "f6ca19807d2988946e6f3b8b2768b7519fc96724eb8c57f62faae702062b6ced",
+      "bytes": 34380
+    },
+    "NotoSans-fallback.ttf": {
+      "source": "https://github.com/White-Gloss/white-gloss-panel/blob/9b2074e2448619ab34cde197d0ee5a8aa2ca3242/assets/fonts/NotoSans.ttf",
+      "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+      "bytes": 569208,
+      "version": "Version 2.008; ttfautohint (v1.8) -l 8 -r 50 -G 200 -x 14 -D latn -f none -a qsq -X \"\"",
+      "purpose": "PDF-only fallback for graphemes absent from the role font; no browser font"
+    },
+    "NotoSans-fallback-OFL.txt": {
+      "source": "https://github.com/White-Gloss/white-gloss-panel/blob/9b2074e2448619ab34cde197d0ee5a8aa2ca3242/assets/fonts/OFL.txt",
+      "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb",
+      "bytes": 4377
+    }
+  }
+}

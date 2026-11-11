@@ -11,6 +11,7 @@ import { displayedPriceEquals } from "./displayed-price.mjs";
 import { completeSuccessfulRead, observePageReads, observeReadDuringAction } from "./read-completion.mjs";
 import { revealTargetWithWheel } from "./scroll-target.mjs";
 import { decodedGalleryImage } from "./gallery-image.mjs";
+import { verifyTypography } from "./typography.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
@@ -19,8 +20,8 @@ const layoutPaths = ["/", "/abholservice/nagold", "/leistungen/keramikversiegelu
 await mkdir(output, { recursive: true });
 const report = {
   status: "running",
-  scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [], directoryFocus: [], pageReads: [], guideAnchors: [],
+  scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports, plus 960/1024/1100px header checks. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [], directoryFocus: [], pageReads: [], guideAnchors: [], typography: [], headers: [],
 };
 const diagnostics = [];
 
@@ -165,6 +166,8 @@ async function verifyLayout(page, label) {
   // alone can occur before that bootstrap starts loading its CSS and modules.
   const hero = page.locator(".page-hero .film-chapter-copy");
   if (await hero.count()) await page.locator(".page-hero .film-chapter-copy.is-in").waitFor();
+  report.lastLayout.stage = "loaded-fonts";
+  report.typography.push(await verifyTypography(page, label));
   report.lastLayout.stage = "heading";
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -184,6 +187,49 @@ async function verifyLayout(page, label) {
 }
 async function completePageReads(reads, label) {
   report.pageReads.push(await reads.complete(label));
+}
+async function verifyHeaderWidths(page, name) {
+  const original = page.viewportSize();
+  try {
+    for (const width of [960, 1024, 1100]) {
+      await page.setViewportSize({ width, height: original.height });
+      await page.evaluate(async () => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
+      const label = `${name}-${width}-header`;
+      report.typography.push(await verifyTypography(page, label));
+      const header = await page.locator(".site-header").evaluate((element) => {
+        const nav = element.querySelector(".header-quick-nav");
+        const controls = [...element.querySelectorAll(".ga-logo, .ga-tools a, .menu-toggle, .header-quick-nav a")]
+          .filter((control) => control.getClientRects().length > 0)
+          .map((control) => {
+            const rect = control.getBoundingClientRect();
+            const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            const range = document.createRange();
+            range.selectNodeContents(control);
+            return { text: control.getAttribute("aria-label") || control.textContent.trim(), left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height, hit: control.contains(hit), navLines: control.closest(".header-quick-nav") ? range.getClientRects().length : null };
+          });
+        return { width: innerWidth, navigationVisible: nav.getClientRects().length > 0, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, controls };
+      });
+      assert.equal(header.navigationVisible, width >= 1100, `${label}: full navigation appears when its fixed 16px labels fit`);
+      assert.ok(header.overflow <= 2, `${label}: no horizontal overflow`);
+      assert.ok(header.controls.some((control) => control.text === "Menü öffnen"), `${label}: complete menu remains available`);
+      for (const [index, control] of header.controls.entries()) {
+        assert.ok(control.left >= 0 && control.right <= width && control.width > 0 && control.height > 0 && control.hit, `${label}: visible, reachable ${JSON.stringify(control)}`);
+        if (control.navLines !== null) assert.equal(control.navLines, 1, `${label}: navigation label remains on one line`);
+        for (const other of header.controls.slice(index + 1)) {
+          const overlapX = Math.min(control.right, other.right) - Math.max(control.left, other.left);
+          const overlapY = Math.min(control.bottom, other.bottom) - Math.max(control.top, other.top);
+          assert.ok(overlapX <= 2 || overlapY <= 2, `${label}: controls do not overlap: ${control.text}, ${other.text}`);
+        }
+      }
+      report.headers.push({ label, ...header });
+      await screenshot(page, `${label}.png`);
+    }
+  } finally {
+    await page.setViewportSize(original);
+  }
 }
 async function verifyGuideAnchor(page, label) {
   const link = page.getByRole("navigation", { name: "Inhaltsverzeichnis", exact: true }).locator("a").first();
@@ -244,6 +290,7 @@ try {
               await rejectConsent(page, path === "/");
               if (path === "/" && width === 390) await verifyHomepageDirectoryFocus(page, `${name}-${width}`, name);
               await verifyLayout(page, `${name} ${width} ${path}`);
+              if (path === "/" && width === 1440) await verifyHeaderWidths(page, name);
             };
             if (path === "/") {
               await verifyHomepageReviews(page, `${name}-${width}: before next navigation`, visit);
@@ -278,6 +325,7 @@ try {
           await page.keyboard.press("Enter");
           const dialog = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
           await dialog.waitFor({ state: "visible" });
+          report.typography.push(await verifyTypography(page, `${name}-${width}-menu`));
           const controls = dialog.locator('a[href],button:not([disabled])');
           await controls.first().focus();
           await page.keyboard.press("Shift+Tab");
@@ -304,6 +352,7 @@ try {
           await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
           await rejectConsent(page);
           await page.locator("form.booking-flow").waitFor();
+          report.typography.push(await verifyTypography(page, `${name}-${width}-booking`));
           await page.locator('input[name="klasse"][value="kompakt"]').check();
           await page.locator('input[name="paket"][value="premium"]').check();
           await page.locator(".booking-steps button").nth(1).click();
@@ -336,6 +385,8 @@ try {
   assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
   assert.equal(report.galleryImages.length, 8, "Both full-size gallery images must decode before switching/closing for every engine and viewport");
   assert.equal(report.guideAnchors.length, 4, "The guide contents link must work in both engines at both widths");
+  assert.equal(report.headers.length, 6, "Both engines must check the header at 960, 1024 and 1100px");
+  assert.equal(report.typography.length, 4 * (layoutPaths.length + 2) + 6, "Every layout, menu, booking and header checkpoint must use the loaded brand fonts");
   report.status = "passed";
 } catch (error) {
   report.status = "failed";

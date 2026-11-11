@@ -10,12 +10,13 @@ import { qaBase, controlBase, lighthouseBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { robotsEvidence } from "./robots-evidence.mjs";
 import { observeBrowserAction } from "./browser-action.mjs";
+import { verifyTypography } from "./typography.mjs";
 import { emptyCmsContent } from "../../src/lib/cms.model.ts";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/website-studio");
 await mkdir(output, { recursive: true });
-const report = { status: "running", checks: [], screenshots: [], diagnostics: [], blocked: [], serverFunctionTraffic: [], serverFunctions: {} };
+const report = { status: "running", checks: [], screenshots: [], diagnostics: [], blocked: [], serverFunctionTraffic: [], serverFunctions: {}, typography: [] };
 let browser;
 let latest;
 let home;
@@ -103,6 +104,7 @@ async function checkAnonymousLogin() {
     assert.equal(await page.getByRole("button", { name, exact: true }).count(), 0, "Public account creation must not be offered");
   }
   await assertNoOverflow(page);
+  report.typography.push(await verifyTypography(page, "anonymous-mobile-login"));
   await screenshot(page, "mobile-login.png");
   report.checks.push("Anonymous mobile login retains Google and existing-password sign-in without public account creation");
   await context.close();
@@ -144,6 +146,7 @@ async function openStudio(width, cookie = operatorCookie, path = "/admin/studio"
   } else {
     await page.getByLabel("Titel", { exact: true }).waitFor();
   }
+  report.typography.push(await verifyTypography(page, `studio-${width}-${path}`));
   return { context, page };
 }
 async function selectAbout(page) {
@@ -372,6 +375,7 @@ try {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
     await assertNoOverflow(mobile.page);
+    report.typography.push(await verifyTypography(mobile.page, `studio-mobile-${width}`));
     const titleField = await mobile.page.getByLabel("Überschrift", { exact: true }).evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return {

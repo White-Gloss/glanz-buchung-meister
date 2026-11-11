@@ -127,7 +127,7 @@ export function PriceLine({
           className="min-w-6 flex-1 border-b border-dotted border-line"
           aria-hidden
         />
-        <span className="shrink-0 tabular-nums text-fg">
+        <span className="type-number shrink-0 tabular-nums text-fg">
           <span className="mr-1 text-xs tracking-[0.14em] text-subtle">ab </span>
           {eur(price)}
         </span>

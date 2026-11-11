@@ -158,13 +158,13 @@ export function renderContactCard(contact) {
   <title>${h(c.name)} · Digitale Visitenkarte</title>
   <link rel="canonical" href="${h(c.cardUrl)}">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/syne-latin-variable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="preload" href="/fonts/plus-jakarta-sans-latin-variable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="/fonts/white-gloss.css">
   <style>
-    @font-face{font-family:Barlow;font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/barlow-400.woff2') format('woff2')}
-    @font-face{font-family:Barlow;font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/barlow-500.woff2') format('woff2')}
-    @font-face{font-family:Barlow;font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/barlow-600.woff2') format('woff2')}
-    :root{color-scheme:dark;font-family:Barlow,Arial,ui-sans-serif,system-ui,sans-serif;color:#f4f3ed;background:#0e1218;--muted:#bbc5d1;--line:#bfd1e533;--accent:#bfcee0}
+    :root{color-scheme:dark;font-family:var(--font-sans);color:#f4f3ed;background:#0e1218;--muted:#94a3b8;--line:#bfd1e533;--accent:#bfcee0}
     *{box-sizing:border-box}
-    body{margin:0;min-width:320px;min-height:100vh;min-height:100svh;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{margin:0;min-width:320px;min-height:100vh;min-height:100svh;font-size:16px;line-height:1.65;-webkit-text-size-adjust:100%;text-size-adjust:100%}
     a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:#bfcee033}
     a:focus-visible{outline:3px solid #e2eeff;outline-offset:5px}
     .skip-link{position:absolute;z-index:2;left:16px;top:12px;transform:translateY(-200%);padding:12px 16px;color:#0e1218;background:#f4f3ed}
@@ -172,16 +172,16 @@ export function renderContactCard(contact) {
     .card{width:min(100%,560px);margin:0 auto;padding:32px 24px 20px;padding-top:max(32px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}
     .identity{padding:0 0 24px}
     .brand{display:block;width:160px;height:auto;margin:0 0 28px;object-fit:contain}
-    .eyebrow{margin:0 0 12px;font-size:12px;font-weight:500;line-height:1.4;letter-spacing:.17em;text-transform:uppercase;color:var(--muted)}
-    h1{margin:0;font-size:clamp(30px,7.8vw,42px);font-weight:400;letter-spacing:-.035em;line-height:1.06;overflow-wrap:anywhere;text-wrap:balance}
-    .tagline{max-width:34ch;margin:14px 0 0;font-size:17px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+    .eyebrow{margin:0 0 12px;font-family:var(--font-display);font-size:12px;font-weight:700;line-height:1.5;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+    h1{margin:0;font-family:var(--font-display);font-size:48px;font-weight:800;letter-spacing:-.5px;line-height:1.15;overflow-wrap:anywhere;text-wrap:balance}
+    .tagline{max-width:34ch;margin:14px 0 0;font-size:18px;line-height:1.55;color:#e2e8f0;overflow-wrap:anywhere}
     .owner{margin:12px 0 0;font-size:15px;color:#f4f3ed;overflow-wrap:anywhere}
     .actions{display:grid;gap:12px}
     .action{display:flex;align-items:center;gap:14px;min-height:68px;padding:15px 18px;border:1px solid var(--line);border-radius:4px;background:#151d27}
     .action--primary{min-height:76px;background:var(--accent);border-color:var(--accent);color:#0e1218}
     .icon{display:block;width:24px;height:24px;flex:0 0 24px}
     .action-copy{display:block;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
-    .action-label{display:block;font-size:17px;font-weight:500;line-height:1.3}
+    .action-label{display:block;font-family:var(--font-display);font-size:15px;font-weight:700;line-height:1.45}
     .action-detail{display:block;margin-top:3px;font-size:13px;line-height:1.35;color:var(--muted)}
     .action--primary .action-detail{color:#293849}
     .action-arrow{width:18px;height:18px;flex:0 0 18px;color:var(--muted)}
@@ -189,17 +189,18 @@ export function renderContactCard(contact) {
     .direct-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
     .direct-actions .action{min-height:74px;gap:10px;padding:14px}
     .direct-actions .action-arrow{display:none}
-    .direct-actions .action-label{font-size:16px}
-    .direct-actions .action-detail{font-size:12px}
+    .direct-actions .action-label{font-size:15px}
+    .direct-actions .action-detail{font-size:13px}
     .profiles{display:grid;gap:10px;margin-top:8px}
     .details{margin:28px 0 0;padding-top:22px;border-top:1px solid var(--line);font-style:normal;color:var(--muted);font-size:15px}
     .email{display:inline-flex;align-items:center;min-height:44px;max-width:100%;padding:8px 0;color:#f4f3ed;overflow-wrap:anywhere;text-decoration:underline;text-decoration-color:#bfcee066;text-underline-offset:4px}
     .address{margin:8px 0 0;overflow-wrap:anywhere}
-    .footer{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:20px;border-top:1px solid var(--line);padding-top:8px;font-size:13px;color:var(--muted)}
+    .footer{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:20px;border-top:1px solid var(--line);padding-top:8px;font-size:12px;line-height:1.45;color:var(--muted)}
     .footer a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:4px}
     @media(hover:hover){.action:hover{background:#202c3a;border-color:#bfcee077}.action--primary:hover{background:#d3deeb;border-color:#d3deeb}.email:hover,.footer a:hover{color:#fff;text-decoration-color:currentColor}}
     @media(min-width:700px){.card{margin-top:36px;margin-bottom:36px;padding:40px;border:1px solid var(--line);border-radius:4px}.brand{width:174px}.identity{padding-bottom:28px}}
-    @media(max-width:359px){.card{padding-right:20px;padding-left:20px}.direct-actions{grid-template-columns:1fr}.direct-actions .action{min-height:68px;padding:15px 18px;gap:14px}.direct-actions .action-label{font-size:17px}.direct-actions .action-detail{font-size:13px}.direct-actions .action-arrow{display:block}}
+    @media(max-width:767px){body{font-size:15px}h1{font-size:34px}.tagline{font-size:16px}.eyebrow{font-size:11px}.action-label,.direct-actions .action-label{font-size:14px}}
+    @media(max-width:359px){.card{padding-right:20px;padding-left:20px}.direct-actions{grid-template-columns:1fr}.direct-actions .action{min-height:68px;padding:15px 18px;gap:14px}.direct-actions .action-label{font-size:14px}.direct-actions .action-detail{font-size:13px}.direct-actions .action-arrow{display:block}}
     @media(forced-colors:active){.action,.card{border:1px solid ButtonText}.action--primary{background:Canvas;color:CanvasText}.action-detail,.action-arrow{color:CanvasText}}
   </style>
 </head>

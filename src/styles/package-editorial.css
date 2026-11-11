@@ -15,11 +15,6 @@
 
 .package-editorial .atelier-heading h2 {
   max-width: 17ch;
-  font-family: var(--font-display);
-  font-size: clamp(2.75rem, 5.8vw, 6rem);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
 }
 
 .package-editorial-track {
@@ -55,11 +50,6 @@
   padding: 1rem 1.25rem;
   background: rgba(8, 8, 8, 0.82);
   color: #f3f0e8;
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .package-editorial-body {
@@ -72,12 +62,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1.25rem;
-  font-family: var(--font-sans);
   color: var(--color-muted);
-  font-size: 0.6875rem;
-  line-height: 1.6;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
 }
 
 .package-editorial .package-recommendation {
@@ -92,11 +77,6 @@
 [data-shell="public"] .package-editorial h3 {
   max-width: 14ch;
   margin-top: 1.5rem;
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 5vw, 5.4rem);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.035em;
   overflow-wrap: normal;
   text-wrap: wrap;
 }
@@ -105,16 +85,12 @@
   max-width: 36ch;
   margin-top: 1.5rem;
   color: var(--color-fg);
-  font-size: 1.0625rem;
-  line-height: 1.7;
 }
 
 .package-editorial .package-description {
   max-width: 38ch;
   margin-top: 1rem;
   color: var(--color-muted);
-  font-size: 0.9375rem;
-  line-height: 1.8;
 }
 
 .package-editorial-foot {
@@ -131,19 +107,12 @@
 }
 
 .package-editorial .package-price strong {
-  font-family: var(--font-display);
-  font-size: clamp(3.25rem, 4.5vw, 4.5rem);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.035em;
   font-variant-numeric: lining-nums tabular-nums;
 }
 
 .package-editorial .package-terms {
   margin-top: 0.75rem;
   color: var(--color-muted);
-  font-size: 0.8125rem;
-  line-height: 1.7;
 }
 
 .package-editorial .atelier-text-link {
@@ -153,8 +122,6 @@
   margin-top: 1.5rem;
   border-bottom: 1px solid var(--color-line-strong);
   color: var(--color-fg);
-  font-family: var(--font-sans);
-  font-size: 0.875rem;
 }
 
 .package-editorial .atelier-heading .atelier-text-link {
@@ -263,13 +230,7 @@
     padding-block: 3.5rem 1rem;
   }
 
-  .package-editorial .atelier-heading h2 {
-    font-size: clamp(2.75rem, 10vw, 3.75rem);
-  }
 
-  [data-shell="public"] .package-editorial h3 {
-    font-size: clamp(2.75rem, 10.5vw, 4rem);
-  }
 
   .package-editorial-media {
     aspect-ratio: 4 / 5;
@@ -277,7 +238,6 @@
 
   .package-editorial-media figcaption {
     padding-inline: 0.9rem;
-    font-size: 0.625rem;
   }
 }
 

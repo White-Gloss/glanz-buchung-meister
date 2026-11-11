@@ -35,14 +35,11 @@
   gap: 0.5rem;
   min-height: 2.75rem;
   white-space: nowrap;
-  font-size: 0.875rem;
   color: var(--color-fg);
 }
 
 .wg-results-note {
   margin-top: 1rem;
-  font-size: 0.875rem;
-  letter-spacing: 0.06em;
   color: var(--color-muted);
 }
 
@@ -138,9 +135,6 @@
   justify-content: space-between;
   padding: 1.25rem 1rem 0.75rem;
   background: linear-gradient(transparent, rgb(12 17 16 / 0.84));
-  font-size: 0.875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--color-fg);
 }
 
@@ -152,8 +146,6 @@
   max-width: 42ch;
   margin-top: 0.4rem;
   color: var(--color-muted);
-  font-size: 1rem;
-  line-height: 1.55;
 }
 
 .wg-video-dialog {
@@ -192,9 +184,6 @@
   padding: 0 0.75rem;
   border: 1px solid var(--color-line-strong);
   color: var(--color-fg);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .wg-video-player {
@@ -207,7 +196,6 @@
 .wg-video-description {
   margin-top: 1rem;
   color: var(--color-muted);
-  font-size: 1rem;
 }
 
 .wg-trust-strip {
@@ -218,8 +206,6 @@
   padding: 1rem 0;
   border-block: 1px solid var(--color-line);
   color: var(--color-muted);
-  font-size: 0.875rem;
-  line-height: 1.45;
 }
 
 .wg-trust-strip span {
@@ -274,7 +260,6 @@
     gap: 0.75rem;
     margin-top: 0.5rem;
     color: var(--color-muted);
-    font-size: 0.875rem;
   }
 
   .wg-results-teaser-head,

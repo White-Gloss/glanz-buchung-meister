@@ -1,4 +1,4 @@
-import { createRootRoute, type AnyRouteMatch } from "@tanstack/react-router";
+import { createRootRoute } from "@tanstack/react-router";
 import { DeferredScripts } from "@/components/deferred-scripts";
 import { PrioritizedHeadContent } from "@/components/prioritized-head-content";
 import { AuthProvider } from "@/lib/auth/provider";
@@ -15,21 +15,15 @@ import "../styles/luxury.css";
 import "../styles/hero-clearance.css";
 import "../styles/studio.css";
 import "../styles/forge-fidelity.css";
+import "../styles/typography.css";
 import forgeDesktopCss from "../styles/forge-desktop.css?url";
 
 export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
-  head: ({ matches }) => {
-    const app = matches.some((match: AnyRouteMatch) =>
-      /^\/(admin|login)(\/|$)/.test(match.routeId),
-    );
-    // The public first viewport uses Cormorant 400 and Geist's UI weights.
-    // Cormorant has one regular face; Geist supplies all UI weights.
-    // Operational screens retain their existing Barlow family.
-    const fontPreloads = (app
-      ? ["barlow-400", "barlow-300"]
-      : ["cormorant-garamond-latin-400", "geist-latin-variable"]
-    ).map((name) => ({
+  head: () => {
+    // Public pages, dialogs and CMS share the same local Google Fonts.
+    // Extended glyphs load on demand; the German first viewport needs only Latin.
+    const fontPreloads = ["syne-latin-variable", "plus-jakarta-sans-latin-variable"].map((name) => ({
       rel: "preload",
       href: `/fonts/${name}.woff2`,
       as: "font",

@@ -13,9 +13,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .site-header .gd-header {
   padding-inline: clamp(1.25rem, 2vw, 2.5rem);
 }
-[data-shell="public"] .site-header .menu-toggle-label {
-  letter-spacing: .22em;
-}
 [data-shell="public"] .scroll-film-media {
   clip-path: none;
 }
@@ -42,9 +39,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .scroll-film-copy h1 {
   max-width: 26ch;
   margin-inline: auto;
-  font-size: clamp(3.5rem, 5.5vw, 6.5rem);
-  line-height: 1.06;
-  letter-spacing: -.04em;
 }
 [data-shell="public"] .scroll-film-copy .hero-line {
   display: inline-block;
@@ -56,21 +50,15 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 }
 [data-shell="public"] .scroll-film-eyebrow {
   margin-bottom: 1.5rem;
-  font-size: .625rem;
-  letter-spacing: .23em;
 }
 [data-shell="public"] .scroll-film .scroll-film-service {
   max-width: 54ch;
   margin: 1.5rem auto 0;
   color: #f3f0e8;
-  font-size: .9375rem;
-  line-height: 1.65;
 }
 [data-shell="public"] .scroll-film-cta {
   min-height: 3.5rem;
   padding-inline: 1.75rem;
-  font-size: .6875rem;
-  letter-spacing: .13em;
 }
 [data-shell="public"] .scroll-film-bottom {
   left: 2vw;
@@ -94,13 +82,10 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 [data-shell="public"] .scroll-film-signature p {
   max-width: 20ch;
   margin-inline: auto;
-  font-size: clamp(3.5rem, 6.5vw, 7.5rem);
-  line-height: 1.03;
 }
 [data-shell="public"] .scroll-film-signature span {
   display: block;
   margin-top: 1.5rem;
-  letter-spacing: .2em;
 }
 /* A viewport-wide chapter opens into the compact factual strip. */
 [data-shell="public"] .hero-follow {
@@ -117,9 +102,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
   max-width: 34ch;
   padding-block: 0;
   text-align: center;
-  font-size: clamp(2rem, 3.1vw, 3.75rem);
-  line-height: 1.12;
-  letter-spacing: -.03em;
 }
 /* Match the reference's image-left / copy-right square compositions.
  * Atmosphere is decorative; the original figure and alt remain the content.
@@ -141,9 +123,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
     width: 88%;
     padding-bottom: 8rem;
   }
-  [data-shell="public"] .scroll-film-copy h1 {
-    font-size: clamp(3rem, 7.5vw, 5rem);
-  }
   [data-shell="public"] .scroll-film-copy .hero-line {
     display: block;
   }
@@ -162,38 +141,18 @@ body[data-nav="open"] [data-shell="public"] .site-header {
     padding-top: 6rem;
     padding-bottom: 8.5rem;
   }
-  [data-shell="public"] .scroll-film-copy h1 {
-    font-size: clamp(2.75rem, 11.5vw, 4.25rem);
-    line-height: 1.02;
-  }
   [data-shell="public"] .scroll-film-eyebrow {
-    font-size: .5625rem;
-    letter-spacing: .12em;
     margin-bottom: 1.25rem;
   }
   [data-shell="public"] .scroll-film .scroll-film-service {
     margin-top: 1.25rem;
-    font-size: .8125rem;
-    line-height: 1.5;
   }
   [data-shell="public"] .scroll-film-cta {
     min-height: 3rem;
     padding-inline: .9rem;
-    font-size: .625rem;
-    letter-spacing: .04em;
-  }
-  [data-shell="public"] .scroll-film-signature p {
-    font-size: clamp(2.75rem, 12vw, 4rem);
-  }
-  [data-shell="public"] .scroll-film-signature span {
-    font-size: .5625rem;
-    letter-spacing: .14em;
   }
   [data-shell="public"] .home-intro {
     padding-block: 4.5rem;
-  }
-  [data-shell="public"] .home-intro > p {
-    font-size: 2.25rem;
   }
 }
 /* Consent clearance keeps the original transform contract. In short windows
@@ -205,17 +164,11 @@ body[data-nav="open"] [data-shell="public"] .site-header {
     padding-top: 7rem;
     padding-bottom: 6.5rem;
   }
-  [data-shell="public"] .scroll-film-copy h1 {
-    font-size: clamp(3rem, min(5.2vw, 8svh), 4.5rem);
-  }
 }
 @media (max-height: 600px) and (orientation: landscape) {
   [data-shell="public"] .scroll-film .scroll-film-copy {
     align-items: flex-start;
     padding-top: 7rem;
-  }
-  [data-shell="public"] .scroll-film-copy h1 {
-    font-size: 3rem;
   }
 }
 
@@ -238,7 +191,6 @@ body[data-nav="open"] [data-shell="public"] .site-header {
 }
 [data-shell="public"] .home-jump-links a { min-width: 0; }
 @media (max-width: 639px) {
-  [data-shell="public"] .home-intro > p { font-size: 2.15rem; }
   [data-shell="public"] .home-jump-links {
     width: 100%;
     flex-direction: column;
