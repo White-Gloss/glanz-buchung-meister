@@ -32,7 +32,7 @@ Geprüft werden:
 
 Die GitHub Action `.github/workflows/production-smoke.yml` führt diesen Test auf `main`, zusätzlich alle sechs Stunden und manuell aus. Sie verändert keine Produktionsdaten.
 
-## 2. Audit der Domainmigration
+## 2. Manueller Audit der Domainmigration
 
 ```bash
 npm run audit:domain-migration
@@ -54,11 +54,12 @@ MIGRATION_NEW_BASE=https://neu.example.de \
 npm run audit:domain-migration
 ```
 
-Die GitHub Action `.github/workflows/domain-migration-audit.yml` prüft die
-Migration täglich sowie bei Änderungen am Audit selbst. Der Post-Deploy-
-Smoke-Test ist im IONOS-Workflow direkt an ein erfolgreiches Deployment
-gekoppelt; der separate Zeitplan bleibt als unabhängige Produktionsüberwachung
-bestehen.
+Der automatische GitHub-Domainaudit wurde am 11. November 2026 auf
+Betreiberwunsch entfernt. Der obige Befehl steht ausschließlich als manuelles
+Diagnosewerkzeug zur Verfügung.
+
+Die Produktionsüberwachung der aktuellen Website erfolgt über den separaten
+Produktions-Smoke-Test aus Abschnitt 1.
 
 ## 3. Lighthouse-Baseline
 

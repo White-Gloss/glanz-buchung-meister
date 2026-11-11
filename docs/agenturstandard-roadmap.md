@@ -12,7 +12,8 @@ Status-Legende: **ERLEDIGT** · **IN ARBEIT** · **BLOCKIERT** · **OFFEN**
   - Alte URLs 1:1 permanent auf die jeweilige neue URL weiterleiten.
   - Redirect-Ketten vermeiden.
   - Alte und neue Search-Console-Property sauber verbinden und Adressänderung durchführen.
-  - **Technischer Teilpunkt ERLEDIGT (10.08.2026):** Der automatisierte Domain-Migrationsaudit bestätigt für `/`, `/leistungen`, `/preise`, `/qualitaet`, `/abholservice`, `/faq` und `/ratgeber` jeweils eine direkte permanente `301`-Weiterleitung von `whitegloss.de` auf denselben Pfad unter `white-gloss.de`. Der Audit läuft reproduzierbar per `npm run audit:domain-migration` und zusätzlich automatisiert in GitHub Actions.
+  - **Historischer technischer Nachweis (10.08.2026):** Der damalige Domain-Migrationsaudit bestätigte für `/`, `/leistungen`, `/preise`, `/qualitaet`, `/abholservice`, `/faq` und `/ratgeber` jeweils eine direkte permanente `301`-Weiterleitung von `whitegloss.de` auf denselben Pfad unter `white-gloss.de`.
+  - **Aktualisierung (11.11.2026):** Der automatische GitHub-Domainaudit wurde auf Betreiberwunsch entfernt. `npm run audit:domain-migration` steht weiterhin als manuelles Diagnosewerkzeug bereit. Der historische Nachweis ist keine aktuelle Bestätigung der Weiterleitungen.
   - **Offen:** Search Console / Adressänderung und die tatsächliche Verarbeitung der neuen Domain durch Google beobachten bzw. abschließen.
   - **Abnahme:** Weiterleitungen funktionieren dauerhaft und Google verarbeitet die neue Domain als Ziel.
 
