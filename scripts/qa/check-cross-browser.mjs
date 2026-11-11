@@ -170,6 +170,15 @@ async function verifyLayout(page, label) {
   report.typography.push(await verifyTypography(page, label));
   report.lastLayout.stage = "heading";
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
+  const heroTitle = page.locator(".page-hero h1");
+  if (await heroTitle.count()) {
+    const originalTitle = await heroTitle.getAttribute("aria-label");
+    assert.ok(originalTitle, `${label}: preserve the original hero title as its accessible name`);
+    assert.equal((await heroTitle.textContent()).replaceAll("\u00ad", ""), originalTitle,
+      `${label}: optional hyphenation must not change the visible wording`);
+    assert.equal(await page.getByRole("heading", { level: 1, name: originalTitle, exact: true }).count(), 1,
+      `${label}: assistive technology receives the title without discretionary hyphens`);
+  }
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   report.lastLayout.stage = "scroll-layout";
   for (const top of [0, Math.floor(height / 2), height]) {

@@ -97,7 +97,7 @@ function AdminShell() {
         <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
           {backend === "panel" && (
             <a
-              className="inline-flex min-h-11 items-center px-3 text-sm underline"
+              className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 text-sm underline"
               href="https://panel.white-gloss.de/"
             >
               White-Gloss-Panel öffnen

@@ -301,6 +301,8 @@
   }
 
   [data-shell="public"] .booking-editorial .booking-price {
+    /* Keep four-digit totals intact when label and amount cannot share a row. */
+    flex-wrap: wrap;
     gap: 1rem;
   }
 

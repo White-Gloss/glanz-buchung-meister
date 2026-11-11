@@ -10,9 +10,30 @@ import { documentGraphemes, documentText, documentTextRenderer, embedDocumentFon
 import { createBookingRequestPdf } from "../src/lib/booking-pdf.ts";
 import { createBusinessDocumentPdf } from "../src/lib/document-pdf.ts";
 import { documentLogoBase64 } from "../src/lib/document-logo.generated.ts";
+import { HeroTitle } from "../src/components/hero-title.ts";
 
 const fontDirectory = new URL("../public/fonts/", import.meta.url);
 const manifest = JSON.parse(await readFile(new URL("font-source-manifest.json", fontDirectory), "utf8"));
+
+test("hero compounds keep their original wording and gain only controlled optional breaks", () => {
+  for (const [original, expected] of [
+    ["Ratgeber Fahrzeugpflege.", "Ratgeber Fahr\u00adzeug\u00adpflege."],
+    ["Fahrzeugaufbereitung für Nagold", "Fahr\u00adzeug\u00adauf\u00adbereitung für Nagold"],
+    ["Keramikversiegelung & Langzeitschutz in Horb", "Keramik\u00adver\u00adsiegelung & Langzeit\u00adschutz in Horb"],
+  ]) {
+    const title = HeroTitle({ children: original });
+    assert.equal(title.props.children, expected);
+    assert.equal(title.props.children.replaceAll("\u00ad", ""), original);
+    assert.equal(title.props["aria-hidden"], true, "The parent heading exposes the unmodified accessible title");
+    assert.equal(HeroTitle({ children: expected }).props.children, expected, "Optional breaks are not duplicated");
+  }
+});
+
+test("hero formatting leaves all other words, customer names and larger compounds unchanged", () => {
+  for (const original of ["", "Müller · Şahin · Иванов", "Fahrzeugpflegeprodukte", "Langzeitschutzwirkung", "Keramikversiegelungslack", "Vorfahrzeugaufbereitung", "Fahrzeugpflegeöl"]) {
+    assert.equal(HeroTitle({ children: original }).props.children, original);
+  }
+});
 
 test("local web fonts match their licensed sources and cover German text without another subset", async () => {
   for (const family of ["syne", "plus-jakarta-sans"]) {

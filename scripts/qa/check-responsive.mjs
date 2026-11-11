@@ -199,6 +199,30 @@ async function verifyBookingActivation(page, width, reducedMotion) {
       assert.equal(await page.evaluate(() => document.querySelectorAll("#buchung").length), 1,
         "CTA navigation must retain the single existing request flow.");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (overflow > 2) {
+        const geometry = await form.evaluate((element) => {
+          const describe = (node) => ({
+            tag: node.tagName, className: node.className,
+            text: node.textContent.trim().slice(0, 160),
+            box: node.getBoundingClientRect().toJSON(),
+            font: getComputedStyle(node).font,
+          });
+          const price = element.querySelector(".booking-price");
+          return {
+            viewportWidth: document.documentElement.clientWidth,
+            documentWidth: document.documentElement.scrollWidth,
+            form: element.getBoundingClientRect().toJSON(),
+            price: price && { ...describe(price), children: [...price.children].map(describe) },
+            overflowing: [...element.querySelectorAll("*")].filter((node) => {
+              const box = node.getBoundingClientRect();
+              return box.width > 0 && (box.left < -2 || box.right > document.documentElement.clientWidth + 2);
+            }).slice(0, 15).map(describe),
+          };
+        });
+        await writeFile(`.qa-output/booking-overflow-${width}.json`, JSON.stringify({ ...progress, geometry }, null, 2));
+        await page.screenshot({ path: `.qa-output/booking-overflow-${width}.png` });
+        console.error("BOOKING_OVERFLOW:" + JSON.stringify({ ...progress, geometry }));
+      }
       assert.ok(overflow <= 2, `${width}px ${source}: booking destination overflows by ${overflow}px.`);
     }
   }
@@ -335,8 +359,8 @@ try {
     }
   }
   // Keep the explicit primary CTA at every width, alongside the existing
-  // desktop Termin link. Exercise the exact 959/960px navigation boundary.
-  const headerCases = [320, 390, 768, 900, 959, 960, 1024, 1440]
+  // desktop Termin link. Exercise both sides of the 1100px navigation boundary.
+  const headerCases = [320, 390, 768, 900, 959, 960, 1024, 1099, 1100, 1440]
     .map((width) => ({ width, reducedMotion: "reduce" }));
   headerCases.push(...[390, 1440].map((width) => ({ width, reducedMotion: "no-preference" })));
   for (const { width, reducedMotion } of headerCases) {
@@ -360,9 +384,9 @@ try {
       assert.equal(await navBooking.count(), 1, "Keep the existing desktop Termin navigation link.");
       assert.equal((await navBooking.textContent()).trim(), "Termin");
       assert.equal(await navBooking.getAttribute("href"), "/#buchung");
-      assert.equal(await navBooking.isVisible(), width >= 960,
+      assert.equal(await navBooking.isVisible(), width >= 1100,
         `${width}px: the existing Termin navigation follows the desktop breakpoint.`);
-      if (width >= 960) {
+      if (width >= 1100) {
         const navBounds = await navBooking.boundingBox();
         assert.ok(navBounds && navBounds.height >= 44,
           `${width}px: retain the existing Termin navigation touch-target height.`);
@@ -415,7 +439,7 @@ try {
         `${width}px: closing the menu restores focus to its trigger.`);
       if (reducedMotion === "reduce") await header.screenshot({ path: `.qa-output/review-header-${width}.png` });
       const activation = await verifyBookingActivation(page, width, reducedMotion);
-      results.push({ path: "/", width, reducedMotion, primaryHeaderBookingLinks: 1, desktopTerminVisible: width >= 960, menuKeyboardFocusReturned: true, ...activation });
+      results.push({ path: "/", width, reducedMotion, primaryHeaderBookingLinks: 1, desktopTerminVisible: width >= 1100, menuKeyboardFocusReturned: true, ...activation });
       // Reuse the existing tablet/desktop browser contexts. Phone guides were
       // already exercised by the complete responsive crawl above.
       if (reducedMotion === "reduce" && [768, 1440].includes(width)) {
