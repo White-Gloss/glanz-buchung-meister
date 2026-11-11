@@ -18,17 +18,81 @@ await mkdir(output, { recursive: true });
 const report = {
   status: "running",
   scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [],
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [], directoryFocus: [],
 };
 const diagnostics = [];
 
-async function rejectConsent(page) {
+async function rejectConsent(page, firstVisit = false) {
   const reject = page.getByRole("button", { name: "Ablehnen", exact: true });
-  if (await reject.isVisible()) await reject.click();
+  if (firstVisit) {
+    // The deferred client can mount the banner after goto(networkidle).
+    await reject.waitFor({ state: "visible" });
+    await page.waitForFunction(() => document.body.dataset.consentBanner === "open", undefined, { timeout: 15000 });
+  } else if (!await reject.isVisible()) return;
+  await reject.click();
+  await page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true }).waitFor({ state: "hidden" });
+  await page.waitForFunction(() => localStorage.getItem("wg-consent") === "rejected" &&
+    !document.body.hasAttribute("data-consent-banner"), undefined, { timeout: 5000 });
 }
 async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
   report.screenshots.push(name);
+}
+async function verifyHomepageDirectoryFocus(page, label, browserName) {
+  await page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true }).waitFor({ state: "hidden" });
+  // WebKit includes links with Alt+Tab: https://github.com/microsoft/playwright/issues/5609
+  const navigationKey = browserName === "webkit" ? "Alt+Tab" : "Tab";
+  const headerToggle = page.locator(".site-header").getByRole("button", { name: "Menü öffnen", exact: true });
+  const returnToHeader = async () => {
+    await headerToggle.focus();
+    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+    await page.waitForFunction(() => Math.abs(scrollY) < 1, undefined, { timeout: 5000 });
+  };
+  for (const [name, selector] of [["services", ".home-directory-links"], ["pickup", ".home-city-links"]]) {
+    await returnToHeader();
+    const links = page.locator(selector).locator("a[href]");
+    assert.ok(await links.count() >= 2, `${label} ${name}: two links are required for keyboard navigation`);
+    // Start above the lists without a layout-reading sweep or manual reveal.
+    // Native focus must bring the first link into view; Tab reaches its sibling.
+    await links.first().focus();
+    for (const index of [0, 1]) {
+      if (index) await page.keyboard.press(navigationKey);
+      report.lastDirectoryFocus = { label, selector, index, navigationKey: index ? navigationKey : null };
+      try {
+        await page.waitForFunction(({ selector, index }) => {
+          const link = document.querySelectorAll(`${selector} a[href]`)[index];
+          if (!link || document.activeElement !== link) return false;
+          const box = link.getBoundingClientRect();
+          const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+          return box.width > 0 && box.height > 0 && box.left >= 0 && box.right <= innerWidth &&
+            box.top >= headerBottom - 1 && box.bottom <= innerHeight && link.contains(hit);
+        }, { selector, index }, { timeout: 5000 });
+      } catch (error) {
+        report.lastDirectoryFocus.dom = await page.evaluate(({ selector, index }) => {
+          const link = document.querySelectorAll(`${selector} a[href]`)[index];
+          const box = link?.getBoundingClientRect();
+          const active = document.activeElement;
+          return {
+            activeElement: active ? { tag: active.tagName, id: active.id, href: active.getAttribute("href"), text: active.textContent?.trim().slice(0, 120), ariaLabel: active.getAttribute("aria-label") } : null,
+            expectedHref: link?.getAttribute("href"),
+            expectedRect: box ? { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height } : null,
+            consentStorage: localStorage.getItem("wg-consent"), consentBanner: document.body.getAttribute("data-consent-banner"),
+            scrollY, viewportHeight: innerHeight,
+          };
+        }, { selector, index }).catch((failure) => ({ unavailable: failure.message }));
+        throw error;
+      }
+    }
+    await screenshot(page, `${label}-${name}-keyboard.png`);
+    report.directoryFocus.push({
+      label, selector, navigationKey,
+      firstHref: await links.first().getAttribute("href"),
+      nextHref: await links.nth(1).getAttribute("href"),
+      focusedLinksVisibleAndHitTestable: true,
+    });
+  }
+  await returnToHeader();
 }
 const isReviewsRequest = (request) => request.method() === "GET" && request.url() === `${qaBase}/api/google-reviews`;
 async function revealReviews(page, state) {
@@ -146,7 +210,8 @@ try {
             const visit = async () => {
               const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
               assert.equal(response.status(), 200, `${name} ${path}`);
-              await rejectConsent(page);
+              await rejectConsent(page, path === "/");
+              if (path === "/" && width === 390) await verifyHomepageDirectoryFocus(page, `${name}-${width}`, name);
               await verifyLayout(page, `${name} ${width} ${path}`);
             };
             if (path === "/") {
@@ -227,6 +292,7 @@ try {
   assertBrowserDiagnostics(diagnostics);
   assert.equal(report.failures.length, 0, JSON.stringify(report.failures, null, 2));
   assert.equal(report.checks.length, 24, "Every engine and viewport must complete all checks");
+  assert.equal(report.directoryFocus.length, 4, "Both mobile engines must reach and tab through both homepage link lists");
   assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
   assert.equal(report.galleryImages.length, 8, "Both full-size gallery images must decode before switching/closing for every engine and viewport");
   report.status = "passed";
