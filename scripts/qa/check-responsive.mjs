@@ -328,11 +328,12 @@ try {
       await toggle.press("Enter");
       const menu = page.getByRole("dialog", { name: "Hauptnavigation", exact: true });
       await menu.waitFor({ state: "visible" });
-      await menu.evaluate((element) => new Promise((resolve) => {
-        const deadline = performance.now() + 2000;
-        const check = () => (element.contains(document.activeElement) || performance.now() > deadline ? resolve() : requestAnimationFrame(check));
-        check();
-      }));
+      // CSS can make the portal visible before the effect opens it and sets focus.
+      // Playwright's timeout still expires if Chromium suspends animation frames.
+      await page.waitForFunction(() => {
+        const dialog = document.getElementById("site-nav");
+        return dialog instanceof HTMLDialogElement && dialog.open && dialog.contains(document.activeElement);
+      }, undefined, { polling: 50, timeout: 2000 });
       assert.equal(await menu.evaluate((element) => element.contains(document.activeElement)), true,
         `${width}px: keyboard focus enters the open menu.`);
       await page.keyboard.press("Escape");
