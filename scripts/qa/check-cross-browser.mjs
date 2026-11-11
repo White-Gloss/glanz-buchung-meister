@@ -22,9 +22,17 @@ const report = {
 };
 const diagnostics = [];
 
-async function rejectConsent(page) {
+async function rejectConsent(page, firstVisit = false) {
   const reject = page.getByRole("button", { name: "Ablehnen", exact: true });
-  if (await reject.isVisible()) await reject.click();
+  if (firstVisit) {
+    // The deferred client can mount the banner after goto(networkidle).
+    await reject.waitFor({ state: "visible" });
+    await page.waitForFunction(() => document.body.dataset.consentBanner === "open", undefined, { timeout: 15000 });
+  } else if (!await reject.isVisible()) return;
+  await reject.click();
+  await page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true }).waitFor({ state: "hidden" });
+  await page.waitForFunction(() => localStorage.getItem("wg-consent") === "rejected" &&
+    !document.body.hasAttribute("data-consent-banner"), undefined, { timeout: 5000 });
 }
 async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
@@ -66,9 +74,10 @@ async function verifyHomepageDirectoryFocus(page, label, browserName) {
           const box = link?.getBoundingClientRect();
           const active = document.activeElement;
           return {
-            activeElement: active ? { tag: active.tagName, id: active.id, href: active.getAttribute("href") } : null,
+            activeElement: active ? { tag: active.tagName, id: active.id, href: active.getAttribute("href"), text: active.textContent?.trim().slice(0, 120), ariaLabel: active.getAttribute("aria-label") } : null,
             expectedHref: link?.getAttribute("href"),
             expectedRect: box ? { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height } : null,
+            consentStorage: localStorage.getItem("wg-consent"), consentBanner: document.body.getAttribute("data-consent-banner"),
             scrollY, viewportHeight: innerHeight,
           };
         }, { selector, index }).catch((failure) => ({ unavailable: failure.message }));
@@ -201,7 +210,7 @@ try {
             const visit = async () => {
               const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
               assert.equal(response.status(), 200, `${name} ${path}`);
-              await rejectConsent(page);
+              await rejectConsent(page, path === "/");
               if (path === "/" && width === 390) await verifyHomepageDirectoryFocus(page, `${name}-${width}`, name);
               await verifyLayout(page, `${name} ${width} ${path}`);
             };
