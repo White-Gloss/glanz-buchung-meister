@@ -19,11 +19,11 @@
 }
 
 [data-shell="public"] [data-ratgeber] .page-hero .heading-page {
-  max-width: 17ch;
+  max-width: 22ch;
   font-size: clamp(2.75rem, 4.7vw, 5rem);
   line-height: 1.05;
   overflow-wrap: anywhere;
-  hyphens: auto;
+  hyphens: manual;
 }
 
 [data-shell="public"] [data-ratgeber="article"] .page-hero .heading-page {
@@ -346,6 +346,12 @@
 
   [data-shell="public"] [data-ratgeber] .page-hero .film-chapter-media {
     aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 359px) {
+  [data-shell="public"] [data-ratgeber="article"] .page-hero .heading-page {
+    hyphens: auto;
   }
 }
 

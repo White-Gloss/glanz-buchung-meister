@@ -20,7 +20,7 @@ await mkdir(output, { recursive: true });
 const report = {
   status: "running",
   scope: "Playwright Firefox and WebKit on Linux, 390px and 1440px viewports. WebKit is not a real Safari/iOS test; no physical device or native Windows/macOS browser claim.",
-  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [], directoryFocus: [],
+  checks: [], diagnostics: [], failures: [], screenshots: [], reviews: [], reviewRequests: [], reviewActions: [], galleryImages: [], directoryFocus: [], pageReads: [], guideAnchors: [],
 };
 const diagnostics = [];
 
@@ -159,7 +159,13 @@ async function verifyHomepageReviews(page, label, action) {
   }
 }
 async function verifyLayout(page, label) {
-  report.lastLayout = { label, stage: "heading" };
+  report.lastLayout = { label, stage: "client-hydration" };
+  // SSR already contains a visible hero. Its reveal class is set only by the
+  // real client effect, after the deferred route has hydrated. networkidle
+  // alone can occur before that bootstrap starts loading its CSS and modules.
+  const hero = page.locator(".page-hero .film-chapter-copy");
+  if (await hero.count()) await page.locator(".page-hero .film-chapter-copy.is-in").waitFor();
+  report.lastLayout.stage = "heading";
   assert.equal(await page.locator("h1").count(), 1, `${label}: one H1`);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   report.lastLayout.stage = "scroll-layout";
@@ -175,6 +181,44 @@ async function verifyLayout(page, label) {
     return box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < innerHeight && getComputedStyle(image).visibility !== "hidden";
   }).every((image) => image.complete && image.naturalWidth > 0));
   report.lastLayout.stage = "finished";
+}
+async function completePageReads(pending, label) {
+  let timer;
+  const completed = [];
+  try {
+    await Promise.race([
+      (async () => {
+        while (pending.size) {
+          await Promise.all([...pending].map(async (request) => {
+            const response = await request.response();
+            assert.ok(response, `${label}: a started page read must receive a response`);
+            const completion = await completeSuccessfulRead(response);
+            completed.push({ path: new URL(request.url()).pathname, ...completion });
+            pending.delete(request);
+          }));
+        }
+      })(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}: page reads did not finish before navigation`)), 15000);
+      }),
+    ]);
+    report.pageReads.push({ label, completed, pending: pending.size });
+  } finally { clearTimeout(timer); }
+}
+async function verifyGuideAnchor(page, label) {
+  const link = page.getByRole("navigation", { name: "Inhaltsverzeichnis", exact: true }).locator("a").first();
+  const hash = await link.getAttribute("href");
+  assert.match(hash, /^#abschnitt-\d+$/);
+  await link.click();
+  await page.waitForFunction((target) => {
+    const heading = document.getElementById(target.slice(1))?.querySelector("h2");
+    const box = heading?.getBoundingClientRect();
+    const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+    return location.hash === target && box && box.width > 0 && box.height > 0 &&
+      box.top >= headerBottom - 1 && box.bottom <= innerHeight;
+  }, hash);
+  report.guideAnchors.push({ label, hash, headingVisibleBelowHeader: true });
+  await page.evaluate(() => window.scrollTo(0, 0));
 }
 
 try {
@@ -197,13 +241,22 @@ try {
         const page = await context.newPage();
         let phase = "open";
         const started = Date.now();
+        const pendingPageReads = new Set();
         const traceReviews = (request, event, details = {}) => {
           if (isReviewsRequest(request)) report.reviewRequests.push({ label: `${name}-${width}`, phase, event, elapsedMs: Date.now() - started, endpoint: "/api/google-reviews", ...details });
         };
-        page.on("request", (request) => traceReviews(request, "request"));
+        page.on("request", (request) => {
+          traceReviews(request, "request");
+          if (request.method() === "GET" && new URL(request.url()).origin === qaBase &&
+              ["script", "stylesheet", "fetch", "xhr"].includes(request.resourceType())) pendingPageReads.add(request);
+        });
         page.on("response", (response) => traceReviews(response.request(), "response", { status: response.status() }));
-        page.on("requestfinished", (request) => traceReviews(request, "finished"));
-        page.on("requestfailed", (request) => traceReviews(request, "failed", { error: request.failure()?.errorText }));
+        page.on("requestfinished", (request) => { traceReviews(request, "finished"); pendingPageReads.delete(request); });
+        page.on("requestfailed", (request) => {
+          traceReviews(request, "failed", { error: request.failure()?.errorText });
+          // Diagnostics still records every unexpected failed request.
+          pendingPageReads.delete(request);
+        });
         page.setDefaultTimeout(15000);
         diagnostic.attach(page);
         try {
@@ -220,7 +273,9 @@ try {
               await verifyHomepageReviews(page, `${name}-${width}: before next navigation`, visit);
               await page.evaluate(() => window.scrollTo(0, 0));
             } else await visit();
+            if (path.startsWith("/ratgeber/")) await verifyGuideAnchor(page, `${name}-${width}`);
             await screenshot(page, `${name}-${width}-${path.replace(/\W+/g, "-") || "home"}.png`);
+            await completePageReads(pendingPageReads, `${name}-${width}:${path}`);
             report.checks.push(`${name} ${width}px ${path}: status, H1, visible images and horizontal layout`);
           }
 
@@ -280,6 +335,7 @@ try {
           await screenshot(page, `${name}-${width}-booking.png`);
           report.checks.push(`${name} ${width}px: real booking selection totals 468 EUR without submission`);
           });
+          await completePageReads(pendingPageReads, `${name}-${width}:before-close`);
         } finally {
           phase = "context-close";
           await context.close();
@@ -297,6 +353,7 @@ try {
   assert.equal(report.directoryFocus.length, 4, "Both mobile engines must reach and tab through both homepage link lists");
   assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
   assert.equal(report.galleryImages.length, 8, "Both full-size gallery images must decode before switching/closing for every engine and viewport");
+  assert.equal(report.guideAnchors.length, 4, "The guide contents link must work in both engines at both widths");
   report.status = "passed";
 } catch (error) {
   report.status = "failed";
@@ -307,5 +364,5 @@ try {
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));
-console.log("Cross-browser read evidence: " + JSON.stringify({ status: report.status, failures: report.failures, lastLayout: report.lastLayout, actions: report.reviewActions, reads: report.reviewRequests, gallery: report.galleryImages, errors: report.diagnostics.flatMap((item) => item.errors) }));
+console.log("Cross-browser read evidence: " + JSON.stringify({ status: report.status, failures: report.failures, lastLayout: report.lastLayout, actions: report.reviewActions, reads: report.reviewRequests, pageReads: report.pageReads, guideAnchors: report.guideAnchors, gallery: report.galleryImages, errors: report.diagnostics.flatMap((item) => item.errors) }));
 
