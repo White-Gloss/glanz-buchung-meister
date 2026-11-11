@@ -312,7 +312,7 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
               sizes="100vw"
               width={heroImage?.width ?? 1920}
               height={heroImage?.height ?? 1080}
-              alt={heroImage?.alt ?? "Schwarzer Klassiker bei der Einfahrt in eine Aufbereitungsgarage"}
+              alt={heroImage?.alt ?? "Schwarzer Klassiker mit glänzendem Lack und Chromdetails im dunklen Studio"}
               loading="eager"
               fetchPriority="high"
               decoding="async"

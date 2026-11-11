@@ -1,0 +1,67 @@
+{
+  "status": "Blocked: video submissions rejected before job creation because of insufficient Higgsfield credits. Do not substitute the first quiet garage film.",
+  "direction": "Forward muddy driving with visible tyre splashes → garage entrance → high-gloss reveal → physical turntable rotation, controlled forward/backward by native page scrolling.",
+  "keyframes": [
+    {
+      "index": 0,
+      "job_id": "1b44551d-4dad-495b-8479-c35362aa449f",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051046_1b44551d-4dad-495b-8479-c35362aa449f.png"
+    },
+    {
+      "index": 1,
+      "job_id": "1a80e967-2ad3-4999-bbe6-299fe36b4d68",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051047_1a80e967-2ad3-4999-bbe6-299fe36b4d68.png"
+    },
+    {
+      "index": 2,
+      "job_id": "5d03ced6-1a43-46cf-b6b1-9795a8750ee8",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051047_5d03ced6-1a43-46cf-b6b1-9795a8750ee8.png"
+    }
+  ],
+  "requests": [
+    {
+      "index": 0,
+      "params": {
+        "model": "minimax_h3",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "count": 1,
+        "duration": 8,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "1b44551d-4dad-495b-8479-c35362aa449f"
+          },
+          {
+            "role": "end_image",
+            "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+          }
+        ],
+        "prompt": "High-impact photorealistic luxury detailing brand film, exactly the SAME black classic coupe, chrome and wire wheels throughout. Use supplied START and END frames. This sequence MUST SHOW actual forward driving and obvious MUD SPLASHING, not a stationary car with a camera zoom. 0–3 seconds: the car accelerates moderately FORWARD toward the open garage, its tyres roll through the muddy puddle; a dramatic physically plausible fan of BROWN MUD AND WATER sprays sideways and backward from BOTH visible tyres and spatters the lower doors, with readable individual droplets and gravity. Low stabilized camera tracks the rear quarter closely so the car moves strongly through the environment. Wheels rotate naturally. Keep the whole car identifiable. 3–5 seconds: the car clearly crosses the open garage threshold and drives INTO the illuminated detailing bay, camera follows it inside. 5–6 seconds: a quick tight dolly past the dark muddy rear quarter creates a brief natural bodywork wipe filling the view, a clear editorial passage of time. 6–8 seconds: reveal the same car freshly detailed, now stationary on the flush circular presentation turntable of the END frame. Immaculate mirror-black paint, brilliant crisp neutral-white LED reflections and polished chrome. Settle precisely on the supplied rear three-quarter end composition for the last half-second, ready for a seamless next shot. Strong tangible action then controlled luxury finish. No wheels changing, no car morphing, no open doors, no visible people, no captions, no artificial particles, no random flashes, no smoke and no unrelated objects. The car must travel forward into the garage, not reverse or teleport. This is a cinematic time-passage transformation, not magical instant cleaning while driving. Silent visual storytelling."
+      }
+    },
+    {
+      "index": 1,
+      "params": {
+        "model": "minimax_h3",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "count": 1,
+        "duration": 7,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+          },
+          {
+            "role": "end_image",
+            "value": "5d03ced6-1a43-46cf-b6b1-9795a8750ee8"
+          }
+        ],
+        "prompt": "Photorealistic premium automotive presentation, one continuous smooth TURNTABLE ROTATION. Start exactly on the supplied rear three-quarter keyframe of the immaculate black classic coupe. The flush circular floor turntable visibly and smoothly rotates the ENTIRE CAR as one rigid object through approximately 120 degrees, bringing its front around into the supplied final FRONT three-quarter view. This MUST show the car physically turning on the display platform, not merely a static photograph or a zoom. The fixed garage walls, ceiling and white LED fixtures do not rotate. Car body, roof, chrome, wire wheels and whitewall tyres remain completely identical and geometrically rigid. The wheels rotate together with the platform but do NOT roll on it. Doors closed, vehicle centred on the circular platform. Camera stays at the same low waist height with only a very subtle steady push-in; keep the full car in frame with breathing room throughout. Rich mirror-black paint with crisp white light strips flowing realistically across the changing body angles, immaculate chrome, deep gloss and clean floor reflections. Rotation eases into a beautiful front three-quarter hero pose and settles during final half-second. Start motion gently so it joins the previous garage reveal. High-end studio commercial, strong cinematic wow, no shaking, no new logos or text overlays, no people, no smoke, no sparks, no cuts, no changing car model, no warping, no wheel swaps, no background morphing."
+      }
+    }
+  ],
+  "quotedCredits": 30,
+  "existingFilm": "Keep the currently published studio-journey film until the requested action version is generated and visually verified."
+}

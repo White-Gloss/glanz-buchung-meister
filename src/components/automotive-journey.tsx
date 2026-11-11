@@ -40,6 +40,9 @@ export function AutomotiveJourney() {
     const resize = new ResizeObserver(schedule);
     observer.observe(section);
     resize.observe(section);
+    // Lazy sections above this chapter can move its start without resizing it.
+    const main = section.closest("main");
+    if (main) resize.observe(main);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
     window.addEventListener("pageshow", schedule);

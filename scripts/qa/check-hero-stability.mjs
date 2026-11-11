@@ -400,17 +400,29 @@ async function verifyAutomotiveJourney(page, result, phase) {
   result.automotiveJourney = [];
   if (result.viewport.width >= 960) {
     for (const point of [{ name: "first", progress: 0.12 }, { name: "second", progress: 0.86 }, { name: "reverse", progress: 0.2 }]) {
-      const target = await section.evaluate((element, progress) => {
-        const stage = element.firstElementChild;
-        return element.getBoundingClientRect().top + window.scrollY + (element.offsetHeight - stage.offsetHeight) * progress;
-      }, point.progress);
-      const evidence = { phase: "automotive-" + point.name, target, attempts: [] };
-      result.scrollActions.push(evidence);
-      await wheelToHeroPosition(page, target, evidence);
-      await page.waitForFunction((progress) => {
-        const element = document.querySelector(".automotive-journey");
-        return Math.abs(Number(getComputedStyle(element).getPropertyValue("--journey-progress")) - progress) < 0.035;
-      }, point.progress);
+      // Re-measure after native scrolling: lazy reviews above the chapter may
+      // settle while a large wheel gesture crosses the page.
+      let measured;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const target = await section.evaluate((element, progress) => {
+          const stage = element.querySelector(".automotive-journey-stage");
+          return element.getBoundingClientRect().top + window.scrollY + (element.offsetHeight - stage.offsetHeight) * progress;
+        }, point.progress);
+        const evidence = { phase: "automotive-" + point.name, target, attempts: [] };
+        result.scrollActions.push(evidence);
+        await wheelToHeroPosition(page, target, evidence);
+        measured = await section.evaluate((element) => ({
+          progress: Number(getComputedStyle(element).getPropertyValue("--journey-progress")),
+          top: element.getBoundingClientRect().top,
+          height: element.offsetHeight,
+          stageHeight: element.querySelector(".automotive-journey-stage").offsetHeight,
+          scrollY: window.scrollY,
+        }));
+        evidence.geometry = measured;
+        if (Math.abs(measured.progress - point.progress) < 0.035) break;
+      }
+      assert.ok(Math.abs(measured.progress - point.progress) < 0.035,
+        `Native image progress must follow the measured section: ${JSON.stringify({ expected: point.progress, measured })}`);
       const photo = images.nth(point.name === "second" ? 1 : 0);
       await photo.evaluate(async (image) => { await image.decode(); });
       const geometry = await section.evaluate((element) => {
