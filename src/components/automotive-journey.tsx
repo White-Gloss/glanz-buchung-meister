@@ -10,6 +10,7 @@ export function AutomotiveJourney() {
     const motion = window.matchMedia("(min-width: 960px) and (min-height: 601px) and (prefers-reduced-motion: no-preference)");
     let frame = 0;
     let visible = false;
+    let previousProgress = -1;
     const paint = () => {
       frame = 0;
       if (!motion.matches || !visible || document.hidden) return;
@@ -17,8 +18,14 @@ export function AutomotiveJourney() {
       const stage = section.firstElementChild as HTMLElement;
       const distance = Math.max(1, section.offsetHeight - stage.offsetHeight);
       const progress = Math.min(1, Math.max(0, -rect.top / distance));
-      section.style.setProperty("--journey-progress", String(progress));
-      section.style.setProperty("--journey-reveal", String(Math.min(1, Math.max(0, (progress - 0.18) / 0.64))));
+      if (Math.abs(progress - previousProgress) > 0.00001) {
+        previousProgress = progress;
+        section.style.setProperty("--journey-progress", String(progress));
+        section.style.setProperty("--journey-reveal", String(Math.min(1, Math.max(0, (progress - 0.18) / 0.64))));
+      }
+      // Lazy layout above may move this section without a scroll event.
+      // Read only while visible; avoid observing the entire document in WebKit.
+      frame = window.requestAnimationFrame(paint);
     };
     const schedule = () => {
       if (!frame && motion.matches && visible && !document.hidden)
@@ -28,6 +35,7 @@ export function AutomotiveJourney() {
       if (!motion.matches) {
         window.cancelAnimationFrame(frame);
         frame = 0;
+        previousProgress = -1;
         section.style.removeProperty("--journey-progress");
         section.style.removeProperty("--journey-reveal");
       } else schedule();
@@ -37,12 +45,7 @@ export function AutomotiveJourney() {
       if (visible) schedule();
       else { window.cancelAnimationFrame(frame); frame = 0; }
     }, { rootMargin: "200px 0px" });
-    const resize = new ResizeObserver(schedule);
     observer.observe(section);
-    resize.observe(section);
-    // Lazy sections above this chapter can move its start without resizing it.
-    const main = section.closest("main");
-    if (main) resize.observe(main);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
     window.addEventListener("pageshow", schedule);
@@ -50,7 +53,6 @@ export function AutomotiveJourney() {
     motion.addEventListener("change", configure);
     return () => {
       observer.disconnect();
-      resize.disconnect();
       window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
