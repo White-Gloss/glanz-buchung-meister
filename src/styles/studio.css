@@ -629,6 +629,29 @@ html[data-lines="armed"] [data-lines].is-in .reveal-line > span {
 }
 
 /* 9. Abholorte als Chips ----------------------------------------------------- */
+/* These static directories follow the booking section. Defer their offscreen
+   layout on mobile, with estimated content heights until first rendering.
+   Their children have no startup geometry reads or scroll-driven animation. */
+@media screen and (max-width: 959px) {
+  [data-home="polish"] :is(.home-directory, .home-city-links) {
+    content-visibility: auto;
+    overflow-clip-margin: 8px;
+  }
+
+  [data-home="polish"] .home-directory {
+    contain-intrinsic-block-size: auto 52rem;
+  }
+
+  [data-home="polish"] .home-city-links {
+    contain-intrinsic-block-size: auto 55rem;
+  }
+
+  /* Preserve the full focus outline when keyboard users enter either list. */
+  [data-home="polish"] :is(.home-directory, .home-city-links):focus-within {
+    content-visibility: visible;
+  }
+}
+
 [data-shell="public"] .home-location .city-chips {
   display: grid;
   /* 8.5rem: ab 320 px zwei Spalten, auf dem Desktop drei bis vier. */
