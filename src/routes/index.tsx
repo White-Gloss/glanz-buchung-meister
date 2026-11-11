@@ -22,6 +22,7 @@ import { HomePolish } from "@/components/home-polish";
 import { PackageShowcase } from "@/components/package-showcase";
 import { ResultsTeaser } from "@/components/results-teaser";
 import { HomeProcess } from "@/components/home-process";
+import { AutomotiveJourney } from "@/components/automotive-journey";
 import { RevealLines } from "@/components/reveal-lines";
 import { WebsiteStudioContent } from "@/components/website-studio-content";
 import { loadPublicStudioDocument } from "@/lib/studio-public.functions";
@@ -175,6 +176,8 @@ function Home() {
       </div>
 
       <HomeProcess />
+
+      <AutomotiveJourney />
 
       <section className="concierge-service" aria-labelledby="concierge-heading">
         <header>

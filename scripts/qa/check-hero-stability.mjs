@@ -392,6 +392,54 @@ async function verifyConciergeMedia(page, result, phase) {
   console.log("CONCIERGE_MEDIA:" + JSON.stringify({ viewport: result.viewport.name, frames: result.conciergeMedia }));
 }
 
+
+async function verifyAutomotiveJourney(page, result, phase) {
+  const section = page.locator(".automotive-journey");
+  const images = section.locator("img");
+  assert.equal(await images.count(), 2);
+  result.automotiveJourney = [];
+  if (result.viewport.width >= 960) {
+    for (const point of [{ name: "first", progress: 0.12 }, { name: "second", progress: 0.86 }, { name: "reverse", progress: 0.2 }]) {
+      const target = await section.evaluate((element, progress) => {
+        const stage = element.firstElementChild;
+        return element.getBoundingClientRect().top + window.scrollY + (element.offsetHeight - stage.offsetHeight) * progress;
+      }, point.progress);
+      const evidence = { phase: "automotive-" + point.name, target, attempts: [] };
+      result.scrollActions.push(evidence);
+      await wheelToHeroPosition(page, target, evidence);
+      await page.waitForFunction((progress) => {
+        const element = document.querySelector(".automotive-journey");
+        return Math.abs(Number(getComputedStyle(element).getPropertyValue("--journey-progress")) - progress) < 0.035;
+      }, point.progress);
+      const photo = images.nth(point.name === "second" ? 1 : 0);
+      await photo.evaluate(async (image) => { await image.decode(); });
+      const geometry = await section.evaluate((element) => {
+        const stage = element.firstElementChild;
+        const frames = [...element.querySelectorAll(".automotive-journey-frame")];
+        return { progress: Number(getComputedStyle(element).getPropertyValue("--journey-progress")), stageTop: stage.getBoundingClientRect().top,
+          secondTop: frames[1].getBoundingClientRect().top, stageHeight: stage.offsetHeight };
+      });
+      assert.ok(Math.abs(geometry.stageTop) < 2, "The automotive image stage follows native page scrolling.");
+      if (point.name === "second") assert.ok(Math.abs(geometry.secondTop) < 2, "The second car is fully revealed.");
+      else assert.ok(geometry.secondTop > geometry.stageHeight * 0.8, "Reverse scrolling reveals the first car again.");
+      result.automotiveJourney.push({ ...point, ...geometry });
+      if (point.name !== "reverse") await page.screenshot({ path: `${output}/desktop-automotive-${point.name}.png` });
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    assert.equal(await section.locator(".automotive-journey-stage").evaluate((element) => getComputedStyle(element).position), "relative");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  } else {
+    assert.equal(await section.locator(".automotive-journey-stage").evaluate((element) => getComputedStyle(element).position), "relative");
+    for (let i = 0; i < 2; i++) {
+      await images.nth(i).scrollIntoViewIfNeeded();
+      await images.nth(i).evaluate(async (image) => { await image.decode(); });
+    }
+    await section.screenshot({ path: `${output}/mobile-automotive.png` });
+  }
+  assert.ok(await images.evaluateAll((items) => items.every((image) => image.naturalWidth > 0
+    && new URL(image.currentSrc).origin === location.origin)), "New media is decoded and delivered from this website.");
+}
+
 try {
   for (const viewport of viewports) {
     const result = { viewport, blockedRequests: [], pageErrors: [], mediaResponses: [], scrollActions: [] };
@@ -589,8 +637,10 @@ try {
         if (["mobile", "desktop"].includes(viewport.name))
           await verifyDecodedFilmSeeks(page, result, phase);
       }
-      if (["mobile", "desktop"].includes(viewport.name))
+      if (["mobile", "desktop"].includes(viewport.name)) {
+        await phase.run("automotive-journey", () => verifyAutomotiveJourney(page, result, phase));
         await phase.run("concierge-media", () => verifyConciergeMedia(page, result, phase));
+      }
       if (result.pageErrors.length) report.failures.push(`${viewport.name}: ${result.pageErrors.join("; ")}`);
     } catch (error) {
       result.error = redactHeroEvidence(error.message);

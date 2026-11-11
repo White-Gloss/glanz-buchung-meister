@@ -1,9 +1,9 @@
 // A separate media version keeps cached posters and scroll frames in sync.
-const base = "/media/scroll-film/studio-journey";
+const base = "/media/scroll-film/garage-journey";
 export const scrollFilm = {
   mobileQuery: "(max-width: 767px)",
-  desktopVideo: `${base}/classic-desktop-1280.mp4`,
-  mobileVideo: `${base}/classic-mobile-540.mp4`,
+  desktopVideo: `${base}/garage-desktop-1280.mp4`,
+  mobileVideo: `${base}/garage-mobile-540.mp4`,
   desktopPoster: `${base}/poster-desktop-1280.webp`,
   desktopPosters: `${base}/poster-desktop-1280.webp 1280w, ${base}/poster-desktop-1920.webp 1920w`,
   mobilePoster: `${base}/poster-mobile-540.webp`,
