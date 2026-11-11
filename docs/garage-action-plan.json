@@ -1,0 +1,121 @@
+{
+  "status": "Completed: drive and corrected continuous turntable scenes visually reviewed, concatenated into an 18-second silent responsive scroll film. Candidate integrated; CI and publication pending.",
+  "direction": "Forward muddy driving with visible tyre splashes → garage entrance → high-gloss reveal → physical turntable rotation, controlled forward/backward by native page scrolling.",
+  "keyframes": [
+    {
+      "index": 0,
+      "job_id": "1b44551d-4dad-495b-8479-c35362aa449f",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051046_1b44551d-4dad-495b-8479-c35362aa449f.png"
+    },
+    {
+      "index": 1,
+      "job_id": "1a80e967-2ad3-4999-bbe6-299fe36b4d68",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051047_1a80e967-2ad3-4999-bbe6-299fe36b4d68.png"
+    },
+    {
+      "index": 2,
+      "job_id": "5d03ced6-1a43-46cf-b6b1-9795a8750ee8",
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_051047_5d03ced6-1a43-46cf-b6b1-9795a8750ee8.png"
+    }
+  ],
+  "requests": [
+    {
+      "index": 0,
+      "params": {
+        "model": "minimax_h3",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "count": 1,
+        "duration": 8,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "1b44551d-4dad-495b-8479-c35362aa449f"
+          },
+          {
+            "role": "end_image",
+            "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+          }
+        ],
+        "prompt": "High-impact photorealistic luxury detailing brand film, exactly the SAME black classic coupe, chrome and wire wheels throughout. Use supplied START and END frames. This sequence MUST SHOW actual forward driving and obvious MUD SPLASHING, not a stationary car with a camera zoom. 0–3 seconds: the car accelerates moderately FORWARD toward the open garage, its tyres roll through the muddy puddle; a dramatic physically plausible fan of BROWN MUD AND WATER sprays sideways and backward from BOTH visible tyres and spatters the lower doors, with readable individual droplets and gravity. Low stabilized camera tracks the rear quarter closely so the car moves strongly through the environment. Wheels rotate naturally. Keep the whole car identifiable. 3–5 seconds: the car clearly crosses the open garage threshold and drives INTO the illuminated detailing bay, camera follows it inside. 5–6 seconds: a quick tight dolly past the dark muddy rear quarter creates a brief natural bodywork wipe filling the view, a clear editorial passage of time. 6–8 seconds: reveal the same car freshly detailed, now stationary on the flush circular presentation turntable of the END frame. Immaculate mirror-black paint, brilliant crisp neutral-white LED reflections and polished chrome. Settle precisely on the supplied rear three-quarter end composition for the last half-second, ready for a seamless next shot. Strong tangible action then controlled luxury finish. No wheels changing, no car morphing, no open doors, no visible people, no captions, no artificial particles, no random flashes, no smoke and no unrelated objects. The car must travel forward into the garage, not reverse or teleport. This is a cinematic time-passage transformation, not magical instant cleaning while driving. Silent visual storytelling."
+      }
+    },
+    {
+      "index": 1,
+      "params": {
+        "model": "minimax_h3",
+        "aspect_ratio": "16:9",
+        "resolution": "2K",
+        "count": 1,
+        "duration": 7,
+        "medias": [
+          {
+            "role": "start_image",
+            "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+          },
+          {
+            "role": "end_image",
+            "value": "5d03ced6-1a43-46cf-b6b1-9795a8750ee8"
+          }
+        ],
+        "prompt": "Photorealistic premium automotive presentation, one continuous smooth TURNTABLE ROTATION. Start exactly on the supplied rear three-quarter keyframe of the immaculate black classic coupe. The flush circular floor turntable visibly and smoothly rotates the ENTIRE CAR as one rigid object through approximately 120 degrees, bringing its front around into the supplied final FRONT three-quarter view. This MUST show the car physically turning on the display platform, not merely a static photograph or a zoom. The fixed garage walls, ceiling and white LED fixtures do not rotate. Car body, roof, chrome, wire wheels and whitewall tyres remain completely identical and geometrically rigid. The wheels rotate together with the platform but do NOT roll on it. Doors closed, vehicle centred on the circular platform. Camera stays at the same low waist height with only a very subtle steady push-in; keep the full car in frame with breathing room throughout. Rich mirror-black paint with crisp white light strips flowing realistically across the changing body angles, immaculate chrome, deep gloss and clean floor reflections. Rotation eases into a beautiful front three-quarter hero pose and settles during final half-second. Start motion gently so it joins the previous garage reveal. High-end studio commercial, strong cinematic wow, no shaking, no new logos or text overlays, no people, no smoke, no sparks, no cuts, no changing car model, no warping, no wheel swaps, no background morphing."
+      }
+    }
+  ],
+  "quotedCredits": 30,
+  "existingFilm": "The candidate now selects the completed action film; production stays unchanged until CI succeeds and the guarded deployment completes.",
+  "jobs": [
+    {
+      "index": 0,
+      "job_id": "2a985e45-7a0f-422a-be0d-a24d92c3cc00",
+      "status": "completed",
+      "type": "video",
+      "model": "minimax_h3",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_053225_2a985e45-7a0f-422a-be0d-a24d92c3cc00.mp4"
+    },
+    {
+      "index": 1,
+      "job_id": "f90300c0-9a4a-49b2-b7fa-56a9b486dedb",
+      "status": "completed",
+      "type": "video",
+      "model": "minimax_h3",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_053225_f90300c0-9a4a-49b2-b7fa-56a9b486dedb.mp4"
+    }
+  ],
+  "rejectedRotation": "f90300c0-9a4a-49b2-b7fa-56a9b486dedb: rejected because the rear abruptly changes to the front around 3.7 seconds.",
+  "rotationCorrection": {
+    "job_id": "fc9a16a2-7fa8-4d58-af00-e7885159aa50",
+    "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/hf_20261111_054005_fc9a16a2-7fa8-4d58-af00-e7885159aa50.mp4",
+    "params": {
+      "model": "minimax_h3",
+      "aspect_ratio": "16:9",
+      "resolution": "2K",
+      "duration": 10,
+      "count": 1,
+      "medias": [
+        {
+          "role": "start_image",
+          "value": "1a80e967-2ad3-4999-bbe6-299fe36b4d68"
+        }
+      ],
+      "prompt": "ONE UNBROKEN TEN-SECOND SHOT, fixed camera in the exact garage from the starting image. A motorized circular turntable smoothly rotates this same rigid black classic coupe at a steady slow speed. The FRONT NOSE at image right gradually swings TOWARD the camera; the REAR BUMPER at image left moves AWAY from the camera. The middle of the shot MUST pass through a complete SIDE PROFILE, where both wheels on the visible side are equally distant from the lens. Continue a little further into a front three-quarter angle. Never turn the rear bumper directly toward the camera. Show EVERY intermediate angle of the real three-dimensional car continuously, with a constant unhurried angular speed. The car is one solid object rotating around its centre on the flush floor turntable; its wheels do not roll. Fixed ceiling lights and walls remain perfectly stationary. Identical grille, tail, cabin, wire wheels, chrome, whitewalls and body proportions throughout. Deep flawless black mirror gloss and bright clean white strip reflections sliding over the rotating body. Locked tripod camera, full car visible, no zoom. No shot changes, no jump cuts, no crossfade, no rear transforming into front, no warping. This is a continuous product turntable presentation, not an edit montage. Ease gently to a stop at the end."
+    },
+    "review": "Continuous rear-to-side-to-front turntable movement; fixed garage; no jump cut. Small framing limits at the widest side profile. Reviewed at one-second intervals and concatenation boundary."
+  },
+  "delivery": {
+    "durationSeconds": 18,
+    "desktop": {
+      "name": "classic-desktop-1280.mp4",
+      "bytes": 8879708,
+      "sha256": "d9c5572fa9898c62817281ffd90c520f8a1fd6cbbbbb668e60fe7f48771df60b",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/32d0004c-3361-42e9-9e30-731cbaa28a56.mp4"
+    },
+    "mobile": {
+      "name": "classic-mobile-540.mp4",
+      "bytes": 4314520,
+      "sha256": "f7289e41f5130f43b85143a1cd9e3af72b7f4e51ef75ec41d4fc275618e83a03",
+      "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IiKHVlDwrF1Y5QooEGFMg6XriC/172e1cc1-8f73-45b2-9053-3430854f3227.mp4"
+    },
+    "encoding": "H.264/yuv420p, 24 fps, GOP 6, no B frames, faststart, silent. Desktop 1280x720 CRF25; mobile 540x960 CRF26. Mobile crop tracks from x=0.43 to x=0.85 during rotation. hqdn3d 2:2:4:4."
+  }
+}
