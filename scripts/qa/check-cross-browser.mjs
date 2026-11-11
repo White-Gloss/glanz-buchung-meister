@@ -8,7 +8,7 @@ import { qaBase, controlBase } from "./ports.mjs";
 import { qaClientHeaders } from "./client-identity.mjs";
 import { prepareBrowserFixture } from "./browser-fixture.mjs";
 import { displayedPriceEquals } from "./displayed-price.mjs";
-import { completeSuccessfulRead, observeReadDuringAction } from "./read-completion.mjs";
+import { completeSuccessfulRead, observePageReads, observeReadDuringAction } from "./read-completion.mjs";
 import { revealTargetWithWheel } from "./scroll-target.mjs";
 import { decodedGalleryImage } from "./gallery-image.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
@@ -182,28 +182,8 @@ async function verifyLayout(page, label) {
   }).every((image) => image.complete && image.naturalWidth > 0));
   report.lastLayout.stage = "finished";
 }
-async function completePageReads(pending, label) {
-  let timer;
-  const completed = [];
-  try {
-    await Promise.race([
-      (async () => {
-        while (pending.size) {
-          await Promise.all([...pending].map(async (request) => {
-            const response = await request.response();
-            assert.ok(response, `${label}: a started page read must receive a response`);
-            const completion = await completeSuccessfulRead(response);
-            completed.push({ path: new URL(request.url()).pathname, ...completion });
-            pending.delete(request);
-          }));
-        }
-      })(),
-      new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label}: page reads did not finish before navigation`)), 15000);
-      }),
-    ]);
-    report.pageReads.push({ label, completed, pending: pending.size });
-  } finally { clearTimeout(timer); }
+async function completePageReads(reads, label) {
+  report.pageReads.push(await reads.complete(label));
 }
 async function verifyGuideAnchor(page, label) {
   const link = page.getByRole("navigation", { name: "Inhaltsverzeichnis", exact: true }).locator("a").first();
@@ -241,21 +221,17 @@ try {
         const page = await context.newPage();
         let phase = "open";
         const started = Date.now();
-        const pendingPageReads = new Set();
+        const pendingPageReads = observePageReads(page, qaBase);
         const traceReviews = (request, event, details = {}) => {
           if (isReviewsRequest(request)) report.reviewRequests.push({ label: `${name}-${width}`, phase, event, elapsedMs: Date.now() - started, endpoint: "/api/google-reviews", ...details });
         };
         page.on("request", (request) => {
           traceReviews(request, "request");
-          if (request.method() === "GET" && new URL(request.url()).origin === qaBase &&
-              ["script", "stylesheet", "fetch", "xhr"].includes(request.resourceType())) pendingPageReads.add(request);
         });
         page.on("response", (response) => traceReviews(response.request(), "response", { status: response.status() }));
-        page.on("requestfinished", (request) => { traceReviews(request, "finished"); pendingPageReads.delete(request); });
+        page.on("requestfinished", (request) => traceReviews(request, "finished"));
         page.on("requestfailed", (request) => {
           traceReviews(request, "failed", { error: request.failure()?.errorText });
-          // Diagnostics still records every unexpected failed request.
-          pendingPageReads.delete(request);
         });
         page.setDefaultTimeout(15000);
         diagnostic.attach(page);
@@ -308,6 +284,9 @@ try {
           assert.ok(await controls.last().evaluate((element) => element === document.activeElement));
           await page.keyboard.press("Tab");
           assert.ok(await controls.first().evaluate((element) => element === document.activeElement));
+          // Closing the menu unmounts its logo and focused preview image. Let
+          // those reads finish before Escape can remove their image elements.
+          await completePageReads(pendingPageReads, `${name}-${width}:before-menu-close`);
           await page.keyboard.press("Escape");
           await dialog.waitFor({ state: "hidden" });
           assert.ok(await menu.evaluate((element) => element === document.activeElement));
@@ -318,6 +297,9 @@ try {
           report.checks.push(`${name} ${width}px: gallery keys/focus return, menu focus trap/Escape and skip link`);
 
           phase = "booking";
+          // Gallery/menu/skip-link actions can start offscreen image reads after
+          // the layout checkpoint. Finish them before replacing this document.
+          await completePageReads(pendingPageReads, `${name}-${width}:before-booking-navigation`);
           await verifyHomepageReviews(page, `${name}-${width}: before context close`, async () => {
           await page.goto(`${qaBase}/#buchung`, { waitUntil: "networkidle" });
           await rejectConsent(page);
