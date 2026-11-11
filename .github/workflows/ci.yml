@@ -269,6 +269,12 @@ jobs:
         run: git diff --exit-code -- src/routeTree.gen.ts
       - name: Firefox und WebKit bereitstellen
         run: node scripts/check-ci-browsers.mjs 1.62.1 firefox webkit
+      - name: Firefox-Profilverzeichnis im CI-Container vorbereiten
+        if: ${{ job.container.id != '' }}
+        # GitHub mounts this temporary directory with a different owner.
+        # Firefox requires the existing home directory to belong to its user.
+        # Change only that directory, never recursively or on a host runner.
+        run: chown "$(id -u):$(id -g)" "$HOME"
       - name: Isolierte Browserprüfung
         run: node scripts/qa/run-checks.mjs --cross-browser-only
       - name: Browsernachweise sichern
