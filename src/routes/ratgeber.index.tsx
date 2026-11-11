@@ -54,7 +54,7 @@ function RatgeberIndex() {
   };
 
   return (
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} data-ratgeber="index">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -75,15 +75,16 @@ function RatgeberIndex() {
           </Link>
         }
       />
-      <section className="border-t border-line">
-        <div className="gd-split gd-split--duo">
+      <section className="ratgeber-list">
+        <div className="ratgeber-grid">
           {articles.map((a) => (
-            <article
-              key={a.slug}
-              className="group relative block border-b border-line lg:odd:border-r"
-            >
-              <MediaTile src={a.image} alt={`Titelbild: ${a.title}`}>
-                <p className="kicker">
+            <article key={a.slug} className="ratgeber-card group relative">
+              <MediaTile
+                src={a.image}
+                alt={`Titelbild: ${a.title}`}
+                className="ratgeber-card-media"
+              >
+                <p className="ratgeber-meta">
                   {new Date(a.date).toLocaleDateString("de-DE", {
                     day: "2-digit",
                     month: "long",
@@ -91,17 +92,17 @@ function RatgeberIndex() {
                   })}{" "}
                   · {a.minutes} Min.
                 </p>
-                <h2 className="heading-2 mt-3 max-w-md">
+                <h2 className="ratgeber-card-title">
                   <Link
                     to="/ratgeber/$slug"
                     params={{ slug: a.slug }}
-                    className="after:absolute after:inset-0 hover:underline"
+                    className="ratgeber-card-link after:absolute after:inset-0"
                   >
                     {a.title}
                   </Link>
                 </h2>
-                <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">{a.excerpt}</p>
-                <span className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm text-fg" aria-hidden="true">
+                <p className="ratgeber-card-excerpt">{a.excerpt}</p>
+                <span className="ratgeber-read" aria-hidden="true">
                   Lesen
                   <IconArrowRight className="link-arrow size-4" />
                 </span>
@@ -118,21 +119,22 @@ function RatgeberIndex() {
                 /* ignore */
               }
               return (
-                <article
-                  key={r.id}
-                  className="group relative block border-b border-line p-8 lg:odd:border-r"
-                >
-                  <p className="kicker">Aktuell</p>
-                  <h2 className="heading-2 mt-3">
+                <article key={r.id} className="ratgeber-card ratgeber-card--text group relative">
+                  <p className="ratgeber-meta">Aktuell</p>
+                  <h2 className="ratgeber-card-title">
                     <Link
                       to="/ratgeber/$slug"
                       params={{ slug: r.slug as string }}
-                      className="after:absolute after:inset-0 hover:underline"
+                      className="ratgeber-card-link after:absolute after:inset-0"
                     >
                       {r.title}
                     </Link>
                   </h2>
-                  <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">{excerpt}</p>
+                  <p className="ratgeber-card-excerpt">{excerpt}</p>
+                  <span className="ratgeber-read" aria-hidden="true">
+                    Lesen
+                    <IconArrowRight className="link-arrow size-4" />
+                  </span>
                 </article>
               );
             })}

@@ -14,6 +14,8 @@ import { decodedGalleryImage } from "./gallery-image.mjs";
 import { assertBrowserDiagnostics, createBrowserDiagnostics } from "../browser-diagnostics.mjs";
 
 const output = resolve(".qa-output/cross-browser");
+// Keep the gallery last: its keyboard interaction continues after this crawl.
+const layoutPaths = ["/", "/abholservice/nagold", "/leistungen/keramikversiegelung", "/ratgeber", "/ratgeber/keramikversiegelung-langzeitschutz", "/galerie"];
 await mkdir(output, { recursive: true });
 const report = {
   status: "running",
@@ -205,7 +207,7 @@ try {
         page.setDefaultTimeout(15000);
         diagnostic.attach(page);
         try {
-          for (const path of ["/", "/abholservice/nagold", "/leistungen/keramikversiegelung", "/galerie"]) {
+          for (const path of layoutPaths) {
             phase = `navigate/layout:${path}`;
             const visit = async () => {
               const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
@@ -291,7 +293,7 @@ try {
   }
   assertBrowserDiagnostics(diagnostics);
   assert.equal(report.failures.length, 0, JSON.stringify(report.failures, null, 2));
-  assert.equal(report.checks.length, 24, "Every engine and viewport must complete all checks");
+  assert.equal(report.checks.length, 4 * (layoutPaths.length + 2), "Every engine and viewport must complete all checks");
   assert.equal(report.directoryFocus.length, 4, "Both mobile engines must reach and tab through both homepage link lists");
   assert.equal(report.reviews.length, 8, "Both homepage visits must finish reviews before navigation/close for every engine and viewport");
   assert.equal(report.galleryImages.length, 8, "Both full-size gallery images must decode before switching/closing for every engine and viewport");
