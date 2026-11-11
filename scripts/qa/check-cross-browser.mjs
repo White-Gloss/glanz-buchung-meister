@@ -30,8 +30,10 @@ async function screenshot(page, name) {
   await page.screenshot({ path: resolve(output, name) });
   report.screenshots.push(name);
 }
-async function verifyHomepageDirectoryFocus(page, label) {
+async function verifyHomepageDirectoryFocus(page, label, browserName) {
   await page.getByRole("dialog", { name: "Cookie-Einstellungen", exact: true }).waitFor({ state: "hidden" });
+  // WebKit includes links with Alt+Tab: https://github.com/microsoft/playwright/issues/5609
+  const navigationKey = browserName === "webkit" ? "Alt+Tab" : "Tab";
   const headerToggle = page.locator(".site-header").getByRole("button", { name: "Menü öffnen", exact: true });
   const returnToHeader = async () => {
     await headerToggle.focus();
@@ -46,21 +48,36 @@ async function verifyHomepageDirectoryFocus(page, label) {
     // Native focus must bring the first link into view; Tab reaches its sibling.
     await links.first().focus();
     for (const index of [0, 1]) {
-      if (index) await page.keyboard.press("Tab");
-      report.lastDirectoryFocus = { label, selector, index };
-      await page.waitForFunction(({ selector, index }) => {
-        const link = document.querySelectorAll(`${selector} a[href]`)[index];
-        if (!link || document.activeElement !== link) return false;
-        const box = link.getBoundingClientRect();
-        const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
-        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-        return box.width > 0 && box.height > 0 && box.left >= 0 && box.right <= innerWidth &&
-          box.top >= headerBottom - 1 && box.bottom <= innerHeight && link.contains(hit);
-      }, { selector, index }, { timeout: 5000 });
+      if (index) await page.keyboard.press(navigationKey);
+      report.lastDirectoryFocus = { label, selector, index, navigationKey: index ? navigationKey : null };
+      try {
+        await page.waitForFunction(({ selector, index }) => {
+          const link = document.querySelectorAll(`${selector} a[href]`)[index];
+          if (!link || document.activeElement !== link) return false;
+          const box = link.getBoundingClientRect();
+          const headerBottom = document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0;
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+          return box.width > 0 && box.height > 0 && box.left >= 0 && box.right <= innerWidth &&
+            box.top >= headerBottom - 1 && box.bottom <= innerHeight && link.contains(hit);
+        }, { selector, index }, { timeout: 5000 });
+      } catch (error) {
+        report.lastDirectoryFocus.dom = await page.evaluate(({ selector, index }) => {
+          const link = document.querySelectorAll(`${selector} a[href]`)[index];
+          const box = link?.getBoundingClientRect();
+          const active = document.activeElement;
+          return {
+            activeElement: active ? { tag: active.tagName, id: active.id, href: active.getAttribute("href") } : null,
+            expectedHref: link?.getAttribute("href"),
+            expectedRect: box ? { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height } : null,
+            scrollY, viewportHeight: innerHeight,
+          };
+        }, { selector, index }).catch((failure) => ({ unavailable: failure.message }));
+        throw error;
+      }
     }
     await screenshot(page, `${label}-${name}-keyboard.png`);
     report.directoryFocus.push({
-      label, selector,
+      label, selector, navigationKey,
       firstHref: await links.first().getAttribute("href"),
       nextHref: await links.nth(1).getAttribute("href"),
       focusedLinksVisibleAndHitTestable: true,
@@ -185,7 +202,7 @@ try {
               const response = await page.goto(qaBase + path, { waitUntil: "networkidle" });
               assert.equal(response.status(), 200, `${name} ${path}`);
               await rejectConsent(page);
-              if (path === "/" && width === 390) await verifyHomepageDirectoryFocus(page, `${name}-${width}`);
+              if (path === "/" && width === 390) await verifyHomepageDirectoryFocus(page, `${name}-${width}`, name);
               await verifyLayout(page, `${name} ${width} ${path}`);
             };
             if (path === "/") {
