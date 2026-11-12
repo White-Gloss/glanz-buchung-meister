@@ -205,10 +205,12 @@ export async function readCustomerPhotos(
     [SHOP, bookingId, MAX_PHOTOS],
   );
   const photos: { name: string; mime: string; url: string }[] = [];
+  let eligiblePhotos = 0;
   for (const row of rows) {
     const path = text(row.storage_path);
     const mime = text(row.mime).toLowerCase();
     if (!PHOTO_PATH.test(path) || !PHOTO_MIME.has(mime)) continue;
+    eligiblePhotos++;
     let url = "";
     try {
       url = await sign(path);
@@ -222,6 +224,7 @@ export async function readCustomerPhotos(
       url,
     });
   }
+  if (eligiblePhotos > 0 && photos.length === 0) throw new Error("photos_unavailable");
   return photos;
 }
 
@@ -289,7 +292,7 @@ export async function handleHubInquiries(
     return json({ inquiries: await readOpenInquiries(sql) }, 200);
   } catch {
     // No query text, parameters or customer data in logs.
-    console.error("[hub] list_failed");
+    console.error(`[hub] ${action.action}_failed`);
     return json({ error: "unavailable" }, 500);
   }
 }

@@ -1,4 +1,5 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, type PDFFont, rgb } from "pdf-lib";
+import { documentGraphemes, documentText, documentTextRenderer, embedDocumentFonts } from "./document-fonts.ts";
 
 export type DocumentRow = { name: string; quantity: number; grossCents: number; taxRate: number };
 export type BusinessDocument = {
@@ -23,8 +24,9 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
   const doc = await PDFDocument.create();
   doc.setTitle(`${input.title} ${input.reference}`);
   doc.setAuthor(input.company);
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const fonts = await embedDocumentFonts(doc);
+  const { body: font, bodyStrong, heading: bold, numbers, fallback } = fonts;
+  const renderer = documentTextRenderer(fonts);
   const logo = await doc.embedPng(input.logo);
   const ink = rgb(0.125, 0.125, 0.125),
     muted = rgb(0.4, 0.4, 0.4);
@@ -33,24 +35,13 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
     width = right - left;
   let page = doc.addPage([595.28, 841.89]),
     y = 680;
-  const clean = (s: string) =>
-    Array.from(String(s).normalize("NFC"), (c) => {
-      if (c === "\n") return c;
-      try {
-        font.encodeText(c);
-        return c;
-      } catch {
-        return "?";
-      }
-    })
-      .join("")
-      .replace(/\r/g, "");
-  const wrap = (s: string, maxWidth = width, size = 9) => {
+  const clean = (s: string, activeFont = font) => documentText(s, activeFont, fallback);
+  const wrap = (s: string, maxWidth = width, size = 9, activeFont = font) => {
     const lines: string[] = [];
-    for (const paragraph of clean(s).split("\n")) {
+    for (const paragraph of clean(s, activeFont).split("\n")) {
       let line = "";
-      for (const char of paragraph) {
-        if (font.widthOfTextAtSize(line + char, size) > maxWidth) {
+      for (const char of documentGraphemes(paragraph)) {
+        if (renderer.widthOfTextAtSize(line + char, size, activeFont) > maxWidth) {
           const at = line.lastIndexOf(" ");
           if (at > 0) {
             lines.push(line.slice(0, at));
@@ -65,16 +56,16 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
     }
     return lines;
   };
-  const text = (s: string, x: number, at: number, size = 9, strong = false, grey = false) =>
-    page.drawText(clean(s), {
+  const text = (s: string, x: number, at: number, size = 9, strong = false, grey = false, activeFont: PDFFont = strong ? bold : font) =>
+    renderer.drawText(page, clean(s, activeFont), {
       x,
       y: at,
       size,
-      font: strong ? bold : font,
+      font: activeFont,
       color: grey ? muted : ink,
     });
-  const alignRight = (s: string, x: number, at: number, size = 9, strong = false) =>
-    text(s, x - (strong ? bold : font).widthOfTextAtSize(clean(s), size), at, size, strong);
+  const alignRight = (s: string, x: number, at: number, size = 9, strong = false, activeFont: PDFFont = strong ? numbers : font) =>
+    text(s, x - renderer.widthOfTextAtSize(clean(s, activeFont), size, activeFont), at, size, strong, false, activeFont);
   const money = (cents: number) =>
     (cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
   const newPage = () => {
@@ -87,14 +78,14 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
   };
   const paragraph = (value: string, strong = false) => {
     if (!value.trim()) return;
-    for (const line of wrap(value)) {
+    for (const line of wrap(value, width, 9, strong ? bold : font)) {
       space(13);
       text(line, left, y, 9, strong);
       y -= 13;
     }
     y -= 7;
   };
-  text(input.title, left, 781, 22);
+  text(input.title, left, 781, 22, true, false, numbers);
   page.drawImage(logo, { x: 425, y: 714, width: 112, height: (112 * logo.height) / logo.width });
   for (const line of wrap(`${input.company} · ${input.address}`, width, 7)) {
     text(line, left, y, 7);
@@ -104,7 +95,7 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
   const customerLines = input.customer.filter(Boolean).flatMap((v) => wrap(v, 233));
   const metaLines = input.metadata.filter(Boolean).flatMap((v) => wrap(v, 231));
   for (const [index, line] of customerLines.entries())
-    text(line, left, y - index * 13, 9, index === 0);
+    text(line, left, y - index * 13);
   for (const [index, line] of metaLines.entries()) text(line, 306, y - index * 13);
   y -= Math.max(customerLines.length, metaLines.length) * 13 + 25;
   paragraph(input.introduction);
@@ -118,7 +109,7 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
         x: columns[i] + 5,
         y: y - 14,
         size: 8,
-        font: bold,
+        font: bodyStrong,
         color: rgb(1, 1, 1),
       });
     });
@@ -144,9 +135,9 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
       text(line, left + 5, y);
       if (index === 0) {
         alignRight(String(row.quantity), columns[2] - 7, y);
-        alignRight(money(net / row.quantity), columns[3] - 7, y);
+        alignRight(money(net / row.quantity), columns[3] - 7, y, 9, false, numbers);
         alignRight(`${row.taxRate} %`, columns[4] - 7, y);
-        alignRight(money(net), right - 5, y);
+        alignRight(money(net), right - 5, y, 9, false, numbers);
       }
       y -= 13;
     });
@@ -160,10 +151,10 @@ export async function createBusinessDocumentPdf(input: BusinessDocument): Promis
   }
   space(80 + taxes.size * 17);
   y -= 8;
-  alignRight(`Nettobetrag: ${money(netCents)}`, right, y);
+  alignRight(`Nettobetrag: ${money(netCents)}`, right, y, 9, false, numbers);
   y -= 17;
   for (const [rate, tax] of taxes) {
-    alignRight(`MwSt. ${rate} %: ${money(tax)}`, right, y);
+    alignRight(`MwSt. ${rate} %: ${money(tax)}`, right, y, 9, false, numbers);
     y -= 17;
   }
   page.drawRectangle({

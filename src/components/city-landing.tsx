@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { HeroMedia, Shot } from "@/components/media";
 import { PageCrumbs } from "@/components/page-hero";
+import { HeroTitle } from "@/components/hero-title";
 import { ctaGhost, ctaPrimary } from "@/components/ui";
 import { cityJsonLd, whatsappForCity } from "@/lib/city-seo";
 import {
@@ -87,7 +88,9 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
             ]}
           />
           <p className="kicker mt-5">Mit Hol- und Bringservice</p>
-          <h1 className="heading-page mt-4 max-w-4xl">{editorial?.content.title.trim() || copy.heading}</h1>
+          <h1 className="heading-page mt-4 max-w-4xl" aria-label={editorial?.content.title.trim() || copy.heading}>
+            <HeroTitle>{editorial?.content.title.trim() || copy.heading}</HeroTitle>
+          </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
             {editorial?.content.lead.trim() || city.blurb} Innenraumreinigung, Lackpflege oder Keramikversiegelung machen wir in
             unserer Werkstatt in {site.city}. Hol- und Bringservice: {pickup}.
@@ -233,15 +236,15 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Entfernung</dt>
-              <dd className="mt-2 font-display text-3xl">{city.km === null ? "Nach Adresse" : `ca. ${city.km} km`}</dd>
+              <dd className="type-number mt-2 font-display text-3xl">{city.km === null ? "Nach Adresse" : `ca. ${city.km} km`}</dd>
             </div>
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Fahrzeit</dt>
-              <dd className="mt-2 font-display text-3xl">{city.minutes === null ? "Nach Absprache" : `ca. ${city.minutes} Min.`}</dd>
+              <dd className="type-number mt-2 font-display text-3xl">{city.minutes === null ? "Nach Absprache" : `ca. ${city.minutes} Min.`}</dd>
             </div>
             <div className="border border-line p-5">
               <dt className="text-xs uppercase tracking-[0.16em] text-subtle">Abholung</dt>
-              <dd className="mt-2 font-display text-3xl">{pickup}</dd>
+              <dd className="type-number mt-2 font-display text-3xl">{pickup}</dd>
             </div>
           </dl>
         </div>
@@ -253,7 +256,7 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
           <ol className="gd-tiles gd-tiles-3 mt-12">
             {steps.map((s) => (
               <li key={s.n} className="border-t border-line pt-5">
-                <p className="font-display text-3xl text-subtle/80">{s.n}</p>
+                <p className="type-number font-display text-3xl text-subtle/80">{s.n}</p>
                 <h3 className="heading-3 mt-3">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
               </li>

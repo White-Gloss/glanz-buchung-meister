@@ -6,7 +6,6 @@
   margin-top: clamp(2rem, 4vw, 4rem);
   gap: 1.75rem;
   color: var(--color-fg);
-  font-family: var(--font-sans);
   color-scheme: dark;
 }
 
@@ -25,17 +24,12 @@
   border: 0;
   border-bottom: 1px solid var(--color-line-strong);
   color: var(--color-muted);
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: 0.02em;
   text-align: left;
 }
 
 [data-shell="public"] .booking-editorial .booking-steps button span {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -57,31 +51,18 @@
 [data-shell="public"] .booking-editorial .booking-price > span {
   max-width: 22ch;
   color: var(--color-muted);
-  font-size: 0.75rem;
-  line-height: 1.6;
 }
 
 [data-shell="public"] .booking-editorial .booking-price small {
   margin-top: 0.35rem;
-  font-size: 0.6875rem;
 }
 
 [data-shell="public"] .booking-editorial .booking-price strong {
-  font-family: var(--font-display);
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
-  font-weight: 400;
   font-variant-numeric: lining-nums tabular-nums;
-  line-height: 1.1;
-  letter-spacing: -0.035em;
 }
 
 [data-shell="public"] .booking-editorial .booking-step-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 400;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
 }
 
 [data-shell="public"] .booking-editorial .booking-step-panel {
@@ -91,9 +72,6 @@
 [data-shell="public"] .booking-editorial legend {
   padding: 0;
   color: var(--color-muted);
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  letter-spacing: 0.16em;
 }
 
 [data-shell="public"] .booking-editorial fieldset {
@@ -126,10 +104,6 @@
 }
 
 [data-shell="public"] .booking-editorial .booking-package-options .booking-choice > span > .font-medium {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  font-weight: 400;
-  line-height: 1.15;
   margin-bottom: 0.5rem;
 }
 
@@ -155,8 +129,6 @@
   border: 0;
   border-block: 1px solid var(--color-line-strong);
   color: var(--color-fg);
-  font-size: 0.875rem;
-  line-height: 1.5;
   cursor: pointer;
 }
 
@@ -176,15 +148,7 @@
   background: transparent;
 }
 
-[data-shell="public"] .booking-editorial .booking-contact > .font-display {
-  font-size: 2.75rem;
-  font-weight: 400;
-  line-height: 1.1;
-}
 
-[data-shell="public"] .booking-editorial label[for] {
-  line-height: 1.6;
-}
 
 [data-shell="public"] .booking-editorial .input-line {
   min-width: 0;
@@ -194,9 +158,6 @@
   border-radius: 0;
   background: var(--color-surface);
   color: var(--color-fg);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.5;
 }
 
 [data-shell="public"] .booking-editorial textarea.input-line {
@@ -217,12 +178,10 @@
   padding: 1rem;
   border-left: 2px solid currentColor;
   background: var(--color-surface);
-  line-height: 1.65;
 }
 
 [data-shell="public"] .booking-editorial .booking-summary {
   gap: 1rem;
-  line-height: 1.65;
 }
 
 [data-shell="public"] .booking-editorial .booking-summary :is(dt, dd) {
@@ -250,7 +209,6 @@
   border-radius: 0;
   background: var(--color-elevated);
   color: var(--color-fg);
-  font: inherit;
 }
 
 [data-shell="public"] .booking-editorial .booking-actions {
@@ -266,7 +224,6 @@
   border-radius: 0;
   white-space: normal;
   text-align: center;
-  line-height: 1.5;
   transform: none;
   translate: none;
   scale: none;
@@ -311,7 +268,6 @@
   }
 
   [data-shell="public"] .booking-editorial .booking-price strong {
-    font-size: clamp(2.5rem, 4vw, 4rem);
     overflow-wrap: anywhere;
   }
 
@@ -341,22 +297,19 @@
   }
 
   [data-shell="public"] .booking-editorial .booking-steps button {
-    font-size: 0.6875rem;
     overflow-wrap: anywhere;
   }
 
   [data-shell="public"] .booking-editorial .booking-price {
+    /* Keep four-digit totals intact when label and amount cannot share a row. */
+    flex-wrap: wrap;
     gap: 1rem;
   }
 
   [data-shell="public"] .booking-editorial .booking-price > span {
     max-width: 18ch;
-    font-size: 0.6875rem;
   }
 
-  [data-shell="public"] .booking-editorial .booking-price strong {
-    font-size: 2.2rem;
-  }
 
   [data-shell="public"] .booking-editorial .booking-vehicle-options {
     grid-template-columns: minmax(0, 1fr);

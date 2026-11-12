@@ -330,7 +330,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
   const unavailable = loading || hasPendingOperation || !document || document.archived;
   return (
     <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:py-12" aria-busy={loading || hasPendingOperation}>
-      <header className="mb-5 max-w-3xl sm:mb-8">
+      <header className="mb-3 max-w-3xl sm:mb-8">
         <p className="text-xs uppercase tracking-[0.16em] text-subtle">White-Gloss · Website</p>
         <h1 className="mt-2 font-display text-3xl sm:text-5xl">Website Studio</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted sm:mt-3">
@@ -525,7 +525,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
           <p role="status" aria-live="polite" className="text-sm text-muted">
             {loading ? "Inhalt wird geladen …" : hasPendingOperation ? "Änderung wird geprüft …" : status}
           </p>
-          <nav aria-label="Studio-Ansichten" className="flex flex-wrap gap-2">
+          <nav aria-label="Studio-Ansichten" className="flex flex-wrap gap-2 max-[359px]:gap-1">
             {(
               [
                 ["edit", "Inhalt"],
@@ -538,6 +538,7 @@ export function WebsiteStudio({ initialKind }: { initialKind?: CmsKind }) {
                 key={value}
                 type="button"
                 variant={view === value ? "primary" : "ghost"}
+                className="px-2.5 max-[359px]:px-0.5 sm:px-5"
                 aria-pressed={view === value}
                 disabled={loading || hasPendingOperation || (value === "media" && document?.kind !== "page")}
                 onClick={() => setView(value)}
