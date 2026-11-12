@@ -91,10 +91,19 @@ jobs:
   verify:
     runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    # Preserve explicitly configured custom runners; the default Linux CI uses
+    # Microsoft's version-pinned browser image, with OS dependencies included.
+    container: ${{ fromJSON(((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNS_ON) && 'null' || '{"image":"mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e","options":"--ipc=host"}') }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Ausgechecktes Verzeichnis im CI-Container bestätigen
+        if: ${{ job.container.id != '' }}
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -164,7 +173,9 @@ jobs:
         # Chromium wird ausschließlich auf diesem Linux-CI-Runner gestartet.
         # Keine lokale Vorschau und keine echten Anfrage-/Uploadaktionen.
         run: |
-          if [[ "${{ runner.environment }}" == "github-hosted" ]]; then
+          if [[ "${PLAYWRIGHT_BROWSERS_PATH:-}" == "/ms-playwright" ]]; then
+            node scripts/check-ci-browsers.mjs 1.62.1 chromium
+          elif [[ "${{ runner.environment }}" == "github-hosted" ]]; then
             npx playwright install --with-deps chromium
           else
             # OS dependencies are provisioned by the VPS administrator.
@@ -194,10 +205,16 @@ jobs:
     # Separate ephemeral database and media store: a Studio failure must not
     # prevent the independent public-site Lighthouse and browser evidence.
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+      options: --ipc=host
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Ausgechecktes Verzeichnis im CI-Container bestätigen
+        if: ${{ job.container.id != '' }}
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -208,7 +225,7 @@ jobs:
       - name: Produktions-Build erstellen
         run: npm run build
       - name: Chromium bereitstellen
-        run: npx playwright install --with-deps chromium
+        run: node scripts/check-ci-browsers.mjs 1.62.1 chromium
       - name: Studio mit geschützten Testdaten prüfen
         timeout-minutes: 5
         run: node scripts/qa/run-checks.mjs --studio-only
@@ -229,10 +246,16 @@ jobs:
     # Additional engines run on a disposable runner, never install OS packages
     # on the self-hosted production VPS. Existing verify remains independent.
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+      options: --ipc=host
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Ausgechecktes Verzeichnis im CI-Container bestätigen
+        if: ${{ job.container.id != '' }}
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Node.js einrichten
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -245,7 +268,13 @@ jobs:
       - name: Eingecheckten Route-Tree gegen den Build prüfen
         run: git diff --exit-code -- src/routeTree.gen.ts
       - name: Firefox und WebKit bereitstellen
-        run: npx playwright install --with-deps firefox webkit
+        run: node scripts/check-ci-browsers.mjs 1.62.1 firefox webkit
+      - name: Firefox-Profilverzeichnis im CI-Container vorbereiten
+        if: ${{ job.container.id != '' }}
+        # GitHub mounts this temporary directory with a different owner.
+        # Firefox requires the existing home directory to belong to its user.
+        # Change only that directory, never recursively or on a host runner.
+        run: chown "$(id -u):$(id -g)" "$HOME"
       - name: Isolierte Browserprüfung
         run: node scripts/qa/run-checks.mjs --cross-browser-only
       - name: Browsernachweise sichern

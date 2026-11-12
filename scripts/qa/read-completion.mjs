@@ -30,3 +30,40 @@ export async function completeSuccessfulRead(response, { timeoutMs = 15000 } = {
     return { status: response.status(), finished: true };
   } finally { clearTimeout(timer); }
 }
+
+export function observePageReads(page, origin) {
+  const allowedOrigin = new URL(origin).origin;
+  const pending = new Set();
+  page.on("request", (request) => {
+    if (request.method() === "GET" && new URL(request.url()).origin === allowedOrigin &&
+        ["script", "stylesheet", "fetch", "xhr", "image"].includes(request.resourceType())) pending.add(request);
+  });
+  page.on("requestfinished", (request) => pending.delete(request));
+  // The independent browser diagnostics still records every failed request.
+  page.on("requestfailed", (request) => pending.delete(request));
+  return {
+    async complete(label, { timeoutMs = 15000 } = {}) {
+      let timer;
+      const completed = [];
+      try {
+        await Promise.race([
+          (async () => {
+            while (pending.size) {
+              await Promise.all([...pending].map(async (request) => {
+                const response = await request.response();
+                assert.ok(response, `${label}: a started page read must receive a response`);
+                const completion = await completeSuccessfulRead(response, { timeoutMs });
+                completed.push({ path: new URL(request.url()).pathname, ...completion });
+                pending.delete(request);
+              }));
+            }
+          })(),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`${label}: page reads did not finish before navigation: ${[...pending].map((request) => new URL(request.url()).pathname).join(", ")}`)), timeoutMs);
+          }),
+        ]);
+        return { label, completed, pending: pending.size };
+      } finally { clearTimeout(timer); }
+    },
+  };
+}
