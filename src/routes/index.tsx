@@ -42,9 +42,9 @@ export const Route = createFileRoute("/")({
     const hero = studioHero(loaderData?.document);
     const head = pageHead({
       ...studioMetadata(loaderData?.document, {
-      title: `Fahrzeugaufbereitung ${site.city} | ${site.name}`,
-      description:
-        `Autoaufbereitung und Fahrzeugpflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung. Ab 149 €, Hol- und Bringservice für ${cities.length} Orte.`,
+        title: `Fahrzeugaufbereitung in ${site.city} | ${site.legalName}`,
+        description:
+          `Fahrzeugaufbereitung in Horb am Neckar: Innenraumreinigung, Lackkorrektur und Keramikversiegelung. Hol- und Bringservice für ${cities.length} Abholorte.`,
       }),
       path: "/",
       ...(hero ? { preloadImage: hero.src, image: hero.src } : {}),

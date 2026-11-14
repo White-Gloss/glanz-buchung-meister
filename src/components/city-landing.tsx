@@ -11,7 +11,6 @@ import {
   packageServiceSlug,
   pickupKeramikNote,
   cityPickupPriceText,
-  pickupTierSummary,
   services,
   site,
   type City,
@@ -229,9 +228,15 @@ export function CityLanding({ city, serviceSlug, editorial }: { city: City; serv
               : `${city.name} ist ein Abholgebiet, keine weitere Niederlassung.`}
           </p>
           <p className="mt-5 max-w-2xl text-muted leading-relaxed">
-            {cityJourneyText(city).replace(/\.$/, "")}. Entfernungen und Fahrzeiten sind Richtwerte. Politur und Keramik
-            brauchen gleichmäßiges Licht und sauberes Wasser – das gibt es in der Werkstatt, nicht
-            vor der Haustür. Deshalb holen wir ab: {pickupTierSummary()}.{city.pickupFlat !== undefined ? ` Für ${city.name} gilt abweichend ein Festpreis von ${pickup} (White-Gloss Classic und White-Gloss Signature).` : ""}
+            {cityJourneyText(city).replace(/\.$/, "")}. Entfernungen und Fahrzeiten sind Richtwerte.
+            Für Politur und Keramik nutzen wir gleichmäßiges Licht und sauberes Wasser in der Werkstatt.
+            {city.pickupFlat !== undefined
+              ? ` Mit White-Gloss Classic oder White-Gloss Signature gilt in ${city.name} ein Festpreis von ${pickup}.`
+              : null}{" "}
+            <Link to="/abholservice" className="underline">
+              Abholorte und Konditionen im Überblick
+            </Link>
+            .
           </p>
           <dl className="gd-tiles gd-tiles-3 mt-10">
             <div className="border border-line p-5">

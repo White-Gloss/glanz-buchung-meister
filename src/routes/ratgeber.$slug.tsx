@@ -6,10 +6,18 @@ import { ctaPrimary } from "@/components/ui";
 import { articles, getArticle, type Article } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
 import { cmsPublishedDate } from "@/lib/cms-date";
-import { site } from "@/data/site";
+import { logoJsonLdHref } from "@/data/media-src";
+import { services, site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 import { articleBookingSelection, articleNavigation } from "@/lib/article-navigation";
-import { services } from "@/data/site";
+
+const pickupGuideSlugs = new Set([
+  "fahrzeugaufbereitung-horb-am-neckar",
+  "hol-und-bringservice",
+  "keramikversiegelung-kosten",
+  "keramikversiegelung-langzeitschutz",
+  "leasingrueckgabe-aufbereitung-vermeiden-mehrkosten",
+]);
 
 async function loadArticle(slug: string): Promise<Omit<Article, "date"> & { date?: string }> {
   const staticArticle = getArticle(slug);
@@ -60,26 +68,23 @@ function ArticlePage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Article",
+        "@type": "BlogPosting",
         "@id": `${site.origin}/ratgeber/${a.slug}#article`,
         mainEntityOfPage: `${site.origin}/ratgeber/${a.slug}`,
         inLanguage: "de-DE",
         headline: a.title,
         datePublished: a.date,
-        author: {
-          "@type": "Organization",
-          "@id": `${site.origin}/#betrieb`,
-          name: site.legalName,
-          url: site.origin,
-        },
-        publisher: {
-          "@type": "Organization",
-          "@id": `${site.origin}/#betrieb`,
-          name: site.legalName,
-          url: site.origin,
-        },
+        author: { "@id": `${site.origin}/#betrieb` },
+        publisher: { "@id": `${site.origin}/#betrieb` },
         image: `${site.origin}${a.image}`,
         description: a.excerpt,
+      },
+      {
+        "@type": "Organization",
+        "@id": `${site.origin}/#betrieb`,
+        name: site.legalName,
+        url: site.origin,
+        logo: { "@type": "ImageObject", url: `${site.origin}${logoJsonLdHref}` },
       },
       {
         "@type": "BreadcrumbList",
@@ -172,6 +177,15 @@ function ArticlePage() {
               {request.paket || request.leistung
                 ? "Die Anfrage übernimmt das zugehörige Paket oder Ihr Interesse an dieser individuellen Leistung."
                 : "Wählen Sie in der Anfrage das passende Paket und Ihren Abholort aus."}
+              {pickupGuideSlugs.has(a.slug) ? (
+                <>
+                  {" "}Abholorte und Preise stehen in der{" "}
+                  <Link to="/abholservice" className="underline underline-offset-4">
+                    Abholübersicht
+                  </Link>
+                  .
+                </>
+              ) : null}
             </p>
           ) : null}
           <Link

@@ -56,6 +56,14 @@ describe("pickup pricing source of truth", () => {
     }
     assert.match(summary, /darüber auf Anfrage/);
     assert.match(summary, /^Bis /);
+    const fixedPrice = cities.filter((city) => city.pickupFlat !== undefined);
+    assert.ok(summary.includes(eur(30)));
+    for (const city of fixedPrice) {
+      assert.ok(summary.includes(city.name), city.slug);
+    }
+    const distanceOnly = pickupTierSummary({ includeCityExceptions: false });
+    assert.ok(!distanceOnly.includes(eur(30)));
+    assert.ok(summary.startsWith(distanceOnly + ". "));
     assert.ok(pickupKeramikNote().includes(String(pickupPricing.freeUpToKm)));
   });
 

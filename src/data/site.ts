@@ -521,12 +521,28 @@ export function cityPickupPriceText(city: PickupCity, packageId?: PackageId) {
   return fee === 0 ? "kostenlos" : eur(fee);
 }
 
-export function pickupTierSummary(): string {
+export function pickupTierSummary({ includeCityExceptions = true } = {}): string {
   const parts = [...pickupPricing.tiers]
     .sort((a, b) => a.maxKm - b.maxKm)
     .map((t) => `bis ${t.maxKm} km ${t.amount === 0 ? "kostenlos" : eur(t.amount)}`);
   const text = `${parts.join(", ")}, darüber auf Anfrage`;
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  const summary = text.charAt(0).toUpperCase() + text.slice(1);
+  if (!includeCityExceptions) return summary;
+
+  const fixedPrices = new Map<number, string[]>();
+  for (const city of cities) {
+    const price = city.pickupFlat;
+    if (price === undefined || price <= 0 || cityPickupFee(city, "basis") !== price) continue;
+    const names = fixedPrices.get(price) ?? [];
+    names.push(city.name);
+    fixedPrices.set(price, names);
+  }
+  const cityList = new Intl.ListFormat("de-DE");
+  const exceptions = [...fixedPrices].map(
+    ([price, names]) =>
+      `Mit Classic oder Signature gilt in ${cityList.format(names)} ein Festpreis von ${eur(price)}`,
+  );
+  return [summary, ...exceptions].join(". ");
 }
 
 export function pickupKeramikNote(): string {

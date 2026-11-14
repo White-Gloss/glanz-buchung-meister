@@ -53,6 +53,9 @@ test("published CMS articles require a nonempty provisional or reviewed intent",
 });
 
 test("each pickup city has an indexable vehicle-detailing keyword destination", () => {
+  const snippets = cities.map(citySeoCopy);
+  assert.equal(new Set(snippets.map((snippet) => snippet.title)).size, cities.length);
+  assert.equal(new Set(snippets.map((snippet) => snippet.description)).size, cities.length);
   for (const city of cities) {
     const copy = citySeoCopy(city);
     const path = `/abholservice/${city.slug}`;
@@ -60,6 +63,8 @@ test("each pickup city has an indexable vehicle-detailing keyword destination", 
     assert.match(copy.heading, /Fahrzeugaufbereitung/);
     assert.ok(copy.heading.includes(city.name));
     assert.ok(copy.description.includes(city.name));
+    assert.match(copy.title, /Abholung/);
+    assert.match(copy.description, /Abholung|Hol- und Bringservice/);
     assert.match(copy.description, /Werkstatt in Horb/);
     assert.equal(seoIntents[path].cluster, copy.cluster);
     if (city.slug !== "horb-am-neckar") {

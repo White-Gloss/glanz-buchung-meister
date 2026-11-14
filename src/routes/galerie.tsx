@@ -4,6 +4,7 @@ import { CustomerProjectStory } from "@/components/customer-project-story";
 import { Shot } from "@/components/media";
 import { ctaPrimary } from "@/components/ui";
 import { site } from "@/data/site";
+import { serializeJsonLd } from "@/lib/json-ld";
 import { pageHead } from "@/lib/seo";
 import { CustomerVideoGallery } from "@/components/customer-video-gallery";
 import { customerVideos } from "@/components/results-teaser";
@@ -14,16 +15,19 @@ import { studioGalleryPhotos, studioHero, studioMetadata } from "@/lib/studio-pu
 export const Route = createFileRoute("/galerie")({
   component: GaleriePage,
   loader: () => loadPublicStudioDocument("gallery"),
-  head: ({ loaderData }) =>
-    pageHead({
+  head: ({ loaderData }) => {
+    const hero = studioHero(loaderData);
+    return pageHead({
       ...studioMetadata(loaderData, {
-      title: `Echte Ergebnisse | ${site.name}`,
-      description:
-        "Einblicke in die Werkstatt von White Gloss in Horb am Neckar: Politur, Lackfinish, Innenraum- und Felgenpflege an einem freigegebenen Kundenfahrzeug.",
+        title: `Fahrzeugaufbereitung in Horb: Ergebnisse | ${site.name}`,
+        description:
+          "Echte Fotos und Videos aus der Werkstatt in Horb am Neckar: Fahrzeugwäsche, Innenraumreinigung, Lackfinish und Versiegelung an freigegebenen Kundenfahrzeugen.",
       }),
       path: "/galerie",
-      ...(studioHero(loaderData) ? { preloadImage: studioHero(loaderData)?.src } : { preloadShot: "atelier" as const }),
-    }),
+      image: hero?.src ?? "/media/atelier-1200.webp",
+      ...(hero ? { preloadImage: hero.src } : { preloadShot: "atelier" }),
+    });
+  },
 });
 
 function GaleriePage() {
@@ -32,6 +36,19 @@ function GaleriePage() {
   const photos = studioGalleryPhotos(document);
   return (
     <main id="main-content" tabIndex={-1} data-gallery="curated">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+              { "@type": "ListItem", position: 2, name: "Ergebnisse", item: `${site.origin}/galerie` },
+            ],
+          }),
+        }}
+      />
       <section className="gallery-intro mx-auto max-w-7xl px-4 sm:px-6">
         <nav aria-label="Brotkrumen" className="gallery-crumbs"><Link to="/">Startseite</Link><span aria-hidden>/</span><span aria-current="page">Ergebnisse</span></nav>
         <div className="gallery-intro-heading">
@@ -47,7 +64,17 @@ function GaleriePage() {
       <section id="kundenbilder" className="section mx-auto max-w-7xl px-4 sm:px-6" aria-labelledby="kundenbilder-heading">
         <p className="kicker">Aus echten Kundenaufträgen</p>
         <h2 id="kundenbilder-heading" className="heading-2 mt-4">Unsere Arbeit in Bildern.</h2>
-        <p className="mt-5 max-w-2xl text-muted">Ausgewählte Perspektiven auf Lackfinish, Innenraum und das fertige Fahrzeug.</p>
+        <p className="mt-5 max-w-2xl text-muted">
+          Ausgewählte Perspektiven auf{" "}
+          <Link to="/leistungen/$slug" params={{ slug: "lackkorrektur" }} className="underline underline-offset-4">
+            Lackfinish
+          </Link>
+          ,{" "}
+          <Link to="/leistungen/$slug" params={{ slug: "innenraumreinigung" }} className="underline underline-offset-4">
+            Innenraum
+          </Link>{" "}
+          und das fertige Fahrzeug.
+        </p>
         {document && <div className="my-8"><WebsiteStudioContent content={document.content} assets={document.assets} headingLevel={1} showIntro={false} showHero={false} showImages={false} /></div>}
         <CustomerPhotoGallery key={document ? `${document.revisionId}:${photos?.map((photo) => photo.id).join(",")}` : "catalog"} photos={photos} />
         <p className="gallery-permission-note">Originalaufnahmen, mit Zustimmung veröffentlicht. Sichtbare Kennzeichen wurden unkenntlich gemacht.</p>
