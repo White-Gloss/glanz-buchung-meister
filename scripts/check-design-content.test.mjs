@@ -287,3 +287,33 @@ test("unavailable or mutable source baselines and missing baseline files fail cl
     } }), /unprotected public TSX source/);
   });
 });
+
+test("SEO blob pins cover only the exact reviewed TSX and protected data", () => {
+  withApprovedSourceFixture(({ cwd, base, approved, write, git }) => {
+    const page = "src/routes/index.tsx";
+    const data = "src/data/site.ts";
+    write(page, approved);
+    write(data, "export const price = 149; // Published price note.\n");
+    git("add", page, data);
+    const approvedSeoBlobs = Object.fromEntries([page, data].map((name) => [
+      name,
+      git("rev-parse", `:${name}`).trim(),
+    ]));
+    // Restore unrelated fixture files so they still use the original design baseline.
+    write("src/components/configurator.tsx", fixture);
+    write("src/routes/danke.tsx", fixture);
+    const review = () => inspectDesignContent({ cwd, base, approvedSeoBlobs });
+    assert.equal(review().passed, true);
+    write(data, "export const price = 199;\n");
+    write(page, approved.replace("Eine neue Anfrage ist nicht nötig.", "Neuer Text."));
+    write("src/routes/danke.tsx", approved);
+    const failures = review().failures;
+    assert.equal(failures.filter(({ kind }) => kind === "seo-source").length, 2);
+    assert.ok(failures.some(({ file, kind }) => file === "src/routes/danke.tsx" && kind === "text"));
+    assert.throws(() => inspectDesignContent({
+      cwd,
+      base,
+      approvedSeoBlobs: { "src/unknown.ts": "1".repeat(40) },
+    }), /Invalid approved SEO Git blob/);
+  });
+});

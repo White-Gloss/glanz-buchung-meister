@@ -87,7 +87,7 @@ function TermsPage() {
           <p>
             Ein Hol- und Bringservice wird nur nach vorheriger Bestätigung erbracht. Abholort,
             Übergabezeit und Preis richten sich nach der vereinbarten Entfernung und dem
-            Fahrzeugzustand ({pickupTierSummary()}. {pickupKeramikNote()}). Bei der Übergabe
+            Fahrzeugzustand ({pickupTierSummary({ includeCityExceptions: false })}. {pickupKeramikNote()}). Bei der Übergabe
             dokumentieren die Parteien erkennbare Vorschäden, soweit dies angemessen möglich ist.
             Die Aufbereitung erfolgt ausschließlich in der Werkstatt in {site.city}.
           </p>

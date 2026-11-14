@@ -13,6 +13,7 @@ import {
   services,
   site,
 } from "@/data/site";
+import { googleProfile } from "@/data/google-profile";
 import { seoRobots } from "@/lib/seo-policy";
 
 export function absUrl(path: string) {
@@ -160,7 +161,7 @@ export function localBusinessJsonLd() {
         publisher: { "@id": businessId },
       },
       {
-        "@type": ["AutoRepair", "AutomotiveBusiness"],
+        "@type": "AutomotiveBusiness",
         "@id": businessId,
         name: site.legalName,
         alternateName: site.name,
@@ -211,7 +212,7 @@ export function localBusinessJsonLd() {
           "@type": "City",
           name: c.name,
         })),
-        sameAs: [site.instagram],
+        sameAs: [site.instagram, googleProfile.url],
         openingHoursSpecification: [
           {
             "@type": "OpeningHoursSpecification",

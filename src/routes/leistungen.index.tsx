@@ -22,7 +22,7 @@ export const Route = createFileRoute("/leistungen/")({
     pageHead({
       title: `Leistungen der Fahrzeugaufbereitung | ${site.name}`,
       description:
-        "Autopflege und Kfz-Pflege in Horb am Neckar: Innenraumreinigung, Lackkorrektur, Keramikversiegelung, Lederreparatur, Smart Repair und Leasingrückgabe.",
+        "Innenraumreinigung, Lackkorrektur, Keramikversiegelung und Leasingaufbereitung in Horb am Neckar. Leistungen mit Hol- und Bringservice im Überblick.",
       path: "/leistungen",
       preloadShot: "lack",
     }),
@@ -200,7 +200,11 @@ function LeistungenIndex() {
         <h2 className="heading-2 mt-4">Leistungen nach Stadt</h2>
         <p className="mt-4 max-w-2xl text-muted">
           Wählen Sie Ihren Ort und informieren Sie sich über unsere Leistungen
-          und die Abholung. Die Aufbereitung erfolgt in Horb am Neckar.
+          und die Abholung. Die Aufbereitung erfolgt in Horb am Neckar.{" "}
+          <Link to="/abholservice" className="underline underline-offset-4 hover:text-fg">
+            Alle Abholorte und Preise
+          </Link>
+          .
         </p>
         <ul className="mt-8 flex flex-wrap gap-2">
           {cities.map((c) => (

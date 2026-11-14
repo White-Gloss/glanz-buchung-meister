@@ -5,7 +5,6 @@ import { MediaTile, PageHero } from "@/components/page-hero";
 import { ctaPrimary } from "@/components/ui";
 import { articles } from "@/data/ratgeber";
 import { listPublishedCms } from "@/lib/cms.functions";
-import { cmsPublishedDate } from "@/lib/cms-date";
 import { site } from "@/data/site";
 import { pageHead } from "@/lib/seo";
 
@@ -32,24 +31,25 @@ function RatgeberIndex() {
   const { extra } = Route.useLoaderData();
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Blog",
-    name: "Ratgeber Fahrzeugpflege | White Gloss",
-    url: `${site.origin}/ratgeber`,
-    blogPost: [
-      ...articles.map((a) => ({
-        "@type": "BlogPosting",
-        headline: a.title,
-        datePublished: a.date,
-        url: `${site.origin}/ratgeber/${a.slug}`,
-      })),
-      ...extra
-        .filter((r) => r.slug)
-        .map((r) => ({
-          "@type": "BlogPosting",
-          headline: r.title,
-          datePublished: cmsPublishedDate(r.created_at),
-          url: `${site.origin}/ratgeber/${r.slug}`,
-        })),
+    "@graph": [
+      {
+        "@type": "Blog",
+        name: "Ratgeber Fahrzeugpflege | White Gloss",
+        url: `${site.origin}/ratgeber`,
+        blogPost: [
+          ...articles.map((article) => ({ "@id": `${site.origin}/ratgeber/${article.slug}#article` })),
+          ...extra
+            .filter((row) => row.slug)
+            .map((row) => ({ "@id": `${site.origin}/ratgeber/${row.slug}#article` })),
+        ],
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Startseite", item: site.origin },
+          { "@type": "ListItem", position: 2, name: "Ratgeber", item: `${site.origin}/ratgeber` },
+        ],
+      },
     ],
   };
 

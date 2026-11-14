@@ -9,9 +9,8 @@ export const Route = createFileRoute("/abholservice/")({
   component: AbholIndex,
   head: () =>
     pageHead({
-      title: `Hol- & Bringservice: ${cities.length} Abholorte | ${site.name}`,
-      description:
-        "Abholung und Rückgabe in Horb, Tübingen, Nagold, Freudenstadt, Böblingen, Sindelfingen und weiteren Städten. Ausführung in Horb am Neckar.",
+      title: `Autoaufbereitung mit Hol- und Bringservice | ${site.name}`,
+      description: `Wir holen Ihr Fahrzeug in ${cities.length} Orten ab und bringen es nach der Aufbereitung in Horb zurück. Abholorte, Kosten und Terminablauf im Überblick.`,
       path: "/abholservice",
       preloadShot: "atelier",
     }),
