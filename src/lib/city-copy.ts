@@ -23,7 +23,7 @@ export function citySeoCopy(city: City) {
     freudenstadt: `Hol- und Bringservice aus Freudenstadt im Nordschwarzwald für ${pickup}. Wir planen Abholung und Rückgabe rund um die Aufbereitung in der Werkstatt in Horb.`,
     "oberndorf-am-neckar": `Hol- und Bringservice für Oberndorf am Neckar: ${pickup}. Abholung und Rückgabe an der vereinbarten Adresse, Endkontrolle in der Werkstatt in Horb.`,
     herrenberg: `Hol- und Bringservice für Herrenberg: ${pickup}. Fahrzeugaufbereitung in der Werkstatt in Horb, Übergabe und Rückgabe nach Terminabsprache.`,
-    tuebingen: "Autoaufbereitung für Tübingen mit Abholung und Rückgabe. Werkstatt in Horb für Innenraumreinigung, Lackkorrektur und Keramikversiegelung.",
+    tuebingen: `Autoaufbereitung für Tübingen mit Abholung und Rückgabe für ${pickup}. Innenraumreinigung, Lackkorrektur und Keramikversiegelung in der Werkstatt in Horb.`,
     calw: `Für Calw bieten wir Abholung für ${pickup} oder Selbstanlieferung nach Termin an. Die Aufbereitung erfolgt in unserer Werkstatt in Horb.`,
     balingen: `Autoaufbereitung für Balingen, auch vor der Leasingrückgabe oder dem Verkauf. Hol- und Bringservice für ${pickup}, Werkstatt in Horb.`,
     rottweil: `Innenraumreinigung oder Lackkorrektur in der Werkstatt in Horb. Abholung und Rückgabe für Rottweil: ${pickup} mit Classic oder Signature.`,

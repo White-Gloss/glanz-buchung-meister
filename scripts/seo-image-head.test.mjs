@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import * as media from "../src/data/media-src.ts";
 import * as site from "../src/data/site.ts";
+import * as profile from "../src/data/google-profile.ts";
 import * as policy from "../src/lib/seo-policy.ts";
 
 const require = createRequire(import.meta.url);
@@ -15,6 +16,7 @@ const compiled = ts.transpileModule(source, {
 const dependencies = {
   "@/data/media-src": media,
   "@/data/site": site,
+  "@/data/google-profile": profile,
   "@/lib/seo-policy": policy,
 };
 const exports = {};

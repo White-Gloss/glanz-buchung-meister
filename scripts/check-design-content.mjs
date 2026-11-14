@@ -42,7 +42,7 @@ export const APPROVED_CTA_LABELS = Object.freeze({
 export const APPROVED_SEO_BLOBS = Object.freeze({
   "src/components/city-landing.tsx": "247430d8f540af5cdb73c34984f59e202c6d5ebf",
   "src/data/site.ts": "3356ee2567830a37e3198d4b82bb12fba3c99ef8",
-  "src/lib/city-copy.ts": "281fbd0d571769ca2d55dba5b351602420dd0815",
+  "src/lib/city-copy.ts": "c330f37e051679cfdd34f160acb7f3d2fb4ac391",
   "src/lib/seo.ts": "3488b971e1941762b1a530c8861c26468a873067",
   "src/routes/abholservice.index.tsx": "e10fee117409229f91b76ee0862070d6664fb1de",
   "src/routes/agb.tsx": "b3d3628d17c61a71e4228cd1f0642a4168d61df0",
