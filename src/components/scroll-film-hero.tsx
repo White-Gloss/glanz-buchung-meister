@@ -144,16 +144,6 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
       if (position !== target) frame = window.requestAnimationFrame(paint);
     };
     const schedule = () => {
-      // Anchor navigation can return to the top before IntersectionObserver
-      // reports the collapsed/re-expanded hero. Restore its actions immediately.
-      if (enabled && window.scrollY <= top + 1) {
-        target = 0;
-        position = 0;
-        copy.style.opacity = "1";
-        setCopyTransform(0);
-        setActionsInert(false);
-        section.style.setProperty("--film-progress", "0");
-      }
       if (window.scrollY > top && !engaged) {
         engaged = true;
         start();
@@ -322,7 +312,7 @@ export function ScrollFilmHero({ title, lead, heroImage }: { title?: string; lea
               sizes="100vw"
               width={heroImage?.width ?? 1920}
               height={heroImage?.height ?? 1080}
-              alt={heroImage?.alt ?? "Schwarzer Klassiker auf nasser Zufahrt vor einer beleuchteten Garage"}
+              alt={heroImage?.alt ?? "Schwarzer Klassiker mit glänzendem Lack und Chromdetails im dunklen Studio"}
               loading="eager"
               fetchPriority="high"
               decoding="async"

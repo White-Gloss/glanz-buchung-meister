@@ -1,7 +1,6 @@
-import { PDFDocument, type PDFFont, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { packages, extras, vehicleClasses, site } from "../data/site.ts";
 import { documentLogoBase64 } from "./document-logo.generated.ts";
-import { documentGraphemes, documentText, documentTextRenderer, embedDocumentFonts } from "./document-fonts.ts";
 
 export type BookingPdfData = {
   id: number;
@@ -21,34 +20,42 @@ export type BookingPdfData = {
 /** Request snapshot in the owner's business stationery; never an invoice or confirmation. */
 export async function createBookingRequestPdf(booking: BookingPdfData): Promise<string> {
   const doc = await PDFDocument.create();
-  const fonts = await embedDocumentFonts(doc);
-  const { body: font, bodyStrong, heading: bold, numbers, fallback } = fonts;
-  const renderer = documentTextRenderer(fonts);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const logo = await doc.embedPng(documentLogoBase64);
   doc.setTitle(`Buchungsanfrage WG-${booking.id}`);
   doc.setAuthor(site.legalName);
   const page = doc.addPage([595.28, 841.89]);
   const black = rgb(0.12, 0.12, 0.12),
     grey = rgb(0.4, 0.4, 0.4);
-  const clean = (s: string, activeFont = font) =>
-    documentText(s.normalize("NFC").replace(/\s+/g, " "), activeFont, fallback).trim();
-  const text = (s: string, x: number, y: number, size = 9, strong = false, muted = false, activeFont: PDFFont = strong ? bold : font) =>
-    renderer.drawText(page, clean(s, activeFont), {
+  const clean = (s: string) =>
+    Array.from(s.normalize("NFC").replace(/\s+/g, " "), (c) => {
+      try {
+        font.encodeText(c);
+        return c;
+      } catch {
+        return "?";
+      }
+    })
+      .join("")
+      .trim();
+  const text = (s: string, x: number, y: number, size = 9, strong = false, muted = false) =>
+    page.drawText(clean(s), {
       x,
       y,
       size,
-      font: activeFont,
+      font: strong ? bold : font,
       color: muted ? grey : black,
     });
   const right = (s: string, edge: number, y: number, size = 9, strong = false) => {
-    const f = strong ? numbers : font;
-    text(s, edge - renderer.widthOfTextAtSize(clean(s, f), size, f), y, size, strong, false, f);
+    const f = strong ? bold : font;
+    text(s, edge - f.widthOfTextAtSize(clean(s), size), y, size, strong);
   };
-  const wrap = (s: string, width: number, size = 9, activeFont = font) => {
+  const wrap = (s: string, width: number, size = 9) => {
     const result: string[] = [];
     let line = "";
-    for (const c of documentGraphemes(clean(s, activeFont))) {
-      if (renderer.widthOfTextAtSize(line + c, size, activeFont) > width) {
+    for (const c of clean(s)) {
+      if (font.widthOfTextAtSize(line + c, size) > width) {
         const split = line.lastIndexOf(" ");
         if (split > 0) {
           result.push(line.slice(0, split));
@@ -63,7 +70,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
     if (line) result.push(line);
     return result;
   };
-  text("Buchungsanfrage", 63, 775, 18, true, false, numbers);
+  text("Buchungsanfrage", 63, 775, 18, true);
   page.drawImage(logo, { x: 451, y: 703, width: 92, height: (92 * logo.height) / logo.width });
   text(
     `${site.legalName} - ${site.owner}  ·  ${site.street}, ${site.postalCode} ${site.city}`,
@@ -73,7 +80,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
   );
   let customerY = 634;
   for (const l of wrap(booking.customer_name, 240, 10)) {
-    text(l, 63, customerY, 10);
+    text(l, 63, customerY, 10, true);
     customerY -= 13;
   }
   text(booking.phone, 63, customerY - 5, 9);
@@ -124,7 +131,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
     ["Menge", 381],
     ["Gesamtpreis", 475],
   ] as const)
-    page.drawText(label, { x, y: headerY - 12, size: 8, font: bodyStrong, color: rgb(1, 1, 1) });
+    page.drawText(label, { x, y: headerY - 12, size: 8, font: bold, color: rgb(1, 1, 1) });
   let y = headerY - 37;
   for (const l of description) {
     text(l, 72, y, 9);
@@ -135,7 +142,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
     typeof booking.total_cents === "number"
       ? (booking.total_cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })
       : "nach Prüfung";
-  right(price, 534, headerY - 37, 9, true);
+  right(price, 534, headerY - 37);
   y -= 5;
   page.drawLine({
     start: { x: 63, y },
@@ -165,7 +172,7 @@ export async function createBookingRequestPdf(booking: BookingPdfData): Promise<
         ]
       : []),
   ].flatMap((p) => [
-    ...wrap(p.s, 480, 9, p.strong ? bold : font).map((s) => ({ s, strong: p.strong })),
+    ...wrap(p.s, 480, 9).map((s) => ({ s, strong: p.strong })),
     { s: "", strong: false },
   ]);
   const scale = Math.min(1, (y - 95) / (details.length * 13));

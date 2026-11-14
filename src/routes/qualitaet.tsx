@@ -48,7 +48,7 @@ function QualityPage() {
             const photo = customerPhotos.find((item) => item.id === image?.id);
             return (
               <li key={s.n} className="border-t border-line pt-8">
-                <p className="type-number font-display text-5xl tracking-tight text-subtle/80">{s.n}</p>
+                <p className="font-display text-5xl tracking-tight text-subtle/80">{s.n}</p>
                 <h2 className="mt-4 font-display text-3xl tracking-tight">{s.title}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted">{s.text}</p>
                 {photo ? (

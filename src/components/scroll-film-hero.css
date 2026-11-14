@@ -62,9 +62,18 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
 .scroll-film-eyebrow {
   margin: 0 0 24px;
   color: #c0c3c4;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 .scroll-film-copy h1 {
   margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(38px, 4.5vw, 76px);
+  line-height: 1.09;
+  font-weight: 400;
+  letter-spacing: -0.045em;
 }
 .scroll-film-copy h1 span {
   color: #aeb5b8;
@@ -78,6 +87,7 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
   padding: 0 20px;
   border: 1px solid #aab0b36b;
   background: #080a0bcc;
+  font-size: 12px;
   transition:
     border-color 180ms,
     background 180ms;
@@ -89,6 +99,7 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
 .scroll-film-prices {
   display: inline-block;
   padding: 14px 18px;
+  font-size: 12px;
   color: #c0c3c4;
 }
 .scroll-film-bottom {
@@ -105,15 +116,18 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
   align-items: center;
   gap: 20px;
   min-height: 44px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.scroll-film-skip > span:last-child {
+  font-size: 20px;
 }
 .scroll-film-track {
   flex: 1;
   max-width: 150px;
   height: 1px;
   background: #ffffff30;
-}
-.scroll-film-skip > span:last-child {
-  font-size: 20px;
 }
 .scroll-film-track span {
   display: block;
@@ -125,6 +139,7 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
 .scroll-film-pause {
   min-height: 44px;
   color: #bfc3c5;
+  font-size: 10px;
   cursor: pointer;
 }
 .scroll-film a:focus-visible,
@@ -140,6 +155,7 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
   align-items: center;
   min-height: 44px;
   padding: 0 14px;
+  font-size: 11px;
   border: 1px solid #ffffff45;
   color: #f2f1ed;
   white-space: nowrap;
@@ -173,7 +189,13 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
     max-width: 88%;
   }
   .scroll-film-eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.13em;
     margin-bottom: 14px;
+  }
+  .scroll-film-copy h1 {
+    font-size: clamp(31px, 8.3vw, 48px);
+    line-height: 1.06;
   }
   .scroll-film-cta {
     margin-top: 19px;
@@ -182,6 +204,7 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
   }
   .scroll-film-prices {
     padding-inline: 14px;
+    font-size: 11px;
   }
   .scroll-film-bottom {
     left: 7%;
@@ -191,12 +214,14 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
     flex-wrap: wrap;
   }
   .scroll-film-skip {
+    font-size: 8px;
     gap: 13px;
   }
   .scroll-film-track {
     max-width: 60px;
   }
   .scroll-film-pause {
+    font-size: 9px;
     margin-left: auto;
   }
   .site-header .ga-tools {
@@ -211,6 +236,9 @@ html:has(#buchung:target) .scroll-film[data-motion="scroll"] {
     top: 28%;
     bottom: auto;
     margin-top: 0;
+  }
+  .scroll-film-copy h1 {
+    font-size: 31px;
   }
   .scroll-film-eyebrow {
     margin-bottom: 10px;

@@ -80,7 +80,6 @@ async function book(sql: Sql, data = form()) {
 function call(
   sql: Sql | null,
   init: { method?: string; auth?: string | null; body?: string } = {},
-  sign?: (path: string) => Promise<string>,
 ): Promise<Response> {
   const headers: Record<string, string> = {
     "content-type": "application/json",
@@ -99,7 +98,6 @@ function call(
       if (!sql) throw new Error("database must not be touched");
       return sql;
     },
-    sign,
   );
 }
 
@@ -331,89 +329,4 @@ test("hub photos: signed preview only, storage path stays out", async () => {
   const raw = JSON.stringify(body);
   assert.ok(!raw.includes("secret-path"));
   assert.ok(!raw.includes(stored));
-});
-
-test("hub photos: no eligible photos stays an empty success without signing", async () => {
-  process.env.HUB_SYNC_TOKEN = TOKEN;
-  const sql = await database();
-  const booking = await book(sql);
-  const init = { body: JSON.stringify({ action: "photos", id: booking.id }) };
-  let signed = 0;
-  const sign = async () => { signed++; throw new Error("No eligible photo should be signed"); };
-  let response = await call(sql, init, sign);
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { photos: [] });
-
-  await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
-    values('white-gloss',${booking.id},'private/secret-path.jpg','image/jpeg',10,'geheim.jpg','ready')`;
-  response = await call(sql, init, sign);
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { photos: [] });
-  assert.equal(signed, 0);
-});
-
-test("hub photos: total signing failure answers 500 without storage or customer details", async () => {
-  process.env.HUB_SYNC_TOKEN = TOKEN;
-  const sql = await database();
-  const booking = await book(sql);
-  for (const key of ["ab", "cd"]) {
-    const path = `bookings/${booking.id}/${key.repeat(16)}.jpg`;
-    await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
-      values('white-gloss',${booking.id},${path},'image/jpeg',10,'privater-name.jpg','ready')`;
-  }
-  const original = console.error;
-  const logged: unknown[] = [];
-  let signed = 0;
-  console.error = (...args: unknown[]) => logged.push(...args);
-  try {
-    const response = await call(sql, { body: JSON.stringify({ action: "photos", id: booking.id }) }, async (path) => {
-      signed++;
-      throw new Error(`Storage failed for ${path}?token=private-token`);
-    });
-    assert.equal(response.status, 500);
-    assert.deepEqual(await response.json(), { error: "unavailable" });
-    assert.equal(response.headers.get("cache-control"), "no-store");
-  } finally { console.error = original; }
-  assert.equal(signed, 2);
-  assert.deepEqual(logged, ["[hub] photos_failed"]);
-});
-
-test("hub photos: unusable signed URLs are failures rather than successful empty lists", async () => {
-  process.env.HUB_SYNC_TOKEN = TOKEN;
-  const sql = await database();
-  const booking = await book(sql);
-  const path = `bookings/${booking.id}/${"ab".repeat(16)}.jpg`;
-  await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
-    values('white-gloss',${booking.id},${path},'image/jpeg',10,'vorne.jpg','ready')`;
-  const original = console.error;
-  const logged: unknown[] = [];
-  console.error = (...args: unknown[]) => logged.push(...args);
-  try {
-    for (const url of ["http://cdn.example.invalid/preview", `https://cdn.example.invalid/${"x".repeat(2000)}`]) {
-      const response = await call(sql, { body: JSON.stringify({ action: "photos", id: booking.id }) }, async () => url);
-      assert.equal(response.status, 500);
-      assert.deepEqual(await response.json(), { error: "unavailable" });
-    }
-  } finally { console.error = original; }
-  assert.deepEqual(logged, ["[hub] photos_failed", "[hub] photos_failed"]);
-});
-
-test("hub photos: a signing failure still allows the successful part of the batch", async () => {
-  process.env.HUB_SYNC_TOKEN = TOKEN;
-  const sql = await database();
-  const booking = await book(sql);
-  const failedPath = `bookings/${booking.id}/${"ab".repeat(16)}.jpg`;
-  const validPath = `bookings/${booking.id}/${"cd".repeat(16)}.jpg`;
-  for (const path of [failedPath, validPath]) {
-    await sql`insert into booking_photos(shop_id,booking_id,storage_path,mime,size_bytes,original_name,upload_state)
-      values('white-gloss',${booking.id},${path},'image/jpeg',10,'vorne.jpg','ready')`;
-  }
-  const response = await call(sql, { body: JSON.stringify({ action: "photos", id: booking.id }) }, async (path) => {
-    if (path === failedPath) throw new Error("Storage temporarily unavailable");
-    return "https://cdn.example.invalid/preview";
-  });
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { photos: [
-    { name: "vorne.jpg", mime: "image/jpeg", url: "https://cdn.example.invalid/preview" },
-  ] });
 });

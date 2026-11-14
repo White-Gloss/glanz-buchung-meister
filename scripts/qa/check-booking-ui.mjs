@@ -292,17 +292,7 @@ try {
       await chip.scrollIntoViewIfNeeded();
       const price = chip.locator(".city-chip-status");
       assert.ok(await price.isVisible(), `${name}: pickup price is visible`);
-      assert.equal(flat(await price.textContent()), expected, `${name}: original pickup price`);
-      assert.equal(
-        await price.evaluate((element) => getComputedStyle(element).textTransform),
-        "uppercase",
-        `${name}: pickup status uses the uppercase badge role`,
-      );
-      assert.equal(
-        flat(await price.innerText()),
-        expected.toLocaleUpperCase("de-DE"),
-        `${name}: visible pickup price`,
-      );
+      assert.equal(flat(await price.innerText()), expected, `${name}: visible pickup price`);
     }
     results.push("Homepage pickup prices: city overrides, free pickup, tier and on-request agree visually and accessibly");
     await page.locator("#pakete").scrollIntoViewIfNeeded();

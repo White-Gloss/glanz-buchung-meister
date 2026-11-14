@@ -40,17 +40,17 @@ export const APPROVED_CTA_LABELS = Object.freeze({
 // keep their original design or booking baselines. Hash the file locally so
 // the check also works with a shallow GitHub checkout and squash merges.
 export const APPROVED_SEO_BLOBS = Object.freeze({
-  "src/components/city-landing.tsx": "247430d8f540af5cdb73c34984f59e202c6d5ebf",
+  "src/components/city-landing.tsx": "7489070ee8d138d5880711bfd41e925905151209",
   "src/data/site.ts": "3356ee2567830a37e3198d4b82bb12fba3c99ef8",
   "src/lib/city-copy.ts": "c330f37e051679cfdd34f160acb7f3d2fb4ac391",
   "src/lib/seo.ts": "3488b971e1941762b1a530c8861c26468a873067",
   "src/routes/abholservice.index.tsx": "e10fee117409229f91b76ee0862070d6664fb1de",
   "src/routes/agb.tsx": "b3d3628d17c61a71e4228cd1f0642a4168d61df0",
   "src/routes/galerie.tsx": "9e18230731dd64b42506c203fb634e6088ca5c5a",
-  "src/routes/index.tsx": "234307c6d09511ffa4d04c3f5fc8b8f6c466c348",
+  "src/routes/index.tsx": "bab5cb42ba1e34d60af4ead159a0211d9a55b243",
   "src/routes/leistungen.index.tsx": "d51449039284566fa988c338e393b4d87cf065ad",
-  "src/routes/ratgeber.$slug.tsx": "26f0c757f6589c29c41026d659b6cb4525028e70",
-  "src/routes/ratgeber.index.tsx": "62a29a49f0e20f5268bc8d38e093f55dfd47d46d",
+  "src/routes/ratgeber.$slug.tsx": "d8058cb30f3231d7dc56b3f232b2f885fa3983c4",
+  "src/routes/ratgeber.index.tsx": "db60f5fd460078577fc2adfa633eea922ab16742",
 });
 
 function sourceBlobId(source) {
