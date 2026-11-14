@@ -218,7 +218,7 @@ function ServicePage() {
           <ol className="mt-12 space-y-8">
             {s.steps.map((st, i) => (
               <li key={st.title} className="border-t border-line pt-6">
-                <p className="type-number font-display text-3xl tracking-tight text-subtle/80">0{i + 1}</p>
+                <p className="font-display text-3xl tracking-tight text-subtle/80">0{i + 1}</p>
                 <h2 className="mt-2 font-display text-2xl tracking-tight">{st.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{st.text}</p>
               </li>

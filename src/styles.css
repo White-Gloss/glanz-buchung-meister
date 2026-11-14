@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "./styles/results.css";
-@import "../public/fonts/white-gloss.css";
 
 .instagram-badge {
   display: inline-flex;
@@ -30,6 +29,82 @@
   animation-play-state: paused !important;
 }
 
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 300;
+  font-display: optional;
+  src: url("/fonts/barlow-300.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url("/fonts/barlow-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 500;
+  font-display: optional;
+  src: url("/fonts/barlow-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url("/fonts/barlow-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 300;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 97.19322%;
+  ascent-override: 102.887835%;
+  descent-override: 20.577567%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 97.578908%;
+  ascent-override: 102.481164%;
+  descent-override: 20.496233%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 98.157439%;
+  ascent-override: 101.877149%;
+  descent-override: 20.37543%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Barlow Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  size-adjust: 98.543126%;
+  ascent-override: 101.478412%;
+  descent-override: 20.295682%;
+  line-gap-override: 0%;
+}
+
 @theme {
   /* White Gloss: Studio-Obsidian, Graphit und ein präziser Klarlack-Akzent. */
   --color-bg: #090a0d;
@@ -37,9 +112,9 @@
   --color-elevated: #171a21;
 
   /* Drei Textstufen. Headlines weiss, Lauftext hellgrau, Meta leiser. */
-  --color-fg: #f8fafc;
-  --color-muted: #cbd5e1;
-  --color-subtle: #94a3b8;
+  --color-fg: #f4f3ed;
+  --color-muted: #bbc5d1;
+  --color-subtle: #929faf;
 
   /* Haarlinien statt Schatten. Transparent, damit sie auf jeder Fläche tragen. */
   --color-line: rgba(255, 255, 255, 0.1);
@@ -52,15 +127,11 @@
   --color-danger: #ed9b82;
   --color-wa: #a9bed6;
 
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-display: "Syne", system-ui, sans-serif;
-  --text-xs: var(--type-meta-size);
-  --text-sm: var(--type-body-size);
-  --text-base: var(--type-body-size);
-  --text-lg: var(--type-hero-size);
-  --text-sm--line-height: 1.6;
-  --text-base--line-height: 1.65;
-  --text-lg--line-height: 1.55;
+  /* Eine Sans fuer alles. --font-display bleibt als Name bestehen, zeigt aber
+     auf dieselbe Familie: die 110 font-display-Stellen brauchen keine Aenderung,
+     und es faellt ein kompletter Schriftschnitt aus dem kritischen Pfad. */
+  --font-sans: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow", "Barlow Fallback", ui-sans-serif, system-ui, sans-serif;
 
   /* Bestehende Skala bleibt unverändert, damit Schritt 1 nichts verschiebt. */
   --radius-xs: 4px;
@@ -72,6 +143,16 @@
   /* Neue, kantigere Skala — wird in Schritt 3 auf die Komponenten gelegt. */
   --radius-control: 2px;
   --radius-card: 4px;
+
+  /* Fliesstext-Zeilenhoehe 1.55. Sie allein auf body zu setzen
+     reicht nicht: Tailwinds Groessen-Utilities bringen ihre eigene
+     line-height mit und gewinnen gegen den geerbten Wert. Deshalb an den
+     Groessen selbst gesetzt — das erreicht jeden Absatz, ohne dass die
+     Komponenten angefasst werden muessen. text-xs bleibt aussen vor: das
+     ist Kleinschrift und Label, kein Fliesstext. */
+  --text-sm--line-height: 1.55;
+  --text-base--line-height: 1.55;
+  --text-lg--line-height: 1.55;
 
   --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
   --shadow-glow: 0 0 0 1px rgb(255 255 255 / 0.35), 0 18px 60px -22px rgb(255 255 255 / 0.4);
@@ -128,9 +209,15 @@
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 100%;
     touch-action: manipulation;
     scroll-behavior: smooth;
     scroll-padding-top: 5.75rem;
+  }
+
+  /* Standard line-height; public pages use the more spacious scale below. */
+  body {
+    line-height: 1.55;
   }
 
   h1,
@@ -144,9 +231,22 @@
     text-wrap: balance;
   }
 
+  /* Readable public typography, including the navigation portal. Admin keeps its scale. */
+  [data-shell="public"],
+  .film-menu {
+    --text-xs: 0.875rem;
+    --text-xs--line-height: 1.5;
+    --text-sm: 1rem;
+    --text-sm--line-height: 1.65;
+    --text-base--line-height: 1.65;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
   [data-shell="public"] h1,
   [data-shell="public"] h2,
   [data-shell="public"] h3 {
+    font-weight: 400;
     overflow-wrap: anywhere;
     hyphens: auto;
   }
@@ -278,31 +378,91 @@
   /* Eyebrow. Die einzige Textsorte ausser Buttons und Navigation, die
      Grossbuchstaben traegt. Farbe laut Vorgabe --color-muted. */
   .kicker {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--color-subtle);
   }
 
+  /* Display und H1: leicht, gross, kampagnenhaft. */
+  .heading-display,
+  .heading-1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 7vw, 5.75rem);
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    line-height: 0.96;
+  }
+
+  /* Wortmarke im Hero, ohne Umbruch. Regular statt Light — auf dem Foto
+     bleibt 300 zu dünn, 500 wäre schon Plakat. Etwas ruhigeres vw, damit
+     die Marke auf Mobile nicht drängt. */
   .heading-brand {
+    font-family: var(--font-display);
+    font-size: min(clamp(2.85rem, 7.2vw, 6.25rem), 13.5vw);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    line-height: 0.88;
     white-space: nowrap;
     color: var(--color-fg);
   }
 
-
+  /* Produktzeile: Display, klar unter der Marke — weiteres Tracking, leichter. */
   .heading-product {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 0.9rem + 2vw, 2.35rem);
+    font-weight: 300;
+    letter-spacing: 0.28em;
+    line-height: 1;
+    text-transform: lowercase;
     color: var(--color-fg);
   }
 
-
+  /* Kampagnenzeile: leiser, mehr Luft im Tracking. */
   .heading-tagline {
+    font-family: var(--font-sans);
+    font-size: clamp(1rem, 0.75rem + 1.15vw, 1.4rem);
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
     color: var(--color-muted);
   }
 
-
+  /* Standort/Service: tertiär unter dem Marken-Cluster. */
   .heading-location {
+    font-family: var(--font-sans);
+    font-size: clamp(0.9rem, 0.8rem + 0.55vw, 1.05rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
     color: var(--color-subtle);
   }
 
+  .heading-2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 3.8vw, 3.35rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
 
+  .heading-page {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 5.4vw, 4.5rem);
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+  }
 
+  .heading-3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
 
   img.hero-image,
   .hero-image img,
@@ -347,10 +507,17 @@
 
   .prose-legal {
     color: var(--color-muted);
+    font-size: 1rem;
+    line-height: 1.65;
   }
 
   .prose-legal h2 {
     color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
     margin-top: 2.25rem;
   }
 
@@ -378,7 +545,14 @@
 }
 
 @layer components {
-
+  /* Frueher kam der Display-Charakter aus einer zweiten Schriftfamilie. Jetzt
+     kommt er aus Gewicht und negativer Laufweite — an einer Stelle gesetzt,
+     damit die 110 font-display-Stellen unveraendert bleiben koennen. Inline
+     gesetzte tracking-Utilities gewinnen weiterhin. */
+  .font-display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
 
   /* Zeilenlaenge laut Vorgabe hoechstens 68 Zeichen. */
   .measure {
@@ -851,6 +1025,12 @@
       transform 240ms var(--ease-out-quart);
   }
 
+  .menu-toggle-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
 
   .burger {
     position: relative;
@@ -977,7 +1157,12 @@
     display: block;
     padding: 0.22rem 0;
     color: #fff;
+    font-size: clamp(1.25rem, 2.5vw, 2.2rem);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1.25;
     text-align: left;
+    text-transform: uppercase;
     opacity: 0.85;
     transition:
       opacity 400ms cubic-bezier(0.23, 1, 0.32, 1),
@@ -988,6 +1173,7 @@
   .film-menu-link:focus-visible,
   .film-menu-link[aria-current="page"] {
     opacity: 1;
+    letter-spacing: 0.08em;
   }
 
   .film-menu-cta {
@@ -1367,6 +1553,10 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
   }
 
   .nav-link::after {
@@ -1413,6 +1603,10 @@
 
   .sheet-head p {
     margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
     color: var(--color-subtle);
   }
 
@@ -1454,6 +1648,7 @@
     display: flex;
     min-height: 2.5rem;
     align-items: center;
+    font-size: 0.875rem;
     color: var(--color-muted);
   }
 
@@ -1472,6 +1667,10 @@
     border-radius: 0;
     background: transparent;
     color: var(--color-fg);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
     transition: color 200ms var(--ease-out-quart);
@@ -1484,6 +1683,9 @@
 
   .nav-bubble-sub {
     min-height: 2.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
     color: var(--color-muted);
   }
 
@@ -1502,6 +1704,10 @@
 
   .nav-bubble-badge {
     flex-shrink: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--color-subtle);
     white-space: nowrap;
   }
@@ -1604,7 +1810,12 @@
     padding: 1rem 2rem;
     border-radius: 4px;
     border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
     text-align: center;
+    text-transform: uppercase;
     transition:
       background-color 240ms var(--ease-out-quart),
       border-color 240ms var(--ease-out-quart),
@@ -1657,6 +1868,7 @@
     border-radius: 0;
     background-color: transparent;
     color: var(--color-fg);
+    font-size: 1rem;
     transition: border-color 240ms var(--ease-out-quart);
   }
 
@@ -1807,6 +2019,10 @@
   position: relative;
   padding: 0.75rem 0;
   color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   transition: color 220ms var(--ease-out-quart);
 }
 
@@ -1906,11 +2122,13 @@
   padding: 0.75rem 0.5rem;
   border-bottom: 2px solid var(--color-subtle);
   color: var(--color-muted);
+  font-size: 0.875rem;
   text-align: left;
 }
 .booking-steps button[aria-current="step"] {
   border-color: var(--color-fg);
   color: var(--color-fg);
+  font-weight: 600;
 }
 .booking-price {
   display: flex;
@@ -1923,12 +2141,14 @@
 }
 .booking-price span {
   max-width: 25rem;
+  font-size: 0.875rem;
 }
 .booking-price small {
   display: block;
 }
 .booking-price strong {
   flex-shrink: 0;
+  font-size: 1.5rem;
 }
 .booking-extras summary {
   cursor: pointer;
@@ -1939,6 +2159,7 @@
 .booking-flow input:not([type="checkbox"]):not([type="radio"]),
 .booking-flow select,
 .booking-flow textarea {
+  font-size: 1rem;
   max-width: 100%;
 }
 .booking-flow :is(input, select, textarea) {
@@ -1964,6 +2185,9 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 639px) {
+  .booking-steps button {
+    font-size: 0.875rem;
+  }
   .booking-steps button span {
     display: block;
   }

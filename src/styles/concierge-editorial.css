@@ -12,12 +12,17 @@
 [data-shell="public"] .concierge-service > header .heading-2 {
   max-width: 20ch;
   margin-top: 1.25rem;
+  font-size: clamp(2.4rem, 3.6vw, 4rem);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
 }
 
 [data-shell="public"] .concierge-service > header > p:not(.kicker) {
   max-width: 46ch;
   margin-top: 1.25rem;
   color: var(--color-muted);
+  font-size: 0.9375rem;
+  line-height: 1.7;
 }
 
 .concierge-media {
@@ -83,17 +88,26 @@
 [data-shell="public"] .concierge-service > ol > li > span {
   padding-top: 0.6rem;
   color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 [data-shell="public"] .concierge-service > ol > li h3 {
   max-width: 12ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 4.5vw, 4.6rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 
 [data-shell="public"] .concierge-service > ol > li p {
   max-width: 34ch;
   margin-top: 1.25rem;
   color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.8;
 }
 
 @media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
@@ -131,6 +145,7 @@
 
   [data-shell="public"] .concierge-service > header .heading-2 {
     max-width: 22ch;
+    font-size: clamp(2.6rem, 6vw, 4rem);
   }
 
   .concierge-media {
@@ -146,9 +161,15 @@
 }
 
 @media (max-width: 639px) {
+  [data-shell="public"] .concierge-service > header .heading-2 {
+    font-size: clamp(2.2rem, 9vw, 3.25rem);
+  }
 
   [data-shell="public"] .concierge-service > ol > li {
     column-gap: 0.75rem;
   }
 
+  [data-shell="public"] .concierge-service > ol > li h3 {
+    font-size: clamp(2.4rem, 9vw, 3.25rem);
+  }
 }

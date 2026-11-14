@@ -52,7 +52,7 @@ function KontaktPage() {
           <div className="border border-line p-6">
             <dt className="kicker">Telefon</dt>
             <dd className="mt-4">
-              <a href={site.phoneHref} className="type-number font-display text-3xl tracking-tight hover:underline">
+              <a href={site.phoneHref} className="font-display text-3xl tracking-tight hover:underline">
                 {site.phoneDisplay}
               </a>
               <p className="mt-2 text-sm text-muted">{site.hoursLabel}</p>
@@ -61,7 +61,7 @@ function KontaktPage() {
           <div className="border border-line p-6">
             <dt className="kicker">E-Mail</dt>
             <dd className="mt-4">
-              <a href={`mailto:${site.email}`} className="font-sans text-base break-words hover:underline">
+              <a href={`mailto:${site.email}`} className="font-display text-3xl tracking-tight hover:underline">
                 {site.email}
               </a>
               <p className="mt-2 text-sm text-muted">Antwort in der Regel am selben Werktag.</p>
@@ -69,7 +69,7 @@ function KontaktPage() {
           </div>
           <div className="border border-line p-6">
             <dt className="kicker">Anschrift</dt>
-            <dd className="mt-4 font-sans text-base">
+            <dd className="mt-4 font-display text-3xl tracking-tight">
               {site.street}
               <span className="mt-1 block text-lg text-muted">
                 {site.postalCode} {site.city}

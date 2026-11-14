@@ -46,19 +46,14 @@ export function ConsentBanner() {
     if (!visible) return;
     document.body.dataset.consentBanner = "open";
     const banner = bannerRef.current;
-    let heightFrame = 0;
     const updateHeight = () => {
-      heightFrame = 0;
-      const height = `${banner?.getBoundingClientRect().height ?? 0}px`;
-      const root = document.documentElement.style;
-      if (root.getPropertyValue("--consent-banner-height") !== height)
-        root.setProperty("--consent-banner-height", height);
+      document.documentElement.style.setProperty(
+        "--consent-banner-height",
+        `${banner?.getBoundingClientRect().height ?? 0}px`,
+      );
     };
     updateHeight();
-    // Defer layout writes out of ResizeObserver delivery, including WebKit.
-    const resizeObserver = new ResizeObserver(() => {
-      if (!heightFrame) heightFrame = window.requestAnimationFrame(updateHeight);
-    });
+    const resizeObserver = new ResizeObserver(updateHeight);
     if (banner) resizeObserver.observe(banner);
     const active = document.activeElement;
     previousFocusRef.current =
@@ -66,7 +61,6 @@ export function ConsentBanner() {
     rejectRef.current?.focus();
     return () => {
       resizeObserver.disconnect();
-      window.cancelAnimationFrame(heightFrame);
       document.documentElement.style.removeProperty("--consent-banner-height");
       delete document.body.dataset.consentBanner;
     };

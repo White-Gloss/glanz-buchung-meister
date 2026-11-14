@@ -5,6 +5,8 @@
   max-width: 34ch;
   margin-top: 1.35rem;
   color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.45;
 }
 [data-shell="public"] .scroll-film-service + .scroll-film-cta { margin-top: 1.25rem; }
 [data-shell="public"] .scroll-film-copy {
@@ -64,6 +66,8 @@ body[data-consent-banner="open"] .city-wa-bar {
   [data-shell="public"] .scroll-film-service {
     max-width: none;
     margin-top: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.4;
   }
   [data-shell="public"] .scroll-film-service + .scroll-film-cta { margin-top: 1rem; }
   [data-shell="public"] .scroll-film-copy {

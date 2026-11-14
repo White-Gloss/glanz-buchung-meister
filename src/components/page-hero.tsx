@@ -3,7 +3,6 @@ import { useRef, type ReactNode } from "react";
 import { FluidImg, Shot, type ShotName } from "./media";
 import { cn } from "@/lib/utils";
 import { useParallaxFrames } from "@/lib/studio-motion";
-import { HeroTitle } from "./hero-title";
 
 export function PageCrumbs({
   items,
@@ -85,9 +84,7 @@ export function PageHero({
         {kicker ? (
           <p className={cn("kicker", crumbs ? "mt-5" : undefined)}>{kicker}</p>
         ) : null}
-        <h1 className="heading-page mt-4 max-w-4xl" aria-label={title}>
-          <HeroTitle>{title}</HeroTitle>
-        </h1>
+        <h1 className="heading-page mt-4 max-w-4xl">{title}</h1>
         {lead ? (
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
             {lead}

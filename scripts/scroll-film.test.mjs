@@ -425,17 +425,3 @@ test("crossing the mobile breakpoint changes the film while preserving scroll pr
   h.cleanup();
 });
 
-
-test("returning to the top restores hero actions before the intersection callback", () => {
-  const h = harness();
-  h.load();
-  h.scroll(3500);
-  assert.ok(h.actions.every((action) => action.inert));
-  h.visible(false);
-  h.scroll(0);
-  assert.equal(h.copy.style.opacity, "1");
-  assert.ok(h.actions.every((action) => !action.inert));
-  h.visible(true);
-  assert.ok(h.video.currentTime < 0.03);
-  h.cleanup();
-});

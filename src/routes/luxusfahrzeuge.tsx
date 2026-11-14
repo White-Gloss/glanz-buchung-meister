@@ -86,7 +86,7 @@ function LuxuryPage() {
             ],
           ].map(([t, d], i) => (
             <li key={t} className="border-t border-line pt-8">
-              <p className="type-number font-display text-4xl text-subtle/80">
+              <p className="font-display text-4xl text-subtle/80">
                 {String(i + 1).padStart(2, "0")}
               </p>
               <h2 className="mt-4 font-display text-3xl tracking-tight">{t}</h2>
