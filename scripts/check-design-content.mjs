@@ -7,6 +7,7 @@
  * CI checks: CSS visibility, live CMS content and runtime layout need a browser.
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,6 +36,28 @@ export const APPROVED_CTA_LABELS = Object.freeze({
     className: "scroll-film-cta", before: "Fahrzeug verwandeln lassen", after: "Jetzt Termin anfragen",
   }),
 });
+// These exact Git blobs cover the November 14 SEO update. All other sources
+// keep their original design or booking baselines. Hash the file locally so
+// the check also works with a shallow GitHub checkout and squash merges.
+export const APPROVED_SEO_BLOBS = Object.freeze({
+  "src/components/city-landing.tsx": "247430d8f540af5cdb73c34984f59e202c6d5ebf",
+  "src/data/site.ts": "3356ee2567830a37e3198d4b82bb12fba3c99ef8",
+  "src/lib/city-copy.ts": "281fbd0d571769ca2d55dba5b351602420dd0815",
+  "src/lib/seo.ts": "3488b971e1941762b1a530c8861c26468a873067",
+  "src/routes/abholservice.index.tsx": "e10fee117409229f91b76ee0862070d6664fb1de",
+  "src/routes/agb.tsx": "b3d3628d17c61a71e4228cd1f0642a4168d61df0",
+  "src/routes/galerie.tsx": "9e18230731dd64b42506c203fb634e6088ca5c5a",
+  "src/routes/index.tsx": "234307c6d09511ffa4d04c3f5fc8b8f6c466c348",
+  "src/routes/leistungen.index.tsx": "d51449039284566fa988c338e393b4d87cf065ad",
+  "src/routes/ratgeber.$slug.tsx": "26f0c757f6589c29c41026d659b6cb4525028e70",
+  "src/routes/ratgeber.index.tsx": "62a29a49f0e20f5268bc8d38e093f55dfd47d46d",
+});
+
+function sourceBlobId(source) {
+  const bytes = Buffer.from(source.replace(/\r\n/g, "\n"), "utf8");
+  return createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+}
+
 const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind.LineFeed });
 const normalize = (value) => value.replace(/\s+/gu, " ").trim();
 const protectedProps = new Set([
@@ -237,7 +260,12 @@ export function compareSource(before, after, filename, { approvedCtaLabels = fal
   ));
 }
 
-export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), sourceBaselines } = {}) {
+export function inspectDesignContent({
+  base = DESIGN_BASE,
+  cwd = process.cwd(),
+  sourceBaselines,
+  approvedSeoBlobs,
+} = {}) {
   const git = (args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 16 * 1024 * 1024 });
   // Resolve once to reject unknown revisions before inspecting any content.
   const commit = git(["rev-parse", "--verify", `${base}^{commit}`]).trim();
@@ -268,7 +296,18 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), 
       ...(baseline.pullRequestUrl === undefined ? {} : { pullRequestUrl: baseline.pullRequestUrl }),
     };
   }
+  const protectedPresent = protectedFiles.filter((name) => names.includes(name));
+  const seoBlobs = approvedSeoBlobs ?? (commit === DESIGN_BASE ? APPROVED_SEO_BLOBS : {});
+  for (const [name, blobId] of Object.entries(seoBlobs)) {
+    if ((!sources.includes(name) && !protectedPresent.includes(name)) || !/^[a-f0-9]{40}$/.test(blobId)) {
+      throw new Error(`Invalid approved SEO Git blob for ${name}`);
+    }
+  }
   const failures = [];
+  const verifySeoBlob = (name, source) => {
+    if (source && sourceBlobId(source) === seoBlobs[name]) return;
+    failures.push({ file: name, kind: "seo-source", value: "Source differs from the approved SEO update", count: 1 });
+  };
   let textEntries = 0;
   let headingEntries = 0;
   let linkEntries = 0;
@@ -287,17 +326,18 @@ export function inspectDesignContent({ base = DESIGN_BASE, cwd = process.cwd(), 
     headingEntries += total("headings");
     linkEntries += total("links");
     seoEntries += total("seo");
-    failures.push(...compareSource(before, after, name, { approvedCtaLabels: commit === DESIGN_BASE }));
+    if (Object.hasOwn(seoBlobs, name)) verifySeoBlob(name, after);
+    else failures.push(...compareSource(before, after, name, { approvedCtaLabels: commit === DESIGN_BASE }));
   }
-  const protectedPresent = protectedFiles.filter((name) => names.includes(name));
   for (const name of protectedPresent) {
     let current;
     try { current = readFileSync(resolve(cwd, name), "utf8"); } catch { current = null; }
-    if (current !== git(["show", `${commit}:${name}`])) {
+    if (Object.hasOwn(seoBlobs, name)) verifySeoBlob(name, current);
+    else if (current !== git(["show", `${commit}:${name}`])) {
       failures.push({ file: name, kind: "protected-source", value: "Content/SEO source differs from baseline", count: 1 });
     }
   }
-  return { base: commit, sourceBaselines: actualSourceBaselines, protectedBase: commit,
+  return { base: commit, sourceBaselines: actualSourceBaselines, protectedBase: commit, approvedSeoBlobs: seoBlobs,
     approvedCtaLabels: commit === DESIGN_BASE ? APPROVED_CTA_LABELS : {},
     sourceFiles: sources.length, protectedFiles: protectedPresent.length,
     textEntries, headingEntries, linkEntries, seoEntries, failures, passed: failures.length === 0 };
@@ -321,6 +361,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
           console.log(`Source baseline: ${file} -> ${baseline.commit}${baseline.pullRequest === undefined ? "" : ` (approved PR #${baseline.pullRequest}: ${baseline.pullRequestUrl})`}`);
         }
         console.log(`Protected data/SEO baseline: ${result.protectedBase}`);
+        for (const [file, blobId] of Object.entries(result.approvedSeoBlobs))
+          console.log(`Approved SEO source: ${file} -> ${blobId}`);
         for (const [file, label] of Object.entries(result.approvedCtaLabels)) {
           console.log(`Approved CTA label: ${file} .${label.className}: ${JSON.stringify(label.before)} -> ${JSON.stringify(label.after)} (exactly one)`);
         }
